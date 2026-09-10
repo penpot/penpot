@@ -843,7 +843,7 @@ fn exports_open_path_with_dotted_center_stroke() {
 fn exports_open_path_with_dotted_stroke_and_caps() {
     // Regression: dotted/dashed SVG expansion used stroke_to_path and returned
     // before draw_stroke_geometry, so open-path caps (triangle/circle/…) were
-    // dropped. Caps must be overlaid after the expanded outline.
+    // dropped. `stroke_to_path` now unions them into the expanded outline.
     let mut pool = ShapesPool::new();
     let id = uid(1);
     let mut stroke = dotted_stroke(
@@ -860,10 +860,13 @@ fn exports_open_path_with_dotted_stroke_and_caps() {
         svg.contains("fill=\"#1040FF\"") || svg.to_ascii_lowercase().contains("fill=\"#1040ff\""),
         "dotted stroke with caps must emit filled geometry: {svg}"
     );
-    // Caps are separate filled draws (triangle + circle), not only the dotted outline.
-    assert!(
-        svg.matches("<path ").count() >= 2 || svg.contains("<circle"),
-        "expected separate cap geometry besides the dotted outline: {svg}"
+    // Caps are unioned into the expanded outline by `stroke_to_path`, so they
+    // must not be emitted as extra draws: overlapping draws would double the
+    // alpha of translucent strokes. The snapshot below covers the geometry.
+    assert_eq!(
+        svg.matches("<path ").count(),
+        1,
+        "caps must be part of the outline, not extra draws: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -1430,8 +1433,8 @@ fn exports_open_path_with_solid_center_image_stroke() {
 
 #[test]
 fn exports_open_path_with_image_stroke_and_caps() {
-    // Caps go into the clip silhouette with the outline. Image dest must grow
-    // past stroke.delta() so triangle/circle markers stay textured.
+    // Caps are part of the clip silhouette (unioned into the outline). Image
+    // dest must grow past stroke.delta() so triangle/circle markers stay textured.
     let mut pool = ShapesPool::new();
     let id = uid(1);
     let image_id = uid(42);
@@ -1453,11 +1456,12 @@ fn exports_open_path_with_image_stroke_and_caps() {
         .nth(1)
         .and_then(|s| s.split("</clipPath>").next())
         .expect("imgstroke clipPath");
-    assert!(
-        clip.matches("<path ").count() >= 2
-            || clip.contains("<circle")
-            || clip.contains("<ellipse"),
-        "clip must include cap geometry besides the stroke outline: {svg}"
+    // `stroke_to_path` unions the caps into the outline, so the clip is a
+    // single path covering both.
+    assert_eq!(
+        clip.matches("<path ").count(),
+        1,
+        "clip must be the outline with the caps unioned in: {svg}"
     );
     // TriangleArrow margin is width*4 = 48.
     assert!(

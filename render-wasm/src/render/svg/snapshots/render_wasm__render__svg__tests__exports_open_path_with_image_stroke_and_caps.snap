@@ -4,7 +4,5 @@ expression: svg
 ---
 <?xml version="1.0" encoding="utf-8" ?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="344" height="294" viewBox="0 0 344 294"><defs><clipPath id="imgstrokeclip0" clipPathUnits="userSpaceOnUse">
-	<path transform="translate(102 102)" d="M146 -6L0 -6L0 6L134 6L134 84L0 84L0 96L146 96L146 -6Z" clip-rule="evenodd"/>
-	<path transform="translate(102 102)" d="M-24 0L24 48L24 -48L-24 0Z"/>
-	<ellipse transform="translate(102 102)" cx="0" cy="90" rx="24" ry="24"/>
+	<path transform="translate(102 102)" d="M24 -48L-24 0L24 48L24 6L134 6L134 84L23.2379 84C20.139513 72 12.393547 66 0 66C-16 66 -24 74 -24 90C-24 106 -16 114 0 114C12.393547 114 20.139513 108 23.2379 96L146 96L146 -6L24 -6L24 -48Z" clip-rule="evenodd"/>
 </clipPath></defs><g clip-path="url(#imgstrokeclip0)"><image href="images/test-fill.svg" x="-48" y="-48" width="236" height="186" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 102 102)"/></g></svg>

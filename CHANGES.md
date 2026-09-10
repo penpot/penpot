@@ -10,6 +10,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix stroke to path dropping caps and markers on open paths (by @ShreyashAgare26) [#10825](https://github.com/penpot/penpot/issues/10825)
 - Fix copying text from Penpot to the clipboard not working on MS Windows [#11303](https://github.com/penpot/penpot/issues/11303) (PR: [#11305](https://github.com/penpot/penpot/pull/11305))
 - Fix performance issue with WebGL render [#11240](https://github.com/penpot/penpot/issues/11240) (PR: [#11259](https://github.com/penpot/penpot/pull/11259))
 - Fix comment bubbles rendering on top of workspace dropdown menus [#10283](https://github.com/penpot/penpot/issues/10283) (PR: [#11201](https://github.com/penpot/penpot/pull/11201))

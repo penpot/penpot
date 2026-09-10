@@ -1169,12 +1169,9 @@ fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> b
     paint.set_anti_alias(true);
     canvas.draw_path(&outline.to_skia_path(shape.svg_attrs.as_ref()), &paint);
 
-    // Expanded dotted/dashed strokes skip `draw_stroke_geometry`, which is
-    // where open-path caps are drawn. Overlay them here in local path space
-    // (same as fills / the outline above under the leaf CTM).
-    if is_open {
-        paint_svg_stroke_caps(canvas, shape, stroke, false);
-    }
+    // Caps are already part of the outline (`stroke_to_path` unions them in),
+    // so they must not be overlaid again: a second draw would double the
+    // alpha of translucent strokes.
 
     true
 }
@@ -1189,8 +1186,6 @@ pub(super) fn paint_svg_stroke_silhouette(
     stroke: &Stroke,
     scale: f32,
 ) -> bool {
-    let is_open = shape.is_open();
-
     if stroke.per_side_widths().is_some()
         && matches!(shape.shape_type, Type::Rect(_) | Type::Frame(_))
     {
@@ -1235,24 +1230,7 @@ pub(super) fn paint_svg_stroke_silhouette(
     paint.set_color(skia::Color::BLACK);
     canvas.draw_path(&outline.to_skia_path(shape.svg_attrs.as_ref()), &paint);
 
-    if is_open {
-        paint_svg_stroke_caps(canvas, shape, stroke, true);
-    }
-
     true
-}
-
-fn paint_svg_stroke_caps(canvas: &Canvas, shape: &Shape, stroke: &Stroke, opaque: bool) {
-    let Some(cap_path) = transformed_skia_path(shape) else {
-        return;
-    };
-    let mut cap_paint =
-        stroke.to_stroked_paint(true, &shape.selrect, shape.svg_attrs.as_ref(), true);
-    if opaque {
-        cap_paint.set_shader(None);
-        cap_paint.set_color(skia::Color::BLACK);
-    }
-    super::strokes::handle_stroke_caps(&cap_path, stroke, canvas, true, &cap_paint, None, true);
 }
 
 /// Draws a stroke's geometry by shape type, kind and dash style. Rect/Circle

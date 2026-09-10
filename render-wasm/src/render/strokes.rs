@@ -1,8 +1,8 @@
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{
-    merge_fills, Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs,
-    Type,
+    arrow_cap_path, merge_fills, square_cap_path, triangle_cap_path, Corners, Fill, ImageFill,
+    Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs, Type,
 };
 use skia_safe::{self as skia, ImageFilter, RRect};
 
@@ -445,40 +445,10 @@ fn draw_square_cap(
     size: f32,
     extra_rotation: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(
-        angle.to_degrees() + extra_rotation,
-        Point::new(center.x, center.y),
+    canvas.draw_path(
+        &square_cap_path(center, direction, size, extra_rotation),
+        paint,
     );
-
-    let half_size = size / 2.0;
-    let rect = Rect::from_xywh(center.x - half_size, center.y - half_size, size, size);
-
-    let points = [
-        Point::new(rect.left(), rect.top()),
-        Point::new(rect.right(), rect.top()),
-        Point::new(rect.right(), rect.bottom()),
-        Point::new(rect.left(), rect.bottom()),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(Point::new(center.x, center.y));
-        pb.move_to(transformed_points[0]);
-        pb.line_to(transformed_points[1]);
-        pb.line_to(transformed_points[2]);
-        pb.line_to(transformed_points[3]);
-        pb.close();
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
 }
 
 fn draw_arrow_cap(
@@ -488,33 +458,7 @@ fn draw_arrow_cap(
     direction: &Point,
     size: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(angle.to_degrees() - 90., Point::new(center.x, center.y));
-
-    let half_height = size / 2.;
-    let points = [
-        Point::new(center.x, center.y - half_height),
-        Point::new(center.x - size, center.y + half_height),
-        Point::new(center.x + size, center.y + half_height),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(transformed_points[1]);
-        pb.line_to(transformed_points[0]);
-        pb.line_to(transformed_points[2]);
-        pb.move_to(Point::new(center.x, center.y));
-        pb.line_to(transformed_points[0]);
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
+    canvas.draw_path(&arrow_cap_path(center, direction, size), paint);
 }
 
 fn draw_triangle_cap(
@@ -524,32 +468,7 @@ fn draw_triangle_cap(
     direction: &Point,
     size: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(angle.to_degrees() - 90., Point::new(center.x, center.y));
-
-    let half_height = size / 2.;
-    let points = [
-        Point::new(center.x, center.y - half_height),
-        Point::new(center.x - size, center.y + half_height),
-        Point::new(center.x + size, center.y + half_height),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(transformed_points[0]);
-        pb.line_to(transformed_points[1]);
-        pb.line_to(transformed_points[2]);
-        pb.close();
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
+    canvas.draw_path(&triangle_cap_path(center, direction, size), paint);
 }
 
 fn draw_image_stroke_in_container(
