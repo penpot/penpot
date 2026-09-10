@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-09 12:51+0000\n"
+"PO-Revision-Date: 2026-09-11 12:51+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.9.1\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -10149,3 +10149,78 @@ msgstr ""
 
 msgid "nitrate.form.contact-us-free-trial"
 msgstr "Contacte-nous pour faire l'essai du forfait Entreprise pour 14 jours :"
+
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "Contacte-nous pour une mise à niveau au forfait Entreprise :"
+
+msgid "nitrate.form.free-trial-button"
+msgstr "Essai gratuit de 14 jours"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
+msgid "nitrate.form.subscribe-with-code"
+msgstr "S'abonner avec un code d'activation"
+
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "Pour annuler l'abonnement Nitrate, merci de nous contacter au :"
+
+msgid "onboarding.choice.team-up.create-team-name"
+msgstr "Nom de l'équipe"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:184
+msgid "onboarding.choice.team-up.create-team-enter"
+msgstr "Choisir le nom de l'équipe"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Dévelopeurs, designers, gestionnaires... tous sont bienvenus. Tu pourras "
+"inviter des gens plus tard."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "Le token {%s} n'existe pas ou a été supprimé."
+
+#: src/app/plugins/utils.cljs:533
+msgid "plugins.validation.invalid-value"
+msgstr "%s attendu, %s reçu (%s)"
+
+#: src/app/plugins/utils.cljs:536
+msgid "plugins.validation.received-value"
+msgstr "%s reçu (%s)"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.show-measure"
+msgstr "Afficher les mesures"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Page des raccourcis"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Rétablir à la valeur par défaut"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disable"
+msgstr "Désactiver raccourci"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled-shortcut"
+msgstr "Raccourci désactivé"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.overwritten-by"
+msgstr "Ce raccourci a été réassigé à %s"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Aller à Tout pour personnaliser les raccourcis"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-disabled"
+msgstr "Aucun raccourci désactivé"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reload-hint"
+msgstr ""
+"Après avoir modifié un raccourci, recharger l'onglet Penpot pour appliquer "
+"les changements."
