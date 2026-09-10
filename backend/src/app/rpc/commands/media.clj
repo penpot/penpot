@@ -339,7 +339,8 @@
 
 ;; --- Chunked Upload: Upload a single chunk
 
-(declare get-upload-chunk)
+(declare ^:private get-upload-chunk)
+(declare ^:private check-upload-chunk-slot)
 
 (def ^:private schema:upload-chunk
   [:map {:title "upload-chunk"}
@@ -356,45 +357,56 @@
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
-  [cfg
-   {:keys [::rpc/profile-id session-id index content] :as _params}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id} {::db/for-update true})]
-                  (when (or (neg? index) (>= index (:total-chunks session)))
-                    (ex/raise :type :validation
-                              :code :invalid-chunk-index
-                              :hint "chunk index is out of range for this session"
-                              :session-id session-id
-                              :total-chunks (:total-chunks session)
-                              :index index))
+  [cfg {:keys [::rpc/profile-id session-id index content]}]
+  (let [session (db/tx-run! check-upload-chunk-slot session-id profile-id index content)]
+    (l/trc :hint "upload-chunk"
+           :session-id session-id
+           :chunk (str index "/" (:total-chunks session))
+           :size (:size content)
+           :path (:path content))
 
-                  (when (get-upload-chunk conn session-id index)
-                    (ex/raise :type :validation
-                              :code :duplicate-chunk-index
-                              :hint "chunk index already uploaded for this session"
-                              :session-id session-id
-                              :index index))
+    (let [storage (sto/resolve cfg ::db/reuse-conn true)
+          data    (sto/content (:path content))]
+      (sto/put-object! storage
+                       {::sto/content      data
+                        ::sto/deduplicate? false
+                        ::sto/touch        true
+                        :content-type      (:mtype content)
+                        :bucket            sto/tempfile-bucket
+                        :upload-id         (str session-id)
+                        :chunk-index       index}))
 
-                  (l/trc :hint "upload-chunk"
-                         :session-id session-id
-                         :chunk (str index "/" (:total-chunks session))
-                         :size (:size content)
-                         :path (:path content))
+    {:session-id session-id
+     :index      index}))
 
-                  (let [storage (sto/resolve cfg ::db/reuse-conn true)
-                        data    (sto/content (:path content))]
-                    (sto/put-object! storage
-                                     {::sto/content      data
-                                      ::sto/deduplicate? false
-                                      ::sto/touch        true
-                                      :content-type      (:mtype content)
-                                      :bucket            sto/tempfile-bucket
-                                      :upload-id         (str session-id)
-                                      :chunk-index       index})))
+(defn- check-upload-chunk-slot
+  [{:keys [::db/conn]} session-id profile-id index content]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id} {::db/for-update true})]
+    (when (or (neg? index) (>= index (:total-chunks session)))
+      (ex/raise :type :validation
+                :code :invalid-chunk-index
+                :hint "chunk index is out of range for this session"
+                :session-id session-id
+                :total-chunks (:total-chunks session)
+                :index index))
 
-                {:session-id session-id
-                 :index      index})))
+    (when (> (:size content) (cf/get :upload-max-chunk-size))
+      (ex/raise :type :validation
+                :code :chunk-too-large
+                :hint "chunk size exceeds the maximum allowed"
+                :session-id session-id
+                :index index
+                :size (:size content)
+                :max-size (cf/get :upload-max-chunk-size)))
+
+    (when (get-upload-chunk conn session-id index)
+      (ex/raise :type :validation
+                :code :duplicate-chunk-index
+                :hint "chunk index already uploaded for this session"
+                :session-id session-id
+                :index index))
+
+    session))
 
 ;; --- Chunked Upload: shared helpers
 

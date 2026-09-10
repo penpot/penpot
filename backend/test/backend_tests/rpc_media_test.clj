@@ -927,6 +927,42 @@
                              (str session-id)])]
       (t/is (= 1 (count rows))))))
 
+(t/deftest chunked-upload-chunk-too-large
+  ;; Chunks larger than the configured cap must be rejected with
+  ;; :validation / :chunk-too-large before anything is stored, while a
+  ;; chunk exactly at the cap still uploads fine.
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:upload-max-chunk-size 1024})}]
+    (let [prof        (th/create-profile* 1)
+          session-id  (create-session! prof 1)
+          source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+          chunks      (split-file-into-chunks source-path 312043)
+          mtype       "image/jpeg"]
+
+      ;; 312043 bytes exceeds the mocked 1024-byte cap: rejected
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         (make-chunk-mfile (first chunks) mtype)})]
+        (t/is (some? (:error out)))
+        (t/is (= :validation (-> out :error ex-data :type)))
+        (t/is (= :chunk-too-large (-> out :error ex-data :code))))
+
+      ;; Nothing stored for the rejected chunk
+      (let [rows (th/db-exec! ["SELECT id FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND deleted_at IS NULL"
+                               (str session-id)])]
+        (t/is (= 0 (count rows))))
+
+      ;; A chunk exactly at the cap still uploads fine
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         (make-chunk-mfile (byte-array 1024 (byte 1)) mtype)})]
+        (t/is (nil? (:error out)))))))
+
 (t/deftest chunked-upload-sessions-per-profile-quota
   ;; With the session limit set to 2, creating a third session for the
   ;; same profile must fail with :restriction / :max-quote-reached.
