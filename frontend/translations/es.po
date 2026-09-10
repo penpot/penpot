@@ -1764,7 +1764,7 @@ msgstr "Al menos 1 letra mayúscula"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-digits"
-msgstr "Al menos 1 dígito"
+msgstr "Al menos 1 número"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-special"

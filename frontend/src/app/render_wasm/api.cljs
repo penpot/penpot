@@ -700,7 +700,9 @@
 
 (defn use-shape
   [id]
-  (when (initialized?)
+  ;; Use `wasm/live?` (not `initialized?`) so context-restore reload can
+  ;; select shapes while `reloading?` still blocks external app callers.
+  (when (wasm/live?)
     (let [buffer (uuid/get-u32 id)]
       (h/call wasm/internal-module "_use_shape"
               (aget buffer 0)
@@ -710,7 +712,7 @@
 
 (defn has-shape
   [id]
-  (when (initialized?)
+  (when (wasm/live?)
     (let [buffer (uuid/get-u32 id)
 
           result
@@ -739,9 +741,11 @@
   ;; Cache content for text editor sync
   (text-editor/cache-shape-text-content! shape-id content)
 
-  ;; The WASM design state may not be ready (e.g. while switching renderer
-  ;; with a text shape being edited). Skip the WASM layout calls in that case.
-  (when (initialized?)
+  ;; Skip when the GL/WASM context is not usable. Use `wasm/live?` (not
+  ;; `initialized?`) so context-restore reload can re-upload text while
+  ;; `reloading?` still blocks external app callers. Geometry shapes already
+  ;; use `live?` via `set-shape-base-props`; text must match that path.
+  (when (wasm/live?)
     (h/call wasm/internal-module "_clear_shape_text")
 
     (set-shape-vertical-align (get content :vertical-align))

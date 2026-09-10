@@ -60,7 +60,13 @@
 
 (defmethod handle-error :restriction
   [err request _]
-  (let [{:keys [code] :as data} (ex-data err)]
+  (let [data    (ex-data err)
+        code    (get data :code)
+        explain (ex/explain data)
+        data    (-> data
+                    (dissoc ::sm/explain)
+                    (cond-> explain (assoc :explain explain)))]
+
     (if (= code :method-not-allowed)
       {::yres/status 405
        ::yres/body data}

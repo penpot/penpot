@@ -1799,7 +1799,7 @@ msgstr "At least 1 uppercase letter"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-digits"
-msgstr "At least 1 digit"
+msgstr "At least 1 number"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-special"

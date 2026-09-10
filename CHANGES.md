@@ -156,6 +156,21 @@
 - Fix incorrect permission handling when managing share links on a file [#11289](https://github.com/penpot/penpot/issues/11289) (PR: [#11290](https://github.com/penpot/penpot/pull/11290))
 - Fix backend session remaining valid after logout when the auth-token cookie is replayed [#11316](https://github.com/penpot/penpot/issues/11316) (PR: [#11317](https://github.com/penpot/penpot/pull/11317))
 - Fix get-team-invitation-token requiring only read permissions [#11358](https://github.com/penpot/penpot/issues/11358) (PR: [#11359](https://github.com/penpot/penpot/pull/11359))
+- Fix missing text in legacy SVG board thumbnails [#10182](https://github.com/penpot/penpot/issues/10182) (PR: [#11552](https://github.com/penpot/penpot/pull/11552))
+- Fix workspace crash when applying transform modifiers in the WASM renderer [#10894](https://github.com/penpot/penpot/issues/10894) (PR: [#10896](https://github.com/penpot/penpot/pull/10896))
+- Limit ZIP entry count and object size on V3 binfile import [#11021](https://github.com/penpot/penpot/issues/11021) (PR: [#11022](https://github.com/penpot/penpot/pull/11022))
+- Block plugin UI iframe URLs targeting the Penpot domain [#11271](https://github.com/penpot/penpot/issues/11271) (PR: [#11273](https://github.com/penpot/penpot/pull/11273))
+- Restrict the MCP REPL code execution endpoint to development environments [#11283](https://github.com/penpot/penpot/issues/11283) (PR: [#11282](https://github.com/penpot/penpot/pull/11282))
+- Filter share-link tokens from the get-view-only-bundle response [#11285](https://github.com/penpot/penpot/issues/11285) (PR: [#11286](https://github.com/penpot/penpot/pull/11286))
+- Disable MCP developer tools in multi-user mode [#11291](https://github.com/penpot/penpot/issues/11291) (PR: [#11310](https://github.com/penpot/penpot/pull/11310))
+- Fix Hide comments setting being ignored after opening the Comments section [#11308](https://github.com/penpot/penpot/issues/11308) (PR: [#11492](https://github.com/penpot/penpot/pull/11492))
+- Block NAT64/6to4/Teredo IPv6 transition addresses in the SSRF guard [#11319](https://github.com/penpot/penpot/issues/11319) (PR: [#11320](https://github.com/penpot/penpot/pull/11320))
+- Prevent team admins from removing the team owner [#11367](https://github.com/penpot/penpot/issues/11367) (PR: [#11368](https://github.com/penpot/penpot/pull/11368))
+- Enforce share-link comment permissions and page scope [#11370](https://github.com/penpot/penpot/issues/11370) (PR: [#11371](https://github.com/penpot/penpot/pull/11371))
+- Clean up orphaned teams, projects and files on profile deletion [#11394](https://github.com/penpot/penpot/issues/11394) (PR: [#11395](https://github.com/penpot/penpot/pull/11395))
+- Fix crash when pressing Ctrl+D with no shape selected [#11448](https://github.com/penpot/penpot/issues/11448) (PR: [#11491](https://github.com/penpot/penpot/pull/11491))
+- Fix text layout not updating when auto-width is set by double-clicking the bounding box [#11480](https://github.com/penpot/penpot/issues/11480) (PR: [#11541](https://github.com/penpot/penpot/pull/11541))
+- Fix boolean shapes rendering deformed in the WASM renderer and exports [#11482](https://github.com/penpot/penpot/issues/11482) (PR: [#11551](https://github.com/penpot/penpot/pull/11551))
 
 ### :sparkles: New features & Enhancements
 
