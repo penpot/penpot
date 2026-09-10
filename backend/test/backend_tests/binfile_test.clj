@@ -308,7 +308,7 @@
        (io/output-stream output))
 
       ;; Read the manifest and check external-libraries
-      (let [manifest (v3/get-manifest output)]
+      (let [manifest (v3/get-manifest th/*system* output)]
         (t/is (some? (:external-libraries manifest)))
         (t/is (= 1 (count (:external-libraries manifest))))
         (let [ext-lib (first (:external-libraries manifest))]
@@ -710,7 +710,7 @@
      (io/output-stream output))
 
     ;; Verify manifest has external-libraries
-    (let [manifest (v3/get-manifest output)
+    (let [manifest (v3/get-manifest th/*system* output)
           ext-libs (:external-libraries manifest)]
       (t/is (some? ext-libs))
       (t/is (pos? (count ext-libs))))
@@ -1461,7 +1461,7 @@
        (io/output-stream output))
 
       ;; Verify slug in manifest
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             ext-lib (first (:external-libraries manifest))]
         (t/is (= "icons-buttons" (:slug ext-lib)))))))
 
@@ -1488,7 +1488,7 @@
        (io/output-stream output))
 
       ;; Library with empty slug should be dropped from external-libraries
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             ext-libs (:external-libraries manifest)]
         (t/is (or (nil? ext-libs)
                   (empty? ext-libs)))))))
@@ -1508,7 +1508,7 @@
      (io/output-stream output))
 
     ;; Manifest should have no external-libraries
-    (let [manifest (v3/get-manifest output)]
+    (let [manifest (v3/get-manifest th/*system* output)]
       (t/is (nil? (:external-libraries manifest))))
 
     ;; Import should succeed with empty resolution
@@ -1626,7 +1626,7 @@
           new-file-id (first (:file-ids result))]
 
       ;; Get the original library id from the manifest
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             original-lib-id (:id (first (:external-libraries manifest)))]
         ;; Get the imported file's data
         (let [imported (:result (th/command! {::th/type :get-file
@@ -1800,7 +1800,7 @@
 
       ;; Refs must remain as original UUID (dangling), NOT remapped to any
       ;; of the candidate libraries
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             original-lib-id (:id (first (:external-libraries manifest)))
             imported (:result (th/command! {::th/type :get-file
                                             ::rpc/profile-id (:id profile)
@@ -1856,7 +1856,7 @@
               "viewer should NOT auto-link")
 
         ;; Refs must remain as original UUID (dangling)
-        (let [manifest (v3/get-manifest output)
+        (let [manifest (v3/get-manifest th/*system* output)
               original-lib-id (:id (first (:external-libraries manifest)))
               imported (:result (th/command! {::th/type :get-file
                                               ::rpc/profile-id (:id viewer)
@@ -1885,7 +1885,7 @@
      (io/output-stream output))
 
     ;; Verify manifest has external-libraries (only produced by link-later)
-    (let [manifest (v3/get-manifest output)
+    (let [manifest (v3/get-manifest th/*system* output)
           ext-libs (:external-libraries manifest)]
       (t/is (some? ext-libs)
             "type :link-later should produce external-libraries even with include-libraries=true")
@@ -2066,7 +2066,7 @@
       (.setLevel zos Deflater/BEST_COMPRESSION)
       (write-bomb-entry! zos "manifest.json" bomb-entry-size))
     (let [out (try
-                (v3/get-manifest bombed)
+                (v3/get-manifest th/*system* bombed)
                 :no-error
                 (catch Throwable e
                   (or (ex-data e) (some-> (ex-cause e) ex-data))))]
