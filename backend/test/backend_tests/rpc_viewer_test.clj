@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-viewer-test
   (:require
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -16,6 +17,18 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(defn- update-file!
+  [& {:keys [profile-id file-id changes]}]
+  (let [out (th/command! {::th/type :update-file
+                          ::rpc/profile-id profile-id
+                          :id file-id
+                          :session-id (uuid/random)
+                          :revn 0
+                          :vern 0
+                          :changes changes})]
+    (t/is (nil? (:error out)))
+    (:result out)))
 
 (t/deftest obfuscate-email-happy-path
   (t/is (= "a****@****.com" (viewer/obfuscate-email "alice@example.com")))
@@ -244,13 +257,35 @@
         (t/is (= {} (get-in trimmed [:data :components])))
         (t/is (= [] (get-in trimmed [:data :pages])))))
 
-    (t/testing "follows nested component references"
-      (let [inner   (mk-shape (uuid/random) comp-c)
-            lib2    (-> lib
-                        (assoc-in [:data :components comp-c] {:id comp-c :name "c" :objects {}})
-                        (assoc-in [:data :components comp-a :objects] {(:id inner) inner}))
-            used    (#'viewer/collect-used-library-components primary {lib-id lib2})
-            trimmed (#'viewer/trim-library-data used lib2)]
+    (t/testing "follows nested component references through the main instance"
+      ;; Stored components carry no `:objects`; nested references resolve
+      ;; through the main-instance subtree on the library page.
+      (let [main-used   (uuid/random)
+            main-nested (uuid/random)
+            child       (assoc (mk-shape (uuid/random) comp-c) :parent-id main-used)
+            lib2        (assoc lib :data
+                               {:id lib-id
+                                :options {}
+                                :pages [page-id]
+                                :pages-index {page-id {:id page-id
+                                                       :objects {main-used {:id main-used
+                                                                            :type :frame
+                                                                            :shapes [(:id child)]}
+                                                                 (:id child) child
+                                                                 main-nested {:id main-nested
+                                                                              :type :frame}}}}
+                                :components {comp-a {:id comp-a
+                                                     :name "a"
+                                                     :main-instance-id main-used
+                                                     :main-instance-page page-id}
+                                             comp-b {:id comp-b
+                                                     :name "b"}
+                                             comp-c {:id comp-c
+                                                     :name "c"
+                                                     :main-instance-id main-nested
+                                                     :main-instance-page page-id}}})
+            used        (#'viewer/collect-used-library-components primary {lib-id lib2})
+            trimmed     (#'viewer/trim-library-data used lib2)]
         (t/is (= #{comp-a comp-c} (get used lib-id)))
         (t/is (= #{comp-a comp-c} (set (keys (get-in trimmed [:data :components])))))
         (t/is (not (contains? (get-in trimmed [:data :components]) comp-b)))))))
@@ -421,3 +456,154 @@
                                 :file-id (:id plain)})]
         (t/is (nil? (:error out)))
         (t/is (= [] (:libraries (:result out))))))))
+
+(t/deftest share-link-bundle-keeps-used-library-components
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id owner)
+
+        lib      (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+        lib-page (first (get-in lib [:data :pages]))
+
+        c-nested (uuid/random)
+        c-used   (uuid/random)
+        c-unused (uuid/random)
+        n-main   (uuid/random)
+        u-main   (uuid/random)
+        u-child  (uuid/random)
+        x-main   (uuid/random)
+        inst     (uuid/random)
+
+        frame    (fn [id parent frame-id extra]
+                   (cts/setup-shape
+                    (merge {:id id
+                            :name "Board"
+                            :frame-id frame-id
+                            :parent-id parent
+                            :type :frame}
+                           extra)))
+
+        ;; Nested component, referenced only through c-used.
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id (:id lib)
+                  :changes [{:type :add-obj
+                             :page-id lib-page
+                             :id n-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame n-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file (:id lib)
+                                          :component-id c-nested})}
+                            {:type :add-component
+                             :path ""
+                             :name "nested"
+                             :main-instance-id n-main
+                             :main-instance-page lib-page
+                             :id c-nested
+                             :anotation nil}])
+
+        ;; Used component, instancing the nested one.
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id (:id lib)
+                  :changes [{:type :add-obj
+                             :page-id lib-page
+                             :id u-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame u-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file (:id lib)
+                                          :component-id c-used})}
+                            {:type :add-obj
+                             :page-id lib-page
+                             :id u-child
+                             :parent-id u-main
+                             :frame-id u-main
+                             :components-v2 true
+                             :obj (frame u-child u-main u-main
+                                         {:main-instance false
+                                          :component-root true
+                                          :component-file (:id lib)
+                                          :component-id c-nested})}
+                            {:type :add-component
+                             :path ""
+                             :name "used"
+                             :main-instance-id u-main
+                             :main-instance-page lib-page
+                             :id c-used
+                             :anotation nil}])
+
+        ;; Unreferenced component, never instanced anywhere.
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id (:id lib)
+                  :changes [{:type :add-obj
+                             :page-id lib-page
+                             :id x-main
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame x-main uuid/zero uuid/zero
+                                         {:main-instance true
+                                          :component-root true
+                                          :component-file (:id lib)
+                                          :component-id c-unused})}
+                            {:type :add-component
+                             :path ""
+                             :name "unused"
+                             :main-instance-id x-main
+                             :main-instance-page lib-page
+                             :id c-unused
+                             :anotation nil}])
+
+        file     (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+        main-page (first (get-in file [:data :pages]))
+
+        ;; Instance the used component on the main file.
+        _        (update-file!
+                  :profile-id (:id owner)
+                  :file-id (:id file)
+                  :changes [{:type :add-obj
+                             :page-id main-page
+                             :id inst
+                             :parent-id uuid/zero
+                             :frame-id uuid/zero
+                             :components-v2 true
+                             :obj (frame inst uuid/zero uuid/zero
+                                         {:main-instance false
+                                          :component-root true
+                                          :component-file (:id lib)
+                                          :component-id c-used})}])
+
+        _        (th/link-file-to-library* {:file-id (:id file)
+                                            :library-id (:id lib)})
+
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :pages #{main-page}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "anonymous bundle keeps referenced components and drops the rest"
+      (let [out    (th/command! {::th/type :get-view-only-bundle
+                                 :share-id slink-id
+                                 :file-id (:id file)})
+            result (:result out)
+            libs   (:libraries result)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (count libs)))
+        (t/is (= #{c-used c-nested}
+                 (set (keys (get-in (first libs) [:data :components])))))
+        (t/is (= [] (get-in (first libs) [:data :pages])))))))
