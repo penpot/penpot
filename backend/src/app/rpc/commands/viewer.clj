@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
@@ -27,6 +28,47 @@
   (-> data
       (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
       (update :pages-index select-keys allowed)))
+
+(defn- collect-used-library-components
+  "Walk the objects of the (already page-scoped) primary file data and of
+   the referenced library components themselves, and return a map of
+   `{lib-id #{component-id}}` with every library component the allowed
+   pages need. Follows nested references to a fixpoint so trimming never
+   drops a component that is only reached through another component."
+  [primary-data libs-by-id]
+  (loop [seen {}]
+    (let [objects (->> (concat (map :objects (vals (:pages-index primary-data)))
+                               (map :objects (vals (:components primary-data)))
+                               (for [[lib-id comp-ids] seen
+                                     comp-id           comp-ids
+                                     :let [component (get-in libs-by-id [lib-id :data :components comp-id])]
+                                     :when (some? component)]
+                                 (:objects component)))
+                       (mapcat vals))
+          found   (reduce (fn [acc shape]
+                            (if (and (map? shape)
+                                     (some? (:component-file shape))
+                                     (some? (:component-id shape)))
+                              (update acc (:component-file shape) (fnil conj #{}) (:component-id shape))
+                              acc))
+                          {}
+                          objects)
+          merged  (merge-with into seen found)]
+      (if (= merged seen)
+        seen
+        (recur merged)))))
+
+(defn- trim-library-data
+  "Reduce a linked library to the minimum a share-link viewer needs: keep
+   the narrow `:data` keys, drop the library's own pages (a share link
+   never grants pages of a library), and keep only the components
+   referenced by the allowed pages of the primary file."
+  [used-refs {:keys [id] :as lib}]
+  (-> lib
+      (update :data select-keys [:id :options :pages :pages-index :components])
+      (assoc-in [:data :pages] [])
+      (assoc-in [:data :pages-index] {})
+      (update-in [:data :components] select-keys (get used-refs id #{}))))
 
 (defn obfuscate-email
   "Obfuscate the `email` for share-link members so the viewer only sees a
@@ -88,6 +130,19 @@
         libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
                              (merge lib (bfc/get-file cfg id)))))
+
+        ;; A share link never grants pages of a linked library, so trim
+        ;; each library to the components the allowed pages reference.
+        ;; File data may hold lazy pointer-mapped pages/components, so
+        ;; realize each file with its own loader before walking it.
+        ;; Membership bundles keep the full libraries.
+        libs    (if (= :share-link (:type perms))
+                  (let [file*      (fdata/realize-pointers cfg file)
+                        libs*      (mapv #(fdata/realize-pointers cfg %) libs)
+                        libs-by-id (into {} (map (juxt :id identity)) libs*)
+                        used       (collect-used-library-components (:data file*) libs-by-id)]
+                    (mapv #(trim-library-data used %) libs*))
+                  libs)
 
         links   (cond->> (->> (db/query conn :share-link {:file-id file-id})
                               (mapv (fn [row]

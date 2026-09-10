@@ -205,3 +205,219 @@
         (t/is (= 2 (count share-links)))
         (t/is (some #(= link-a-id (:id %)) share-links))
         (t/is (some #(= link-b-id (:id %)) share-links))))))
+
+(t/deftest trim-library-data-unit
+  (let [lib-id  (uuid/random)
+        comp-a  (uuid/random)
+        comp-b  (uuid/random)
+        comp-c  (uuid/random)
+        page-id (uuid/random)
+
+        mk-shape (fn [id comp] {:id id :type :rect :component-id comp :component-file lib-id})
+        shape-a  (mk-shape (uuid/random) comp-a)
+
+        primary {:pages [page-id]
+                 :pages-index {page-id {:id page-id :objects {(:id shape-a) shape-a}}}
+                 :components {}}
+
+        lib     {:id lib-id
+                 :synced-at "now"
+                 :data {:id lib-id
+                        :options {}
+                        :pages [page-id]
+                        :pages-index {page-id {:id page-id}}
+                        :components {comp-a {:id comp-a :name "a" :objects {}}
+                                     comp-b {:id comp-b :name "b" :objects {}}}}}]
+
+    (t/testing "keeps referenced components and drops library pages"
+      (let [used    (#'viewer/collect-used-library-components primary {lib-id lib})
+            trimmed (#'viewer/trim-library-data used lib)]
+        (t/is (= #{comp-a} (get used lib-id)))
+        (t/is (= #{comp-a} (set (keys (get-in trimmed [:data :components])))))
+        (t/is (= [] (get-in trimmed [:data :pages])))
+        (t/is (= {} (get-in trimmed [:data :pages-index])))
+        (t/is (= lib-id (:id trimmed)))
+        (t/is (= "now" (:synced-at trimmed)))))
+
+    (t/testing "no references keeps no components"
+      (let [trimmed (#'viewer/trim-library-data {} lib)]
+        (t/is (= {} (get-in trimmed [:data :components])))
+        (t/is (= [] (get-in trimmed [:data :pages])))))
+
+    (t/testing "follows nested component references"
+      (let [inner   (mk-shape (uuid/random) comp-c)
+            lib2    (-> lib
+                        (assoc-in [:data :components comp-c] {:id comp-c :name "c" :objects {}})
+                        (assoc-in [:data :components comp-a :objects] {(:id inner) inner}))
+            used    (#'viewer/collect-used-library-components primary {lib-id lib2})
+            trimmed (#'viewer/trim-library-data used lib2)]
+        (t/is (= #{comp-a comp-c} (get used lib-id)))
+        (t/is (= #{comp-a comp-c} (set (keys (get-in trimmed [:data :components])))))
+        (t/is (not (contains? (get-in trimmed [:data :components]) comp-b)))))))
+
+(t/deftest share-link-bundle-trims-linked-libraries
+  (let [owner    (th/create-profile* 1 {:is-active true})
+        stranger (th/create-profile* 2 {:is-active true})
+        proj-id  (:default-project-id owner)
+
+        lib      (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared true})
+
+        ;; A second page that only exists inside the library; the main
+        ;; file never references it, so no share link on the main file
+        ;; should ever expose it.
+        canary   (uuid/random)
+
+        _        (th/command! {::th/type :update-file
+                               ::rpc/profile-id (:id owner)
+                               :id (:id lib)
+                               :session-id (uuid/random)
+                               :revn 0
+                               :vern 0
+                               :changes [{:type :add-page
+                                          :id canary
+                                          :page {:id canary
+                                                 :name "Private canary"
+                                                 :options {}
+                                                 :objects {}}}]})
+
+        file     (th/create-file* 2 {:profile-id (:id owner)
+                                     :project-id proj-id
+                                     :is-shared false})
+
+        _        (th/link-file-to-library* {:file-id (:id file)
+                                            :library-id (:id lib)})
+
+        slink    (th/command! {::th/type :create-share-link
+                               ::rpc/profile-id (:id owner)
+                               :file-id (:id file)
+                               :pages #{(get-in file [:data :pages 0])}
+                               :who-comment "team"
+                               :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "control: non-member cannot read the library directly"
+      (let [out (th/command! {::th/type :get-file
+                              ::rpc/profile-id (:id stranger)
+                              :id (:id lib)
+                              :components-v2 true})
+            error-data (ex-data (:error out))]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (= :not-found (:type error-data)))))
+
+    (t/testing "anonymous bundle omits unreferenced library pages"
+      (let [out       (th/command! {::th/type :get-view-only-bundle
+                                    :share-id slink-id
+                                    :file-id (:id file)})
+            result    (:result out)
+            lib-pages (into #{} (mapcat #(get-in % [:data :pages] []))
+                            (:libraries result))]
+        (t/is (nil? (:error out)))
+        (t/is (not (contains? lib-pages canary)))
+        (t/is (every? #(every? #{:id :options :pages :pages-index :components} (keys (:data %)))
+                      (:libraries result)))))))
+
+(t/deftest share-link-bundle-library-edge-cases
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        add-canary (fn [file n]
+                     (let [canary (uuid/random)]
+                       (th/command! {::th/type :update-file
+                                     ::rpc/profile-id (:id owner)
+                                     :id (:id file)
+                                     :session-id (uuid/random)
+                                     :revn 0
+                                     :vern 0
+                                     :changes [{:type :add-page
+                                                :id canary
+                                                :page {:id canary
+                                                       :name n
+                                                       :options {}
+                                                       :objects {}}}]})
+                       canary))
+
+        lib2    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared true})
+        canary2 (add-canary lib2 "Private canary 2")
+
+        lib1    (th/create-file* 2 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared true})
+        canary1 (add-canary lib1 "Private canary 1")
+
+        _       (th/link-file-to-library* {:file-id (:id lib1)
+                                           :library-id (:id lib2)})
+
+        file    (th/create-file* 3 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        _       (th/link-file-to-library* {:file-id (:id file)
+                                           :library-id (:id lib1)})
+
+        full    (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{(get-in file [:data :pages 0])}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        full-id (get-in full [:result :id])
+
+        empty   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{}
+                              :who-comment "team"
+                              :who-inspect "team"})
+        empty-id (get-in empty [:result :id])
+
+        bundle  (fn [& {:as params}]
+                  (th/command! (merge {::th/type :get-view-only-bundle
+                                       :file-id (:id file)}
+                                      params)))
+        lib-pages (fn [result]
+                    (into #{} (mapcat #(get-in % [:data :pages] []))
+                          (:libraries result)))]
+
+    (t/testing "indirect libraries are trimmed too"
+      (let [out    (bundle :share-id full-id)
+            result (:result out)
+            pages  (lib-pages result)]
+        (t/is (nil? (:error out)))
+        (t/is (= 2 (count (:libraries result))))
+        (t/is (not (contains? pages canary1)))
+        (t/is (not (contains? pages canary2)))))
+
+    (t/testing "empty-pages link exposes no library content"
+      (let [out    (bundle :share-id empty-id)
+            result (:result out)]
+        (t/is (nil? (:error out)))
+        (t/is (every? #(= {} (get-in % [:data :components])) (:libraries result)))
+        (t/is (every? #(= [] (get-in % [:data :pages])) (:libraries result)))))
+
+    (t/testing "member bundle keeps full libraries"
+      (let [out    (bundle ::rpc/profile-id (:id owner))
+            result (:result out)
+            pages  (lib-pages result)]
+        (t/is (nil? (:error out)))
+        (t/is (contains? pages canary1))
+        (t/is (contains? pages canary2))))
+
+    (t/testing "file without libraries returns no libraries"
+      (let [plain (th/create-file* 4 {:profile-id (:id owner)
+                                      :project-id proj-id
+                                      :is-shared false})
+            link  (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id owner)
+                                :file-id (:id plain)
+                                :pages #{(get-in plain [:data :pages 0])}
+                                :who-comment "team"
+                                :who-inspect "all"})
+            out   (th/command! {::th/type :get-view-only-bundle
+                                :share-id (get-in link [:result :id])
+                                :file-id (:id plain)})]
+        (t/is (nil? (:error out)))
+        (t/is (= [] (:libraries (:result out))))))))
