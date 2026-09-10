@@ -88,13 +88,21 @@
 
 ;; --- BACKEND INIT
 
+(def ^:private schema:target
+  [:map {:title "s3-target"}
+   [:bucket ::sm/text]
+   [:region {:optional true} :keyword]
+   [:endpoint {:optional true} ::sm/uri]
+   [:prefix {:optional true} ::sm/text]])
+
 (def ^:private schema:config
   [:map {:title "s3-backend-config"}
    ::wrk/netty-io-executor
    [::region {:optional true} :keyword]
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
-   [::endpoint {:optional true} ::sm/uri]])
+   [::endpoint {:optional true} ::sm/uri]
+   [::targets {:optional true} [:map-of :keyword schema:target]]])
 
 (defmethod ig/expand-key ::backend
   [k v]
@@ -104,41 +112,113 @@
   [_ params]
   (assert (sm/check schema:config params)))
 
+(defn- build-client-pair
+  [{:keys [::wrk/netty-io-executor]} region endpoint]
+  (let [params    {::region region
+                   ::endpoint endpoint
+                   ::wrk/netty-io-executor netty-io-executor}
+        client    (build-s3-client params)
+        presigner (build-s3-presigner params)]
+    {:client    @client
+     :presigner presigner
+     :close-fn  #(.close ^java.lang.AutoCloseable client)}))
+
+(defn- build-targets
+  "Resolves the implicit `:default` target plus the declared targets, sharing
+  one S3 client/presigner pair per distinct `[region endpoint]`."
+  [{:keys [::region ::endpoint ::bucket ::prefix ::targets] :as params}]
+  (let [defs   (merge {:default {:region region :endpoint endpoint
+                                 :bucket bucket :prefix prefix}}
+                      (into {}
+                            (map (fn [[id target]]
+                                   [id {:region   (or (:region target) region)
+                                        :endpoint (or (:endpoint target) endpoint)
+                                        :bucket   (:bucket target)
+                                        :prefix   (or (:prefix target) prefix)}]))
+                            targets))
+        result (reduce-kv
+                (fn [acc id {:keys [region endpoint bucket prefix]}]
+                  (let [k    [region endpoint]
+                        pair (or (get-in acc [:pairs k])
+                                 (build-client-pair params region endpoint))
+                        acc  (cond-> acc
+                               (nil? (get-in acc [:pairs k]))
+                               (-> (assoc-in [:pairs k] pair)
+                                   (update :close-fns conj (:close-fn pair))))]
+                    (assoc-in acc [:targets id]
+                              {::client    (:client pair)
+                               ::presigner (:presigner pair)
+                               ::bucket    bucket
+                               ::prefix    prefix})))
+                {:pairs {} :targets {} :close-fns []}
+                defs)]
+    (select-keys result [:targets :close-fns])))
+
 (defmethod ig/init-key ::backend
   [_ params]
   (when (and (contains? params ::region)
              (contains? params ::bucket))
-    (let [client    (build-s3-client params)
-          presigner (build-s3-presigner params)]
+    (let [{:keys [targets close-fns]} (build-targets params)]
       (assoc params
              ::sto/type :s3
              ::counter (AtomicLong. 0)
-             ::client @client
-             ::presigner presigner
-             ::close-fn #(.close ^java.lang.AutoCloseable client)))))
+             ::default-target :default
+             ::targets targets
+             ::close-fns (vec close-fns)))))
 
 (defmethod ig/resolve-key ::backend
   [_ params]
-  (dissoc params ::close-fn))
+  (dissoc params ::close-fns))
 
 (defmethod ig/halt-key! ::backend
-  [_ {:keys [::close-fn]}]
-  (when (fn? close-fn)
-    (close-fn)))
+  [_ {:keys [::close-fns]}]
+  (doseq [f close-fns]
+    (when (fn? f)
+      (f))))
 
 (def ^:private schema:backend
   [:map {:title "s3-backend"}
-   ;; [::region :keyword]
-   ;; [::bucket ::sm/text]
-   [::client [:fn #(instance? S3AsyncClient %)]]
-   [::presigner [:fn #(instance? S3Presigner %)]]
-   [::prefix {:optional true} ::sm/text]
-   #_[::sto/type [:= :s3]]])
+   [::default-target :keyword]
+   [::targets
+    [:map-of :keyword
+     [:map
+      [::client [:fn #(instance? S3AsyncClient %)]]
+      [::presigner [:fn #(instance? S3Presigner %)]]
+      [::bucket ::sm/text]
+      [::prefix {:optional true} ::sm/text]]]]])
 
 (sm/register! ::backend schema:backend)
 
 (def ^:private valid-backend?
   (sm/validator schema:backend))
+
+;; --- TARGET RESOLUTION
+
+(defn- target-id
+  "Returns the configured target id stored on the object, or the default
+  target name when the object predates the routing feature."
+  [backend object]
+  (or (:storage-target object)
+      (some-> (meta object) :storage-target)
+      (name (::default-target backend))))
+
+(defn- resolve-target-by-id
+  [backend target-id]
+  (let [tid (cond
+              (nil? target-id)     (::default-target backend)
+              (keyword? target-id) target-id
+              :else                (keyword target-id))]
+    (or (get (::targets backend) tid)
+        (get (::targets backend) (::default-target backend))
+        (ex/raise :type :internal
+                  :code :invalid-storage-target
+                  :hint "storage target not configured"
+                  :target target-id
+                  :available (vec (keys (::targets backend)))))))
+
+(defn- resolve-target
+  [backend object]
+  (resolve-target-by-id backend (target-id backend object)))
 
 ;; --- API IMPL
 
@@ -210,13 +290,14 @@
       true)))
 
 (defmethod impl/del-objects-in-bulk :s3
-  [backend ids]
+  [backend target ids]
   (assert (valid-backend? backend) "expected a valid backend instance")
-  (let [key->id (into {} (map (fn [id]
-                                [(str (::prefix backend) (impl/id->path id)) id]))
+  (let [target  (resolve-target-by-id backend target)
+        key->id (into {} (map (fn [id]
+                                [(str (::prefix target) (impl/id->path id)) id]))
                       ids)
         result  (try
-                  (p/await! (del-object-in-bulk backend ids))
+                  (p/await! (del-object-in-bulk target ids))
                   (catch Throwable cause
                     (l/err :hint "error on s3 bulk deletion"
                            :ids ids
@@ -320,8 +401,9 @@
                       ^Subscriber subscriber))))))
 
 (defn- put-object
-  [{:keys [::client ::bucket ::prefix ::counter]} {:keys [id] :as object} content]
-  (let [path    (dm/str prefix (impl/id->path id))
+  [{:keys [::counter] :as backend} {:keys [id] :as object} content]
+  (let [{:keys [::client ::bucket ::prefix]} (resolve-target backend object)
+        path    (dm/str prefix (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
         rbody   (make-request-body counter content)
@@ -344,8 +426,9 @@
       (proxy-super close))))
 
 (defn- get-object-data
-  [{:keys [::client ::bucket ::prefix]} {:keys [id size]}]
-  (let [gor (.. (GetObjectRequest/builder)
+  [backend {:keys [id size] :as object}]
+  (let [{:keys [::client ::bucket ::prefix]} (resolve-target backend object)
+        gor (.. (GetObjectRequest/builder)
                 (bucket bucket)
                 (key (str prefix (impl/id->path id)))
                 (build))]
@@ -369,16 +452,18 @@
              (p/fmap #(.asInputStream ^ResponseBytes %)))))))
 
 (defn- head-object
-  [{:keys [::client ::bucket ::prefix]} {:keys [id]}]
-  (let [hor (.. (HeadObjectRequest/builder)
+  [backend {:keys [id] :as object}]
+  (let [{:keys [::client ::bucket ::prefix]} (resolve-target backend object)
+        hor (.. (HeadObjectRequest/builder)
                 (bucket bucket)
                 (key (str prefix (impl/id->path id)))
                 (build))]
     (.headObject ^S3AsyncClient client ^HeadObjectRequest hor)))
 
 (defn- get-object-bytes
-  [{:keys [::client ::bucket ::prefix]} {:keys [id]}]
-  (let [gor (.. (GetObjectRequest/builder)
+  [backend {:keys [id] :as object}]
+  (let [{:keys [::client ::bucket ::prefix]} (resolve-target backend object)
+        gor (.. (GetObjectRequest/builder)
                 (bucket bucket)
                 (key (str prefix (impl/id->path id)))
                 (build))
@@ -392,7 +477,7 @@
   (ct/duration {:minutes 10}))
 
 (defn- get-object-url
-  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]}
+  [backend {:keys [id] :as object}
    {:keys [max-age content-disposition] :or {max-age default-max-age}}]
   (assert (ct/duration? max-age) "expected valid duration instance")
 
@@ -400,7 +485,8 @@
   ;; object store sets that header on the response the client fetches after
   ;; following the redirect. It is only set when asked for, so urls for
   ;; objects served inline stay byte identical to before.
-  (let [gorb (.. (GetObjectRequest/builder)
+  (let [{:keys [::presigner ::bucket ::prefix]} (resolve-target backend object)
+        gorb (.. (GetObjectRequest/builder)
                  (bucket bucket)
                  (key (dm/str prefix (impl/id->path id))))
         gorb (cond-> gorb
@@ -415,8 +501,9 @@
     (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
 
 (defn- del-object
-  [{:keys [::bucket ::client ::prefix]} {:keys [id] :as obj}]
-  (let [dor (.. (DeleteObjectRequest/builder)
+  [backend {:keys [id] :as object}]
+  (let [{:keys [::bucket ::client ::prefix]} (resolve-target backend object)
+        dor (.. (DeleteObjectRequest/builder)
                 (bucket bucket)
                 (key (dm/str prefix (impl/id->path id)))
                 (build))]

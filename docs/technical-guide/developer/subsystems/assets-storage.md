@@ -16,11 +16,12 @@ that may be used for any kind of user uploaded files. Currently:
 There is an abstract interface and several implementations (or **backends**),
 depending on where the objects are actually stored:
 
- * <code class="language-clojure">:assets-fs</code> stores ojects in the file system, under a given base path.
- * <code class="language-clojure">:assets-s3</code> stores them in any cloud storage with an AWS-S3 compatible
+ * <code class="language-clojure">:fs</code> stores objects in the file system, under a given base path.
+ * <code class="language-clojure">:s3</code> stores them in any cloud storage with an AWS-S3 compatible
    interface.
- * <code class="language-clojure">:assets-db</code> stores them inside the PostgreSQL database, in a special table
-   with a binary column.
+
+Legacy rows may still reference the deprecated <code class="language-clojure">:assets-fs</code> and
+<code class="language-clojure">:assets-s3</code> names, which alias the current backends.
 
 ## Storage API
 
@@ -82,6 +83,13 @@ Obects may be organized in **buckets**, that are a kind of "intelligent" folders
 The storage module may use the bucket (hardcoded) to make special treatment to
 object, such as storing in a different path, or guessing how to know if an object
 is referenced from other place.
+
+When the <code class="language-clojure">:s3</code> backend is used, a semantic bucket may also be routed to a
+named S3 **target** (a different bucket and/or key prefix). The chosen target id
+is stored in the object metadata (<code class="language-clojure">:storage-target</code>) and resolved again on
+reads, URL signing, deduplication and garbage collection. Objects without a
+stored target use the default target. See the configuration guide for the
+routing file format.
 
 ## Sharing and deleting objects
 

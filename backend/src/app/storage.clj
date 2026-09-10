@@ -70,6 +70,7 @@
   [:map {:title "storage"}
    [::backends schema:backends]
    [::backend [:enum :s3 :fs]]
+   [::bucket->target {:optional true} [:map-of :string :keyword]]
    ::db/pool])
 
 (def valid-storage?
@@ -112,17 +113,18 @@
              params))
 
 (defn- get-database-object-by-hash
-  [connectable backend bucket hash]
+  [connectable backend bucket target hash]
   (let [sql (str "select * from storage_object "
                  " where (metadata->>'~:hash') = ? "
                  "   and (metadata->>'~:bucket') = ? "
+                 "   and coalesce(metadata->>'~:storage-target', 'default') = ? "
                  "   and backend = ?"
                  "   and deleted_at is null"
                  "   and status = 'valid'"
                  " limit 1")]
     ;; NOTE: metadata is left encoded; row->storage-object is
     ;; responsible for decoding it.
-    (db/exec-one! connectable [sql hash bucket (name backend)])))
+    (db/exec-one! connectable [sql hash bucket target (name backend)])))
 
 (defn- promote-object!
   [storage object]
@@ -185,6 +187,13 @@
   (let [ds (db/get-connectable storage)]
     (get-database-object ds id)))
 
+(defn- resolve-target-id
+  "Returns the storage target id for the given semantic bucket, or nil when
+  the routing does not apply (non-S3 backends)."
+  [storage bucket]
+  (when (= :s3 (::backend storage))
+    (get (::bucket->target storage) bucket :default)))
+
 (defn put-object!
   "Creates a new object with the provided content."
   [{:keys [::backend ::db/pool] :as storage}
@@ -193,9 +202,16 @@
   (assert (impl/content? content) "expected an instance of content")
 
   (let [id         (or (::id params) (uuid/random))
-        mdata      (cond-> (get-metadata params)
+        base-mdata (get-metadata params)
+        bucket     (:bucket base-mdata)
+        target     (resolve-target-id storage bucket)
+        target-str (or (some-> target name) "default")
+        mdata      (cond-> base-mdata
                      (satisfies? impl/IContentHash content)
-                     (assoc :hash (impl/get-hash content)))
+                     (assoc :hash (impl/get-hash content))
+
+                     (some? target)
+                     (assoc :storage-target target-str))
 
         touched-at (if touch
                      (or touched-at (ct/now))
@@ -214,10 +230,11 @@
                              (not= tempfile-bucket (:bucket mdata)))
                     (get-database-object-by-hash pool backend
                                                  (:bucket mdata)
+                                                 target-str
                                                  (:hash mdata)))]
 
       ;; PHASE 2: an existing reference is found: reuse or repair it.
-      (if (impl/exists-object? backend' hit)
+      (if (impl/exists-object? backend' (row->storage-object hit))
 
         ;; PHASE 2a: healthy reference. Optionally refresh touched_at
         ;; and reuse the object as it is.

@@ -20,7 +20,8 @@
    [integrant.core :as ig]))
 
 (def ^:private sql:get-pending-sobjects
-  "SELECT id, backend
+  "SELECT id, backend,
+          coalesce(metadata->>'~:storage-target', 'default') as target
      FROM storage_object
     WHERE status = 'pending'
       AND created_at <= now() - interval '24 hours'
@@ -56,10 +57,10 @@
   "Best-effort removal of the orphaned blobs. Runs after the pending rows
   have been committed so a failure here never blocks their reclamation."
   [storage rows]
-  (doseq [{:keys [id backend]} rows]
+  (doseq [{:keys [id backend target]} rows]
     (try
       (-> (impl/resolve-backend storage (keyword backend))
-          (impl/del-object {:id id}))
+          (impl/del-object (with-meta {:id id} {:storage-target target})))
       (catch Throwable cause
         (l/err :hint "error deleting orphaned pending blob"
                :id (str id)

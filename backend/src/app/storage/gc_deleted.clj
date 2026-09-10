@@ -87,11 +87,11 @@
 
   Returns the number of successfully deleted objects, or 0 if no rows
   could be locked."
-  [conn storage backend-id ids]
+  [conn storage backend-id target ids]
   (if-let [locked-ids (lock-ids conn ids)]
     (let [fail-ids (try
                      (-> (impl/resolve-backend storage backend-id)
-                         (impl/del-objects-in-bulk locked-ids))
+                         (impl/del-objects-in-bulk target locked-ids))
                      (catch Throwable cause
                        (l/err :hint "error on physical deletion, will retry"
                               :ids locked-ids
@@ -118,12 +118,15 @@
       (count ok-ids))
     0))
 
-(defn- group-by-backend
+(defn- group-by-route
   [items]
-  (d/group-by (comp keyword :backend) :id #{} items))
+  (d/group-by (fn [item]
+                [(keyword (:backend item)) (:target item)])
+              :id #{} items))
 
 (def ^:private sql:get-deleted-chunk
-  "SELECT id, backend
+  "SELECT id, backend,
+          coalesce(metadata->>'~:storage-target', 'default') as target
      FROM storage_object
     WHERE deleted_at IS NOT NULL
       AND deleted_at <= ?
@@ -144,11 +147,11 @@
                               (fn [{:keys [::db/conn ::sto/storage]}]
                                 (let [chunk (get-deleted-chunk conn chunk-size)]
                                   (when (seq chunk)
-                                    (let [by-backend (group-by-backend chunk)]
-                                      (reduce-kv (fn [acc backend-id ids]
-                                                   (+ acc (process-chunk conn storage backend-id ids)))
+                                    (let [by-route (group-by-route chunk)]
+                                      (reduce-kv (fn [acc [backend-id target] ids]
+                                                   (+ acc (process-chunk conn storage backend-id target ids)))
                                                  0
-                                                 by-backend))))))]
+                                                 by-route))))))]
       (if deleted
         (recur (+ total deleted))
         total))))
