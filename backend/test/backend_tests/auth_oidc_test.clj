@@ -156,6 +156,12 @@
         (t/is (.contains loc "error=auth-error"))
         (t/is (not (.contains loc "hint=")))))))
 
+(t/deftest redirect-with-error-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-with-error "auth-error")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot/#/auth/login?")))))
+
 (t/deftest redirect-to-verify-token-builds-verify-url
   (binding [cf/config {:public-uri "http://localhost:3449"}]
     (let [result (#'oidc/redirect-to-verify-token "test-token-value")
@@ -164,10 +170,79 @@
       (t/is (.contains loc "http://localhost:3449/#/auth/verify-token?"))
       (t/is (.contains loc "token=test-token-value")))))
 
+(t/deftest redirect-to-verify-token-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-to-verify-token "test-token-value")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot/#/auth/verify-token?")))))
+
 (t/deftest build-redirect-uri-constructs-redirect
   (binding [cf/config {:public-uri "http://localhost:3449"}]
     (t/is (= "http://localhost:3449/api/auth/oidc/callback"
              (#'oidc/build-redirect-uri)))))
+
+(t/deftest build-redirect-uri-preserves-public-uri-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (t/is (= "http://localhost:3449/penpot/api/auth/oidc/callback"
+             (#'oidc/build-redirect-uri)))))
+
+(t/deftest build-redirect-uri-with-subpath-and-trailing-slash
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot/"}]
+    (t/is (= "http://localhost:3449/penpot/api/auth/oidc/callback"
+             (#'oidc/build-redirect-uri)))))
+
+(t/deftest redirect-with-error-subpath-query-inside-fragment
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [result (#'oidc/redirect-with-error "auth-error" "hint message")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/penpot/#/auth/login?"))
+      (t/is (.contains loc "error=auth-error"))
+      (t/is (.contains loc "hint=hint"))
+      ;; Query params must appear after the hash, not before
+      (t/is (re-find #"#/auth/login\?" loc)))))
+
+(t/deftest redirect-to-register-subpath
+  (let [test-key (byte-array (map byte (range 32)))
+        cfg      {::setup/props {:tokens-key test-key}}]
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+      (let [info     {:email "u@e.com" :fullname "U" :backend "oidc"
+                      :email-verified false :props {}}
+            provider {:type "oidc" :id "oidc"}
+            result   (#'oidc/redirect-to-register cfg info provider)
+            loc      (get-in result [::yres/headers "location"])]
+        (t/is (.contains loc "http://localhost:3449/penpot/#/auth/register/validate?"))
+        (t/is (.contains loc "token="))))))
+
+(t/deftest redirect-to-register-no-subpath
+  (let [test-key (byte-array (map byte (range 32)))
+        cfg      {::setup/props {:tokens-key test-key}}]
+    (binding [cf/config {:public-uri "http://localhost:3449"}]
+      (let [info     {:email "u@e.com" :fullname "U" :backend "oidc"
+                      :email-verified false :props {}}
+            provider {:type "oidc" :id "oidc"}
+            result   (#'oidc/redirect-to-register cfg info provider)
+            loc      (get-in result [::yres/headers "location"])]
+        (t/is (.contains loc "http://localhost:3449/#/auth/register/validate?"))
+        (t/is (.contains loc "token="))))))
+
+(t/deftest redirect-to-verify-token-subpath-no-trailing-slash
+  (binding [cf/config {:public-uri "http://localhost:3449/my-app"}]
+    (let [result (#'oidc/redirect-to-verify-token "test-token-value")
+          loc    (get-in result [::yres/headers "location"])]
+      (t/is (.contains loc "http://localhost:3449/my-app/#/auth/verify-token?")))))
+
+(t/deftest build-public-uri-no-subpath
+  (binding [cf/config {:public-uri "http://localhost:3449"}]
+    (t/is (= "http://localhost:3449/api/auth/oidc/callback"
+             (str (#'oidc/build-public-uri "api/auth/oidc/callback"))))))
+
+(t/deftest build-public-uri-hash-route-query-in-fragment
+  (binding [cf/config {:public-uri "http://localhost:3449/penpot"}]
+    (let [uri (#'oidc/build-public-uri "#/auth/login")]
+      ;; The URI map should have the hash route as fragment
+      (t/is (= "/auth/login" (:fragment uri)))
+      ;; Path should end with trailing slash
+      (t/is (= "/penpot/" (:path uri))))))
 
 (t/deftest fetch-user-info-returns-decoded-body-on-success
   (let [cfg      {}
@@ -476,7 +551,7 @@
   (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
         state   (make-state-token cfg {})
         request (default-request cfg :state state)]
-    (binding [cf/config {:public-uri "http://localhost:3449"}
+    (binding [cf/config {:public-uri "http://localhost:3449/penpot"}
               cf/flags #{:registration}]
       (with-redefs [app.auth.oidc/resolve-provider (constantly {:type "oidc" :id "oidc"})
                     app.auth.oidc/get-info         (constantly {:email "u@e.com" :fullname "U"
@@ -485,7 +560,7 @@
                     app.auth.oidc/get-profile      (constantly (assoc test-profile :is-active false))]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (.contains loc "http://localhost:3449/#/auth/register/validate?"))
+          (t/is (.contains loc "http://localhost:3449/penpot/#/auth/register/validate?"))
           (t/is (.contains loc "token=")))))))
 
 (t/deftest callback-success-flow

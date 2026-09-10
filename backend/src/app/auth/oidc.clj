@@ -453,10 +453,30 @@
         [fitem & items]  (str/split path separator)]
     (into [(keyword (:type provider) (str/kebab fitem))] (map keyword) items)))
 
+(defn- build-public-uri
+  "Join a relative path onto the configured public URI, preserving any
+  subpath. Uses `u/ensure-path-slash` + `u/join` to match the pattern
+  used throughout the backend and frontend.
+  `path` must not start with `/` — a leading slash would be treated as
+  absolute by `u/join`, silently dropping the configured subpath."
+  [path]
+  {:pre [(not (str/starts-with? path "/"))]}
+  (-> (cf/get :public-uri)
+      (u/uri)
+      (u/ensure-path-slash)
+      (u/join path)))
+
+(defn- build-fragment-uri
+  "Build a public URI with a hash-route fragment and query params
+  placed inside that fragment."
+  [path params]
+  (reduce-kv #(u/append-query-param %1 (name %2) %3)
+             (build-public-uri path)
+             params))
+
 (defn- build-redirect-uri
   []
-  (let [public (u/uri (cf/get :public-uri))]
-    (str (assoc public :path "/api/auth/oidc/callback"))))
+  (str (build-public-uri "api/auth/oidc/callback")))
 
 (defn build-auth-redirect-uri
   [provider token]
@@ -687,9 +707,7 @@
   ([error hint]
    (let [params {:error error :hint hint}
          params (d/without-nils params)
-         uri    (-> (u/uri (cf/get :public-uri))
-                    (assoc :path "/#/auth/login")
-                    (assoc :query (u/map->query-string params)))]
+         uri    (build-fragment-uri "#/auth/login" params)]
      (redirect-response uri))))
 
 (defn- redirect-with-organization-sso-error
@@ -710,19 +728,15 @@
         params {:token (tokens/generate cfg info)
                 :provider (:provider (:id provider))
                 :fullname (:fullname info)}
-        params (d/without-nils params)]
+        params (d/without-nils params)
+        uri    (build-fragment-uri "#/auth/register/validate" params)]
 
-    (redirect-response
-     (-> (u/uri (cf/get :public-uri))
-         (assoc :path "/#/auth/register/validate")
-         (assoc :query (u/map->query-string params))))))
+    (redirect-response uri)))
 
 (defn- redirect-to-verify-token
   [token]
   (let [params {:token token}
-        uri    (-> (u/uri (cf/get :public-uri))
-                   (assoc :path "/#/auth/verify-token")
-                   (assoc :query (u/map->query-string params)))]
+        uri    (build-fragment-uri "#/auth/verify-token" params)]
 
     (redirect-response uri)))
 
