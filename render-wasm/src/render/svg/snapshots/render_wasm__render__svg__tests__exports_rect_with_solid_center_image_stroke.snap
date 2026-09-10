@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="108" height="88" viewBox="0 0 108 88"><defs><clipPath id="imgstrokeclip0" clipPathUnits="userSpaceOnUse">
+	<path transform="translate(-6 -6)" d="M114 6L6 6L6 94L114 94L114 6ZM14 86L14 14L106 14L106 86L14 86Z" clip-rule="evenodd"/>
+</clipPath></defs><g clip-path="url(#imgstrokeclip0)"><image href="images/test-fill.svg" x="2" y="2" width="116" height="96" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 -6 -6)"/></g></svg>

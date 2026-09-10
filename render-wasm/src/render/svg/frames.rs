@@ -1,11 +1,9 @@
 use crate::error::Result;
-use crate::render::shape_renderer::ShapeRenderer;
-use crate::render::vector::VectorRenderer;
 use crate::shapes::{Shape, Stroke};
 use crate::state::ShapesPoolRef;
 
 use super::document::{effect_attrs, SvgLayerCanvas};
-use super::images::emit_fills;
+use super::images::{emit_fills, emit_strokes};
 use super::render_tree;
 use crate::render::RenderResources;
 
@@ -16,8 +14,6 @@ pub(super) fn render_frame(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let matrix = element.centered_transform();
-
     let effects = effect_attrs(element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
@@ -51,12 +47,7 @@ pub(super) fn render_frame(
     // Strokes over children (frame space), outside the content clip.
     let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
     if !visible_strokes.is_empty() {
-        let canvas = builder.canvas();
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-        renderer.draw_strokes(element, &visible_strokes)?;
-        canvas.restore();
+        emit_strokes(builder, shared, element, &visible_strokes, scale)?;
     }
 
     if effects.is_some() {

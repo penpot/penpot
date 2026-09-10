@@ -1257,3 +1257,239 @@ fn exports_image_fill_on_frame() {
     );
     insta::assert_snapshot!(svg);
 }
+
+fn assert_linked_image_stroke(svg: &str) {
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "image stroke must emit a linked <image>: {svg}"
+    );
+    assert!(
+        svg.contains("imgstrokeclip") && svg.contains("clip-path=\"url(#"),
+        "image stroke must clip to the stroke outline: {svg}"
+    );
+    assert!(
+        !svg.contains("data:image"),
+        "must not base64-embed the stroke image: {svg}"
+    );
+}
+
+fn assert_evenodd_stroke_clip(svg: &str) {
+    assert!(
+        svg.contains("clip-rule=\"evenodd\""),
+        "stroke clip must use clip-rule=evenodd: {svg}"
+    );
+    assert!(
+        !svg.contains("fill-rule=\"evenodd\""),
+        "clipPath should rewrite fill-rule to clip-rule: {svg}"
+    );
+}
+
+#[test]
+fn exports_rect_with_solid_center_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        image_solid_stroke(StrokeKind::Center, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_solid_inner_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        image_solid_stroke(StrokeKind::Inner, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_solid_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (20.0, 20.0, 120.0, 100.0),
+        image_solid_stroke(StrokeKind::Outer, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_dotted_center_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (10.0, 10.0, 110.0, 90.0),
+        image_dotted_stroke(StrokeKind::Center, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_solid_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        image_solid_stroke(StrokeKind::Outer, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_solid_center_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_open_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        image_solid_stroke(StrokeKind::Center, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_open_path_with_image_stroke_and_caps() {
+    // Caps go into the clip silhouette with the outline. Image dest must grow
+    // past stroke.delta() so triangle/circle markers stay textured.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    let mut stroke = image_solid_stroke(StrokeKind::Center, 12.0, image_id);
+    stroke.cap_start = Some(StrokeCap::TriangleArrow);
+    stroke.cap_end = Some(StrokeCap::CircleMarker);
+    add_stroked_open_path(&mut pool, id, Uuid::nil(), (0.0, 0.0, 140.0, 90.0), stroke);
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    let clip = svg
+        .split("<clipPath")
+        .nth(1)
+        .and_then(|s| s.split("</clipPath>").next())
+        .expect("imgstroke clipPath");
+    assert!(
+        clip.matches("<path ").count() >= 2
+            || clip.contains("<circle")
+            || clip.contains("<ellipse"),
+        "clip must include cap geometry besides the stroke outline: {svg}"
+    );
+    // TriangleArrow margin is width*4 = 48.
+    assert!(
+        svg.contains(r#"x="-48""#)
+            && svg.contains(r#"y="-48""#)
+            && svg.contains(r#"width="236""#)
+            && svg.contains(r#"height="186""#),
+        "image dest must cover cap margin (48), not only stroke.delta: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_closed_path_with_dotted_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_stroked_closed_path(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        image_dotted_stroke(StrokeKind::Outer, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+
+    assert_linked_image_stroke(&svg);
+    assert_evenodd_stroke_clip(&svg);
+    insta::assert_snapshot!(svg);
+}

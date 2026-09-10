@@ -1093,13 +1093,49 @@ fn draw_single_stroke(
     Ok(())
 }
 
+/// Shape path in local coords for SVG stroke outline expansion.
+fn svg_stroke_shape_path(shape: &Shape) -> Option<Path> {
+    match &shape.shape_type {
+        Type::Rect(r) => Some(Path::new(rect_segments_local(shape, r.corners))),
+        Type::Frame(f) => Some(Path::new(rect_segments_local(shape, f.corners))),
+        Type::Circle => Some(Path::new(circle_segments_local(shape))),
+        Type::Path(_) | Type::Bool(_) => {
+            let path = shape.shape_type.path()?;
+            let mut local = path.clone();
+            if let Some(t) = shape.to_path_transform() {
+                local.transform(&t);
+            }
+            Some(local)
+        }
+        Type::Text(_) | Type::SVGRaw(_) | Type::Group(_) => None,
+    }
+}
+
+fn svg_stroke_solid_outline(stroke: &Stroke, is_open: bool) -> Option<bool> {
+    let kind = stroke.render_kind(is_open);
+    match stroke.style {
+        StrokeStyle::Solid => match kind {
+            // Solid Center already serializes as a native SVG stroke.
+            StrokeKind::Center => None,
+            StrokeKind::Inner | StrokeKind::Outer => {
+                if is_open {
+                    None
+                } else {
+                    Some(true)
+                }
+            }
+        },
+        // PathEffects (path_1d / dash) do not survive SkSVGDevice; expand them.
+        StrokeStyle::Dotted | StrokeStyle::Dashed | StrokeStyle::Mixed => Some(false),
+    }
+}
+
 /// Draws a stroke as a filled path outline for SVG export.
 ///
 /// Handles solid Inner/Outer and all dotted/dashed/mixed alignments (including
 /// Center and open paths, which force Center). Returns `true` when handled.
 fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> bool {
     let is_open = shape.is_open();
-    let kind = stroke.render_kind(is_open);
 
     // Per-side rect/frame strokes already expand to an evenodd band in
     // `draw_stroke_on_rect`. `stroke_to_path` only knows a uniform width.
@@ -1109,41 +1145,12 @@ fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> b
         return false;
     }
 
-    let solid_outline = match stroke.style {
-        StrokeStyle::Solid => match kind {
-            // Solid Center already serializes as a native SVG stroke.
-            StrokeKind::Center => return false,
-            StrokeKind::Inner | StrokeKind::Outer => {
-                if is_open {
-                    return false;
-                }
-                true
-            }
-        },
-        // PathEffects (path_1d / dash) do not survive SkSVGDevice; expand them.
-        StrokeStyle::Dotted | StrokeStyle::Dashed | StrokeStyle::Mixed => false,
+    let Some(solid_outline) = svg_stroke_solid_outline(stroke, is_open) else {
+        return false;
     };
 
-    // Local (untransformed) geometry: the SVG leaf canvas already has
-    // `centered_transform`. Using `rect_segments` / `circle_segments` here
-    // would bake the same transform into the path and double-rotate.
-    // Path/Bool content is stored in parent space; `to_path_transform`
-    // undoes that so the outline matches `get_skia_path` (fills) under CTM.
-    let shape_path = match &shape.shape_type {
-        Type::Rect(r) => Path::new(rect_segments_local(shape, r.corners)),
-        Type::Frame(f) => Path::new(rect_segments_local(shape, f.corners)),
-        Type::Circle => Path::new(circle_segments_local(shape)),
-        Type::Path(_) | Type::Bool(_) => match shape.shape_type.path() {
-            Some(path) => {
-                let mut local = path.clone();
-                if let Some(t) = shape.to_path_transform() {
-                    local.transform(&t);
-                }
-                local
-            }
-            None => return false,
-        },
-        Type::Text(_) | Type::SVGRaw(_) | Type::Group(_) => return false,
+    let Some(shape_path) = svg_stroke_shape_path(shape) else {
+        return false;
     };
 
     let Some(outline) = stroke_to_path(
@@ -1166,16 +1173,86 @@ fn draw_svg_stroke_as_fill(canvas: &Canvas, shape: &Shape, stroke: &Stroke) -> b
     // where open-path caps are drawn. Overlay them here in local path space
     // (same as fills / the outline above under the leaf CTM).
     if is_open {
-        if let Some(cap_path) = transformed_skia_path(shape) {
-            let cap_paint =
-                stroke.to_stroked_paint(true, &shape.selrect, shape.svg_attrs.as_ref(), true);
-            super::strokes::handle_stroke_caps(
-                &cap_path, stroke, canvas, true, &cap_paint, None, true,
-            );
-        }
+        paint_svg_stroke_caps(canvas, shape, stroke, false);
     }
 
     true
+}
+
+/// Opaque stroke region for SVG clipPath silhouettes.
+///
+/// Expands every alignment (including solid Center) to a filled outline so we
+/// do not rely on save_layer + SrcIn. Returns false when there is nothing to draw.
+pub(super) fn paint_svg_stroke_silhouette(
+    canvas: &Canvas,
+    shape: &Shape,
+    stroke: &Stroke,
+    scale: f32,
+) -> bool {
+    let is_open = shape.is_open();
+
+    if stroke.per_side_widths().is_some()
+        && matches!(shape.shape_type, Type::Rect(_) | Type::Frame(_))
+    {
+        let corners = shape.shape_type.corners();
+        let mut paint = stroke.to_paint(&shape.selrect, shape.svg_attrs.as_ref(), true);
+        paint.set_shader(None);
+        paint.set_color(skia::Color::BLACK);
+        super::strokes::draw_stroke_on_rect(
+            canvas,
+            stroke,
+            &shape.selrect,
+            &corners,
+            &paint,
+            scale,
+            None,
+            None,
+            true,
+        );
+        return true;
+    }
+
+    let Some(shape_path) = svg_stroke_shape_path(shape) else {
+        return false;
+    };
+
+    // Expand Center too: a native stroke attribute cannot clip an image.
+    let solid_outline = matches!(stroke.style, StrokeStyle::Solid);
+    let Some(outline) = stroke_to_path(
+        stroke,
+        &shape_path,
+        None,
+        &shape.selrect,
+        shape.svg_attrs.as_ref(),
+        solid_outline,
+    ) else {
+        return false;
+    };
+
+    let mut paint = Paint::default();
+    paint.set_style(skia::PaintStyle::Fill);
+    paint.set_anti_alias(true);
+    paint.set_color(skia::Color::BLACK);
+    canvas.draw_path(&outline.to_skia_path(shape.svg_attrs.as_ref()), &paint);
+
+    if is_open {
+        paint_svg_stroke_caps(canvas, shape, stroke, true);
+    }
+
+    true
+}
+
+fn paint_svg_stroke_caps(canvas: &Canvas, shape: &Shape, stroke: &Stroke, opaque: bool) {
+    let Some(cap_path) = transformed_skia_path(shape) else {
+        return;
+    };
+    let mut cap_paint =
+        stroke.to_stroked_paint(true, &shape.selrect, shape.svg_attrs.as_ref(), true);
+    if opaque {
+        cap_paint.set_shader(None);
+        cap_paint.set_color(skia::Color::BLACK);
+    }
+    super::strokes::handle_stroke_caps(&cap_path, stroke, canvas, true, &cap_paint, None, true);
 }
 
 /// Draws a stroke's geometry by shape type, kind and dash style. Rect/Circle
