@@ -27,7 +27,7 @@ export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-login-with-password \
-       disable-login-with-ldap \
+       enable-login-with-ldap \
        disable-login-with-oidc \
        disable-login-with-google \
        disable-login-with-github \

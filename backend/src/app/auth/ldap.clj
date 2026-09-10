@@ -10,7 +10,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [clj-ldap.client :as ldap]
-   [clojure.string]
+   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (defn- prepare-params
@@ -36,11 +36,22 @@
                 :cause cause))))
 
 (defn- replace-several [s & {:as replacements}]
-  (reduce-kv clojure.string/replace s replacements))
+  (reduce-kv str/replace s replacements))
+
+(defn- escape-ldap-filter-value
+  "Escapes special characters in a string for use in LDAP filter values,
+  per RFC 4515 section 3."
+  [s]
+  (-> s
+      (str/replace "\\" "\\5c")
+      (str/replace "*"  "\\2a")
+      (str/replace "("  "\\28")
+      (str/replace ")"  "\\29")
+      (str/replace "\u0000" "\\00")))
 
 (defn- search-user
   [{:keys [::conn base-dn] :as cfg} email]
-  (let [query  (replace-several (:query cfg) ":username" email)
+  (let [query  (replace-several (:query cfg) ":username" (escape-ldap-filter-value email))
         attrs  [(:attrs-username cfg)
                 (:attrs-email cfg)
                 (:attrs-fullname cfg)]
@@ -49,12 +60,19 @@
                  :attributes attrs}]
     (first (ldap/search conn base-dn params))))
 
+(defn- get-attr
+  "Retrieves an attribute from an LDAP entry. Handles multi-valued
+  attributes by returning the first value."
+  [entry attr-key]
+  (let [v (get entry attr-key)]
+    (if (coll? v) (first v) v)))
+
 (defn- retrieve-user
   [{:keys [::conn] :as cfg} {:keys [email password]}]
   (when-let [{:keys [dn] :as user} (search-user cfg email)]
     (when (ldap/bind? conn dn password)
-      {:fullname (get user (-> cfg :attrs-fullname keyword))
-       :email    email
+      {:fullname (get-attr user (-> cfg :attrs-fullname keyword))
+       :email    (get-attr user (-> cfg :attrs-email keyword))
        :backend  "ldap"})))
 
 (def ^:private schema:info-data
@@ -79,7 +97,7 @@
           (l/warn :hint "invalid response from ldap, looks like ldap is not configured correctly" :data user)
           (ex/raise :type :restriction
                     :code :wrong-ldap-response
-                    :explain explain)))
+                    ::sm/explain explain)))
       user)))
 
 (defn- try-connectivity
