@@ -435,15 +435,19 @@
   "Wraps an InputStream to enforce a maximum number of decompressed bytes.
   Raises :validation :max-file-size-reached when the limit is exceeded.
   `counter` holds the bytes accounted so far: pass a fresh atom for a
-  per-entry cap, or the shared job-wide atom for the cumulative budget."
+  per-entry cap, or the shared job-wide atom for the cumulative budget.
+  `entry-name` identifies the entry being read and is included in the
+  raised ex-data for triage."
   ^InputStream
-  [^InputStream input ^long max-size counter]
+  [^InputStream input ^long max-size counter entry-name]
   (let [on-read (fn [n]
                   (when (pos? n)
                     (when (> (swap! counter + (long n)) max-size)
                       (ex/raise :type :validation
                                 :code :max-file-size-reached
-                                :hint (str "stream exceeded max size: " max-size))))
+                                :hint (str "stream exceeded max size on entry " entry-name ": " max-size)
+                                :path entry-name
+                                :max max-size)))
                   n)]
     (proxy [FilterInputStream] [input]
       (read
@@ -456,7 +460,14 @@
         ([^bytes buf off]
          (on-read (.read input buf (int off) (- (alength buf) (int off)))))
         ([^bytes buf off len]
-         (on-read (.read input buf (int off) (int len))))))))
+         (on-read (.read input buf (int off) (int len)))))
+      (skip [n]
+        ;; Skipped bytes were already decompressed, so they count against
+        ;; the budget like read bytes do.
+        (let [skipped (.skip input (long n))]
+          (when (pos? skipped)
+            (on-read skipped))
+          skipped)))))
 
 (defn- setup-limits
   "Resolve the binfile import limits once per job from cfg, falling back
@@ -492,8 +503,8 @@
                 :max max-size
                 :found declared))
     (-> (zip-entry-stream input entry)
-        (size-limiting-stream max-size (atom 0))
-        (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg))
+        (size-limiting-stream max-size (atom 0) entry-name)
+        (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg) entry-name)
         (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content
@@ -502,7 +513,7 @@
   [input entry & {:keys [max-size]}]
   (let [stream-fn (fn []
                     (cond-> (zip-entry-stream input entry)
-                      max-size (size-limiting-stream max-size (atom 0))))
+                      max-size (size-limiting-stream max-size (atom 0) (zip-entry-name entry))))
         hash      (delay (->> (stream-fn)
                               (sto.impl/calculate-hash)))]
     (reify
@@ -1149,7 +1160,9 @@
   decompressed-size limits."
   [path]
   (let [cfg (setup-limits {::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
-                           ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)})]
+                           ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
+                           ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
+                           ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)})]
     (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
       (-> (read-manifest cfg input)
           (validate-manifest)))))

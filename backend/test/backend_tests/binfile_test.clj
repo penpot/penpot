@@ -468,3 +468,80 @@
           out (try-import-files! cfg)]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
+
+(defn- text-entries-sizes
+  "Returns the decompressed sizes of every `.json` entry in the zip at
+  `zip-path`. Used to pick a cumulative budget that sits between the
+  largest single entry and the summed total."
+  [zip-path]
+  (with-open [zin (ZipFile. (fs/file zip-path))]
+    (->> (iterator-seq (.entries zin))
+         (filter #(.endsWith ^String (.getName ^ZipEntry %) ".json"))
+         (map #(.getSize ^ZipEntry %))
+         (remove neg?)
+         vec)))
+
+(t/deftest import-rejects-accumulated-text-across-entries
+  ;; The cumulative budget must account bytes across entries sharing one
+  ;; counter: a budget just over the largest single entry (so no entry
+  ;; alone can trip it) but under the summed total (so the running total
+  ;; must trip it) is rejected. If the shared counter ever regressed to
+  ;; a fresh atom per entry, every entry alone would pass and the valid
+  ;; import would succeed, so this test would go red.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        exported (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream exported))
+
+    (let [sizes      (text-entries-sizes exported)
+          max-single (apply max 0 sizes)
+          summed     (reduce + 0 sizes)
+          budget     (inc max-single)]
+      ;; Preconditions that make the test meaningful: more than one
+      ;; entry worth of text, so the trip can only come from
+      ;; accumulation, never from a single entry.
+      (t/is (> summed budget))
+      (let [cfg (-> th/*system*
+                    (assoc ::bfc/project-id (:default-project-id profile))
+                    (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/input exported)
+                    (assoc ::bfc/import-max-text-total-size budget))
+            out (try-import-files! cfg)]
+        (t/is (= :validation (:type out)))
+        (t/is (= :max-file-size-reached (:code out)))
+        (t/is (some? (:path out)))))))
+
+(t/deftest size-limiting-stream-counts-skip
+  ;; Skipped bytes were already decompressed, so they must count against
+  ;; the budget like read bytes do.
+  (let [payload   (.getBytes "abcdefghijklmnopqrstuvwxyz" "UTF-8")
+        mk-stream (fn [cap]
+                    (@#'v3/size-limiting-stream
+                     (ByteArrayInputStream. payload) cap (atom 0) "test-entry"))]
+    ;; Skipping past the cap trips the guard.
+    (let [out (try
+                (with-open [s (mk-stream 10)]
+                  (.skip ^java.io.InputStream s 20)
+                  :no-error)
+                (catch clojure.lang.ExceptionInfo e
+                  (ex-data e)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out)))
+      (t/is (= "test-entry" (:path out))))
+    ;; Skipping under the cap leaves the remainder accounted: 6 skipped
+    ;; plus 10 read over a cap of 10 trips the guard.
+    (let [out (try
+                (with-open [s (mk-stream 10)]
+                  (.skip ^java.io.InputStream s 6)
+                  (.read ^java.io.InputStream s (byte-array 10))
+                  :no-error)
+                (catch clojure.lang.ExceptionInfo e
+                  (ex-data e)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
