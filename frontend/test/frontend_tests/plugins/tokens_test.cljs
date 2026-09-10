@@ -22,9 +22,14 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
 
-(t/use-fixtures :each {:before cthi/reset-idmap!})
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after thw/teardown-wasm-mocks!})
 
 (def ^:private get-resolved-value @#'ptok/get-resolved-value)
 
@@ -80,6 +85,18 @@
   (t/is (= :m2 (ptok/token-attr-plugin->token-attr :margin-right)))
   (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom)))
   (t/is (= :m4 (ptok/token-attr-plugin->token-attr :margin-left))))
+
+(t/deftest token-attr-plugin->token-attr-resolves-font-family-alias
+  ;; Plugin-facing `fontFamilies` (kebab-cased to `:font-families` by the
+  ;; schema layer) maps to the canonical internal `:font-family`.
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr :font-families)))
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr "font-families"))))
+
+(t/deftest token-attr->token-attr-plugin-resolves-font-family-alias
+  ;; Symmetric direction: the canonical internal attribute maps to the
+  ;; plural plugin-facing name so applied-token readback serializes as
+  ;; camelCase `fontFamilies`, not the undocumented singular `fontFamily`.
+  (t/is (= :font-families (ptok/token-attr->token-attr-plugin :font-family))))
 
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
@@ -147,6 +164,57 @@
                     (get-in @store
                             [:files (:id file) :data :pages-index page-id
                              :objects shape-id :applied-tokens :p1])))
+           (done)))
+       0))))
+
+(t/deftest shape-apply-token-accepts-font-families
+  (t/async
+    done
+    (let [set-id    (cthi/new-id! :token-set)
+          token-id  (cthi/new-id! :font-family-token)
+          file      (-> (cthf/sample-file :file1 :page-label :page1)
+                        (ctho/add-text :text1 "Hello World!")
+                        (ctht/add-tokens-lib)
+                        (ctht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set
+                               (ctob/make-token-set :id set-id
+                                                    :name "fonts"))
+                              (ctob/add-theme
+                               (ctob/make-token-theme :name "theme"
+                                                      :sets #{"fonts"}))
+                              (ctob/set-active-themes #{"/theme"})
+                              (ctob/add-token
+                               set-id
+                               (ctob/make-token :id token-id
+                                                :name "font.primary"
+                                                :type :font-family
+                                                :value ["Inter"])))))
+          store     (ths/setup-store file)
+          _         (set! st/state store)
+          _         (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :text1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str token-id))]
+      (.applyToken shape token #js ["fontFamilies"])
+      (js/setTimeout
+       (fn []
+         (let [shape-id (cthi/id :text1)
+               page-id  (cthf/current-page-id file)]
+           ;; Plugin readback exposes the documented plural key.
+           (t/is (= "font.primary" (.. shape -tokens -fontFamilies)))
+           ;; The undocumented singular spelling must not leak.
+           (t/is (undefined? (.. shape -tokens -fontFamily)))
+           ;; Internal state keeps the canonical `:font-family` key.
+           (t/is (= "font.primary"
+                    (get-in @store
+                            [:files (:id file) :data :pages-index page-id
+                             :objects shape-id :applied-tokens :font-family])))
            (done)))
        0))))
 

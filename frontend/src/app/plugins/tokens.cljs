@@ -41,7 +41,9 @@
    :m1 :margin-top
    :m2 :margin-right
    :m3 :margin-bottom
-   :m4 :margin-left})
+   :m4 :margin-left
+
+   :font-family :font-families})
 
 (def ^:private map:token-attr-plugin->token-attr
   (merge
