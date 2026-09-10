@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.releases.common :as c]
    [rumext.v2 :as mf]))
 
@@ -47,8 +48,10 @@
            "Let’s dive in!"]]
 
          [:div {:class (stl/css :navigation)}
-          [:button {:class (stl/css :next-btn)
-                    :on-click next} "Continue"]]]]]]
+          [:> button* {:class (stl/css :next-btn)
+                       :on-click next
+                       :variant "primary"}
+           "Continue"]]]]]]
 
      0
      [:div {:class (stl/css-case :modal-overlay true)}
@@ -77,8 +80,10 @@
             :navigate navigate
             :total 2}]
 
-          [:button {:on-click next
-                    :class (stl/css :next-btn)} "Continue"]]]]]]
+          [:> button* {:class (stl/css :next-btn)
+                       :on-click next
+                       :variant "primary"}
+           "Continue"]]]]]]
 
 
      1
@@ -98,7 +103,10 @@
           [:p {:class (stl/css :feature-content)}
            "Penpot plugins are quite easy to install."]
           [:p {:class (stl/css :feature-content)}
-           "Be sure to keep an eye on our evolving " [:a {:href "https://penpot.app/penpothub" :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
+           "Be sure to keep an eye on our evolving "
+           [:a {:class (stl/css :link)
+                :href "https://penpot.app/penpothub"
+                :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
 
           [:p {:class (stl/css :feature-content)}
            "This is just the beginning of a myriad of possibilities. Let’s build this community together ❤️."]]
@@ -110,6 +118,7 @@
             :navigate navigate
             :total 2}]
 
-          [:button {:on-click finish
-                    :class (stl/css :next-btn)} "Let's go"]]]]]])))
-
+          [:> button* {:class (stl/css :next-btn)
+                       :on-click finish
+                       :variant "primary"}
+           "Let's go"]]]]]])))
