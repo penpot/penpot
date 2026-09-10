@@ -7,6 +7,7 @@
 (ns app.rpc.commands.viewer
   (:require
    [app.binfile.common :as bfc]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
@@ -166,11 +167,11 @@
         ;; realize each file with its own loader before walking it.
         ;; Membership bundles keep the full libraries.
         libs    (if (= :share-link (:type perms))
-                  (let [file*      (fdata/realize-pointers cfg file)
-                        libs*      (mapv #(fdata/realize-pointers cfg %) libs)
-                        libs-by-id (into {} (map (juxt :id identity)) libs*)
-                        used       (collect-used-library-components (:data file*) libs-by-id)]
-                    (mapv #(trim-library-data used %) libs*))
+                  (let [file'      (fdata/realize-pointers cfg file)
+                        libs'      (mapv #(fdata/realize-pointers cfg %) libs)
+                        libs-by-id (d/index-by :id libs')
+                        used       (collect-used-library-components (:data file') libs-by-id)]
+                    (mapv #(trim-library-data used %) libs'))
                   libs)
 
         links   (cond->> (->> (db/query conn :share-link {:file-id file-id})
