@@ -17,7 +17,6 @@
    [app.http.client :as http]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
-   [app.util.blob :as blob]
    [app.util.json :as json]
    [integrant.core :as ig]
    [promesa.exec :as px]))
@@ -248,20 +247,16 @@
     :props      (or (some-> props db/decode-transit-pgobject) {})
     :context    (or (some-> context db/decode-transit-pgobject) {})}))
 
-(defn- encode-batch
-  "Encode a sequence of event maps into a fressian+zstd base64 string
-  suitable for JSON transport."
-  ^String [events]
-  (blob/encode-str events {:version 4}))
-
 (defn send-event-batch
   "Send a single batch of events to the telemetry endpoint. Returns
-  true on success."
+  true on success. The events are sent as a plain vector of event
+  maps; the JSON encoder handles UUID and temporal types natively and
+  the receiver coerces them back to proper types."
   [{:keys [::setup/props] :as cfg} batch]
   (let [payload {:type :telemetry-events
                  :version (:full cf/version)
                  :instance-id (:instance-id props)
-                 :events (encode-batch batch)}
+                 :events (vec batch)}
         request {:method  :post
                  :uri     (cf/get :telemetry-uri)
                  :headers {"content-type" "application/json"}

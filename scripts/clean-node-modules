@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Remove node_modules directories across the monorepo's pnpm workspaces:
+# the repo root, all module workspaces, and all workspace member packages.
+#
+# Use it when node_modules are stale or corrupted and a clean reinstall is
+# cheaper than debugging. Reinstall afterwards with `pnpm install` in each
+# workspace root (root, backend, common, docs, exporter, frontend, library,
+# mcp, media-processor, plugins, render-wasm).
+#
+# external/ (vendored dependency trees) and .opencode/ are always ignored.
+# The pnpm content-addressable store lives at <repo>/.pnpm-store, outside
+# node_modules, and survives a default clean. `--store` removes it too;
+# the next install re-downloads what it held.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/clean-node-modules [options]
+
+Remove every node_modules directory in the pnpm workspaces: the repo root,
+all module workspaces, and all workspace member packages.
+
+Options:
+  -n, --dry-run  Print what would be removed without deleting anything.
+      --store    Also delete the shared pnpm store at <repo>/.pnpm-store.
+                 The next install re-downloads everything it held.
+  -h, --help     Show this help.
+
+external/ (vendored dependency trees) and .opencode/ are always ignored.
+EOF
+}
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DRY_RUN=0
+WITH_STORE=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -n | --dry-run) DRY_RUN=1 ;;
+    --store) WITH_STORE=1 ;;
+    -h | --help) usage; exit 0 ;;
+    *) {
+      echo "error: unknown option: $1" >&2
+      usage >&2
+      exit 64
+    } ;;
+  esac
+  shift
+done
+
+cd "$ROOT"
+
+if [[ $WITH_STORE -eq 1 && -d .pnpm-store ]]; then
+  size="$(du -sh .pnpm-store | cut -f1)"
+  if [[ $DRY_RUN -eq 1 ]]; then
+    echo "would remove: ./.pnpm-store (pnpm store, $size)"
+  else
+    echo "removing pnpm store: $ROOT/.pnpm-store ($size); the next install re-downloads it"
+    rm -rf .pnpm-store
+  fi
+fi
+
+# -prune stops the descent, so only the top-most node_modules of each tree
+# matches; nested dependency copies inside it die with their parent.
+mapfile -t dirs < <(
+  find . \( -name .git -o -name external -o -name .opencode \) -type d -prune \
+    -o \( -name node_modules -type d -prune -print \)
+)
+
+if [[ ${#dirs[@]} -eq 0 ]]; then
+  echo "no node_modules directories found"
+  exit 0
+fi
+
+cleaned=0
+for dir in "${dirs[@]}"; do
+  if [[ $DRY_RUN -eq 1 ]]; then
+    echo "would remove: $dir"
+  else
+    rm -rf "$dir"
+    echo "removed: $dir"
+  fi
+  cleaned=$((cleaned + 1))
+done
+
+if [[ $DRY_RUN -eq 1 ]]; then
+  echo "$cleaned node_modules directories found"
+else
+  echo "$cleaned node_modules directories cleaned"
+fi

@@ -1,10 +1,9 @@
 use crate::error::Result;
-use crate::render::shape_renderer::ShapeRenderer;
-use crate::render::vector::VectorRenderer;
 use crate::shapes::{Shape, Stroke};
 use crate::state::ShapesPoolRef;
 
 use super::document::{effect_attrs, SvgLayerCanvas};
+use super::images::{emit_fills, emit_strokes};
 use super::render_tree;
 use crate::render::RenderResources;
 
@@ -15,9 +14,7 @@ pub(super) fn render_frame(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let matrix = element.centered_transform();
-
-    let effects = effect_attrs(element);
+    let effects = effect_attrs(builder, element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
     }
@@ -29,14 +26,9 @@ pub(super) fn render_frame(
         builder.open_group(&format!("clip-path=\"url(#{clip_id})\""));
     }
 
-    // Frame background (frame space).
+    // Frame background (frame space), with linked `<image>` for image fills.
     if !element.fills.is_empty() {
-        let canvas = builder.canvas();
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-        renderer.draw_fills(element, &element.fills)?;
-        canvas.restore();
+        emit_fills(builder, shared, element, &element.fills, tree, scale)?;
     }
 
     // Children (absolute coords).
@@ -45,20 +37,19 @@ pub(super) fn render_frame(
         render_tree(builder, shared, child_id, tree, scale)?;
     }
 
-    // Strokes over children (frame space).
-    let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
-    if !visible_strokes.is_empty() {
-        let canvas = builder.canvas();
-        canvas.save();
-        canvas.concat(&matrix);
-        let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-        renderer.draw_strokes(element, &visible_strokes)?;
-        canvas.restore();
-    }
-
+    // Close content clip before strokes. Outer (and half of center) strokes
+    // extend past the frame bounds; keeping them under clip-path hides them.
+    // Matches GPU: clipped-frame strokes render in exit without the frame clip.
     if clipped {
         builder.close_group();
     }
+
+    // Strokes over children (frame space), outside the content clip.
+    let visible_strokes: Vec<&Stroke> = element.visible_strokes().collect();
+    if !visible_strokes.is_empty() {
+        emit_strokes(builder, shared, element, &visible_strokes, scale)?;
+    }
+
     if effects.is_some() {
         builder.close_group();
     }

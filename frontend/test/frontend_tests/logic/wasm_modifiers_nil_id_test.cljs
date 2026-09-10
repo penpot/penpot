@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.logic.wasm-modifiers-nil-id-test
   "Reproduces the production crash \"Cannot read properties of null
@@ -46,7 +46,7 @@
    the real implementations."
   []
   (set! wasm.api/propagate-modifiers
-        (fn [entries _pixel-precision]
+        (fn [entries _snap-pixel? _snap-ignore-axis]
           (swap! captured-geometry-entries into entries)
           (into []
                 (map (fn [[id data]] [id (:transform data)]))

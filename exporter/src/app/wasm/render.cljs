@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.wasm.render
   "Headless render pipeline: renders exports with the render-wasm Skia pipeline,
@@ -369,13 +369,18 @@
   "Fetches and stores every image the scene references (shape, stroke and
   text-span fills, enumerated by `app.common.types.shape.images`). Unlike fonts,
   the image store is not reset per request, so already-held images are skipped
-  and repeated exports of a file reuse them."
+  and repeated exports of a file reuse them.
+
+  Always registers a public media URL for each id so SVG export can emit linked
+  `<image href>` even when the encoded bytes were already cached."
   [scene params]
   (let [all-ids (images/scene-image-ids scene)
         new-ids (remove wasm/image-cached? all-ids)]
     (l/dbg :hint "wasm render: provisioning images"
            :total (count all-ids)
            :cached (- (count all-ids) (count new-ids)))
+    (doseq [image-id all-ids]
+      (wasm/store-image-url! image-id (public-uri (str "assets/by-file-media-id/" image-id))))
     (->> new-ids
          (map (fn [image-id]
                 (->> (fetch-file-media-bytes image-id params)

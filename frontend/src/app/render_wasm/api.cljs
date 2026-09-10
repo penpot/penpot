@@ -880,6 +880,25 @@
            (h/call wasm/internal-module "_store_image")
            true)))))
 
+(defn- store-image-url!
+  "Registers the public URL an image was loaded from so SVG export can emit a
+   linked `<image href>` instead of a Skia base64 embed."
+  [image-id url]
+  (when (and (wasm/live?) (some? url) (not (str/blank? url)))
+    (let [buffer (uuid/get-u32 image-id)
+          encoder (js/TextEncoder.)
+          encoded (.encode encoder url)
+          size (.-byteLength encoded)
+          offset (mem/alloc size)
+          heap (mem/get-heap-u8)]
+      (.set heap encoded offset)
+      (h/call wasm/internal-module "_store_image_url"
+              (aget buffer 0)
+              (aget buffer 1)
+              (aget buffer 2)
+              (aget buffer 3))
+      true)))
+
 (defn- store-image-texture
   "Creates a WebGL texture from a decoded image and passes the texture ID to
    WASM. This avoids decoding the image twice (once in browser, once in WASM)."
@@ -922,6 +941,7 @@
    so Skia rasterizes them."
   [shape-id image-id thumbnail?]
   (let [url (cf/resolve-file-media {:id image-id} thumbnail?)]
+    (store-image-url! image-id url)
     {:key url
      :thumbnail? thumbnail?
      :callback
@@ -959,6 +979,8 @@
                                 (aget buffer 2)
                                 (aget buffer 3)
                                 thumbnail?)]
+      ;; Always register the URL (SVG export needs it even when bytes are cached).
+      (store-image-url! id (cf/resolve-file-media {:id id} thumbnail?))
       (when (zero? cached-image?)
         (fetch-image shape-id id thumbnail?)))))
 
@@ -993,6 +1015,7 @@
                                            (aget buffer 2)
                                            (aget buffer 3)
                                            thumbnail?)]
+                 (store-image-url! id (cf/resolve-file-media {:id id} thumbnail?))
                  (when (zero? cached-image?)
                    (fetch-image shape-id id thumbnail?))))
              (types.fills/get-image-ids fills))))))
@@ -1021,6 +1044,7 @@
                                          (aget buffer 2)
                                          (aget buffer 3)
                                          thumbnail?)]
+               (store-image-url! image-id (cf/resolve-file-media {:id image-id} thumbnail?))
                (when (zero? cached-image?)
                  (fetch-image shape-id image-id thumbnail?))))
            image-ids))))
@@ -2098,13 +2122,34 @@
 
       (h/call wasm/internal-module "_set_structure_modifiers"))))
 
+;; Axes the pixel grid rounds, as `propagate_modifiers` expects them.
+(def ^:private pixel-precision
+  {:disabled 0
+   :both     1
+   :only-x   2
+   :only-y   3})
+
+(defn- pixel-precision-mode
+  "Encodes the pixel grid snapping for the renderer. `snap-ignore-axis`
+  names the axis to leave alone (`:x`, `:y` or nil)."
+  [snap-pixel? snap-ignore-axis]
+  (pixel-precision
+   (cond
+     (not snap-pixel?)       :disabled
+     (= :x snap-ignore-axis) :only-y
+     (= :y snap-ignore-axis) :only-x
+     :else                   :both)))
+
 (defn propagate-modifiers
   "Propagates geometry modifiers through the WASM shape tree.
+
+  Rounds the resulting geometry to the pixel grid when `snap-pixel?` is set,
+  skipping the axis named by `snap-ignore-axis` (`:x`, `:y` or nil).
 
   Always returns a vector. When the context is not ready (lost / mid-reload)
   or `entries` is empty, returns `[]` so callers never receive `nil` (which
   would trip `set-modifiers`' vector assert)."
-  [entries pixel-precision]
+  [entries snap-pixel? snap-ignore-axis]
   (if-not (and (initialized?) (not ^boolean (empty? entries)))
     []
     (let [heapf32 (mem/get-heap-f32)
@@ -2122,7 +2167,8 @@
               offset
               entries)
 
-      (let [offset     (-> (h/call wasm/internal-module "_propagate_modifiers" pixel-precision)
+      (let [precision  (pixel-precision-mode snap-pixel? snap-ignore-axis)
+            offset     (-> (h/call wasm/internal-module "_propagate_modifiers" precision)
                            (mem/->offset-32))
             length     (aget heapu32 offset)
             max-offset (+ offset 1 (* length MODIFIER-U32-SIZE))

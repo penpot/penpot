@@ -103,6 +103,9 @@
            (not (contains? ctsi/event-types value))
            (u/not-valid plugin-id :trigger value)
 
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :trigger "Plugin doesn't have 'content:write' permission")
+
            :else
            (st/emit! (dwi/update-interaction
                       (u/locate-shape file-id page-id shape-id)
@@ -118,6 +121,9 @@
        (cond
          (or (not (sm/valid-safe-int? value)) (neg? value))
          (u/not-valid plugin-id :delay value)
+
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :delay "Plugin doesn't have 'content:write' permission")
 
          :else
          (st/emit! (dwi/update-interaction
@@ -139,6 +145,9 @@
            (not (sm/validate ctsi/schema:interaction interaction))
            (u/not-valid plugin-id :action interaction)
 
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :action "Plugin doesn't have 'content:write' permission")
+
            :else
            (st/emit! (dwi/update-interaction
                       (u/locate-shape file-id page-id shape-id)
@@ -148,7 +157,12 @@
 
     :remove
     (fn []
-      (st/emit! (dwi/remove-interaction {:id shape-id} index)))))
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dwi/remove-interaction {:id shape-id} index))))))
 
 (def lib-typography-proxy? nil)
 (def lib-component-proxy nil)
@@ -200,14 +214,14 @@
       (not (sm/validate [:vector types.fills/schema:fill] value))
       (u/not-valid plugin-id :fills value)
 
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
+
       (not (u/page-active? (obj/get self "$page")))
       (u/not-valid plugin-id :fills "Cannot modify a page that is not currently active")
 
       (cfh/text-shape? shape)
       (st/emit! (dwt/update-attrs id {:fills value}))
-
-      (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :fills "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))
@@ -1475,6 +1489,9 @@
            :detach
            (fn []
              (cond
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :detach "Plugin doesn't have 'content:write' permission")
+
                (not (u/page-active? page-id))
                (u/not-valid plugin-id :detach "Cannot modify a page that is not currently active")
 
@@ -1485,11 +1502,11 @@
            (fn [component]
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
-
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
 
                  (not (obj/type-of? component "LibraryComponentProxy"))
                  (u/not-valid plugin-id :swapComponent "Component not valid")
@@ -1507,11 +1524,11 @@
            (fn []
              (let [shape (u/locate-shape file-id page-id id)]
                (cond
-                 (not (u/page-active? page-id))
-                 (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
-
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :resetOverrides "Plugin doesn't have 'content:write' permission")
+
+                 (not (u/page-active? page-id))
+                 (u/not-valid plugin-id :resetOverrides "Cannot modify a page that is not currently active")
 
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :resetOverrides "The shape is not a component copy instance")
@@ -1526,6 +1543,9 @@
                (cond
                  (not (sm/validate ctse/schema:export value))
                  (u/not-valid plugin-id :export value)
+
+                 (not (r/check-permission plugin-id "content:read"))
+                 (u/not-valid plugin-id :export "Plugin doesn't have 'content:read' permission")
 
                  :else
                  (if (and (contains? cf/flags :wasm-export)
@@ -1598,6 +1618,9 @@
                  (not (sm/validate ctsi/schema:interaction interaction))
                  (u/not-valid plugin-id :addInteraction interaction)
 
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/not-valid plugin-id :addInteraction "Plugin doesn't have 'content:write' permission")
+
                  :else
                  (let [index (-> (u/locate-shape file-id page-id id) (:interactions [])  count)]
                    (st/emit!
@@ -1610,6 +1633,9 @@
              (cond
                (not (interaction-proxy? interaction))
                (u/not-valid plugin-id :removeInteraction interaction)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :removeInteraction "Plugin doesn't have 'content:write' permission")
 
                :else
                (st/emit!
@@ -1691,8 +1717,14 @@
             :fn (fn [token attrs]
                   (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
                         kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
-                    (if (some #(not (token-attr? %)) kw-attrs)
+                    (cond
+                      (some #(not (token-attr? %)) kw-attrs)
                       (u/not-valid plugin-id :applyToken attrs)
+
+                      (not (r/check-permission plugin-id "content:write"))
+                      (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
+
+                      :else
                       (st/emit!
                        (-> (dwta/toggle-token {:token token
                                                :attrs kw-attrs
@@ -1720,6 +1752,9 @@
                (not (string? value))
                (u/not-valid plugin-id :value value)
 
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
+
                :else
                (let [shape     (u/locate-shape file-id page-id id)
                      component (u/locate-library-component file-id (:component-id shape))]
@@ -1732,6 +1767,9 @@
              (cond
                (or (not (seq ids)) (not (every? uuid/parse* ids)))
                (u/not-valid plugin-id :ids ids)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :combineAsVariants "Plugin doesn't have 'content:write' permission")
 
                :else
                (let [;; Keep the input order (head shape first): it determines

@@ -1,4 +1,4 @@
-use crate::render::text::calculate_decoration_metrics;
+use crate::render::text::decoration_segments;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -318,6 +318,18 @@ pub struct TextDecorationSegment {
     pub thickness: f32,
     pub left: f32,
     pub width: f32,
+}
+
+impl TextDecorationSegment {
+    /// The bar to paint, centered on `y`.
+    pub fn rect(&self) -> Rect {
+        Rect::new(
+            self.left,
+            self.y - self.thickness / 2.0,
+            self.left + self.width,
+            self.y + self.thickness / 2.0,
+        )
+    }
 }
 
 fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
@@ -796,13 +808,13 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(use_shadow, false, None, None)
+        self.paragraph_builders(use_shadow, false, None, None, None, None)
     }
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, true, None, None)
+        self.paragraph_builders(None, true, None, None, None, None)
     }
 
     /// Maximum number of stacked fills across every span in this text block.
@@ -821,7 +833,42 @@ impl TextContent {
         &self,
         layer_from_bottom: usize,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, false, None, Some(layer_from_bottom))
+        self.paragraph_builders(None, false, None, Some(layer_from_bottom), None, None)
+    }
+
+    /// Like [`paragraph_builder_group_for_fill_layer`], but spans whose fill at
+    /// this layer is an image in `skip_image_ids` get transparent paint (those
+    /// fills are re-emitted as linked SVG `<image>` elements).
+    pub fn paragraph_builder_group_for_fill_layer_skipping_images(
+        &self,
+        layer_from_bottom: usize,
+        skip_image_ids: &HashSet<Uuid>,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            Some(layer_from_bottom),
+            None,
+            Some(skip_image_ids),
+        )
+    }
+
+    /// Opaque black glyphs only for spans whose fill at `layer_from_bottom` is
+    /// the given image — used as an SVG `<clipPath>` for linked image fills.
+    pub fn paragraph_builder_group_opaque_for_image_layer(
+        &self,
+        layer_from_bottom: usize,
+        image_id: Uuid,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            None,
+            Some((layer_from_bottom, image_id)),
+            None,
+        )
     }
 
     fn paragraph_builders(
@@ -830,6 +877,8 @@ impl TextContent {
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
         fill_layer: Option<usize>,
+        opaque_image_layer: Option<(usize, Uuid)>,
+        skip_image_ids: Option<&HashSet<Uuid>>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
@@ -843,15 +892,63 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let remove_alpha =
-                    opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                let text_style = span.to_style_with_paint(
-                    &self.bounds(),
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                    fill_layer,
-                );
+                let text_style = if let Some((layer, image_id)) = opaque_image_layer {
+                    let mut style = span.to_style(
+                        &self.bounds(),
+                        fallback_fonts,
+                        false,
+                        paragraph.line_height(),
+                    );
+                    let mut paint = paint::Paint::default();
+                    match span.fills_from_bottom(layer) {
+                        Some(shapes::Fill::Image(img)) if img.id() == image_id => {
+                            paint.set_color(skia::Color::BLACK);
+                            paint.set_alpha(255);
+                        }
+                        _ => {
+                            paint.set_color(skia::Color::TRANSPARENT);
+                        }
+                    }
+                    style.set_foreground_paint(&paint);
+                    style
+                } else if let (Some(layer), Some(skip)) = (fill_layer, skip_image_ids) {
+                    let skip_span = matches!(
+                        span.fills_from_bottom(layer),
+                        Some(shapes::Fill::Image(img)) if skip.contains(&img.id())
+                    );
+                    if skip_span {
+                        let mut style = span.to_style(
+                            &self.bounds(),
+                            fallback_fonts,
+                            false,
+                            paragraph.line_height(),
+                        );
+                        let mut paint = paint::Paint::default();
+                        paint.set_color(skia::Color::TRANSPARENT);
+                        style.set_foreground_paint(&paint);
+                        style
+                    } else {
+                        let remove_alpha =
+                            opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                        span.to_style_with_paint(
+                            &self.bounds(),
+                            fallback_fonts,
+                            remove_alpha,
+                            paragraph.line_height(),
+                            fill_layer,
+                        )
+                    }
+                } else {
+                    let remove_alpha =
+                        opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                    span.to_style_with_paint(
+                        &self.bounds(),
+                        fallback_fonts,
+                        remove_alpha,
+                        paragraph.line_height(),
+                        fill_layer,
+                    )
+                };
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
@@ -871,8 +968,14 @@ impl TextContent {
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
-        let mut measure_builders =
-            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left), None);
+        let mut measure_builders = self.paragraph_builders(
+            None,
+            false,
+            Some(skia::textlayout::TextAlign::Left),
+            None,
+            None,
+            None,
+        );
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut measure_builders, f32::MAX);
@@ -1464,6 +1567,15 @@ pub struct TextSpan {
 }
 
 impl TextSpan {
+    /// Fill at `layer` counting from the bottom (`0` = last / bottommost fill).
+    pub fn fills_from_bottom(&self, layer: usize) -> Option<&shapes::Fill> {
+        if layer < self.fills.len() {
+            Some(&self.fills[self.fills.len() - 1 - layer])
+        } else {
+            None
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,
@@ -1725,68 +1837,12 @@ pub fn calculate_text_layout_data(
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = text_paragraphs
+                .get(i)
+                .map(|text_paragraph| {
+                    decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
+                })
+                .unwrap_or_default();
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,

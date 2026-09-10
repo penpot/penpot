@@ -103,7 +103,7 @@ opencode.json
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
-/.opencode/plans
+/.agents/plans
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs

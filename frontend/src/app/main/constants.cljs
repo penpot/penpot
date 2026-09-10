@@ -299,7 +299,21 @@
     :height 1152}
    {:name "YouTube thumb"
     :width 1280
-    :height 720}])
+    :height 720}
+
+   {:name "PENPOT"}
+   {:name "File thumbnail"
+    :width 300
+    :height 200}
+   {:name "Template cover"
+    :width 1390
+    :height 781}
+   {:name "Plugin icon"
+    :width 400
+    :height 400}
+   {:name "Plugin cover"
+    :width 1390
+    :height 724}])
 
 (def max-input-length 255)
 

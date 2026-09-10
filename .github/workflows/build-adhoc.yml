@@ -1,0 +1,44 @@
+name: _ADHOC
+
+run-name: >-
+  _ADHOC (${{ inputs.gh_ref }}${{ inputs.nitrate_ref != '' && format(' / nitrate:{0}', inputs.nitrate_ref) || '' }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Branch/ref to build in penpot/penpot'
+        type: string
+        required: true
+      nitrate_ref:
+        description: 'Branch/ref to build admin-console in penpot/penpot-nitrate (defaults to gh_ref)'
+        type: string
+        required: false
+      force:
+        description: 'Rebuild and overwrite even if already built/promoted'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  build-bundle:
+    uses: ./.github/workflows/build-bundle.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ inputs.gh_ref }}
+      force: ${{ inputs.force }}
+
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ inputs.gh_ref }}
+      force: ${{ inputs.force }}
+
+  build-docker-admin-console:
+    uses: ./.github/workflows/build-docker-admin-console.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ inputs.nitrate_ref || inputs.gh_ref }}
+      force: ${{ inputs.force }}

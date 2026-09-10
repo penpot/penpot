@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.tasks.telemetry :as telemetry]
-   [app.util.blob :as blob]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -58,11 +57,6 @@
   (-> (th/db-exec-one! ["SELECT count(*) AS cnt FROM audit_log WHERE source IN ('telemetry:backend', 'telemetry:frontend')"])
       :cnt
       long))
-
-(defn- decode-event-batch
-  "Decode the base64+fressian+zstd event-batch sent to the mock."
-  [b64-str]
-  (blob/decode-str b64-str))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STATS / REPORT STRUCTURE TESTS (existing behaviour, extended)
@@ -245,21 +239,19 @@
             (t/is (not (contains? ev :ip-addr)))))))))
 
 (t/deftest test-batch-encoding-is-decodable
-  ;; Verify that encode-batch produces a blob that round-trips back
-  ;; through blob/decode to the original data.
+  ;; Events are sent as a plain vector of raw event maps (no blob
+  ;; encoding): every batch must JSON round-trip unchanged, because
+  ;; the receiver coerces types from the plain JSON representation.
   (let [events [{:name "navigate" :type "action" :source "telemetry"
                  :tracked-at (ct/now)}
                 {:name "create-file" :type "action" :source "telemetry"
                  :tracked-at (ct/now)}]
-        ;; Call the private fn through the ns-mapped var
-        encode  (ns-resolve 'app.tasks.telemetry 'encode-batch)
-        encoded (encode events)
-        decoded (decode-event-batch encoded)]
-    (t/is (string? encoded))
-    (t/is (seq decoded))
-    (t/is (= (count events) (count decoded)))
-    (t/is (= "navigate" (:name (first decoded))))
-    (t/is (= "create-file" (:name (second decoded))))))
+        encoded (json/encode-str {:events (vec events)})
+        decoded (json/decode encoded)]
+    (t/is (vector? (:events decoded)))
+    (t/is (= (count events) (count (:events decoded))))
+    (t/is (= "navigate" (:name (first (:events decoded)))))
+    (t/is (= "create-file" (:name (second (:events decoded)))))))
 
 (t/deftest test-multiple-batches-when-many-events
   ;; Lower batch-size to 1 so that 3 events produce 3 separate
@@ -787,9 +779,13 @@
             (t/is (= "telemetry-events" (name (:type body))))
             (t/is (string? (:version body)))
             (t/is (some? (:instance-id body)))
-            ;; :events is a base64-encoded blob
-            (t/is (string? (:events body)))
-            (t/is (pos? (count (:events body))))))))))
+            ;; :events is a plain vector of raw event maps
+            (t/is (vector? (:events body)))
+            (t/is (pos? (count (:events body))))
+            (doseq [ev (:events body)]
+              (t/is (string? (:name ev)))
+              (t/is (string? (:source ev)))
+              (t/is (string? (:tracked-at ev))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK BRANCH COVERAGE
