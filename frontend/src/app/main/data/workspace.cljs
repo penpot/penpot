@@ -403,7 +403,8 @@
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
           (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)))
+          (update :workspace-global dissoc :default-font)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state stream]
