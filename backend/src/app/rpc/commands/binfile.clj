@@ -173,7 +173,7 @@
         manifest
         (case (int version)
           1 nil
-          3 (bf.v3/get-manifest (-> params :file :path))
+          3 (bf.v3/get-manifest cfg (-> params :file :path))
           (throw (ex-info (str "Unsupported binfile version: " version)
                           {:type :validation
                            :code :unsupported-version

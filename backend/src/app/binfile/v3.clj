@@ -1156,13 +1156,11 @@
 (defn get-manifest
   "Reads and validates the manifest of a `.penpot` file at `path`.
   Runs synchronously on the RPC request thread (before the background
-  import job exists), so the read is bounded by the configured
-  decompressed-size limits."
-  [path]
-  (let [cfg (setup-limits {::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
-                           ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
-                           ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
-                           ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)})]
+  import job exists). Limits are resolved from `cfg` like in the import
+  job itself, so the read is bounded by the same decompressed-size
+  limits."
+  [cfg path]
+  (let [cfg (setup-limits cfg)]
     (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
       (-> (read-manifest cfg input)
           (validate-manifest)))))

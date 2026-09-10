@@ -437,7 +437,7 @@
       (.setLevel zos Deflater/BEST_COMPRESSION)
       (write-bomb-entry! zos "manifest.json" bomb-entry-size))
     (let [out (try
-                (v3/get-manifest bombed)
+                (v3/get-manifest th/*system* bombed)
                 :no-error
                 (catch Throwable e
                   (or (ex-data e) (some-> (ex-cause e) ex-data))))]
