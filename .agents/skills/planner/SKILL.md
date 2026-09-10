@@ -1,13 +1,11 @@
 ---
 name: planner
-description: Read-only planning and architecture analysis for Penpot — produce a structured implementation plan with task breakdown, acceptance criteria, sizing, and checkpoints. Always output to the user with the plan's save path (saved or suggested) and the next steps.
+description: Read-only planning and architecture analysis — produce a structured implementation plan with task breakdown, acceptance criteria, sizing, and checkpoints. Always output to the user with the plan, suggested save path and the next steps.
 ---
 
 # Planner
 
-Read-only senior software architect role for Penpot. Produces structured
-implementation plans with task breakdowns that engineers or other agents can
-execute. Never writes or modifies code.
+Produce a plan that another engineer or agent can execute without guessing.
 
 ## When to Use
 
@@ -21,24 +19,7 @@ execute. Never writes or modifies code.
 - A task feels too large or vague to start.
 - Work needs to be parallelized across multiple agents or sessions.
 
-Do **not** use this skill to actually implement anything — it is read-only.
-
-**When NOT to use:** Single-file changes with obvious scope, or when the spec
-already contains well-defined tasks.
-
-## Role
-
-You help users understand the Penpot codebase, design solutions, and produce
-implementation plans that other agents or developers can execute. The plan
-tells them what to build and how to verify it, task by task.
-
-The implementer reads the project's agent docs (`AGENTS.md`, project memories
-such as `mem:critical-info`, `mem:testing`, and each module's core memory)
-before working. Reference those memories instead of re-explaining tooling,
-conventions, or test design — explain in the plan only what they do not cover.
-
-Do **not** suggest commit messages or commit names anywhere in your plans or
-responses — committing is the implementer's responsibility.
+Do not use for a small change with obvious scope or an existing executable plan.
 
 ## CRITICAL: Required Reading Before Planning
 
@@ -55,67 +36,36 @@ Before drafting any plan, work through the project's own guidance:
 
 Skipping this step is the #1 cause of incorrect or incomplete plans.
 
----
+## Constraints
 
-## The Planning Process
+- You are **analysis-only** — never create, edit, or delete source code. The
+  only file you may write is the plan itself, and only when the command or
+  user explicitly instructs you to save it.
+- You do **not** run builds, tests, linters, or any commands that modify state.
+- You do **not** create git commits or interact with version control.
+- You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
+  `find`, `cat`, `bat`).
+- Your output is a structured plan or analysis, ready for handoff to an
+  engineer agent or developer.
 
-### Phase 1: Architecture Analysis
+## Planning Process
 
-1. Read the spec, requirements, or feature request.
-2. Analyze the codebase architecture and identify affected modules.
-3. Read project conventions (starting with `critical-info` and module core
-   memories) before drafting.
-4. Map dependencies between components (see the dependency graph in
-   `critical-info`).
-5. Identify risks, edge cases, performance implications, and breaking changes.
+1. Define the problem, desired outcome, constraints, and exclusions.
+2. Trace the current behavior through the affected modules.
+3. Map dependencies and choose an implementation order that builds foundations
+   before their consumers.
+4. Identify open product or architecture decisions. Resolve implementation
+   details from existing conventions when they do not affect public behavior.
+5. Identify edge cases, security and data risks, performance bounds, breaking
+   changes, and external dependencies.
+6. Split the work into small, ordered tasks. Prefer complete testable slices
+   over unrelated layer-wide batches. Apply DRY and KISS to the proposed
+   implementation.
+7. Define exact acceptance criteria and verification for every task.
+8. Add a checkpoint after every two or three tasks in a longer plan.
+9. State which tasks can run in parallel and which must remain sequential.
 
-### Phase 2: Task Breakdown
-
-#### Identify the Dependency Graph
-
-Map what depends on what, following the monorepo's module dependency graph:
-
-```
-common (shared types, schemas — no deps)
-    │
-    ├── backend (depends common)
-    │       ├── RPC handlers
-    │       └── persistence / migrations
-    │
-    ├── frontend (depends common, render-wasm)
-    │       ├── UI components
-    │       └── state / API integration
-    │
-    ├── exporter (depends common)
-    │
-    └── render-wasm (consumed by frontend)
-```
-
-Implementation order follows the dependency graph bottom-up: build shared
-foundations first, then layer consumers on top.
-
-#### Slice Vertically
-
-Instead of building all of common, then all of backend, then all of frontend —
-build one complete feature path at a time:
-
-**Bad (horizontal slicing):**
-```
-Task 1: Build all common types
-Task 2: Build all backend handlers
-Task 3: Build all frontend components
-```
-
-**Good (vertical slicing):**
-```
-Task 1: common data types + schema             ← foundation
-Task 2: backend RPC handler + persistence
-Task 3: frontend UI component + API integration
-```
-
-Each vertical slice delivers working, testable functionality.
-
-#### Write Tasks
+## Task Format
 
 Each task follows this structure:
 
@@ -152,17 +102,16 @@ implementation. Omit when the task is mechanical.
 **Estimated scope:** [XS: 1 file | S: 1-2 files | M: 3-5 files | L: 5+ files]
 ```
 
-Replace "module-specific test command" with the actual commands for the module
-(e.g. `clojure -M:dev:test` for backend/common,
-`npx shadow-cljs compile test && npx karma start` for frontend, or the
-commands noted in the module's core memory).
+Use commands from `mem:testing` and affected module memories. Never substitute
+generic text such as "run the tests" when the project documents an exact
+command.
 
-When possible, design each task with TDD in mind: acceptance criteria double
-as a test list, and the natural first step of the task is writing those tests
-before the implementation. Some tasks resist this (config, migrations, pure
-wiring) — for those, keep the usual verification steps.
+When possible, design each task with TDD in mind: acceptance criteria double as a test
+list, and the natural first step of the task is writing those tests before the
+implementation. Some tasks resist this (config, migrations, pure wiring) — for those, keep
+the usual verification steps.
 
-#### Estimate Scope
+## Task Sizing
 
 | Size | Files | Scope | Example |
 |------|-------|-------|---------|
@@ -172,16 +121,11 @@ wiring) — for those, keep the usual verification steps.
 | **L** | 5-8 | Multi-component feature | Search with filtering and pagination |
 | **XL** | 8+ | **Too large — break it down further** | — |
 
-If a task is XL, it should be broken into smaller tasks. Agents perform best
-on S and M tasks.
+Split a task when it contains independent outcomes, spans unrelated systems, or cannot be
+completed and verified in one focused session (if a task is XL, it should be broken into
+smaller tasks; agents perform best on S and M tasks).
 
-**When to break a task down further:**
-- It would take more than one focused session
-- You cannot describe the acceptance criteria in 3 or fewer bullet points
-- It touches two or more independent subsystems
-- You find yourself writing "and" in the task title (a sign it is two tasks)
-
-#### Order and Checkpoints
+## Task order and checkpoints
 
 Arrange tasks so that:
 
@@ -197,152 +141,42 @@ Add explicit checkpoints with the relevant module commands:
 - [ ] Relevant tests pass (module-specific command).
 - [ ] The relevant build or compilation passes, if applicable.
 - [ ] The core flow works end-to-end.
-- [ ] Review with human before proceeding.
 ```
-
-## Requirements
-
-- Analyze the codebase architecture and identify affected modules.
-- Read project conventions before drafting (start with `critical-info` and
-  affected module core memories).
-- Break down complex features or bugs into atomic, actionable steps.
-- Propose solutions with clear rationale, trade-offs, and sequencing.
-- Identify risks, edge cases, performance implications, and breaking changes.
-- Apply DRY and KISS principles to the proposed implementation.
-- Define a testing strategy aligned with each affected module's tooling.
-- Every task must have acceptance criteria and verification steps.
-- Checkpoints must exist after every 2-3 tasks.
-
-## Constraints
-
-- You are **analysis-only** — never create, edit, or delete source code. The
-  only file you may write is the plan itself, and only when the command or
-  user explicitly instructs you to save it.
-- You do **not** run builds, tests, linters, or any commands that modify state.
-- You do **not** create git commits or interact with version control.
-- You do **not** execute shell commands beyond read-only searches (`rg`, `ls`,
-  `find`, `cat`, `bat`).
-- Your output is a structured plan or analysis, ready for handoff to an
-  engineer agent or developer.
 
 ## Output Format
 
 The plan is always delivered in the response so the user sees it regardless
-of which agent is running the skill. By default you never write the plan file;
-announce the path instead. Write the file only when the command or user
-explicitly instructs you to save it — and then only that file.
+of which agent is running the skill. File writes follow `Constraints` —
+by default announce the path instead of writing.
 
-Announce the suggested save path:
-
-```
-.agents/plans/YYYY-MM-DD-<plan-one-line-title>.md
-```
-
-Use today's date in the user's local timezone. The `<plan-one-line-title>`
-slug is lowercase, hyphen-separated, and a short summary of the task
-(e.g. `add-batch-get-profiles-for-file-comments`). If the user explicitly
-provides a target file path, announce that path instead of the default.
+Announce the save path `.agents/plans/YYYY-MM-DD-<slug>.md` (today's date,
+lowercase hyphen-separated slug, e.g. `2026-09-10-add-batch-get-profiles`;
+an explicit user path wins).
 
 End the response by suggesting the next steps: `/review-plan` to get a second
 opinion on the plan and `/implement-plan` to execute it.
 
-### Plan Document Template
+### Plan Structure
+
+Use this document shape:
 
 ```markdown
-# Plan: [Feature/Project Name]
+# Plan: Title
 
 ## Context
-[One paragraph: what is the problem or feature request? Why is it needed?]
-
 ## Affected Modules
-[Which modules of the monorepo are involved? Reference module paths and any
-`mem:` memories that were consulted.]
-
 ## Architecture Decisions
-- [Key decision 1 and rationale]
-- [Key decision 2 and rationale]
-
-## Risks & Considerations
-[Edge cases, performance implications, breaking changes, migration concerns,
-security implications.]
-
+## Risks and Considerations
 ## Approach
-[A short strategy summary: 3-5 sentences describing the overall approach and
-the shape of the dependency graph (what depends on what, what gets built
-first). High-level only — the task-by-task detail lives in the Task List.]
-
 ## Task List
-
-Each task uses the full task structure defined in
-[Write Tasks](#write-tasks) — description, rationale, acceptance criteria,
-verification, dependencies, files, estimated scope, and optional code sketch.
-Never reduce a task to a one-line checkbox; the plan must be self-contained
-and executable without other context.
-
-Tasks are a flat, ordered list — a plan is not a roadmap. Do not group tasks
-into phases, milestones, or sprints; ordering and dependencies are already
-captured per task. Insert a checkpoint after every 2-3 tasks.
-
-## Task 1: [Short descriptive title]
-
-**Description:** [What this task accomplishes.]
-
-**Rationale:** [Why this approach over the alternatives.]
-
-**Acceptance criteria:**
-- [ ] [Specific, testable condition]
-
-**Verification:**
-- [ ] Relevant tests pass (module-specific command).
-
-**Dependencies:** None
-
-**Files likely touched:**
-- `path/to/file`
-
-**Estimated scope:** [XS: 1 file | S: 1-2 files | M: 3-5 files | L: 5+ files]
-
-**Code sketch (optional):** [Short contract-level example, only if the shape
-is non-obvious.]
-
-## Task 2: [Short descriptive title]
-
-[Same structure as Task 1.]
-
-## Task 3: [Short descriptive title]
-
-[Same structure as Task 1.]
-
-### Checkpoint: After Tasks 1-3
-- [ ] Relevant tests pass (module-specific command).
-- [ ] The relevant build or compilation passes, if applicable.
-- [ ] The core flow works end-to-end.
-- [ ] Review with human before proceeding.
-
-## Task 4: [Short descriptive title]
-
-[Same structure as Task 1.]
-
-## Task 5: [Short descriptive title]
-
-[Same structure as Task 1.]
-
-## Verification & Testing
-[How to verify each task and the whole plan: the project's real test, lint,
-build, and run commands (extracted during Required Reading), coverage
-expectations, and manual checks. Consult each module's core memory for the
-exact commands.]
-
-## Parallelization Opportunities
-- **Safe to parallelize:** Independent feature slices across separate
-  modules, tests for already-implemented features, documentation
-- **Must be sequential:** Shared common schema changes, database migrations
-- **Needs coordination:** Features that share a contract (define the contract
-  first, then parallelize)
-
+## Verification and Testing
+## Parallelization
 ## Open Questions
-- [Question needing human input]
 ```
+
+Omit empty sections only when they do not apply. Every implementation task
+still requires acceptance criteria, verification, dependencies, likely files,
+and scope.
 
 When the plan is purely analytical (e.g. a code review or feasibility study
 with no implementation), skip the **Approach** and **Task List** sections and
@@ -356,15 +190,6 @@ lead with **Findings** instead, keeping the rest of the structure.
 | "The tasks are obvious" | Write them down anyway. Explicit tasks surface hidden dependencies and forgotten edge cases. |
 | "Planning is overhead" | Planning is the task. Implementation without a plan is just typing. |
 | "I can hold it all in my head" | Context windows are finite. Written plans survive session boundaries and compaction. |
-
-## Red Flags
-
-- Delivering prose without a task breakdown
-- Tasks that say "implement the feature" without acceptance criteria
-- No verification steps in the plan
-- All tasks are XL-sized
-- No checkpoints between tasks
-- Dependency order isn't considered
 
 ## Verification Checklist
 
