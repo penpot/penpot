@@ -163,6 +163,7 @@
         (-> state
             (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)
             (assoc-in [:workspace-local :edit-path id :moving-handler] moving-handler)
+            (assoc-in [:workspace-local :edit-path id :edited-handler] primary)
             (cond-> (some? new-prev-handler)
               (assoc-in [:workspace-local :edit-path id :prev-handler] new-prev-handler)))))))
 
@@ -286,7 +287,10 @@
                          content-modifiers))]
 
         (-> state
-            (assoc-in [:workspace-local :edit-path id :content-modifiers] content-modifiers))))))
+            (assoc-in [:workspace-local :edit-path id :content-modifiers] content-modifiers)
+            (cond-> (= 1 (count handler-ids))
+              (assoc-in [:workspace-local :edit-path id :edited-handler]
+                        (first handler-ids))))))))
 
 (defn- move-node-indices
   [state node-indices from-point to-point]
@@ -946,7 +950,7 @@
        (ptk/data-event :layout/update {:ids [id]})))))
 
 (defn- split-segments
-  [_id {:keys [from-p to-p t]}]
+  [id {:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
     ptk/UpdateEvent
     (update [_ state]
@@ -955,7 +959,9 @@
             (st/set-content (-> content
                                 (path/split-segments #{from-p to-p} t)
                                 (path/content)))
-            (update-in (st/get-path-location state) path/update-geometry))))))
+            (update-in (st/get-path-location state) path/update-geometry)
+            ;; The inserted command shifts the indices a handler id refers to.
+            (update-in [:workspace-local :edit-path id] dissoc :edited-handler))))))
 
 (defn create-node-at-position
   [params]

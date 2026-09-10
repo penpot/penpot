@@ -180,6 +180,36 @@
 
       :else nil)))
 
+(defn node-handler-ids
+  "Returns a node's curve handlers, its primary handle first."
+  [content node-index]
+  (if-let [[index prefix :as primary] (node-primary-handler content node-index)]
+    (let [[op-idx op-prefix] (path/opposite-index content index prefix)]
+      (if (some? op-idx)
+        [primary [op-idx op-prefix]]
+        [primary]))
+    []))
+
+(defn handler-type-reference
+  "Returns the handler that keeps its geometry when a node's handler type changes.
+
+  The other handler adapts to it. Priority: the node's only selected handler,
+  then `edited-handler` when it is one of this node's two handlers, then its
+  primary handle. `edited-handler` is the last handler edited anywhere in the
+  path, so a node only gets this hint while it holds the latest edit."
+  [content selection edited-handler node-index]
+  (let [handler-ids (node-handler-ids content node-index)
+        selected    (filterv (get selection :handlers #{}) handler-ids)]
+    (cond
+      (= 1 (count selected))
+      (first selected)
+
+      (some #{edited-handler} handler-ids)
+      edited-handler
+
+      :else
+      (first handler-ids))))
+
 (defn handlers-equal-length?
   "True when a node's two handlers are the same distance from the node."
   [content index prefix]

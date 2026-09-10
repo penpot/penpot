@@ -802,3 +802,117 @@
       (t/is (empty? (emit-of (mk {:nodes #{3} :segments #{} :handlers #{}})))))))
 
 ;; Path-local undo and redo events use a seeded local stack.
+
+;; --- Handler type changes pick which handler keeps its geometry
+
+(defn- aligned-uneven-handlers-content
+  "Returns content whose node (10,0) has aligned handlers at (8,0) and (16,0)."
+  []
+  (path/content
+   [{:command :move-to :params {:x 0 :y 0}}
+    {:command :curve-to
+     :params {:c1x 2 :c1y 0 :c2x 8 :c2y 0 :x 10 :y 0}}
+    {:command :curve-to
+     :params {:c1x 16 :c1y 0 :c2x 28 :c2y 0 :x 30 :y 0}}]))
+
+(t/deftest making-handlers-equal-keeps-the-selected-handler-length
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        state   (pth/selectable-path-state
+                 id content {:nodes #{} :segments #{} :handlers #{[2 :c1]}})
+        result  (-> (ptk/update (path.tools/set-handler-type :mirror) state)
+                    (path.state/get-path :content))]
+    ;; The node is aligned with handlers of unequal length.
+    (t/is (= :aligned (path.helpers/derive-handler-type content 1)))
+    ;; The selected handler keeps its length and the opposite one adapts.
+    (t/is (= (gpt/point 16 0) (path/get-handler-point result 2 :c1)))
+    (t/is (= (gpt/point 4 0) (path/get-handler-point result 1 :c2)))))
+
+(t/deftest making-handlers-equal-falls-back-to-the-last-edited-handler
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        state   (-> (pth/selectable-path-state
+                     id content {:nodes #{1} :segments #{} :handlers #{}})
+                    (assoc-in [:workspace-local :edit-path id :edited-handler]
+                              [2 :c1]))
+        result  (-> (ptk/update (path.tools/set-handler-type :mirror) state)
+                    (path.state/get-path :content))]
+    (t/is (= (gpt/point 16 0) (path/get-handler-point result 2 :c1)))
+    (t/is (= (gpt/point 4 0) (path/get-handler-point result 1 :c2)))))
+
+(t/deftest making-handlers-equal-uses-the-incoming-handler-with-no-hint
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        state   (pth/selectable-path-state
+                 id content {:nodes #{1} :segments #{} :handlers #{}})
+        result  (-> (ptk/update (path.tools/set-handler-type :mirror) state)
+                    (path.state/get-path :content))]
+    (t/is (= (gpt/point 8 0) (path/get-handler-point result 1 :c2)))
+    (t/is (= (gpt/point 12 0) (path/get-handler-point result 2 :c1)))))
+
+(t/deftest aligning-handlers-takes-the-angle-of-the-selected-handler
+  (let [id      (random-uuid)
+        content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :curve-to
+                   :params {:c1x 2 :c1y 0 :c2x 10 :c2y -3 :x 10 :y 0}}
+                  {:command :curve-to
+                   :params {:c1x 16 :c1y 0 :c2x 28 :c2y 0 :x 30 :y 0}}])
+        state   (pth/selectable-path-state
+                 id content {:nodes #{} :segments #{} :handlers #{[2 :c1]}})
+        result  (-> (ptk/update (path.tools/set-handler-type :aligned) state)
+                    (path.state/get-path :content))]
+    ;; The selected handler stays put; the opposite one rotates onto its axis
+    ;; keeping its own length.
+    (t/is (= (gpt/point 16 0) (path/get-handler-point result 2 :c1)))
+    (t/is (= (gpt/point 7 0) (path/get-handler-point result 1 :c2)))))
+
+(t/deftest dragging-a-handler-records-it-as-the-last-edited-one
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        state   (pth/selectable-path-state
+                 id content {:nodes #{} :segments #{} :handlers #{[2 :c1]}})
+        state'  (ptk/update
+                 (path.edition/modify-selected-handlers id [2 :c1] {} 3 0 :independent false)
+                 state)]
+    (t/is (= [2 :c1]
+             (get-in state' [:workspace-local :edit-path id :edited-handler])))))
+
+(t/deftest making-handlers-equal-ignores-an-ambiguous-handler-selection
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        mk      (fn [] (pth/selectable-path-state
+                        id content
+                        {:nodes #{} :segments #{} :handlers #{[1 :c2] [2 :c1]}}))
+        equal   (fn [state]
+                  (-> (ptk/update (path.tools/set-handler-type :mirror) state)
+                      (path.state/get-path :content)))]
+    (t/testing "with both handlers selected the last edited one wins"
+      (let [result (equal (-> (mk)
+                              (assoc-in [:workspace-local :edit-path id :edited-handler]
+                                        [2 :c1])))]
+        (t/is (= (gpt/point 16 0) (path/get-handler-point result 2 :c1)))
+        (t/is (= (gpt/point 4 0) (path/get-handler-point result 1 :c2)))))
+    (t/testing "with both handlers selected and no hint the incoming one wins"
+      (let [result (equal (mk))]
+        (t/is (= (gpt/point 8 0) (path/get-handler-point result 1 :c2)))
+        (t/is (= (gpt/point 12 0) (path/get-handler-point result 2 :c1)))))))
+
+(t/deftest inserting-a-node-forgets-the-last-edited-handler
+  (let [id      (random-uuid)
+        content (aligned-uneven-handlers-content)
+        state   (-> (pth/selectable-path-state
+                     id content {:nodes #{} :segments #{} :handlers #{}})
+                    (assoc-in [:workspace-local :edit-path id :edited-handler] [2 :c1]))
+        events  (let [out (atom [])]
+                  (->> (ptk/watch (path.edition/create-node-at-position
+                                   {:from-p (gpt/point 0 0)
+                                    :to-p   (gpt/point 10 0)
+                                    :t      0.5})
+                                  state (rx/subject))
+                       (rx/subs! #(swap! out conj %)))
+                  @out)
+        state'  (ptk/update (first events) state)]
+    ;; The new command shifts every later index, so [2 :c1] is another node now.
+    (t/is (= 4 (count (path.state/get-path state' :content))))
+    (t/is (nil? (get-in state' [:workspace-local :edit-path id :edited-handler])))))

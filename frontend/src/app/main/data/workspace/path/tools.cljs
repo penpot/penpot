@@ -49,7 +49,8 @@
                  (update-in [:workspace-local :edit-path id :selection]
                             #(helpers/remap-selection % old-content new-content))
                  (update-in [:workspace-local :edit-path id :handler-types]
-                            #(helpers/remap-handler-types % old-content new-content))))
+                            #(helpers/remap-handler-types % old-content new-content))
+                 (update-in [:workspace-local :edit-path id] dissoc :edited-handler)))
            state)))
 
      ptk/WatchEvent
@@ -80,9 +81,11 @@
            (reduce path/make-curve-point content))))))
 
 (defn- apply-handler-type-modifiers
-  "Returns modifiers that reshape a node's handlers to `type`."
-  [content node-index type]
-  (if-let [[idx prefix] (helpers/node-primary-handler content node-index)]
+  "Returns modifiers that reshape a node's handlers to `type`.
+
+  `reference` keeps its geometry; the opposite handler adapts to it."
+  [content reference type]
+  (if-let [[idx prefix] reference]
     (case type
       :mirror  (helpers/move-handler-modifiers content idx prefix true true true 0 0)
       :aligned (helpers/align-handler-modifiers content idx prefix 0 0)
@@ -98,10 +101,13 @@
       (let [id        (st/get-path-id state)
             content   (st/get-path state :content)
             selection (st/get-selection state id)
+            edited    (dm/get-in state [:workspace-local :edit-path id :edited-handler])
             nodes     (helpers/handler-target-nodes content selection)]
         (if (and (some? content) (seq nodes))
           (let [modifiers   (reduce (fn [acc node-index]
-                                      (d/deep-merge acc (apply-handler-type-modifiers content node-index type)))
+                                      (let [reference (helpers/handler-type-reference
+                                                       content selection edited node-index)]
+                                        (d/deep-merge acc (apply-handler-type-modifiers content reference type))))
                                     {} nodes)
                 new-content (path/apply-content-modifiers content modifiers)]
             (-> (st/set-content state new-content)
@@ -146,7 +152,8 @@
         (update-in [:workspace-local :edit-path id :selection]
                    #(helpers/remap-selection % old-content new-content))
         (update-in [:workspace-local :edit-path id :handler-types]
-                   #(helpers/remap-handler-types % old-content new-content)))))
+                   #(helpers/remap-handler-types % old-content new-content))
+        (update-in [:workspace-local :edit-path id] dissoc :edited-handler))))
 
 (defn remove-segments
   "Removes segments and opens the path at their endpoints."
