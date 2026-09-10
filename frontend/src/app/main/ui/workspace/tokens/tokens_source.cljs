@@ -56,7 +56,7 @@
          (fn []
            (modal/show! :libraries-dialog {:file-id file-id})))]
 
-    (mf/with-effect [file-name file-name-truncated?]
+    (mf/with-effect [file-name]
       (check-file-name-truncated)
       (when-let [node (mf/ref-val file-name-ref)]
         (let [ro (js/ResizeObserver. check-file-name-truncated)]
