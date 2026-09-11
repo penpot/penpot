@@ -57,6 +57,18 @@
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
         (db/get-update-count))))
 
+(def ^:private sql:delete-upload-session-chunks
+  "DELETE FROM upload_session_chunk
+    WHERE object_id = ANY(?::uuid[])")
+
+(defn- delete-upload-session-chunks!
+  "Remove the chunk mappings for the given storage object ids. This must run
+  before the storage_object rows are deleted: the upload_session_chunk
+  foreign keys are ON DELETE NO ACTION."
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:delete-upload-session-chunks ids])))
+
 (def ^:private sql:increment-attempts-and-defer
   "UPDATE storage_object
       SET deletion_attempts = deletion_attempts + 1,
@@ -105,10 +117,21 @@
                :backend (name backend-id)))
 
       (when (seq ok-ids)
+        ;; NOTE: the chunk mappings must be removed before the
+        ;; storage_object rows (NO ACTION foreign keys). It only affects
+        ;; objects of the upload-session bucket; for any other bucket the
+        ;; delete matches no rows.
+        (delete-upload-session-chunks! conn ok-ids)
         (delete-sobjects! conn ok-ids))
 
       (when (seq fail-ids)
         (increment-attempts-and-defer! conn fail-ids)
+        ;; NOTE: same NO ACTION ordering as above: the give-up DELETE below
+        ;; removes storage_object rows, so chunk mappings must go first.
+        ;; Deferred objects keep their rows; only the mapping of a
+        ;; permanently given-up object disappears early, and that object is
+        ;; already deleted-marked.
+        (delete-upload-session-chunks! conn fail-ids)
         (let [given-up (delete-give-up! conn fail-ids)]
           (when (pos? (db/get-update-count given-up))
             (l/wrn :hint "giving up on orphan blob after max attempts"

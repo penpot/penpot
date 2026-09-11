@@ -339,7 +339,6 @@
 
 ;; --- Chunked Upload: Upload a single chunk
 
-(declare ^:private get-upload-chunk)
 (declare ^:private check-upload-chunk-slot)
 
 (def ^:private schema:upload-chunk
@@ -353,11 +352,19 @@
    [:session-id ::sm/uuid]
    [:index      ::sm/int]])
 
+(def ^:private sql:link-upload-session-chunk
+  "UPDATE upload_session_chunk
+      SET object_id = ?
+    WHERE session_id = ?
+      AND chunk_index = ?
+      AND object_id IS NULL")
+
 (sv/defmethod ::upload-chunk
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
-  [cfg {:keys [::rpc/profile-id session-id index content]}]
+  [{:keys [::db/pool] :as cfg}
+   {:keys [::rpc/profile-id session-id index content] :as _params}]
   (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
     (l/trc :hint "upload-chunk"
            :session-id session-id
@@ -365,23 +372,55 @@
            :size (:size content)
            :path (:path content))
 
+    ;; NOTE: the blob is written outside any transaction on purpose (see
+    ;; mem:backend/storage): a failed write must never mingle with the
+    ;; mapping transaction. If the write fails, the reserved mapping is
+    ;; removed and the error propagates, so the client retries the index
+    ;; in the same session. If the process dies between the reserve and
+    ;; the link below, a NULL mapping is left behind and the client starts
+    ;; a new session (sessions are ephemeral).
     (let [storage (sto/resolve cfg)
-          data    (sto/content (:path content))]
-      (sto/put-object! storage
-                       {::sto/content      data
-                        ::sto/deduplicate? false
-                        ::sto/touch        true
-                        :content-type      (:mtype content)
-                        :bucket            sto/tempfile-bucket
-                        :upload-id         (str session-id)
-                        :chunk-index       index}))
+          data    (sto/content (:path content))
+          object  (try
+                    (sto/put-object! storage
+                                     {::sto/content      data
+                                      ::sto/deduplicate? false
+                                      ::sto/touched-at   (ct/in-future {:hours 1})
+                                      :content-type      (:mtype content)
+                                      :bucket            sto/upload-session-bucket})
+                    (catch Throwable cause
+                      (db/delete! pool :upload-session-chunk
+                                  {:session-id session-id :chunk-index index})
+                      (throw cause)))
+          linked  (-> (db/exec-one! pool [sql:link-upload-session-chunk
+                                          (:id object) session-id index])
+                      (db/get-update-count))]
+      (when (zero? linked)
+        ;; The mapping vanished concurrently (session consumed or purged
+        ;; after the reserve); the orphaned object stays touched so
+        ;; touched-gc reclaims it.
+        (ex/raise :type :not-found
+                  :code :object-not-found
+                  :hint "upload session no longer available"
+                  :session-id session-id))))
 
-    {:session-id session-id
-     :index      index}))
+  {:session-id session-id
+   :index      index})
 
 (defn- check-upload-chunk-slot
+  "Reserves the (session, index) slot: locks the session row, runs all
+  validations and inserts the mapping with a NULL object_id, all in one
+  transaction. Concurrent uploads of the same session serialize on the
+  session lock, so the UNIQUE(session_id, chunk_index) constraint can
+  never fire."
   [{:keys [::db/conn]} session-id profile-id index content]
   (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id} {::db/for-update true})]
+    (when (:deleted-at session)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "upload session already consumed"
+                :session-id session-id))
+
     (when (or (neg? index) (>= index (:total-chunks session)))
       (ex/raise :type :validation
                 :code :invalid-chunk-index
@@ -399,40 +438,37 @@
                 :size (:size content)
                 :max-size (cf/get :upload-max-chunk-size)))
 
-    (when (get-upload-chunk conn session-id index)
+    ;; NOTE: a mapping with NULL object_id also counts as occupied: either
+    ;; its upload is still in flight, or it died mid-flight and the client
+    ;; must start a new session.
+    (when (db/get* conn :upload-session-chunk {:session-id session-id :chunk-index index})
       (ex/raise :type :validation
-                :code :duplicate-chunk-index
-                :hint "chunk index already uploaded for this session"
+                :code :chunk-already-exists
+                :hint "chunk already uploaded for this session and index"
                 :session-id session-id
                 :index index))
+
+    (db/insert! conn :upload-session-chunk
+                {:session-id  session-id
+                 :object-id   nil
+                 :chunk-index index})
 
     session))
 
 ;; --- Chunked Upload: shared helpers
 
-(def ^:private sql:get-upload-chunks
-  "SELECT id, size, (metadata->>'~:chunk-index')::integer AS chunk_index
-     FROM storage_object
-    WHERE (metadata->>'~:upload-id') = ?::text
-      AND deleted_at IS NULL
-      AND status = 'valid'
-    ORDER BY (metadata->>'~:chunk-index')::integer ASC")
+(def ^:private sql:get-upload-session-chunks
+  "SELECT so.id, so.size
+     FROM upload_session_chunk AS usc
+     JOIN storage_object AS so ON (so.id = usc.object_id)
+    WHERE usc.session_id = ?
+      AND so.deleted_at IS NULL
+      AND so.status = 'valid'
+    ORDER BY usc.chunk_index ASC")
 
 (defn- get-upload-chunks
   [conn session-id]
-  (db/exec! conn [sql:get-upload-chunks (str session-id)]))
-
-(def ^:private sql:get-upload-chunk
-  "SELECT id
-     FROM storage_object
-    WHERE (metadata->>'~:upload-id') = ?::text
-      AND (metadata->>'~:chunk-index')::integer = ?
-      AND deleted_at IS NULL
-    LIMIT 1")
-
-(defn- get-upload-chunk
-  [conn session-id index]
-  (db/exec-one! conn [sql:get-upload-chunk (str session-id) index]))
+  (db/exec! conn [sql:get-upload-session-chunks session-id]))
 
 (defn- concat-chunks
   "Reads all chunk storage objects in order and writes them to a single
@@ -452,34 +488,47 @@
   conforming to `media.v/schema:upload` with `:filename`, `:path` and
   `:size`.
 
-  Raises a :validation/:missing-chunks error when the stored chunk
-  indices do not form exactly the `0..total-chunks` range recorded in
-  the session row (wrong count, gaps or duplicates).
-  Raises :not-found when the session does not belong to `profile-id`.
-  Deletes the session row from `upload_session` on success."
+  Raises a :validation/:missing-chunks error when the number of stored
+  chunks does not match `:total-chunks` recorded in the session row.
+  Raises :not-found when the session does not belong to `profile-id` or
+  was already consumed. Marks the session row as consumed (`deleted_at`);
+  the chunk mappings stay until the objects-gc task purges them (touching
+  the chunk objects so storage GC reclaims them), and the session row is
+  purged afterwards."
   [{:keys [::db/conn] :as cfg} profile-id session-id]
-  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})
-        chunks  (get-upload-chunks conn session-id)
-        indices (sort (map :chunk-index chunks))]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})]
+    (when (:deleted-at session)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "upload session already consumed"
+                :session-id session-id))
 
-    (when (or (not= (count chunks) (:total-chunks session))
-              (not= indices (range (:total-chunks session))))
-      (ex/raise :type :validation
-                :code :missing-chunks
-                :hint "stored chunks do not match expected total"
-                :session-id session-id
-                :expected   (:total-chunks session)
-                :found      (count chunks)))
+    (let [chunks (get-upload-chunks conn session-id)]
 
-    (let [storage (sto/resolve cfg ::db/reuse-conn true)
-          path    (concat-chunks storage chunks)
-          size    (reduce #(+ %1 (:size %2)) 0 chunks)]
+      (when (not= (count chunks) (:total-chunks session))
+        (ex/raise :type :validation
+                  :code :missing-chunks
+                  :hint "number of stored chunks does not match expected total"
+                  :session-id session-id
+                  :expected   (:total-chunks session)
+                  :found      (count chunks)))
 
-      (db/delete! conn :upload-session {:id session-id})
+      (let [storage (sto/resolve cfg ::db/reuse-conn true)
+            path    (concat-chunks storage chunks)
+            size    (reduce #(+ %1 (:size %2)) 0 chunks)]
 
-      {:filename "upload"
-       :path     path
-       :size     size})))
+        ;; NOTE: the session row is only marked (deleted_at) here; the
+        ;; chunk mappings stay until the objects-gc task removes them
+        ;; (before the session row, as the NO ACTION foreign keys
+        ;; require) while touching the chunk objects.
+        (db/update! conn :upload-session
+                    {:deleted-at (ct/now)}
+                    {:id session-id}
+                    {::db/return-keys false})
+
+        {:filename "upload"
+         :path     path
+         :size     size}))))
 
 ;; --- Chunked Upload: Assemble all chunks into a final media object
 
