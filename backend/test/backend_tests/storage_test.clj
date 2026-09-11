@@ -904,6 +904,17 @@
     (t/is (some? ex))
     (t/is (= :invalid-storage-target (:code (ex-data ex))))))
 
+(t/deftest s3-get-object-data-rejects-unknown-target
+  (let [backend (fake-s3-backend-with-targets)
+        ex      (try
+                  (impl/get-object-data backend {:id (uuid/next)
+                                                 :size 1
+                                                 :storage-target "ghost"})
+                  nil
+                  (catch Throwable cause cause))]
+    (t/is (some? ex))
+    (t/is (= :invalid-storage-target (:code (ex-data ex))))))
+
 (t/deftest s3-target-resolvable-checks-configured-targets
   (let [backend (fake-s3-backend-with-targets)]
     (t/is (true? (impl/target-resolvable? backend nil)))
