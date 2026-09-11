@@ -2211,6 +2211,10 @@
   [background]
   (when (initialized?)
     (let [rgba (sr-clr/hex->u32argb background 1)]
+      ;; Background is baked into every tile. Cancel Partial/ViewportReady so we
+      ;; do not continue a progressive pass whose tile cache was just cleared —
+      ;; that drops already-finished tiles from the queue and leaves bg-only holes.
+      (stop-progressive-render!)
       (h/call wasm/internal-module "_set_canvas_background" rgba)
       (request-render "set-canvas-background"))))
 
