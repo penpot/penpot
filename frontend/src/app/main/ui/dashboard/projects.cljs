@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.geom.point :as gpt]
    [app.common.time :as ct]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
@@ -20,11 +19,13 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.deleted :as deleted]
    [app.main.ui.dashboard.grid :refer [line-grid*]]
+   [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu* project-menu-items*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -120,9 +121,9 @@
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
 
-        local      (mf/use-state {:menu-open false
-                                  :menu-pos nil
-                                  :edition (= (:id project) edit-id)})
+        local              (mf/use-state {:edition (= (:id project) edit-id)})
+        menu-open*         (mf/use-state false)
+        context-menu-open* (mf/use-state false)
 
         [rowref limit]
         (hooks/use-dynamic-grid-item-width)
@@ -144,21 +145,7 @@
         (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
-
-           (let [client-position (dom/get-client-position event)
-                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
-                            (let [target-element (dom/get-target event)
-                                  points         (dom/get-bounding-rect target-element)
-                                  y              (:top points)
-                                  x              (:left points)]
-                              (gpt/point x y))
-                            client-position)]
-             (swap! local assoc
-                    :menu-open true
-                    :menu-pos position))))
-
-        on-menu-close
-        (mf/use-fn #(swap! local assoc :menu-open false))
+           (swap! menu-open* not)))
 
         on-edit-open
         (mf/use-fn #(swap! local assoc :edition true))
@@ -194,7 +181,13 @@
          (fn [_]
            (create-file "dashboard:grid-header-plus-button")))
 
-        on-import
+        file-input
+        (mf/use-ref nil)
+
+        on-import-click
+        (mf/use-fn #(dom/click (mf/ref-val file-input)))
+
+        on-finish-import
         (mf/use-fn
          (mf/deps project-id team-id)
          (fn []
@@ -226,16 +219,23 @@
          [:& inline-edition {:content (:name project)
                              :on-end on-edit
                              :max-length 250}]
-         [:h2 {:on-click on-nav
-               :style {:max-width (str title-width "%")}
-               :class (stl/css :project-name)
-               :title (if (:is-default project)
-                        (tr "labels.drafts")
-                        (:name project))
-               :on-context-menu (when can-edit on-menu-click)}
-          (if (:is-default project)
-            (tr "labels.drafts")
-            (:name project))])
+         [:> context-menu* {:aria-label (tr "dashboard.options")
+                            :is-disabled (not can-edit)
+                            :on-open-change #(reset! context-menu-open* %)
+                            :trigger
+                            (mf/html
+                             [:h2 {:on-click on-nav
+                                   :style {:max-width (str title-width "%")}
+                                   :class (stl/css :project-name)
+                                   :title (if (:is-default project)
+                                            (tr "labels.drafts")
+                                            (:name project))}
+                              (if (:is-default project)
+                                (tr "labels.drafts")
+                                (:name project))])}
+          [:> project-menu-items* {:project project
+                                   :on-edit on-edit-open
+                                   :on-import-click on-import-click}]])
 
        [:div {:class (stl/css :info-wrapper)}
 
@@ -248,7 +248,9 @@
            [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])]
 
         [:div {:class (stl/css-case :project-actions true
-                                    :pinned-project (:is-pinned project))}
+                                    :pinned-project (:is-pinned project)
+                                    :is-force-display (or (deref menu-open*)
+                                                          (deref context-menu-open*)))}
          (when-not (:is-default project)
            [:> pin-button* {:class (stl/css :pin-button)
                             :is-pinned (:is-pinned project)
@@ -265,23 +267,31 @@
             add-icon])
 
          (when ^boolean can-edit
-           [:button {:class (stl/css :options-btn)
-                     :on-click on-menu-click
-                     :title (tr "dashboard.options")
-                     :aria-label  (tr "dashboard.options")
-                     :data-testid "project-options"
-                     :on-key-down handle-menu-click}
-            menu-icon])]
+           [:> project-menu*
+            {:project project
+             :is-open (deref menu-open*)
+             :on-open-change #(reset! menu-open* %)
+             :on-edit on-edit-open
+             :on-import-click on-import-click
+             :trigger
+             (mf/html
+              [:button {:class (stl/css :options-btn)
+                        :on-click on-menu-click
+                        :title (tr "dashboard.options")
+                        :aria-label (tr "dashboard.options")
+                        :data-testid "project-options"
+                        :on-key-down handle-menu-click}
+               menu-icon])}])]]]]
 
-        (when ^boolean can-edit
-          [:> project-menu*
-           {:project project
-            :show (:menu-open @local)
-            :left (+ 24 (:x (:menu-pos @local)))
-            :top (:y (:menu-pos @local))
-            :on-edit on-edit-open
-            :on-close on-menu-close
-            :on-import on-import}])]]]
+     ;; Kept mounted for as long as this row is, shared by both menu
+     ;; instances above: the popover each renders inside really unmounts its
+     ;; content on close (unlike the old context-menu-a11y, which just hid
+     ;; it), and selecting "Import" closes the menu in the same tick — a ref
+     ;; owned inside either popover could already be gone by the time its
+     ;; own click handler fires.
+     [:> udi/import-form* {:ref file-input
+                           :project-id project-id
+                           :on-finish-import on-finish-import}]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       (if ^boolean empty?

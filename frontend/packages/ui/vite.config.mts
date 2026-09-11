@@ -1,20 +1,19 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import dts from 'vite-plugin-dts';
-import * as path from 'path';
-import { copyFileSync } from 'node:fs';
+import { defineConfig, esmExternalRequirePlugin } from "vite";
+import react from "@vitejs/plugin-react";
+import dts from "vite-plugin-dts";
+import * as path from "path";
+import { copyFileSync } from "node:fs";
+
+const externalDeps = ["react", "react-dom", "react/jsx-runtime"];
 
 const copyCssPlugin = () => ({
-  name: 'copy-css',
+  name: "copy-css",
   closeBundle: () => {
     try {
-      copyFileSync(
-        'dist/ui.css',
-        '../../resources/public/css/ui.css',
-      );
+      copyFileSync("dist/ui.css", "../../resources/public/css/ui.css");
     } catch (e) {
-      console.log('Error copying css file', e);
+      console.log("Error copying css file", e);
     }
   },
 });
@@ -24,27 +23,25 @@ export default defineConfig(() => ({
   css: {
     preprocessorOptions: {
       scss: {
-        loadPaths: [
-          path.resolve(import.meta.dirname, '../../src/app/main/ui'),
-        ],
+        loadPaths: [path.resolve(import.meta.dirname, "../../src/app/main/ui")],
       },
     },
   },
   plugins: [
     react({
       babel: {
-        plugins: ['babel-plugin-react-compiler'],
+        plugins: ["babel-plugin-react-compiler"],
       },
     }),
     dts({
-      entryRoot: 'src',
-      tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
+      entryRoot: "src",
+      tsconfigPath: path.join(import.meta.dirname, "tsconfig.lib.json"),
       pathsToAliases: false,
     }),
     copyCssPlugin(),
   ],
   build: {
-    outDir: 'dist/',
+    outDir: "dist/",
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
@@ -52,26 +49,34 @@ export default defineConfig(() => ({
     },
     lib: {
       entry: {
-        index: 'src/index.ts',
-        modal: 'src/modal.ts',
+        index: "src/index.ts",
+        modal: "src/modal.ts",
+        menu: "src/menu.ts",
       },
-      name: 'ui',
-      formats: ['es' as const],
+      name: "ui",
+      formats: ["es" as const],
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // Vendored CJS-only deps (e.g. use-sync-external-store) call
+      // require("react") internally. Rolldown keeps require() calls
+      // against external modules as-is instead of converting them to
+      // import, which breaks in the browser where require() doesn't
+      // exist. esmExternalRequirePlugin both marks these as external and
+      // rewrites those calls to real ESM imports.
+      // https://rolldown.rs/in-depth/bundling-cjs#require-external-modules
+      plugins: [esmExternalRequirePlugin({ external: externalDeps })],
     },
   },
   test: {
-    name: 'ui',
+    name: "ui",
     watch: false,
     globals: true,
-    environment: 'jsdom',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    reporters: ['default'],
+    environment: "jsdom",
+    include: ["{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
+    reporters: ["default"],
     coverage: {
-      reportsDirectory: '../../coverage/libs/ui',
-      provider: 'v8' as const,
+      reportsDirectory: "../../coverage/libs/ui",
+      provider: "v8" as const,
     },
   },
 }));

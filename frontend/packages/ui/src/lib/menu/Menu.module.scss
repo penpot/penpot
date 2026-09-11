@@ -1,0 +1,167 @@
+@use "ds/_borders" as *;
+@use "ds/_sizes" as *;
+@use "ds/_utils" as *;
+@use "ds/spacing" as *;
+@use "ds/typography" as *;
+@use "ds/mixins" as *;
+
+.popover {
+  z-index: var(--z-index-dropdown);
+
+  &[data-entering] {
+    animation: popover-fade-in 0.15s ease-out;
+  }
+
+  &[data-exiting] {
+    animation: popover-fade-out 0.1s ease-in;
+  }
+}
+
+.menu {
+  @include custom-scrollbar;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  min-inline-size: $sz-160;
+  max-block-size: inherit;
+  padding-block: var(--sp-xs);
+  padding-inline: var(--sp-xxs);
+  margin: 0;
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  overflow-y: auto;
+  outline: none;
+  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+}
+
+.menuItem {
+  @include use-typography("body-small");
+
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--sp-s);
+  block-size: $sz-32;
+  padding-inline: var(--sp-s);
+  border-radius: $br-6;
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+  outline: none;
+
+  &[data-hovered],
+  &[data-focused] {
+    background-color: var(--color-background-quaternary);
+  }
+
+  &[data-focus-visible] {
+    background-color: var(--color-background-tertiary);
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+
+  &[data-disabled] {
+    color: var(--color-foreground-secondary);
+    background-color: var(--color-background-tertiary);
+    cursor: default;
+  }
+}
+
+// Cascades into every flyout SubMenu's own .menu too (Menu.tsx threads the
+// density down through context so nested flyouts don't need it repeated).
+.menuDense {
+  .menuItem {
+    block-size: $sz-28;
+  }
+}
+
+.subMenuItem {
+  justify-content: space-between;
+
+  &[data-open] {
+    background-color: var(--color-background-quaternary);
+  }
+}
+
+.subMenuLabel {
+  display: flex;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--sp-s);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subMenuChevron {
+  flex: 0 0 auto;
+  inline-size: $sz-12;
+  block-size: $sz-12;
+  color: var(--color-foreground-secondary);
+}
+
+.backItem {
+  color: var(--color-foreground-secondary);
+}
+
+// Shared by the back item's own label and by MenuItem's plain-string
+// children (see MenuItem in Menu.tsx) — anything else (icons, a SubMenu
+// trigger's own subMenuLabel/subMenuChevron pair) handles its own
+// truncation instead of being wrapped in this a second time.
+.menuItemLabel {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.separator {
+  flex: 0 0 auto;
+  block-size: $b-1;
+  margin-block: var(--sp-xxs);
+  margin-inline: 0;
+  border: none;
+  background-color: var(--color-background-quaternary);
+}
+
+.menuTrigger {
+  display: inline-block;
+  place-self: start start;
+}
+
+.contextMenuTrigger {
+  display: contents;
+}
+
+.contextMenuAnchor {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 0;
+  block-size: 0;
+  pointer-events: none;
+}
+
+@keyframes popover-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}

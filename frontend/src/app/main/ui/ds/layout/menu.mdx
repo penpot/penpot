@@ -1,0 +1,246 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS SUBSIDIARY SL */ }
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+import * as Menu from "./menu.stories";
+
+<Meta title="Layout/Menu" />
+
+# Menu
+
+A menu displays a list of actions or options that a user can choose from. It opens next to a trigger element and closes on selection, **Escape**, or an outside click. Use it to build dropdowns and context menus.
+
+## Example
+
+### Default
+
+<Canvas of={Menu.Default} />
+
+### With a submenu
+
+<Canvas of={Menu.WithSubMenu} />
+
+### With a drilldown submenu
+
+<Canvas of={Menu.WithDrilldownSubMenu} />
+
+### Dense
+
+<Canvas of={Menu.Dense} />
+
+### With a max width
+
+<Canvas of={Menu.WithMaxWidth} />
+
+---
+
+# Usage
+
+```clojure
+(let [open*          (mf/use-state false)
+      open           (deref open*)
+      trigger-ref    (mf/use-ref nil)
+      on-ref         (mf/use-fn (fn [node] (mf/set-ref-val! trigger-ref node)))
+      on-open        (mf/use-fn (fn [] (reset! open* true)))
+      on-open-change (mf/use-fn (fn [open] (reset! open* open)))
+      on-action      (mf/use-fn (fn [key] (handle-action key)))]
+  [:> menu*
+   {:is-open open
+    :on-open-change on-open-change
+    :trigger (mf/html
+              [:> button* {:variant "secondary"
+                           :on-ref on-ref
+                           :on-click on-open}
+               "Open menu"])
+    :on-action on-action}
+
+   [:> menu-item* {:id "rename"} "Rename"]
+   [:> menu-item* {:id "duplicate"} "Duplicate"]
+   [:> menu-separator*]
+   [:> menu-item* {:id "delete"} "Delete"]])
+```
+
+`is-open` and `on-open-change` are controlled by the caller: the trigger's `on-click` opens the menu, and `on-open-change` reports closes from selection, **Escape**, or an outside click. For a context menu, skip `trigger`/`on-click` and drive `is-open` from your own `on-context-menu` handler instead.
+
+---
+
+# Menu props
+## trigger
+
+Element that opens the menu.
+
+Type: React element
+
+## is-open
+
+Controls whether the menu is open.
+
+Type: boolean
+
+## on-open-change
+
+Callback invoked whenever the open state changes.
+
+Type: function
+
+## on-action
+
+Callback invoked with the selected item's `id` when an item is chosen.
+
+Type: function
+
+## placement
+
+Controls where the menu opens relative to its trigger.
+
+Options
+
+"top", "top start", "top end", "bottom", "bottom start" (default), "bottom end", "left", "left top", "left bottom", "right", "right top", "right bottom"
+
+## max-width
+
+Caps how wide the menu (and every flyout submenu nested in it) can grow. The existing minimum width still wins if it's larger than this.
+
+Type: number (pixels) | string (any CSS length)
+
+Default: 250
+
+## is-dense
+
+Shrinks every item — this menu's own and every nested flyout submenu's — to a 28px row, for lists dense enough that the default 32px adds up.
+
+Default: false
+
+## class
+
+Additional CSS class applied to the menu.
+
+---
+
+# MenuItem props
+## id
+
+Unique identifier for the item, passed to `on-action` when selected.
+
+Type: string | number
+
+## is-disabled
+
+Prevents the item from being selected.
+
+Default: false
+
+## on-action
+
+Callback invoked when this specific item is selected.
+
+Type: function
+
+## text-value
+
+Plain-text representation of the item, used for typeahead. Required when the item's content isn't a plain string.
+
+Type: string
+
+## class
+
+Additional CSS class applied to the item.
+
+---
+
+# SubMenu props
+
+A `sub-menu*` nests a further list of items behind one item, opening on hover or when navigated into with the keyboard. Use it in place of `menu-item*` for that item:
+
+```clojure
+[:> sub-menu* {:trigger "Share" :on-action (fn [key] (handle-action key))}
+ [:> menu-item* {:id "share-link"} "Copy link"]
+ [:> menu-item* {:id "share-email"} "Send by email"]]
+```
+
+Selecting any item inside a submenu closes the whole menu, not just that submenu.
+
+## variant
+
+`"flyout"` (default) opens a nested popover next to the trigger item. `"drilldown"` replaces the parent menu's content with this submenu's items and adds a back item — use it for deep or wide trees, e.g. move-to-project's team → project nesting. Nested drilldowns keep drilling into the same list, which is never sized smaller than the root level it was entered from.
+
+```clojure
+[:> sub-menu* {:trigger "Move to" :variant "drilldown"}
+ [:> menu-item* {:id "project-a"} "Project A"]
+ [:> sub-menu* {:trigger "Other team" :variant "drilldown"}
+  [:> menu-item* {:id "project-b"} "Project B"]]]
+```
+
+Options
+
+"flyout" (default), "drilldown"
+
+## trigger
+
+Label shown for the item that opens the submenu.
+
+Type: React element
+
+## id
+
+Unique identifier for the submenu trigger item.
+
+Type: string | number
+
+## is-disabled
+
+Prevents the submenu from being opened.
+
+Default: false
+
+## on-action
+
+Callback invoked with the selected item's `id` for actions inside this submenu. Ignored when `variant` is `"drilldown"` — those items use the parent menu's `on-action` instead.
+
+Type: function
+
+## text-value
+
+Plain-text representation of the trigger, used for typeahead. Required when `trigger` isn't a plain string.
+
+Type: string
+
+## max-width
+
+Only meaningful for the `"flyout"` variant: its nested popover is its own menu, independent of the root's. A `"drilldown"` submenu has no popover of its own to size — it renders into the root's, sized by the root Menu/ContextMenu's own `max-width` instead.
+
+Type: number (pixels) | string (any CSS length)
+
+Default: 250
+
+## class
+
+Additional CSS class applied to the submenu's item list.
+
+---
+
+# Accessibility
+
+The menu automatically provides:
+
+- Accessible `menu`/`menuitem` semantics
+- Full keyboard navigation (arrow keys, Home/End, typeahead)
+- Focus management and restoration when closed
+- Dismissal with **Escape** and outside click
+
+---
+
+# Best practices
+
+Use a menu for:
+
+- A list of actions tied to a trigger button (dropdown)
+- A contextual list of actions tied to a right click (context menu)
+
+Avoid using a menu for:
+
+- Long forms or free-text input
+- Navigation between pages (use a link/nav component instead)
+- A single toggleable option (use a switch or checkbox instead)

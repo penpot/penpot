@@ -198,8 +198,7 @@
     (update [_ state]
       (-> state
           (dissoc :selected-files)
-          (dissoc :selected-project)
-          (update :dashboard-local dissoc :menu-open :menu-pos)))))
+          (dissoc :selected-project)))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
@@ -213,36 +212,6 @@
               (update :selected-files #(if (contains? % id) (disj % id) (conj % id)))
               (assoc :selected-project project-id))
           state)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Show grid menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn show-file-menu-with-position
-  [file-id pos]
-  (ptk/reify ::show-file-menu-with-position
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local assoc
-              :menu-open true
-              :menu-pos pos
-              :file-id file-id))))
-
-(defn show-file-menu
-  []
-  (ptk/reify ::show-file-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open true))))
-
-(defn hide-file-menu
-  []
-  (ptk/reify ::hide-file-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open false))))
 
 (defn start-edit-file-name
   [file-id]
