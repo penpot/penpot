@@ -682,45 +682,6 @@
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :missing-chunks (-> out :error ex-data :code))))))
 
-(t/deftest chunked-upload-assemble-rejects-duplicate-indices
-  ;; assemble-chunks must validate the index SET, not just the count: a
-  ;; session declaring 2 chunks but storing [0,0] must fail instead of
-  ;; assembling a corrupt file. Chunks are written at the storage level
-  ;; because upload-chunk itself now rejects the second index.
-  (let [prof        (th/create-profile* 1)
-        _           (th/create-project* 1 {:profile-id (:id prof)
-                                           :team-id (:default-team-id prof)})
-        file        (th/create-file* 1 {:profile-id (:id prof)
-                                        :project-id (:default-project-id prof)
-                                        :is-shared false})
-        session-id  (create-session! prof 2)
-        storage     (:app.storage/storage th/*system*)
-        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
-        chunks      (split-file-into-chunks source-path 312043)
-        put-chunk!  (fn [idx]
-                      (let [mfile (make-chunk-mfile (first chunks) "image/jpeg")]
-                        (sto/put-object! storage
-                                         {::sto/content      (sto/content (:path mfile))
-                                          ::sto/deduplicate? false
-                                          ::sto/touch        true
-                                          :content-type      "image/jpeg"
-                                          :bucket            sto/tempfile-bucket
-                                          :upload-id         (str session-id)
-                                          :chunk-index       idx})))]
-    (put-chunk! 0)
-    (put-chunk! 0)
-
-    (let [out (th/command! {::th/type        :assemble-file-media-object
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :file-id         (:id file)
-                            :is-local        true
-                            :name            "dupe-indices"
-                            :mtype           "image/jpeg"})]
-      (t/is (some? (:error out)))
-      (t/is (= :validation (-> out :error ex-data :type)))
-      (t/is (= :missing-chunks (-> out :error ex-data :code))))))
-
 (t/deftest chunked-upload-duplicate-then-assemble
   ;; A rejected duplicate must leave the first chunk intact: upload 0,
   ;; re-upload 0 (rejected), then assemble succeeds with the original size.
@@ -749,7 +710,8 @@
                             :index           0
                             :content         (make-chunk-mfile (first chunks) mtype)})]
       (t/is (some? (:error out)))
-      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :chunk-already-exists (-> out :error ex-data :code))))
 
     (let [out (th/command! {::th/type        :assemble-file-media-object
                             ::rpc/profile-id (:id prof)
@@ -792,7 +754,8 @@
                             :index           0
                             :content         (make-chunk-mfile (nth chunks 0) mtype)})]
       (t/is (some? (:error out)))
-      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :chunk-already-exists (-> out :error ex-data :code))))
 
     (let [out (th/command! {::th/type        :upload-chunk
                             ::rpc/profile-id (:id prof)
@@ -801,11 +764,11 @@
                             :content         (make-chunk-mfile (nth chunks 1) mtype)})]
       (t/is (nil? (:error out))))
 
-    ;; The live store holds exactly the two distinct indices: the
+    ;; The mapping table holds exactly the two distinct indices: the
     ;; rejected duplicate stored nothing.
-    (let [rows (th/db-exec! ["SELECT (metadata->>'~:chunk-index')::integer AS idx FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND deleted_at IS NULL ORDER BY idx"
-                             (str session-id)])]
-      (t/is (= [0 1] (mapv :idx rows))))))
+    (let [rows (th/db-exec! ["SELECT chunk_index FROM upload_session_chunk WHERE session_id = ? ORDER BY chunk_index"
+                             session-id])]
+      (t/is (= [0 1] (mapv :chunk-index rows))))))
 
 (t/deftest chunked-upload-session-not-found
   (let [prof       (th/create-profile* 1)
@@ -935,41 +898,6 @@
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :invalid-chunk-index (-> out :error ex-data :code))))))
 
-(t/deftest chunked-upload-duplicate-index-rejected
-  ;; Uploading the same chunk index twice into one session must fail:
-  ;; the second call raises :validation / :duplicate-chunk-index and
-  ;; stores nothing, so one session+index keeps at most one object.
-  (let [prof        (th/create-profile* 1)
-        session-id  (create-session! prof 1)
-        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
-        chunks      (split-file-into-chunks source-path 312043)
-        mtype       "image/jpeg"
-        mfile1      (make-chunk-mfile (first chunks) mtype)
-        mfile2      (make-chunk-mfile (first chunks) mtype)]
-
-    ;; First upload succeeds
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         mfile1})]
-      (t/is (nil? (:error out))))
-
-    ;; Second upload of the same index must be rejected
-    (let [out (th/command! {::th/type        :upload-chunk
-                            ::rpc/profile-id (:id prof)
-                            :session-id      session-id
-                            :index           0
-                            :content         mfile2})]
-      (t/is (some? (:error out)))
-      (t/is (= :validation (-> out :error ex-data :type)))
-      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
-
-    ;; Exactly one live object stored for that session/index
-    (let [rows (th/db-exec! ["SELECT id FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND (metadata->>'~:chunk-index') = '0' AND deleted_at IS NULL"
-                             (str session-id)])]
-      (t/is (= 1 (count rows))))))
-
 (t/deftest chunked-upload-chunk-too-large
   ;; Chunks larger than the configured cap must be rejected with
   ;; :validation / :chunk-too-large before anything is stored, while a
@@ -994,9 +922,8 @@
         (t/is (= :chunk-too-large (-> out :error ex-data :code))))
 
       ;; Nothing stored for the rejected chunk
-      (let [rows (th/db-exec! ["SELECT id FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND deleted_at IS NULL"
-                               (str session-id)])]
-        (t/is (= 0 (count rows))))
+      (t/is (= 0 (:count (th/db-exec-one! ["SELECT count(*) FROM upload_session_chunk WHERE session_id = ?"
+                                           session-id]))))
 
       ;; A chunk exactly at the cap still uploads fine
       (let [out (th/command! {::th/type        :upload-chunk
