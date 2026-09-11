@@ -437,7 +437,8 @@
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.delete-object/handler
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.demo-purge/handler
    {::db/pool (ig/ref ::db/pool)}
