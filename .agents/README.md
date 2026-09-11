@@ -291,6 +291,13 @@ defining subagents or helpers — or none at all.
 
 ## 6. Common agentic flows
 
+Work happens two ways: directly in your session, or delegated to a
+subagent. Besides the `engineer-*` subagents from §5 there is a
+builtin `general` subagent. Delegating planning and review to a
+subagent starts a fresh, clean context with a clean prompt instead
+of growing the main session — the main lever for keeping context
+small. To delegate without switching models, delegate to `general`.
+
 ### Issue / error report flow
 
 1. **Frame the problem.** Enter Plan mode (TAB in opencode) and paste the
