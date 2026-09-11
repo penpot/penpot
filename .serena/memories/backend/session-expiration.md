@@ -5,7 +5,7 @@
 - `:auth-token-cookie-name` / `PENPOT_AUTH_TOKEN_COOKIE_NAME` (default `auth-token`): cookie name.
 - `:auth-token-cookie-max-age` / `PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE` (default 7d): idle window; drives the sliding cookie `Expires` and the GC idle threshold.
 - `:auth-token-cookie-max-age-absolute` / `PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE_ABSOLUTE` (default 30d): hard cap from `created-at`; drives the token `:exp` and the GC absolute threshold.
-- Durations decode as `<n><unit>` (`7d`, `168h`, `30m`) via `ct/schema:duration`.
+- Durations decode as `<n><unit>` with hour/minute/second units (`168h`, `30m`); day units like `7d` are rejected by the `Duration/parse` string path, use hours (`168h`, `720h`).
 - Session lifetime defaults live only as code constants in `session.clj` (`default-cookie-max-age`, `default-cookie-max-age-absolute`); do not duplicate them in the `config.clj` default map. Call sites always pass the constant as the `cf/get` fallback.
 
 ## Token and session model

@@ -126,7 +126,7 @@ the idle window or the absolute maximum.
 
 Sessions created before 2.18.0 carry no <code
 class="language-clojure">:exp</code> in their token; they are still removed by
-the 30d <code class="language-text">created_at</code> cleanup and acquire <code
+the 30-day <code class="language-text">created_at</code> cleanup and acquire <code
 class="language-clojure">:exp</code> on their next renewal.
 
 The normal storage is the database. When the backend uses a read-only database
