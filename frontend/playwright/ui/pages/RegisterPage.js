@@ -21,6 +21,14 @@ export class RegisterPage extends BasePage {
     await this.registerButton.click();
   }
 
+  async setupEmailAlreadyExistsError() {
+    await this.mockRPC(
+      "prepare-register-profile",
+      "register/prepare-register-profile-email-already-exists.json",
+      { status: 400 },
+    );
+  }
+
   async setupMismatchedEmailError() {
     await this.mockRPC(
       "prepare-register-profile",
