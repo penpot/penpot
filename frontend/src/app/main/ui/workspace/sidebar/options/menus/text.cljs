@@ -20,6 +20,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -307,6 +308,11 @@
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
 
+        font-id         (or (:font-id values) (:font-id txt/default-typography))
+
+        fonts           (mf/deref fonts/fontsdb)
+        font            (get fonts font-id)
+
         token-dropdown-open* (mf/use-state false)
         token-dropdown-open? (deref token-dropdown-open*)
 
@@ -512,7 +518,7 @@
                             :on-click          toggle-token-dropdown
                             :tooltip-placement "top-left"
                             :icon              i/tokens}])
-        (when (and (not typography) (not multiple?) (not applied-token-name))
+        (when (and (some? font) (not typography) (not multiple?) (not applied-token-name))
           [:> icon-button* {:variant           "ghost"
                             :aria-label        (tr "workspace.options.convert-to-typography")
                             :on-click          on-convert-to-typography
