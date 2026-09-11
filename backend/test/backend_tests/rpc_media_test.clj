@@ -532,7 +532,7 @@
                   :index           0
                   :content         mfile})
 
-    ;; First assemble succeeds; session row is deleted afterwards
+    ;; First assemble succeeds; session row is marked as consumed afterwards
     (let [out1 (th/command! {::th/type        :assemble-file-media-object
                              ::rpc/profile-id (:id prof)
                              :session-id      session-id
@@ -545,7 +545,7 @@
       (t/is (= media-id (:id (:result out1)))))
 
     ;; Second assemble with the same session-id must fail because the
-    ;; session row has been deleted after the first assembly
+    ;; session row has been marked as consumed after the first assembly
     (let [out2 (th/command! {::th/type        :assemble-file-media-object
                              ::rpc/profile-id (:id prof)
                              :session-id      session-id
@@ -983,6 +983,148 @@
         (t/is (some? (:error out)))
         (t/is (= :restriction (-> out :error ex-data :type)))
         (t/is (= :max-quote-reached (-> out :error ex-data :code)))))))
+
+;; --- upload_session_chunk mapping tests ---
+
+(t/deftest chunked-upload-creates-chunk-mapping
+  ;; Uploading a chunk creates a row in upload_session_chunk pointing to the
+  ;; storage object, and the object itself carries no session metadata.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        out         (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           0
+                                  :content         mfile})]
+    (t/is (nil? (:error out)))
+
+    (let [row (th/db-exec-one! ["select session_id, object_id, chunk_index from upload_session_chunk where session_id = ?"
+                                session-id])]
+      (t/is (= session-id (:session-id row)))
+      (t/is (= 0 (:chunk-index row)))
+
+      (let [storage (:app.storage/storage th/*system*)
+            obj     (sto/get-object storage (:object-id row))]
+        (t/is (sto/object? obj))
+        (t/is (= "upload-session" (-> obj meta :bucket)))
+        (t/is (nil? (-> obj meta :upload-id)))
+        (t/is (nil? (-> obj meta :chunk-index)))))))
+
+(t/deftest chunked-upload-duplicate-index-fails
+  ;; Re-uploading an already stored index fails with
+  ;; :validation/:chunk-already-exists and creates no new storage object.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        out1        (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           0
+                                  :content         mfile})]
+    (t/is (nil? (:error out1)))
+
+    (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
+          out2   (th/command! {::th/type        :upload-chunk
+                               ::rpc/profile-id (:id prof)
+                               :session-id      session-id
+                               :index           0
+                               :content         mfile})]
+      (t/is (some? (:error out2)))
+      (t/is (= :validation (-> out2 :error ex-data :type)))
+      (t/is (= :chunk-already-exists (-> out2 :error ex-data :code)))
+      (t/is (= before (:count (th/db-exec-one! ["select count(*) from storage_object"])))))))
+
+(t/deftest chunked-upload-to-consumed-session-fails
+  ;; Once assembled, the session is consumed: uploading another chunk fails
+  ;; with :not-found and the session row stays, marked with deleted_at.
+  (let [prof        (th/create-profile* 1)
+        _           (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:default-team-id prof)})
+        file        (th/create-file* 1 {:profile-id (:id prof)
+                                        :project-id (:default-project-id prof)
+                                        :is-shared false})
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        out1        (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           0
+                                  :content         mfile})]
+    (t/is (nil? (:error out1)))
+
+    (let [assemble-out (th/command! {::th/type        :assemble-file-media-object
+                                     ::rpc/profile-id (:id prof)
+                                     :session-id      session-id
+                                     :file-id         (:id file)
+                                     :is-local        true
+                                     :name            "assembled-image"
+                                     :mtype           "image/jpeg"})]
+      (t/is (nil? (:error assemble-out))))
+
+    ;; chunk mappings are gone, session row stays marked as consumed
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (some? (:deleted-at (th/db-exec-one! ["select deleted_at from upload_session where id = ?"
+                                                session-id]))))
+
+    ;; uploading to the consumed session fails without creating an object
+    (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
+          out    (th/command! {::th/type        :upload-chunk
+                               ::rpc/profile-id (:id prof)
+                               :session-id      session-id
+                               :index           0
+                               :content         mfile})]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code)))
+      (t/is (= before (:count (th/db-exec-one! ["select count(*) from storage_object"])))))))
+
+(defn- sql-state-of
+  "Runs thunk (a db statement) and returns the SQLState of the raised
+  SQLException, or nil when no error is raised."
+  [thunk]
+  (try
+    (thunk)
+    nil
+    (catch java.sql.SQLException cause
+      (.getSQLState cause))))
+
+(t/deftest upload-session-chunk-restrict-blocks-direct-deletes
+  ;; With a live mapping row, deleting the storage object or the session
+  ;; directly violates the RESTRICT foreign keys (SQLState 23503).
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        out         (th/command! {::th/type        :upload-chunk
+                                  ::rpc/profile-id (:id prof)
+                                  :session-id      session-id
+                                  :index           0
+                                  :content         mfile})]
+    (t/is (nil? (:error out)))
+
+    (let [object-id (:object-id (th/db-exec-one! ["select object_id from upload_session_chunk where session_id = ?"
+                                                  session-id]))]
+      (t/is (= "23503" (sql-state-of #(th/db-exec! ["delete from storage_object where id = ?"
+                                                    object-id]))))
+      (t/is (= "23503" (sql-state-of #(th/db-exec! ["delete from upload_session where id = ?"
+                                                    session-id])))))))
 
 ;; --- Clone File Media Object BOLA tests ---
 

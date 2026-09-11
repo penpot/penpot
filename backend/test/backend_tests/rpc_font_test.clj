@@ -158,7 +158,8 @@
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 2 (:processed res)))))
+        ;; processed = 4: the 2 font variants plus the 2 consumed upload sessions
+        (t/is (= 4 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
@@ -224,7 +225,8 @@
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res)))))
+        ;; processed = 3: the font plus the 2 consumed upload sessions
+        (t/is (= 3 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
@@ -271,7 +273,8 @@
     ;; objects-gc at days 8, then storage-gc-touched at days 8 + 3h
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 1 (:processed res)))))
+        ;; processed = 3: the font variant plus the 2 consumed upload sessions
+        (t/is (= 3 (:processed res)))))
 
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]

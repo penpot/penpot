@@ -57,6 +57,18 @@
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
         (db/get-update-count))))
 
+(def ^:private sql:delete-upload-session-chunks
+  "DELETE FROM upload_session_chunk
+    WHERE object_id = ANY(?::uuid[])")
+
+(defn- delete-upload-session-chunks!
+  "Remove the chunk mappings for the given storage object ids. This must run
+  before the storage_object rows are deleted: the upload_session_chunk
+  foreign keys are ON DELETE RESTRICT."
+  [conn ids]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:delete-upload-session-chunks ids])))
+
 (def ^:private sql:increment-attempts-and-defer
   "UPDATE storage_object
       SET deletion_attempts = deletion_attempts + 1,
@@ -105,6 +117,11 @@
                :backend (name backend-id)))
 
       (when (seq ok-ids)
+        ;; NOTE: the chunk mappings must be removed before the
+        ;; storage_object rows (RESTRICT foreign keys). It only affects
+        ;; objects of the upload-session bucket; for any other bucket the
+        ;; delete matches no rows.
+        (delete-upload-session-chunks! conn ok-ids)
         (delete-sobjects! conn ok-ids))
 
       (when (seq fail-ids)

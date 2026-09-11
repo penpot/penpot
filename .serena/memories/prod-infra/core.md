@@ -22,7 +22,7 @@ Postgres row locking is the only correctness primitive: `task` claims via `FOR U
 
 Two known race patterns survive multi-backend operation:
 
-- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `tasks-gc`, `upload-session-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-archive` (depends on archive target idempotency).
+- **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc` (incl. upload-session purge), `storage-gc-*`, `tasks-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-archive` (depends on archive target idempotency).
 - **`wrk/submit! ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).

@@ -292,8 +292,9 @@
                        {:id (:id result-2)})
 
         ;; run the objects gc task for permanent deletion
+        ;; (processed = 2: the consumed upload session plus the font variant)
         (let [res (th/run-task! :objects-gc {})]
-          (t/is (= 1 (:processed res))))
+          (t/is (= 2 (:processed res))))
 
         ;; revert touched state to all storage objects
 
@@ -817,8 +818,8 @@
 
     ;; mark all the chunks of this session as pending (simulates rows that
     ;; were never promoted)
-    (th/db-exec! ["update storage_object set status = 'pending' where (metadata->>'~:upload-id') = ?"
-                  (str session-id)])
+    (th/db-exec! ["update storage_object set status = 'pending' where id in (select object_id from upload_session_chunk where session_id = ?)"
+                  session-id])
 
     ;; assembling fails because no chunk is visible anymore
     (let [assemble-out (th/command! {::th/type :assemble-file-media-object
@@ -829,6 +830,105 @@
                                      :name "assembled-image"
                                      :mtype "image/jpeg"})]
       (t/is (some? (:error assemble-out))))))
+
+(t/deftest upload-session-stalled-purge-lifecycle
+  ;; Full lifecycle of a stalled session: objects-gc purges the session and
+  ;; its mappings while touching the objects, touched-gc marks them deleted
+  ;; and deleted-gc removes rows and blobs.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        _          (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})]
+
+    (t/is (nil? (:error out)))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+
+    ;; backdate the session so it counts as stalled
+    (th/db-exec! ["update upload_session set created_at = now() - interval '2 hours' where id = ?"
+                  session-id])
+
+    ;; objects-gc purges session and mappings, touching the objects
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 1 (:processed res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))
+
+    ;; touched-gc marks the orphaned object as deleted
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
+                (th/run-task! :storage-gc-touched {}))]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res))))
+
+    ;; deleted-gc removes the row and the blob (clock past the mark time)
+    (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 4}))]
+                (th/run-task! :storage-gc-deleted {}))]
+      (t/is (= 1 (:deleted res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from storage_object"]))))))
+
+(t/deftest upload-session-consumed-purge
+  ;; An assembled session is marked as consumed and objects-gc purges it
+  ;; right away, without waiting for the stalled threshold.
+  (let [prof       (th/create-profile* 1)
+        _          (th/create-project* 1 {:profile-id (:id prof)
+                                          :team-id (:default-team-id prof)})
+        file       (th/create-file* 1 {:profile-id (:id prof)
+                                       :project-id (:default-project-id prof)
+                                       :is-shared false})
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})]
+
+    (t/is (nil? (:error out)))
+
+    (let [assemble-out (th/command! {::th/type :assemble-file-media-object
+                                     ::rpc/profile-id (:id prof)
+                                     :session-id session-id
+                                     :file-id (:id file)
+                                     :is-local true
+                                     :name "assembled-image"
+                                     :mtype "image/jpeg"})]
+      (t/is (nil? (:error assemble-out))))
+
+    ;; mappings are gone, session row stays marked as consumed
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (some? (:deleted-at (th/db-exec-one! ["select deleted_at from upload_session where id = ?"
+                                                session-id]))))
+
+    ;; objects-gc purges the consumed session immediately
+    (let [res (th/run-task! :objects-gc {})]
+      (t/is (= 1 (:processed res))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))))
 
 (defn- fake-s3-backend
   []
