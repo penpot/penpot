@@ -78,8 +78,8 @@
      [:section {:data-testid "token-management-sidebar"
                 :class (stl/css :token-management-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
-      (when (not= tokens-source (:id current-file-data))
-        [:> tokens-source-info* {:tokens-source tokens-source}])
+      [:> tokens-source-info* {:tokens-source tokens-source
+                               :file-id (:id current-file-data)}]
       [:> themes-header* {:tokens-source tokens-source}]
       [:div {:class (stl/css :sidebar-header)}
        [:> title-bar* {:title (tr "labels.sets")}

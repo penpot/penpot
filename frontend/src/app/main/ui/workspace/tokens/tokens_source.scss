@@ -9,25 +9,62 @@
 @use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+// TODO: this must be a custom property in the design system
+:global(.light) {
+  --low-emphasis-background: #fafafa;
+}
+
+:global(.default) {
+  --low-emphasis-background: #121214;
+}
 
 .tokens-source-wrapper {
   display: flex;
   padding: 0 0 0 var(--sp-m);
+  background-color: var(--low-emphasis-background);
 }
 
 .tokens-source-header {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--sp-s);
   flex-grow: 1;
-  padding: var(--sp-s);
+  min-width: 0;
+  padding: var(--sp-xs);
 }
 
-.tokens-source-title {
+.tokens-source-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.tokens-source-text {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.file-name,
+.this-file {
   flex: 1 1 auto;
   min-width: 0;
   color: var(--color-foreground-primary);
+}
+
+.file-name {
+  @include text-ellipsis;
+}
+
+.file-name-tooltip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.this-file {
+  font-style: italic;
+  color: var(--color-foreground-secondary);
   overflow-wrap: break-word;
 }
 
