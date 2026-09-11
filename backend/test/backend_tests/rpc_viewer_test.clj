@@ -204,4 +204,26 @@
         ;; Team member should see both share-links
         (t/is (= 2 (count share-links)))
         (t/is (some #(= link-a-id (:id %)) share-links))
-        (t/is (some #(= link-b-id (:id %)) share-links))))))
+        (t/is (some #(= link-b-id (:id %)) share-links))))
+
+    (t/testing "cross-file share-id replay fails closed"
+      (let [other-file (th/create-file* 2 {:profile-id (:id owner)
+                                           :project-id proj-id
+                                           :is-shared false})
+            out (th/command! {::th/type :get-view-only-bundle
+                              :share-id link-a-id
+                              :file-id (:id other-file)})
+            error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= :not-found (:type error-data)))
+        (t/is (= :object-not-found (:code error-data)))))
+
+    (t/testing "anonymous without share-id fails closed"
+      (let [out (th/command! {::th/type :get-view-only-bundle
+                              :file-id (:id file)})
+            error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= :not-found (:type error-data)))
+        (t/is (= :object-not-found (:code error-data)))))))
