@@ -73,6 +73,11 @@
         has-shadows?   (or (= :multiple shadows)
                            (some? (seq shadows)))
 
+        summary        (when has-shadows?
+                         (if (= :multiple shadows)
+                           (tr "settings.multiple")
+                           (count shadows)))
+
         show-content*  (mf/use-state true)
         show-content?  (deref show-content*)
 
@@ -147,6 +152,7 @@
                                       :multiple (tr "workspace.options.shadow-options.title.multiple")
                                       :group (tr "workspace.options.shadow-options.title.group")
                                       (tr "workspace.options.shadow-options.title"))
+                      :summary      summary
                       :class        (stl/css-case :shadow-title-bar (not has-shadows?))}
 
        (when-not (= :multiple shadows)
