@@ -1,5 +1,5 @@
 use crate::render::options::RenderOptions;
-use crate::shapes::{Shape, TextContent, Type, VerticalAlign};
+use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
 use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
@@ -112,16 +112,16 @@ fn render_selection(
     canvas.restore();
 }
 
-fn vertical_align_offset(
+fn paragraphs_vertical_offset(
     shape: &Shape,
     layout_paragraphs: &[&skia_safe::textlayout::Paragraph],
 ) -> f32 {
     let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    match shape.vertical_align() {
-        VerticalAlign::Center => (shape.selrect().height() - total_height) / 2.0,
-        VerticalAlign::Bottom => shape.selrect().height() - total_height,
-        _ => 0.0,
-    }
+    vertical_align_offset(
+        shape.selrect().height(),
+        total_height,
+        shape.vertical_align(),
+    )
 }
 
 fn calculate_cursor_rect(
@@ -141,7 +141,7 @@ fn calculate_cursor_rect(
         return None;
     }
 
-    let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
+    let mut y_offset = paragraphs_vertical_offset(shape, &layout_paragraphs);
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
             let char_pos = cursor.offset;
@@ -236,7 +236,7 @@ fn calculate_selection_rects(
     let paragraphs = text_content.paragraphs();
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
-    let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
+    let mut y_offset = paragraphs_vertical_offset(shape, &layout_paragraphs);
 
     for (para_idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         let para_height = laid_out_para.height();
