@@ -67,7 +67,15 @@ fn emit_image_fill(
     builder.push_clip_path(&clip_id, shape, tree);
     let href = xml_escape_attr(url);
     let dest_rect = get_image_dest_rect(&shape.selrect(), image_fill);
-    emit_linked_image_element(builder, shape, image_fill, dest_rect, &href, &clip_id);
+    emit_linked_image_element(
+        builder,
+        shape,
+        image_fill,
+        dest_rect,
+        &href,
+        Some(&clip_id),
+        false,
+    );
     Ok(())
 }
 
@@ -136,7 +144,15 @@ fn emit_image_stroke(
 
     let href = xml_escape_attr(url);
     let dest = image_stroke_dest_rect(shape, stroke);
-    emit_linked_image_element(builder, shape, image_fill, dest, &href, &clip_id);
+    emit_linked_image_element(
+        builder,
+        shape,
+        image_fill,
+        dest,
+        &href,
+        Some(&clip_id),
+        false,
+    );
     Ok(())
 }
 
@@ -159,17 +175,24 @@ fn image_stroke_dest_rect(shape: &Shape, stroke: &Stroke) -> MathRect {
     dest
 }
 
-/// Emits `<g clip-path>` + `<image href>` at `dest_rect`, under the page CTM.
+/// Emits `<image href>` at `dest_rect`, under the page CTM.
+///
+/// When `clip_id` is set, wraps the image in `<g clip-path>`. Pass `None` when
+/// the caller already confines the image (e.g. a luminance stroke mask).
+///
+/// When `force_cover` is true, uses `xMidYMid slice` regardless of
+/// `keep_aspect_ratio` — matching GPU text stroke image shaders.
 pub(super) fn emit_linked_image_element(
     builder: &mut SvgLayerCanvas,
     shape: &Shape,
     image_fill: &ImageFill,
     dest_rect: MathRect,
     href: &str,
-    clip_id: &str,
+    clip_id: Option<&str>,
+    force_cover: bool,
 ) {
     let opacity = image_fill.opacity() as f32 / 255.0;
-    let preserve = if image_fill.keep_aspect_ratio() {
+    let preserve = if force_cover || image_fill.keep_aspect_ratio() {
         "xMidYMid slice"
     } else {
         "none"
@@ -182,7 +205,9 @@ pub(super) fn emit_linked_image_element(
         format!(r#" opacity="{opacity}""#)
     };
 
-    builder.open_group(&format!("clip-path=\"url(#{clip_id})\""));
+    if let Some(id) = clip_id {
+        builder.open_group(&format!("clip-path=\"url(#{id})\""));
+    }
     builder.push_raw(&format!(
         r#"<image href="{href}" x="{}" y="{}" width="{}" height="{}" preserveAspectRatio="{preserve}"{opacity_attr} transform="{transform}"/>"#,
         dest_rect.left(),
@@ -190,7 +215,9 @@ pub(super) fn emit_linked_image_element(
         dest_rect.width(),
         dest_rect.height(),
     ));
-    builder.close_group();
+    if clip_id.is_some() {
+        builder.close_group();
+    }
 }
 
 pub(super) fn xml_escape_attr(s: &str) -> String {

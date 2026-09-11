@@ -170,6 +170,21 @@ impl SvgLayerCanvas {
         ));
         id
     }
+
+    /// Finalizes a fragment canvas as a luminance `<mask>` def (white shows,
+    /// black hides). Used for outer text strokes: white canvas minus black
+    /// glyphs keeps only the exterior half of a double-width stroke.
+    pub(super) fn finish_mask_fragment(&mut self, id: &str, canvas: skia::svg::Canvas) {
+        let data = canvas.end();
+        let doc = String::from_utf8_lossy(data.as_bytes());
+        let inner = extract_inner_svg(&doc);
+        let prefix = format!("f{}_", self.frag_no);
+        self.frag_no += 1;
+        let geometry = sanitize_skia_svg_fragment(&remap_ids(inner, &prefix));
+        self.defs.push_str(&format!(
+            "<mask id=\"{id}\" maskUnits=\"userSpaceOnUse\">{geometry}</mask>"
+        ));
+    }
 }
 
 /// Draws a clip geometry into `cv` (already set up with the page transform).
