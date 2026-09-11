@@ -78,6 +78,24 @@
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
 
+(def ^:private sql:defer-unresolvable
+  "UPDATE storage_object
+      SET deleted_at = NOW() + INTERVAL '1 day'
+    WHERE id = ANY(?::uuid[])")
+
+(defn- park-unresolvable!
+  "Refuses to delete rows whose target id is not configured: logs the
+  misconfiguration and pushes `deleted_at` forward so the rows leave the
+  selection window without being deleted and without counting a deletion
+  attempt (they are therefore never subject to the give-up window)."
+  [conn backend-id target ids]
+  (l/err :hint "storage target is not configured, deletion refused"
+         :backend (name backend-id)
+         :target target
+         :ids (mapv str ids))
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:defer-unresolvable ids])))
+
 (defn- process-chunk
   "Attempt to delete a chunk of storage objects from a specific backend.
 
@@ -87,11 +105,11 @@
 
   Returns the number of successfully deleted objects, or 0 if no rows
   could be locked."
-  [conn storage backend-id ids]
+  [conn storage backend-id target ids]
   (if-let [locked-ids (lock-ids conn ids)]
     (let [fail-ids (try
                      (-> (impl/resolve-backend storage backend-id)
-                         (impl/del-objects-in-bulk locked-ids))
+                         (impl/del-objects-in-bulk target locked-ids))
                      (catch Throwable cause
                        (l/err :hint "error on physical deletion, will retry"
                               :ids locked-ids
@@ -118,12 +136,15 @@
       (count ok-ids))
     0))
 
-(defn- group-by-backend
+(defn- group-by-route
   [items]
-  (d/group-by (comp keyword :backend) :id #{} items))
+  (d/group-by (fn [item]
+                [(keyword (:backend item)) (:target item)])
+              :id #{} items))
 
 (def ^:private sql:get-deleted-chunk
-  "SELECT id, backend
+  "SELECT id, backend,
+          coalesce(metadata->>'~:storage-target', 'default') as target
      FROM storage_object
     WHERE deleted_at IS NOT NULL
       AND deleted_at <= ?
@@ -139,19 +160,27 @@
 
 (defn- clean-deleted!
   [cfg]
-  (loop [total 0]
-    (let [deleted (db/tx-run! cfg
-                              (fn [{:keys [::db/conn ::sto/storage]}]
-                                (let [chunk (get-deleted-chunk conn chunk-size)]
-                                  (when (seq chunk)
-                                    (let [by-backend (group-by-backend chunk)]
-                                      (reduce-kv (fn [acc backend-id ids]
-                                                   (+ acc (process-chunk conn storage backend-id ids)))
-                                                 0
-                                                 by-backend))))))]
-      (if deleted
-        (recur (+ total deleted))
-        total))))
+  (loop [deleted 0
+         parked  0]
+    (let [result (db/tx-run! cfg
+                             (fn [{:keys [::db/conn ::sto/storage]}]
+                               (let [chunk (get-deleted-chunk conn chunk-size)]
+                                 (when (seq chunk)
+                                   (let [by-route (group-by-route chunk)]
+                                     (reduce-kv
+                                      (fn [acc [backend-id target] ids]
+                                        (if (sto/target-resolvable? storage backend-id target)
+                                          (update acc :deleted + (process-chunk conn storage backend-id target ids))
+                                          (do
+                                            (park-unresolvable! conn backend-id target ids)
+                                            (update acc :parked + (count ids)))))
+                                      {:deleted 0 :parked 0}
+                                      by-route))))))]
+      (if result
+        (recur (+ deleted (:deleted result))
+               (+ parked (:parked result)))
+        {:deleted deleted
+         :parked  parked}))))
 
 (defmethod ig/assert-key ::handler
   [_ params]
@@ -161,6 +190,7 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [_]
-    (let [total (clean-deleted! cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:deleted total})))
+    (let [{:keys [deleted parked]} (clean-deleted! cfg)]
+      (l/inf :hint "task finished" :total deleted :parked parked)
+      {:deleted deleted
+       :parked  parked})))

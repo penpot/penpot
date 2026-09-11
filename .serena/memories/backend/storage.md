@@ -8,12 +8,29 @@
 - The backend stores the binary content.
 - Supported backends are `:fs` and `:s3`.
 - FS uses one root directory and a UUID-derived path.
-- S3 uses one configured bucket and an optional prefix.
+- S3 uses a default configured bucket and an optional prefix, plus optional named targets.
 - A Penpot bucket is metadata. It is not an S3 bucket or a filesystem directory.
 - FS and S3 use the same UUID-derived object path. The bucket does not change the path.
 - `PENPOT_OBJECTS_STORAGE_*` configures the current object backend.
 - Deprecated asset-storage config keys remain supported for migration.
 - Database rows keep the backend name. Keep the legacy `:assets-fs` and `:assets-s3` aliases.
+
+## S3 Targets and Routing
+
+- The `:s3` backend keeps `storage_object.backend = 's3'`; routing lives inside the backend.
+- Routing maps a Penpot semantic bucket to a named target (own bucket, optional prefix/region/endpoint).
+- Targets are declared in an EDN file referenced by `PENPOT_OBJECTS_STORAGE_S3_ROUTES_FILE` (`app.storage.config/load`).
+- Schema: `{:targets {<id> {:bucket ... :prefix? ... :region? ... :endpoint? ...}} :routes {"<semantic-bucket>" <id>}}`.
+- The reserved `:default` target is implicit and built from `PENPOT_OBJECTS_STORAGE_S3_*`; declared targets inherit missing region/endpoint/prefix from it.
+- Without a routes file, `::sto/bucket->target` is nil and every object uses `:default` (unchanged behavior).
+- The chosen target id is stored in object metadata as `:storage-target` (plain string) by `put-object!`.
+- `app.storage.s3/resolve-target` reads the object metadata; `nil` (legacy) and `"default"` use the default target, an unknown non-nil id raises `:invalid-storage-target` (no fallback) on reads/serving/deletes.
+- `impl/target-resolvable?` (wrapped as `sto/target-resolvable?`) reports whether a target id is configured; `:fs` is always true.
+- GC-deleted and pending-gc refuse to delete rows whose target is not resolvable: they log `:err`, park the row (`deleted_at = now()+1d`, no attempts, no give-up) and never remove it until the target is configured again.
+- `deleted_at` doubles as the pending-gc park marker; the pending selection skips rows whose `deleted_at` is in the future.
+- One S3 client/presigner is built per distinct `[region endpoint]` and shared by targets; a failed init closes the already-built pairs.
+- Target ids are stored in metadata, so they must stay stable; removing one makes its old rows unreadable and unGC-able by design.
+- `:storage-target` metadata is load-bearing: `pending-gc` passes it via `with-meta` so `del-object` resolves the right target.
 
 ## Object Lifecycle
 
@@ -64,7 +81,7 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 ## Deduplication
 
 - Deduplication requires `::sto/deduplicate?`, a content hash, and bucket metadata.
-- The lookup matches hash, bucket, backend, and `deleted_at IS NULL`.
+- The lookup matches hash, bucket, backend, storage target (`:storage-target`, coalesced to `default`), and `deleted_at IS NULL`.
 - The lookup only considers rows with `status='valid'`; pending rows are invisible.
 - A hit whose blob is missing is repaired in place: the same row/id is kept,
   and `put-object!` rewrites the blob under that id. This heals all existing
@@ -93,6 +110,8 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 
 - The valid bucket set lives in `app.storage/valid-buckets`.
 - `file-media-object` is the default bucket for old rows without bucket metadata.
+- Under `:s3`, any valid bucket may be routed to a named target; unrouted buckets use `:default`.
+- GC resolves the target from `metadata.:storage-target` for deleted and pending rows.
 - Do not assign a new bucket without adding its access and cleanup behavior.
 - The touched-object collector raises an internal error for an unknown bucket.
 - It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, and `organization`.

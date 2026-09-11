@@ -34,6 +34,7 @@
    [app.setup :as-alias setup]
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
+   [app.storage.config :as sto.config]
    [app.storage.fs :as-alias sto.fs]
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
@@ -147,6 +148,11 @@
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
     ::mdef/type :histogram}})
+
+(def ^:private storage-routing
+  "Optional S3 storage targets and per semantic-bucket routing. Loaded once
+  from the external routes file. Empty when the feature is not configured."
+  (sto.config/load))
 
 (def system-config
   {::db/pool
@@ -522,7 +528,8 @@
      ;; explicit migration because the database objects/rows will
      ;; still reference the old names).
      :assets-s3 (ig/ref :app.storage.s3/backend)
-     :assets-fs (ig/ref :app.storage.fs/backend)}}
+     :assets-fs (ig/ref :app.storage.fs/backend)}
+    ::sto/bucket->target (:routes storage-routing)}
 
    :app.storage.s3/backend
    {::sto.s3/region     (or (cf/get :storage-assets-s3-region)
@@ -533,6 +540,7 @@
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
                             (cf/get :objects-storage-s3-io-threads))
+    ::sto.s3/targets    (:targets storage-routing)
 
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}

@@ -549,6 +549,51 @@ PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <endpoint-uri>
 These settings are equally useful if you have a Minio storage system.
 </p>
 
+#### S3 targets and per-bucket routing
+
+__Since version 2.19.0__
+
+By default the S3 backend stores every object in the configured bucket. You can
+route specific internal semantic buckets (for example `tempfile` or `file-data`)
+to additional S3 targets. Each target has its own bucket and, optionally, its
+own key prefix, region and endpoint.
+
+Targets and routing are declared in an external EDN file referenced by the
+`PENPOT_OBJECTS_STORAGE_S3_ROUTES_FILE` environment variable:
+
+```clojure
+{:targets
+ {:temp {:bucket "penpot-temp"}
+  :cold {:bucket "penpot-cold"
+         :region :us-east-1
+         :endpoint "https://s3.us-east-1.amazonaws.com"
+         :prefix "objects/"}}
+ :routes
+ {"tempfile" :temp
+  "file-data" :temp}}
+```
+
+- `:targets` declares the named destinations. `:bucket` is required; `:prefix`,
+  `:region` and `:endpoint` are optional and inherit the values from the default
+  target (`PENPOT_OBJECTS_STORAGE_S3_*`) when omitted.
+- `:routes` maps a Penpot semantic bucket to a target id. Semantic buckets that
+  are not listed use the default target (the configured
+  `PENPOT_OBJECTS_STORAGE_S3_BUCKET`).
+- The `:default` target id is reserved and implicit; do not declare it.
+- The file is optional and only applies to the `s3` backend. Without it, all
+  objects use the default bucket and the behavior is unchanged.
+
+The target id is stored in the object metadata, so it must stay stable. If you
+remove or rename a target id, objects already written with it cannot be located:
+reads and serving of those objects fail, and the garbage-collection tasks refuse
+to delete them. Those rows are parked for one day and retried on later runs,
+without counting deletion attempts and without ever reaching the give-up window,
+so the row is never removed until the routes file declares the target id again.
+
+All backend replicas must mount the same routes file with the same target ids. A
+replica with a stale file misroutes new writes and fails reads and garbage
+collection for the targets it does not declare.
+
 ### File Data Storage
 
 __Since version 2.11.0__

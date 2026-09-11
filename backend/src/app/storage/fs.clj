@@ -141,7 +141,7 @@
     (Files/deleteIfExists ^Path path)))
 
 (defmethod impl/del-objects-in-bulk :fs
-  [backend ids]
+  [backend _target ids]
   (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))]
     (reduce (fn [fail-ids id]
@@ -152,4 +152,8 @@
                   (catch Throwable _
                     (conj fail-ids id)))))
             #{} ids)))
+
+(defmethod impl/target-resolvable? :fs
+  [_backend _target]
+  true)
 
