@@ -710,7 +710,7 @@
                                  :components
                                  vals
                                  (remove #(true? (:deleted %)))
-                                 (remove #(cfv/is-secondary-variant? % current-lib-data))
+                                 (remove #(cfv/is-secondary-variant? current-lib-data %))
                                  (map #(assoc % :full-name (cpn/merge-path-item-with-dot (:path %) (:name %)))))
 
         count-variants      (fn [component]

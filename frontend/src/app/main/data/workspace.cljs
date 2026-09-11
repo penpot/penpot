@@ -1208,26 +1208,30 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id   (:current-file-id state)
-            fdata     (dsh/lookup-file-data state file-id)
-            component (cfv/get-primary-component fdata component-id)
-            cpath     (:path component)
-            cpath     (cpn/split-path cpath)
-            paths     (map (fn [i] (cpn/join-path (take (inc i) cpath)))
-                           (range (count cpath)))]
+      (let [file-id           (:current-file-id state)
+            fdata             (dsh/lookup-file-data state file-id)
+            component         (ctkl/get-component fdata component-id)
+            primary-variant   (cfv/get-primary-variant fdata component)
+            primary-component (ctkl/get-component fdata (:component-id primary-variant))
+            cpath             (:path primary-component)
+            cpath             (cpn/split-path cpath)
+            paths             (map (fn [i] (cpn/join-path (take (inc i) cpath)))
+                                   (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (dcm/go-to-workspace :layout :assets)
                 (set-assets-section-open file-id :library true)
                 (set-assets-section-open file-id :components true)
-                (select-single-asset file-id (:id component) :components)))))
+                (select-single-asset file-id (:id primary-component) :components)))))
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [file-id   (:current-file-id state)
-            fdata     (dsh/lookup-file-data state file-id)
-            component (cfv/get-primary-component fdata component-id)
-            wrapper-id (str "component-shape-id-" (:id component))]
+      (let [file-id           (:current-file-id state)
+            fdata             (dsh/lookup-file-data state file-id)
+            component         (ctkl/get-component fdata component-id)
+            primary-variant   (cfv/get-primary-variant fdata component)
+            primary-component (ctkl/get-component fdata (:component-id primary-variant))
+            wrapper-id        (str "component-shape-id-" (:id primary-component))]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

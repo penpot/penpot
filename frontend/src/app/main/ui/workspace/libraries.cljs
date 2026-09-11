@@ -55,7 +55,7 @@
         graphics     0
         typographies (count (:typographies data))
         components   (count (->> (ctkl/components-seq data)
-                                 (remove #(cfv/is-secondary-variant? % data))))
+                                 (remove #(cfv/is-secondary-variant? data %))))
         empty?       (and (zero? components)
                           (zero? graphics)
                           (zero? colors)

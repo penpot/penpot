@@ -216,6 +216,41 @@
     :else
     (get-instance-root objects (get objects (:parent-id shape)))))
 
+(defn get-all-instance-roots
+  "Given a list of shape ids and an objects tree, returns a set with the ids of
+  all instance roots that are at, above or below any of the shapes identified by
+  the given list. An instance root is a shape that has :component-root set to
+  true (checked by ctk/instance-root?). There is at most one instance root in
+  any subtree rooted at an instance root, so the downward search stops at the
+  first instance root found in each branch. Uses a visited set to avoid
+  reprocessing the same shapes."
+  [objects shape-ids]
+  (let [visited (atom #{})
+        result  (atom #{})]
+    (letfn [(search-up [shape-id]
+              (when-not (contains? @visited shape-id)
+                (swap! visited conj shape-id)
+                (let [shape (get objects shape-id)]
+                  (when-not (nil? shape)
+                    (if (ctk/instance-root? shape)
+                      (swap! result conj (:id shape))
+                      (when-not (cfh/root? shape)
+                        (when-let [parent-id (:parent-id shape)]
+                          (search-up parent-id))))))))
+            (search-down [shape-id]
+              (when-not (contains? @visited shape-id)
+                (swap! visited conj shape-id)
+                (let [shape (get objects shape-id)]
+                  (when-not (nil? shape)
+                    (if (ctk/instance-root? shape)
+                      (swap! result conj (:id shape))
+                      (doseq [child-id (:shapes shape)]
+                        (search-down child-id)))))))]
+      (doseq [shape-id shape-ids]
+        (search-up shape-id)
+        (search-down shape-id))
+      @result)))
+
 (defn find-component-main
   "If the shape is a component main instance or is inside one, return that instance.
    Uses an iterative loop with cycle detection to prevent stack overflow on circular
