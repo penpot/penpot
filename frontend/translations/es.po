@@ -3199,6 +3199,22 @@ msgstr ""
 "Penpot no está disponible temporalmente debido a un problema del sistema. "
 "Por favor, inténtalo de nuevo en unos momentos."
 
+#: src/app/main/ui/static.cljs:344
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot no puede iniciarse aún."
+
+#: src/app/main/ui/static.cljs:345
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr "Esta instancia requiere un paso de configuración que se incluye en la versión más reciente."
+
+#: src/app/main/ui/static.cljs:346
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Echa un vistazo a nuestra"
+
+#: src/app/main/ui/static.cljs:346
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "technical guide"
+
 #: src/app/main/ui/dashboard/comments.cljs:120, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "¡Ya estás al día! Nuevas notificaciones de comentarios aparecerán aquí."
