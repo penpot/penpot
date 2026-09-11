@@ -14,6 +14,7 @@ Center](https://help.penpot.app/).
 - [Reporting Bugs](#reporting-bugs)
 - [Pull Requests](#pull-requests)
   - [Workflow](#workflow)
+  - [Branch naming](#branch-naming)
   - [Format](#format)
     - [Title format](#title-format)
     - [Description](#description)
@@ -72,6 +73,18 @@ Advisories](https://github.com/penpot/penpot/security/advisories)
    filing an issue first so we can track it independently of your fix.
 4. **Format and lint** — run the checks described in
    [Formatting and Linting](#formatting-and-linting) before submitting.
+
+### Branch naming
+
+Branch names are not enforced, but we recommend the following:
+
+- **`issue-NNNN`** — when working from a GitHub issue, name the branch after
+  it (e.g. `issue-11525`). This makes each PR's origin self-evident.
+- Otherwise, use a short, descriptive name with words separated by hyphens
+  and no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
+
+Since PRs are squash-merged, the branch name does not survive into the
+commit history — what matters is the [PR title](#title-format).
 
 ### Format
 
@@ -175,7 +188,10 @@ Commit messages must follow this format:
 - Add clear and concise description on the body
 - Do not end the subject with a period
 - Keep the subject to **70 characters** or fewer
+- **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+
+You can check a commit against these rules with `./scripts/check-commit`.
 
 ### Examples
 

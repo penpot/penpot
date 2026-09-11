@@ -40,12 +40,14 @@
 
       ;; FIXME: inconsistent with comment-thread: owner
       :user
-      {:get #(->> (dc/get-owner data)
-                  (user/user-proxy plugin-id))}
+      {:get #(when (r/check-permission plugin-id "user:read")
+               (->> (dc/get-owner data)
+                    (user/user-proxy plugin-id)))}
 
       :owner
-      {:get #(->> (dc/get-owner data)
-                  (user/user-proxy plugin-id))}
+      {:get #(when (r/check-permission plugin-id "user:read")
+               (->> (dc/get-owner data)
+                    (user/user-proxy plugin-id)))}
 
       :date
       {:get
@@ -116,8 +118,9 @@
       :board {:get #(shape/shape-proxy plugin-id file-id page-id (:frame-id data))}
 
       :owner
-      {:get #(->> (dc/get-owner data)
-                  (user/user-proxy plugin-id))}
+      {:get #(when (r/check-permission plugin-id "user:read")
+               (->> (dc/get-owner data)
+                    (user/user-proxy plugin-id)))}
 
       :position
       {:get

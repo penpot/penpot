@@ -339,6 +339,9 @@
 
 ;; --- Chunked Upload: Upload a single chunk
 
+(declare ^:private get-upload-chunk)
+(declare ^:private check-upload-chunk-slot)
+
 (def ^:private schema:upload-chunk
   [:map {:title "upload-chunk"}
    [:session-id ::sm/uuid]
@@ -354,9 +357,31 @@
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
-  [{:keys [::db/pool] :as cfg}
-   {:keys [::rpc/profile-id session-id index content] :as _params}]
-  (let [session (db/get pool :upload-session {:id session-id :profile-id profile-id})]
+  [cfg {:keys [::rpc/profile-id session-id index content]}]
+  (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
+    (l/trc :hint "upload-chunk"
+           :session-id session-id
+           :chunk (str index "/" (:total-chunks session))
+           :size (:size content)
+           :path (:path content))
+
+    (let [storage (sto/resolve cfg)
+          data    (sto/content (:path content))]
+      (sto/put-object! storage
+                       {::sto/content      data
+                        ::sto/deduplicate? false
+                        ::sto/touch        true
+                        :content-type      (:mtype content)
+                        :bucket            sto/tempfile-bucket
+                        :upload-id         (str session-id)
+                        :chunk-index       index}))
+
+    {:session-id session-id
+     :index      index}))
+
+(defn- check-upload-chunk-slot
+  [{:keys [::db/conn]} session-id profile-id index content]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id} {::db/for-update true})]
     (when (or (neg? index) (>= index (:total-chunks session)))
       (ex/raise :type :validation
                 :code :invalid-chunk-index
@@ -365,26 +390,23 @@
                 :total-chunks (:total-chunks session)
                 :index index))
 
+    (when (> (:size content) (cf/get :upload-max-chunk-size))
+      (ex/raise :type :validation
+                :code :chunk-too-large
+                :hint "chunk size exceeds the maximum allowed"
+                :session-id session-id
+                :index index
+                :size (:size content)
+                :max-size (cf/get :upload-max-chunk-size)))
 
-    (l/trc :hint "upload-chunk"
-           :session-id session-id
-           :chunk (str index "/" (:total-chunks session))
-           :size (:size content)
-           :path (:path content)))
+    (when (get-upload-chunk conn session-id index)
+      (ex/raise :type :validation
+                :code :duplicate-chunk-index
+                :hint "chunk index already uploaded for this session"
+                :session-id session-id
+                :index index))
 
-  (let [storage (sto/resolve cfg)
-        data    (sto/content (:path content))]
-    (sto/put-object! storage
-                     {::sto/content      data
-                      ::sto/deduplicate? false
-                      ::sto/touched-at   (ct/in-future {:hours 1})
-                      :content-type      (:mtype content)
-                      :bucket            sto/tempfile-bucket
-                      :upload-id         (str session-id)
-                      :chunk-index       index}))
-
-  {:session-id session-id
-   :index      index})
+    session))
 
 ;; --- Chunked Upload: shared helpers
 
@@ -399,6 +421,18 @@
 (defn- get-upload-chunks
   [conn session-id]
   (db/exec! conn [sql:get-upload-chunks (str session-id)]))
+
+(def ^:private sql:get-upload-chunk
+  "SELECT id
+     FROM storage_object
+    WHERE (metadata->>'~:upload-id') = ?::text
+      AND (metadata->>'~:chunk-index')::integer = ?
+      AND deleted_at IS NULL
+    LIMIT 1")
+
+(defn- get-upload-chunk
+  [conn session-id index]
+  (db/exec-one! conn [sql:get-upload-chunk (str session-id) index]))
 
 (defn- concat-chunks
   "Reads all chunk storage objects in order and writes them to a single
@@ -418,18 +452,21 @@
   conforming to `media.v/schema:upload` with `:filename`, `:path` and
   `:size`.
 
-  Raises a :validation/:missing-chunks error when the number of stored
-  chunks does not match `:total-chunks` recorded in the session row.
+  Raises a :validation/:missing-chunks error when the stored chunk
+  indices do not form exactly the `0..total-chunks` range recorded in
+  the session row (wrong count, gaps or duplicates).
   Raises :not-found when the session does not belong to `profile-id`.
   Deletes the session row from `upload_session` on success."
   [{:keys [::db/conn] :as cfg} profile-id session-id]
   (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})
-        chunks  (get-upload-chunks conn session-id)]
+        chunks  (get-upload-chunks conn session-id)
+        indices (sort (map :chunk-index chunks))]
 
-    (when (not= (count chunks) (:total-chunks session))
+    (when (or (not= (count chunks) (:total-chunks session))
+              (not= indices (range (:total-chunks session))))
       (ex/raise :type :validation
                 :code :missing-chunks
-                :hint "number of stored chunks does not match expected total"
+                :hint "stored chunks do not match expected total"
                 :session-id session-id
                 :expected   (:total-chunks session)
                 :found      (count chunks)))

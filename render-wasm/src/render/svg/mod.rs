@@ -8,7 +8,8 @@ use crate::shapes::{Shape, Type};
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
-use super::vector::{render_leaf_content, VectorRenderer};
+use super::shape_renderer::ShapeRenderer;
+use super::vector::VectorRenderer;
 use super::RenderResources;
 
 /// Collects the registered font aliases used by every text span in the subtree
@@ -59,8 +60,10 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// composed as native SVG `<g>` wrappers. Frame `clip content` uses a native
 /// `<clipPath>`.
 ///
-/// Special-case re-emission for shadows, layer blur, masks, text strokes, and
-/// deferred strokes is intentionally out of scope for this cut.
+/// Layer blur and drop/inner shadows are re-emitted as a native SVG `<filter>`
+/// wrapper. Masks and text strokes still need dedicated SVG re-emission.
+/// Solid Inner/Outer and dotted/dashed strokes go out as filled outlines;
+/// image-filled strokes use a linked `<image>` clipped to the stroke.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
@@ -124,6 +127,7 @@ pub(crate) fn render_tree_to_svg(
 mod document;
 mod frames;
 mod groups;
+mod images;
 mod text;
 
 use document::SvgLayerCanvas;
@@ -131,7 +135,8 @@ use frames::render_frame;
 use groups::render_group;
 use text::render_text_fill;
 
-use document::effect_attrs;
+use document::{effect_attrs, push_text_silhouette_spread_filter, shape_with_selrect_outset};
+use images::{emit_fills, emit_strokes};
 
 /// Renders `id`'s subtree to an SVG body, returning `(defs, body)`.
 fn render_body(
@@ -171,7 +176,7 @@ fn render_tree(
         | Type::Path(_)
         | Type::Bool(_)
         | Type::Text(_)
-        | Type::SVGRaw(_) => render_leaf(builder, shared, element, scale),
+        | Type::SVGRaw(_) => render_leaf(builder, shared, element, tree, scale),
     }
 }
 
@@ -179,24 +184,68 @@ fn render_leaf(
     builder: &mut SvgLayerCanvas,
     shared: &mut RenderResources,
     element: &Shape,
+    tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
-    let effects = effect_attrs(element);
+    let effects = effect_attrs(builder, element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
     }
 
     {
+        let spread = builder.silhouette_spread;
+        // Spread outsets fills only (GPU). Rect/Frame strokes ignore outset.
+        // Text keeps its selrect: GPU dilates shadow alpha, not layout bounds.
+        let fill_shape = shape_with_selrect_outset(element, spread);
+        // Always from the original element (not outset selrect) so the pivot
+        // matches content; offset comes from the parent silhouette pass.
+        let draw_matrix = builder.silhouette_draw_matrix(element);
         if matches!(element.shape_type, Type::Text(_)) {
-            render_text_fill(builder, element)?;
-        } else {
-            let matrix = element.centered_transform();
+            // See `push_text_silhouette_spread_filter`: morph-before-blur approx
+            // of GPU dilate(drop_shadow) for inherited container spread.
+            let morph_id = push_text_silhouette_spread_filter(builder, spread);
+            if let Some(id) = &morph_id {
+                builder.open_group(&format!("filter=\"url(#{id})\""));
+            }
+            render_text_fill(builder, shared, element, draw_matrix)?;
+            if morph_id.is_some() {
+                builder.close_group();
+            }
+        } else if matches!(element.shape_type, Type::SVGRaw(_)) {
             let canvas = builder.canvas();
             canvas.save();
-            canvas.concat(&matrix);
+            canvas.concat(&draw_matrix);
             let mut renderer = VectorRenderer::new(canvas, shared, scale, false);
-            render_leaf_content(&mut renderer, element)?;
+            renderer.draw_svg(element)?;
             canvas.restore();
+        } else {
+            emit_fills(
+                builder,
+                shared,
+                &fill_shape,
+                &fill_shape.fills,
+                tree,
+                scale,
+                Some(draw_matrix),
+            )?;
+
+            // Drop/inner shadows are native SVG filters on the effects `<g>` —
+            // do not draw them via Skia image-filters (SkSVGDevice drops them).
+
+            // Stroke geometry stays on the original selrect (GPU Rect/Frame
+            // drop-shadow outset is a no-op for single strokes). Image strokes
+            // go through emit_strokes (linked <image> + stroke clip).
+            let visible_strokes: Vec<_> = element.visible_strokes().collect();
+            if !visible_strokes.is_empty() {
+                emit_strokes(
+                    builder,
+                    shared,
+                    element,
+                    &visible_strokes,
+                    scale,
+                    Some(draw_matrix),
+                )?;
+            }
         }
     }
 

@@ -390,18 +390,26 @@
 
 (def ^:private sql:file-comment-users
   "WITH available_profiles AS (
-     SELECT DISTINCT owner_id AS id
-       FROM comment
-      WHERE thread_id IN (SELECT id FROM comment_thread WHERE file_id=?)
+     SELECT DISTINCT c.owner_id AS id
+     FROM comment c
+     JOIN comment_thread ct
+       ON ct.id = c.thread_id
+    WHERE ct.file_id = ?::uuid
+  ),
+  profile_ids AS (
+    SELECT id FROM available_profiles
+    UNION
+    SELECT ?::uuid
   )
   SELECT p.id,
          p.email,
          p.fullname AS name,
-         p.fullname AS fullname,
+         p.fullname,
          p.photo_id,
          p.is_active
-    FROM profile AS p
-   WHERE p.id IN (SELECT id FROM available_profiles) OR p.id=?")
+    FROM profile p
+    JOIN profile_ids AS x
+      ON x.id = p.id;")
 
 (defn get-file-comments-users
   [conn file-id profile-id]

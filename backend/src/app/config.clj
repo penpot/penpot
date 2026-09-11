@@ -58,6 +58,7 @@
    :objects-storage-fs-directory "assets"
 
    :auth-token-cookie-name "auth-token"
+   :auth-token-cookie-max-age-absolute (ct/duration {:days 30})
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -91,6 +92,7 @@
 
    :quotes-upload-sessions-per-profile 5
    :quotes-upload-chunks-per-session 20
+   :upload-max-chunk-size (* 1024 1024 30) ; 30MiB
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
@@ -202,10 +204,12 @@
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
     [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
     [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
+    [:upload-max-chunk-size {:optional true} ::sm/int]
     [:quotes-media-storage-bytes-per-team {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
+    [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]

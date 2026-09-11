@@ -1,0 +1,16 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="144" viewBox="0 0 200 144"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="200" height="144" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.54901963 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter><clipPath id="clip1" clipPathUnits="userSpaceOnUse">
+	<rect transform="translate(0 24)" width="200" height="120"/>
+</clipPath><clipPath id="clip2" clipPathUnits="userSpaceOnUse">
+	<rect width="200" height="120"/>
+</clipPath></defs><g filter="url(#fx0)"><g clip-path="url(#clip1)">
+	<rect fill="#F0F0F0" transform="translate(0 24)" width="200" height="120"/>
+	<rect fill="#00C800" transform="translate(0 24)" x="20" y="20" width="160" height="80"/>
+</g></g><g clip-path="url(#clip2)">
+	<rect fill="#F0F0F0" width="200" height="120"/>
+	<rect fill="#00C800" x="20" y="20" width="160" height="80"/>
+</g></svg>

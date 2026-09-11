@@ -940,18 +940,21 @@
                              (not= :close-path (:command c))))]
     (loop [i      0
            k      0
+           start  nil
            result (transient [])]
       (if (>= i n)
         (persistent! result)
         (let [cmd   (nth content i)
               nxt   (nth content (inc i) nil)
+              move? (= :move-to (:command cmd))
+              start (if move? (helpers/segment->point cmd) start)
               at-p? (and (not= :close-path (:command cmd))
                          (gpt/close? point (helpers/segment->point cmd)))]
           (cond
             ;; Offset a subpath start.
-            (and at-p? (= :move-to (:command cmd)))
+            (and at-p? move?)
             (let [off (gpt/point (* k ox) (* k oy))]
-              (recur (inc i) (inc k)
+              (recur (inc i) (inc k) start
                      (conj! result (-> cmd
                                        (update-in [:params :x] + (:x off))
                                        (update-in [:params :y] + (:y off))))))
@@ -972,7 +975,7 @@
                          (= :curve-to (:command nxt))
                          (-> (update-in [:params :c1x] + (:x off2))
                              (update-in [:params :c1y] + (:y off2))))]
-              (recur (+ i 2) (inc k2)
+              (recur (+ i 2) (inc k2) start
                      (-> result (conj! cmd') (conj! mv) (conj! nxt'))))
 
             ;; Open and offset a closed seam.
@@ -985,12 +988,20 @@
                          (-> (update-in [:params :c2x] + (:x off))
                              (update-in [:params :c2y] + (:y off))))]
               ;; Drop the close command so the seam stays open.
-              (recur (+ i 2) (inc k) (conj! result cmd')))
+              (recur (+ i 2) (inc k) start (conj! result cmd')))
+
+            ;; Open the seam of a subpath that closes back onto the node.
+            (and (= :close-path (:command cmd))
+                 (some? start)
+                 (gpt/close? point start))
+            (let [off (gpt/point (* k ox) (* k oy))]
+              (recur (inc i) (inc k) start
+                     (conj! result (helpers/make-line-to (gpt/add point off)))))
 
             ;; Offset the end of an open subpath.
             (and at-p? (seg? cmd) (not= :close-path (:command nxt)))
             (let [off (gpt/point (* k ox) (* k oy))]
-              (recur (inc i) (inc k)
+              (recur (inc i) (inc k) start
                      (conj! result (cond-> (-> cmd
                                                (update-in [:params :x] + (:x off))
                                                (update-in [:params :y] + (:y off)))
@@ -999,7 +1010,7 @@
                                          (update-in [:params :c2y] + (:y off)))))))
 
             :else
-            (recur (inc i) k (conj! result cmd))))))))
+            (recur (inc i) k start (conj! result cmd))))))))
 
 (defn separate-nodes
   "Removes segments between points or splits one node into offset open ends."
@@ -1072,7 +1083,7 @@
 
             result (cond-> result
                      (and (nil? set-a) (nil? set-b))
-                     (conj #{point-a point-b})
+                     (conj (hash-set point-a point-b))
 
                      (and (some? set-a) (nil? set-b))
                      (add-to-set set-a point-b)
@@ -1108,6 +1119,144 @@
     (->> content
          (mapv replace-command))))
 
+(defn- remove-empty-segments
+  "Drops segments with no length whose ends are accepted by `at-point?`."
+  [content at-point?]
+  (loop [result    (transient [])
+         prev      nil
+         segments? false
+         pending   (seq content)]
+    (if-let [{:keys [command] :as segment} (first pending)]
+      (let [close?  (= :close-path command)
+            move?   (= :move-to command)
+            point   (when-not close? (helpers/segment->point segment))
+            ;; A close command on a subpath without segments draws nothing.
+            empty?  (if close?
+                      (not segments?)
+                      (and (not move?)
+                           (some? prev)
+                           (gpt/close? prev point)
+                           (at-point? point)))]
+        (if empty?
+          (recur result prev segments? (next pending))
+          (recur (conj! result segment)
+                 (if close? nil point)
+                 (not (or move? close?))
+                 (next pending))))
+      (persistent! result))))
+
+(defn- point-key
+  "Rounded coordinates of a point, usable as a map key."
+  [point]
+  [(mth/round (:x point) 0.1) (mth/round (:y point) 0.1)])
+
+(defn- curve-key
+  "Key for the curve a segment draws, equal in either direction."
+  [from segment to]
+  (let [c1  (or (get-handler segment :c1) from)
+        c2  (or (get-handler segment :c2) to)
+        fwd [(point-key from) (point-key c1) (point-key c2) (point-key to)]
+        bwd [(point-key to) (point-key c2) (point-key c1) (point-key from)]]
+    (if (neg? (compare fwd bwd)) fwd bwd)))
+
+(defn- node-point-groups
+  "Node positions of the content grouped by their rounded coordinates."
+  [content]
+  (group-by point-key
+            (into []
+                  (comp (remove #(= :close-path (:command %)))
+                        (map helpers/segment->point))
+                  content)))
+
+(defn- coincident-points
+  "Positions of the content that more than one command holds."
+  [content]
+  (into #{}
+        (comp (filter (fn [[_ points]] (> (count points) 1)))
+              (map (fn [[_ points]] (first points))))
+        (node-point-groups content)))
+
+(defn- repeated-nodes
+  "Rounded positions accepted by `at-point?` that more than one command holds."
+  [content at-point?]
+  (into #{}
+        (comp (filter (fn [[_ points]]
+                        (and (> (count points) 1)
+                             (at-point? (first points)))))
+              (map key))
+        (node-point-groups content)))
+
+(defn- resume-segment
+  "Commands that reopen the subpath at `from` and draw `segment` from there."
+  [from segment start]
+  (if (= :close-path (:command segment))
+    (when-not (subpath/pt= from start)
+      [(helpers/make-move-to from) (helpers/make-line-to start)])
+    [(helpers/make-move-to from) segment]))
+
+(defn- remove-retraced-segments
+  "Drops the segments that draw a curve already drawn through a node.
+
+  A node held by several commands is a junction, but two segments meeting
+  there and drawing the same curve are one line traced twice."
+  [content at-point?]
+  (let [repeated  (repeated-nodes content at-point?)
+        retraced? (fn [from to]
+                    (or (contains? repeated (point-key from))
+                        (contains? repeated (point-key to))))]
+    (if (empty? repeated)
+      content
+      (loop [result  (transient [])
+             pending (seq content)
+             drawn   #{}
+             from    nil
+             start   nil
+             lifted? false]
+        (if-let [{:keys [command] :as segment} (first pending)]
+          (if (= :move-to command)
+            (let [point (helpers/segment->point segment)]
+              (recur (conj! result segment) (next pending) drawn point point false))
+            (let [to  (if (= :close-path command)
+                        start
+                        (helpers/segment->point segment))
+                  key (curve-key from segment to)]
+              (if (and (contains? drawn key)
+                       (retraced? from to))
+                (recur result (next pending) drawn to start true)
+                (recur (reduce conj! result (if lifted?
+                                              (resume-segment from segment start)
+                                              [segment]))
+                       (next pending) (conj drawn key) to start false))))
+          (persistent! result))))))
+
+(defn merge-coincident-nodes
+  "Collapses the commands sharing a position at `points` into a single node.
+
+  Drops the empty segments and the ones retracing another through such a
+  point, and stitches the subpath ends meeting there, closing the resulting
+  loops. A point where more than two distinct segments meet is left alone: the
+  format needs one command per segment there. Without `points` every position
+  held by more than one command is merged."
+  ([content]
+   (merge-coincident-nodes content (coincident-points content)))
+  ([content points]
+   (let [at-point? (fn [point] (some #(gpt/close? point %) points))
+
+         stitch    (fn [content]
+                     (-> content
+                         (subpath/close-subpaths at-point?)
+                         ;; A subpath whose ends meet carries an explicit close command.
+                         (subpath/close-loops)))
+
+         content   (-> (vec content)
+                       (remove-empty-segments at-point?)
+                       (stitch))
+
+         retraced  (remove-retraced-segments content at-point?)]
+     (if (= retraced content)
+       content
+       (stitch retraced)))))
+
 (defn merge-nodes
   "Joins and merges `points` into one point."
   [content points]
@@ -1116,10 +1265,12 @@
     (if (seq segments)
       (let [point->merge-point (-> segments
                                    (group-segments)
-                                   (calculate-merge-points points))]
+                                   (calculate-merge-points points))
+            merge-points       (set (vals point->merge-point))]
         (-> content
             (separate-nodes points)
-            (replace-points point->merge-point)))
+            (replace-points point->merge-point)
+            (merge-coincident-nodes merge-points)))
       content)))
 
 (defn transform-content

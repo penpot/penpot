@@ -1,4 +1,4 @@
+storeDir: ../.pnpm-store
+
 allowBuilds:
   esbuild: true
-onlyBuiltDependencies:
-  - esbuild

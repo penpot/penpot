@@ -25,6 +25,7 @@
    [app.common.uuid :as uuid]
    ;; Required for side effects: binds the generated enums.
    [app.wasm.enums]
+   [cuerdas.core :as str]
    [promesa.core :as p]
    [shadow.esm :refer [dynamic-import]]))
 
@@ -189,6 +190,22 @@
     (not (zero? (h/call wasm/internal-module "_is_image_cached"
                         (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
                         false)))))
+
+(defn store-image-url!
+  "Registers the public URL an image was loaded from. The SVG export emits
+  linked `<image href>` from these, and falls back to Skia base64 when missing,
+  so this should run for every media id the scene references (including
+  already-cached images).
+
+  Does NOT call `mem/free`, for the same reason as `store-font-url!`."
+  [image-id url]
+  (when (and (some? url) (not (str/blank? url)))
+    (let [bytes (js/Buffer.from url "utf-8")
+          ptr   (mem/alloc (.-byteLength bytes))
+          quart (uuid/get-u32 image-id)]
+      (mem/write-buffer ptr (mem/get-heap-u8) bytes)
+      (h/call wasm/internal-module "_store_image_url"
+              (aget quart 0) (aget quart 1) (aget quart 2) (aget quart 3)))))
 
 (defn store-image!
   "Uploads one image's *encoded* bytes (PNG/JPEG — Skia decodes, no WebGL) into

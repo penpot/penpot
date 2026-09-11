@@ -609,3 +609,109 @@ test("Renders background blur under strokes on rects, paths and texts", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders background blur clipped by a board with clip content", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-background-blur-clip.json");
+
+  await workspace.goToWorkspace({
+    id: "77d38721-22c1-81f4-8008-9a2a3e7ce674",
+    pageId: "77d38721-22c1-81f4-8008-9a2a3e7ce675",
+    pageName: "bg-blur-clip",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Clips a group dragged into a board with clip content", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-shapes-groups-boards.json");
+
+  await workspace.goToWorkspace({
+    id: "53a7ff09-2228-81d3-8006-4b5eac177245",
+    pageId: "53a7ff09-2228-81d3-8006-4b5eac177246",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  // Select the group, then drag it so it straddles the right edge of the
+  // board. The overflow must not be painted while the pointer is still down.
+  await workspace.viewport.hover({ position: { x: 1028, y: 548 } });
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+
+  await page.mouse.down();
+  for (const [x, y] of [
+    [1000, 540],
+    [920, 530],
+    [830, 520],
+  ]) {
+    await workspace.viewport.hover({ position: { x, y } });
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(600);
+
+  await expect(workspace.canvas).toHaveScreenshot();
+
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Clips a group dragged inside a board with clip content", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-shapes-groups-boards.json");
+
+  await workspace.goToWorkspace({
+    id: "53a7ff09-2228-81d3-8006-4b5eac177245",
+    pageId: "53a7ff09-2228-81d3-8006-4b5eac177246",
+  });
+  await workspace.waitForFirstRenderWithoutUI();
+
+  await workspace.viewport.hover({ position: { x: 1028, y: 548 } });
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+
+  // Drop the group inside the board so it becomes one of its children.
+  await page.mouse.down();
+  for (const [x, y] of [
+    [900, 540],
+    [700, 520],
+  ]) {
+    await workspace.viewport.hover({ position: { x, y } });
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(600);
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+
+  // Drag it towards the right edge, now as a board child.
+  await page.mouse.down();
+  for (const [x, y] of [
+    [750, 520],
+    [830, 520],
+  ]) {
+    await workspace.viewport.hover({ position: { x, y } });
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(600);
+
+  await expect(workspace.canvas).toHaveScreenshot();
+
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

@@ -272,6 +272,20 @@
               -1))))
       items))))
 
+(defn- clipped-by-ancestor?
+  "Checks whether position falls outside the visible (clipped) bounds of
+  some ancestor frame with clip content enabled. Used so that a nested
+  frame that extends beyond a clipping ancestor's own bounds is never
+  considered hit/reachable in the invisible, clipped-away region."
+  [objects shape position]
+  (->> (cfh/get-parent-ids objects (dm/get-prop shape :id))
+       (keep (d/getf objects))
+       (some (fn [ancestor]
+               (and (not= (dm/get-prop ancestor :id) uuid/zero)
+                    ^boolean (cfh/frame-shape? ancestor)
+                    (not (:show-content ancestor))
+                    (not ^boolean (gsh/has-point? ancestor position)))))))
+
 (defn get-frame-by-position
   ([objects position]
    (get-frame-by-position objects position nil))
@@ -287,6 +301,7 @@
          validator (or (get options :validator) #(-> true))]
      (or (d/seek #(and ^boolean (some? position)
                        ^boolean (gsh/has-point? % position)
+                       ^boolean (not (clipped-by-ancestor? objects % position))
                        ^boolean (validator %))
                  frames)
          (get objects uuid/zero)))))
@@ -302,7 +317,8 @@
   ([objects position options]
    (->> (get-frames objects options)
         (filter #(and ^boolean (some? position)
-                      ^boolean (gsh/has-point? % position)))
+                      ^boolean (gsh/has-point? % position)
+                      ^boolean (not (clipped-by-ancestor? objects % position))))
         (sort-z-index-objects objects))))
 
 (defn top-nested-frame

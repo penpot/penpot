@@ -18,7 +18,6 @@
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
    [app.util.i18n :refer [tr]]
-   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -43,11 +42,14 @@
 (defn- validate-typography-token
   [{:keys [token-value] :as props}]
   (cond
-    ;; Entering form without a value - show no error just resolve nil
-    (nil? token-value) (rx/of nil)
     ;; Validate refrence string
     (cto/composite-token-reference? token-value) (default-validate-token props)
-    ;; Validate composite token
+    ;; Validate composite token. `token-value` may be nil when the form is
+    ;; submitted without any composite field filled in — normalize it to `{}`
+    ;; so `check-empty-typography-token` catches it and rejects the submit,
+    ;; instead of silently saving a token with a `nil` value (which later
+    ;; crashes token resolution: the tokens-studio StyleDictionary
+    ;; preprocessor assumes a typography token's value is never null).
     :else
     (-> props
         (update :token-value

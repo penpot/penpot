@@ -49,7 +49,8 @@
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "open-current-subscription"
-                                ::ev/origin "dashboard:plan-confirmation-modal"}))))
+                                ::ev/origin "dashboard:plan-confirmation-modal"}))
+           (modal/hide!)))
 
         on-close
         (mf/use-fn
@@ -118,8 +119,8 @@
               (tr "nitrate.form.contact-upgrade")
               (tr "nitrate.form.contact-trial"))]
            [:p {:class (stl/css :modal-text-large)}
-            [:a {:class (stl/css :link) :href "mailto:sales@penpot.net"}
-             "sales@penpot.net"]]
+            [:a {:class (stl/css :link) :href "mailto:sales@penpot.app"}
+             "sales@penpot.app"]]
            [:div  {:class (stl/css :activation-code)}
             [:p {:class (stl/css :modal-text-large)}
              [:a {:class (stl/css :link)

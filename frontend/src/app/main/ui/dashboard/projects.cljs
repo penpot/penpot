@@ -216,8 +216,7 @@
          (fn [event]
            (when (kbd/enter? event)
              (dom/stop-propagation event)
-             (on-menu-click event))))
-        title-width (/ 100 limit)]
+             (on-menu-click event))))]
 
     [:article {:class (stl/css-case :dashboard-project-row true :first is-first)}
      [:header {:class (stl/css :project)}
@@ -227,7 +226,6 @@
                              :on-end on-edit
                              :max-length 250}]
          [:h2 {:on-click on-nav
-               :style {:max-width (str title-width "%")}
                :class (stl/css :project-name)
                :title (if (:is-default project)
                         (tr "labels.drafts")

@@ -438,6 +438,7 @@ pub(crate) struct RenderState {
     pub viewport_presented: bool,
 }
 
+#[derive(Clone)]
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
@@ -720,7 +721,12 @@ impl RenderState {
     /// Renders background blur effect directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
     /// so that the backdrop blur is independent of the shape's visual properties.
-    fn render_background_blur(&mut self, shape: &Shape, target_surface: SurfaceId) {
+    fn render_background_blur(
+        &mut self,
+        shape: &Shape,
+        clip_bounds: Option<&ClipStack>,
+        target_surface: SurfaceId,
+    ) {
         if self.options.is_fast_mode() {
             return;
         }
@@ -760,8 +766,14 @@ impl RenderState {
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
+        self.surfaces.canvas(target_surface).save();
+
+        if let Some(clips) = clip_bounds {
+            let antialias = shape.should_use_antialias(scale, self.options.antialias_threshold);
+            self.clip_target_surface_to_stack(clips, target_surface, scale, antialias);
+        }
+
         let canvas = self.surfaces.canvas(target_surface);
-        canvas.save();
 
         // Current/Export have no render context transform (identity canvas).
         // Apply scale + translate + shape transform so the clip maps
@@ -3714,7 +3726,21 @@ impl RenderState {
                 );
 
                 if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
+                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id).cloned() {
+                        self.surfaces.canvas(target_surface).save();
+                        self.surfaces.canvas(target_surface).reset_matrix();
+
+                        if let Some(clips) = clip_bounds.as_ref() {
+                            let antialias = element
+                                .should_use_antialias(scale, self.options.antialias_threshold);
+                            self.clip_target_surface_to_stack(
+                                clips,
+                                target_surface,
+                                scale,
+                                antialias,
+                            );
+                        }
+
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
 
@@ -3726,14 +3752,11 @@ impl RenderState {
                             ),
                             None => (0.0, 0.0),
                         };
-                        let scale = self.get_scale();
                         let translation = self
                             .surfaces
                             .get_render_context_translation(self.render_area, scale);
 
                         let canvas = self.surfaces.canvas(target_surface);
-                        canvas.save();
-                        canvas.reset_matrix();
                         // If the crop includes shadows/blur (extrect pixels outside the fill/stroke
                         // silhouette), do NOT apply the silhouette clip or we'd cut those pixels.
                         let should_clip_crop = element.shadows.is_empty() && element.blur.is_none();
@@ -3804,7 +3827,7 @@ impl RenderState {
                 // Render background blur BEFORE save_layer so it modifies
                 // the backdrop independently of the shape's opacity.
                 if !node_render_state.is_root() && self.focus_mode.is_active() {
-                    self.render_background_blur(element, target_surface);
+                    self.render_background_blur(element, clip_bounds.as_ref(), target_surface);
                 }
 
                 self.render_shape_enter(element, mask, clip_bounds.as_ref(), target_surface);
