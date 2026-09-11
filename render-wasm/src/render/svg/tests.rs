@@ -1074,6 +1074,139 @@ fn exports_a_group_with_two_rects_and_group_opacity() {
 }
 
 #[test]
+fn exports_masked_group_as_alpha_mask() {
+    // First child is the mask; content must be under mask="url(#…)" and the
+    // mask shape must not appear as unmasked sibling content (Closes #11378).
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_id = uid(2);
+    let content_id = uid(3);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        &[mask_id, content_id],
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_id,
+        group_id,
+        (40.0, 20.0, 160.0, 100.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(61, 123, 255),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("mask-type=\"alpha\"") && svg.contains("maskUnits=\"userSpaceOnUse\""),
+        "masked group must emit an alpha <mask>: {svg}"
+    );
+    assert!(
+        svg.contains("mask=\"url(#mask"),
+        "content must reference the alpha mask: {svg}"
+    );
+
+    // Mask body lives in <defs>; content fill appears under the mask group.
+    let defs_end = svg.find("</defs>").expect("defs");
+    let mask_def = svg[..defs_end]
+        .find("<mask ")
+        .map(|i| &svg[i..defs_end])
+        .expect("mask def");
+    assert!(
+        mask_def.contains(r#"width="120""#) && mask_def.contains(r#"height="80""#),
+        "mask def must paint the mask shape geometry: {mask_def}"
+    );
+
+    let body = &svg[defs_end..];
+    assert!(
+        body.contains("fill=\"#3D7BFF\"") || body.contains("fill=\"#3d7bff\""),
+        "content fill must appear in the body: {body}"
+    );
+    // Mask geometry must not also paint as a sibling outside the mask wrapper.
+    let mask_wrapper = body.find("mask=\"url(#mask").expect("mask wrapper");
+    let before_masked_content = &body[..mask_wrapper];
+    assert!(
+        !before_masked_content.contains(r#"width="120""#)
+            || !before_masked_content.contains(r#"height="80""#),
+        "mask shape must not paint as unmasked content: {svg}"
+    );
+
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_masked_group_when_mask_is_itself_a_group() {
+    // Issue #11378: mask subtree can be a group of shapes.
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_group = uid(2);
+    let mask_a = uid(3);
+    let mask_b = uid(4);
+    let content_id = uid(5);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 100.0),
+        &[mask_group, content_id],
+    );
+    add_group(
+        &mut pool,
+        mask_group,
+        group_id,
+        (10.0, 10.0, 110.0, 90.0),
+        &[mask_a, mask_b],
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_a,
+        mask_group,
+        (10.0, 10.0, 50.0, 90.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_b,
+        mask_group,
+        (70.0, 10.0, 110.0, 90.0),
+        skia::Color::from_argb(128, 0, 0, 0),
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (0.0, 0.0, 220.0, 100.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("mask-type=\"alpha\"") && svg.contains("mask=\"url(#mask"),
+        "nested group mask must still emit alpha <mask>: {svg}"
+    );
+    let defs_end = svg.find("</defs>").expect("defs");
+    let mask_def = &svg[svg.find("<mask ").expect("mask")..defs_end];
+    assert!(
+        mask_def.matches("<rect").count() >= 2,
+        "mask group must paint both children into the mask: {mask_def}"
+    );
+    assert!(
+        mask_def.contains("fill-opacity"),
+        "soft mask child alpha must reach the <mask>: {mask_def}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn loads_svg_raw_dom_like_wasm_upload() {
     // Production paints svg-raw via Dom::render after set_shape_svg_raw_content.
     // Native SkSVGCanvas does not serialize those draws, so the export string
