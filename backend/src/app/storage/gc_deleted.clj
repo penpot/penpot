@@ -64,7 +64,7 @@
 (defn- delete-upload-session-chunks!
   "Remove the chunk mappings for the given storage object ids. This must run
   before the storage_object rows are deleted: the upload_session_chunk
-  foreign keys are ON DELETE RESTRICT."
+  foreign keys are ON DELETE NO ACTION."
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:delete-upload-session-chunks ids])))
@@ -118,7 +118,7 @@
 
       (when (seq ok-ids)
         ;; NOTE: the chunk mappings must be removed before the
-        ;; storage_object rows (RESTRICT foreign keys). It only affects
+        ;; storage_object rows (NO ACTION foreign keys). It only affects
         ;; objects of the upload-session bucket; for any other bucket the
         ;; delete matches no rows.
         (delete-upload-session-chunks! conn ok-ids)
@@ -126,7 +126,7 @@
 
       (when (seq fail-ids)
         (increment-attempts-and-defer! conn fail-ids)
-        ;; NOTE: same RESTRICT ordering as above: the give-up DELETE below
+        ;; NOTE: same NO ACTION ordering as above: the give-up DELETE below
         ;; removes storage_object rows, so chunk mappings must go first.
         ;; Deferred objects keep their rows; only the mapping of a
         ;; permanently given-up object disappears early, and that object is

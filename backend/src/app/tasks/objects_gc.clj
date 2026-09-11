@@ -43,7 +43,7 @@
   sessions (never assembled within max-age) and sessions owned by profiles
   pending purge. Referenced storage objects are touched so the storage GC
   reclaims them with its usual delay; chunk mappings are removed before the
-  session row (RESTRICT foreign keys)."
+  session row (NO ACTION foreign keys)."
   [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
   (let [stalled-threshold (ct/minus timestamp {:hours 1})]
     (->> (db/plan conn [sql:get-upload-sessions timestamp stalled-threshold timestamp chunk-size]
@@ -339,7 +339,7 @@
 
 (def ^:private deletion-proc-vars
   ;; NOTE: upload sessions go first: deleting a profile cascades to its
-  ;; sessions, which would hit the upload_session_chunk RESTRICT foreign key
+  ;; sessions, which would hit the upload_session_chunk NO ACTION foreign key
   ;; while mappings still exist.
   [#'delete-upload-sessions!
    #'delete-profiles!

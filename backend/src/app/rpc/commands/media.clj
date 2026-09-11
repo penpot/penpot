@@ -486,7 +486,7 @@
             size    (reduce #(+ %1 (:size %2)) 0 chunks)]
 
         ;; NOTE: the mappings must be removed before the session is marked
-        ;; as consumed; the RESTRICT foreign keys enforce this order. The
+        ;; as consumed; the NO ACTION foreign keys enforce this order. The
         ;; session row itself is only marked (deleted_at) here and purged
         ;; later by the objects-gc task.
         (db/delete! conn :upload-session-chunk {:session-id session-id})

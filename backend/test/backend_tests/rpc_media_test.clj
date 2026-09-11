@@ -1094,7 +1094,16 @@
       (t/is (= "23503" (sql-state-of #(th/db-exec! ["delete from storage_object where id = ?"
                                                     object-id]))))
       (t/is (= "23503" (sql-state-of #(th/db-exec! ["delete from upload_session where id = ?"
-                                                    session-id])))))))
+                                                    session-id]))))
+      ;; the profile cannot disappear either while its session is live
+      ;; (profile_id FK is NO ACTION DEFERRABLE; purge goes through
+      ;; objects-gc). The deletion_protection rule is disabled here so the
+      ;; statement reaches the FK check.
+      (t/is (= "23503" (sql-state-of #(db/transact! th/*pool*
+                                                    (fn [conn]
+                                                      (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                                                      (db/exec! conn ["delete from profile where id = ?"
+                                                                      (:id prof)])))))))))
 
 (t/deftest chunked-upload-duplicate-index-race-backstop
   ;; Forces the UNIQUE backstop past the pre-check (simulates two concurrent
