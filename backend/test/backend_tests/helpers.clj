@@ -627,3 +627,66 @@
             (parse-sse (slurp' input)))
       (finally
         (.close input)))))
+
+;; ---- Dummy Request Helpers
+
+(defrecord DummyRequest [headers cookies method body-stream
+                         remote-addr server-name server-port
+                         scheme protocol path query ssl-client-cert]
+  yrq/IRequestCookies
+  (get-cookie [_ name]
+    {:value (get cookies name)})
+
+  yrq/IRequest
+  (get-header [_ name]
+    (get headers name))
+  (method [_] method)
+  (body [_] body-stream)
+  (path [_] path)
+  (query [_] query)
+  (server-port [_] server-port)
+  (server-name [_] server-name)
+  (remote-addr [_] remote-addr)
+  (ssl-client-cert [_] ssl-client-cert)
+  (scheme [_] scheme)
+  (protocol [_] protocol))
+
+(defn make-dummy-request
+  "Constructs a DummyRequest from an options map. Every key is
+  optional; missing values fall back to sensible defaults. New
+  fields added to DummyRequest won't break existing call sites
+  as long as this constructor keeps its `:or` defaults in sync.
+
+  Recognized keys:
+    :headers         — map of header name → value
+    :cookies         — map of cookie name → value
+    :method          — HTTP method keyword (default :get)
+    :body-stream     — InputStream for the body (used directly)
+    :body-bytes      — bytes or string for the body; wrapped in a
+                       ByteArrayInputStream if :body-stream is not
+                       given
+    :remote-addr     — string (default \"127.0.0.1\")
+    :server-name     — string (default \"test\")
+    :server-port     — long   (default 0)
+    :scheme          — keyword (default :http)
+    :protocol        — string (default \"HTTP/1.1\")
+    :path            — string (default \"/test\")
+    :query           — string or nil (default nil)
+    :ssl-client-cert — X509Certificate or nil (default nil)"
+  [{:keys [headers cookies method body-stream body-bytes
+           remote-addr server-name server-port scheme protocol
+           path query ssl-client-cert]
+    :or   {headers {} cookies {} method :get
+           body-stream nil
+           remote-addr "127.0.0.1" server-name "test" server-port 0
+           scheme :http protocol "HTTP/1.1" path "/test" query nil
+           ssl-client-cert nil}}]
+  (let [body-stream (or body-stream
+                        (when body-bytes
+                          (java.io.ByteArrayInputStream.
+                           (if (string? body-bytes)
+                             (.getBytes ^String body-bytes "UTF-8")
+                             body-bytes))))]
+    (->DummyRequest headers cookies method body-stream
+                    remote-addr server-name server-port
+                    scheme protocol path query ssl-client-cert)))
