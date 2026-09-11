@@ -109,7 +109,9 @@ limits:
 
 * **Idle timeout:** a session that is not renewed within
   <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE</code> (default 7
-  days) stops working.
+  days) stops working once the next daily <code
+  class="language-text">session-gc</code> run deletes it, up to ~24h after the
+  idle window elapses.
 * **Absolute maximum:** a session cannot live longer than
   <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE_ABSOLUTE</code>
   (default 30 days) from its creation, no matter how much it is renewed. The
@@ -121,6 +123,11 @@ Renewal issues a new token but keeps the same session row, so the absolute
 maximum is not extended. A daily garbage collector
 (<code class="language-text">session-gc</code>) deletes rows that exceed either
 the idle window or the absolute maximum.
+
+Sessions created before 2.18.0 carry no <code
+class="language-clojure">:exp</code> in their token; they are still removed by
+the 30d <code class="language-text">created_at</code> cleanup and acquire <code
+class="language-clojure">:exp</code> on their next renewal.
 
 The normal storage is the database. When the backend uses a read-only database
 pool (for example, to debug something in production with the local devenv),

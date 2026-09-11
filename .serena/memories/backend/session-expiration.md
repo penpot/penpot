@@ -10,8 +10,9 @@
 ## Token and session model
 
 - Sessions live only in `http_session_v2`. Legacy v1 support (`http_session`, string ids, `:ver 0` tokens) was removed and the table dropped (`0153-drop-http-session-table`).
-- `assign-token` emits header `{:kid 1 :ver 1}` with claims `:sid`, `:iat` (= `modified-at`) and `:exp` = `created-at + absolute-max-age` (omitted when `created-at` is nil, e.g. in-memory fake sessions).
+- `assign-token` emits header `{:kid 1 :ver 1}` with claims `:sid`, `:iat` (= `modified-at`) and `:exp` = `created-at + absolute-max-age` (omitted only when `created-at` is nil, which neither manager produces today; the branch is defensive).
 - `:exp` is anchored to `created-at`, never `modified-at`, so renewal cannot extend the absolute maximum.
+- Tokens issued before `:exp` existed carry no `:exp`; they are still bounded by the GC's `created_at` condition and acquire `:exp` on their next renewal (self-healing, no operator action).
 - `wrap-authz` resolves the session by `(:sid claims)` only; there is no fallback to reading a session by the raw token string.
 - `middleware/wrap-auth` attaches `::http/auth-data` only for `kid=1`/`ver=1` tokens with a configured decoder; anything else stays unauthenticated.
 - Renewal fires when `modified-at` is older than 6h (`default-renewal-max-age`, not configurable). It `UPDATE`s the same row (`modified-at` only) and issues a new token that keeps the original `:exp`.

@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token]
@@ -22,6 +23,7 @@
    [backend-tests.helpers :as th]
    [clojure.string :as str]
    [clojure.test :as t]
+   [integrant.core :as ig]
    [mockery.core :refer [with-mocks]]
    [yetti.request :as yreq]
    [yetti.response :as yres])
@@ -341,6 +343,38 @@
     (t/is (= (inst-ms original-exp) (inst-ms (:exp renewed-claims)))
           "renewed token should preserve the original :exp, not extend it")))
 
+(t/deftest session-renewal-preserves-exp-with-db-manager
+  (let [cfg          th/*system*
+        manager      (::session/manager th/*system*)
+        profile      (th/create-profile* 1)
+        created      (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+        _            (th/db-exec-one! ["UPDATE http_session_v2
+                                         SET modified_at = now() - interval '7 hours'
+                                       WHERE id = ?" (:id created)])
+        stale        (session/read-session manager (:id created))
+        old-token    (:token (#'session/assign-token cfg stale))
+        original-exp (:exp (tokens/decode cfg old-token))
+        handler      (-> (fn [req] req)
+                         (#'session/wrap-authz cfg)
+                         (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                          :cookie (partial session/decode-token cfg)}))
+        response     (handler (make-dummy-request {:cookies {"auth-token" old-token}}))
+        renewed      (get-in response [::yres/cookies "auth-token" :value])
+        renewed-exp  (:exp (tokens/decode cfg renewed))
+        expected-exp (ct/plus (:created-at created) (ct/duration {:days 30}))
+        current      (session/read-session manager (:id created))]
+    (t/is (some? original-exp) "original token should have :exp")
+    (t/is (some? renewed) "renewal should issue a new cookie token")
+    (t/is (not= old-token renewed) "renewal should issue a new token string")
+    (t/is (= (inst-ms original-exp) (inst-ms renewed-exp))
+          "renewed token should preserve the original :exp, not extend it")
+    (t/is (= (inst-ms expected-exp) (inst-ms renewed-exp))
+          "renewed :exp should equal created-at + 30 days")
+    (t/is (some? current) "session row must still exist after renewal")
+    (t/is (pos? (compare (:modified-at current) (:modified-at stale)))
+          "persisted modified_at must move forward on renewal")))
+
 (t/deftest legacy-session-token-is-rejected
   (let [cfg      th/*system*
         manager  (session/inmemory-manager)
@@ -389,6 +423,40 @@
       (t/is (contains? ids valid) "session within both windows must be kept")
       (t/is (not (contains? ids idle)) "idle session must be deleted")
       (t/is (not (contains? ids absolute)) "session past the absolute cap must be deleted"))))
+
+(t/deftest session-gc-config-wiring
+  (let [idle     (ct/duration {:days 3})
+        absolute (ct/duration {:days 10})]
+    (with-redefs [cf/get (fn
+                           ([k] (case k
+                                  :auth-token-cookie-max-age idle
+                                  :auth-token-cookie-max-age-absolute absolute
+                                  nil))
+                           ([k default] (case k
+                                          :auth-token-cookie-max-age idle
+                                          :auth-token-cookie-max-age-absolute absolute
+                                          default)))]
+      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+        (t/is (= idle
+                 (get-in expanded [:app.http.session.tasks/gc
+                                   :app.http.session.tasks/max-age]))
+              "task max-age should carry the configured idle window")
+        (t/is (= absolute
+                 (get-in expanded [:app.http.session.tasks/gc
+                                   :app.http.session.tasks/max-age-absolute]))
+              "task max-age-absolute should carry the configured absolute cap")))
+    (with-redefs [cf/get (fn
+                           ([_k] nil)
+                           ([_k default] default))]
+      (let [expanded (ig/expand-key :app.http.session.tasks/gc {})]
+        (t/is (= session/default-cookie-max-age
+                 (get-in expanded [:app.http.session.tasks/gc
+                                   :app.http.session.tasks/max-age]))
+              "task max-age should fall back to the default idle window")
+        (t/is (= session/default-cookie-max-age-absolute
+                 (get-in expanded [:app.http.session.tasks/gc
+                                   :app.http.session.tasks/max-age-absolute]))
+              "task max-age-absolute should fall back to the default absolute cap")))))
 
 (t/deftest parse-request-illegal-argument-exception
   ;; clojure.data.json raises IllegalArgumentException (case
