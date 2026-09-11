@@ -30,8 +30,9 @@ CREATE TABLE upload_session_chunk (
   UNIQUE (session_id, chunk_index)
 );
 
-CREATE INDEX upload_session_chunk__session_id__idx
-    ON upload_session_chunk(session_id);
+--- No standalone index on session_id: the UNIQUE(session_id, chunk_index)
+--- btree already serves session_id-only lookups and the session FK check
+--- via its leftmost column.
 
 CREATE INDEX upload_session_chunk__object_id__idx
     ON upload_session_chunk(object_id);
