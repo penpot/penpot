@@ -1044,8 +1044,9 @@
                                      :mtype           "image/jpeg"})]
       (t/is (nil? (:error assemble-out))))
 
-    ;; chunk mappings are gone, session row stays marked as consumed
-    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+    ;; chunk mappings stay until objects-gc purges them, session row
+    ;; stays marked as consumed
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))
     (t/is (some? (:deleted-at (th/db-exec-one! ["select deleted_at from upload_session where id = ?"
                                                 session-id]))))

@@ -4,9 +4,10 @@
 --- Each row maps one chunk of a chunked-upload session to the storage_object
 --- row that holds its bytes. Both foreign keys are ON DELETE NO ACTION
 --- DEFERRABLE on purpose: neither the session nor the storage object can be
---- removed while a mapping row exists, so every deletion path must first
---- remove the mapping (assemble-chunks on success, objects-gc for consumed
---- and stalled sessions). NO ACTION is identical to RESTRICT in normal
+--- removed while a mapping row exists. Only objects-gc removes mappings
+--- (for consumed, stalled and profile-purge sessions), always before the
+--- session row, touching the chunk objects so storage GC reclaims them.
+--- NO ACTION is identical to RESTRICT in normal
 --- (immediate) operation; only the deferrability differs, which tooling
 --- such as the backend test fixture relies on
 --- (SET CONSTRAINTS ALL DEFERRED).

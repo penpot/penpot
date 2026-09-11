@@ -491,9 +491,10 @@
   Raises a :validation/:missing-chunks error when the number of stored
   chunks does not match `:total-chunks` recorded in the session row.
   Raises :not-found when the session does not belong to `profile-id` or
-  was already consumed. Marks the session row as consumed (`deleted_at`)
-  and removes its chunk mappings on success; the physical purge happens
-  later in the objects-gc task."
+  was already consumed. Marks the session row as consumed (`deleted_at`);
+  the chunk mappings stay until the objects-gc task purges them (touching
+  the chunk objects so storage GC reclaims them), and the session row is
+  purged afterwards."
   [{:keys [::db/conn] :as cfg} profile-id session-id]
   (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id})]
     (when (:deleted-at session)
@@ -516,11 +517,10 @@
             path    (concat-chunks storage chunks)
             size    (reduce #(+ %1 (:size %2)) 0 chunks)]
 
-        ;; NOTE: the mappings must be removed before the session is marked
-        ;; as consumed; the NO ACTION foreign keys enforce this order. The
-        ;; session row itself is only marked (deleted_at) here and purged
-        ;; later by the objects-gc task.
-        (db/delete! conn :upload-session-chunk {:session-id session-id})
+        ;; NOTE: the session row is only marked (deleted_at) here; the
+        ;; chunk mappings stay until the objects-gc task removes them
+        ;; (before the session row, as the NO ACTION foreign keys
+        ;; require) while touching the chunk objects.
         (db/update! conn :upload-session
                     {:deleted-at (ct/now)}
                     {:id session-id}

@@ -918,8 +918,9 @@
                                      :mtype "image/jpeg"})]
       (t/is (nil? (:error assemble-out))))
 
-    ;; mappings are gone, session row stays marked as consumed
-    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+    ;; mappings stay, session row stays marked as consumed; objects-gc
+    ;; purges both
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))
     (t/is (some? (:deleted-at (th/db-exec-one! ["select deleted_at from upload_session where id = ?"
                                                 session-id]))))
@@ -928,6 +929,8 @@
     (let [res (th/run-task! :objects-gc {})]
       (t/is (= 1 (:processed res))))
     (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
                                          session-id]))))))
 
 (t/deftest upload-session-profile-purge
