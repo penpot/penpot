@@ -500,10 +500,10 @@ fn exports_frame_drop_shadow_wrapping_children() {
 }
 
 #[test]
-fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
-    // clip=ON + drop offset: silhouette fills/children move with
-    // silhouette_draw_matrix, so the board clipPath must move too — otherwise
-    // the unshifted clip truncates the shadow (F1a / show-content=false).
+fn clipped_frame_drop_shadow_silhouette_skips_content_clip() {
+    // clip=ON + drop offset: GPU paints the drop outside the content clip, so
+    // the silhouette must not use clipPath (F1a). Otherwise an unshifted clip
+    // truncates the offset shadow.
     let mut pool = ShapesPool::new();
     let frame_id = uid(1);
     let child = uid(2);
@@ -543,10 +543,6 @@ fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
         svg.contains("filter=\"url(#fx"),
         "clipped frame drop shadow must emit a filter: {svg}"
     );
-    assert!(
-        svg.matches("<clipPath").count() >= 2,
-        "silhouette and content each need a clipPath: {svg}"
-    );
 
     let filter_open = svg.find("filter=\"url(#fx").expect("frame filter");
     let filter_close = svg[filter_open..]
@@ -554,29 +550,78 @@ fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
         .map(|i| filter_open + i)
         .expect("silhouette group close");
     let silhouette = &svg[filter_open..=filter_close];
-    let clip_ref = silhouette
-        .find("clip-path=\"url(#")
-        .and_then(|i| {
-            let start = i + "clip-path=\"url(#".len();
-            let end = silhouette[start..].find(')')?;
-            Some(&silhouette[start..start + end])
-        })
-        .expect("silhouette must reference a clipPath");
-
-    let clip_def_start = svg
-        .find(&format!("<clipPath id=\"{clip_ref}\""))
-        .expect("silhouette clipPath def");
-    let clip_def_end = svg[clip_def_start..]
-        .find("</clipPath>")
-        .map(|i| clip_def_start + i)
-        .expect("clipPath close");
-    let clip_geom = &svg[clip_def_start..clip_def_end];
-
-    // Content clip (second clipPath) stays unshifted; silhouette clip must
-    // carry the local drop offset (0, 24) like silhouette fills.
     assert!(
-        clip_geom.contains("translate(") && clip_geom.contains(" 24"),
-        "silhouette clipPath must follow drop offset (0,24): {clip_geom}\nfull: {svg}"
+        !silhouette.contains("clip-path="),
+        "drop silhouette must not use content clip: {silhouette}"
+    );
+    assert!(
+        silhouette.contains(r#"translate(0 24)"#),
+        "silhouette fills must still apply drop offset: {silhouette}"
+    );
+    assert!(
+        svg.contains("<clipPath") && svg.contains("clip-path=\"url(#"),
+        "content pass must still clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn clipped_frame_drop_spread_is_not_truncated_by_content_clip() {
+    // clip=ON + spread 24, offset 0: fills outset in the silhouette, but if the
+    // content clipPath stays at the true selrect the red ring is cut away.
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let child = uid(2);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(240, 240, 240),
+        true,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_shadow(Shadow::new(
+            skia::Color::from_rgb(229, 16, 35),
+            0.0,
+            24.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+    }
+    add_solid_rect(
+        &mut pool,
+        child,
+        frame_id,
+        (20.0, 20.0, 180.0, 100.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_child(child);
+    }
+
+    let svg = render(&pool, frame_id);
+    let filter_open = svg.find("filter=\"url(#fx").expect("frame filter");
+    let filter_close = svg[filter_open..]
+        .find("</g>")
+        .map(|i| filter_open + i)
+        .expect("silhouette group close");
+    let silhouette = &svg[filter_open..=filter_close];
+    assert!(
+        !silhouette.contains("clip-path="),
+        "spread silhouette must not be content-clipped: {silhouette}"
+    );
+    // 200×120 + 2×24 spread, and child 160×80 + 2×24.
+    assert!(
+        silhouette.contains(r#"width="248""#) && silhouette.contains(r#"height="168""#),
+        "frame fill must outset by spread 24: {silhouette}"
+    );
+    assert!(
+        silhouette.contains(r#"width="208""#) && silhouette.contains(r#"height="128""#),
+        "child fill must outset by inherited spread 24: {silhouette}"
     );
     insta::assert_snapshot!(svg);
 }
