@@ -470,6 +470,7 @@
               (rx/map #(move-selected-path-point start-position %))
               (rx/take-until stopper))
          (rx/of (apply-content-modifiers)
+                (tools/merge-coincident-nodes)
                 (merge-dragged-on-drop)))))))
 
 (declare drag-selected-segments)
@@ -559,6 +560,7 @@
                 (rx/map #(move-selected-path-segment start-position %))
                 (rx/take-until stopper))
            (rx/of (apply-content-modifiers)
+                  (tools/merge-coincident-nodes)
                   (merge-dragged-on-drop))))))))
 
 (defn bend-segment-modifier
@@ -757,6 +759,7 @@
                 (rx/of (move-selected direction shift?)))
 
                (rx/of (apply-content-modifiers)
+                      (tools/merge-coincident-nodes)
                       (finish-move-selected))))
             (rx/empty)))))))
 

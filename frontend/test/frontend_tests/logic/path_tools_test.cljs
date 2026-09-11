@@ -306,8 +306,11 @@
           state'   (ptk/update (path.tools/set-selection-coordinate :x 5) state)
           content' (get-in state' [:workspace-drawing :object :content])]
       (t/is (= (gpt/point 5 0)  (path.helpers/node-position content' 0)))
-      (t/is (= (gpt/point 5 0)  (path.helpers/node-position content' 2)))
-      (t/is (= (gpt/point 10 0) (path.helpers/node-position content' 1)))))
+      (t/is (= (gpt/point 10 0) (path.helpers/node-position content' 1)))
+      ;; both ends land on (5,0), where they merge and close the subpath
+      (t/is (= [:move-to :line-to :close-path] (mapv :command (vec content'))))
+      ;; the merged node stays selected
+      (t/is (= #{0} (get-in state' [:workspace-local :edit-path id :selection :nodes])))))
   ;; a coincident closed-seam node moves as one logical node
   (let [id      (random-uuid)
         content (path/content
@@ -319,7 +322,8 @@
         state'  (ptk/update (path.tools/set-selection-coordinate :y 7) state)
         content' (get-in state' [:workspace-drawing :object :content])]
     (t/is (= (gpt/point 0 7) (path.helpers/node-position content' 0)))
-    (t/is (= (gpt/point 0 7) (path.helpers/node-position content' 2))))
+    ;; the seam is one node, so the subpath closes on it
+    (t/is (= [:move-to :line-to :close-path] (mapv :command (vec content')))))
   ;; a selected handler on an independent node moves only its own control point
   (let [id      (random-uuid)
         content (path/content
@@ -359,17 +363,17 @@
                  [{:command :move-to :params {:x 0 :y 0}}
                   {:command :line-to :params {:x 10 :y 0}}
                   {:command :line-to :params {:x 20 :y 0}}])]
-    ;; a middle node: opens a new subpath (move-to) at the node and makes it the
-    ;; pending origin, so the next click draws a line from it
+    ;; a middle node: becomes the pending origin of a new subpath, which stays
+    ;; out of the content until the next click draws a line from it
     (let [state    (pth/selectable-path-state id content
                                               {:nodes #{1} :segments #{} :handlers #{}})
           state'   (ptk/update (path.drawing/change-edit-mode :draw) state)
           content' (get-in state' [:workspace-drawing :object :content])]
       (t/is (= (gpt/point 10 0)
                (get-in state' [:workspace-local :edit-path id :last-point])))
-      (t/is (= 4 (count content')))
-      (t/is (= :move-to (:command (nth content' 3))))
-      (t/is (= (gpt/point 10 0) (path.helpers/node-position content' 3))))
+      (t/is (= (gpt/point 10 0)
+               (get-in state' [:workspace-local :edit-path id :pending-start])))
+      (t/is (= (vec content) (vec content'))))
     ;; the drawing tip: just becomes the pending origin (extends), no new subpath
     (let [state    (pth/selectable-path-state id content
                                               {:nodes #{2} :segments #{} :handlers #{}})
@@ -377,6 +381,7 @@
           content' (get-in state' [:workspace-drawing :object :content])]
       (t/is (= (gpt/point 20 0)
                (get-in state' [:workspace-local :edit-path id :last-point])))
+      (t/is (nil? (get-in state' [:workspace-local :edit-path id :pending-start])))
       (t/is (= 3 (count content'))))
     ;; nothing selected: no pending line
     (let [state    (pth/selectable-path-state id content
@@ -415,7 +420,8 @@
         content' (get-in state' [:workspace-drawing :object :content])]
     (t/is (= (gpt/point 20 0) (path.helpers/node-position content' 0)))
     (t/is (= (gpt/point 20 10) (path.helpers/node-position content' 3)))
-    (t/is (= (gpt/point 20 0) (path.helpers/node-position content' 4)))))
+    ;; the seam commands merge into the subpath close
+    (t/is (= :close-path (:command (nth (vec content') 4))))))
 
 (t/deftest set-selection-coordinate-translates-mixed-segment-and-node-selection
   ;; Selected segments and nodes translate as one group.
@@ -428,12 +434,12 @@
         ;; The combined bounds start at x=0.
         state    (pth/selectable-path-state id content
                                             {:nodes #{0} :segments #{3} :handlers #{}})
-        state'   (ptk/update (path.tools/set-selection-coordinate :x 10) state)
+        state'   (ptk/update (path.tools/set-selection-coordinate :x 5) state)
         content' (get-in state' [:workspace-drawing :object :content])]
-    (t/is (= (gpt/point 10 0) (path.helpers/node-position content' 0)))
+    (t/is (= (gpt/point 5 0)  (path.helpers/node-position content' 0)))
     (t/is (= (gpt/point 10 0) (path.helpers/node-position content' 1)))
-    (t/is (= (gpt/point 30 0) (path.helpers/node-position content' 2)))
-    (t/is (= (gpt/point 40 0) (path.helpers/node-position content' 3)))))
+    (t/is (= (gpt/point 25 0) (path.helpers/node-position content' 2)))
+    (t/is (= (gpt/point 35 0) (path.helpers/node-position content' 3)))))
 
 (t/deftest set-selection-coordinate-translates-mixed-segment-and-handler-selection
   ;; Standalone selected handlers translate with the group.
@@ -800,6 +806,96 @@
         (t/is (= welded (mapv :params content')))))
     (t/testing "a node dropped with no neighbour in range does not merge"
       (t/is (empty? (emit-of (mk {:nodes #{3} :segments #{} :handlers #{}})))))))
+
+(t/deftest nodes-dropped-on-the-same-position-are-merged
+  ;; An exact drop leaves both commands at one position, with no node near it.
+  (let [id      (random-uuid)
+        content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :line-to :params {:x 10 :y 10}}
+                  {:command :move-to :params {:x 20 :y 0}}
+                  {:command :line-to :params {:x 10 :y 10}}])
+        state   (pth/selectable-path-state
+                 id content {:nodes #{3} :segments #{} :handlers #{}})
+        result  (-> (ptk/update (path.tools/merge-coincident-nodes) state)
+                    (path.state/get-path :content))]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command (vec result))))
+    ;; the two ends are one node, so separating them cannot restore them
+    (t/is (= 1 (count (path/point-indices result (gpt/point 10.0 10.0)))))))
+
+(t/deftest a-node-dropped-inside-a-closed-subpath-leaves-one-node
+  ;; The rest of the loop retraces the two visible lines backwards, so only
+  ;; those lines survive and the node they meet at exists once.
+  (let [id      (random-uuid)
+        content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :line-to :params {:x 10 :y 5}}
+                  {:command :line-to :params {:x 20 :y 10}}
+                  {:command :curve-to :params {:c1x 20 :c1y 10
+                                               :c2x 10 :c2y 5
+                                               :x 10 :y 5}}
+                  {:command :close-path :params {}}])
+        state   (pth/selectable-path-state
+                 id content {:nodes #{3} :segments #{} :handlers #{}})
+        state'  (ptk/update (path.tools/merge-coincident-nodes) state)
+        result  (path.state/get-path state' :content)]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command (vec result))))
+    (t/is (= 1 (count (path/point-indices result (gpt/point 10.0 5.0)))))
+    ;; the surviving node stays selected
+    (t/is (= #{1} (get-in state' [:workspace-local :edit-path id :selection :nodes])))))
+
+(defn- three-node-line []
+  (path/content
+   [{:command :move-to :params {:x 0 :y 0}}
+    {:command :line-to :params {:x 10 :y 5}}
+    {:command :line-to :params {:x 20 :y 10}}]))
+
+(t/deftest splitting-a-node-in-draw-mode-yields-one-end-per-line
+  ;; Two lines meet at the node, so it separates into two ends.
+  (let [id     (random-uuid)
+        state  (->> (pth/selectable-path-state
+                     id (three-node-line)
+                     {:nodes #{1} :segments #{} :handlers #{}})
+                    (ptk/update (path.drawing/change-edit-mode :draw)))
+        state' (ptk/update (path.tools/separate-nodes) state)
+        result (vec (path.state/get-path state' :content))]
+    (t/is (= [:move-to :line-to :move-to :line-to] (mapv :command result)))
+    ;; one end stays on the node and the other is offset away from it
+    (t/is (= (gpt/point 10 5) (path.helpers/node-position result 1)))
+    (t/is (not= (gpt/point 10 5) (path.helpers/node-position result 2)))))
+
+(t/deftest adding-a-node-after-a-pending-start-opens-the-subpath
+  ;; The start reaches the content together with the segment it draws.
+  (let [id     (random-uuid)
+        state  (->> (pth/selectable-path-state
+                     id (three-node-line)
+                     {:nodes #{1} :segments #{} :handlers #{}})
+                    (ptk/update (path.drawing/change-edit-mode :draw)))
+        state' (ptk/update (path.drawing/add-node {:x 30 :y 30}) state)
+        result (vec (path.state/get-path state' :content))]
+    (t/is (= [:move-to :line-to :line-to :move-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0 :y 0} {:x 10 :y 5} {:x 20 :y 10} {:x 10 :y 5} {:x 30 :y 30}]
+             (mapv #(select-keys (:params %) [:x :y]) result)))
+    (t/is (nil? (get-in state' [:workspace-local :edit-path id :pending-start])))))
+
+(t/deftest aligning-nodes-onto-each-other-merges-them
+  (let [id      (random-uuid)
+        content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :line-to :params {:x 20 :y 0}}
+                  {:command :move-to :params {:x 0 :y 10}}
+                  {:command :line-to :params {:x 20 :y 10}}])
+        state   (pth/selectable-path-state
+                 id content {:nodes #{1 3} :segments #{} :handlers #{}})
+        state'  (ptk/update (path.tools/align-nodes :vcenter) state)
+        result  (path.state/get-path state' :content)]
+    ;; both ends meet at (20,5) and become a single node
+    (t/is (= [:move-to :line-to :line-to] (mapv :command (vec result))))
+    (t/is (= 1 (count (path/point-indices result (gpt/point 20.0 5.0)))))
+    ;; and that node stays selected
+    (t/is (= #{1} (get-in state' [:workspace-local :edit-path id :selection :nodes])))
+    (t/is (= (gpt/point 20.0 5.0)
+             (path.helpers/node-position result 1)))))
 
 ;; Path-local undo and redo events use a seeded local stack.
 
