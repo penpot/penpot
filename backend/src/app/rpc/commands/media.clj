@@ -411,7 +411,7 @@
                     {:session-id  session-id
                      :object-id   (:id object)
                      :chunk-index index})
-        (catch org.postgresql.util.PSQLException cause
+        (catch java.sql.SQLException cause
           (if (db/duplicate-key-error? cause)
             (ex/raise :type :validation
                       :code :chunk-already-exists

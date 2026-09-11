@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-media-test
   (:require
    [app.common.uuid :as uuid]
+   [app.db :as db]
    [app.http.client :as http]
    [app.media :as media]
    [app.rpc :as-alias rpc]
@@ -843,6 +844,48 @@
       (t/is (= :max-quote-reached (-> out :error ex-data :code)))
       (t/is (= "upload-chunks-per-session" (-> out :error ex-data :target))))))
 
+(t/deftest chunked-upload-consumed-session-frees-quota
+  ;; Consumed sessions must not count against the sessions-per-profile
+  ;; quota: with the limit set to 1, assembling a session frees the slot
+  ;; for a new one.
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-upload-sessions-per-profile 1})}]
+    (let [prof        (th/create-profile* 1)
+          _           (th/create-project* 1 {:profile-id (:id prof)
+                                             :team-id (:default-team-id prof)})
+          file        (th/create-file* 1 {:profile-id (:id prof)
+                                          :project-id (:default-project-id prof)
+                                          :is-shared false})
+          source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+          mfile       {:filename "sample.jpg"
+                       :path     source-path
+                       :mtype    "image/jpeg"
+                       :size     312043}
+          session-id  (create-session! prof 1)
+          upload-out  (th/command! {::th/type        :upload-chunk
+                                    ::rpc/profile-id (:id prof)
+                                    :session-id      session-id
+                                    :index           0
+                                    :content         mfile})]
+      (t/is (nil? (:error upload-out)))
+
+      (let [assemble-out (th/command! {::th/type        :assemble-file-media-object
+                                       ::rpc/profile-id (:id prof)
+                                       :session-id      session-id
+                                       :file-id         (:id file)
+                                       :is-local        true
+                                       :name            "assembled-image"
+                                       :mtype           "image/jpeg"})]
+        (t/is (nil? (:error assemble-out))))
+
+      ;; the consumed session frees the quota slot
+      (let [out (th/command! {::th/type        :create-upload-session
+                              ::rpc/profile-id (:id prof)
+                              :total-chunks    1})]
+        (t/is (nil? (:error out)))
+        (t/is (uuid? (:session-id (:result out))))))))
+
 (t/deftest chunked-upload-invalid-total-chunks
   ;; total-chunks must be at least 1; zero and negative values are rejected
   ;; with a :validation error.
@@ -1125,6 +1168,47 @@
                                                     object-id]))))
       (t/is (= "23503" (sql-state-of #(th/db-exec! ["delete from upload_session where id = ?"
                                                     session-id])))))))
+
+(t/deftest chunked-upload-duplicate-index-race-backstop
+  ;; Forces the UNIQUE backstop past the pre-check (simulates two concurrent
+  ;; uploads of the same index): the insert collides and the client still
+  ;; gets :validation/:chunk-already-exists. The just-created orphaned object
+  ;; stays touched so touched-gc reclaims it, and there is still exactly one
+  ;; mapping row.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        upload      {::th/type        :upload-chunk
+                     ::rpc/profile-id (:id prof)
+                     :session-id      session-id
+                     :index           0
+                     :content         mfile}
+        out1        (th/command! upload)
+        orig-get*   @#'db/get*]
+    (t/is (nil? (:error out1)))
+
+    (with-mocks [_mock {:target 'app.db/get*
+                        ;; blind the duplicate pre-check, delegate the rest
+                        :return (fn [ds table params & opts]
+                                  (if (= table :upload-session-chunk)
+                                    nil
+                                    (apply orig-get* ds table params opts)))}]
+      (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
+            out2   (th/command! upload)]
+        (t/is (some? (:error out2)))
+        (t/is (= :validation (-> out2 :error ex-data :type)))
+        (t/is (= :chunk-already-exists (-> out2 :error ex-data :code)))
+        ;; one orphaned object was created...
+        (t/is (= (inc before) (:count (th/db-exec-one! ["select count(*) from storage_object"]))))
+        ;; ...but still a single mapping row...
+        (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                             session-id]))))
+        ;; ...and the orphan stays touched for touched-gc.
+        (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null and id not in (select object_id from upload_session_chunk)"]))))))))
 
 ;; --- Clone File Media Object BOLA tests ---
 

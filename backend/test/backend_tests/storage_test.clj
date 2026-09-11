@@ -930,6 +930,41 @@
     (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
                                          session-id]))))))
 
+(t/deftest upload-session-profile-purge
+  ;; Sessions owned by a profile pending purge are drained first, so the
+  ;; profile delete (which cascades to its sessions) never hits the chunk
+  ;; RESTRICT foreign keys.
+  (let [prof       (th/create-profile* 1)
+        mfile      {:filename "chunk"
+                    :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                    :mtype "image/jpeg"
+                    :size 312043}
+        session-id (-> (th/command! {::th/type :create-upload-session
+                                     ::rpc/profile-id (:id prof)
+                                     :total-chunks 1})
+                       :result :session-id)
+        out        (th/command! {::th/type :upload-chunk
+                                 ::rpc/profile-id (:id prof)
+                                 :session-id session-id
+                                 :index 0
+                                 :content mfile})]
+    (t/is (nil? (:error out)))
+
+    ;; soft-delete the profile; the live session is neither consumed nor stalled
+    (th/db-update! :profile {:deleted-at (ct/now)} {:id (:id prof)})
+
+    (th/run-task! :objects-gc {})
+
+    ;; session and mappings are gone, profile row deletes cleanly
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session where id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                         session-id]))))
+    (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from profile where id = ?"
+                                         (:id prof)]))))
+    ;; and the chunk object was touched for the storage GC
+    (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"]))))))
+
 (defn- fake-s3-backend
   []
   {::sto/type         :s3

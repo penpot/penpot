@@ -126,6 +126,12 @@
 
       (when (seq fail-ids)
         (increment-attempts-and-defer! conn fail-ids)
+        ;; NOTE: same RESTRICT ordering as above: the give-up DELETE below
+        ;; removes storage_object rows, so chunk mappings must go first.
+        ;; Deferred objects keep their rows; only the mapping of a
+        ;; permanently given-up object disappears early, and that object is
+        ;; already deleted-marked.
+        (delete-upload-session-chunks! conn fail-ids)
         (let [given-up (delete-give-up! conn fail-ids)]
           (when (pos? (db/get-update-count given-up))
             (l/wrn :hint "giving up on orphan blob after max attempts"
