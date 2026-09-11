@@ -358,14 +358,14 @@
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
   [cfg {:keys [::rpc/profile-id session-id index content]}]
-  (let [session (db/tx-run! check-upload-chunk-slot session-id profile-id index content)]
+  (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
     (l/trc :hint "upload-chunk"
            :session-id session-id
            :chunk (str index "/" (:total-chunks session))
            :size (:size content)
            :path (:path content))
 
-    (let [storage (sto/resolve cfg ::db/reuse-conn true)
+    (let [storage (sto/resolve cfg)
           data    (sto/content (:path content))]
       (sto/put-object! storage
                        {::sto/content      data
