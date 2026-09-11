@@ -28,7 +28,12 @@
 
 .users input,
 .users select {
-  padding: var(--sp-xs);
+  box-sizing: border-box;
+  height: $sz-32;
+  margin: 0;
+  padding: 0 var(--sp-s);
+  font: inherit;
+  line-height: normal;
   color: var(--color-foreground-primary);
   background: var(--color-background-secondary);
   border: $b-1 solid var(--color-foreground-secondary);
@@ -54,7 +59,8 @@
 }
 
 .add-membership label {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: center;
   gap: var(--sp-s);
 }
@@ -82,6 +88,10 @@
   @extend %base-button-secondary;
   @include t.use-typography("body-medium");
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   padding-inline: var(--sp-m);
   flex-shrink: 0;
   cursor: pointer;
@@ -119,6 +129,10 @@
   flex: 1;
   min-width: 0;
   height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  font: inherit;
+  line-height: normal;
   padding: 0;
   border: 0;
   outline: none;
@@ -137,6 +151,8 @@
 .search-icon svg {
   width: $sz-16;
   height: $sz-16;
+  fill: none;
+  stroke: currentcolor;
 }
 
 .error-notice {
@@ -157,4 +173,59 @@
 
 .pagination {
   justify-content: flex-end;
+}
+
+.editor {
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  padding-block-start: var(--sp-l);
+  gap: var(--sp-m);
+}
+
+.editor h3,
+.editor h4,
+.editor p {
+  margin: 0;
+}
+
+.editor h3 {
+  overflow-wrap: anywhere;
+}
+
+.memberships {
+  margin: 0;
+}
+
+.memberships li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) $sz-120 $sz-64;
+  max-width: $sz-500;
+}
+
+.memberships span {
+  overflow-wrap: anywhere;
+}
+
+.add-membership {
+  width: 100%;
+  max-width: $sz-500;
+  gap: var(--sp-m);
+  padding-block-start: var(--sp-m);
+}
+
+.add-membership input,
+.add-membership select {
+  width: 100%;
+  min-width: 0;
+}
+
+.add-membership label {
+  margin: 0;
+}
+
+.add-membership > .button {
+  align-self: flex-end;
+}
+
+.users td {
+  vertical-align: top;
 }
