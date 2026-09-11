@@ -472,6 +472,44 @@ And configure it:
 PENPOT_SECRET_KEY: my-super-secure-key
 ```
 
+### Session expiration
+
+__Since version 2.18.0__
+
+User sessions are stored server-side and expire on two independent conditions: an
+**idle timeout** and an **absolute maximum lifetime**. Both are backend only.
+
+```bash
+# Backend
+# Idle timeout: the session stops working after this much inactivity.
+# Default: 168h
+PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE: 168h
+
+# Absolute maximum lifetime from the moment the session was created,
+# regardless of activity. Default: 720h
+PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE_ABSOLUTE: 720h
+```
+
+Durations use the `<number><unit>` form with hour, minute or second units,
+for example `168h`, `30m` or `90s` (day units like `7d` are not accepted).
+
+While a user is active the session is automatically renewed every 6 hours (not
+configurable). Renewal extends the cookie, but never the absolute maximum. A
+running daily task (`session-gc`) deletes the sessions that have exceeded either
+window. Idle expiration takes effect on the next daily `session-gc` run, up to
+~24h after the idle window elapses; until then a copied session token still
+verifies. Legacy v1 sessions and the old `http_session` table are no longer
+used.
+
+Sessions created before 2.18.0 carry no `:exp` in their token; they are still
+removed by the 30-day `created_at` cleanup and acquire `:exp` on their next
+renewal.
+
+The `secure` and `same-site` attributes of the session cookie are controlled by
+the `disable-secure-session-cookies`, `strict-session-cookies` and `enable-cors`
+flags, and by whether `PENPOT_PUBLIC_URI` is served over HTTPS. See
+[Penpot URI](#penpot-uri).
+
 ### Database
 
 Penpot only supports PostgreSQL and we highly recommend >=13 version. If you are using official

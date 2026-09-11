@@ -7,10 +7,10 @@
 - The backend sets Clojure `*assert*` globally from the `:backend-asserts` feature flag. Assertion-dependent checks can therefore differ by runtime flags.
 - Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`.
 - Response formatting negotiates with `Accept` or `_fmt=json`. Transit is the default for collection/boolean bodies; JSON encoding has special pointer-map handling.
-- Auth prefers the session cookie token before the `Authorization` header. Headers may be `Token` or `Bearer`; JWTs with `kid=1` and `ver=1` are decoded as v1 session tokens, otherwise they are treated as legacy tokens.
+- Auth prefers the session cookie token before the `Authorization` header. Headers may be `Token` or `Bearer`. Only `kid=1`/`ver=1` tokens are decoded as session tokens; anything else is left unauthenticated (legacy v1 tokens were removed).
 - Shared-key auth requires `x-shared-key` as `<key-id> <key>` and stores the lowercased key id on the request. If no shared keys are configured it always rejects.
-- Session management uses DB storage unless the DB pool is read-only, then falls back to the in-memory manager. DB sessions support both legacy string ids and v2 UUID session ids.
-- Session cookies are renewed when using a legacy string id or when `modified-at` is older than the renewal interval. SameSite is `none` for CORS, otherwise strict/lax based on config.
+- Session management uses DB storage unless the DB pool is read-only, then falls back to the in-memory manager. Sessions use only the v2 UUID model (`http_session_v2`); legacy string ids were removed.
+- Session cookies are renewed when `modified-at` is older than the 6h renewal interval. SameSite is `none` for CORS, otherwise strict/lax based on config. Session lifetime config and GC: `mem:backend/session-expiration`.
 
 ## Storage and media
 

@@ -94,14 +94,46 @@ Similarly as the OIDC backend, it checks if the profile exists, and calls
 
 ## Sessions
 
-User sessions are created when a user logs in via any one of the backends. A
-session token is generated (a JWT token that does not currently contain any data)
-and returned to frontend as a cookie.
+User sessions are created when a user logs in via any one of the backends. The
+backend generates a signed JWT token and returns it to the frontend as an
+<code class="language-text">auth-token</code> cookie. A matching row is stored in
+the <code class="language-text">http_session_v2</code> table with the profile id
+and the session timestamps.
 
-Normally the session is stored in a DB table with the information of the user
-profile and the session expiration. But if a frontend connects to the backend in
-"read only" mode (for example, to debug something in production with the local
-devenv), sessions are stored in memory (may be lost if the backend restarts).
+A request is authenticated only when both the token verifies and its session row
+still exists. The token claims carry the session row id (<code
+class="language-clojure">:sid</code>), the last activity instant (<code
+class="language-clojure">:iat</code>) and an absolute expiration (<code
+class="language-clojure">:exp</code>). The server enforces two independent
+limits:
+
+* **Idle timeout:** a session that is not renewed within
+  <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE</code> (default 7
+  days) stops working once the next daily <code
+  class="language-text">session-gc</code> run deletes it, up to ~24h after the
+  idle window elapses.
+* **Absolute maximum:** a session cannot live longer than
+  <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE_ABSOLUTE</code>
+  (default 30 days) from its creation, no matter how much it is renewed. The
+  <code class="language-clojure">:exp</code> claim enforces this even when the
+  cookie is still present.
+
+Sessions are automatically renewed every 6 hours of use (not configurable).
+Renewal issues a new token but keeps the same session row, so the absolute
+maximum is not extended. A daily garbage collector
+(<code class="language-text">session-gc</code>) deletes rows that exceed either
+the idle window or the absolute maximum.
+
+Sessions created before 2.18.0 carry no <code
+class="language-clojure">:exp</code> in their token; they are still removed by
+the 30-day <code class="language-text">created_at</code> cleanup and acquire <code
+class="language-clojure">:exp</code> on their next renewal.
+
+The normal storage is the database. When the backend uses a read-only database
+pool (for example, to debug something in production with the local devenv),
+sessions are kept in memory and are lost when the backend restarts. The
+organization SSO gate keeps an additional 4-hour entry inside the same session
+row, separate from the session token lifetime.
 
 ## Team invitations
 

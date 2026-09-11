@@ -208,6 +208,7 @@
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
+    [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]

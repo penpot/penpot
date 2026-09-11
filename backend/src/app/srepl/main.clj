@@ -125,7 +125,7 @@
                                          {:columns [:id :email]})]
                (when-not (:is-blocked profile)
                  (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
-                 (db/delete! conn :http-session {:profile-id (:id profile)})
+                 (session/invalidate-all system (:id profile))
                  :blocked))))))
 
 (defn reset-password!
