@@ -342,6 +342,27 @@
    [:p {:class (stl/css :nitrate-unavailable-footer)}
     (tr "labels.copyright-period")]])
 
+(mf/defc nitrate-not-configured-page*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:div {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-not-configured.main-message")]
+    [:div {:class (stl/css :nitrate-not-configured-message)}
+     (tr "labels.nitrate-not-configured.desc-message")]
+    [:div {:class (stl/css :nitrate-not-configured-message)}
+     [:span
+      (tr "labels.nitrate-not-configured.learn-more")
+      " "
+      [:a {:href "https://help.penpot.app/technical-guide/getting-started/"
+           :target "_blank"
+           :rel "noopener noreferrer"}
+       (tr "labels.nitrate-not-configured.technical-guide")]]]]
+
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
+
 (mf/defc webgl-context-lost*
   []
   (let [on-reload (mf/use-fn #(js/location.reload))]
@@ -561,6 +582,9 @@
 
       :nitrate-unavailable
       [:> nitrate-unavailable*]
+
+      :nitrate-not-configured
+      [:> nitrate-not-configured-page*]
 
       :sso-error
       [:> sso-error-section* {:organization-id (get data :organization-id)

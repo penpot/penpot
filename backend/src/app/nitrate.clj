@@ -156,9 +156,13 @@
 (defn call
   [cfg method params]
   (when (contains? cf/flags :admin-console)
-    (let [client (get cfg ::client)
-          method (get client method)]
-      (method params))))
+    (let [uri (cf/get :admin-console-uri)]
+      (if (nil? uri)
+        (ex/raise :type :nitrate-not-configured
+                  :hint "admin console is not configured; refer to the documentation to complete the setup")
+        (let [client (get cfg ::client)
+              method (get client method)]
+          (method params))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -499,6 +503,8 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :admin-console)
+    (when (nil? (cf/get :admin-console-uri))
+      (l/warn :hint "admin console is not configured; nitrate calls will fail until the setup is complete"))
     {:get-team-organization                 (partial get-team-organization-api cfg)
      :get-teams-organizations               (partial get-teams-organizations-api cfg)
      :set-team-organization                 (partial set-team-organization-api cfg)
