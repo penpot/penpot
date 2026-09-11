@@ -74,6 +74,21 @@ pub(super) fn add_solid_rect(
     );
 }
 
+/// Adds a solid-filled ellipse/circle to the pool.
+pub(super) fn add_solid_circle(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    color: skia::Color,
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Circle);
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(vec![Fill::Solid(SolidColor(color))]);
+}
+
 /// Adds a rectangle with the given fill stack (bottom → top).
 pub(super) fn add_rect_with_fills(
     pool: &mut ShapesPool,
@@ -200,9 +215,31 @@ pub(super) fn add_group(
     (l, t, r, b): (f32, f32, f32, f32),
     children: &[Uuid],
 ) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, false);
+}
+
+/// Masked group: `children[0]` is the mask, the rest are content (Penpot order).
+pub(super) fn add_masked_group(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, true);
+}
+
+fn add_group_inner(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+    masked: bool,
+) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
-    shape.set_shape_type(Type::Group(Group { masked: false }));
+    shape.set_shape_type(Type::Group(Group { masked }));
     shape.set_selrect(l, t, r, b);
     for child in children {
         shape.add_child(*child);
@@ -297,6 +334,24 @@ pub(super) fn add_stroked_rect(
     shape.set_selrect(l, t, r, b);
     shape.set_fills(vec![]);
     shape.add_stroke(stroke);
+}
+
+/// Closed rectangular path with no fills (inherits parent group fills when
+/// nested, matching GPU `nested_fills` for SVG-imported mask groups).
+pub(super) fn add_empty_fill_closed_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+) {
+    let segments = vec![
+        Segment::MoveTo((l, t)),
+        Segment::LineTo((r, t)),
+        Segment::LineTo((r, b)),
+        Segment::LineTo((l, b)),
+        Segment::Close,
+    ];
+    add_path_with_fills(pool, id, parent, (l, t, r, b), segments, vec![]);
 }
 
 /// Adds a closed rectangular path with a single solid stroke (no fill).
