@@ -13,10 +13,16 @@ use crate::render::RenderResources;
 ///
 /// Linked image fills become `<image href>` clipped to the glyph silhouette;
 /// other fills go through Skia as native `<text>`. Strokes are a later PR.
+///
+/// `draw_matrix` is the leaf CTM (normally `centered_transform`). During a
+/// parent drop-shadow silhouette pass it must include the geometric offset
+/// (`silhouette_draw_matrix`); using only `centered_transform` leaves child
+/// text unshifted while strokes/fills move.
 pub(super) fn render_text_fill(
     builder: &mut SvgLayerCanvas,
     shared: &RenderResources,
     element: &Shape,
+    draw_matrix: skia_safe::Matrix,
 ) -> Result<()> {
     let text_content = element.get_text_content();
     let text_content = text_content.new_bounds(element.selrect());
@@ -25,14 +31,12 @@ pub(super) fn render_text_fill(
         return Ok(());
     }
 
-    let matrix = element.centered_transform();
-
     for layer in 0..max_layers {
         let linked = linked_image_fills_at_layer(&text_content, layer, shared);
         let skip_ids: HashSet<Uuid> = linked.iter().map(|img| img.id()).collect();
 
         for image_fill in &linked {
-            emit_text_image_fill(builder, shared, element, image_fill, layer)?;
+            emit_text_image_fill(builder, shared, element, image_fill, layer, draw_matrix)?;
         }
 
         if layer_has_skia_fills(&text_content, layer, &skip_ids) {
@@ -44,7 +48,7 @@ pub(super) fn render_text_fill(
             };
             let canvas = builder.canvas();
             canvas.save();
-            canvas.concat(&matrix);
+            canvas.concat(&draw_matrix);
             text::paint_text_paragraphs(canvas, element, &mut paragraph_builders);
             canvas.restore();
         }
@@ -96,6 +100,7 @@ fn emit_text_image_fill(
     shape: &Shape,
     image_fill: &ImageFill,
     layer: usize,
+    draw_matrix: skia_safe::Matrix,
 ) -> Result<()> {
     let Some(url) = shared.images.source_url(&image_fill.id()) else {
         return Ok(());
@@ -110,13 +115,21 @@ fn emit_text_image_fill(
     {
         let cv: &skia_safe::Canvas = &canvas;
         cv.save();
-        cv.concat(&shape.centered_transform());
+        cv.concat(&draw_matrix);
         text::paint_text_paragraphs(cv, shape, &mut paragraph_builders);
         cv.restore();
     }
     builder.finish_clip_path_fragment(&clip_id, canvas);
 
     let href = xml_escape_attr(url);
-    emit_linked_image_element(builder, shape, image_fill, shape.selrect(), &href, &clip_id);
+    emit_linked_image_element(
+        builder,
+        shape,
+        image_fill,
+        shape.selrect(),
+        &href,
+        &clip_id,
+        draw_matrix,
+    );
     Ok(())
 }
