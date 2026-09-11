@@ -55,8 +55,6 @@
 
    ["/view" :viewer]
 
-   ["/view/:file-id" :viewer-legacy]
-
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
@@ -79,20 +77,7 @@
     ["/files"                :dashboard-files]
     ["/deleted" :dashboard-deleted]]
 
-   ["/dashboard/team/:team-id"
-    ["/members"              :dashboard-legacy-team-members]
-    ["/invitations"          :dashboard-legacy-team-invitations]
-    ["/webhooks"             :dashboard-legacy-team-webhooks]
-    ["/settings"             :dashboard-legacy-team-settings]
-    ["/projects"             :dashboard-legacy-projects]
-    ["/search"               :dashboard-legacy-search]
-    ["/fonts"                :dashboard-legacy-fonts]
-    ["/fonts/providers"      :dashboard-legacy-font-providers]
-    ["/libraries"            :dashboard-legacy-libraries]
-    ["/projects/:project-id" :dashboard-legacy-files]]
-
-   ["/workspace" :workspace]
-   ["/workspace/:project-id/:file-id" :workspace-legacy]])
+   ["/workspace" :workspace]])
 
 
 (defn- store-session-params

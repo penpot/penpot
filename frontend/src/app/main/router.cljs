@@ -65,6 +65,16 @@
 
 ;; --- Navigate (Event)
 
+(defn get-query-param
+  "Safely extracts a scalar value for a query param key from a params
+  map. When the same key appears multiple times in a URL,
+  query-string->map returns a vector for that key; this function
+  always returns a single (last) element in that case, so downstream
+  consumers such as parse-long always receive a plain string or nil."
+  [params k]
+  (let [v (get params k)]
+    (if (sequential? v) (peek v) v)))
+
 (defn navigated
   [match send-event-info?]
   (ptk/reify ::navigated
@@ -85,7 +95,30 @@
     (update [_ state]
       (-> state
           (assoc :route match)
-          (dissoc :exception)))))
+          (dissoc :exception)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      ;; The route is read from the state the `update` above just stored:
+      ;; the effect always runs after the update. The sharing-context ids
+      ;; are synced into the pre-fragment query (the fragment never reaches
+      ;; the server, so shared links need them there); every other param is
+      ;; left untouched, except valueless ones (`?flag`), which the query
+      ;; codec cannot round-trip and are dropped. The backend applies its
+      ;; own file > project > team priority, so no filtering is needed
+      ;; here.
+      (let [params (:query-params (:route state))
+            uri    (u/uri (.-href globals/location))
+            search (reduce (fn [m k]
+                             (let [v (get-query-param params k)]
+                               (if (some? v)
+                                 (assoc m k v)
+                                 (dissoc m k))))
+                           (u/query-string->map (:query uri))
+                           [:file-id :team-id :project-id])
+            href   (str (assoc uri :query (u/map->query-string search)))]
+        (when (not= href (.-href globals/location))
+          (.replaceState js/history nil "" href))))))
 
 (defn navigate
   [id params & {:keys [::replace ::new-window] :as options}]
@@ -134,16 +167,6 @@
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))
-
-(defn get-query-param
-  "Safely extracts a scalar value for a query param key from a params
-  map. When the same key appears multiple times in a URL,
-  query-string->map returns a vector for that key; this function
-  always returns a single (last) element in that case, so downstream
-  consumers such as parse-long always receive a plain string or nil."
-  [params k]
-  (let [v (get params k)]
-    (if (sequential? v) (peek v) v)))
 
 (defn nav-back
   []
