@@ -181,11 +181,17 @@
           (update-password [conn profile-id]
             (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
-              nil))]
+              (db/get-by-id conn :profile profile-id)))]
 
     (passwords/validate-password password)
-    (->> (validate-token token)
-         (update-password conn))
+
+    (let [profile (->> (validate-token token)
+                       (update-password conn))]
+      (eml/send! {::eml/conn conn
+                  ::eml/factory eml/password-changed
+                  :public-uri (cf/get :public-uri)
+                  :to (:email profile)
+                  :name (:fullname profile)}))
 
     nil))
 

@@ -407,6 +407,16 @@
    :id ::password-recovery
    :schema schema:password-recovery))
 
+(def ^:private schema:password-changed
+  [:map
+   [:name ::sm/text]])
+
+(def password-changed
+  "A password changed notification email."
+  (template-factory
+   :id ::password-changed
+   :schema schema:password-changed))
+
 (def ^:private schema:change-email
   [:map
    [:name ::sm/text]
