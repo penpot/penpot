@@ -58,7 +58,6 @@
    :objects-storage-fs-directory "assets"
 
    :auth-token-cookie-name "auth-token"
-   :auth-token-cookie-max-age-absolute (ct/duration {:days 30})
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"

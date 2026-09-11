@@ -293,9 +293,9 @@
 (defn- assign-session-cookie
   [response {token :token modified-at :modified-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        created-at modified-at
-        renewal    (ct/plus created-at default-renewal-max-age)
-        expires    (ct/plus created-at max-age)
+        renewal-at modified-at
+        renewal    (ct/plus renewal-at default-renewal-max-age)
+        expires    (ct/plus renewal-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
         strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)

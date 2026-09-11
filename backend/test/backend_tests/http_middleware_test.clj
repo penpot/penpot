@@ -375,6 +375,42 @@
     (t/is (pos? (compare (:modified-at current) (:modified-at stale)))
           "persisted modified_at must move forward on renewal")))
 
+(t/deftest session-renewal-cookie-expires-diverges-from-token-exp
+  (let [cfg          th/*system*
+        manager      (::session/manager th/*system*)
+        profile      (th/create-profile* 1)
+        created      (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+        _            (th/db-exec-one! ["UPDATE http_session_v2
+                                         SET created_at = now() - interval '29 days',
+                                             modified_at = now() - interval '7 hours'
+                                       WHERE id = ?" (:id created)])
+        stale        (session/read-session manager (:id created))
+        old-token    (:token (#'session/assign-token cfg stale))
+        handler      (-> (fn [req] req)
+                         (#'session/wrap-authz cfg)
+                         (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                          :cookie (partial session/decode-token cfg)}))
+        response     (handler (make-dummy-request {:cookies {"auth-token" old-token}}))
+        cookie       (get-in response [::yres/cookies "auth-token"])
+        renewed      (:value cookie)
+        renewed-exp  (:exp (tokens/decode cfg renewed))
+        expected-exp (ct/plus (:created-at stale) (ct/duration {:days 30}))
+        close-to?    (fn [a b tolerance-ms]
+                       (<= (Math/abs (- (inst-ms a) (inst-ms b))) tolerance-ms))]
+    (t/is (some? renewed) "renewal should issue a new cookie token")
+    (t/is (not= old-token renewed) "renewal should issue a new token string")
+    (t/is (= (inst-ms expected-exp) (inst-ms renewed-exp))
+          "renewed :exp should equal created-at + 30 days")
+    (t/is (close-to? renewed-exp (ct/plus (ct/now) (ct/duration {:days 1}))
+                     (* 10 60 1000))
+          "renewed :exp should be ~1 day out (absolute cap is near)")
+    (t/is (close-to? (:expires cookie) (ct/plus (ct/now) (ct/duration {:days 7}))
+                     (* 10 60 1000))
+          "cookie Expires should slide ~7 days out from now")
+    (t/is (pos? (compare (:expires cookie) renewed-exp))
+          "cookie Expires should stay ahead of the token :exp")))
+
 (t/deftest legacy-session-token-is-rejected
   (let [cfg      th/*system*
         manager  (session/inmemory-manager)
