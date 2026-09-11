@@ -36,6 +36,9 @@
 ;; Default age for automatic session renewal
 (def default-renewal-max-age (ct/duration {:hours 6}))
 
+;; Default absolute maximum session duration
+(def default-cookie-max-age-absolute (ct/duration {:days 30}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROTOCOLS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,14 +81,8 @@
   [pool]
   (reify ISessionManager
     (read-session [_ id]
-      (if (string? id)
-        ;; Backward compatibility: http_session (v1) has no props column
-        (let [session (db/exec-one! pool (sql/select :http-session {:id id}))]
-          (-> session
-              (assoc :modified-at (:updated-at session))
-              (dissoc :updated-at)))
-        (some-> (db/exec-one! pool (sql/select :http-session-v2 {:id id}))
-                (decode-session))))
+      (some-> (db/exec-one! pool (sql/select :http-session-v2 {:id id}))
+              (decode-session)))
 
     (create-session [_ params]
       (assert (valid-params? params) "expect valid session params")
@@ -100,23 +97,15 @@
 
     (update-session [_ session]
       (let [modified-at (ct/now)]
-        (if (string? (:id session))
-          (db/insert! pool :http-session-v2
-                      (-> session
-                          (assoc :id (uuid/next))
-                          (assoc :created-at modified-at)
-                          (assoc :modified-at modified-at)))
-          (db/update! pool :http-session-v2
-                      (cond-> {:modified-at modified-at}
-                        (some? (:props session))
-                        (assoc :props (db/tjson (:props session))))
-                      {:id (:id session)}
-                      {::db/return-keys true}))))
+        (db/update! pool :http-session-v2
+                    (cond-> {:modified-at modified-at}
+                      (some? (:props session))
+                      (assoc :props (db/tjson (:props session))))
+                    {:id (:id session)}
+                    {::db/return-keys true})))
 
     (delete-session [_ id]
-      (if (string? id)
-        (db/delete! pool :http-session {:id id} {::db/return-keys false})
-        (db/delete! pool :http-session-v2 {:id id} {::db/return-keys false}))
+      (db/delete! pool :http-session-v2 {:id id} {::db/return-keys false})
       nil)))
 
 (defn inmemory-manager
@@ -169,15 +158,19 @@
 
 (defn- assign-token
   [cfg session]
-  (let [claims {:iss "authentication"
-                :aud "penpot"
-                :sid (:id session)
-                :iat (:modified-at session)
-                :uid (:profile-id session)
-                :sso-provider-id (:sso-provider-id session)
-                :sso-session-id (:sso-session-id session)}
-        header {:kid 1 :ver 1}
-        token  (tokens/generate cfg claims header)]
+  (let [absolute-max-age (cf/get :auth-token-cookie-max-age-absolute default-cookie-max-age-absolute)
+        claims            {:iss "authentication"
+                           :aud "penpot"
+                           :sid (:id session)
+                           :iat (:modified-at session)
+                           :uid (:profile-id session)
+                           :sso-provider-id (:sso-provider-id session)
+                           :sso-session-id (:sso-session-id session)}
+        claims            (if (:created-at session)
+                            (assoc claims :exp (ct/plus (:created-at session) absolute-max-age))
+                            claims)
+        header            {:kid 1 :ver 1}
+        token             (tokens/generate cfg claims header)]
     (assoc session :token token)))
 
 (defn create-fn
@@ -249,25 +242,19 @@
     (db/exec! pool [sql:clear-organization-sso-sessions organization-key organization-key])))
 
 (defn- renew-session?
-  [{:keys [id modified-at] :as session}]
-  (or (string? id)
-      (and (ct/inst? modified-at)
-           (let [elapsed (ct/diff modified-at (ct/now))]
-             (neg? (compare default-renewal-max-age elapsed))))))
+  [{:keys [modified-at]}]
+  (and (ct/inst? modified-at)
+       (let [elapsed (ct/diff modified-at (ct/now))]
+         (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-authz
   [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request]
-    (let [{:keys [type token claims metadata]} (get request ::http/auth-data)]
+    (let [{:keys [type claims]} (get request ::http/auth-data)]
       (cond
         (= type :cookie)
-        (let [session
-              (case (:ver metadata)
-                ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
-                0 (read-session manager token)
-                1 (some->> (:sid claims) (read-session manager))
-                nil)
+        (let [session (some->> (:sid claims) (read-session manager))
 
               request
               (cond-> request
@@ -287,11 +274,7 @@
             response))
 
         (= type :bearer)
-        (let [session (case (:ver metadata)
-                        ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
-                        0 (read-session manager token)
-                        1 (some->> (:sid claims) (read-session manager))
-                        nil)
+        (let [session (some->> (:sid claims) (read-session manager))
               request (cond-> request
                         (some? session)
                         (-> (assoc ::profile-id (:profile-id session))
@@ -339,32 +322,40 @@
 (defmethod ig/assert-key ::tasks/gc
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid database pool")
-  (assert (ct/duration? (::tasks/max-age params))))
+  (assert (ct/duration? (::tasks/max-age params)))
+  (assert (ct/duration? (::tasks/max-age-absolute params))))
 
 (defmethod ig/expand-key ::tasks/gc
   [k v]
-  (let [max-age (cf/get :auth-token-cookie-max-age default-cookie-max-age)]
-    {k (merge {::tasks/max-age max-age} (d/without-nils v))}))
+  (let [max-age          (cf/get :auth-token-cookie-max-age default-cookie-max-age)
+        max-age-absolute (cf/get :auth-token-cookie-max-age-absolute
+                                 default-cookie-max-age-absolute)]
+    {k (merge {::tasks/max-age max-age
+               ::tasks/max-age-absolute max-age-absolute}
+              (d/without-nils v))}))
 
 (def ^:private
-  sql:delete-expired
-  "DELETE FROM http_session
-    WHERE updated_at < ?::timestamptz
-       or (updated_at is null and
-           created_at < ?::timestamptz)")
+  sql:delete-expired-v2
+  "DELETE FROM http_session_v2
+    WHERE modified_at < ?::timestamptz
+       OR created_at  < ?::timestamptz")
 
 (defn- collect-expired-tasks
-  [{:keys [::db/conn ::tasks/max-age]}]
-  (let [threshold (ct/minus (ct/now) max-age)
-        result    (-> (db/exec-one! conn [sql:delete-expired threshold threshold])
-                      (db/get-update-count))]
+  [{:keys [::db/conn ::tasks/max-age ::tasks/max-age-absolute]}]
+  (let [idle-threshold (ct/minus (ct/now) max-age)
+        abs-threshold  (ct/minus (ct/now) max-age-absolute)
+        result         (-> (db/exec-one! conn [sql:delete-expired-v2
+                                               idle-threshold abs-threshold])
+                           (db/get-update-count))]
     (l/dbg :task "gc"
            :hint "clean http sessions"
            :deleted result)
     result))
 
 (defmethod ig/init-key ::tasks/gc
-  [_ {:keys [::tasks/max-age] :as cfg}]
-  (l/dbg :hint "initializing session gc task" :max-age max-age)
+  [_ {:keys [::tasks/max-age ::tasks/max-age-absolute] :as cfg}]
+  (l/dbg :hint "initializing session gc task"
+         :max-age max-age
+         :max-age-absolute max-age-absolute)
   (fn [_]
     (db/tx-run! cfg collect-expired-tasks)))

@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token]
@@ -117,12 +118,11 @@
     (handler (make-dummy-request {}))
     (t/is (nil? (::http/auth-data @request)))
 
+    ;; A bearer token is only attached when it is a current session
+    ;; token (kid=1/ver=1) and a decoder is configured. Otherwise the
+    ;; request stays unauthenticated.
     (handler (make-dummy-request {:headers {"authorization" "Bearer aaaa"}}))
-
-    (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
-      (t/is (= :bearer token-type))
-      (t/is (= "aaaa" token))
-      (t/is (nil? claims)))))
+    (t/is (nil? (::http/auth-data @request)))))
 
 (t/deftest auth-middleware-3
   (let [request (volatile! nil)
@@ -134,11 +134,7 @@
     (t/is (nil? (::http/auth-data @request)))
 
     (handler (make-dummy-request {:cookies {"auth-token" "foobar"}}))
-
-    (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
-      (t/is (= :cookie token-type))
-      (t/is (= "foobar" token))
-      (t/is (nil? claims)))))
+    (t/is (nil? (::http/auth-data @request)))))
 
 (t/deftest shared-key-auth
   (let [handler (#'app.http.middleware/wrap-shared-key-auth
@@ -276,6 +272,123 @@
     (t/is (= "penpot" (:aud claims)))
     (t/is (= (:id session) (:sid claims)))
     (t/is (= (:id profile) (:uid claims)))))
+
+(t/deftest session-token-contains-exp-claim
+  (let [cfg     th/*system*
+        manager (session/inmemory-manager)
+        profile (th/create-profile* 1)
+        session (->> (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+                     (#'session/assign-token cfg))
+        claims  (tokens/decode cfg (:token session))
+        exp     (:exp claims)]
+    (t/is (some? exp) "session token should contain :exp claim")
+    (t/is (ct/inst? exp) "exp should be an instant")))
+
+(t/deftest session-token-exp-based-on-created-at
+  (let [cfg          th/*system*
+        manager      (session/inmemory-manager)
+        profile      (th/create-profile* 1)
+        session      (->> (session/create-session manager {:profile-id (:id profile)
+                                                           :user-agent "user agent"})
+                          (#'session/assign-token cfg))
+        claims       (tokens/decode cfg (:token session))
+        expected-exp (ct/plus (:created-at session) (ct/duration {:days 30}))]
+    (t/is (some? (:exp claims)) "session token should contain :exp claim")
+    (t/is (= (inst-ms (:exp claims))
+             (inst-ms expected-exp))
+          "exp should equal created-at + 30 days")))
+
+(t/deftest session-token-past-exp-is-rejected
+  (let [cfg         th/*system*
+        manager     (session/inmemory-manager)
+        profile     (th/create-profile* 1)
+        session     (->> (session/create-session manager {:profile-id (:id profile)
+                                                          :user-agent "user agent"})
+                         (#'session/assign-token cfg))
+        claims      (tokens/decode cfg (:token session))
+        past-claims (assoc claims :exp (ct/minus (ct/now) (ct/duration {:days 1})))
+        past-token  (tokens/generate cfg past-claims {:kid 1 :ver 1})]
+    (t/is (nil? (session/decode-token cfg past-token))
+          "token with exp in the past should be rejected")))
+
+(t/deftest session-renewal-preserves-original-exp
+  (let [cfg      th/*system*
+        profile  (th/create-profile* 1)
+        created  (ct/minus (ct/now) (ct/duration {:days 1}))
+        session  {:id          (uuid/random)
+                  :profile-id  (:id profile)
+                  :user-agent  "user agent"
+                  :created-at  created
+                  :modified-at (ct/minus (ct/now) (ct/duration {:hours 7}))}
+        manager  (reify session/ISessionManager
+                   (read-session [_ _] session)
+                   (create-session [_ _] session)
+                   (update-session [_ s] (assoc s :modified-at (ct/now)))
+                   (delete-session [_ _] nil))
+
+        old-token      (:token (#'session/assign-token cfg session))
+        original-exp   (:exp (tokens/decode cfg old-token))
+        handler        (-> (fn [req] req)
+                           (#'session/wrap-authz (assoc th/*system* ::session/manager manager))
+                           (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                            :cookie (partial session/decode-token cfg)}))
+        response       (handler (make-dummy-request {:cookies {"auth-token" old-token}}))
+        renewed-token  (get-in response [::yres/cookies "auth-token" :value])
+        renewed-claims (tokens/decode cfg renewed-token)]
+    (t/is (some? original-exp) "original token should have :exp")
+    (t/is (not= old-token renewed-token) "renewal should issue a new token string")
+    (t/is (= (inst-ms original-exp) (inst-ms (:exp renewed-claims)))
+          "renewed token should preserve the original :exp, not extend it")))
+
+(t/deftest legacy-session-token-is-rejected
+  (let [cfg      th/*system*
+        manager  (session/inmemory-manager)
+        handler  (-> (fn [req] req)
+                     (#'session/wrap-authz {::session/manager manager})
+                     (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                      :cookie (partial session/decode-token cfg)}))
+        token    (tokens/generate cfg {:sid "legacy-session-id"} {:kid 0 :ver 0})
+        response (handler (make-dummy-request {:cookies {"auth-token" token}}))]
+    (t/is (nil? (get response ::http/auth-data))
+          "legacy tokens must not be attached as auth data")
+    (t/is (nil? (::session/profile-id response))
+          "legacy tokens must not authenticate")))
+
+(t/deftest session-gc-deletes-idle-and-absolute-expired-rows
+  (let [profile  (th/create-profile* 1)
+        fresh    (uuid/random)
+        idle     (uuid/random)
+        absolute (uuid/random)
+        valid    (uuid/random)]
+
+    (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, created_at, modified_at)
+                       VALUES (?, ?, now(), now())"
+                      fresh (:id profile)])
+    (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, created_at, modified_at)
+                       VALUES (?, ?, now() - interval '1 day', now() - interval '8 days')"
+                      idle (:id profile)])
+    (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, created_at, modified_at)
+                       VALUES (?, ?, now() - interval '31 days', now())"
+                      absolute (:id profile)])
+    (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, created_at, modified_at)
+                       VALUES (?, ?, now() - interval '1 day', now() - interval '6 days')"
+                      valid (:id profile)])
+
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (#'session/collect-expired-tasks
+                   (assoc cfg
+                          :app.http.session.tasks/max-age (ct/duration {:days 7})
+                          :app.http.session.tasks/max-age-absolute (ct/duration {:days 30})))))
+
+    (let [ids (->> (th/db-exec! ["SELECT id FROM http_session_v2 WHERE profile_id = ?" (:id profile)])
+                   (map :id)
+                   (set))]
+      (t/is (contains? ids fresh) "fresh session must be kept")
+      (t/is (contains? ids valid) "session within both windows must be kept")
+      (t/is (not (contains? ids idle)) "idle session must be deleted")
+      (t/is (not (contains? ids absolute)) "session past the absolute cap must be deleted"))))
 
 (t/deftest parse-request-illegal-argument-exception
   ;; clojure.data.json raises IllegalArgumentException (case
