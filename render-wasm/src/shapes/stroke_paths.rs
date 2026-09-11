@@ -295,6 +295,57 @@ mod tests {
         assert!(bounds.right > 104., "bounds: {bounds:?}");
     }
 
+    /// Farthest point from `center` still inside `path` along `angle`,
+    /// probed between 0 and `max_radius`.
+    fn radius_at(path: &skia::Path, center: (f32, f32), angle: f32, max_radius: f32) -> f32 {
+        let (mut lo, mut hi) = (0., max_radius);
+        for _ in 0..40 {
+            let mid = (lo + hi) / 2.;
+            let p = (center.0 + mid * angle.cos(), center.1 + mid * angle.sin());
+            if path.contains(p) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        lo
+    }
+
+    #[test]
+    fn circle_marker_cap_stays_round() {
+        // Regression: conics were converted to a single quad each, so circle
+        // markers bulged ~6% at the arc midpoints and looked like squircles.
+        let stroke = Stroke::new_center_stroke(
+            4.,
+            StrokeStyle::Solid,
+            None,
+            Some(StrokeCap::CircleMarker),
+            None,
+            None,
+        );
+        let selrect = Rect::from_xywh(0., 0., 100., 0.);
+        let path = stroke_to_path(&stroke, &horizontal_line(), None, &selrect, None, false)
+            .expect("stroke outline")
+            .to_skia_path(None);
+
+        // CircleMarker radius is width * 2, centered on the path end.
+        let expected = 8.;
+        for step in 0..8 {
+            // Skip the direction pointing back along the line, where the cap
+            // merges into the stroke band.
+            if step == 4 {
+                continue;
+            }
+            let angle = std::f32::consts::FRAC_PI_4 * step as f32;
+            let radius = radius_at(&path, (100., 0.), angle, expected * 2.);
+            assert!(
+                (radius - expected).abs() < expected * 0.01,
+                "radius at {}rad: {radius}",
+                angle
+            );
+        }
+    }
+
     #[test]
     fn outline_includes_mixed_round_and_arrow_caps() {
         // Regression for #10825: a round start plus an arrow end used to be

@@ -196,9 +196,12 @@ impl Path {
                     let w = conic_weights[current_conic];
                     current_conic += 1;
 
-                    // pow2=0: 1 quad per conic. A circle (4 conics) becomes
-                    // 4 cubics, matching the standard bezier approximation.
-                    const POW2: usize = 0;
+                    // pow2=2: 4 quads per conic, so a circle (4 conics)
+                    // becomes 16 cubics and stays within ~0.03% of the real
+                    // radius. One quad per conic is off by ~6% at the arc
+                    // midpoint, which makes round caps and circle markers
+                    // look like squircles once converted to a path.
+                    const POW2: usize = 2;
                     let quad_count = 1 << POW2;
                     let pts_count = 1 + 2 * quad_count;
                     let mut quad_pts = vec![skia::Point::default(); pts_count];
