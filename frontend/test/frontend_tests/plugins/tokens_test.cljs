@@ -194,7 +194,7 @@
                                                 :type :font-family
                                                 :value ["Inter"]))))
                         (ctht/update-tokens-status
-                          #(ctos/set-tokens-status % #{theme-id} #{set-id})))
+                         #(ctos/set-tokens-status % #{theme-id} #{set-id})))
           store     (ths/setup-store file)
           _         (set! st/state store)
           _         (set! st/stream (ptk/input-stream store))
