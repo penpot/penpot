@@ -51,4 +51,10 @@
  {:permits 4}
 
  :import-binfile/by-profile
+ {:permits 1 :queue 2}
+
+ :profile-plugin-ops/global
+ {:permits 4}
+
+ :profile-plugin-ops/by-profile
  {:permits 1 :queue 2}}

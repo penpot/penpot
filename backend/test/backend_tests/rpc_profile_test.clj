@@ -1341,6 +1341,111 @@
     (t/is (th/ex-of-code? (:error out) :params-validation))))
 
 
+(t/deftest update-profile-props-rejects-oversized-props
+  ;; The merged props must not exceed :profile-props-max-size
+  (let [profile (th/create-profile* 1)]
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest update-profile-props-enforces-hard-limit-on-oversized-profile
+  ;; An already-oversized profile can only write back under the limit:
+  ;; shrinking below it passes, staying above it fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    ;; Seed an already-oversized profile directly in DB (bypasses RPC validation)
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      ;; Shrinking below the limit passes
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob "small"}}}
+            out  (th/command! data)]
+        (t/is (nil? (:error out))))
+      ;; Staying above the limit fails
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 300 "x"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest check-props-size-measures-bytes-not-chars
+  ;; The limit is in UTF-8 bytes: multibyte content that fits in chars
+  ;; but exceeds the byte limit must be rejected
+  (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 200})]
+    ;; 70 ASCII chars (~87 bytes serialized) passes and returns props unchanged
+    (let [props {:blob (apply str (repeat 70 "x"))}]
+      (t/is (= props (profile/check-props-size props))))
+    ;; 70 CJK chars (~227 bytes serialized, still 70 chars) raises
+    (try
+      (profile/check-props-size {:blob (apply str (repeat 70 "日"))})
+      (t/is false "should have thrown")
+      (catch clojure.lang.ExceptionInfo e
+        (t/is (= :validation (:type (ex-data e))))
+        (t/is (= :props-too-large (:code (ex-data e))))))))
+
+(t/deftest update-profile-props-rejects-steady-size-on-oversized-profile
+  ;; Same size (not smaller) on an oversized profile still exceeds
+  ;; the limit, so it fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-props
+                  ::rpc/profile-id (:id profile)
+                  :props {:onboarding-questions {:big-blob (apply str (repeat 200 "y"))}}}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
+(t/deftest update-profile-notifications-rejects-growth-on-oversized-profile
+  ;; The notifications write path goes through the same size check:
+  ;; growing an oversized profile fails
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data {::th/type :update-profile-notifications
+                  ::rpc/profile-id (:id profile)
+                  :dashboard-comments :all
+                  :email-comments :all
+                  :email-invites :all}
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+(t/deftest update-profile-notifications-rejects-steady-on-oversized-profile
+  ;; Same-size notifications write on an oversized profile still exceeds
+  ;; the limit, so it fails
+  (let [profile (th/create-profile* 1)
+        notifications {:dashboard-comments :all
+                       :email-comments :all
+                       :email-invites :all}
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}
+                 :notifications notifications}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [data (merge {::th/type :update-profile-notifications
+                         ::rpc/profile-id (:id profile)}
+                        notifications)
+            out  (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+
 (t/deftest prepare-register-profile-password-too-short
   (let [data {::th/type :prepare-register-profile
               :email "user@example.com"
