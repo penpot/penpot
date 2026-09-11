@@ -101,10 +101,7 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}
-
-   ;; Profile props total size limit (serialized, after merge)
-   :profile-props-max-size (* 1024 1024 2)}) ;; 2 MiB
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -168,7 +165,8 @@
     [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 
-    ;; Profile props total size limit (PENPOT_PROFILE_PROPS_MAX_SIZE)
+    ;; Profile props total size limit (PENPOT_PROFILE_PROPS_MAX_SIZE);
+    ;; defaults to profile/default-props-max-size when unset
     [:profile-props-max-size {:optional true} ::sm/int]
 
     [:login-lockout-max-attempts {:optional true} ::sm/int]

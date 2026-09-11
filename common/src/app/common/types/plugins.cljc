@@ -52,8 +52,8 @@
    [:name [:string {:max 500}]]
    [:description {:optional true} [:string {:max 4096}]]
    [:host [:string {:max 500}]]
-   [:code [:string {:max 1048576}]] ;; 1 MiB chars; byte budget enforced by profile-props-max-size
-   [:icon {:optional true} [:string {:max 262144}]] ;; 256 KiB chars; see above
+   [:code [:string {:max 500}]] ;; manifest path, not content
+   [:icon {:optional true} [:string {:max 500}]] ;; manifest path, not content
    [:permissions schema:permissions]])
 
 (def schema:plugin-registry

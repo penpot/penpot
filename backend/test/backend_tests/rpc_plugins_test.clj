@@ -160,6 +160,19 @@
         (t/is (th/ex-of-type? (:error out) :validation))
         (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
+(t/deftest add-profile-plugin-rejects-oversized-code-path
+  ;; :code holds a manifest path, not content: overlong values are
+  ;; rejected by the entry schema before the props size check runs
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 501 "x")))
+        data    {::th/type :add-profile-plugin
+                 ::rpc/profile-id (:id profile)
+                 :plugin plugin}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
 (t/deftest remove-profile-plugin-allowed-on-oversized-profile
   ;; Removal shrinks props, so it passes even under a tight limit
   (let [profile (th/create-profile* 1)
@@ -170,8 +183,9 @@
                               ::rpc/profile-id (:id profile)
                               :plugin plugin})]
         (t/is (nil? (:error out)))))
-    ;; Removal under a tight limit still passes
-    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+    ;; Removal under a tighter limit still passes: the seeded registry
+    ;; is oversized against it, but the remaining props fit
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 300})]
       (let [out (th/command! {::th/type :remove-profile-plugin
                               ::rpc/profile-id (:id profile)
                               :plugin-id (uuid/uuid plugin-id-1)})]
