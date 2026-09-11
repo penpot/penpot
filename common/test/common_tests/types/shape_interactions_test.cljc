@@ -858,7 +858,20 @@
     (t/testing "Update interaction"
       (let [new-interactions (ctsi/update-interaction interactions 1 #(ctsi/set-action-type % :open-url))]
         (t/is (= (count new-interactions) 2))
-        (t/is (= (:action-type (last new-interactions)) :open-url))))))
+        (t/is (= (:action-type (last new-interactions)) :open-url))))
+
+    (t/testing "Remove interaction with an index out of range"
+      (t/is (= interactions (ctsi/remove-interaction interactions 2)))
+      (t/is (= interactions (ctsi/remove-interaction interactions -1)))
+      (t/is (= interactions (ctsi/remove-interaction interactions nil)))
+      (t/is (= [] (ctsi/remove-interaction nil 0))))
+
+    (t/testing "Update interaction with an index out of range"
+      (let [update-fn #(ctsi/set-action-type % :open-url)]
+        (t/is (= interactions (ctsi/update-interaction interactions 2 update-fn)))
+        (t/is (= interactions (ctsi/update-interaction interactions -1 update-fn)))
+        (t/is (= interactions (ctsi/update-interaction interactions nil update-fn)))
+        (t/is (nil? (ctsi/update-interaction nil 0 update-fn)))))))
 
 
 (t/deftest remap-interactions

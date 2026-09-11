@@ -349,6 +349,70 @@ describe('Interactions', () => {
     expect(r.interactions.length).toBe(before - 1);
   });
 
+  // Removing an interaction shifts the ones after it, so draining a shape from
+  // a single read of the array must reach every interaction it returned. Both
+  // removal entry points are covered.
+  test('every interaction can be removed from one read of the array', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', { type: 'open-url', url: 'https://a.example' });
+    await ctx.penpot.waitForLayoutUpdate();
+    r.addInteraction('mouse-enter', {
+      type: 'open-url',
+      url: 'https://b.example',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(2);
+
+    for (const interaction of r.interactions) {
+      interaction.remove();
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    expect(r.interactions).toHaveLength(0);
+  });
+
+  test('removeInteraction can drain a shape from one read of the array', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', { type: 'open-url', url: 'https://a.example' });
+    await ctx.penpot.waitForLayoutUpdate();
+    r.addInteraction('mouse-enter', {
+      type: 'open-url',
+      url: 'https://b.example',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(2);
+
+    for (const interaction of r.interactions) {
+      r.removeInteraction(interaction);
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    expect(r.interactions).toHaveLength(0);
+  });
+
+  // A held interaction addresses itself rather than a position, so a write
+  // reaches it even once an earlier interaction has shifted it.
+  test('an interaction still writes to itself after an earlier one is removed', async (ctx) => {
+    const r = rect(ctx);
+    for (const trigger of ['click', 'mouse-enter', 'mouse-leave'] as const) {
+      r.addInteraction(trigger, {
+        type: 'open-url',
+        url: `https://${trigger}.example`,
+      });
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    const [first, , last] = r.interactions;
+
+    first.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    last.delay = 500;
+    await ctx.penpot.waitForLayoutUpdate();
+
+    expect(r.interactions.map((i) => i.trigger)).toEqual([
+      'mouse-enter',
+      'mouse-leave',
+    ]);
+    expect(r.interactions.map((i) => i.delay)).toEqual([null, 500]);
+  });
+
   test('interaction trigger can be changed', (ctx) => {
     const dest = board(ctx);
     const r = rect(ctx);
