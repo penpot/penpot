@@ -28,3 +28,13 @@
    [:id ::sm/uuid]
    [:name {:optional true} :string]
    [:email {:optional true} :string]])
+
+
+(defn oidc?
+  "Whether account credentials are managed by an OIDC provider.
+  Resolved profiles expose is-oidc because private provider claims are filtered."
+  [{:keys [auth-backend props is-oidc]}]
+  (boolean (or is-oidc
+               (= auth-backend "oidc")
+               (contains? props :oidc/email)
+               (contains? props :oidc/provider-id))))
