@@ -9804,21 +9804,31 @@ msgstr "Usa una referencia"
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
 
-#: src/app/main/ui/workspace/tokens/tokens_source.cljs:24
-msgid "workspace.tokens.connected-library"
-msgstr "librería conectada"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
 msgid "workspace.tokens.current-tokens-source-tooltip"
 msgstr "Esta es la actual fuente de Tokens"
 
-#: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
-msgid "workspace.tokens.open-connected-library"
-msgstr "Abrir librería conectada"
 
 #: src/app/main/data/workspace/libraries.cljs:847
 msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
 msgstr "Los sets o temas de la fuente de tokens se han modificado"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:74
+msgid "workspace.tokens.source"
+msgstr "Fuente:"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:79
+msgid "workspace.tokens.this-file"
+msgstr "Este archivo"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:96
+msgid "workspace.tokens.change-token-source"
+msgstr "Cambiar fuente de tokens"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:102
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Abrir la fuente de tokens en una pestaña nueva"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused

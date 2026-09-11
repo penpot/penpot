@@ -10147,21 +10147,31 @@ msgstr "Use a reference"
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
-#: src/app/main/ui/workspace/tokens/tokens_source.cljs:24
-msgid "workspace.tokens.connected-library"
-msgstr "connected library"
 
 #: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
 msgid "workspace.tokens.current-tokens-source-tooltip"
 msgstr "This is the current Tokens source"
 
-#: src/app/main/ui/workspace/tokens/tokens_source.cljs:25
-msgid "workspace.tokens.open-connected-library"
-msgstr "Open connected library"
 
 #: src/app/main/data/workspace/libraries.cljs:847
 msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
 msgstr "Tokens source sets or themes have been modified"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:74
+msgid "workspace.tokens.source"
+msgstr "Source:"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:79
+msgid "workspace.tokens.this-file"
+msgstr "This file"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:96
+msgid "workspace.tokens.change-token-source"
+msgstr "Change token source"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:102
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Open tokens' source in a new tab"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
