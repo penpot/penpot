@@ -138,8 +138,8 @@
         (mf/use-fn
          (mf/deps id is-separator?)
          (fn [event]
-           (let [new-name (str/trim (dom/get-target-val event))]
-             (if (str/empty? new-name)
+           (let [new-name (ctp/normalize-page-name (dom/get-target-val event))]
+             (if (not (ctp/valid-page-name? new-name))
                (when is-separator?
                  (st/emit! (dw/delete-page id)))
                (st/emit! (dw/rename-page id new-name))))

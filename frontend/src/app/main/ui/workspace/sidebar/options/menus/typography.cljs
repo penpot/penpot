@@ -620,8 +620,8 @@
            :options size-options
            :type "number"
            :placeholder (tr "settings.multiple")
-           :min 3
-           :max 1000
+           :min txt/font-size-min
+           :max txt/font-size-max
            :on-change on-font-size-change
            :on-blur on-blur}])]
 
@@ -669,8 +669,8 @@
               :alt (tr "workspace.options.text-options.line-height")}
        deprecated-icon/text-lineheight]
       [:> deprecated-input/numeric-input*
-       {:min -200
-        :max 200
+       {:min txt/spacing-min
+        :max txt/spacing-max
         :step 0.1
         :default-value "1.2"
         :class (stl/css :line-height-input)
@@ -688,8 +688,8 @@
         :alt (tr "workspace.options.text-options.letter-spacing")}
        deprecated-icon/text-letterspacing]
       [:> deprecated-input/numeric-input*
-       {:min -200
-        :max 200
+       {:min txt/spacing-min
+        :max txt/spacing-max
         :step 0.1
         :default-value "0"
         :class (stl/css :letter-spacing-input)

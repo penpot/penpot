@@ -64,7 +64,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -78,6 +78,21 @@
 
 (defn interaction-proxy? [p]
   (obj/type-of? p "InteractionProxy"))
+
+(defn- valid-interaction-action?
+  [file-id page-id source raw-action interaction]
+  (let [page              (u/locate-page file-id page-id)
+        destination-proxy (obj/get raw-action "destination")
+        destination-id    (:destination interaction)
+        animation-type    (get-in interaction [:animation :animation-type])]
+    (and (sm/validate ctsi/schema:interaction interaction)
+         (ctsi/valid-delay? interaction)
+         (or (nil? destination-proxy)
+             (and (shape-proxy? destination-proxy)
+                  (= file-id (obj/get destination-proxy "$file"))
+                  (= page-id (obj/get destination-proxy "$page"))))
+         (ctsi/valid-destination? (:objects page) source destination-id)
+         (ctsi/allowed-animation? (:action-type interaction) animation-type))))
 
 (defn interaction-proxy
   [plugin-id file-id page-id shape-id index]
@@ -98,9 +113,10 @@
      :get #(-> % u/proxy->interaction :event-type format/format-key)
      :set
      (fn [_ value]
-       (let [value (parser/parse-keyword value)]
+       (let [value (parser/parse-keyword value)
+             shape (u/locate-shape file-id page-id shape-id)]
          (cond
-           (not (contains? ctsi/event-types value))
+           (not (ctsi/valid-event-type-for-shape? shape value))
            (u/not-valid plugin-id :trigger value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -108,9 +124,9 @@
 
            :else
            (st/emit! (dwi/update-interaction
-                      (u/locate-shape file-id page-id shape-id)
+                      shape
                       index
-                      #(assoc % :event-type value)
+                      #(ctsi/set-event-type % value shape)
                       {:page-id page-id})))))}
 
     :delay
@@ -137,12 +153,13 @@
      :get #(-> % u/proxy->interaction (format/format-action plugin-id file-id page-id))
      :set
      (fn [self value]
-       (let [params (parser/parse-action value)
+       (let [shape (u/locate-shape file-id page-id shape-id)
+             params (parser/parse-action value)
              interaction
              (-> (u/proxy->interaction self)
                  (d/patch-object params))]
          (cond
-           (not (sm/validate ctsi/schema:interaction interaction))
+           (not (valid-interaction-action? file-id page-id shape value interaction))
            (u/not-valid plugin-id :action interaction)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -507,7 +524,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -526,7 +543,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusTopRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -545,7 +562,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomRight value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -564,7 +581,7 @@
             (fn [self value]
               (let [id (obj/get self "$id")]
                 (cond
-                  (not (sm/valid-safe-number? value))
+                  (not (sm/valid-non-negative-safe-number? value))
                   (u/not-valid plugin-id :borderRadiusBottomLeft value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -1500,7 +1517,12 @@
 
            :swapComponent
            (fn [component]
-             (let [shape (u/locate-shape file-id page-id id)]
+             (let [shape            (u/locate-shape file-id page-id id)
+                   objects          (u/locate-objects file-id page-id)
+                   valid-component? (obj/type-of? component "LibraryComponentProxy")
+                   target-file      (when valid-component? (obj/get component "$file"))
+                   target-id        (when valid-component? (obj/get component "$id"))
+                   target-data      (some-> (u/locate-file target-file) :data)]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :swapComponent "Plugin doesn't have 'content:write' permission")
@@ -1508,16 +1530,19 @@
                  (not (u/page-active? page-id))
                  (u/not-valid plugin-id :swapComponent "Cannot modify a page that is not currently active")
 
-                 (not (obj/type-of? component "LibraryComponentProxy"))
+                 (not valid-component?)
                  (u/not-valid plugin-id :swapComponent "Component not valid")
 
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :swapComponent "The shape is not a component copy instance")
 
+                 (dwl/component-swap-nesting-loop? objects shape target-data target-id)
+                 (u/not-valid plugin-id :swapComponent "The swap would create a component nesting loop")
+
                  :else
                  (st/emit! (dwl/component-swap shape
-                                               (obj/get component "$file")
-                                               (obj/get component "$id")
+                                               target-file
+                                               target-id
                                                true)))))
 
            :resetOverrides
@@ -1611,11 +1636,15 @@
            ;; Interactions
            :addInteraction
            (fn [trigger action delay]
-             (let [interaction
-                   (-> ctsi/default-interaction
-                       (d/patch-object (parser/parse-interaction trigger action delay)))]
+             (let [shape       (u/locate-shape file-id page-id id)
+                   event-type  (parser/parse-keyword trigger)
+                   interaction (when (ctsi/valid-event-type-for-shape? shape event-type)
+                                 (-> ctsi/default-interaction
+                                     (ctsi/set-event-type event-type shape)
+                                     (d/patch-object (parser/parse-action action))
+                                     (cond-> (some? delay) (assoc :delay delay))))]
                (cond
-                 (not (sm/validate ctsi/schema:interaction interaction))
+                 (not (valid-interaction-action? file-id page-id shape action interaction))
                  (u/not-valid plugin-id :addInteraction interaction)
 
                  (not (r/check-permission plugin-id "content:write"))
@@ -1715,14 +1744,22 @@
                      [:fn token-proxy?]
                      [:maybe [::sm/set [:and ::sm/keyword [:fn token-attr?]]]]]
             :fn (fn [token attrs]
-                  (let [token (u/locate-token file-id (obj/get token "$set-id") (obj/get token "$id"))
+                  (let [set-id   (obj/get token "$set-id")
+                        token-id (obj/get token "$id")
+                        token    (u/locate-token file-id set-id token-id)
                         kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
                     (cond
-                      (some #(not (token-attr? %)) kw-attrs)
-                      (u/not-valid plugin-id :applyToken attrs)
-
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")
+
+                      (nil? token)
+                      (u/not-valid plugin-id :applyToken token-id)
+
+                      (not (valid-token-resolution? file-id set-id token-id))
+                      (u/not-valid plugin-id :applyToken (:value token))
+
+                      (some #(not (token-attr? %)) kw-attrs)
+                      (u/not-valid plugin-id :applyToken attrs)
 
                       :else
                       (st/emit!
@@ -1746,21 +1783,24 @@
            :switchVariant
            (fn [pos value]
              (cond
+               (not (u/page-active? page-id))
+               (u/not-valid plugin-id :switchVariant "Cannot modify a page that is not currently active")
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
+
                (not (nat-int? pos))
                (u/not-valid plugin-id :pos pos)
 
                (not (string? value))
                (u/not-valid plugin-id :value value)
 
-               (not (r/check-permission plugin-id "content:write"))
-               (u/not-valid plugin-id :switchVariant "Plugin doesn't have 'content:write' permission")
-
                :else
-               (let [shape     (u/locate-shape file-id page-id id)
-                     component (u/locate-library-component file-id (:component-id shape))]
-                 (when  (and component (ctk/is-variant? component))
+               (let [shape (u/locate-shape file-id page-id id)]
+                 (if (dwv/valid-variant-switch? @st/state shape pos value)
                    (st/emit! (-> (dwv/variants-switch {:shapes [shape] :pos pos :val value})
-                                 (se/add-event plugin-id)))))))
+                                 (se/add-event plugin-id)))
+                   (u/not-valid plugin-id :switchVariant "Shape, property, or value is not valid")))))
 
            :combineAsVariants
            (fn [ids]
@@ -1782,13 +1822,7 @@
                                  (distinct))
                            ids)
 
-                     valid?
-                     (every?
-                      (fn [id]
-                        (let [shape     (u/locate-shape file-id page-id id)
-                              component (u/locate-library-component file-id (:component-id shape))]
-                          (not (ctk/is-variant? component))))
-                      ids)]
+                     valid? (dwv/valid-components-for-variants? @st/state page-id ids)]
 
                  (if valid?
                    (let [variant-id (uuid/next)]
@@ -1796,7 +1830,7 @@
                                     ids
                                     {:trigger "plugin:combine-as-variants" :variant-id variant-id})
                                    (se/add-event plugin-id)))
-                     (shape-proxy plugin-id variant-id))
+                     (shape-proxy plugin-id file-id page-id variant-id))
 
                    (u/not-valid plugin-id :ids "One of the components is not on the same page or is already a variant"))))))
 

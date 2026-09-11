@@ -7,6 +7,7 @@
 (ns app.common.types.grid
   (:require
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.types.color :as clr]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,18 +19,28 @@
    [:color clr/schema:hex-color]
    [:opacity ::sm/safe-number]])
 
+(def schema:grid-count
+  [:and {:gen/gen (sg/small-double :min 1)}
+   ::sm/safe-number
+   [:fn #(<= 1 %)]])
+
+(def schema:square-size
+  [:and {:gen/gen (sg/small-double :min 0.01)}
+   ::sm/safe-number
+   [:fn #(<= 0.01 %)]])
+
 (def schema:column-params
   [:map {:title "ColumnGridParams"}
    [:color schema:grid-color]
    [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
-   [:size {:optional true} [:maybe ::sm/safe-number]]
+   [:size {:optional true} [:maybe schema:grid-count]]
    [:margin {:optional true} [:maybe ::sm/safe-number]]
    [:item-length {:optional true} [:maybe ::sm/safe-number]]
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
 (def schema:square-params
   [:map {:title "SquareGridParams"}
-   [:size {:optional true} [:maybe ::sm/safe-number]]
+   [:size {:optional true} [:maybe schema:square-size]]
    [:color schema:grid-color]])
 
 (def schema:grid
@@ -78,4 +89,3 @@
   {:square default-square-params
    :column default-layout-params
    :row    default-layout-params})
-
