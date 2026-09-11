@@ -16,6 +16,7 @@
    [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.tokens :as clo]
    [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.time :as ct]
@@ -46,6 +47,7 @@
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -654,6 +656,7 @@
                      (merge (meta it))))
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
+                (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                 (dws/select-shapes (d/ordered-set (:id new-shape)))
                 (when start-move?
@@ -837,7 +840,11 @@
          (rx/merge
           (->> (rx/of library-id)
                (rx/delay 5000)
-               (rx/map fetch-library-thumbnails)))
+               (rx/map fetch-library-thumbnails))
+          (when (ch/tokens-lib-changed? changes)
+            (rx/of (dwtp/propagate-workspace-tokens)))
+          (when (ch/notifiable-token-change-occured? changes)
+            (rx/of (ntf/info (tr "workspace.tokens.notifications.source-sets-or-themes-updated")))))
 
          (rx/take-until stopper-s))))))
 
@@ -1096,6 +1103,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
          (when (and (features/active-feature? state "render-wasm/v1")
                     (seq new-text-ids))
            (dwwt/resize-wasm-text-all new-text-ids))
@@ -1345,6 +1353,9 @@
                                #(do (apply st/emit! (map (fn [library]
                                                            (sync-file file-id (:id library)))
                                                          libraries-with-changes))
+                                    ;; Launch a local tokens propagation, so that the copies have the token values
+                                    ;; with the local tokens status, not the one coming from the external library.
+                                    (st/emit! (dwtp/propagate-workspace-tokens))
                                     (st/emit! (ntf/hide)))
 
                                do-dismiss
@@ -1397,8 +1408,8 @@
        (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
-  "Watch the state for changes that affect to any main instance. If a change is detected will throw
-  an update-component-sync, so changes are immediately propagated to the component and copies."
+  "Watch the state for changes that affect to any main instance. If a change is detected will call
+   component-changed, so changes are immediately propagated to the component and copies."
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
@@ -1530,6 +1541,47 @@
 
                (rx/take-until stopper-s)))))))
 
+(defn sync-tokens-status-with-lib
+  []
+  (ptk/reify ::sync-tokens-status-with-lib
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)]
+        (when (and tokens-lib tokens-status)
+          (let [data    (dsh/lookup-file-data state)
+                changes (-> (pcb/empty-changes)
+                            (pcb/with-library-data data)
+                            (clo/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
+            (rx/of (dch/commit-changes changes))))))))
+
+(defn watch-token-changes
+  "Watch the state for changes that affect the tokens library. If a change is detected,
+   launches a sync-tokens-status event so the tokens-status is kept in sync with the library."
+  []
+  (ptk/reify ::watch-token-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper-s
+            (->> stream
+                 (rx/map ptk/type)
+                 (rx/filter (fn [event-type]
+                              (or (= ::dwpg/finalize-page event-type)
+                                  (= ::watch-token-changes event-type)))))
+
+            changes-s
+            (->> stream
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
+                 (rx/filter #(= :local (:source %)))
+                 (rx/observe-on :async))]
+
+        (->> changes-s
+             (rx/filter (comp ch/tokens-lib-changed? :changes))
+             (rx/debounce 5000)
+             (rx/map (fn [_] (sync-tokens-status-with-lib)))
+             (rx/take-until stopper-s))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1575,6 +1627,7 @@
                    (map #(assoc % :library-of file-id))
                    (d/index-by :id))))))
 
+
 (defn- load-library-file
   [file-id library-id]
   (ptk/reify ::load-library-file
@@ -1584,8 +1637,9 @@
         (rx/merge
          (->> (rp/cmd! :get-file {:id library-id :features features})
               (rx/merge-map fpmap/resolve-file)
-              (rx/map (fn [file]
-                        (libraries-fetched file-id [file]))))
+              (rx/mapcat (fn [file]
+                           (rx/of
+                            (libraries-fetched file-id [file])))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -1594,10 +1648,10 @@
 
 (defn link-file-to-library
   [file-id library-id]
-  (ptk/reify ::attach-library
+  (ptk/reify ::link-file-to-library
     ev/Event
     (-data [_]
-      {::ev/name "attach-library"
+      {::ev/name "link-file-to-library"
        :file-id file-id
        :library-id library-id})
 
@@ -1614,23 +1668,22 @@
                                   (map first)
                                   set)]
         (rx/concat
-         (rx/merge
-          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-               (rx/merge-map (fn [libraries-to-load]
-                               (as-> libraries-to-load $
-                                 (remove loaded-libraries $)
-                                 (conj $ library-id)
-                                 (map #(load-library-file file-id %) $))))
-               (rx/catch (fn [cause]
-                           (let [error (ex-data cause)]
-                             (if (= (:code error) :circular-library-reference)
-                               (rx/of (ntf/error (tr "errors.circular-library-reference")))
-                               (rx/throw cause)))))))
-         (rx/of (ptk/reify ::attach-library-finished))
+         (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+              (rx/merge-map (fn [libraries-to-load]
+                              (as-> libraries-to-load $
+                                (remove loaded-libraries $)
+                                (conj $ library-id)
+                                (map #(load-library-file file-id %) $))))
+              (rx/catch (fn [cause]
+                          (let [error (ex-data cause)]
+                            (if (= (:code error) :circular-library-reference)
+                              (rx/of (ntf/error (tr "errors.circular-library-reference")))
+                              (rx/throw cause))))))
+         (rx/of (ptk/reify ::link-file-to-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ev/event {::ev/name "attach-library-variants"
+                          (ev/event {::ev/name "link-file-to-library-variants"
                                      :file-id file-id
                                      :library-id library-id
                                      :variants-count variants-count

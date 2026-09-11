@@ -134,6 +134,18 @@
             "~:components-v2": true,
             "~:base-font-size": "16px"
         },
+        "~:tokens-status": {
+            "~#penpot/tokens-status": {
+                "~:active-theme-ids": {
+                    "~#set": []
+                },
+                "~:active-set-ids": {
+                    "~#set": [
+                    "~u7c1a66f7-5186-8060-8007-6ce67f8f2592"
+                    ]
+                }
+            }
+        },
         "~:tokens-lib": {
             "~#penpot/tokens-lib": {
                 "~:sets": {

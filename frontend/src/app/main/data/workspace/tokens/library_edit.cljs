@@ -9,12 +9,14 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.point :as gpt]
-   [app.common.logic.tokens :as clt]
+   [app.common.logic.tokens :as clo]
    [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
@@ -34,19 +36,12 @@
 ;; TOKENS Getters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME: lookup rename
-
-(defn get-tokens-lib
-  [state]
-  (-> (dsh/lookup-file-data state)
-      (get :tokens-lib)))
-
 (defn lookup-token-set
   ([state]
    (when-let [selected (dm/get-in state [:workspace-tokens :selected-token-set-id])]
      (lookup-token-set state selected)))
   ([state id]
-   (some-> (get-tokens-lib state)
+   (some-> (dsh/lookup-tokens-lib state)
            (ctob/get-set id))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -231,8 +226,7 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [data       (dsh/lookup-file-data state)
-              tokens-lib (get data :tokens-lib)]
-
+              tokens-lib (dsh/lookup-tokens-lib state)]
           (if (and tokens-lib (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
             (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
                               :type :toast
@@ -249,8 +243,8 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [data             (dsh/lookup-file-data state)
-            tokens-lib       (get data :tokens-lib)]
+      (let [data       (dsh/lookup-file-data state)
+            tokens-lib (dsh/lookup-tokens-lib state)]
         (if (and (not= id (ctob/get-id token-theme))
                  (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
           (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
@@ -259,7 +253,7 @@
                             :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-theme (ctob/get-id token-theme) token-theme))]
+                            (clo/generate-update-token-theme token-theme))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn set-token-theme-active
@@ -269,31 +263,35 @@
   (ptk/reify ::set-token-theme-active
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data        (dsh/lookup-file-data state)
-            tokens-lib  (get-tokens-lib state)
-            changes (-> (pcb/empty-changes)
-                        (pcb/with-library-data data)
-                        (clt/generate-set-active-token-theme tokens-lib id active?))]
+      (let [data          (dsh/lookup-file-data state)
+            tokens-status (dsh/lookup-tokens-status state)
+            tokens-lib    (dsh/lookup-tokens-lib state)
+            changes       (-> (pcb/empty-changes)
+                              (pcb/with-library-data data)
+                              (clo/generate-set-theme-status tokens-status tokens-lib id active?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-theme-active
   [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::toggle-token-theme-active
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)
-            tokens-lib (get-tokens-lib state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (clt/generate-toggle-token-theme tokens-lib id))]
+      (let [data          (dsh/lookup-tokens-source-data state)
+            tokens-status (dsh/lookup-tokens-status state)
+            tokens-lib    (dsh/lookup-tokens-lib state)
+            changes       (-> (pcb/empty-changes it)
+                              (pcb/with-library-data data)
+                              (clo/generate-toggle-theme tokens-status tokens-lib id))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
 
 (defn delete-token-theme
   [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
@@ -350,10 +348,11 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [data       (dsh/lookup-file-data state)
-             tokens-lib (get data :tokens-lib)
+             tokens-lib (dsh/lookup-tokens-lib state)
              suffix     (tr "workspace.tokens.duplicate-suffix")]
 
-         (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
+         (when-let [token-set (when tokens-lib
+                                (ctob/duplicate-set id tokens-lib {:suffix suffix}))]
            (when id-ref (reset! id-ref (ctob/get-id token-set)))
            (let [changes (-> (pcb/empty-changes it)
                              (pcb/with-library-data data)
@@ -362,32 +361,34 @@
                     (dch/commit-changes changes)))))))))
 
 (defn set-enabled-token-set
-  [name enabled?]
-  (assert (string? name) "expected a string for `name`")
+  [id enabled?]
+  (assert (uuid? id) "expected a uuid for `id`")
   (assert (boolean? enabled?) "expected a boolean for `enabled?`")
   (ptk/reify ::set-enabled-token-set
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data    (dsh/lookup-file-data state)
-            tlib    (get-tokens-lib state)
-            changes (-> (pcb/empty-changes)
-                        (pcb/with-library-data data)
-                        (clt/generate-set-enabled-token-set tlib name enabled?))]
+      (let [data          (dsh/lookup-file-data state)
+            tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)
+            changes       (-> (pcb/empty-changes)
+                              (pcb/with-library-data data)
+                              (clo/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
 
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
 (defn toggle-token-set
-  [name]
-  (assert (string? name) "expected a string for `name`")
+  [id]
+  (assert (uuid? id) "expected a uuid for `id`")
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data    (dsh/lookup-file-data state)
-            tlib    (get-tokens-lib state)
-            changes (-> (pcb/empty-changes)
-                        (pcb/with-library-data data)
-                        (clt/generate-toggle-token-set tlib name))]
+      (let [data          (dsh/lookup-file-data state)
+            tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)
+            changes       (-> (pcb/empty-changes)
+                              (pcb/with-library-data data)
+                              (clo/generate-toggle-token-set tokens-status tokens-lib id))]
 
         (rx/of
          (dch/commit-changes changes)
@@ -398,10 +399,12 @@
   (ptk/reify ::toggle-token-set-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data    (dsh/lookup-file-data state)
-            changes (-> (pcb/empty-changes)
-                        (pcb/with-library-data data)
-                        (clt/generate-toggle-token-set-group (get-tokens-lib state) group-path))]
+      (let [data          (dsh/lookup-file-data state)
+            tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)
+            changes       (-> (pcb/empty-changes)
+                              (pcb/with-library-data data)
+                              (clo/generate-toggle-token-set-group tokens-status tokens-lib group-path))]
 
         (rx/of
          (dch/commit-changes changes)
@@ -413,11 +416,26 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            status  (cfo/make-tokens-status-from-lib lib)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/set-tokens-lib lib))]
+                        (pcb/set-tokens-lib lib)
+                        (pcb/set-tokens-status status))]
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
+
+(defn set-tokens-source
+  [library-id]
+  (ptk/reify ::set-tokens-source
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            library (dsh/lookup-file state library-id)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (clo/generate-set-tokens-source library)
+                        (pcb/set-tokens-source library-id))]
+        (rx/of (dch/commit-changes changes))))))
 
 (defn delete-token-set
   [id]
@@ -439,7 +457,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (clt/generate-delete-token-set-group (get-tokens-lib state) path))]
+                        (clo/generate-delete-token-set-group (dsh/lookup-tokens-lib state) path))]
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
@@ -467,7 +485,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (try
-        (when-let [changes (clt/generate-move-token-set-group (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+        (when-let [changes (clo/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
           (rx/of
            (dch/commit-changes changes)
            (dwtp/propagate-workspace-tokens)))
@@ -483,9 +501,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (try
-        (let [tokens-lib (get-tokens-lib state)
+        (let [tokens-lib (dsh/lookup-tokens-lib state)
               changes    (-> (pcb/empty-changes it)
-                             (clt/generate-move-token-set tokens-lib params))]
+                             (clo/generate-move-token-set tokens-lib params))]
           (rx/of (dch/commit-changes changes)
                  (dwtp/propagate-workspace-tokens)))
         (catch :default cause
@@ -506,11 +524,13 @@
             token-set
             (ctob/make-token-set :name set-name)
 
-            hidden-theme
-            (ctob/make-hidden-theme)
+            hidden-theme                     ;; For legacy compatibility only
+            (-> (ctob/make-hidden-theme)
+                (ctob/enable-set set-name))
 
-            hidden-theme-with-set
-            (ctob/enable-set hidden-theme set-name)
+            token-status
+            (ctos/make-tokens-status :active-theme-ids #{}
+                                     :active-set-ids #{(ctob/get-id token-set)})
 
             changes
             (-> (pcb/empty-changes)
@@ -518,8 +538,9 @@
                 (pcb/set-token-set (ctob/get-id token-set) token-set)
                 (pcb/set-token (ctob/get-id token-set) (:id token) token)
                 (pcb/set-token-theme (ctob/get-id hidden-theme)
-                                     hidden-theme-with-set)
-                (pcb/set-active-token-themes #{ctob/hidden-theme-path}))]
+                                     hidden-theme)
+                (pcb/set-tokens-status token-status))]
+
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
@@ -559,7 +580,7 @@
       (let [token-set (lookup-token-set state set-id)
             data    (dsh/lookup-file-data state)
             changes (reduce (fn [changes token-id]
-                              (let [token     (-> (get-tokens-lib state)
+                              (let [token     (-> (dsh/lookup-tokens-lib state)
                                                   (ctob/get-token (ctob/get-id token-set) token-id))
                                     new-name (->
                                               (cpn/split-path (:name token) :separator ".")
@@ -589,21 +610,22 @@
                          (lookup-token-set state set-id)
                          (lookup-token-set state))
              data      (dsh/lookup-file-data state)
-             token     (-> (get-tokens-lib state)
-                           (ctob/get-token (ctob/get-id token-set) id))
-             token'    (->> (merge token params)
-                            (into {})
-                            (ctob/make-token))
-             token-type (:type token)
-             changes   (-> (pcb/empty-changes it)
-                           (pcb/with-library-data data)
-                           (pcb/set-token (ctob/get-id token-set)
-                                          id
-                                          token'))]
-         (toggle-token-path (str (name token-type) "." (:name token)))
-         (rx/of (dch/commit-changes changes)
-                (ev/event (-> {::ev/name "edit-token" :type token-type}
-                              (merge (meta it))))))))))
+             tokens-lib (dsh/lookup-tokens-lib state)]
+         (when (and tokens-lib token-set)
+           (let [token     (ctob/get-token tokens-lib (ctob/get-id token-set) id)
+                 token'    (->> (merge token params)
+                                (into {})
+                                (ctob/make-token))
+                 token-type (:type token)
+                 changes   (-> (pcb/empty-changes it)
+                               (pcb/with-library-data data)
+                               (pcb/set-token (ctob/get-id token-set)
+                                              id
+                                              token'))]
+             (toggle-token-path (str (name token-type) "." (:name token)))
+             (rx/of (dch/commit-changes changes)
+                    (ev/event (-> {::ev/name "edit-token" :type token-type}
+                                  (merge (meta it))))))))))))
 
 (defn bulk-update-tokens
   [set-id token-ids type old-path new-path & {:keys [undo-group]}]
@@ -617,7 +639,7 @@
                         (lookup-token-set state))
             data    (dsh/lookup-file-data state)
             changes (reduce (fn [changes token-id]
-                              (let [token     (-> (get-tokens-lib state)
+                              (let [token     (-> (dsh/lookup-tokens-lib state)
                                                   (ctob/get-token (ctob/get-id token-set) token-id))
                                     new-name (str/replace (:name token) old-path new-path)
                                     token'    (->> (merge token {:name new-name})
@@ -643,19 +665,20 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
+            tokens-lib (dsh/lookup-tokens-lib state)
             token-set (if set-id
                         (lookup-token-set state set-id)
-                        (lookup-token-set state))
-            token     (-> (get-tokens-lib state)
-                          (ctob/get-token (ctob/get-id token-set) token-id))
-            token-type (:type token)
+                        (lookup-token-set state))]
+        (when (and tokens-lib token-set)
+          (let [token     (ctob/get-token tokens-lib (ctob/get-id token-set) token-id)
+                token-type (:type token)
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/set-token set-id token-id nil))]
-        (rx/of (dch/commit-changes changes)
-               (ev/event (-> {::ev/name "delete-token" :type token-type}
-                             (merge (meta it)))))))))
+                changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/set-token set-id token-id nil))]
+            (rx/of (dch/commit-changes changes)
+                   (ev/event (-> {::ev/name "delete-token" :type token-type}
+                                 (merge (meta it)))))))))))
 
 (defn bulk-delete-tokens
   [set-id token-ids]
@@ -680,7 +703,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [token-set (lookup-token-set state)]
-        (when-let [tokens-lib (get-tokens-lib state)]
+        (when-let [tokens-lib (dsh/lookup-tokens-lib state)]
           (when-let [token (ctob/get-token tokens-lib
                                            (ctob/get-id token-set)
                                            token-id)]

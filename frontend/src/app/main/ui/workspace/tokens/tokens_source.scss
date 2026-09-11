@@ -1,0 +1,77 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as *;
+@use "ds/_sizes" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
+
+// TODO: this must be a custom property in the design system
+:global(.light) {
+  --low-emphasis-background: #fafafa;
+}
+
+:global(.default) {
+  --low-emphasis-background: #121214;
+}
+
+.tokens-source-wrapper {
+  display: flex;
+  padding: 0 0 0 var(--sp-m);
+  background-color: var(--low-emphasis-background);
+}
+
+.tokens-source-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-s);
+  flex-grow: 1;
+  min-width: 0;
+  padding: var(--sp-xs);
+}
+
+.tokens-source-icon {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.tokens-source-text {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.file-name,
+.this-file {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-foreground-primary);
+}
+
+.file-name {
+  @include text-ellipsis;
+}
+
+.file-name-tooltip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.this-file {
+  font-style: italic;
+  color: var(--color-foreground-secondary);
+  overflow-wrap: break-word;
+}
+
+.tokens-source-description {
+  flex-shrink: 0;
+  color: var(--color-foreground-secondary);
+  border: $b-1 solid var(--color-foreground-secondary);
+  padding: var(--sp-xxs) px2rem(6);
+  border-radius: $br-6;
+}

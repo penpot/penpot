@@ -6,49 +6,51 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.ui.workspace.tokens.management.context-menu :as wtcm]
    [clojure.test :as t]))
 
 (defn setup-file []
-  (-> (thf/sample-file :file-1)
-      (tht/add-tokens-lib)
-      (tht/update-tokens-lib #(-> %
-                                  (ctob/add-set (ctob/make-token-set :name "test-token-set"))
-                                  (ctob/add-theme (ctob/make-token-theme :name "test-theme"
-                                                                         :sets #{"test-token-set"}))
-                                  (ctob/set-active-themes #{"/test-theme"})
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-radius"
-                                                                   :type :border-radius
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-color"
-                                                                   :type :color
-                                                                   :value "red"))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-spacing"
-                                                                   :type :spacing
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-sizing"
-                                                                   :type :sizing
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-rotation"
-                                                                   :type :rotation
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-opacity"
-                                                                   :type :opacity
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-dimensions"
-                                                                   :type :dimensions
-                                                                   :value 10))
-                                  (ctob/add-token (thi/id :test-token-set)
-                                                  (ctob/make-token :name "token-number"
-                                                                   :type :number
-                                                                   :value 10))))
+  (-> (tht/sample-file-with-tokens
+       :lib-fn #(-> %
+                    (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
+                                                       :name "test-token-set"))
+                    (ctob/add-theme (ctob/make-token-theme :id (thi/new-id! :test-theme)
+                                                           :name "test-theme"
+                                                           :sets #{"test-token-set"}))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-radius"
+                                                     :type :border-radius
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-color"
+                                                     :type :color
+                                                     :value "red"))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-spacing"
+                                                     :type :spacing
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-sizing"
+                                                     :type :sizing
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-rotation"
+                                                     :type :rotation
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-opacity"
+                                                     :type :opacity
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-dimensions"
+                                                     :type :dimensions
+                                                     :value 10))
+                    (ctob/add-token (thi/id :test-token-set)
+                                    (ctob/make-token :name "token-number"
+                                                     :type :number
+                                                     :value 10)))
+       :status-fn #(ctos/set-tokens-status % #{(thi/id :test-theme)} #{(thi/id :test-token-set)}))
       ;; app.main.data.workspace.tokens.application/generic-attributes
       (tho/add-group :group1)
       ;; app.main.data.workspace.tokens.application/rect-attributes

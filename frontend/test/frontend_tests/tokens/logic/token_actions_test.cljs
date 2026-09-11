@@ -10,8 +10,10 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.test-helpers.tokens :as ctht]
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -44,21 +46,22 @@
 
 (defn setup-file-with-tokens
   [& {:keys [rect-1 rect-2 rect-3]}]
-  (-> (setup-file)
-      (ctho/add-rect :rect-1 rect-1)
-      (ctho/add-rect :rect-2 rect-2)
-      (ctho/add-rect :rect-3 rect-3)
-      (ctho/add-text :text-1 "Hello World!")
-      (assoc-in [:data :tokens-lib]
-                (-> (ctob/make-tokens-lib)
-                    (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
-                    (ctob/set-active-themes #{"/Theme A"})
+  (-> (ctht/sample-file-with-tokens
+       :lib-fn #(-> %
                     (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :set-a)
                                                        :name "Set A"))
+                    (ctob/add-theme (ctob/make-token-theme :id (cthi/new-id! :theme-a)
+                                                           :name "Theme A"
+                                                           :sets #{"Set A"}))
                     (ctob/add-token (cthi/id :set-a)
                                     (ctob/make-token border-radius-token))
                     (ctob/add-token (cthi/id :set-a)
-                                    (ctob/make-token reference-border-radius-token))))))
+                                    (ctob/make-token reference-border-radius-token)))
+       :status-fn #(ctos/set-tokens-status % #{(cthi/id :theme-a)} #{(cthi/id :set-a)}))
+      (ctho/add-rect :rect-1 rect-1)
+      (ctho/add-rect :rect-2 rect-2)
+      (ctho/add-rect :rect-3 rect-3)
+      (ctho/add-text :text-1 "Hello World!")))
 
 (def debounce-text-stop
   (tohs/stop-on ::dwwt/resize-wasm-text-debounce-commit))
@@ -83,15 +86,16 @@
       done
       (let [file   (setup-file-with-empty-lib)
             store  (ths/setup-store file)
-            set    (ctob/make-token-set :name "primitives")
+            set    (ctob/make-token-set :id (cthi/new-id! :set1) :name "primitives")
             events [(dwtl/create-token-set set)]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-state new-state)
-                 lib   (get-in file' [:data :tokens-lib])]
+           (let [file'  (ths/get-file-from-state new-state)
+                 lib    (ctht/get-tokens-lib file')
+                 status (ctht/get-tokens-status file')]
              (t/is (some? (ctob/get-set lib (ctob/get-id set))))
-             (t/is (false? (ctob/token-set-active? lib "primitives"))))))))))
+             (t/is (false? (ctos/set-active? status (cthi/id :set1)))))))))))
 
 (t/deftest test-create-then-enable-token-set
   (t/testing "create followed by set-enabled (as the plugin addSet does) yields an active set"
@@ -99,16 +103,17 @@
       done
       (let [file   (setup-file-with-empty-lib)
             store  (ths/setup-store file)
-            set    (ctob/make-token-set :name "primitives")
+            set    (ctob/make-token-set :id (cthi/new-id! :set1) :name "primitives")
             events [(dwtl/create-token-set set)
-                    (dwtl/set-enabled-token-set "primitives" true)]]
+                    (dwtl/set-enabled-token-set (cthi/id :set1) true)]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-state new-state)
-                 lib   (get-in file' [:data :tokens-lib])]
+           (let [file'  (ths/get-file-from-state new-state)
+                 lib    (ctht/get-tokens-lib file')
+                 status (ctht/get-tokens-status file')]
              (t/is (some? (ctob/get-set lib (ctob/get-id set))))
-             (t/is (true? (ctob/token-set-active? lib "primitives"))))))))))
+             (t/is (true? (ctos/set-active? status (cthi/id :set1)))))))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape   attributes to resolved value"

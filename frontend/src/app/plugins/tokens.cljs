@@ -10,8 +10,10 @@
    [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.schema :as sm]
+   [app.common.types.file :as ctf]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -216,8 +218,10 @@
          (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (-> (dwtl/update-token set-id id {:name value})
-                       (se/add-event plugin-id)))))}
+         (do
+           (u/check-editable-tokens file-id)
+           (st/emit! (-> (dwtl/update-token set-id id {:name value})
+                         (se/add-event plugin-id))))))}
 
     :type
     {:this true
@@ -247,11 +251,13 @@
          (u/not-valid plugin-id :value "Plugin doesn't have 'content:write' permission")
 
          :else
-         (let [token (u/locate-token file-id set-id id)
-               value (cond-> value
-                       (= :font-family (:type token))
-                       (ctob/convert-dtcg-font-family))]
-           (st/emit! (dwtl/update-token set-id id {:value value})))))}
+         (do
+           (u/check-editable-tokens file-id)
+           (let [token (u/locate-token file-id set-id id)
+                 value (cond-> value
+                         (= :font-family (:type token))
+                         (ctob/convert-dtcg-font-family))]
+             (st/emit! (dwtl/update-token set-id id {:value value}))))))}
 
     :resolvedValue
     {:this true
@@ -260,7 +266,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+             tokens-status   (u/locate-tokens-status file-id)
+             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
          (get-resolved-value token tokens-tree)))}
 
     :resolvedValueString
@@ -270,7 +277,8 @@
      (fn [_]
        (let [token           (u/locate-token file-id set-id id)
              tokens-lib      (u/locate-tokens-lib file-id)
-             tokens-tree     (ctob/get-tokens-in-active-sets tokens-lib)]
+             tokens-status   (u/locate-tokens-status file-id)
+             tokens-tree     (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
          (str (get-resolved-value token tokens-tree))))}
 
     :description
@@ -287,8 +295,10 @@
          (u/not-valid plugin-id :description "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (-> (dwtl/update-token set-id id {:description value})
-                       (se/add-event plugin-id)))))}
+         (do
+           (u/check-editable-tokens file-id)
+           (st/emit! (-> (dwtl/update-token set-id id {:description value})
+                         (se/add-event plugin-id))))))}
 
     :duplicate
     (fn []
@@ -302,13 +312,15 @@
         ;;  - use this function in dwtl/duplicate-token
         ;;  - return the new token proxy using the locally forced id
         ;;  - do the same with sets and themes
-        (let [token  (u/locate-token file-id set-id id)
-              token' (ctob/make-token (-> (datafy token)
-                                          (dissoc :id
-                                                  :modified-at)))]
-          (st/emit! (-> (dwtl/create-token set-id token')
-                        (se/add-event plugin-id)))
-          (token-proxy plugin-id file-id set-id (:id token')))))
+        (do
+          (u/check-editable-tokens file-id)
+          (let [token  (u/locate-token file-id set-id id)
+                token' (ctob/make-token (-> (datafy token)
+                                            (dissoc :id
+                                                    :modified-at)))]
+            (st/emit! (-> (dwtl/create-token set-id token')
+                          (se/add-event plugin-id)))
+            (token-proxy plugin-id file-id set-id (:id token'))))))
 
     :remove
     (fn []
@@ -317,8 +329,10 @@
         (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (-> (dwtl/delete-token set-id id)
-                      (se/add-event plugin-id)))))
+        (do
+          (u/check-editable-tokens file-id)
+          (st/emit! (-> (dwtl/delete-token set-id id)
+                        (se/add-event plugin-id))))))
 
     :applyToShapes
     {:enumerable false
@@ -374,17 +388,18 @@
           (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
           :else
-          (let [set (u/locate-token-set file-id id)]
-            (st/emit! (dwtl/rename-token-set set name)))))}
+          (do
+            (u/check-editable-tokens file-id)
+            (let [set (u/locate-token-set file-id id)]
+              (st/emit! (dwtl/rename-token-set set name))))))}
 
      :active
      {:this true
       :enumerable false
       :get
       (fn [_]
-        (let [tokens-lib (u/locate-tokens-lib file-id)
-              set        (u/locate-token-set file-id id)]
-          (ctob/token-set-active? tokens-lib (ctob/get-name set))))
+        (let [tokens-status (u/locate-tokens-status file-id)]
+          (ctos/set-active? tokens-status id)))
       :schema ::sm/boolean
       :set
       (fn [_ value]
@@ -393,8 +408,7 @@
           (u/not-valid plugin-id :active "Plugin doesn't have 'content:write' permission")
 
           :else
-          (let [set (u/locate-token-set file-id id)]
-            (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) value)))))}
+          (st/emit! (dwtl/set-enabled-token-set id value))))}  ;; This can be done even with tokens in an external library
 
      :toggleActive
      (fn []
@@ -403,8 +417,7 @@
          (u/not-valid plugin-id :toggleActive "Plugin doesn't have 'content:write' permission")
 
          :else
-         (let [set (u/locate-token-set file-id id)]
-           (st/emit! (dwtl/toggle-token-set (ctob/get-name set))))))
+         (st/emit! (dwtl/toggle-token-set id))))
 
      :tokens
      {:this true
@@ -468,28 +481,30 @@
               (u/not-valid plugin-id :addToken "Plugin doesn't have 'content:write' permission")
 
               :else
-              (let [tokens-lib (u/locate-tokens-lib file-id)
-                    token (ctob/make-token attrs)
-                    ;; Resolve against all tokens in the library (including those
-                    ;; in inactive sets) so that references to structurally
-                    ;; existing tokens resolve even if their set is not active.
-                    ;; The target set's tokens take precedence over equally named
-                    ;; tokens in other sets, and the new token takes precedence
-                    ;; over all.
-                    tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
-                                           (ctob/get-tokens tokens-lib id))
-                                    (assoc (:name token) token))
-                    resolved-tokens (ts/resolve-tokens tokens-tree)
+              (do
+                (u/check-editable-tokens file-id)
+                (let [tokens-lib (u/locate-tokens-lib file-id)
+                      token (ctob/make-token attrs)
+                      ;; Resolve against all tokens in the library (including those
+                      ;; in inactive sets) so that references to structurally
+                      ;; existing tokens resolve even if their set is not active.
+                      ;; The target set's tokens take precedence over equally named
+                      ;; tokens in other sets, and the new token takes precedence
+                      ;; over all.
+                      tokens-tree (-> (merge (ctob/get-all-tokens-map tokens-lib)
+                                             (ctob/get-tokens tokens-lib id))
+                                      (assoc (:name token) token))
+                      resolved-tokens (ts/resolve-tokens tokens-tree)
 
-                    {:keys [errors resolved-value] :as resolved-token}
-                    (get resolved-tokens (:name token))]
+                      {:keys [errors resolved-value] :as resolved-token}
+                      (get resolved-tokens (:name token))]
 
-                (if resolved-value
-                  (do (st/emit! (-> (dwtl/create-token id token)
-                                    (se/add-event plugin-id)))
-                      (token-proxy plugin-id file-id id (:id token)))
-                  (do (u/not-valid plugin-id :addToken (str errors))
-                      nil)))))}
+                  (if resolved-value
+                    (do (st/emit! (-> (dwtl/create-token id token)
+                                      (se/add-event plugin-id)))
+                        (token-proxy plugin-id file-id id (:id token)))
+                    (do (u/not-valid plugin-id :addToken (str errors))
+                        nil))))))}
 
      :duplicate
      (fn []
@@ -498,10 +513,12 @@
          (u/not-valid plugin-id :duplicate "Plugin doesn't have 'content:write' permission")
 
          :else
-         (let [id-ref (atom nil)]
-           (st/emit! (dwtl/duplicate-token-set id {:id-ref id-ref}))
-           (when (some? @id-ref)
-             (token-set-proxy plugin-id file-id @id-ref)))))
+         (do
+           (u/check-editable-tokens file-id)
+           (let [id-ref (atom nil)]
+             (st/emit! (dwtl/duplicate-token-set id {:id-ref id-ref}))
+             (when (some? @id-ref)
+               (token-set-proxy plugin-id file-id @id-ref))))))
 
      :remove
      (fn []
@@ -510,7 +527,9 @@
          (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwtl/delete-token-set id)))))))
+         (do
+           (u/check-editable-tokens file-id)
+           (st/emit! (dwtl/delete-token-set id))))))))
 
 (defn token-theme-proxy? [p]
   (obj/type-of? p "TokenThemeProxy"))
@@ -568,8 +587,10 @@
          (u/not-valid plugin-id :group "Plugin doesn't have 'content:write' permission")
 
          :else
-         (let [theme (u/locate-token-theme file-id id)]
-           (st/emit! (dwtl/update-token-theme id (assoc theme :group group))))))}
+         (do
+           (u/check-editable-tokens file-id)
+           (let [theme (u/locate-token-theme file-id id)]
+             (st/emit! (dwtl/update-token-theme id (assoc theme :group group)))))))}
 
     :name
     {:this true
@@ -589,17 +610,19 @@
          (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
          :else
-         (let [theme (u/locate-token-theme file-id id)]
-           (when name
-             (st/emit! (dwtl/update-token-theme id (assoc theme :name name)))))))}
+         (do
+           (u/check-editable-tokens file-id)
+           (let [theme (u/locate-token-theme file-id id)]
+             (when name
+               (st/emit! (dwtl/update-token-theme id (assoc theme :name name))))))))}
 
     :active
     {:this true
      :enumerable false
      :get
      (fn [_]
-       (let [tokens-lib (u/locate-tokens-lib file-id)]
-         (ctob/theme-active? tokens-lib id)))
+       (let [tokens-status (u/locate-tokens-status file-id)]
+         (ctos/theme-active? tokens-status id)))
      :schema ::sm/boolean
      :set
      (fn [_ value]
@@ -641,10 +664,12 @@
              (u/not-valid plugin-id :addSet "Plugin doesn't have 'content:write' permission")
 
              :else
-             (let [set-name (token-set-name (resolve-token-set file-id set-arg))
-                   theme    (u/locate-token-theme file-id id)]
-               (when (and set-name theme)
-                 (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name)))))))}
+             (do
+               (u/check-editable-tokens file-id)
+               (let [set-name (token-set-name (resolve-token-set file-id set-arg))
+                     theme    (u/locate-token-theme file-id id)]
+                 (when (and set-name theme)
+                   (st/emit! (dwtl/update-token-theme id (ctob/enable-set theme set-name))))))))}
 
     :removeSet
     {:enumerable false
@@ -655,10 +680,12 @@
              (u/not-valid plugin-id :removeSet "Plugin doesn't have 'content:write' permission")
 
              :else
-             (let [set-name (token-set-name (resolve-token-set file-id set-arg))
-                   theme    (u/locate-token-theme file-id id)]
-               (when (and set-name theme)
-                 (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name)))))))}
+             (do
+               (u/check-editable-tokens file-id)
+               (let [set-name (token-set-name (resolve-token-set file-id set-arg))
+                     theme    (u/locate-token-theme file-id id)]
+                 (when (and set-name theme)
+                   (st/emit! (dwtl/update-token-theme id (ctob/disable-set theme set-name))))))))}
 
     :duplicate
     (fn []
@@ -667,12 +694,14 @@
         (u/not-valid plugin-id :duplicate "Plugin doesn't have 'content:write' permission")
 
         :else
-        (let [theme  (u/locate-token-theme file-id id)
-              theme' (ctob/make-token-theme (-> (datafy theme)
-                                                (dissoc :id
-                                                        :modified-at)))]
-          (st/emit! (dwtl/create-token-theme theme'))
-          (token-theme-proxy plugin-id file-id (:id theme')))))
+        (do
+          (u/check-editable-tokens file-id)
+          (let [theme  (u/locate-token-theme file-id id)
+                theme' (ctob/make-token-theme (-> (datafy theme)
+                                                  (dissoc :id
+                                                          :modified-at)))]
+            (st/emit! (dwtl/create-token-theme theme'))
+            (token-theme-proxy plugin-id file-id (:id theme'))))))
 
     :remove
     (fn []
@@ -681,7 +710,9 @@
         (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dwtl/delete-token-theme id))))))
+        (do
+          (u/check-editable-tokens file-id)
+          (st/emit! (dwtl/delete-token-theme id)))))))
 
 (defn tokens-catalog
   [plugin-id file-id]
@@ -689,6 +720,14 @@
               :on-error (u/handle-error plugin-id)}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$id {:enumerable false :get (constantly file-id)}
+
+    :isEditableTokens
+    {:this false
+     :enumerable false
+     :get
+     (fn []
+       (let [file (u/locate-file file-id)]
+         (cfo/editable-tokens? (ctf/file-data file))))}
 
     :themes
     {:this true
@@ -726,9 +765,11 @@
              (u/not-valid plugin-id :addTheme "Plugin doesn't have 'content:write' permission")
 
              :else
-             (let [theme (ctob/make-token-theme attrs)]
-               (st/emit! (dwtl/create-token-theme theme))
-               (token-theme-proxy plugin-id file-id (:id theme)))))}
+             (do
+               (u/check-editable-tokens file-id)
+               (let [theme (ctob/make-token-theme attrs)]
+                 (st/emit! (dwtl/create-token-theme theme))
+                 (token-theme-proxy plugin-id file-id (:id theme))))))}
 
     :addSet
     {:enumerable false
@@ -750,21 +791,23 @@
              (u/not-valid plugin-id :addSet "Plugin doesn't have 'content:write' permission")
 
              :else
-             (let [active? (boolean (:active attrs))
-                   attrs   (-> attrs
-                               (dissoc :active)
-                               (update :name ctob/normalize-set-name))
-                   set     (ctob/make-token-set attrs)]
-               (st/emit! (dwtl/create-token-set set))
-               ;; Newly created sets are inactive by default; activate it when
-               ;; requested. Enabling only adds the set name to the hidden theme,
-               ;; so it does not depend on the create event having propagated yet.
-               (when active?
-                 (st/emit! (dwtl/set-enabled-token-set (ctob/get-name set) true)))
-               ;; Pass the set name as `initial-name` so the proxy can resolve
-               ;; it immediately, before the async `st/emit!` above propagates
-               ;; the new set into `@st/state`.
-               (token-set-proxy plugin-id file-id (ctob/get-id set) (ctob/get-name set)))))}
+             (do
+               (u/check-editable-tokens file-id)
+               (let [active? (boolean (:active attrs))
+                     attrs   (-> attrs
+                                 (dissoc :active)
+                                 (update :name ctob/normalize-set-name))
+                     set     (ctob/make-token-set attrs)]
+                 (st/emit! (dwtl/create-token-set set))
+                 ;; Newly created sets are inactive by default; activate it when
+                 ;; requested. Enabling only adds the set name to the hidden theme,
+                 ;; so it does not depend on the create event having propagated yet.
+                 (when active?
+                   (st/emit! (dwtl/set-enabled-token-set (ctob/get-id set) true)))
+                 ;; Pass the set name as `initial-name` so the proxy can resolve
+                 ;; it immediately, before the async `st/emit!` above propagates
+                 ;; the new set into `@st/state`.
+                 (token-set-proxy plugin-id file-id (ctob/get-id set) (ctob/get-name set))))))}
 
     :getThemeById
     {:enumerable false

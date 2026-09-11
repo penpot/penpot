@@ -42,9 +42,23 @@
         ]
       }
     },
-    "~:id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
+    "~:id": "~uc7ce0794-0992-8105-8004-38f280443849",
     "~:options": {
       "~:components-v2": true
+    },
+    "~:tokens-status": {
+        "~#penpot/tokens-status": {
+            "~:active-theme-ids": {
+                "~#set": ["~u66697432-c33d-8055-8006-2c62de27d738"]
+            },
+            "~:active-set-ids": {
+                "~#set": [
+                  "~u66697432-c33d-8055-8006-2c62de27d709",
+                   "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
+                   "~u66697432-c33d-8055-8006-2c62de27d731"
+                ]
+            }
+        }
     },
     "~:tokens-lib": {
       "~#penpot/tokens-lib": {
