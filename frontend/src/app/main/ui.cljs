@@ -196,7 +196,8 @@
        :nitrate-entry
        [:> nitrate-entry/nitrate-entry-page* {:profile profile}]
 
-       (:settings-profile
+       (:settings-instance-users
+        :settings-profile
         :settings-password
         :settings-options
         :settings-feedback

@@ -11,6 +11,96 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.12-dev\n"
 
+#: src/app/main/ui/settings/instance_users.cljs:84
+msgid "admin.users.add"
+msgstr "Add membership"
+
+#: src/app/main/ui/settings/instance_users.cljs:138
+msgid "admin.users.email"
+msgstr "Email"
+
+#: src/app/main/ui/settings/instance_users.cljs:67
+msgid "admin.users.find-target"
+msgstr "Find a team or project"
+
+#: src/app/main/ui/settings.cljs:65
+msgid "admin.users.forbidden"
+msgstr "Only instance administrators can manage users."
+
+#: src/app/main/ui/settings/instance_users.cljs:159
+msgid "admin.users.inheritance"
+msgstr ""
+"Team membership also grants access to its projects. Removing a direct "
+"project membership does not remove access inherited from a team. Owners and "
+"personal workspaces are protected."
+
+#: src/app/main/ui/settings/instance_users.cljs:62
+msgid "admin.users.kind"
+msgstr "Membership type"
+
+#: src/app/main/ui/settings/instance_users.cljs:83, src/app/main/ui/settings/instance_users.cljs:116
+msgid "admin.users.load-error"
+msgstr "Unable to load users or memberships. Try again."
+
+#: src/app/main/ui/settings/instance_users.cljs:140, src/app/main/ui/settings/instance_users.cljs:148
+msgid "admin.users.manage"
+msgstr "Manage memberships"
+
+#: src/app/main/ui/settings/instance_users.cljs:138
+msgid "admin.users.name"
+msgstr "Name"
+
+#: src/app/main/ui/settings/instance_users.cljs:78, src/app/main/ui/settings/instance_users.cljs:155
+msgid "admin.users.next"
+msgstr "Next"
+
+#: src/app/main/ui/settings/instance_users.cljs:77, src/app/main/ui/settings/instance_users.cljs:152
+msgid "admin.users.previous"
+msgstr "Previous"
+
+#: src/app/main/ui/settings/instance_users.cljs:66, src/app/main/ui/settings/instance_users.cljs:139, src/app/main/ui/settings/instance_users.cljs:162
+msgid "admin.users.projects"
+msgstr "Direct project memberships"
+
+#: src/app/main/ui/settings/instance_users.cljs:28, src/app/main/ui/settings/instance_users.cljs:79
+msgid "admin.users.role"
+msgstr "Role"
+
+#: src/app/main/ui/settings/instance_users.cljs:110
+msgid "admin.users.save-error"
+msgstr "Unable to change this membership. Check your access and try again."
+
+#: src/app/main/ui/settings/instance_users.cljs:125, src/app/main/ui/settings/instance_users.cljs:126
+msgid "admin.users.search"
+msgstr "Search by name or email"
+
+#: src/app/main/ui/settings/instance_users.cljs:129
+msgid "admin.users.search-action"
+msgstr "Search"
+
+#: src/app/main/ui/settings/instance_users.cljs:72
+msgid "admin.users.select-target"
+msgstr "Select a team or project"
+
+#: src/app/main/ui/settings/instance_users.cljs:70
+msgid "admin.users.target"
+msgstr "Add to"
+
+#: src/app/main/ui/settings/instance_users.cljs:109
+msgid "admin.users.team-required"
+msgstr ""
+"Add this user to the enclosing team first. Viewer membership allows "
+"project-specific edit permissions."
+
+#: src/app/main/ui/settings/instance_users.cljs:65, src/app/main/ui/settings/instance_users.cljs:139, src/app/main/ui/settings/instance_users.cljs:160
+msgid "admin.users.teams"
+msgstr "Teams"
+
+#: src/app/main/ui/settings/instance_users.cljs:119, src/app/main/ui/settings/sidebar.cljs:97
+msgid "admin.users.title"
+msgstr "User administration"
+
+
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
 msgstr "Already have an account?"

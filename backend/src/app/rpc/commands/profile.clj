@@ -89,6 +89,7 @@
    [:email ::sm/email]
    [:theme {:optional true} :string]
    [:is-admin {:optional true} ::sm/boolean]
+   [:is-instance-admin {:optional true} ::sm/boolean]
    [:is-active {:optional true} ::sm/boolean]
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
@@ -646,7 +647,11 @@
 (defn strip-private-attrs
   "Only selects a publicly visible profile attrs."
   [row]
-  (dissoc row :password :deleted-at))
+  (-> row
+      (assoc :is-instance-admin (boolean (and (:is-active row)
+                                               (not (:is-blocked row))
+                                               (contains? (cf/get :admins #{}) (:email row)))))
+      (dissoc :password :deleted-at)))
 
 (defn filter-props
   "Removes all namespace qualified props from `props` attr."
