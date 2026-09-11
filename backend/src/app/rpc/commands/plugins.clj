@@ -53,8 +53,9 @@
     (let [plugins (-> plugins
                       (update :ids #(vec (distinct (conj % plugin-id))))
                       (assoc-in [:data plugin-id] plugin))
-          props   (assoc (:props profile) :plugins plugins)]
-      (profile/check-props-size! (:props profile) props)
+          props   (-> (:props profile)
+                      (assoc :plugins plugins)
+                      (profile/check-props-size))]
       (db/update! conn :profile
                   {:props (db/tjson props)}
                   {:id profile-id}
@@ -84,14 +85,16 @@
       (let [plugins (-> plugins
                         (update :ids #(vec (remove (partial = plugin-id-str) %)))
                         (update :data dissoc plugin-id-str))
-            props   (assoc (:props profile) :plugins plugins)]
-        ;; Removal only shrinks props, so this never raises; kept for uniformity
-        ;; so the user-facing profile.props RPC writes (update-profile-props,
-        ;; update-profile-notifications, add/remove-profile-plugin) all go
-        ;; through the size check. System writers (OIDC login merge,
-        ;; management subscription update) are exempt: they write fixed-key,
-        ;; non-accumulating shapes.
-        (profile/check-props-size! (:props profile) props)
+            ;; The size check runs on the resulting props: removal usually
+            ;; shrinks them, but still raises when the remaining props exceed
+            ;; the limit. Kept for uniformity so the user-facing profile.props
+            ;; RPC writes (update-profile-props, update-profile-notifications,
+            ;; add/remove-profile-plugin) all go through the size check. System
+            ;; writers (OIDC login merge, management subscription update) are
+            ;; exempt: they write fixed-key, non-accumulating shapes.
+            props   (-> (:props profile)
+                        (assoc :plugins plugins)
+                        (profile/check-props-size))]
         (db/update! conn :profile
                     {:props (db/tjson props)}
                     {:id profile-id}

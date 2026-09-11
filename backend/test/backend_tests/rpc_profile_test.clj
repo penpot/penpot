@@ -1354,21 +1354,21 @@
         (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
 
-(t/deftest update-profile-props-grandfathers-oversized-profile
-  ;; Profiles that already exceed the limit can shrink or hold steady,
-  ;; but cannot grow further
+(t/deftest update-profile-props-enforces-hard-limit-on-oversized-profile
+  ;; An already-oversized profile can only write back under the limit:
+  ;; shrinking below it passes, staying above it fails
   (let [profile (th/create-profile* 1)
         big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
     ;; Seed an already-oversized profile directly in DB (bypasses RPC validation)
     (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
     (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
-      ;; Shrinking update passes
+      ;; Shrinking below the limit passes
       (let [data {::th/type :update-profile-props
                   ::rpc/profile-id (:id profile)
                   :props {:onboarding-questions {:big-blob "small"}}}
             out  (th/command! data)]
         (t/is (nil? (:error out))))
-      ;; Growing update fails
+      ;; Staying above the limit fails
       (let [data {::th/type :update-profile-props
                   ::rpc/profile-id (:id profile)
                   :props {:onboarding-questions {:big-blob (apply str (repeat 300 "x"))}}}
@@ -1382,18 +1382,20 @@
   ;; The limit is in UTF-8 bytes: multibyte content that fits in chars
   ;; but exceeds the byte limit must be rejected
   (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 200})]
-    ;; 70 ASCII chars (~87 bytes serialized) passes
-    (t/is (nil? (profile/check-props-size! {} {:blob (apply str (repeat 70 "x"))})))
+    ;; 70 ASCII chars (~87 bytes serialized) passes and returns props unchanged
+    (let [props {:blob (apply str (repeat 70 "x"))}]
+      (t/is (= props (profile/check-props-size props))))
     ;; 70 CJK chars (~227 bytes serialized, still 70 chars) raises
     (try
-      (profile/check-props-size! {} {:blob (apply str (repeat 70 "日"))})
+      (profile/check-props-size {:blob (apply str (repeat 70 "日"))})
       (t/is false "should have thrown")
       (catch clojure.lang.ExceptionInfo e
         (t/is (= :validation (:type (ex-data e))))
         (t/is (= :props-too-large (:code (ex-data e))))))))
 
-(t/deftest update-profile-props-allows-steady-size-on-oversized-profile
-  ;; Same size (not smaller) on an oversized profile passes
+(t/deftest update-profile-props-rejects-steady-size-on-oversized-profile
+  ;; Same size (not smaller) on an oversized profile still exceeds
+  ;; the limit, so it fails
   (let [profile (th/create-profile* 1)
         big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
     (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
@@ -1402,7 +1404,9 @@
                   ::rpc/profile-id (:id profile)
                   :props {:onboarding-questions {:big-blob (apply str (repeat 200 "y"))}}}
             out  (th/command! data)]
-        (t/is (nil? (:error out)))))))
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
 
 (t/deftest update-profile-notifications-rejects-growth-on-oversized-profile
@@ -1422,8 +1426,9 @@
         (t/is (th/ex-of-type? (:error out) :validation))
         (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
-(t/deftest update-profile-notifications-allows-steady-on-oversized-profile
-  ;; Same-size notifications write on an oversized profile passes
+(t/deftest update-profile-notifications-rejects-steady-on-oversized-profile
+  ;; Same-size notifications write on an oversized profile still exceeds
+  ;; the limit, so it fails
   (let [profile (th/create-profile* 1)
         notifications {:dashboard-comments :all
                        :email-comments :all
@@ -1436,7 +1441,9 @@
                          ::rpc/profile-id (:id profile)}
                         notifications)
             out  (th/command! data)]
-        (t/is (nil? (:error out)))))))
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
 
 
 (t/deftest prepare-register-profile-password-too-short

@@ -100,10 +100,7 @@
 
    ;; Binfile import limits
    :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
-   :binfile-import-max-zip-entries (* 500 1000)      ;; 500,000
-
-   ;; Profile props total size limit (serialized, after merge)
-   :profile-props-max-size (* 1024 1024 2)})         ;; 2 MiB
+   :binfile-import-max-zip-entries (* 500 1000)})     ;; 500,000
 
 (def schema:config
   (do #_sm/optional-keys
@@ -164,7 +161,8 @@
     [:binfile-import-max-object-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 
-    ;; Profile props total size limit (PENPOT_PROFILE_PROPS_MAX_SIZE)
+    ;; Profile props total size limit (PENPOT_PROFILE_PROPS_MAX_SIZE);
+    ;; defaults to profile/default-props-max-size when unset
     [:profile-props-max-size {:optional true} ::sm/int]
 
     [:deletion-delay {:optional true} ::ct/duration]
