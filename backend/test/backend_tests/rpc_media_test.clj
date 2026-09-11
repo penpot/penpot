@@ -1105,47 +1105,6 @@
                                                       (db/exec! conn ["delete from profile where id = ?"
                                                                       (:id prof)])))))))))
 
-(t/deftest chunked-upload-duplicate-index-race-backstop
-  ;; Forces the UNIQUE backstop past the pre-check (simulates two concurrent
-  ;; uploads of the same index): the insert collides and the client still
-  ;; gets :validation/:chunk-already-exists. The just-created orphaned object
-  ;; stays touched so touched-gc reclaims it, and there is still exactly one
-  ;; mapping row.
-  (let [prof        (th/create-profile* 1)
-        session-id  (create-session! prof 1)
-        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
-        mfile       {:filename "sample.jpg"
-                     :path     source-path
-                     :mtype    "image/jpeg"
-                     :size     312043}
-        upload      {::th/type        :upload-chunk
-                     ::rpc/profile-id (:id prof)
-                     :session-id      session-id
-                     :index           0
-                     :content         mfile}
-        out1        (th/command! upload)
-        orig-get*   @#'db/get*]
-    (t/is (nil? (:error out1)))
-
-    (with-mocks [_mock {:target 'app.db/get*
-                        ;; blind the duplicate pre-check, delegate the rest
-                        :return (fn [ds table params & opts]
-                                  (if (= table :upload-session-chunk)
-                                    nil
-                                    (apply orig-get* ds table params opts)))}]
-      (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
-            out2   (th/command! upload)]
-        (t/is (some? (:error out2)))
-        (t/is (= :validation (-> out2 :error ex-data :type)))
-        (t/is (= :chunk-already-exists (-> out2 :error ex-data :code)))
-        ;; one orphaned object was created...
-        (t/is (= (inc before) (:count (th/db-exec-one! ["select count(*) from storage_object"]))))
-        ;; ...but still a single mapping row...
-        (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
-                                             session-id]))))
-        ;; ...and the orphan stays touched for touched-gc.
-        (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null and id not in (select object_id from upload_session_chunk)"]))))))))
-
 ;; --- Clone File Media Object BOLA tests ---
 
 (defn- create-storage-object!

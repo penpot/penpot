@@ -10,6 +10,13 @@
 --- (immediate) operation; only the deferrability differs, which tooling
 --- such as the backend test fixture relies on
 --- (SET CONSTRAINTS ALL DEFERRED).
+---
+--- object_id is nullable: the mapping row is inserted first (reserving the
+--- slot under the UNIQUE(session_id, chunk_index) constraint inside a
+--- transaction that locks the session), and object_id is set once the blob
+--- has been written outside the transaction. A mapping with NULL object_id
+--- and no in-flight upload behind it means that upload died mid-flight; the
+--- client then starts a new session (sessions are ephemeral).
 
 CREATE TABLE upload_session_chunk (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,7 +24,7 @@ CREATE TABLE upload_session_chunk (
   created_at  timestamptz NOT NULL DEFAULT now(),
 
   session_id  uuid NOT NULL REFERENCES upload_session(id) ON DELETE NO ACTION DEFERRABLE,
-  object_id   uuid NOT NULL REFERENCES storage_object(id) ON DELETE NO ACTION DEFERRABLE,
+  object_id   uuid NULL REFERENCES storage_object(id) ON DELETE NO ACTION DEFERRABLE,
   chunk_index integer NOT NULL,
 
   UNIQUE (session_id, chunk_index)

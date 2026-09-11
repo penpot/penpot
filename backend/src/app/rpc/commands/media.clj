@@ -339,6 +339,8 @@
 
 ;; --- Chunked Upload: Upload a single chunk
 
+(declare ^:private check-upload-chunk-slot)
+
 (def ^:private schema:upload-chunk
   [:map {:title "upload-chunk"}
    [:session-id ::sm/uuid]
@@ -350,13 +352,69 @@
    [:session-id ::sm/uuid]
    [:index      ::sm/int]])
 
+(def ^:private sql:link-upload-session-chunk
+  "UPDATE upload_session_chunk
+      SET object_id = ?
+    WHERE session_id = ?
+      AND chunk_index = ?
+      AND object_id IS NULL")
+
 (sv/defmethod ::upload-chunk
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
    ::sm/result schema:upload-chunk-result}
   [{:keys [::db/pool] :as cfg}
    {:keys [::rpc/profile-id session-id index content] :as _params}]
-  (let [session (db/get pool :upload-session {:id session-id :profile-id profile-id})]
+  (let [session (db/tx-run! cfg check-upload-chunk-slot session-id profile-id index content)]
+    (l/trc :hint "upload-chunk"
+           :session-id session-id
+           :chunk (str index "/" (:total-chunks session))
+           :size (:size content)
+           :path (:path content))
+
+    ;; NOTE: the blob is written outside any transaction on purpose (see
+    ;; mem:backend/storage): a failed write must never mingle with the
+    ;; mapping transaction. If the write fails, the reserved mapping is
+    ;; removed and the error propagates, so the client retries the index
+    ;; in the same session. If the process dies between the reserve and
+    ;; the link below, a NULL mapping is left behind and the client starts
+    ;; a new session (sessions are ephemeral).
+    (let [storage (sto/resolve cfg)
+          data    (sto/content (:path content))
+          object  (try
+                    (sto/put-object! storage
+                                     {::sto/content      data
+                                      ::sto/deduplicate? false
+                                      ::sto/touched-at   (ct/in-future {:hours 1})
+                                      :content-type      (:mtype content)
+                                      :bucket            sto/upload-session-bucket})
+                    (catch Throwable cause
+                      (db/delete! pool :upload-session-chunk
+                                  {:session-id session-id :chunk-index index})
+                      (throw cause)))
+          linked  (-> (db/exec-one! pool [sql:link-upload-session-chunk
+                                          (:id object) session-id index])
+                      (db/get-update-count))]
+      (when (zero? linked)
+        ;; The mapping vanished concurrently (session consumed or purged
+        ;; after the reserve); the orphaned object stays touched so
+        ;; touched-gc reclaims it.
+        (ex/raise :type :not-found
+                  :code :object-not-found
+                  :hint "upload session no longer available"
+                  :session-id session-id))))
+
+  {:session-id session-id
+   :index      index})
+
+(defn- check-upload-chunk-slot
+  "Reserves the (session, index) slot: locks the session row, runs all
+  validations and inserts the mapping with a NULL object_id, all in one
+  transaction. Concurrent uploads of the same session serialize on the
+  session lock, so the UNIQUE(session_id, chunk_index) constraint can
+  never fire."
+  [{:keys [::db/conn]} session-id profile-id index content]
+  (let [session (db/get conn :upload-session {:id session-id :profile-id profile-id} {::db/for-update true})]
     (when (:deleted-at session)
       (ex/raise :type :not-found
                 :code :object-not-found
@@ -380,49 +438,22 @@
                 :size (:size content)
                 :max-size (cf/get :upload-max-chunk-size)))
 
-    (when (db/get* pool :upload-session-chunk {:session-id session-id :chunk-index index})
+    ;; NOTE: a mapping with NULL object_id also counts as occupied: either
+    ;; its upload is still in flight, or it died mid-flight and the client
+    ;; must start a new session.
+    (when (db/get* conn :upload-session-chunk {:session-id session-id :chunk-index index})
       (ex/raise :type :validation
                 :code :chunk-already-exists
                 :hint "chunk already uploaded for this session and index"
                 :session-id session-id
                 :index index))
 
-    (l/trc :hint "upload-chunk"
-           :session-id session-id
-           :chunk (str index "/" (:total-chunks session))
-           :size (:size content)
-           :path (:path content))
+    (db/insert! conn :upload-session-chunk
+                {:session-id  session-id
+                 :object-id   nil
+                 :chunk-index index})
 
-    (let [storage (sto/resolve cfg)
-          data    (sto/content (:path content))
-          object  (sto/put-object! storage
-                                   {::sto/content      data
-                                    ::sto/deduplicate? false
-                                    ::sto/touched-at   (ct/in-future {:hours 1})
-                                    :content-type      (:mtype content)
-                                    :bucket            sto/upload-session-bucket})]
-      ;; NOTE: the pre-check above covers the common path, but two
-      ;; concurrent uploads of the same index can still race past it; the
-      ;; UNIQUE (session_id, chunk_index) constraint is the backstop. In
-      ;; that case the just-created storage object is left orphaned but
-      ;; touched, so touched-gc reclaims it.
-      (try
-        (db/insert! pool :upload-session-chunk
-                    {:session-id  session-id
-                     :object-id   (:id object)
-                     :chunk-index index})
-        (catch java.sql.SQLException cause
-          (if (db/duplicate-key-error? cause)
-            (ex/raise :type :validation
-                      :code :chunk-already-exists
-                      :hint "chunk already uploaded for this session and index"
-                      :session-id session-id
-                      :index index
-                      :cause cause)
-            (throw cause))))))
-
-  {:session-id session-id
-   :index      index})
+    session))
 
 ;; --- Chunked Upload: shared helpers
 

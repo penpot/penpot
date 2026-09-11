@@ -86,7 +86,7 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `file-thumbnail` | File grid thumbnails in `file_thumbnail.media_id`. | Yes | Authentication required | Reference scan. |
 | `profile` | User and team profile photos. References: `profile.photo_id` and `team.photo_id`. | Yes | Authentication required | Reference scan. |
 | `organization` | Organization logos uploaded by the Nitrate management API. | Yes | Public | No reference scan. A touched object is deleted. |
-| `tempfile` | Export files and temporary font downloads. Legacy chunked-upload chunks (pre-`upload_session_chunk`) still expire through this bucket. | No | Authentication required | No reference scan. A touched object uses a two-hour deletion delay. |
+| `tempfile` | Export files and temporary font downloads. | No | Authentication required | No reference scan. A touched object uses a two-hour deletion delay. |
 | `upload-session` | Chunked-upload chunks. References: `upload_session_chunk.object_id` and `upload_session_chunk.session_id` (both NO ACTION DEFERRABLE: restrict semantics, procedural deletion). | No | Authentication required | No reference scan. A touched object is deleted after the delay; `gc-deleted` removes mappings before rows. |
 | `file-data` | Encoded file data when `file-data-backend` is `storage`. Reference metadata has `storage-ref-id`, `file-id`, and the `file_data` row ID. | Yes | Authentication required | Reference scan. |
 | `file-data-fragment` | Compatibility value for file-data fragments. The current backend has no dedicated producer for this bucket. | No current write semantics | Public | No touched-object collector case. |
