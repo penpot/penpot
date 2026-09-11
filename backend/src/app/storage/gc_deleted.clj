@@ -78,14 +78,6 @@
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
 
-(defn- log-refusal!
-  "Indirection over the error log so tests can capture the refusal payload."
-  [backend-id target ids]
-  (l/err :hint "storage target is not configured, deletion refused"
-         :backend (name backend-id)
-         :target target
-         :ids (mapv str ids)))
-
 (def ^:private sql:defer-unresolvable
   "UPDATE storage_object
       SET deleted_at = NOW() + INTERVAL '1 day'
@@ -97,7 +89,10 @@
   selection window without being deleted and without counting a deletion
   attempt (they are therefore never subject to the give-up window)."
   [conn backend-id target ids]
-  (log-refusal! backend-id target ids)
+  (l/err :hint "storage target is not configured, deletion refused"
+         :backend (name backend-id)
+         :target target
+         :ids (mapv str ids))
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:defer-unresolvable ids])))
 

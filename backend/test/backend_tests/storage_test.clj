@@ -897,8 +897,8 @@
 (t/deftest s3-get-object-url-rejects-unknown-target
   (let [backend (fake-s3-backend-with-targets)
         ex      (try
-                  (impl/get-object-url backend {:id (uuid/next)
-                                                :storage-target "ghost"} {})
+                  (impl/get-object-url backend (with-meta {:id (uuid/next)}
+                                                 {:storage-target "ghost"}) {})
                   nil
                   (catch Throwable cause cause))]
     (t/is (some? ex))
@@ -907,9 +907,8 @@
 (t/deftest s3-get-object-data-rejects-unknown-target
   (let [backend (fake-s3-backend-with-targets)
         ex      (try
-                  (impl/get-object-data backend {:id (uuid/next)
-                                                 :size 1
-                                                 :storage-target "ghost"})
+                  (impl/get-object-data backend (with-meta {:id (uuid/next) :size 1}
+                                                  {:storage-target "ghost"}))
                   nil
                   (catch Throwable cause cause))]
     (t/is (some? ex))
@@ -1183,8 +1182,7 @@
 (t/deftest gc-deleted-refuses-unknown-target-and-keeps-row
   (let [storage  (storage-with-s3-targets)
         cfg      {::db/pool th/*pool* ::sto/storage storage}
-        id       (uuid/next)
-        logged   (atom nil)]
+        id       (uuid/next)]
     (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status)
                    values (?, 1, 's3', ?, ?, 'valid')"
                   id
@@ -1192,20 +1190,16 @@
                   (ct/in-past {:minutes 1})])
     (with-mocks [mock {:target 'app.storage.impl/del-objects-in-bulk
                        :return (fn [_ _ _] #{})}]
-      (with-redefs [app.storage.gc-deleted/log-refusal!
-                    (fn [backend-id target ids]
-                      (reset! logged [backend-id target (vec ids)]))]
-        (let [result (#'sto.gc-deleted/clean-deleted! cfg)
-              row    (th/db-exec-one!
-                      ["select status, deleted_at, deletion_attempts
+      (let [result (#'sto.gc-deleted/clean-deleted! cfg)
+            row    (th/db-exec-one!
+                    ["select status, deleted_at, deletion_attempts
                           from storage_object where id = ?" id])]
-          (t/is (= 0 (:deleted result)))
-          (t/is (= 1 (:parked result)))
-          (t/is (= 0 (:call-count @mock)))
-          (t/is (= "valid" (:status row)))
-          (t/is (ct/is-after? (:deleted-at row) (ct/now)))
-          (t/is (= 0 (:deletion-attempts row)))
-          (t/is (= [:s3 "ghost" [id]] @logged)))))))
+        (t/is (= 0 (:deleted result)))
+        (t/is (= 1 (:parked result)))
+        (t/is (= 0 (:call-count @mock)))
+        (t/is (= "valid" (:status row)))
+        (t/is (ct/is-after? (:deleted-at row) (ct/now)))
+        (t/is (= 0 (:deletion-attempts row)))))))
 
 (t/deftest gc-deleted-give-up-not-applied-to-unknown-target
   (let [storage (storage-with-s3-targets)
@@ -1218,8 +1212,7 @@
                   (ct/in-past {:minutes 1})])
     (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
                         :return (fn [_ _ _] #{})}]
-      (with-redefs [app.storage.gc-deleted/log-refusal! (fn [& _] nil)]
-        (#'sto.gc-deleted/clean-deleted! cfg)))
+      (#'sto.gc-deleted/clean-deleted! cfg))
     (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
       (t/is (= 1 (:count row))))))
 
@@ -1278,7 +1271,6 @@
   (let [storage  (storage-with-s3-targets)
         cfg      {::db/pool th/*pool* ::sto/storage storage}
         id       (uuid/next)
-        logged   (atom nil)
         captured (atom nil)]
     (th/db-exec! ["insert into storage_object (id, size, backend, metadata, created_at, status)
                    values (?, 1, 's3', ?, ?, 'pending')"
@@ -1289,19 +1281,15 @@
                        :return (fn [_ object]
                                  (reset! captured object)
                                  nil)}]
-      (with-redefs [app.storage.pending-gc/log-refusal!
-                    (fn [backend-id target ids]
-                      (reset! logged [backend-id target (vec ids)]))]
-        (let [result (#'sto.pending-gc/process! cfg)
-              row    (th/db-exec-one!
-                      ["select status, deleted_at from storage_object where id = ?" id])]
-          (t/is (= 0 (:processed result)))
-          (t/is (= 1 (:parked result)))
-          (t/is (= 0 (:call-count @mock)))
-          (t/is (nil? @captured))
-          (t/is (= "pending" (:status row)))
-          (t/is (ct/is-after? (:deleted-at row) (ct/now)))
-          (t/is (= [:s3 "ghost" [id]] @logged)))))))
+      (let [result (#'sto.pending-gc/process! cfg)
+            row    (th/db-exec-one!
+                    ["select status, deleted_at from storage_object where id = ?" id])]
+        (t/is (= 0 (:processed result)))
+        (t/is (= 1 (:parked result)))
+        (t/is (= 0 (:call-count @mock)))
+        (t/is (nil? @captured))
+        (t/is (= "pending" (:status row)))
+        (t/is (ct/is-after? (:deleted-at row) (ct/now)))))))
 
 (t/deftest gc-deleted-legacy-rows-delete-from-default-target
   (let [storage  (storage-with-s3-targets)

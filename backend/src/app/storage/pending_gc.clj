@@ -38,14 +38,6 @@
 (def ^:private sql:delete-pending-sobject
   "DELETE FROM storage_object WHERE id = ? AND status = 'pending'")
 
-(defn- log-refusal!
-  "Indirection over the error log so tests can capture the refusal payload."
-  [backend-id target ids]
-  (l/err :hint "storage target is not configured, deletion refused"
-         :backend (name backend-id)
-         :target target
-         :ids (mapv str ids)))
-
 (def ^:private sql:park-unresolvable
   "UPDATE storage_object
       SET deleted_at = NOW() + INTERVAL '1 day'
@@ -57,7 +49,10 @@
   misconfiguration and pushes `deleted_at` forward so the rows are excluded
   from the next selection without being deleted."
   [conn backend-id target ids]
-  (log-refusal! backend-id target ids)
+  (l/err :hint "storage target is not configured, deletion refused"
+         :backend (name backend-id)
+         :target target
+         :ids (mapv str ids))
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:park-unresolvable ids])))
 

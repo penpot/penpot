@@ -65,7 +65,7 @@
                 :path (str path)
                 :cause cause))))
 
-(defn- assert-backend-s3!
+(defn- assert-backend-s3
   "The routing only makes sense on top of the S3 backend."
   []
   (let [backend (or (sto/get-legacy-backend)
@@ -77,7 +77,7 @@
                 :hint "storage routes file requires the :s3 backend"
                 :backend (keyword backend)))))
 
-(defn- validate!
+(defn- validate
   [data path]
   (when-not (valid-file? data)
     (ex/raise :type :validation
@@ -135,8 +135,8 @@
   configuration key is unset."
   []
   (if-let [path (not-empty (cf/get :objects-storage-s3-routes-file))]
-    (let [data (-> (read-file path) (validate! path))]
-      (assert-backend-s3!)
+    (let [data (-> (read-file path) (validate path))]
+      (assert-backend-s3)
       {:targets (normalize-targets (:targets data))
        :routes  (:routes data)})
     {:targets nil

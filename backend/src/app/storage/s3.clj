@@ -209,8 +209,7 @@
   "Returns the configured target id stored on the object, or the default
   target name when the object predates the routing feature."
   [backend object]
-  (or (:storage-target object)
-      (some-> (meta object) :storage-target)
+  (or (some-> (meta object) :storage-target)
       (name (::default-target backend))))
 
 (defn- resolve-target-by-id
