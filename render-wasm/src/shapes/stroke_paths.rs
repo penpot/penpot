@@ -312,6 +312,72 @@ mod tests {
     }
 
     #[test]
+    fn round_cap_stays_round() {
+        // Round/Round is drawn by Skia's own linecap, which also goes through
+        // the conic conversion on the way back into a Penpot path.
+        let stroke = Stroke::new_center_stroke(
+            10.,
+            StrokeStyle::Solid,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            None,
+            None,
+        );
+        let selrect = Rect::from_xywh(0., 0., 100., 0.);
+        let path = stroke_to_path(&stroke, &horizontal_line(), None, &selrect, None, false)
+            .expect("stroke outline")
+            .to_skia_path(None);
+
+        // The cap is a half disc of radius width / 2 around the path end.
+        let expected = 5.;
+        for step in [-1, 0, 1] {
+            let angle = std::f32::consts::FRAC_PI_4 * step as f32;
+            let radius = radius_at(&path, (100., 0.), angle, expected * 2.);
+            assert!(
+                (radius - expected).abs() < expected * 0.01,
+                "radius at {angle}rad: {radius}"
+            );
+        }
+    }
+
+    #[test]
+    fn closed_paths_get_no_caps() {
+        // Caps only exist at sub-path ends, so a closed path must come back
+        // as the plain outline, arrow cap or not.
+        let stroke = Stroke::new_center_stroke(
+            4.,
+            StrokeStyle::Solid,
+            Some(StrokeCap::TriangleArrow),
+            Some(StrokeCap::TriangleArrow),
+            None,
+            None,
+        );
+        let square = Path::new(vec![
+            Segment::MoveTo((0., 0.)),
+            Segment::LineTo((100., 0.)),
+            Segment::LineTo((100., 100.)),
+            Segment::LineTo((0., 100.)),
+            Segment::Close,
+        ]);
+        let selrect = Rect::from_xywh(0., 0., 100., 100.);
+        let bounds = stroke_to_path(&stroke, &square, None, &selrect, None, false)
+            .expect("stroke outline")
+            .to_skia_path(None)
+            .compute_tight_bounds();
+
+        // Center stroke of width 4 grows the square by 2 on every side.
+        assert!(bounds.left > -2.5 && bounds.right < 102.5, "bounds: {bounds:?}");
+    }
+
+    #[test]
+    fn square_marker_cap_matches_the_canvas_size() {
+        // SquareMarker draws a width * 4 square centered on the path end, so
+        // it sticks out width * 2 past it.
+        let bounds = outline_bounds(None, Some(StrokeCap::SquareMarker));
+        assert!((bounds.right - 108.).abs() < 0.5, "bounds: {bounds:?}");
+    }
+
+    #[test]
     fn circle_marker_cap_stays_round() {
         // Regression: conics were converted to a single quad each, so circle
         // markers bulged ~6% at the arc midpoints and looked like squircles.

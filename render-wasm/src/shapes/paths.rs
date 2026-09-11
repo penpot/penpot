@@ -358,3 +358,36 @@ impl Path {
         math::Bounds::from_rect(self.skia_path.bounds())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Samples a converted circle and returns its largest radius error.
+    fn circle_conversion_error(radius: f32) -> f32 {
+        let center = skia::Point::new(0., 0.);
+        let converted =
+            Path::from_skia_path_accurate(skia::Path::circle(center, radius, None)).to_skia_path(None);
+
+        let mut measure = skia::PathMeasure::new(&converted, false, None);
+        let length = measure.length();
+        (0..64)
+            .filter_map(|i| measure.pos_tan(length * i as f32 / 64.))
+            .map(|(p, _)| (p.length() - radius).abs())
+            .fold(0., f32::max)
+    }
+
+    #[test]
+    fn converts_conics_to_accurate_circles() {
+        // Regression: one quad per conic left circles about 6% off the real
+        // radius at the arc midpoints, which showed up as squircle stroke caps.
+        for radius in [2., 40., 500.] {
+            let error = circle_conversion_error(radius);
+            assert!(
+                error < radius * 0.001,
+                "radius {radius}: off by {error}, expected under {}",
+                radius * 0.001
+            );
+        }
+    }
+}
