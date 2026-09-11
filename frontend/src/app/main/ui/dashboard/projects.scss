@@ -92,11 +92,14 @@
   block-size: $sz-16;
   line-height: 0.8;
   margin-inline-end: var(--sp-m);
+  flex: 0 1 auto;
+  min-inline-size: 0;
 }
 
 .info-wrapper {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: var(--sp-s);
 }
 

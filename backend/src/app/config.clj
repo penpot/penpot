@@ -92,6 +92,7 @@
 
    :quotes-upload-sessions-per-profile 5
    :quotes-upload-chunks-per-session 20
+   :upload-max-chunk-size (* 1024 1024 30) ; 30MiB
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
@@ -203,6 +204,7 @@
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
     [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
     [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
+    [:upload-max-chunk-size {:optional true} ::sm/int]
     [:quotes-media-storage-bytes-per-team {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]

@@ -15,6 +15,12 @@
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]))
 
+(defn start-subpath
+  "Adds the subpath start a pending node draws its first segment from."
+  [shape position]
+  (update shape :content path/append-segment
+          {:command :move-to :params (select-keys position [:x :y])}))
+
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
@@ -180,6 +186,36 @@
 
       :else nil)))
 
+(defn node-handler-ids
+  "Returns a node's curve handlers, its primary handle first."
+  [content node-index]
+  (if-let [[index prefix :as primary] (node-primary-handler content node-index)]
+    (let [[op-idx op-prefix] (path/opposite-index content index prefix)]
+      (if (some? op-idx)
+        [primary [op-idx op-prefix]]
+        [primary]))
+    []))
+
+(defn handler-type-reference
+  "Returns the handler that keeps its geometry when a node's handler type changes.
+
+  The other handler adapts to it. Priority: the node's only selected handler,
+  then `edited-handler` when it is one of this node's two handlers, then its
+  primary handle. `edited-handler` is the last handler edited anywhere in the
+  path, so a node only gets this hint while it holds the latest edit."
+  [content selection edited-handler node-index]
+  (let [handler-ids (node-handler-ids content node-index)
+        selected    (filterv (get selection :handlers #{}) handler-ids)]
+    (cond
+      (= 1 (count selected))
+      (first selected)
+
+      (some #{edited-handler} handler-ids)
+      edited-handler
+
+      :else
+      (first handler-ids))))
+
 (defn handlers-equal-length?
   "True when a node's two handlers are the same distance from the node."
   [content index prefix]
@@ -301,17 +337,33 @@
                 (remove nil?))
           (segment-entries content))))
 
+(defn coincident-node-indices
+  "Adds to `indices` every other command sharing one of their positions.
+
+  Commands at the same position are one node: they move together, so an
+  action cannot depend on which of them the selection holds."
+  [content indices]
+  (let [indices (into #{} (filter #(node? content %)) indices)]
+    (into indices
+          (mapcat #(path/point-indices content %))
+          (node-positions content indices))))
+
+(defn selected-node-count
+  "Number of nodes in the selection, counting coincident commands as one."
+  [content selection]
+  (count (node-positions content (get selection :nodes #{}))))
+
 (defn check-enabled
   "Returns path actions enabled for selected node indices."
   [content selected-nodes]
   (when content
-    (let [selected-nodes    (into #{} (filter #(node? content %)) selected-nodes)
+    (let [selected-nodes    (coincident-node-indices content selected-nodes)
           selected-segments (filter (fn [{:keys [from-index to-index]}]
                                       (and (contains? selected-nodes from-index)
                                            (contains? selected-nodes to-index)))
                                     (segment-entries content))
           num-segments      (count selected-segments)
-          num-nodes         (count selected-nodes)
+          num-nodes         (count (node-positions content selected-nodes))
           nodes-selected?   (seq selected-nodes)
           segments-selected? (seq selected-segments)
           max-segments      (/ (* num-nodes (dec num-nodes)) 2)
@@ -523,6 +575,12 @@
   (let [selection (or selection empty-selection)]
     (if (= (count old-content) (count new-content))
       (-> selection
+          ;; Drop indices that stopped being nodes.
+          (update :nodes
+                  (fn [nodes]
+                    (into #{}
+                          (filter #(node? new-content %))
+                          nodes)))
           (update :handlers
                   (fn [handlers]
                     (into #{}

@@ -188,7 +188,10 @@ Commit messages must follow this format:
 - Add clear and concise description on the body
 - Do not end the subject with a period
 - Keep the subject to **70 characters** or fewer
+- **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+
+You can check a commit against these rules with `./scripts/check-commit`.
 
 ### Examples
 
