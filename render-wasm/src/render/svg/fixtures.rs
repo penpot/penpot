@@ -200,9 +200,31 @@ pub(super) fn add_group(
     (l, t, r, b): (f32, f32, f32, f32),
     children: &[Uuid],
 ) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, false);
+}
+
+/// Masked group: `children[0]` is the mask, the rest are content (Penpot order).
+pub(super) fn add_masked_group(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, true);
+}
+
+fn add_group_inner(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+    masked: bool,
+) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
-    shape.set_shape_type(Type::Group(Group { masked: false }));
+    shape.set_shape_type(Type::Group(Group { masked }));
     shape.set_selrect(l, t, r, b);
     for child in children {
         shape.add_child(*child);

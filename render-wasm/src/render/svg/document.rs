@@ -1,5 +1,6 @@
 use skia_safe::{self as skia, Paint};
 
+use crate::error::Result;
 use crate::shapes::{radius_to_sigma, Shadow, Shape, Type};
 use crate::state::ShapesPoolRef;
 
@@ -108,6 +109,24 @@ impl SvgLayerCanvas {
         self.frag_no += 1;
         self.out
             .push_str(&sanitize_skia_svg_fragment(&remap_ids(inner, &prefix)));
+    }
+
+    /// Runs `f` while diverting body markup into a temporary buffer.
+    ///
+    /// Pending Skia fragments are flushed before/after. Defs (filters, clips,
+    /// nested masks) still append to `self.defs`. Used to build `<mask>` bodies
+    /// from a full mask subtree render.
+    pub(super) fn capture_body<F>(&mut self, f: F) -> Result<String>
+    where
+        F: FnOnce(&mut Self) -> Result<()>,
+    {
+        self.flush();
+        let saved = std::mem::take(&mut self.out);
+        let result = f(self);
+        self.flush();
+        let captured = std::mem::replace(&mut self.out, saved);
+        result?;
+        Ok(captured)
     }
 
     pub(super) fn open_group(&mut self, attrs: &str) {

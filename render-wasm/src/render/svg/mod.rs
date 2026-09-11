@@ -61,9 +61,10 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// `<clipPath>`.
 ///
 /// Layer blur and drop/inner shadows are re-emitted as a native SVG `<filter>`
-/// wrapper. Masks and text strokes still need dedicated SVG re-emission.
-/// Solid Inner/Outer and dotted/dashed strokes go out as filled outlines;
-/// image-filled strokes use a linked `<image>` clipped to the stroke.
+/// wrapper. Masked groups use a native alpha `<mask>`. Text strokes still need
+/// dedicated SVG re-emission. Solid Inner/Outer and dotted/dashed strokes go
+/// out as filled outlines; image-filled strokes use a linked `<image>` clipped
+/// to the stroke.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
