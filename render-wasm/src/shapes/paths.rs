@@ -196,9 +196,12 @@ impl Path {
                     let w = conic_weights[current_conic];
                     current_conic += 1;
 
-                    // pow2=0: 1 quad per conic. A circle (4 conics) becomes
-                    // 4 cubics, matching the standard bezier approximation.
-                    const POW2: usize = 0;
+                    // pow2=2: 4 quads per conic, so a circle (4 conics)
+                    // becomes 16 cubics and stays within ~0.03% of the real
+                    // radius. One quad per conic is off by ~6% at the arc
+                    // midpoint, which makes round caps and circle markers
+                    // look like squircles once converted to a path.
+                    const POW2: usize = 2;
                     let quad_count = 1 << POW2;
                     let pts_count = 1 + 2 * quad_count;
                     let mut quad_pts = vec![skia::Point::default(); pts_count];
@@ -353,5 +356,38 @@ impl Path {
 
     pub fn bounds(&self) -> math::Bounds {
         math::Bounds::from_rect(self.skia_path.bounds())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Samples a converted circle and returns its largest radius error.
+    fn circle_conversion_error(radius: f32) -> f32 {
+        let center = skia::Point::new(0., 0.);
+        let converted =
+            Path::from_skia_path_accurate(skia::Path::circle(center, radius, None)).to_skia_path(None);
+
+        let mut measure = skia::PathMeasure::new(&converted, false, None);
+        let length = measure.length();
+        (0..64)
+            .filter_map(|i| measure.pos_tan(length * i as f32 / 64.))
+            .map(|(p, _)| (p.length() - radius).abs())
+            .fold(0., f32::max)
+    }
+
+    #[test]
+    fn converts_conics_to_accurate_circles() {
+        // Regression: one quad per conic left circles about 6% off the real
+        // radius at the arc midpoints, which showed up as squircle stroke caps.
+        for radius in [2., 40., 500.] {
+            let error = circle_conversion_error(radius);
+            assert!(
+                error < radius * 0.001,
+                "radius {radius}: off by {error}, expected under {}",
+                radius * 0.001
+            );
+        }
     }
 }
