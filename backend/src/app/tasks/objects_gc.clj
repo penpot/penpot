@@ -33,10 +33,10 @@
       FOR UPDATE OF us
      SKIP LOCKED")
 
-(def ^:private sql:get-session-chunk-objects
-  "SELECT object_id
-     FROM upload_session_chunk
-    WHERE session_id = ?")
+(def ^:private sql:delete-session-chunks
+  "DELETE FROM upload_session_chunk
+    WHERE session_id = ?
+    RETURNING object_id")
 
 (defn- delete-upload-sessions!
   "Purges consumed upload sessions (marked by assemble-chunks), stalled
@@ -51,11 +51,10 @@
          (reduce (fn [total {:keys [id]}]
                    (l/trc :obj "upload-session" :id (str id))
 
-                   ;; Mark as touched all related storage objects
-                   (doseq [{:keys [object-id]} (db/exec! conn [sql:get-session-chunk-objects id])]
+                   ;; Remove the chunk mappings, marking as touched all
+                   ;; related storage objects in a single round-trip.
+                   (doseq [{:keys [object-id]} (db/exec! conn [sql:delete-session-chunks id])]
                      (some->> object-id (sto/touch-object! storage)))
-
-                   (db/delete! conn :upload-session-chunk {:session-id id})
 
                    (let [affected (-> (db/delete! conn :upload-session {:id id})
                                       (db/get-update-count))]
