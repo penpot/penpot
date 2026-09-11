@@ -31,7 +31,6 @@
 - Fix triple-click not selecting the full line in text editor v3 [#11483](https://github.com/penpot/penpot/issues/11483) (PR: [#11493](https://github.com/penpot/penpot/pull/11493))
 - Fix pasted text losing formatting on last lines after resizing and adding new lines from the top [#11501](https://github.com/penpot/penpot/issues/11501) (PR: [#11503](https://github.com/penpot/penpot/pull/11503))
 - Fix variant property dropdown appearing empty and throwing an internal error when the component has no sibling variants [#11524](https://github.com/penpot/penpot/issues/11524) (PR: [#11499](https://github.com/penpot/penpot/pull/11499))
-- Fix registering with an already used email showing a toast instead of an error on the email input [#10890](https://github.com/penpot/penpot/issues/10890)
 
 ### :sparkles: New features & Enhancements
 
