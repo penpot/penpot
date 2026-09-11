@@ -116,11 +116,16 @@
         path-editing?
         (path.state/editing? edit-path edition)
 
+        path-content
+        (dm/get-in drawing [:object :content])
+
+        selected-nodes
+        (:nodes (:selection edit-path-state))
+
         ;; Coincident commands are one node, so count positions.
         path-node-count
-        (mf/with-memo [drawing edit-path-state]
-          (path.helpers/selected-node-count (dm/get-in drawing [:object :content])
-                                            (:selection edit-path-state)))
+        (mf/with-memo [path-content selected-nodes]
+          (path.helpers/selected-node-count path-content {:nodes selected-nodes}))
 
         files
         (mf/deref refs/files)

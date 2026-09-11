@@ -2205,15 +2205,92 @@
     (t/is (= (vec curve) (vec (path/merge-coincident-nodes curve #{(gpt/point 0.0 0.0)}))))))
 
 (t/deftest path-merge-coincident-nodes-keeps-junctions
-  ;; Four segments meeting at a point need one command per incoming segment
+  ;; Four distinct segments meeting at a point need one command each
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 5.0 :y 5.0}}
+                  {:command :line-to :params {:x 10.0 :y 0.0}}
+                  {:command :move-to :params {:x 0.0 :y 10.0}}
+                  {:command :line-to :params {:x 5.0 :y 5.0}}
+                  {:command :line-to :params {:x 10.0 :y 10.0}}])
+        result  (path/merge-coincident-nodes content #{(gpt/point 5.0 5.0)})]
+    (t/is (= (vec content) (vec result)))))
+
+(t/deftest path-merge-coincident-nodes-drops-a-retraced-segment
+  ;; The rest of the loop draws the same two lines backwards; dropping them
+  ;; leaves a single node where they meet.
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 5.0}}
+                  {:command :line-to :params {:x 20.0 :y 10.0}}
+                  {:command :curve-to :params {:c1x 20.0 :c1y 10.0
+                                               :c2x 10.0 :c2y 5.0
+                                               :x 10.0 :y 5.0}}
+                  {:command :close-path :params {}}])
+        result  (vec (path/merge-coincident-nodes content #{(gpt/point 10.0 5.0)}))]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 10.0 :y 5.0} {:x 20.0 :y 10.0}]
+             (mapv :params result)))
+    (t/is (= 1 (count (path/point-indices result (gpt/point 10.0 5.0)))))))
+
+(t/deftest path-merge-coincident-nodes-stitches-a-retraced-junction
+  ;; The same two lines, drawn out and back from the subpath start
   (let [content (path/content
                  [{:command :move-to :params {:x 5.0 :y 5.0}}
                   {:command :line-to :params {:x 10.0 :y 0.0}}
                   {:command :line-to :params {:x 5.0 :y 5.0}}
                   {:command :line-to :params {:x 0.0 :y 10.0}}
                   {:command :close-path :params {}}])
-        result  (path/merge-coincident-nodes content #{(gpt/point 5.0 5.0)})]
+        result  (vec (path/merge-coincident-nodes content #{(gpt/point 5.0 5.0)}))]
+    (t/is (= [:move-to :line-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 10.0} {:x 5.0 :y 5.0} {:x 10.0 :y 0.0}]
+             (mapv :params result)))))
+
+(t/deftest path-merge-coincident-nodes-collapses-every-repeated-node
+  ;; Without points every position held by more than one command is merged
+  (let [content (path/content
+                 [{:command :move-to :params {:x 119.0 :y 231.0}}
+                  {:command :line-to :params {:x 447.0 :y 253.0}}
+                  {:command :curve-to :params {:c1x 447.0 :c1y 253.0
+                                               :c2x 774.0 :c2y 384.0
+                                               :x 774.0 :y 384.0}}
+                  {:command :curve-to :params {:c1x 774.0 :c1y 384.0
+                                               :c2x 447.0 :c2y 253.0
+                                               :x 447.0 :y 253.0}}
+                  {:command :close-path :params {}}])
+        result  (vec (path/merge-coincident-nodes content))]
+    (t/is (= [:move-to :line-to :curve-to] (mapv :command result)))
+    (t/is (= 1 (count (path/point-indices result (gpt/point 447.0 253.0)))))))
+
+(t/deftest path-merge-coincident-nodes-keeps-distinct-curves
+  ;; Two different curves between the same two points are not a retrace
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :curve-to :params {:c1x 2.0 :c1y 2.0 :c2x 8.0 :c2y 8.0
+                                               :x 10.0 :y 10.0}}
+                  {:command :curve-to :params {:c1x 8.0 :c1y -8.0 :c2x 2.0 :c2y -2.0
+                                               :x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 0.0 :y 20.0}}])
+        result  (path/merge-coincident-nodes content #{(gpt/point 0.0 0.0)})]
     (t/is (= (vec content) (vec result)))))
+
+(t/deftest path-separate-nodes-after-merge-yields-one-end-per-line
+  ;; A node with two visible lines separates into two ends.
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 10.0 :y 5.0}}
+                  {:command :line-to :params {:x 20.0 :y 10.0}}
+                  {:command :curve-to :params {:c1x 20.0 :c1y 10.0
+                                               :c2x 10.0 :c2y 5.0
+                                               :x 10.0 :y 5.0}}
+                  {:command :close-path :params {}}])
+        node    (gpt/point 10.0 5.0)
+        merged  (path/merge-coincident-nodes content #{node})
+        result  (vec (path/separate-nodes merged #{node} (gpt/point 4.0 4.0)))]
+    (t/is (= [:move-to :line-to :move-to :line-to] (mapv :command result)))
+    (t/is (= [{:x 0.0 :y 0.0} {:x 10.0 :y 5.0}
+              {:x 14.0 :y 9.0} {:x 20.0 :y 10.0}]
+             (mapv #(select-keys (:params %) [:x :y]) result)))))
 
 (t/deftest path-duplicate-node-content
   ;; Duplicating a node copies its incident segments as subpaths.

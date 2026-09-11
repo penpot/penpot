@@ -15,6 +15,12 @@
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]))
 
+(defn start-subpath
+  "Adds the subpath start a pending node draws its first segment from."
+  [shape position]
+  (update shape :content path/append-segment
+          {:command :move-to :params (select-keys position [:x :y])}))
+
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
   [shape position prev-point prev-handler]
