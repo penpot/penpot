@@ -653,3 +653,32 @@ test("Renders background blur on text shapes", async ({ page }) => {
   await workspace.waitForFirstRenderWithoutUI();
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Flattens texts to paths", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-flatten.json");
+
+  await workspace.goToWorkspace({
+    id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
+    pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
+  });
+  await workspace.waitForFirstRender();
+
+  const flattenButton = workspace.page.getByRole("button", {
+    name: "Flatten",
+    exact: true,
+  });
+
+  for (const layer of ["Flat spacing", "Flat paragraph", "Flat centered"]) {
+    await workspace.clickLeafLayer(layer);
+    const renderCount = await workspace.getRenderCount();
+    await flattenButton.click();
+    await workspace.waitForNextRender(renderCount);
+  }
+
+  await workspace.page.keyboard.press("Escape");
+  await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
+});

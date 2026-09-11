@@ -332,7 +332,7 @@ impl TextDecorationSegment {
     }
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -1859,11 +1859,8 @@ pub fn calculate_text_layout_data(
 
     // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
-    let vertical_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
-        VerticalAlign::Bottom => selrect_height - total_text_height,
-        _ => 0.0,
-    };
+    let vertical_offset =
+        vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
@@ -1970,6 +1967,39 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vertical_align_top_keeps_the_content_at_the_origin() {
+        assert_eq!(vertical_align_offset(200.0, 60.0, VerticalAlign::Top), 0.0);
+    }
+
+    #[test]
+    fn vertical_align_center_takes_half_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Center),
+            70.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_bottom_takes_all_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Bottom),
+            140.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_offset_is_negative_when_content_overflows() {
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Center),
+            -70.0
+        );
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Bottom),
+            -140.0
+        );
+    }
 
     #[test]
     fn capitalize_basic_words() {

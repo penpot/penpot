@@ -3,9 +3,9 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, Paragraph as TextParagraph,
-        ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
-        TextDecorationSegment, VerticalAlign,
+        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
+        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
+        TextContent, TextDecorationSegment,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -379,11 +379,8 @@ fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextC
         .filter_map(|group| group.first())
         .map(|p| p.height())
         .sum();
-    let vertical_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect.height() - total_text_height) / 2.0,
-        VerticalAlign::Bottom => selrect.height() - total_text_height,
-        _ => 0.0,
-    };
+    let vertical_offset =
+        vertical_align_offset(selrect.height(), total_text_height, shape.vertical_align());
 
     let mut y_accum = base_y + vertical_offset;
     for (index, group) in paragraphs.iter().enumerate() {
@@ -1234,32 +1231,6 @@ fn calculate_decoration_metrics(
         strike_y,
     )
 }
-
-// How to use it?
-// Type::Text(text_content) => {
-//     self.surfaces
-//         .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
-//             s.canvas().concat(&matrix);
-//         });
-
-//     let text_content = text_content.new_bounds(shape.selrect());
-//     let paths = text_content.get_paths(antialias);
-
-//     shadows::render_text_shadows(self, &shape, &paths, antialias);
-//     text::render(self, &paths, None, None);
-
-//     for stroke in shape.visible_strokes().rev() {
-//         shadows::render_text_path_stroke_shadows(
-//             self, &shape, &paths, stroke, antialias,
-//         );
-//         strokes::render_text_paths(self, &shape, stroke, &paths, None, None, antialias);
-//         shadows::render_text_path_stroke_inner_shadows(
-//             self, &shape, &paths, stroke, antialias,
-//         );
-//     }
-
-//     shadows::render_text_inner_shadows(self, &shape, &paths, antialias);
-// }
 
 #[cfg(test)]
 mod tests {
