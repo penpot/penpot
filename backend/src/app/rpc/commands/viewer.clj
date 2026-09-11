@@ -89,18 +89,27 @@
                      (mapv (fn [{:keys [id] :as lib}]
                              (merge lib (bfc/get-file cfg id)))))
 
-        links   (cond->> (->> (db/query conn :share-link {:file-id file-id})
-                              (mapv (fn [row]
-                                      (-> row
-                                          (update :pages db/decode-pgarray #{})
-                                          ;; NOTE: the flags are deprecated but are still present
-                                          ;; on the table on old rows. The flags are pgarray and
-                                          ;; for avoid decoding it (because they are no longer used
-                                          ;; on frontend) we just dissoc the column attribute from
-                                          ;; row.
-                                          (dissoc :flags)))))
-                  (= :share-link (:type perms))
-                  (filterv #(= (:id %) share-id)))
+        decode-link
+        (fn [row]
+          (-> row
+              (update :pages db/decode-pgarray #{})
+              ;; NOTE: the flags are deprecated but are still present
+              ;; on the table on old rows. The flags are pgarray and
+              ;; for avoid decoding it (because they are no longer used
+              ;; on frontend) we just dissoc the column attribute from
+              ;; row.
+              (dissoc :flags)))
+
+        ;; NOTE: on the share-link path we fetch at most the caller's own
+        ;; row with a composite (id, file-id) predicate, so sibling tokens
+        ;; never leave postgres. The membership path keeps the full list
+        ;; the share-management UI needs. A nil share-id never falls back
+        ;; to the full query; it simply resolves to an empty vector.
+        links   (if (= :share-link (:type perms))
+                  (if-some [row (db/get* conn :share-link {:id share-id :file-id file-id})]
+                    [(decode-link row)]
+                    [])
+                  (mapv decode-link (db/query conn :share-link {:file-id file-id})))
 
         fonts   (db/query conn :team-font-variant
                           {:team-id (:id team)
