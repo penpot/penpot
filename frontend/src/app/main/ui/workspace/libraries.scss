@@ -49,15 +49,15 @@
 }
 
 // Tabs content
-.libraries-content {
+.libraries-content,
+.updates-content {
   display: grid;
   gap: var(--sp-xxxl);
   max-height: $sz-400;
-  padding-block-start: var(--sp-l);
 }
 
 .libraries-content-legacy,
-.updates-content {
+.updates-content-legacy {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--sp-xxxl);
@@ -71,6 +71,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--sp-s);
+  padding-block-start: var(--sp-xs);
 }
 
 .shared-section {
@@ -203,6 +204,7 @@
   margin: 0;
 }
 
+.updates-content-legacy,
 .updates-content {
   grid-template-columns: 1fr;
 }
@@ -345,6 +347,7 @@
   block-size: fit-content;
   border: $b-1 solid var(--color-accent-select);
   border-radius: $br-8;
+  padding-inline: var(--sp-xxs) px2rem(6);
 }
 
 // Modal Component v2 update

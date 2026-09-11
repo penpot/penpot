@@ -937,7 +937,7 @@
 
 (mf/defc updates-tab*
   {::mf/private true}
-  [{:keys [file-id libraries]}]
+  [{:keys [file-id libraries is-legacy]}]
   ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
         summary?   (deref summary?*)
@@ -972,7 +972,8 @@
                                  (dwl/set-updating-library true)
                                  (dwl/sync-file file-id library-id)))))))]
 
-    [:div {:class (stl/css :updates-content)}
+    [:div {:class (stl/css-case :updates-content (not is-legacy)
+                                :updates-content-legacy is-legacy)}
      [:div {:class (stl/css :update-section)}
       (if (empty? libs-assets)
         [:div {:class (stl/css :section-list-empty)}
@@ -1174,6 +1175,7 @@
          "updates"
          [:> updates-tab*
           {:file-id file-id
+           :is-legacy (not token-lib-sync?)
            :libraries linked-libraries}])]]]))
 
 (mf/defc v2-info-dialog
