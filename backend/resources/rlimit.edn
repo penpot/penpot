@@ -216,10 +216,10 @@
  ;; ═══════════════════════════════════════════════
  ;; Profile operations
  ;; ═══════════════════════════════════════════════
-  #{:main/update-profile
-    :main/update-profile-props
-    :main/add-profile-plugin
-    :main/remove-profile-plugin
+ #{:main/update-profile
+   :main/update-profile-props
+   :main/add-profile-plugin
+   :main/remove-profile-plugin
    :main/update-profile-photo
    :main/update-profile-password
    :main/update-profile-notifications
