@@ -87,6 +87,80 @@
 ;; Do not remove commented out lines, they are useful to debug events when
 ;; things go weird.
 
+;; Native drag and drop swallows wheel events while a drag is in progress, so
+;; scrolling a long list mid-drag is done here: when the pointer gets near the
+;; top or bottom edge of the scrollable container, it is scrolled on every
+;; animation frame, faster the closer the pointer is to the edge.
+
+(def ^:private auto-scroll-zone-size 56)
+(def ^:private auto-scroll-max-speed 18)
+(def ^:private auto-scroll-stale-ms 500)
+
+(defonce ^:private auto-scroll-state (atom nil))
+
+(defn- scrollable-ancestor
+  [node]
+  (loop [node (some-> ^js node .-parentElement)]
+    (when (some? node)
+      (let [overflow (-> (dom/get-computed-styles node)
+                         (dom/get-property-value "overflow-y"))]
+        (if (and (or (= overflow "auto") (= overflow "scroll"))
+                 (> (.-scrollHeight ^js node) (.-clientHeight ^js node)))
+          node
+          (recur (.-parentElement ^js node)))))))
+
+(defn auto-scroll-speed
+  "Pixels to scroll on each frame given the pointer position, negative
+  upwards. Zero when the pointer is outside the edge zones."
+  [{:keys [top bottom]} pointer-y]
+  (let [top-distance    (- pointer-y top)
+        bottom-distance (- bottom pointer-y)
+        ramp            (fn [distance]
+                          (-> (- auto-scroll-zone-size distance)
+                              (/ auto-scroll-zone-size)
+                              (* auto-scroll-max-speed)
+                              (mth/ceil)))]
+    (cond
+      (or (neg? top-distance) (neg? bottom-distance)) 0
+      (< top-distance auto-scroll-zone-size)          (- (ramp top-distance))
+      (< bottom-distance auto-scroll-zone-size)       (ramp bottom-distance)
+      :else                                           0)))
+
+(defn- stop-auto-scroll!
+  []
+  (when-let [state @auto-scroll-state]
+    (ts/cancel-af! (:frame state))
+    (reset! auto-scroll-state nil)))
+
+(defn- auto-scroll-tick
+  []
+  (let [{:keys [element speed updated-at]} @auto-scroll-state]
+    ;; The stale check stops the loop if the drag ended without us being
+    ;; notified, for example when a dragend event is lost.
+    (if (or (nil? element)
+            (> (- (inst-ms (js/Date.)) updated-at) auto-scroll-stale-ms))
+      (stop-auto-scroll!)
+      (do
+        (dom/scroll-by! element 0 speed)
+        (swap! auto-scroll-state assoc :frame (ts/raf auto-scroll-tick))))))
+
+(defn- update-auto-scroll!
+  "Starts, updates or stops the auto scroll of the container of `node`
+  depending on how close the pointer is to its edges."
+  [node pointer-y]
+  (let [element (scrollable-ancestor node)
+        speed   (when (some? element)
+                  (auto-scroll-speed (dom/get-bounding-rect element) pointer-y))]
+    (if (or (nil? speed) (zero? speed))
+      (stop-auto-scroll!)
+      (let [running? (some? @auto-scroll-state)]
+        (swap! auto-scroll-state assoc
+               :element element
+               :speed speed
+               :updated-at (inst-ms (js/Date.)))
+        (when-not running?
+          (swap! auto-scroll-state assoc :frame (ts/raf auto-scroll-tick)))))))
+
 (defn use-sortable
   [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center? draggable?]
       :or {draggable? true}
@@ -148,7 +222,8 @@
               (subscribe-to-drag-end)
               ;; (dnd/trace event data "drag-over")
               (let [side (dnd/drop-side event detect-center?)]
-                (swap! state assoc :over side)))))
+                (swap! state assoc :over side)))
+            (update-auto-scroll! (mf/ref-val ref) (.-clientY event))))
 
         on-drag-leave
         (fn [event]
@@ -162,6 +237,7 @@
           ;; (dnd/trace event data "drop")
           (let [side (dnd/drop-side event detect-center?)
                 drop-data (dnd/get-data event data-type)]
+            (stop-auto-scroll!)
             (cleanup)
             (rx/push! global-drag-end nil)
             (when (fn? on-drop)
@@ -171,6 +247,7 @@
         (fn [event]
           (dom/stop-propagation event)
           ;; (dnd/trace event data "drag-end")
+          (stop-auto-scroll!)
           (rx/push! global-drag-end nil)
           (cleanup))
 
