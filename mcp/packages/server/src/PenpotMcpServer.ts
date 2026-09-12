@@ -57,6 +57,16 @@ export function shouldRegisterDeveloperTools(isDevEnv: boolean, isMultiUserMode:
     return isDevEnv && !isMultiUserMode;
 }
 
+/**
+ * Indicates whether the REPL server may be started for the current server mode.
+ *
+ * The REPL server never starts in multi-user mode, even when explicitly
+ * enabled, mirroring the developer tools policy.
+ */
+export function shouldStartReplServer(isReplEnabled: boolean, isMultiUserMode: boolean): boolean {
+    return isReplEnabled && !isMultiUserMode;
+}
+
 export class PenpotMcpServer {
     /**
      * Timeout, in minutes, for idle sessions (Streamable HTTP and SSE) before they are automatically closed and removed.
@@ -133,6 +143,7 @@ export class PenpotMcpServer {
     public readonly host: string;
     public readonly port: number;
     public readonly webSocketPort: number;
+    public readonly replHost: string;
     public readonly replPort: number;
     private sessionTimeoutInterval: ReturnType<typeof setInterval> | undefined;
 
@@ -156,6 +167,7 @@ export class PenpotMcpServer {
         this.host = process.env.PENPOT_MCP_SERVER_HOST ?? "localhost";
         this.port = parseInt(process.env.PENPOT_MCP_SERVER_PORT ?? "4401", 10);
         this.webSocketPort = parseInt(process.env.PENPOT_MCP_WEBSOCKET_PORT ?? "4402", 10);
+        this.replHost = process.env.PENPOT_MCP_REPL_HOST ?? "localhost";
         this.replPort = parseInt(process.env.PENPOT_MCP_REPL_PORT ?? "4403", 10);
         this.tenant = process.env.PENPOT_TENANT ?? "default";
         const toolTimeoutSecs = parseInt(process.env.PENPOT_MCP_TOOL_TIMEOUT_S ?? "120", 10);
@@ -181,8 +193,8 @@ export class PenpotMcpServer {
 
         this.pluginBridge = new PluginBridge(this, this.webSocketPort, toolTimeoutSecs, this.redisBridge);
 
-        if (PenpotMcpServer.isReplEnabled(process.env)) {
-            this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.host);
+        if (shouldStartReplServer(PenpotMcpServer.isReplEnabled(process.env), this.isMultiUserMode())) {
+            this.replServer = new ReplServer(this.pluginBridge, this.replPort, this.replHost);
         } else {
             this.replServer = null;
         }
@@ -232,9 +244,10 @@ export class PenpotMcpServer {
     /**
      * Indicates whether the REPL server was created.
      *
-     * The REPL server is created when {@link isReplEnabled} returns true,
-     * which means either ``PENPOT_MCP_REPL_ENABLE=true`` or, when that
-     * variable is unset, ``PENPOT_MCP_DEVENV=true``.
+     * The REPL server is created when {@link isReplEnabled} returns true and
+     * the server is not running in multi-user mode, which means either
+     * ``PENPOT_MCP_REPL_ENABLE=true`` or, when that variable is unset,
+     * ``PENPOT_MCP_DEVENV=true``, in single-user mode.
      */
     public hasReplServer(): boolean {
         return this.replServer !== null;
@@ -471,6 +484,8 @@ export class PenpotMcpServer {
                 // start the REPL server (devenv only) and session timeout checker
                 if (this.replServer) {
                     await this.replServer.start();
+                } else if (this.isMultiUserMode()) {
+                    this.logger.info("REPL server disabled in multi-user mode (never started with --multi-user)");
                 } else {
                     this.logger.info(
                         "REPL server disabled (set PENPOT_MCP_REPL_ENABLE=true or PENPOT_MCP_DEVENV=true to enable)"
