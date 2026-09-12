@@ -347,11 +347,12 @@
                             "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
-        ;; redirect user to login, if no member-id is present and  in the invitation
-        ;; token and registration is enabled, we redirect user the the register page.
+        ;; redirect user to login. If no member-id is present this is an invitation
+        ;; for a new user — send them to the register page. Invitations bypass
+        ;; the disable-registration flag per documentation.
         {:invitation-token token
          :iss :team-invitation
-         :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
+         :redirect-to (if member-id :auth-login :auth-register)
          :state :pending}))))
 
 ;; --- Default
