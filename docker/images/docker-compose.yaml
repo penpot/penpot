@@ -126,7 +126,7 @@ services:
     networks:
       - penpot
 
-    ## Configuration envronment variables for the backend container.
+    ## Configuration environment variables for the backend container.
 
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key]
