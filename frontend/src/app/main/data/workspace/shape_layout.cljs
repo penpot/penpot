@@ -327,9 +327,8 @@
   [ids dir]
   (ptk/reify ::change-grid-direction
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            undo-id (js/Symbol)]
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwsh/update-shapes
                 ids
