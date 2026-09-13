@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-11 12:51+0000\n"
+"PO-Revision-Date: 2026-09-14 17:51+0000\n"
 "Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
@@ -876,7 +876,6 @@ msgid "dashboard.move-to-other-team"
 msgstr "Déplacer vers une autre équipe"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-#, fuzzy
 msgid "dashboard.my-teams"
 msgstr "Mes équipes"
 
@@ -2438,7 +2437,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Thèmes actifs"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Copier le CSS abrégé au presse-papiers"
 
@@ -5007,7 +5005,6 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-#, fuzzy
 msgid "options.deleted-token"
 msgstr "Ce token n'existe pas ou a été supprimé."
 
@@ -5848,11 +5845,10 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Le paiement ne s'est pas complété. Essayer de nouveau."
 
 #: src/app/main/ui/settings/subscription.cljs:427
-#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"Nous n'avons pas pu initier le processus de paiement. Essayer de nouveau. Si "
-"le problème persiste, contacte-nous : support@penpot.app."
+"Le paiement n'a pas été complété. Essayer de nouveau. Si le problème "
+"persiste, contacte-nous : support@penpot.app."
 
 #: src/app/main/ui/settings/subscription.cljs:407
 msgid "subscription.error.nitrate.checkout-finish-failed"
@@ -5986,9 +5982,8 @@ msgid "subscription.settings.more-information"
 msgstr "En savoir plus"
 
 #: src/app/main/ui/settings/subscription.cljs:724
-#, fuzzy
 msgid "subscription.settings.organization-member-month"
-msgstr "membre d'organisation par mois"
+msgstr "membre d'organisation / mois"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
@@ -9365,7 +9360,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s ensembles actifs"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valeur d'origine : %s"
 
@@ -9432,7 +9426,6 @@ msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Les tokens seront automatiquement renommés à %s.(suffixe).(nomDeToken)"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:87, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Valeur calculée : %s"
 
@@ -9565,7 +9558,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Liste des thèmes"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Description"
 
@@ -10224,3 +10216,233 @@ msgid "shortcuts.reload-hint"
 msgstr ""
 "Après avoir modifié un raccourci, recharger l'onglet Penpot pour appliquer "
 "les changements."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "Aucun raccourci correspondant à ce terme"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Personalisés"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled"
+msgstr "Désactivés"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-arrow"
+msgstr "Flèche"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-line"
+msgstr "Ligne"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "Importer/Exporter"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Appuyer sur la combinaison de touches"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr ""
+"Cette combination sert à « %s ». Enregistrer celle-ci annulera le raccourci "
+"existant."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "À l'enregistrement ce raccourci reviendra à sa valeur d'origine :"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr ""
+"Cette combinaison de touches est disponible et peut être assignée sans "
+"conflits."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "Basculer la visibilité des commentaires"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.edit-on-settings"
+msgstr "Personaliser les raccourcis"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-title"
+msgstr "Restaurer la configuration par défaut"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-text"
+msgstr "Les raccourcis suivants seront restaurés à leur valeur par défaut."
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.acction"
+msgstr "Action"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.restore"
+msgstr "Restaurer"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Importer des raccourcis"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-text"
+msgstr "Les raccourcis suivants seront modifiés par la configuration importée."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.no-changes"
+msgstr "Aucune différence entre les raccourcis actuels et importés."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.apply"
+msgstr "Appliquer"
+
+#: src/app/main/ui/dashboard/subscription.cljs:203
+msgid "subscription.dashboard.banner.unlock-features-description-text"
+msgstr ""
+"Assigne des permissions détaillées et maintens le contrôle, sans "
+"compromettre le code source libre tant prisé par les équipes."
+
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
+msgstr "Tous les avantages du forfait Illimité, plus :"
+
+msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
+msgstr "Gestion multi-organisation :"
+
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr ""
+"Compatibilité pour les équipes à hiérarchies complexes et sous-organisations "
+"séparées."
+
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "Sécurité Entreprise :"
+
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr ""
+"SAML/SSO natif et journaux complets de piste d'audit pour le rapportage de "
+"compliance."
+
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "Contrôle avancé :"
+
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr ""
+"Liste d'autorisation granulaire des plugiciels, incluant notre serveur MCP "
+"pour la connectivité IA."
+
+msgid "subscription.settings.admin-console"
+msgstr "Console admin"
+
+#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
+msgid "subscription.settings.price-user-month"
+msgstr "usager / mois"
+
+#: src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.subscribed-since"
+msgstr "Tu utilises le forfait %s depuis %s."
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Supprimer ces pages"
+
+#: src/app/main/ui/workspace/main_menu.cljs:422
+msgid "workspace.header.menu.show-comments"
+msgstr "Afficher les commentaires"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:354
+msgid "workspace.libraries.colors.add-library-color"
+msgstr "Ajouter couleur à la bibliothèque"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:371, src/app/main/ui/workspace/colorpicker/libraries.cljs:387
+msgid "workspace.libraries.colors.empty-recent-colors"
+msgstr "Aucune couleur récente"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:336
+msgid "workspace.libraries.colors.toggle-color-palette"
+msgstr "Basculer la palette de couleurs"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#, unused
+msgid "workspace.options.blur-effects-options.title"
+msgstr "Effets de flou"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:273
+msgid "workspace.options.blur-effects-options.title.group"
+msgstr "Effets de flou du groupe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:272
+msgid "workspace.options.blur-effects-options.title.multiple"
+msgstr "Effets de flou de la sélection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:144
+msgid "workspace.options.blur-options.blur-type-select"
+msgstr "Type de flou"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:153
+msgid "workspace.options.blur-options.disabled-blur-label"
+msgstr ""
+"Le flou d'arrière-plan est seulement disponible sous le nouveau moteur de "
+"rendu. Active-le dans le menu Préférences pour utiliser cet effet"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
+msgid "workspace.options.blur-options.toggle-more-options"
+msgstr "Afficher/masquer plus d'options"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-top"
+msgstr "Haut (block start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-right"
+msgstr "Droite (inline end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-bottom"
+msgstr "Bas (block end)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-left"
+msgstr "Gauche (inline start)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side"
+msgstr "Contour par côté"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr ""
+"Les contours par côté sont seulement disponibles sous le nouveau moteur de "
+"rendu."
+
+msgid "workspace.shape.menu.copy-id"
+msgstr "Copier l'id"
+
+#, unused
+msgid "workspace.toast.comments-hidden"
+msgstr "Commentaires masqués"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+msgid "workspace.tokens.ref-not-valid"
+msgstr ""
+"La référence dans {%s} est invalide ou ne fait partie d'aucun ensemble actif."
+
+msgid "workspace.toolbar.arrow"
+msgstr "Flèche (%s)"
+
+msgid "workspace.toolbar.line"
+msgstr "Ligne (%s)"
+
+msgid "notifications.invitation-canceled"
+msgstr "Cette invitation n'est plus disponible."
+
+#: src/app/main/ui/dashboard/team.cljs:1057
+msgid "errors.max-quote-reached"
+msgstr "Nombre maximal d'invitations atteint"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+msgid "inspect.tabs-switcher-label"
+msgstr "Type d'info"
