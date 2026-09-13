@@ -1515,3 +1515,25 @@
       (t/is (= [s3] (holder result 1 2)))
       (t/is (= [s2] (holder result 2 1)))
       (t/is (= [s4] (holder result 2 2))))))
+
+(t/deftest reflow-grid-area-span-keeps-source-order-test
+  (t/testing "area/span grids: reflow pins area, keeps :shapes byte-equal"
+    (let [a (uuid/next) b (uuid/next) c (uuid/next) d (uuid/next) x (uuid/next)
+          area (assoc (make-cell :row 1 :column 1 :position :area
+                                 :area-name "a" :shapes [x])
+                      :row-span 1 :column-span 1)
+          c12 (make-cell :row 1 :column 2 :shapes [a])
+          c21 (make-cell :row 2 :column 1 :shapes [b])
+          c22 (make-cell :row 2 :column 2 :shapes [c])
+          c31 (make-cell :row 3 :column 1 :shapes [d])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [x d c b a]
+                  :layout-grid-cells {(:id area) area (:id c12) c12
+                                      (:id c21) c21 (:id c22) c22
+                                      (:id c31) c31}}
+          result (layout/reflow-grid-auto-items-for-direction
+                  parent :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= [x] (:shapes (layout/cell-by-row-column result 1 1)))))))
