@@ -319,6 +319,30 @@
                         (create-layout type))]
             (rx/of (with-meta event (meta it)))))))))
 
+(defn change-grid-direction
+  "Change a grid container flow direction, redistributing only
+  single-span auto-positioned items into the new direction traversal
+  order while preserving the source/layer order and keeping an atomic
+  undo step for the direction + cell reassignment."
+  [ids dir]
+  (ptk/reify ::change-grid-direction
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwsh/update-shapes
+                ids
+                (fn [shape]
+                  (let [from-dir (:layout-grid-dir shape)]
+                    (cond-> shape
+                      (and (= :grid (:layout shape))
+                           (contains? #{:row :column} dir)
+                           (not= from-dir dir))
+                      (ctl/reflow-grid-auto-items-for-direction from-dir dir)))))
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
+
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))
   ([ids changes options]

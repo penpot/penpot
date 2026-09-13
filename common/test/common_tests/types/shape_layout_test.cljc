@@ -1491,3 +1491,27 @@
                      (layout/add-grid-row {:type :fixed :value 300}))
           result (layout/reorder-grid-row parent 0 2 false)]
       (t/is (= 3 (count (:layout-grid-rows result)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; reflow-grid-auto-items-for-direction (#11659)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest reflow-grid-auto-items-for-direction-test
+  (t/testing "RED: row->column redistributes auto cells, keeps :shapes"
+    (let [s1 (uuid/next) s2 (uuid/next) s3 (uuid/next) s4 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [s3])
+          c22 (make-cell :row 2 :column 2 :shapes [s4])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [s4 s3 s2 s1]
+                  :layout-grid-cells {(:id c11) c11 (:id c12) c12 (:id c21) c21 (:id c22) c22}}
+          holder (fn [p r c] (:shapes (layout/cell-by-row-column p r c)))
+          result (layout/reflow-grid-auto-items-for-direction parent :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= [s1] (holder result 1 1)))
+      (t/is (= [s3] (holder result 1 2)))
+      (t/is (= [s2] (holder result 2 1)))
+      (t/is (= [s4] (holder result 2 2))))))
