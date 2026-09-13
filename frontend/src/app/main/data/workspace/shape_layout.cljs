@@ -333,7 +333,7 @@
                (dwsh/update-shapes
                 ids
                 (fn [shape]
-                  (let [from-dir (:layout-grid-dir shape)]
+                  (let [from-dir (d/nilv (:layout-grid-dir shape) :row)]
                     (cond-> shape
                       (and (= :grid (:layout shape))
                            (contains? #{:row :column} dir)

@@ -1608,3 +1608,28 @@
       (t/is (= [e] (:shapes (get-in result [:layout-grid-cells (:id auto-c)]))))
       (t/is (= (set before) (set after)))
       (t/is (= (count after) (count (distinct after)))))))
+
+(t/deftest reflow-grid-missing-dir-normalizes-to-row-test
+  (t/testing "missing :layout-grid-dir behaves like explicit :row"
+    (let [s1 (uuid/next) s2 (uuid/next) s3 (uuid/next) s4 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [s3])
+          c22 (make-cell :row 2 :column 2 :shapes [s4])
+          implicit {:layout :grid
+                    :shapes [s4 s3 s2 s1]
+                    :layout-grid-cells {(:id c11) c11 (:id c12) c12 (:id c21) c21 (:id c22) c22}}
+          explicit (assoc implicit :layout-grid-dir :row)
+          holder (fn [p r c] (:shapes (layout/cell-by-row-column p r c)))
+          from-missing (or (:layout-grid-dir implicit) :row)
+          result (layout/reflow-grid-auto-items-for-direction
+                  implicit from-missing :column)
+          expected (layout/reflow-grid-auto-items-for-direction
+                    explicit :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes explicit) (:shapes result)))
+      (t/is (= (:layout-grid-cells expected) (:layout-grid-cells result)))
+      (t/is (= [s1] (holder result 1 1)))
+      (t/is (= [s3] (holder result 1 2)))
+      (t/is (= [s2] (holder result 2 1)))
+      (t/is (= [s4] (holder result 2 2))))))
