@@ -1583,7 +1583,7 @@
                                    :shapes [x])
                         :row-span 2 :column-span 1)
           auto-b (make-cell :row 2 :column 1 :shapes [b])
-          auto-c (make-cell :row 2 :column 2 :shapes [c])
+          auto-c (make-cell :row 1 :column 3 :shapes [c])
           area-d (assoc (make-cell :row 3 :column 1 :position :area
                                    :area-name "d" :shapes [d])
                         :row-span 1 :column-span 1)
@@ -1602,5 +1602,9 @@
       (t/is (= (:shapes parent) (:shapes result)))
       (t/is (= span-x (get-in result [:layout-grid-cells (:id span-x)])))
       (t/is (= area-d (get-in result [:layout-grid-cells (:id area-d)])))
+      (t/is (= [a] (:shapes (get-in result [:layout-grid-cells (:id auto-a)]))))
+      (t/is (= [c] (:shapes (get-in result [:layout-grid-cells (:id auto-b)]))))
+      (t/is (= [b] (:shapes (get-in result [:layout-grid-cells (:id auto-e)]))))
+      (t/is (= [e] (:shapes (get-in result [:layout-grid-cells (:id auto-c)]))))
       (t/is (= (set before) (set after)))
       (t/is (= (count after) (count (distinct after)))))))
