@@ -1537,3 +1537,22 @@
       (t/is (= :column (:layout-grid-dir result)))
       (t/is (= (:shapes parent) (:shapes result)))
       (t/is (= [x] (:shapes (layout/cell-by-row-column result 1 1)))))))
+
+(t/deftest reflow-grid-sparse-auto-cells-clear-leftover-test
+  (t/testing "sparse grids: leftover target auto cells are emptied, no duplicates"
+    (let [s1 (uuid/next) s2 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [])
+          c22 (make-cell :row 2 :column 2 :shapes [])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [s2 s1]
+                  :layout-grid-cells {(:id c11) c11 (:id c12) c12
+                                      (:id c21) c21 (:id c22) c22}}
+          result (layout/reflow-grid-auto-items-for-direction
+                  parent :row :column)
+          actual (mapv :shapes (layout/cells-seq result :sort? true))]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= [[s1] [s2] [] []] actual)))))

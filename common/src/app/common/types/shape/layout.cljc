@@ -1588,20 +1588,18 @@
                             (#(cells-seq % :sort? true))
                             (filter reflow-eligible-cell?)
                             (map :id))
-          shapes (mapcat #(get-in parent [:layout-grid-cells % :shapes]) old-auto-ids)
-          placements (zipmap new-auto-ids shapes)]
+          shapes (vec (mapcat #(get-in parent [:layout-grid-cells % :shapes]) old-auto-ids))]
       (-> parent
           (assoc :layout-grid-dir to-dir)
           (assoc :layout-grid-cells
-                 (reduce-kv
-                  (fn [acc cell-id cell]
-                    (if (contains? placements cell-id)
-                      (let [shape (get placements cell-id)]
-                        (assoc acc cell-id
-                               (assoc cell :shapes (if (some? shape) [shape] []))))
-                      (assoc acc cell-id cell)))
+                 (reduce
+                  (fn [acc [idx cell-id]]
+                    (let [shape (get shapes idx)]
+                      (assoc acc cell-id
+                             (assoc (get acc cell-id)
+                                    :shapes (if (some? shape) [shape] [])))))
                   (:layout-grid-cells parent)
-                  (select-keys (:layout-grid-cells parent) old-auto-ids)))))))
+                  (map-indexed vector new-auto-ids)))))))
 
 (defn cells-by-row
   ([parent index]
