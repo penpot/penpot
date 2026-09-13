@@ -341,10 +341,12 @@
                            (not= from-dir dir))
                       (ctl/reflow-grid-auto-items-for-direction from-dir dir))))
                 ;; Reflowing already places every eligible auto item,
-                ;; so skip the generic grid cell pass and its blind
-                ;; child reorder: it would rewrite :shapes around
-                ;; pinned manual/area cells in area/span grids.
-                {:translation? true})
+                ;; so skip only the generic grid cell pass and its
+                ;; blind child reorder: it would rewrite :shapes
+                ;; around pinned manual/area cells in area/span
+                ;; grids. Keep translation/component-sync metadata
+                ;; untouched so copies still sync.
+                {:skip-grid-reassignment? true})
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 

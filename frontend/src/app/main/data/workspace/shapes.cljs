@@ -110,7 +110,7 @@
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr
-            translation? skip-component-sync?]
+            translation? skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -150,7 +150,8 @@
                           :changed-sub-attr changed-sub-attr
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
-                          :with-objects? with-objects?})
+                          :with-objects? with-objects?
+                          :skip-grid-reassignment? skip-grid-reassignment?})
                         (cond-> reg-objects? (pcb/resize-parents ids))
                         (pcb/set-translation? translation?)
                         (pcb/set-skip-component-sync? skip-component-sync?))))]
@@ -189,7 +190,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr translation?
-            skip-component-sync?]
+            skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -222,7 +223,8 @@
                                                 :ignore-tree ignore-tree
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
-                                                :translation? translation?})
+                                                :translation? translation?
+                                                :skip-grid-reassignment? skip-grid-reassignment?})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?)
