@@ -75,7 +75,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -87,8 +87,11 @@
                      (some? objects) (pcb/with-objects objects))
                    ids)
         ;; Translation doesn't shift children between grid cells, so
-        ;; cell reassignment + child reorder are no-ops.
-        grid-ids (when-not translation?
+        ;; cell reassignment + child reorder are no-ops. Direction
+        ;; changes reflow eligible items explicitly and skip the same
+        ;; generic pass; unlike translation this keeps component sync
+        ;; and reflow metadata untouched.
+        grid-ids (when-not (or translation? skip-grid-reassignment?)
                    (->> ids (filter (partial ctl/grid-layout? objects))))
         changes (cond-> changes
                   (seq grid-ids)
