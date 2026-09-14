@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-08-13 13:53+0000\n"
+"PO-Revision-Date: 2026-09-14 17:51+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 2026.9.dev0\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -9097,3 +9097,20 @@ msgstr "ההזמנה הזאת לא זמינה יותר."
 #: src/app/main/data/workspace/versions.cljs:297
 msgid "workspace.versions.preview.unnamed"
 msgstr "גרסה ללא שם"
+
+#: src/app/main/ui/settings/integrations.cljs:511
+msgid "integrations.mcp-server.description"
+msgstr ""
+"שרת ה־MCP של Penpot מפעיל לקוחות MCP לתפעול ישיר של קובצי עיצוב של Penpot."
+
+#: src/app/main/ui/settings/integrations.cljs:527
+msgid "integrations.mcp-server.status.expired.0"
+msgstr "התוקף של מפתח MCP המשמש לחיבור לשרת MCP פג. לכן, לא ניתן לתקשר."
+
+#: src/app/main/ui/settings/integrations.cljs:502
+msgid "integrations.mcp-server.title"
+msgstr "שרת MCP"
+
+#: src/app/main/ui/settings/integrations.cljs:506
+msgid "integrations.mcp-server.title.beta"
+msgstr "בטא"
