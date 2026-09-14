@@ -455,7 +455,8 @@
       (t/is (= 1 (:delete res))))))
 
 (def ^:private migration-0155-fixtures
-  ;; [id transit-metadata]: production-shaped legacy rows.
+  ;; [id transit-metadata]: production-shaped legacy rows (nil payload
+  ;; means a NULL column).
   [["11111111-1111-1111-1111-111111111111"
     "{\"~:reference\":\"~:file-media-object\",\"~:content-type\":\"image/png\",\"~:hash\":\"blake2b:aaa\"}"]
    ["22222222-2222-2222-2222-222222222222"
@@ -463,7 +464,9 @@
    ["33333333-3333-3333-3333-333333333333"
     "{\"~:bucket\":\"tempfile\",\"~:reference\":\"~:tempfile\",\"~:content-type\":\"application/zip\"}"]
    ["44444444-4444-4444-4444-444444444444"
-    "{\"~:bucket\":\"tempfile\",\"~:content-type\":\"application/zip\",\"~:upload-id\":\"~u86907e95-1cb8-8122-8008-4eb7ba07d89d\",\"~:chunk-index\":3}"]])
+    "{\"~:bucket\":\"tempfile\",\"~:content-type\":\"application/zip\",\"~:upload-id\":\"~u86907e95-1cb8-8122-8008-4eb7ba07d89d\",\"~:chunk-index\":3}"]
+   ["55555555-5555-5555-5555-555555555555"
+    nil]])
 
 (defn- run-migration-0155!
   ;; Re-runs the 0155 statements (not migratus: it already applied at
@@ -502,7 +505,9 @@
              (mdata "33333333-3333-3333-3333-333333333333")))
     (t/is (= {:bucket "tempfile"
               :content-type "application/zip"}
-             (mdata "44444444-4444-4444-4444-444444444444"))))
+             (mdata "44444444-4444-4444-4444-444444444444")))
+    (t/is (= {:bucket "file-media-object"}
+             (mdata "55555555-5555-5555-5555-555555555555"))))
   ;; second run changes nothing (idempotent)
   (let [raw    (fn [] (mapv #(.getValue ^PGobject (get-metadata-by-id %))
                             (map first migration-0155-fixtures)))

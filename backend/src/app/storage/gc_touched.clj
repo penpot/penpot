@@ -130,7 +130,7 @@
       (do
         ;; Only reachable when the metadata column is NULL: the decode
         ;; always sets :bucket on non-nil metadata (0155 also backfills
-        ;; NULL rows). Keep working, but make it visible.
+        ;; NULL columns). Keep working, but make it visible.
         (l/wrn :hint "storage object without bucket metadata, using fallback"
                :id (str id))
         sto/default-bucket)))

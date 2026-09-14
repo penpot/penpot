@@ -9,7 +9,8 @@
 ---      and "~:reference" is dropped.
 ---   2. Rows with both keep "~:bucket"; the residual "~:reference" is dropped.
 ---   3. Rows with neither get "~:bucket" = "file-media-object"
----      (historic default from lookup-bucket).
+---      (historic default from lookup-bucket). NULL columns match this
+---      rule too (`->` on NULL is NULL) and are backfilled via coalesce.
 ---
 --- Chunk leftovers ("~:upload-id" / "~:chunk-index") are dropped: no
 --- code reads them anymore (#11651 moved chunks to upload_session_chunk
@@ -46,6 +47,6 @@ UPDATE storage_object
    AND (metadata -> '~:bucket') IS NOT NULL;
 
 UPDATE storage_object
-   SET metadata = metadata || '{"~:bucket": "file-media-object"}'
+   SET metadata = coalesce(metadata, '{}') || '{"~:bucket": "file-media-object"}'
  WHERE (metadata -> '~:bucket') IS NULL
    AND (metadata -> '~:reference') IS NULL;
