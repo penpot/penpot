@@ -152,7 +152,7 @@
     (t/is (= 1.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))
     (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "s3"])))))
 
-(t/deftest touch-and-del-with-raw-id-label-unknown-bucket
+(t/deftest touch-and-del-missing-id-emits-nothing
   (let [metrics (make-metrics)
         storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend)
@@ -160,8 +160,19 @@
         id      (uuid/next)]
     (t/is (false? (sto/touch-object! storage id)))
     (t/is (false? (sto/del-object! storage id)))
-    (t/is (= 1.0 (counter-value metrics :storage-operations ["touch" "unknown" "fs"])))
-    (t/is (= 1.0 (counter-value metrics :storage-operations ["del" "unknown" "fs"])))))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["touch" "unknown" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["del" "unknown" "fs"])))))
+
+(t/deftest touch-and-del-emit-once
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (put! storage "content" "file-media-object" nil)]
+    (t/is (true? (sto/touch-object! storage object)))
+    (t/is (true? (sto/del-object! storage object)))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["touch" "file-media-object" "fs"])))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["del" "file-media-object" "fs"])))))
 
 (t/deftest expired-object-emits-nothing
   (let [metrics (make-metrics)
@@ -225,3 +236,27 @@
                      (put! storage "content" "file-media-object" "hash-write-fail"))))
     (t/is (= 0.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
     (t/is (= 0.0 (counter-value metrics :storage-dedup ["miss" "file-media-object"])))))
+
+(t/deftest put-survives-metrics-failure
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))]
+    (with-mocks [_mock {:target 'app.metrics/run!
+                        :throw (ex-info "boom" {})}]
+      (let [object (put! storage "content" "file-media-object" "hash-metrics-fail")]
+        (t/is (sto/object? object))
+        (t/is (= "content" (slurp (sto/get-object-data storage object))))))))
+
+(t/deftest failed-read-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (put! storage "content" "file-media-object" nil)]
+    (with-mocks [_mock {:target 'app.storage.impl/get-object-data
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (sto/get-object-data storage object))))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))))
