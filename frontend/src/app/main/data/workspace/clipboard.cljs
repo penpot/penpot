@@ -333,17 +333,28 @@
     :else
     (rx/throw cause)))
 
+(defn- page-ready?
+  "Check the page objects are loaded enough for paste operations: the
+   root shape exists and carries its children list. Pastes arriving
+   before that (e.g. right after opening the workspace) are ignored."
+  [objects]
+  (and (map? objects)
+       (some? (get objects uuid/zero))
+       (some? (:shapes (get objects uuid/zero)))))
+
 (defn paste-from-clipboard
   "Perform a `paste` operation using the Clipboard API."
   ([] (paste-from-clipboard nil))
   ([{:keys [replace?]}]
    (ptk/reify ::paste-from-clipboard
      ptk/WatchEvent
-     (watch [_ _ _]
-       (->> (clipboard/from-navigator default-options)
-            (rx/mapcat (create-paste-from-blob false (boolean replace?)))
-            (rx/take 1)
-            (rx/catch on-clipboard-permission-error))))))
+     (watch [_ state _]
+       (if (page-ready? (dsh/lookup-page-objects state))
+         (->> (clipboard/from-navigator default-options)
+              (rx/mapcat (create-paste-from-blob false (boolean replace?)))
+              (rx/take 1)
+              (rx/catch on-clipboard-permission-error))
+         (rx/empty))))))
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -356,8 +367,9 @@
             is-editing? (and edit-id (= :text (get-in objects [edit-id :type])))]
 
         ;; Some paste events can be fired while we're editing a text
-        ;; we forbid that scenario so the default behaviour is executed
-        (if is-editing?
+        ;; we forbid that scenario so the default behaviour is executed.
+        ;; Pastes arriving before the page is loaded are ignored as well.
+        (if (or is-editing? (not (page-ready? objects)))
           (rx/empty)
           (->> (clipboard/from-synthetic-clipboard-event event default-options)
                (rx/mapcat (create-paste-from-blob in-viewport? false))))))))
@@ -641,17 +653,19 @@
 
           (cfeat/check-paste-features! features (:features pdata))
 
-          (case (:type pdata)
-            :copied-shapes
-            (if (= file-id (:file-id pdata))
-              (let [pdata (assoc pdata :images [])]
-                (rx/of (paste-shapes pdata)))
-              (->> (rx/from images)
-                   (rx/merge-map (partial upload-media file-id))
-                   (rx/reduce conj [])
-                   (rx/map #(assoc pdata :images %))
-                   (rx/map paste-shapes)))
-            nil))))))
+          (if (page-ready? (dsh/lookup-page-objects state))
+            (case (:type pdata)
+              :copied-shapes
+              (if (= file-id (:file-id pdata))
+                (let [pdata (assoc pdata :images [])]
+                  (rx/of (paste-shapes pdata)))
+                (->> (rx/from images)
+                     (rx/merge-map (partial upload-media file-id))
+                     (rx/reduce conj [])
+                     (rx/map #(assoc pdata :images %))
+                     (rx/map paste-shapes)))
+              nil)
+            (rx/empty)))))))
 
 (defn- paste-transit-props
   [pdata]
@@ -800,6 +814,18 @@
                       target-index (cfh/get-position-on-parent page-objects replace-id)]
                   [parent-id delta target-index])
 
+                ;; No selection, or selection detached from the shape tree
+                ;; (selected shapes unreachable from the root, so there is
+                ;; no base shape): paste at the pointer position. Selecting
+                ;; the root itself (uuid/zero) is a valid workflow handled
+                ;; by the frame branches below.
+                (or (empty? page-selected)
+                    (and (nil? base)
+                         (not (contains? page-selected uuid/zero))))
+                (let [frame-id (ctst/top-nested-frame page-objects position)
+                      delta    (gpt/subtract position orig-pos)]
+                  [frame-id delta])
+
                 ;; Paste next to selected frame, if selected is itself or of the same size as the copied
                 (and (selected-frame? state)
                      (or (any-same-frame-from-selected? state (keys pobjects))
@@ -853,11 +879,6 @@
                         (count (:shapes selected-frame-obj)))]
                   [frame-id delta target-index])
 
-                (empty? page-selected)
-                (let [frame-id (ctst/top-nested-frame page-objects position)
-                      delta    (gpt/subtract position orig-pos)]
-                  [frame-id delta])
-
                 :else
                 (let [parent-id (:parent-id base)
                       delta     (if in-viewport?
@@ -901,139 +922,141 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (let [file-id      (:current-file-id state)
-              page         (dsh/lookup-page state)
+        (if (page-ready? (:objects (dsh/lookup-page state)))
+          (let [file-id      (:current-file-id state)
+                page         (dsh/lookup-page state)
 
-              media-idx    (->> (:images pdata)
-                                (d/index-by :prev-id))
+                media-idx    (->> (:images pdata)
+                                  (d/index-by :prev-id))
 
-              selected     (:selected pdata)
+                selected     (:selected pdata)
 
-              objects      (:objects pdata)
+                objects      (:objects pdata)
 
-              variant-props (:variant-properties pdata)
+                variant-props (:variant-properties pdata)
 
-              position     (deref ms/mouse-position)
+                position     (deref ms/mouse-position)
 
-              ;; Replace mode is only valid with a single selected shape.
-              ;; In that case we drop the pasted content at its position and
-              ;; delete it in the same transaction.
-              page-selected (dsh/lookup-selected state)
-              replace-id    (when (and (:replace pdata) (= 1 (count page-selected)))
-                              (first page-selected))
+                ;; Replace mode is only valid with a single selected shape.
+                ;; In that case we drop the pasted content at its position and
+                ;; delete it in the same transaction.
+                page-selected (dsh/lookup-selected state)
+                replace-id    (when (and (:replace pdata) (= 1 (count page-selected)))
+                                (first page-selected))
 
-              ;; Calculate position for the pasted elements
-              [candidate-parent-id
-               delta
-               index]      (calculate-paste-position state objects selected position replace-id)
+                ;; Calculate position for the pasted elements
+                [candidate-parent-id
+                 delta
+                 index]      (calculate-paste-position state objects selected position replace-id)
 
-              page-objects (:objects page)
+                page-objects (:objects page)
 
-              libraries    (dsh/lookup-libraries state)
-              ldata        (dsh/lookup-file-data state file-id)
+                libraries    (dsh/lookup-libraries state)
+                ldata        (dsh/lookup-file-data state file-id)
 
-              [parent-id
-               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
+                [parent-id
+                 frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
 
-              index        (if (= candidate-parent-id parent-id)
-                             index
-                             0)
+                index        (if (= candidate-parent-id parent-id)
+                               index
+                               0)
 
-              index        (if index
-                             index
-                             (dec (count (dm/get-in page-objects [parent-id :shapes]))))
+                index        (if index
+                               index
+                               (dec (count (dm/get-in page-objects [parent-id :shapes]))))
 
-              selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
-                             (into (d/ordered-set) (reverse selected))
-                             selected)
+                selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
+                               (into (d/ordered-set) (reverse selected))
+                               selected)
 
-              objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
+                objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
 
-              all-objects  (merge page-objects objects)
+                all-objects  (merge page-objects objects)
 
-              drop-cell    (when (ctl/grid-layout? all-objects parent-id)
-                             (gslg/get-drop-cell frame-id all-objects position))
+                drop-cell    (when (ctl/grid-layout? all-objects parent-id)
+                               (gslg/get-drop-cell frame-id all-objects position))
 
-              changes      (-> (pcb/empty-changes it)
-                               (cll/generate-duplicate-changes all-objects page selected delta
-                                                               libraries ldata file-id {:variant-props variant-props})
-                               (pcb/amend-changes (partial process-rchange media-idx))
-                               (pcb/amend-changes (partial change-add-obj-index objects selected index)))
+                changes      (-> (pcb/empty-changes it)
+                                 (cll/generate-duplicate-changes all-objects page selected delta
+                                                                 libraries ldata file-id {:variant-props variant-props})
+                                 (pcb/amend-changes (partial process-rchange media-idx))
+                                 (pcb/amend-changes (partial change-add-obj-index objects selected index)))
 
-              ;; Adds a resize-parents operation so the groups are
-              ;; updated. We add all the new objects
-              changes      (->> (:redo-changes changes)
-                                (filter add-obj?)
-                                (map :id)
-                                (pcb/resize-parents changes))
-
-              changes      (if (some? replace-id)
-                             (second (cls/generate-delete-shapes changes #{replace-id} {}))
-                             changes)
-
-              orig-shapes  (map (d/getf all-objects) selected)
-
-              children-after (-> (pcb/get-objects changes)
-                                 (dm/get-in [parent-id :shapes])
-                                 set)
-
-              ;; At the end of the process, we want to select the new created shapes
-              ;; that are a direct child of the shape parent-id
-              selected     (into (d/ordered-set)
-                                 (comp
+                ;; Adds a resize-parents operation so the groups are
+                ;; updated. We add all the new objects
+                changes      (->> (:redo-changes changes)
                                   (filter add-obj?)
-                                  (map (comp :id :obj))
-                                  (filter #(contains? children-after %)))
-                                 (:redo-changes changes))
+                                  (map :id)
+                                  (pcb/resize-parents changes))
 
-              changes      (cond-> changes
-                             (some? drop-cell)
-                             (pcb/update-shapes [parent-id]
-                                                #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+                changes      (if (some? replace-id)
+                               (second (cls/generate-delete-shapes changes #{replace-id} {}))
+                               changes)
 
-              add-component-to-variant? (and
-                                         ;; Any of the shapes is a head
-                                         (some ctk/instance-head? orig-shapes)
-                                         ;; Any ancestor of the destination parent is a variant
-                                         (->> (cfh/get-parents-with-self page-objects parent-id)
-                                              (some ctk/is-variant?)))
-              undo-id      (js/Symbol)]
+                orig-shapes  (map (d/getf all-objects) selected)
 
-          (rx/concat
-           (->> (rx/from orig-shapes)
-                (rx/map (fn [shape]
-                          (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
-                                external-lib? (not= file-id (:component-file shape))
-                                component     (ctn/get-component-from-shape shape libraries)
-                                origin        "workspace:paste"]
+                children-after (-> (pcb/get-objects changes)
+                                   (dm/get-in [parent-id :shapes])
+                                   set)
 
-                            ;; NOTE: we don't emit the create-shape event all the time for
-                            ;; avoid send a lot of events (that are not necessary); this
-                            ;; decision is made explicitly by the responsible team.
-                            (if (ctk/instance-head? shape)
-                              (ev/event {::ev/name "use-library-component"
-                                         ::ev/origin origin
-                                         :is-external-library external-lib?
-                                         :type (get shape :type)
-                                         :parent-type parent-type
-                                         :is-variant (ctk/is-variant? component)})
-                              (if (cfh/has-layout? objects (:parent-id shape))
-                                (ev/event {::ev/name "layout-add-element"
+                ;; At the end of the process, we want to select the new created shapes
+                ;; that are a direct child of the shape parent-id
+                selected     (into (d/ordered-set)
+                                   (comp
+                                    (filter add-obj?)
+                                    (map (comp :id :obj))
+                                    (filter #(contains? children-after %)))
+                                   (:redo-changes changes))
+
+                changes      (cond-> changes
+                               (some? drop-cell)
+                               (pcb/update-shapes [parent-id]
+                                                  #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+
+                add-component-to-variant? (and
+                                           ;; Any of the shapes is a head
+                                           (some ctk/instance-head? orig-shapes)
+                                           ;; Any ancestor of the destination parent is a variant
+                                           (->> (cfh/get-parents-with-self page-objects parent-id)
+                                                (some ctk/is-variant?)))
+                undo-id      (js/Symbol)]
+
+            (rx/concat
+             (->> (rx/from orig-shapes)
+                  (rx/map (fn [shape]
+                            (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
+                                  external-lib? (not= file-id (:component-file shape))
+                                  component     (ctn/get-component-from-shape shape libraries)
+                                  origin        "workspace:paste"]
+
+                              ;; NOTE: we don't emit the create-shape event all the time for
+                              ;; avoid send a lot of events (that are not necessary); this
+                              ;; decision is made explicitly by the responsible team.
+                              (if (ctk/instance-head? shape)
+                                (ev/event {::ev/name "use-library-component"
                                            ::ev/origin origin
+                                           :is-external-library external-lib?
                                            :type (get shape :type)
-                                           :parent-type parent-type})
-                                (ev/event {::ev/name "create-shape"
-                                           ::ev/origin origin
-                                           :type (get shape :type)
-                                           :parent-type parent-type})))))))
+                                           :parent-type parent-type
+                                           :is-variant (ctk/is-variant? component)})
+                                (if (cfh/has-layout? objects (:parent-id shape))
+                                  (ev/event {::ev/name "layout-add-element"
+                                             ::ev/origin origin
+                                             :type (get shape :type)
+                                             :parent-type parent-type})
+                                  (ev/event {::ev/name "create-shape"
+                                             ::ev/origin origin
+                                             :type (get shape :type)
+                                             :parent-type parent-type})))))))
 
-           (rx/of (dwu/start-undo-transaction undo-id)
-                  (dch/commit-changes changes)
-                  (dws/select-shapes selected)
-                  (ptk/data-event :layout/update {:ids [frame-id]})
-                  (dwu/commit-undo-transaction undo-id)
-                  (when add-component-to-variant?
-                    (ev/event {::ev/name "add-component-to-variant"})))))))))
+             (rx/of (dwu/start-undo-transaction undo-id)
+                    (dch/commit-changes changes)
+                    (dws/select-shapes selected)
+                    (ptk/data-event :layout/update {:ids [frame-id]})
+                    (dwu/commit-undo-transaction undo-id)
+                    (when add-component-to-variant?
+                      (ev/event {::ev/name "add-component-to-variant"})))))
+          (rx/empty))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)
