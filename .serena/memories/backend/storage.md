@@ -127,7 +127,7 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
   - `penpot_storage_s3_retries_total{operation,target}` — SDK retry count.
   - `penpot_storage_s3_timing{operation,target}` — call latency histogram (ms).
 - Logical storage operations (`app.storage`, `::mtx/metrics` optional):
-  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. `del` only marks `deleted_at`; physical deletion is a GC concern.
+  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. `del` only marks `deleted_at`; physical deletion is a GC concern. `exists` is emitted per deduplication-hit probe, always paired with a `hit`/`repair` outcome (never on probe failure), not per user-facing existence check.
   - `penpot_storage_dedup_total{result,bucket}` — `hit`, `miss`, `repair`, `skip`.
 - Asset serving (`app.http.assets`, `::mtx/metrics` optional):
   - `penpot_storage_asset_requests_total{route,backend,bucket,result}` — `route` is `by-id`, `by-file-media-id`, or `thumbnail`; `result` is `served`, `not-found`, `unauthorized`, or `error` (`error` = an exception raised while serving; it is counted and then rethrown). File-media requests denied by permissions answer HTTP 404 (to avoid leaking existence) but are counted as `unauthorized`. Counts backend requests that trigger a browser GET to the object store (one per cache miss), so it is a proxy for object GETs, not an exact count.

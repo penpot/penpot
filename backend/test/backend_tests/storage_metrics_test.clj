@@ -15,7 +15,8 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [mockery.core :refer [with-mocks]])
   (:import
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child))
@@ -173,3 +174,54 @@
                                           :content-type "text/plain"})]
     (t/is (nil? (sto/get-object-data storage object)))
     (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))))
+
+(t/deftest failed-probe-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))]
+    (put! storage "content" "file-media-object" "hash-probe-fail")
+    (with-mocks [_mock {:target 'app.storage.impl/exists-object?
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (put! storage "content" "file-media-object" "hash-probe-fail"))))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["exists" "file-media-object" "fs"])))
+    (t/is (= 1.0 (counter-value metrics :storage-dedup ["miss" "file-media-object"])))
+    (t/is (= 0.0 (counter-value metrics :storage-dedup ["hit" "file-media-object"])))
+    (t/is (= 0.0 (counter-value metrics :storage-dedup ["repair" "file-media-object"])))))
+
+(t/deftest expired-object-bytes-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          ::sto/expired-at (ct/minus (ct/now) (ct/duration {:hours 1}))
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+    (t/is (nil? (sto/get-object-bytes storage object)))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["get-bytes" "file-media-object" "fs"])))))
+
+(t/deftest put-without-bucket-labels-unknown
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          :content-type "text/plain"})]
+    (t/is (sto/object? object))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["put" "unknown" "fs"])))
+    (t/is (= 1.0 (counter-value metrics :storage-dedup ["skip" "unknown"])))))
+
+(t/deftest failed-write-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))]
+    (with-mocks [_mock {:target 'app.storage.impl/put-object
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (put! storage "content" "file-media-object" "hash-write-fail"))))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-dedup ["miss" "file-media-object"])))))

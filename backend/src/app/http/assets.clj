@@ -55,7 +55,7 @@
 
 (defn- result-label
   [status]
-  (case (long status)
+  (case (long (or status 500))
     204 "served"
     307 "served"
     401 "unauthorized"
@@ -72,8 +72,8 @@
     (when-let [metrics (::mtx/metrics cfg)]
       (mtx/run! metrics :id :storage-asset-requests :inc 1
                 :labels [route
-                         (if obj (or (some-> (:backend obj) name) "unknown") "unknown")
-                         (if obj (or (-> obj meta :bucket) "unknown") "unknown")
+                         (mtx/label (some-> obj :backend) "unknown")
+                         (mtx/label (some-> obj meta :bucket) "unknown")
                          (result-label status)]))
     (catch Throwable cause
       (l/wrn :hint "unable to record asset metric" :cause cause))))
@@ -122,7 +122,10 @@
   [cfg {:keys [backend] :as obj}]
   (case backend
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
-    (:fs :assets-fs) (serve-object-from-fs cfg obj)))
+    (:fs :assets-fs) (serve-object-from-fs cfg obj)
+    (ex/raise :type :internal
+              :hint "unknown storage backend"
+              :backend backend)))
 
 (defn- requires-auth?
   "Check if the storage object requires authentication based on its bucket."
