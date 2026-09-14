@@ -25,6 +25,18 @@
   (t/is (throws? #(l/level->int :bogus))))
 
 #?(:cljs
+   (t/use-fixtures
+     :each
+     (fn [f]
+       (f)
+       (doseq [k ["logging-test-probe-xyz"
+                  "logging-test-fatal-xyz"
+                  "logging-test-setup-xyz"
+                  "logging-test-bad-xyz"
+                  "logging-test-key-xyz"]]
+         (.delete l/loggers k)))))
+
+#?(:cljs
    (t/deftest browser-boundaries-test
      (t/testing "unknown levels never throw and disable logging"
        (t/is (false? (l/enabled? "logging-test-probe-xyz" nil)))
@@ -52,10 +64,28 @@
        (t/is (true? (l/enabled? "logging-test-setup-xyz" :error)))
        (t/is (false? (l/enabled? "logging-test-setup-xyz" :bogus)))
        (t/is (false? (l/enabled? "logging-test-bad-xyz" :error))))
+     (t/testing "setup! skips invalid logger keys and installs valid ones"
+       (t/is (do (l/setup! {"logging-test-key-xyz" :error
+                            ""                     :error
+                            nil                    :error})
+                 true))
+       (t/is (true? (l/enabled? "logging-test-key-xyz" :error))))
+     (t/testing "safe fallbacks never throw"
+       (t/is (= "#969896" (l/level->color-safe nil)))
+       (t/is (= "UNK" (l/level->name-safe nil)))
+       (t/is (= "#c82829" (l/level->color-safe :fatal)))
+       (t/is (= "ERR" (l/level->name-safe :fatal))))
      (t/testing "console handler survives a nil-level record"
        (t/is (nil? (l/console-log-handler
                     nil nil nil
                     {::l/logger  "logging-test-probe-xyz"
+                     ::l/level   nil
+                     ::l/message (delay "hi")
+                     ::l/props   {}}))))
+     (t/testing "console handler skips invalid-logger records"
+       (t/is (nil? (l/console-log-handler
+                    nil nil nil
+                    {::l/logger  nil
                      ::l/level   nil
                      ::l/message (delay "hi")
                      ::l/props   {}}))))))

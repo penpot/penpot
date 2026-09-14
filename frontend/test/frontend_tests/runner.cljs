@@ -27,6 +27,7 @@
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.debug-logging-test]
    [frontend-tests.errors-test]
    [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
@@ -128,6 +129,7 @@
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.debug-logging-test
    'frontend-tests.errors-test
    'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
