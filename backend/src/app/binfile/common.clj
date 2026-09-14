@@ -647,10 +647,16 @@
             data
             library-ids)))
 
-(defn disable-database-timeouts!
+(def ^:const import-transaction-timeout-ms
+  "Ceiling for binfile import transactions (20 minutes). Interpolated
+  directly into SQL: compile-time constant, never user input."
+  (* 20 60 1000))
+
+(defn configure-database-timeouts!
   [cfg]
   (let [conn (db/get-connection cfg)]
-    (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+    (db/exec-one! conn [(str "SET LOCAL idle_in_transaction_session_timeout = "
+                             import-transaction-timeout-ms)])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file
