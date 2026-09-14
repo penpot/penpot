@@ -6,6 +6,8 @@
 
 (ns backend-tests.storage-metrics-test
   (:require
+   [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.main :as main]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
@@ -135,3 +137,39 @@
     (t/is (= ["op" "bucket" "backend"] (::mdef/labels (:storage-operations defs))))
     (t/is (= "penpot_storage_dedup_total" (::mdef/name (:storage-dedup defs))))
     (t/is (= ["result" "bucket"] (::mdef/labels (:storage-dedup defs))))))
+
+(t/deftest read-labels-object-backend
+  ;; An object keeps its own backend; reads must be labeled with it even
+  ;; when the storage default points elsewhere (e.g. after a migration).
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (put! storage "content" "file-media-object" nil)
+        storage (assoc storage ::sto/backend :s3)]
+    (t/is (= "content" (slurp (sto/get-object-data storage object))))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "s3"])))))
+
+(t/deftest touch-and-del-with-raw-id-label-unknown-bucket
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        id      (uuid/next)]
+    (t/is (false? (sto/touch-object! storage id)))
+    (t/is (false? (sto/del-object! storage id)))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["touch" "unknown" "fs"])))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["del" "unknown" "fs"])))))
+
+(t/deftest expired-object-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          ::sto/expired-at (ct/minus (ct/now) (ct/duration {:hours 1}))
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})]
+    (t/is (nil? (sto/get-object-data storage object)))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))))

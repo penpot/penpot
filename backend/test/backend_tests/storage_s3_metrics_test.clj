@@ -74,5 +74,28 @@
     (t/is (nil? (.publish publisher empty-call)))
     (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))))
 
+(t/deftest publisher-records-failed-calls
+  (let [metrics   (make-metrics)
+        publisher (s3m/wrap-publisher metrics :default)
+        call      (api-call [[CoreMetric/OPERATION_NAME "PutObject"]
+                             [CoreMetric/API_CALL_SUCCESSFUL false]
+                             [CoreMetric/RETRY_COUNT 0]
+                             [CoreMetric/API_CALL_DURATION (Duration/ofMillis 7)]])]
+    (.publish publisher call)
+    (t/is (= 1.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "error"])))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))
+    (t/is (= 7.0 (histogram-sum metrics :storage-s3-timing ["PutObject" "default"])))))
+
+(t/deftest publisher-labels-custom-target
+  (let [metrics   (make-metrics)
+        publisher (s3m/wrap-publisher metrics :eu-west)
+        call      (api-call [[CoreMetric/OPERATION_NAME "GetObject"]
+                             [CoreMetric/API_CALL_SUCCESSFUL true]
+                             [CoreMetric/RETRY_COUNT 0]
+                             [CoreMetric/API_CALL_DURATION (Duration/ofMillis 3)]])]
+    (.publish publisher call)
+    (t/is (= 1.0 (counter-value metrics :storage-s3-requests ["GetObject" "eu-west" "ok"])))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["GetObject" "default" "ok"])))))
+
 (t/deftest s3-backend-is-wired-with-optional-metrics
   (t/is (some? (get-in main/system-config [:app.storage.s3/backend ::mtx/metrics]))))
