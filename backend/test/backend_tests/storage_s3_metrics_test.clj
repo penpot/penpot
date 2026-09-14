@@ -72,7 +72,8 @@
         publisher (s3m/wrap-publisher metrics :default)
         empty-call (.collect ^MetricCollector (MetricCollector/create "ApiCall"))]
     (t/is (nil? (.publish publisher empty-call)))
-    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["unknown" "default" "ok"])))))
 
 (t/deftest publisher-records-failed-calls
   (let [metrics   (make-metrics)
@@ -98,4 +99,5 @@
     (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["GetObject" "default" "ok"])))))
 
 (t/deftest s3-backend-is-wired-with-optional-metrics
-  (t/is (some? (get-in main/system-config [:app.storage.s3/backend ::mtx/metrics]))))
+  (t/is (= (ig/ref ::mtx/metrics)
+           (get-in main/system-config [:app.storage.s3/backend ::mtx/metrics]))))

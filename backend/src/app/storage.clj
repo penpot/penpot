@@ -254,36 +254,38 @@
     (if-some [hit hit]
 
       ;; PHASE 2: an existing reference is found: reuse or repair it.
-      (do
-        (emit-op! storage "exists" bucket)
-        (if (impl/exists-object? backend' hit)
+      ;; The `exists` op is emitted only after a successful probe so every
+      ;; count stays paired with its `hit`/`repair` outcome.
+      (if (impl/exists-object? backend' hit)
 
-          ;; PHASE 2a: healthy reference. Optionally refresh touched_at
-          ;; and reuse the object as it is.
-          (do
-            (emit-dedup! storage :hit bucket)
-            (when touch
-              (db/update! pool :storage-object
-                          {:touched-at touched-at}
-                          {:id (:id hit)}
-                          {::db/return-keys false}))
-            (row->storage-object (cond-> hit touch (assoc :touched-at touched-at))))
+        ;; PHASE 2a: healthy reference. Optionally refresh touched_at
+        ;; and reuse the object as it is.
+        (do
+          (emit-op! storage "exists" bucket)
+          (emit-dedup! storage :hit bucket)
+          (when touch
+            (db/update! pool :storage-object
+                        {:touched-at touched-at}
+                        {:id (:id hit)}
+                        {::db/return-keys false}))
+          (row->storage-object (cond-> hit touch (assoc :touched-at touched-at))))
 
-          ;; PHASE 2b: the referenced blob is missing (a stale/broken row).
-          ;; Repair the reference in place: rewrite the incoming content
-          ;; under the same id, restoring the blob for all existing
-          ;; references to it. If the write fails, the exception propagates
-          ;; and the row stays live and valid, so a later matching upload
-          ;; retries the heal.
-          (let [object (row->storage-object hit)]
-            (l/wrn :hint "blob not found on reusing storage object"
-                   :id (:id object)
-                   :backend (name backend))
-            (impl/put-object backend' object content)
-            (emit-op! storage "repair" bucket)
-            (emit-dedup! storage :repair bucket)
-            (promote-object! storage object)
-            object)))
+        ;; PHASE 2b: the referenced blob is missing (a stale/broken row).
+        ;; Repair the reference in place: rewrite the incoming content
+        ;; under the same id, restoring the blob for all existing
+        ;; references to it. If the write fails, the exception propagates
+        ;; and the row stays live and valid, so a later matching upload
+        ;; retries the heal.
+        (let [object (row->storage-object hit)]
+          (l/wrn :hint "blob not found on reusing storage object"
+                 :id (:id object)
+                 :backend (name backend))
+          (impl/put-object backend' object content)
+          (emit-op! storage "exists" bucket)
+          (emit-op! storage "repair" bucket)
+          (emit-dedup! storage :repair bucket)
+          (promote-object! storage object)
+          object))
 
       ;; PHASE 3: no dedup hit: create a fresh object. The row is
       ;; inserted in 'pending' state so it is not visible to the normal
