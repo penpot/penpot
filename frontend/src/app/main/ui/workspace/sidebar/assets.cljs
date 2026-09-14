@@ -21,6 +21,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -76,8 +77,9 @@
 
 (mf/defc assets-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size file-id]}]
+  [{:keys [size file-id scroll-store]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
+        assets-ref     (mf/use-ref nil)
         filters*       (mf/use-state
                         (fn []
                           (-> (or (get @session-filters* file-id)
@@ -137,6 +139,12 @@
          (fn []
            (modal/show! :libraries-dialog {:file-id file-id})))
 
+        on-scroll-save
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:assets file-id] event)))
+
         on-open-menu
         (mf/use-fn  #(swap! filters* update :open-menu not))
 
@@ -171,7 +179,11 @@
     (mf/with-effect [file-id term section]
       (swap! session-filters* assoc file-id {:term term :section section}))
 
-    [:article  {:class (stl/css :assets-bar)}
+    (sc/use-restore-scroll scroll-store :assets file-id assets-ref)
+
+    [:article  {:class (stl/css :assets-bar)
+                :on-scroll on-scroll-save
+                :ref assets-ref}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         (if (and (= num-libs 1) (empty? components) (not shared?))

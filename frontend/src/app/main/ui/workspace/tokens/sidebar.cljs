@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.main.ui.workspace.tokens.management :refer [tokens-section*]]
    [app.main.ui.workspace.tokens.sets :as tsets]
    [app.main.ui.workspace.tokens.sets.context-menu :refer [token-set-context-menu*]]
@@ -141,19 +142,35 @@
                          :on-click open-settings-modal}])]))
 
 (mf/defc tokens-sidebar-tab*
-  [{:keys [tokens-lib] :as props}]
+  [{:keys [tokens-lib scroll-store] :as props}]
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
+        (use-resize-hook :tokens 200 38 "0.6" :y false nil)
+
+        set-id
+        (mf/deref refs/selected-token-set-id)
+
+        tokens-ref
+        (mf/use-ref nil)
+
+        on-scroll-save
+        (mf/use-fn
+         (mf/deps set-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:tokens set-id] event)))]
+
+    (sc/use-restore-scroll scroll-store :tokens set-id tokens-ref)
 
     [:div {:class (stl/css :sidebar-wrapper)}
      [:> token-management-section*
       {:resize-height size-pages-opened
        :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
-                :data-testid "tokens-sidebar"}
+                :data-testid "tokens-sidebar"
+                :on-scroll on-scroll-save
+                :ref tokens-ref}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
