@@ -104,6 +104,14 @@
                    100)
                  (recur (get-parent-logger logger'))))))))))
 
+(def valid-levels
+  "The set of log levels accepted on every runtime."
+  #{:trace :debug :info :warn :error :fatal})
+
+(defn- valid-level?
+  [level]
+  (contains? valid-levels level))
+
 (defn enabled?
   "Check if logger has enabled logging for given level."
   [logger level]
@@ -118,13 +126,18 @@
          :fatal (and (.isErrorEnabled ^Logger logger) logger)
          (throw (IllegalArgumentException. (str "invalid level:"  level)))))
      :cljs
-     (>= (level->int level)
-         (get-logger-level logger))))
+     (if (valid-level? level)
+       (>= (level->int level)
+           (get-logger-level logger))
+       (do
+         (js/console.warn "ignoring invalid log level:" (pr-str level) "logger:" logger)
+         false))))
 
 (defn- level->color
   [level]
   (case level
     :error "#c82829"
+    :fatal "#c82829"
     :warn  "#f5871f"
     :info  "#4271ae"
     :debug "#969896"
@@ -140,6 +153,7 @@
     :info  "INF"
     :warn   "WRN"
     :error "ERR"
+    :fatal "ERR"
     (let [hint (str "invalid level provided to `level->name` function: " (pr-str level))]
       (throw (ex-info hint {:level level})))))
 
@@ -151,8 +165,25 @@
     :info 30
     :warn 40
     :error 50
+    :fatal 50
     (let [hint (str "invalid level provided to `level->int` function: " (pr-str level))]
       (throw (ex-info hint {:level level})))))
+
+#?(:cljs
+   (defn- level->color-safe
+     "Like `level->color` but falls back to a neutral gray instead of throwing."
+     [level]
+     (if (valid-level? level)
+       (level->color level)
+       "#969896")))
+
+#?(:cljs
+   (defn- level->name-safe
+     "Like `level->name` but falls back to \"UNK\" instead of throwing."
+     [level]
+     (if (valid-level? level)
+       (level->name level)
+       "UNK")))
 
 (defn build-message
   [props]
@@ -284,11 +315,14 @@
    (defn console-log-handler
      {:no-doc true}
      [_ _ _ {:keys [::logger ::props ::level ::cause ::trace ::message]}]
-     (when (enabled? logger level)
-       (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color level))
-             mstyles (str/ffmt "font-weight: 300; color: %" (level->color level))
+     (when (or (not (valid-level? level))
+               (enabled? logger level))
+       (when-not (valid-level? level)
+         (js/console.warn "invalid level on log record, using fallback rendering:" (pr-str level) "logger:" logger))
+       (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color-safe level))
+             mstyles (str/ffmt "font-weight: 300; color: %" (level->color-safe level))
              ts      (ct/format-inst (ct/now) "kk:mm:ss.SSSS")
-             header  (str/concat "%c" (level->name level) " " ts  " [" logger "] ")
+             header  (str/concat "%c" (level->name-safe level) " " ts  " [" logger "] ")
              message (str/concat header "%c" @message)]
 
          (js/console.group message hstyles mstyles)
@@ -332,9 +366,10 @@
    (defn setup!
      [{:as config}]
      (run! (fn [[logger level]]
-             (let [logger (if (keyword? logger) (name logger) logger)
-                   level  (level->int level)]
-               (.set ^js/Map loggers logger level)))
+             (if (valid-level? level)
+               (let [logger (if (keyword? logger) (name logger) logger)]
+                 (.set ^js/Map loggers logger (level->int level)))
+               (js/console.warn "ignoring invalid log level in setup!:" (pr-str level) "logger:" (pr-str logger))))
            config)))
 
 (defmacro raw!
