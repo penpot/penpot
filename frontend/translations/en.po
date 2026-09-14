@@ -9073,7 +9073,17 @@ msgstr "Read the profile information of the current user."
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Plugins List"
 
-#: src/app/main/ui/workspace/plugins.cljs:101
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr ""
+"Are you sure you want to remove the plugin %s? You can install it again at "
+"any time."
+
+#: src/app/main/ui/workspace/plugins.cljs:186
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "Remove plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:101, src/app/main/ui/workspace/plugins.cljs:188
 msgid "workspace.plugins.remove-plugin"
 msgstr "Remove plugin"
 

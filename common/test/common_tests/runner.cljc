@@ -82,6 +82,7 @@
    [common-tests.types.objects-map-test]
    [common-tests.types.organization-test]
    [common-tests.types.path-data-test]
+   [common-tests.types.plugins-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
    [common-tests.types.shape-layout-test]
@@ -162,6 +163,7 @@
    'common-tests.types.objects-map-test
    'common-tests.types.organization-test
    'common-tests.types.path-data-test
+   'common-tests.types.plugins-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.shape-layout-test
