@@ -46,6 +46,7 @@
    [common-tests.geom-shapes-tree-seq-test]
    [common-tests.geom-snap-test]
    [common-tests.geom-test]
+   [common-tests.logging-test]
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
@@ -125,6 +126,7 @@
    'common-tests.geom-shapes-tree-seq-test
    'common-tests.geom-snap-test
    'common-tests.geom-test
+   'common-tests.logging-test
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
