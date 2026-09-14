@@ -296,6 +296,10 @@
     [:objects-storage-s3-region {:optional true} :keyword]
     [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
 
+    ;; Write storage_object.metadata as plain JSON instead of
+    ;; Transit-JSON. Unset by default (Phase 1: keep writing Transit).
+    [:storage-metadata-as-json {:optional true} ::sm/boolean]
+
     ;; SSRF protection
     [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
     [:ssrf-extra-blocked-cidrs {:optional true} [::sm/set :string]]]))

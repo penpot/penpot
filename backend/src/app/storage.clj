@@ -19,6 +19,7 @@
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
+   [app.storage.schema :as stsch]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig])
@@ -36,7 +37,7 @@
       nil)))
 
 (def default-bucket
-  "file-media-object")
+  stsch/default-bucket)
 
 (def tempfile-bucket
   "Bucket name for temporary file uploads (10-minute expiry)."
@@ -145,7 +146,7 @@
     res))
 
 (defn row->storage-object [res]
-  (let [mdata (or (some-> (:metadata res) (db/decode-transit-pgobject)) {})]
+  (let [mdata (or (some-> (:metadata res) (stsch/decode-metadata)) {})]
     (impl/storage-object
      (:id res)
      (:size res)
@@ -257,7 +258,7 @@
                                {:id id
                                 :size (impl/get-size content)
                                 :backend (name backend)
-                                :metadata (db/tjson mdata)
+                                :metadata (stsch/encode-metadata mdata)
                                 :deleted-at expired-at
                                 :touched-at touched-at
                                 :status "pending"})

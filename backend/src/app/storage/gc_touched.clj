@@ -125,10 +125,16 @@
 ;; have value, it means :file-media-object.
 
 (defn- lookup-bucket
-  [{:keys [metadata]}]
+  [{:keys [id metadata]}]
   (or (some-> metadata :bucket)
-      (some-> metadata :reference d/name)
-      sto/default-bucket))
+      (do
+        ;; The decode already normalizes legacy rows, so reaching this
+        ;; fallback means the 0155 normalization migration has not run
+        ;; over this row yet. Keep it working, but make it visible.
+        (l/wrn :hint "storage object without bucket metadata, using fallback"
+               :id (str id))
+        (or (some-> metadata :reference d/name)
+            sto/default-bucket))))
 
 (defn- process-objects!
   [conn has-refs? bucket objects]

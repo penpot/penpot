@@ -46,15 +46,14 @@
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          :other "data"})]
+                                          :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (fs/path? (sto/get-object-path storage object)))
 
     (t/is (nil? (:expired-at object)))
     (t/is (= :fs (:backend object)))
-    (t/is (= "data" (:other (meta object))))
+    (t/is (= "file-media-object" (:bucket (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
@@ -95,7 +94,7 @@
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
                                           :content-type "text/plain"
-                                          :expired-at (ct/in-future {:seconds 1})})]
+                                          ::sto/expired-at (ct/in-future {:seconds 1})})]
     (t/is (sto/object? object))
     (t/is (true? (sto/del-object! storage object)))
 
