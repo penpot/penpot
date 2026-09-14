@@ -590,8 +590,9 @@
 (defn- resolved-uri?
   "Returns true if the uri is already a fully resolved URI (blob or data)."
   [uri]
-  (or (str/starts-with? uri "blob:")
-      (str/starts-with? uri "data:")))
+  (and (string? uri)
+       (or (str/starts-with? uri "blob:")
+           (str/starts-with? uri "data:"))))
 
 (defn workspace-thumbnail-by-id
   [object-id]
