@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.colors
   (:require
@@ -333,13 +333,16 @@
   [:stroke-style
    :stroke-alignment
    :stroke-width
+   :stroke-dash
+   :stroke-gap
    :stroke-per-side
    :stroke-width-top
    :stroke-width-right
    :stroke-width-bottom
    :stroke-width-left
    :stroke-cap-start
-   :stroke-cap-end])
+   :stroke-cap-end
+   :hidden])
 
 ;; FIXME: this function initializes an empty stroke, maybe we can move
 ;; it to common.types

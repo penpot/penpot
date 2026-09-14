@@ -13,6 +13,11 @@ on:
         type: string
         required: false
         default: 'develop'
+      force:
+        description: 'Rebuild and overwrite even if already built'
+        type: boolean
+        required: false
+        default: false
   workflow_call:
     inputs:
       gh_ref:
@@ -24,6 +29,11 @@ on:
         type: string
         required: false
         default: 'develop'
+      force:
+        description: 'Rebuild and overwrite even if already built'
+        type: boolean
+        required: false
+        default: false
     secrets:
       ORG_WORKFLOW_TOKEN:
         description: 'Token with Actions write access on penpot-nitrate'
@@ -47,6 +57,7 @@ jobs:
 
           gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$DISPATCH_REF" \
             -f gh_ref="$GH_REF" \
+            -f force="${{ inputs.force }}" \
             -f caller_run_id="$DISTINCT_ID" \
             -f caller_run_url="$CALLER_URL"
 

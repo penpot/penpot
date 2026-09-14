@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.viewer
   (:require
@@ -56,7 +56,7 @@
       (assoc :can-read true)))
 
 (defn- get-view-only-bundle
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id share-id ::perms] :as params}]
   (let [file    (bfc/get-file cfg file-id)
 
         project (db/get conn :project
@@ -89,16 +89,18 @@
                      (mapv (fn [{:keys [id] :as lib}]
                              (merge lib (bfc/get-file cfg id)))))
 
-        links   (->> (db/query conn :share-link {:file-id file-id})
-                     (mapv (fn [row]
-                             (-> row
-                                 (update :pages db/decode-pgarray #{})
-                                 ;; NOTE: the flags are deprecated but are still present
-                                 ;; on the table on old rows. The flags are pgarray and
-                                 ;; for avoid decoding it (because they are no longer used
-                                 ;; on frontend) we just dissoc the column attribute from
-                                 ;; row.
-                                 (dissoc :flags)))))
+        links   (cond->> (->> (db/query conn :share-link {:file-id file-id})
+                              (mapv (fn [row]
+                                      (-> row
+                                          (update :pages db/decode-pgarray #{})
+                                          ;; NOTE: the flags are deprecated but are still present
+                                          ;; on the table on old rows. The flags are pgarray and
+                                          ;; for avoid decoding it (because they are no longer used
+                                          ;; on frontend) we just dissoc the column attribute from
+                                          ;; row.
+                                          (dissoc :flags)))))
+                  (= :share-link (:type perms))
+                  (filterv #(= (:id %) share-id)))
 
         fonts   (db/query conn :team-font-variant
                           {:team-id (:id team)

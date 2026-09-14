@@ -30,7 +30,7 @@ jobs:
   test-render-wasm:
     if: ${{ !github.event.pull_request.draft }}
     name: "Render WASM Tests"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:

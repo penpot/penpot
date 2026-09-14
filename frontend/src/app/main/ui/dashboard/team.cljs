@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.dashboard.team
   (:require-macros [app.main.style :as stl])
@@ -19,6 +19,7 @@
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.alert]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -38,6 +39,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.forms :as fc]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -87,6 +89,7 @@
 
         route                (mf/deref refs/route)
         invite-email         (-> route :query-params :invite-email)
+        team-id              (:id team)
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -101,15 +104,20 @@
 
         on-invite-member
         (mf/use-fn
-         (mf/deps team invite-email)
+         (mf/deps team-id invite-email)
          (fn []
-           (st/emit! (dtm/check-and-invite-members {:team-id (:id team)
+           (st/emit! (dtm/check-and-invite-members {:team-id team-id
                                                     :origin :team
                                                     :invite-email invite-email}))))]
 
-    (mf/with-effect [team invite-email]
-      (when invite-email
-        (on-invite-member)))
+    ;; Depend on `team-id` (stable) rather than `team` (a map whose
+    ;; reference changes on every teams/members fetch) and clear
+    ;; `invite-email` from the URL once consumed, so this can't
+    ;; keep re-triggering `check-and-invite-members` in a loop.
+    (mf/with-effect [team-id invite-email]
+      (when (and team-id invite-email)
+        (on-invite-member)
+        (st/emit! (rt/nav (get-in route [:data :name]) {:team-id team-id} {::rt/replace true}))))
 
     [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
@@ -132,11 +140,19 @@
         [:a {:on-click on-nav-settings} (tr "labels.settings")]]]]
      [:div {:class (stl/css :dashboard-buttons)}
       (when (and (or invitations-section? members-section?) (not-empty invitations))
-        [:> button* {:variant "secondary"
-                     :on-click on-invite-member
-                     :disabled (not can-invite?)
-                     :data-testid "invite-member"}
-         (tr "dashboard.invite-profile")])]]))
+        (let [invite-button (mf/html
+                             [:> button* {:class (stl/css :invite-button)
+                                          :variant "secondary"
+                                          :on-click on-invite-member
+                                          :disabled (not can-invite?)
+                                          :data-testid "invite-member"}
+                              (tr "dashboard.invite-profile")])]
+          (if can-invite?
+            invite-button
+            [:> tooltip* {:content (tr "dashboard.invite-profile-disabled")
+                          :id "invite-member-disabled-tooltip"
+                          :tab-index 0}
+             invite-button])))]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS MODAL
@@ -226,6 +242,9 @@
                    (= :email-domain-is-not-allowed code))
               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed"))
                         (modal/hide))
+              (and (= :validation type)
+                   (= :insufficient-permissions code))
+              (st/emit! (modal/show :no-permission-modal {:type :invite-members}))
 
               :else
               (st/emit! (ntf/error (tr "errors.generic"))
@@ -625,7 +644,7 @@
     (dom/set-html-title
      (tr "title.team-members"
          (if (:is-default team)
-           (tr "dashboard.your-penpot")
+           (tr "dashboard.personal-projects")
            (:name team)))))
 
   (mf/with-effect [(:id team)]
@@ -896,34 +915,57 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations organizations-allowed current-organization-id on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key team-id]}]
-  (let [valid-organizations (mf/with-memo [organizations]
-                              (remove #(= (:id %) current-organization-id) organizations))
-        options (mf/with-memo [valid-organizations organizations-allowed]
-                  (mapv (fn [organization]
-                          (let [organization-id (:id organization)
-                                ;; organizations-allowed is a map of organization-id and a boolean indicating if it is allowed
-                                enabled? (or (nil? organizations-allowed)
-                                             (true? (get organizations-allowed organization-id)))]
-                            (cond-> {:id (str organization-id)
-                                     :label (:name organization)
-                                     :disabled (not enabled?)
-                                     :dimmed (not enabled?)
-                                     :avatar {:render-fn render-organization-combobox-avatar*
-                                              :organization organization
-                                              :size "xl"}}
-                              (not enabled?)
-                              (assoc :title (tr "dashboard.team-organization.disabled-organization-tooltip")))))
-                        valid-organizations))
+  [{:keys [organizations organizations-allowed current-organization on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key description-key team-id]}]
+  (let [current-organization-id (:id current-organization)
+        has-current-org?        (some? current-organization)
+        valid-organizations     (mf/with-memo [organizations current-organization-id]
+                                  (remove #(= (:id %) current-organization-id) organizations))
+        all-organizations       (mf/with-memo [organizations current-organization]
+                                  (cond-> organizations
+                                    (and has-current-org?
+                                         (not (some #(= (:id %) current-organization-id) organizations)))
+                                    (conj current-organization)))
+        options                 (mf/with-memo [valid-organizations organizations-allowed current-organization]
+                                  (let [other-options
+                                        (mapv (fn [organization]
+                                                (let [organization-id (:id organization)
+                                                      enabled? (or (nil? organizations-allowed)
+                                                                   (true? (get organizations-allowed organization-id)))]
+                                                  (cond-> {:id (str organization-id)
+                                                           :label (:name organization)
+                                                           :disabled (not enabled?)
+                                                           :dimmed (not enabled?)
+                                                           :avatar {:render-fn render-organization-combobox-avatar*
+                                                                    :organization organization
+                                                                    :size "xl"}}
+                                                    (not enabled?)
+                                                    (assoc :title (tr "dashboard.team-organization.disabled-organization-tooltip")))))
+                                              valid-organizations)]
+                                    (if has-current-org?
+                                      (into [{:id (str current-organization-id)
+                                              :label (:name current-organization)
+                                              :avatar {:render-fn render-organization-combobox-avatar*
+                                                       :organization current-organization
+                                                       :size "xl"}}]
+                                            other-options)
+                                      other-options)))
 
-        form (fm/use-form :schema schema:organization-form :initial {})
+        initial-form            (mf/with-memo [has-current-org? current-organization-id]
+                                  (if has-current-org?
+                                    {:selected-id (str current-organization-id)}
+                                    {}))
+        form                    (fm/use-form :schema schema:organization-form :initial initial-form)
 
-        warning-info* (mf/use-state nil)
-        warning-info (deref warning-info*)
-        selected-organization (mf/with-memo [warning-info valid-organizations]
-                                (when warning-info
-                                  (d/seek #(= (:id %) (:organization-id warning-info)) valid-organizations)))
+        warning-info*           (mf/use-state nil)
+        warning-info            (deref warning-info*)
+        selected-organization   (mf/with-memo [warning-info all-organizations]
+                                  (when warning-info
+                                    (d/seek #(= (:id %) (:organization-id warning-info)) all-organizations)))
 
+        selected-id             (dm/get-in @form [:data :selected-id])
+        disabled?               (or (not (:valid @form))
+                                    (and has-current-org?
+                                         (= (str selected-id) (str current-organization-id))))
         on-change
         (mf/use-fn
          (mf/deps form team-id)
@@ -959,18 +1001,25 @@
         [:div {:class (stl/css :modal-content :modal-select-organization-text)} (tr text-key)])
 
       [:div {:class (stl/css :modal-select-organization-body)}
-       (when info-message-key
+       (when (or description-key info-message-key)
          [:div {:class (stl/css :modal-select-organization-info)}
-          (tr info-message-key)])
+          (when description-key
+            [:div
+             (tr description-key)])
+          (when info-message-key
+            [:div
+             (tr info-message-key)])])
        [:div {:class (stl/css :modal-select-organization-content)}
         (tr choose-key)]
        [:> combobox* {:id "selected-id"
                       :class (stl/css :team-member)
                       :options options
                       :select-only true
-                      :default-selected (or (some-> (get-in @form [:data :selected-id]) str) "")
                       :placeholder (tr placeholder-key)
-                      :on-change on-change}]
+                      :on-change on-change
+                      :default-selected (if has-current-org?
+                                          (str current-organization-id)
+                                          "")}]
 
        ;; Warning for external invitations
        (when (and warning-info
@@ -998,7 +1047,7 @@
          {:class (stl/css :accept-btn)
           :variant "primary"
           :type "button"
-          :disabled (not (:valid @form))
+          :disabled disabled?
           :on-click on-confirm'}
          (tr accept-key)]]]]]))
 
@@ -1199,7 +1248,7 @@
     (dom/set-html-title
      (tr "title.team-invitations"
          (if (:is-default team)
-           (tr "dashboard.your-penpot")
+           (tr "dashboard.personal-projects")
            (:name team)))))
 
   (mf/with-effect [(:id team)]
@@ -1479,7 +1528,7 @@
       (dom/set-html-title
        (tr "title.team-webhooks"
            (if (:is-default team)
-             (tr "dashboard.your-penpot")
+             (tr "dashboard.personal-projects")
              (:name team)))))
 
     (mf/with-effect []
@@ -1586,7 +1635,7 @@
     (mf/with-effect [team]
       (dom/set-html-title (tr "title.team-settings"
                               (if (:is-default team)
-                                (tr "dashboard.your-penpot")
+                                (tr "dashboard.personal-projects")
                                 (:name team)))))
 
     (mf/with-effect []

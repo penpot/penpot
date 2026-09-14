@@ -5,6 +5,7 @@
    [app.main.ui.settings.restore-shortcuts-modal :as restore-modal]
    [app.main.ui.settings.shortcuts :as sut]
    [app.main.ui.shortcuts :as ui-shortcuts]
+   [app.util.strings :refer [matches-search]]
    [cljs.test :as t :include-macros true]
    [clojure.string :as str]))
 
@@ -221,3 +222,72 @@
   (let [result (restore-modal/extract-shortcut-keys :next-frame {} :viewer)]
     (t/is (nth result 3)
           "Should return a default command for :next-frame in :viewer context")))
+
+;; --- shortcut->command-string + command-based search --------------------
+;; The search in both the settings shortcuts page and the workspace sidebar
+;; matches shortcut entries by their translated name AND by their key-combo
+;; string. `shortcut->command-string` (in `app.main.ui.shortcuts`) extracts the
+;; searchable form from `:command`/`:show-command`; `matches-search` does the
+;; case-insensitive substring match. These tests pin that contract so searching
+;; e.g. "ctrl" surfaces every shortcut whose combo includes ctrl.
+
+(t/deftest shortcut->command-string-extracts-string-command
+  (t/testing "a plain string command is returned lowercased"
+    (t/is (= "ctrl+z" (ui-shortcuts/shortcut->command-string
+                       {:command "ctrl+z"})))))
+
+(t/deftest shortcut->command-string-joins-vector-command
+  (t/testing "a vector command (key sequence) is joined with spaces so every
+              token is individually searchable"
+    (t/is (= "g v" (ui-shortcuts/shortcut->command-string
+                    {:command ["g" "v"]})))))
+
+(t/deftest shortcut->command-string-prefers-show-command
+  (t/testing ":show-command (display override) wins over :command"
+    (t/is (= "shift+x" (ui-shortcuts/shortcut->command-string
+                        {:command "ctrl+z" :show-command "shift+x"})))))
+
+(t/deftest shortcut->command-string-empty-for-section-node
+  (t/testing "a node without :command/:show-command (e.g. a section or
+              subsection heading) yields an empty string so it never matches a
+              non-blank command search"
+    (t/is (= "" (ui-shortcuts/shortcut->command-string
+                 {:translation "workspace"})))))
+
+(t/deftest shortcut->command-string-lowercases
+  (t/testing "the result is lowercased so search is case-insensitive"
+    (t/is (= "ctrl+shift+z" (ui-shortcuts/shortcut->command-string
+                             {:command "Ctrl+Shift+Z"})))))
+
+(t/deftest command-search-matches-ctrl-prefix
+  (t/testing "searching 'ctrl' matches a shortcut whose command contains ctrl"
+    (let [shortcut {:command "ctrl+shift+s"
+                    :translation "Save all"}]
+      (t/is (matches-search (ui-shortcuts/shortcut->command-string shortcut)
+                            "ctrl")))))
+
+(t/deftest command-search-does-not-match-when-command-lacks-term
+  (t/testing "searching 'alt' does not match a shortcut with no alt in its combo"
+    (let [shortcut {:command "ctrl+z"
+                    :translation "Undo"}]
+      (t/is (not (matches-search (ui-shortcuts/shortcut->command-string shortcut)
+                                 "alt"))))))
+
+(t/deftest command-search-matches-key-sequence-vector
+  (t/testing "searching a single key in a key-sequence vector command matches"
+    (let [shortcut {:command ["g" "v"]
+                    :translation "Group"}]
+      (t/is (matches-search (ui-shortcuts/shortcut->command-string shortcut)
+                            "g")))))
+
+(t/deftest search-matches-by-translation-or-command
+  (t/testing "a search term matches if it appears in either the translation or
+              the command string — the OR that the filter predicates use"
+    (let [shortcut {:command "ctrl+s"
+                    :translation "Save"}]
+      ;; by translation
+      (t/is (or (matches-search (:translation shortcut) "save")
+                (matches-search (ui-shortcuts/shortcut->command-string shortcut) "save")))
+      ;; by command
+      (t/is (or (matches-search (:translation shortcut) "ctrl")
+                (matches-search (ui-shortcuts/shortcut->command-string shortcut) "ctrl"))))))

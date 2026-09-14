@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -52,12 +52,13 @@
 
    :redis-uri "redis://redis/0"
 
-   :file-data-backend "legacy-db"
+   :file-data-backend "db"
 
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
 
    :auth-token-cookie-name "auth-token"
+   :auth-token-cookie-max-age-absolute (ct/duration {:days 30})
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -91,10 +92,15 @@
 
    :quotes-upload-sessions-per-profile 5
    :quotes-upload-chunks-per-session 20
+   :upload-max-chunk-size (* 1024 1024 30) ; 30MiB
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}})
+   :ssrf-extra-blocked-cidrs #{}
+
+   ;; Binfile import limits
+   :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
+   :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
 (def schema:config
   (do #_sm/optional-keys
@@ -151,6 +157,10 @@
     [:media-processing-service-uri {:optional true} ::sm/uri]
     [:media-processing-service-timeout {:optional true} ::sm/int]
 
+    ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
+    [:binfile-import-max-object-size {:optional true} ::sm/int]
+    [:binfile-import-max-zip-entries {:optional true} ::sm/int]
+
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
@@ -194,9 +204,12 @@
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
     [:quotes-upload-sessions-per-profile {:optional true} ::sm/int]
     [:quotes-upload-chunks-per-session {:optional true} ::sm/int]
+    [:upload-max-chunk-size {:optional true} ::sm/int]
+    [:quotes-media-storage-bytes-per-team {:optional true} ::sm/int]
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
+    [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]
@@ -287,6 +300,18 @@
     [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
     [:ssrf-extra-blocked-cidrs {:optional true} [::sm/set :string]]]))
 
+(defn telemetry-excluded-host?
+  "Returns true when the given host belongs to the official SaaS
+  instances, where telemetry must be fully disabled."
+  [host]
+  (let [host (some-> host (str/lower) (str/trim))]
+    (and (string? host)
+         (not (str/blank? host))
+         (or (= host "penpot.dev")
+             (= host "penpot.app")
+             (str/ends-with? host ".penpot.dev")
+             (str/ends-with? host ".penpot.app")))))
+
 (defn- parse-flags
   [config]
   (let [public-uri  (c/get config :public-uri)
@@ -374,6 +399,15 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(defn telemetry-excluded?
+  "Returns true when telemetry must be fully disabled because the
+  public-uri host points to an official instance (penpot.dev or
+  penpot.app). When true, no telemetry data is collected or sent,
+  not even the limited newsletter report."
+  []
+  (let [host (some-> (c/get config :public-uri) (u/uri) :host)]
+    (telemetry-excluded-host? host)))
 
 (defn logging-context
   []

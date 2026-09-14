@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.auth
   (:require
@@ -367,7 +367,7 @@
         email     (str/lower email)
         fullname  (d/normalize-string (:fullname params))
         locale    (d/normalize-string locale)
-        theme     (d/normalize-string theme)
+        theme     (some-> theme d/normalize-string not-empty)
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)

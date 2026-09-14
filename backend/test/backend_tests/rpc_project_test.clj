@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-project-test
   (:require
@@ -241,3 +241,24 @@
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
         (t/is (= (:type error-data) :not-found))))))
+
+(t/deftest get-project-nonexistent
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-project
+                           ::rpc/profile-id (:id prof)
+                           :id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-project-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        proj  (th/create-project* 1 {:profile-id (:id owner)
+                                     :team-id (:default-team-id owner)})
+        out   (th/command! {::th/type :get-project
+                            ::rpc/profile-id (:id other)
+                            :id (:id proj)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))

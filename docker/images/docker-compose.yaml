@@ -38,7 +38,7 @@ x-body-size: &penpot-http-body-size
 ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
 ## (eg http sessions, or invitations) are derived.
 ##
-## We recommend to use a trully randomly generated
+## We recommend to use a truly randomly generated
 ## 512 bits base64 encoded string here. You can generate one with:
 ##
 ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
@@ -78,7 +78,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:${PENPOT_VERSION:-2.16}"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.17}"
     restart: always
     ports:
       - 9001:8080
@@ -111,7 +111,7 @@ services:
       # PENPOT_DISABLE_IPV6_LISTEN: "true"
 
   penpot-backend:
-    image: "penpotapp/backend:${PENPOT_VERSION:-2.16}"
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.17}"
     restart: always
 
     volumes:
@@ -180,13 +180,13 @@ services:
       PENPOT_SMTP_SSL: "false"
 
   penpot-mcp:
-    image: "penpotapp/mcp:${PENPOT_VERSION:-2.16}"
+    image: "penpotapp/mcp:${PENPOT_VERSION:-2.17}"
     restart: always
     networks:
       - penpot
 
   penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-2.16}"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.17}"
     restart: always
 
     depends_on:
@@ -197,13 +197,23 @@ services:
       - penpot
 
     environment:
-      << : [*penpot-secret-key, *penpot-public-uri]
+      << : [*penpot-flags, *penpot-secret-key, *penpot-public-uri]
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
       PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
-      ## Valkey (or previously Redis) is used for the websockets notifications.
+      ## Valkey (or previously Redis) is used for the websockets notifications
+      ## and for storing the state export jobs
       PENPOT_REDIS_URI: redis://penpot-valkey/0
+
+      # PENPOT_EXPORTER_MAX_CONCURRENT_JOBS: 4
+      # PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE: 2
+      # PENPOT_EXPORTER_QUEUE_MAX: 64
+      # PENPOT_EXPORTER_JOB_TTL: 3600
+      # PENPOT_WASM_WORKER_POOL_MAX: 2
+      # PENPOT_WASM_WORKER_POOL_MIN: 1
+      # PENPOT_WASM_WORKER_IDLE_TIMEOUT: 300
+      # PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE: 134217728
 
   penpot-postgres:
     image: "postgres:15"

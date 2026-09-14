@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-organization-owner-permissions-test
   (:require
@@ -50,7 +50,16 @@
                        :organization (organization-data organization-id organization-owner-id)}
                       {:id (:team-id params)
                        :is-your-penpot false
-                       :organization nil})))]
+                       :organization nil})
+
+                    :get-teams-organizations
+                    (->> (:team-ids params)
+                         (keep (fn [candidate-team-id]
+                                 (when (= team-id candidate-team-id)
+                                   {:id team-id
+                                    :is-your-penpot false
+                                    :organization (organization-data organization-id organization-owner-id)})))
+                         vec)))]
     (f)))
 
 (defn- with-captured-messages

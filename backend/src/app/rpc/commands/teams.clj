@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams
   (:require
@@ -196,11 +196,11 @@
    ::sm/params schema:get-teams}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (dm/with-open [conn (db/open pool)]
-    (cond->> (get-teams conn profile-id)
-      (contains? cf/flags :admin-console)
-      (map #(nitrate/add-organization-info-to-team cfg % params))
-      (contains? cf/flags :admin-console)
-      (remove #(get-in % [:organization :expired-license])))))
+    (let [teams (get-teams conn profile-id)]
+      (if (contains? cf/flags :admin-console)
+        (->> (nitrate/add-organization-info-to-teams cfg teams params)
+             (remove #(get-in % [:organization :expired-license])))
+        teams))))
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
@@ -538,6 +538,9 @@
   ;; When creating inside an organization, verify the user has permission to do so.
   ;; Fail closed: if organization permissions cannot be fetched, deny the operation.
   (when (and organization-id (contains? cf/flags :admin-console))
+    ;; Verify caller is a member of the organization
+    (nitrate/assert-membership cfg profile-id organization-id)
+
     (let [organization-perms (nitrate/call cfg :get-organization-permissions
                                            {:organization-id organization-id})]
       (if (nil? organization-perms)
@@ -572,7 +575,7 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/difference cfeat/no-team-inheritable-features))
         params   {:profile-id profile-id
-                  :name "Your Penpot"
+                  :name "Personal Projects"
                   :features features
                   :organization-id organization-id
                   :is-default true}
@@ -826,7 +829,7 @@
                 :code :only-owner-can-delete-team))
 
     ;; Protect the user's personal default team from deletion.
-    ;; Organization-scoped default teams ("Your Penpot") are allowed to be deleted when they have no files.
+    ;; Organization-scoped default teams ("Personal Projects") are allowed to be deleted when they have no files.
     (when (and (:is-default team) (not in-organization?))
       (ex/raise :type :validation
                 :code :non-deletable-team
@@ -941,8 +944,10 @@
    ::sm/params schema:delete-team-member
    ::db/transaction true}
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
-  (let [team  (get-team conn :profile-id profile-id :team-id team-id)
-        perms (get-permissions conn profile-id team-id)]
+  (let [team    (get-team conn :profile-id profile-id :team-id team-id)
+        perms   (get-permissions conn profile-id team-id)
+        members (get-team-members conn team-id)
+        member  (d/seek #(= member-id (:id %)) members)]
     (when-not (or (:is-owner perms)
                   (:is-admin perms))
       (ex/raise :type :validation
@@ -951,6 +956,15 @@
     (when (= member-id profile-id)
       (ex/raise :type :validation
                 :code :cant-remove-yourself))
+
+    (when-not member
+      (ex/raise :type :not-found
+                :code :member-does-not-exist))
+
+    (when (and (:is-owner member)
+               (not (:is-owner perms)))
+      (ex/raise :type :validation
+                :code :cant-remove-owner))
 
     (db/delete! conn :team-profile-rel {:profile-id member-id
                                         :team-id team-id})

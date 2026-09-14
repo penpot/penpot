@@ -9,6 +9,11 @@ on:
         type: string
         required: true
         default: 'develop'
+      force:
+        description: 'Rebuild and overwrite even if this version already exists in S3'
+        type: boolean
+        required: false
+        default: false
   workflow_call:
     inputs:
       gh_ref:
@@ -16,20 +21,31 @@ on:
         type: string
         required: true
         default: 'develop'
+      force:
+        description: 'Rebuild and overwrite even if this version already exists in S3'
+        type: boolean
+        required: false
+        default: false
 
+# Literal group name: under `workflow_call`, `github.workflow` resolves to the
+# caller's workflow, which put this workflow and the other reusable one called
+# by the same caller into a single shared group, and left a manual dispatch of
+# the same ref in a group of its own, free to race on the same artifacts.
 concurrency:
-  group: ${{ github.workflow }}-${{ inputs.gh_ref }}
+  group: build-bundle-${{ inputs.gh_ref }}
   cancel-in-progress: true
 
 jobs:
   # ── 1. Decide whether there is anything to build ───────────────────────
   check:
     name: Check current bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 10
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
+      sha: ${{ steps.vars.outputs.sha }}
+      commit_title: ${{ steps.vars.outputs.commit_title }}
       exists: ${{ steps.check.outputs.exists }}
 
     steps:
@@ -44,10 +60,12 @@ jobs:
         run: |
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
           echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
+          echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
 
       # The uploaded zip carries its version as S3 metadata. If the
       # existing object was already built from this same commit, the
-      # whole build job is skipped.
+      # whole build job is skipped. `force` bypasses this check entirely.
       - name: Check if this bundle is already built
         id: check
         env:
@@ -55,6 +73,16 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            {
+              echo "### 🔁 Bundle build forced"
+              echo ""
+              echo "\`force: true\` — skipping the S3 version check."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
           EXISTING_VERSION=$(aws s3api head-object \
             --bucket ${{ secrets.S3_BUCKET }} \
             --key "penpot-${{ steps.vars.outputs.gh_ref }}.zip" \
@@ -75,7 +103,7 @@ jobs:
   # ── 2. Build and upload, only when needed ──────────────────────────────
   build:
     name: Build and Upload Penpot Bundle
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 90
     needs: check
     if: needs.check.outputs.exists == 'false'
@@ -113,10 +141,20 @@ jobs:
             s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.check.outputs.gh_ref }}.zip \
             --metadata bundle-version=${{ needs.check.outputs.bundle_version }}
 
+      - name: Write step summary
+        run: |
+          {
+            echo "### ✅ Bundle built"
+            echo ""
+            echo "- Version: \`${{ needs.check.outputs.bundle_version }}\` (\`git describe --tags --always\`)"
+            echo "- Commit: [\`${{ needs.check.outputs.sha }}\`](https://github.com/${{ github.repository }}/commit/${{ needs.check.outputs.sha }}) — ${{ needs.check.outputs.commit_title }}"
+            echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # ── 3. Single failure notification for the whole workflow ─────────────
   notify:
     name: Notify failure
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     timeout-minutes: 5
     needs: [check, build]
     if: failure()

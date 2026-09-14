@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.tasks.objects-gc
   "A maintenance task that performs a general purpose garbage collection
@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.features.fdata :as fdata]
    [app.storage :as sto]
+   [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
 
 (def ^:private sql:get-profiles
@@ -32,6 +33,11 @@
 
                  ;; Mark as deleted the storage object
                  (some->> photo-id (sto/touch-object! storage))
+
+                 ;; Cascade soft-delete to owned teams, projects, files, etc.
+                 (dobj/delete-object cfg {:object :profile
+                                          :id id
+                                          :deleted-at timestamp})
 
                  (let [affected (-> (db/delete! conn :profile {:id id})
                                     (db/get-update-count))]
@@ -321,8 +327,14 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [_]
-    (let [cfg (assoc cfg ::timestamp (ct/now))]
+  (fn [{:keys [props]}]
+    (let [skip-delay (:skip-delay props)
+          chunk-size (or (:chunk-size props) (::chunk-size cfg))
+          cfg        (-> cfg
+                         (assoc ::chunk-size chunk-size)
+                         (assoc ::timestamp (if skip-delay
+                                              (ct/in-future {:days 3650})
+                                              (ct/now))))]
       (loop [procs (map deref deletion-proc-vars)
              total 0]
         (if-let [proc-fn (first procs)]

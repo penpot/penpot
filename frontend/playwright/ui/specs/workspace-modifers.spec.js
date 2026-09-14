@@ -233,5 +233,6 @@ test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
     name: "Width",
     exact: true,
   });
-  await expect(widthInput).toHaveValue("23");
+  // WASM auto-width includes the HTML paragraph-set 1px right margin.
+  await expect(widthInput).toHaveValue("24");
 });

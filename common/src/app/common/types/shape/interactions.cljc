@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape.interactions
   (:require
@@ -717,14 +717,21 @@
   (conj (or interactions []) interaction))
 
 (defn remove-interaction
+  "Interactions without the one at `index`; unchanged when `index` addresses none."
   [interactions index]
   (let [interactions (or interactions [])]
-    (into (subvec interactions 0 index)
-          (subvec interactions (inc index)))))
+    (if (and (int? index) (< -1 index (count interactions)))
+      (into (subvec interactions 0 index)
+            (subvec interactions (inc index)))
+      interactions)))
 
 (defn update-interaction
+  "Interactions with `update-fn` applied at `index`; unchanged when `index`
+  addresses none."
   [interactions index update-fn]
-  (update interactions index update-fn))
+  (if (and (int? index) (< -1 index (count interactions)))
+    (update interactions index update-fn)
+    interactions))
 
 (defn remap-interactions
   "Update all interactions whose destination points to a shape in the

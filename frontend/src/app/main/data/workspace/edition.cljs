@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.edition
   (:require
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.common :as dwpc]
+   [app.main.data.workspace.path.state :as path.state]
    [app.main.features :as features]
    [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
@@ -48,26 +49,32 @@
 
 (defn clear-edition-mode
   []
-  (ptk/reify ::clear-edition-mode
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-local dissoc :edition :edit-path)
-          (update :workspace-drawing dissoc :object :lock)
-          (dissoc :workspace-grid-edition)
-          (dissoc :workspace-wasm-editor-styles)))
+  (let [path-id (volatile! nil)]
+    (ptk/reify ::clear-edition-mode
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [edition-id    (get-in state [:workspace-local :edition])
+              path-editing? (path.state/editing? state)]
+          (vreset! path-id (when path-editing? edition-id))
+          (-> state
+              (update :workspace-local dissoc :edition)
+              (cond-> (not path-editing?)
+                (update :workspace-local dissoc :edit-path)
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [id (get-in state [:workspace-local :edition])]
-        (rx/concat
-         (when (some? id)
-           (dwpc/finish-path)))))
+                (not path-editing?)
+                (update :workspace-drawing dissoc :object :lock))
+              (dissoc :workspace-grid-edition)
+              (dissoc :workspace-wasm-editor-styles))))
 
-    ptk/EffectEvent
-    (effect [_ state _]
-      (when (features/active-feature? state "text-editor-wasm/v1")
-        ;; NOTE: the WASM text editor is disposed by the v3 editor component on
-        ;; unmount, *after* it finalizes its content.
-        (wasm.api/request-render "clear-edition-mode")))))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (if (some? @path-id)
+          (rx/of (dwpc/finish-path))
+          (rx/empty)))
 
+      ptk/EffectEvent
+      (effect [_ state _]
+        (when (features/active-feature? state "text-editor-wasm/v1")
+          ;; NOTE: the WASM text editor is disposed by the v3 editor component on
+          ;; unmount, *after* it finalizes its content.
+          (wasm.api/request-render "clear-edition-mode"))))))

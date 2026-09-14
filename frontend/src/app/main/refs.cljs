@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.refs
   "A collection of derived refs."
@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [beicon.v2.core :as rx]
+   [clojure.string :as str]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -221,6 +222,9 @@
 
 (def selected-edition
   (l/derived :edition workspace-local))
+
+(def workspace-edit-path
+  (l/derived :edit-path workspace-local))
 
 (def current-transform
   (l/derived :transform workspace-local))
@@ -583,13 +587,21 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
+(defn- resolved-uri?
+  "Returns true if the uri is already a fully resolved URI (blob or data)."
+  [uri]
+  (or (str/starts-with? uri "blob:")
+      (str/starts-with? uri "data:")))
+
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
      (when-let [entry (dm/get-in state [:thumbnails object-id])]
        (cond-> entry
-         (:uri entry) (update :uri cf/resolve-media))))
+         (and (:uri entry)
+              (not (resolved-uri? (:uri entry))))
+         (update :uri cf/resolve-media))))
    st/state))
 
 (def workspace-text-modifier

@@ -1,6 +1,13 @@
 import { expect, expectReject } from '../framework/expect';
 import { describe, test } from '../framework/registry';
-import type { Board, Font, Group, Shape, Text } from '@penpot/plugin-types';
+import type {
+  Board,
+  Font,
+  Group,
+  Penpot,
+  Shape,
+  Text,
+} from '@penpot/plugin-types';
 import type { TestContext } from '../framework/types';
 
 // waitForLayoutUpdate (context-level and per-shape).
@@ -43,8 +50,17 @@ function byX(rects: [Shape, Shape]): { left: Shape; right: Shape } {
   return a.x <= b.x ? { left: a, right: b } : { left: b, right: a };
 }
 
-/** Font ids already handed out by `unloadedFont`. */
-const claimedFonts = new Set<string>();
+/** Tracks fonts used by this test run. */
+const claimedFontsByRun = new WeakMap<Penpot, Set<string>>();
+
+function claimedFonts(ctx: TestContext): Set<string> {
+  let claimed = claimedFontsByRun.get(ctx.penpot);
+  if (!claimed) {
+    claimed = new Set<string>();
+    claimedFontsByRun.set(ctx.penpot, claimed);
+  }
+  return claimed;
+}
 
 /**
  * Picks an unclaimed font differing from the text's current one, so assigning
@@ -53,11 +69,12 @@ const claimedFonts = new Set<string>();
  */
 function unloadedFont(ctx: TestContext, t: Text): Font {
   const all = ctx.penpot.fonts.all;
+  const claimed = claimedFonts(ctx);
   for (let i = all.length - 1; i >= 0; i--) {
     const f = all[i];
     if (f.fontId === t.fontId || f.variants.length === 0) continue;
-    if (claimedFonts.has(f.fontId)) continue;
-    claimedFonts.add(f.fontId);
+    if (claimed.has(f.fontId)) continue;
+    claimed.add(f.fontId);
     return f;
   }
   throw new Error('no alternative font available');
@@ -348,6 +365,89 @@ describe('WaitForLayoutUpdate', () => {
       range.fontId = font.fontId;
       await ctx.penpot.waitForLayoutUpdate();
       expect(Math.abs(t.width - w0)).toBeGreaterThan(0.5);
+    });
+  });
+
+  describe('Components', () => {
+    test('wait covers propagation from a component main to its copy', async (ctx) => {
+      const source = ctx.penpot.createRectangle();
+      ctx.board.appendChild(source);
+      const component = ctx.penpot.library.local.createComponent([source]);
+      const main = component.mainInstance() as Board;
+      const copy = component.instance() as Board;
+      ctx.board.appendChild(copy);
+      await ctx.penpot.waitForLayoutUpdate();
+
+      const mainChild = main.children[0];
+      const copyChild = copy.children[0];
+      mainChild.opacity = 0.37;
+
+      await ctx.penpot.waitForLayoutUpdate();
+      expect(copyChild.opacity).toBeCloseTo(0.37);
+    });
+
+    test('shape wait covers propagation from a component main to its copy', async (ctx) => {
+      const source = ctx.penpot.createRectangle();
+      ctx.board.appendChild(source);
+      const component = ctx.penpot.library.local.createComponent([source]);
+      const main = component.mainInstance() as Board;
+      const copy = component.instance() as Board;
+      ctx.board.appendChild(copy);
+      await ctx.penpot.waitForLayoutUpdate();
+
+      const mainChild = main.children[0];
+      const copyChild = copy.children[0];
+      mainChild.opacity = 0.63;
+
+      await copyChild.waitForLayoutUpdate();
+      expect(copyChild.opacity).toBeCloseTo(0.63);
+    });
+
+    test('wait covers layout triggered by component propagation', async (ctx) => {
+      const host = flexBoard(ctx);
+      const flex = host.addFlexLayout();
+      flex.dir = 'row';
+      flex.columnGap = 10;
+      const first = ctx.penpot.createRectangle();
+      first.resize(50, 50);
+      flex.appendChild(first);
+      const second = ctx.penpot.createRectangle();
+      second.resize(50, 50);
+      flex.appendChild(second);
+
+      const component = ctx.penpot.library.local.createComponent([host]);
+      const main = component.mainInstance() as Board;
+      const copy = component.instance() as Board;
+      ctx.board.appendChild(copy);
+      await ctx.penpot.waitForLayoutUpdate();
+
+      const { left: mainLeft } = byX([main.children[0], main.children[1]]);
+      mainLeft.resize(120, 50);
+
+      await ctx.penpot.waitForLayoutUpdate();
+      const { left: copyLeft, right: copyRight } = byX([
+        copy.children[0],
+        copy.children[1],
+      ]);
+      expect(copyLeft.width).toBeCloseTo(120, 0);
+      expect(copyRight.x - copyLeft.x).toBeCloseTo(130, 0);
+    });
+  });
+
+  describe('Library assets', () => {
+    test('wait covers propagation from a local color to a referenced shape', async (ctx) => {
+      const color = ctx.penpot.library.local.createColor();
+      color.color = '#112233';
+      color.opacity = 1;
+      const rect = ctx.penpot.createRectangle();
+      rect.fills = [color.asFill()];
+      ctx.board.appendChild(rect);
+      await ctx.penpot.waitForLayoutUpdate();
+
+      color.color = '#aabbcc';
+
+      await ctx.penpot.waitForLayoutUpdate();
+      expect(rect.fills[0]?.fillColor).toBe('#aabbcc');
     });
   });
 

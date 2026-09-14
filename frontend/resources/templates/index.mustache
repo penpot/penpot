@@ -23,7 +23,12 @@
     <link href="css/debug.css?version={{& version_tag}}" rel="stylesheet" type="text/css" />
     {{/isDebug}}
 
+    {{#isDebug}}
+    <link rel="icon" href="images/favicon-local.png?version={{& version_tag }}" />
+    {{/isDebug}}
+    {{^isDebug}}
     <link rel="icon" href="images/favicon.png?version={{& version_tag }}" />
+    {{/isDebug}}
 
     <script type="importmap">{{& manifest.importmap }}</script>
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.db
   (:refer-clojure :exclude [get run!])
@@ -31,8 +31,8 @@
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.HikariPoolMXBean
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
-   io.whitfin.siphash.SipHasher
-   io.whitfin.siphash.SipHasherContainer
+   io.whitfin.siphash.SipHash
+   io.whitfin.siphash.SipHashContext
    java.io.InputStream
    java.io.OutputStream
    java.sql.Connection
@@ -701,12 +701,12 @@
 ;; --- Locks
 
 (def ^:private siphash-state
-  (SipHasher/container
-   (uuid/get-bytes uuid/zero)))
+  (SipHash/context
+    (uuid/get-bytes uuid/zero)))
 
 (defn uuid->hash-code
   [o]
-  (.hash ^SipHasherContainer siphash-state
+  (.hash ^SipHashContext siphash-state
          ^bytes (uuid/get-bytes o)))
 
 (defn- xact-check-param

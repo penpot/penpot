@@ -8,9 +8,18 @@
   wait for the user to push. Do not change the remote URL, do not switch SSH↔HTTPS.
 - **Never amend a commit that has been pushed** unless the user explicitly asks.
   If the user pushes, treat that commit as final from the agent's side.
+- **Never edit `CHANGES.md` by hand** in commits or PRs. The changelog is
+  generated from GitHub milestones during the release process; update it only
+  via the `update-changelog` skill flow or on explicit user request.
 - **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
   Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
   This prevents hiding test failures. See `mem:testing` for details.
+- **`.claude/skills` is a symlink to `.agents/skills`.**
+  Edit skills only in their canonical location (`.agents/skills`); never edit
+  through `.claude/skills`.
+- **Commit message body lines MUST wrap at ≤76 chars** (subject ≤70 chars) and
+  the commit MUST pass `./scripts/check-commit` with exit code 0 before you
+  consider it done. This is mechanically checked — do not eyeball it.
 - **Read the workflow memory BEFORE the corresponding action**:
   - Before `git commit` → `mem:workflow/creating-commits` (commit format, AI-assisted-by trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, Issue Type)
@@ -31,6 +40,36 @@ Do this **before planning, before coding, before touching any file**:
 
 **STOP: Do not proceed until you have read the core memory of every affected module.**
 Skipping this step is the #1 cause of incorrect or incomplete work.
+
+---
+
+## Auto-triggers
+
+- **Security advisory URL pasted** — When the user pastes a URL matching
+  `github.com/penpot/penpot/security/advisories/GHSA-*`, extract the GHSA ID
+  from the URL and run `python3 scripts/gh.py advisories <GHSA-ID>` to fetch
+  full advisory details before proceeding.
+- **Issue or PR mentioned** — When the user mentions a penpot/penpot issue or
+  PR (URL like `github.com/penpot/penpot/issues/<n>` / `.../pull/<n>`, or a
+  bare `#<n>` when context clearly refers to this repo), fetch details via CLI
+  instead of WebFetch:
+  - Issue → `gh issue view <n> --repo penpot/penpot` (add `--comments` when
+    discussion context matters).
+  - Single PR → `gh pr view <n> --repo penpot/penpot`.
+  - Multiple PRs (list, file, or milestone) → `python3 scripts/gh.py prs ...`.
+  Do this before proceeding. Only use WebFetch if the CLI fails.
+
+## Writing Rules
+
+Writing rules, from Orwell, 1946. These govern prose: docs, PR text, messages. Never touch code or technical terms; swap in everyday words only where precision survives.
+
+1. Never use a metaphor, simile or other figure of speech which you are used to seeing in print.
+2. Never use a long word where a short one will do.
+3. If it is possible to cut a word out, always cut it out.
+4. Never use the passive where you can use the active.
+5. Never use a foreign phrase, a scientific word or a jargon word if you can think of an everyday English equivalent.
+6. Break any of these rules sooner than say anything outright barbarous.
+Review every prose output against these rules before delivering.
 
 ---
 
@@ -112,5 +151,6 @@ precision while maintaining a strong focus on maintainability and performance.
 - `scripts/nrepl-eval.mjs` — Evaluate Clojure code via nREPL (backend + frontend).
 - `scripts/check-commit` — Validate commit messages against Penpot's commit guidelines.
 - `scripts/check-fmt-clj` — Check Clojure formatting without modifying files.
-- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `scripts/ci --help`.
+- `scripts/ci` — CI orchestration script for running lint, tests, and format checks across modules. See `mem:scripts/ci`.
+- `scripts/gh.py` — Multi-purpose GitHub CLI helper. Subcommands: `issues` (list issues in a milestone), `prs` (fetch PR details), `advisories` (list/inspect security advisories). See `python3 scripts/gh.py --help`.
 

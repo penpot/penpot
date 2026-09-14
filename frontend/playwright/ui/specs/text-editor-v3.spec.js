@@ -23,6 +23,49 @@ async function openEditorAndSelectAll(workspace) {
   await workspace.page.keyboard.press("ControlOrMeta+a");
 }
 
+
+test("Typography at a collapsed caret only styles newly typed text", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const fontSize = workspace.textEditor.fontSize;
+  const editorInput = page.locator("#text-editor-wasm-input");
+
+  // Draw a text box, focus it, and type some text; the caret ends up collapsed
+  // after it.
+  await workspace.createTextShape(200, 150, 460, 260);
+  await workspace.clickAt(210, 160);
+  await expect(editorInput).toBeFocused();
+  await page.keyboard.type("ab");
+
+  const originalSize = await fontSize.inputValue();
+  const newSize = String(Number(originalSize) + 20);
+
+  // Change the font size with a collapsed caret. This must not restyle the
+  // existing text; it is stashed as a pending style for the next input. Focus
+  // returns to the editor once the sidebar input blurs.
+  await workspace.textEditor.changeFontSize(newSize);
+  await expect(editorInput).toBeFocused();
+
+  // Typing now adopts the pending size as its own span.
+  await page.keyboard.type("X");
+
+  // The just-typed "X" carries the new size...
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect(fontSize).toHaveValue(newSize);
+
+  // ...while the pre-existing "ab" keeps the original size (the bug applied the
+  // change to the whole shape instead).
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(fontSize).toHaveValue(originalSize);
+});
+
 test.describe("BUG 10502 - Mixed families and variants", () => {
   test("Multiple variants of the same font family", async ({ page }) => {
     const workspace = new WasmWorkspacePage(page, { textEditor: true });
@@ -113,6 +156,69 @@ test.describe("BUG 10530 - Empty text box left behind when leaving the editor", 
     await expect(layerRows).toHaveCount(1);
   });
 });
+
+test.describe("BUG 11083 - Changing typography must not quit the editor", () => {
+  test("Changing a numeric input must not quit the editor", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // Draw an empty text box and, without typing anything, change the font size.
+    await workspace.createTextShape(200, 150, 320, 210);
+    await expect(layerRows).toHaveCount(1);
+
+    await workspace.textEditor.changeFontSize(24);
+
+    // The shape is not deleted and the editor is still mounted.
+    await expect(layerRows).toHaveCount(1);
+    await expect(page.getByTestId("text-editor")).toBeVisible();
+
+    // The edition survives, so we can click back into the box and keep typing.
+    await workspace.clickAt(210, 160);
+    await page.keyboard.type("hello");
+    await workspace.textEditor.stopEditing();
+
+    await layerRows.first().click();
+    await workspace.waitForSelectedShapeName("hello");
+  });
+
+  test("Opening the font family selector must not quit the editor", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page, { textEditor: true });
+    await workspace.setupEmptyFile();
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    const layerRows = workspace.layers.getByTestId("layer-row");
+
+    // Draw an empty text box and, without typing anything, open the font family
+    // selector
+    await workspace.createTextShape(200, 150, 320, 210);
+    await expect(layerRows).toHaveCount(1);
+
+    await workspace.rightSidebar.getByTitle("Font Family").click();
+
+    // The shape is not deleted and the editor is still mounted.
+    await expect(layerRows).toHaveCount(1);
+    await expect(page.getByTestId("text-editor")).toBeVisible();
+
+    // The edition survives, so we can click back into the box and keep typing.
+    await workspace.clickAt(210, 160);
+    await page.keyboard.type("hello");
+    await workspace.textEditor.stopEditing();
+
+    await layerRows.first().click();
+    await workspace.waitForSelectedShapeName("hello");
+  });
+});
+
+
 
 test("BUG 10467 - Auto-width text captures every typed character", async ({
   page,

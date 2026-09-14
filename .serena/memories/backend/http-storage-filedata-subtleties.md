@@ -14,10 +14,7 @@
 
 ## Storage and media
 
-- Storage has a fixed valid bucket set. Backends are `:fs` and `:s3`; default backend comes from deprecated `assets-storage-backend` only when present, otherwise `objects-storage-backend`, defaulting to `:fs`.
-- `put-object!` creates the DB `storage_object` row before writing backend content. Backend writes happen only for newly created rows, so deduplication can skip object writes.
-- Deduplication only applies when requested, when the content can provide a hash, and when bucket metadata is present. Reads exclude soft-deleted storage rows.
-- `sto/resolve` can reuse the current DB connection via `::db/reuse-conn true`; preserve this in transaction-sensitive code.
+- Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
 - SVG validation strips DOCTYPE and uses secure SAX parsing. Basic SVG info falls back to 100x100 dimensions when width/height/viewBox are missing.
 - Raster metadata is shell-derived with ImageMagick `identify`, verifies detected MIME against the supplied MIME, and swaps dimensions for EXIF orientations 6/8.
 - Remote image download requires 2xx status, `content-length`, a known MIME, and size under the configured maximum before writing the temp file; mismatched byte count is an internal error.

@@ -467,4 +467,16 @@ export class PluginBridge {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
         }
     }
+
+    /**
+     * Closes the WebSocket server and all connected client sockets.
+     */
+    public async close(): Promise<void> {
+        return new Promise((resolve) => {
+            this.wsServer.close(() => {
+                this.logger.info("WebSocket server closed");
+                resolve();
+            });
+        });
+    }
 }

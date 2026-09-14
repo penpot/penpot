@@ -31,7 +31,7 @@ export PENPOT_MEDIA_PROCESSING_SERVICE_URI=http://localhost:6065
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-login-with-password \
-       disable-login-with-ldap \
+       enable-login-with-ldap \
        disable-login-with-oidc \
        disable-login-with-google \
        disable-login-with-github \
@@ -93,7 +93,8 @@ export JAVA_OPTS="\
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
-       --enable-native-access=ALL-UNNAMED";
+       --enable-native-access=ALL-UNNAMED \
+       --add-opens=java.base/java.nio=ALL-UNNAMED";
 
 function setup_minio() {
     if [ "${PENPOT_OBJECTS_STORAGE_BACKEND}" != "s3" ]; then

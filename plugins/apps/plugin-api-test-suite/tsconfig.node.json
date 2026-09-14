@@ -4,6 +4,7 @@
     "outDir": "../../dist/out-tsc",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "types": ["node"],
     "noUnusedLocals": true,
     "noUnusedParameters": true
