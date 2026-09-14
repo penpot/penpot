@@ -1150,3 +1150,26 @@
                         :throw (ex-info "boom" {})}]
       (let [response (assets/objects-handler cfg request)]
         (t/is (= 204 (::yres/status response)))))))
+
+(t/deftest file-objects-handler-serve-failure-emits-error-and-rethrows
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}]
+    (with-mocks [_mock {:target 'app.storage/object->relative-path
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (assets/file-objects-handler cfg request))))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "error"])))
+    (t/is (= 0.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))

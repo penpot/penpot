@@ -64,14 +64,13 @@
 
 (defn- result-label
   [status]
-  (case (long (or status 500))
-    204 "served"
-    307 "served"
-    401 "unauthorized"
-    403 "unauthorized"
-    404 "not-found"
-    500 "error"
-    "error"))
+  (let [code (long (or status 500))]
+    (cond
+      (<= 200 code 399) "served"
+      (= code 401) "unauthorized"
+      (= code 403) "unauthorized"
+      (= code 404) "not-found"
+      :else "error")))
 
 (defn- emit-asset!
   "Record an asset request. `route` is the handler route, `obj` the resolved
@@ -85,7 +84,7 @@
                          (mtx/label (some-> obj meta :bucket) "unknown")
                          (result-label status)]))
     (catch Throwable cause
-      (l/wrn :hint "unable to record asset metric" :cause cause))))
+      (l/dbg :hint "unable to record asset metric" :cause cause))))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]

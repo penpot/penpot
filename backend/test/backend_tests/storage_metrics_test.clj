@@ -152,6 +152,20 @@
     (t/is (= 1.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))
     (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "s3"])))))
 
+(t/deftest touch-and-del-by-id-label-row-bucket
+  ;; Production callers pass UUIDs, not objects: the row is resolved so
+  ;; the metric carries the real bucket and backend labels.
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (put! storage "content" "file-media-object" nil)
+        id      (:id object)]
+    (t/is (true? (sto/touch-object! storage id)))
+    (t/is (true? (sto/del-object! storage id)))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["touch" "file-media-object" "fs"])))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["del" "file-media-object" "fs"])))))
+
 (t/deftest touch-and-del-missing-id-emits-nothing
   (let [metrics (make-metrics)
         storage (-> (:app.storage/storage th/*system*)
@@ -260,3 +274,16 @@
                      (sto/get-object-data storage object))))
     (t/is (= 1.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
     (t/is (= 0.0 (counter-value metrics :storage-operations ["get-data" "file-media-object" "fs"])))))
+
+(t/deftest failed-bytes-read-emits-nothing
+  (let [metrics (make-metrics)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend)
+                    (with-metrics metrics))
+        object  (put! storage "content" "file-media-object" nil)]
+    (with-mocks [_mock {:target 'app.storage.impl/get-object-bytes
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (sto/get-object-bytes storage object))))
+    (t/is (= 1.0 (counter-value metrics :storage-operations ["put" "file-media-object" "fs"])))
+    (t/is (= 0.0 (counter-value metrics :storage-operations ["get-bytes" "file-media-object" "fs"])))))

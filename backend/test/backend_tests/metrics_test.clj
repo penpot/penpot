@@ -47,3 +47,12 @@
     (t/is (contains? names "process_open_fds"))
     (t/is (contains? names "process_max_fds"))
     (t/is (contains? names "process_cpu_seconds_total"))))
+
+(t/deftest label-coercion
+  (t/are [value fallback expected]
+         (= expected (mtx/label value fallback))
+    "fs"      "unknown" "fs"
+    :s3        "unknown" "s3"
+    200       "unknown" "200"
+    nil       "unknown" "unknown"
+    nil       "default" "default"))

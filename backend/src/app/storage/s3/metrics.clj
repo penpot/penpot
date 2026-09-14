@@ -72,6 +72,6 @@
           (try
             (record-collection! metrics target collection)
             (catch Throwable cause
-              (l/wrn :hint "unable to record s3 metric" :cause cause)))
+              (l/dbg :hint "unable to record s3 metric" :cause cause)))
           nil)
         (^void close [_])))))
