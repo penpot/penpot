@@ -317,7 +317,8 @@
                             {:id id})
                 (db/get-update-count)
                 (pos?))]
-    (emit-op! storage "touch" (-> object-or-id meta :bucket) object-or-id)
+    (when res
+      (emit-op! storage "touch" (-> object-or-id meta :bucket) object-or-id))
     res))
 
 (defn get-object-data
@@ -327,9 +328,10 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (emit-op! storage "get-data" (-> object meta :bucket) object)
-    (-> (impl/resolve-backend storage (:backend object))
-        (impl/get-object-data object))))
+    (let [result (-> (impl/resolve-backend storage (:backend object))
+                     (impl/get-object-data object))]
+      (emit-op! storage "get-data" (-> object meta :bucket) object)
+      result)))
 
 (defn get-object-bytes
   "Returns a byte array of object content."
@@ -337,9 +339,10 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (emit-op! storage "get-bytes" (-> object meta :bucket) object)
-    (-> (impl/resolve-backend storage (:backend object))
-        (impl/get-object-bytes object))))
+    (let [result (-> (impl/resolve-backend storage (:backend object))
+                     (impl/get-object-bytes object))]
+      (emit-op! storage "get-bytes" (-> object meta :bucket) object)
+      result)))
 
 (defn get-object-url
   ([storage object]
@@ -367,11 +370,14 @@
   (assert (valid-storage? storage))
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         ds  (db/get-connectable storage)
-        res (db/update! ds :storage-object
-                        {:deleted-at (ct/now)}
-                        {:id id})]
-    (emit-op! storage "del" (-> object-or-id meta :bucket) object-or-id)
-    (pos? (db/get-update-count res))))
+        res (-> (db/update! ds :storage-object
+                            {:deleted-at (ct/now)}
+                            {:id id})
+                (db/get-update-count)
+                (pos?))]
+    (when res
+      (emit-op! storage "del" (-> object-or-id meta :bucket) object-or-id))
+    res))
 
 (dm/export impl/calculate-hash)
 (dm/export impl/get-hash)

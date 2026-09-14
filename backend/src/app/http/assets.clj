@@ -169,28 +169,36 @@
    via session cookie or access token.
    For tempfile bucket, also requires ownership (profile-id match)."
   [{:keys [::sto/storage] :as cfg} request]
-  (let [id       (get-id request)
-        obj      (sto/get-object storage id)
-        response (cond
-                   (nil? obj)
-                   {::yres/status 404}
+  (let [id  (get-id request)
+        obj (sto/get-object storage id)]
+    (cond
+      (nil? obj)
+      (do
+        (emit-asset! cfg "by-id" nil 404)
+        {::yres/status 404})
 
-                   (and (requires-auth? obj)
-                        (not (authenticated? request)))
-                   {::yres/status 401}
+      (and (requires-auth? obj)
+           (not (authenticated? request)))
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 401})
 
-                   (and (= (-> obj meta :bucket) sto/tempfile-bucket)
-                        (not (tempfile-owner-match? obj request)))
-                   {::yres/status 404}
+      ;; The response stays 404 to avoid leaking existence, but the
+      ;; metric records the internal 401 outcome.
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
+           (not (tempfile-owner-match? obj request)))
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 404})
 
-                   :else
-                   (try
-                     (serve-object cfg obj)
-                     (catch Throwable cause
-                       (emit-asset! cfg "by-id" obj 500)
-                       (throw cause))))]
-    (emit-asset! cfg "by-id" obj (::yres/status response))
-    response))
+      :else
+      (try
+        (let [response (serve-object cfg obj)]
+          (emit-asset! cfg "by-id" obj (::yres/status response))
+          response)
+        (catch Throwable cause
+          (emit-asset! cfg "by-id" obj 500)
+          (throw cause))))))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."

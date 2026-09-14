@@ -11,7 +11,8 @@
    [app.metrics.definition :as-alias mdef]
    [app.storage.s3.metrics :as s3m]
    [clojure.test :as t]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [mockery.core :refer [with-mocks]])
   (:import
    io.prometheus.client.Counter
    io.prometheus.client.Counter$Child
@@ -97,6 +98,39 @@
     (.publish publisher call)
     (t/is (= 1.0 (counter-value metrics :storage-s3-requests ["GetObject" "eu-west" "ok"])))
     (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["GetObject" "default" "ok"])))))
+
+(t/deftest publisher-survives-record-failure
+  (let [metrics   (make-metrics)
+        publisher (s3m/wrap-publisher metrics :default)
+        call      (api-call [[CoreMetric/OPERATION_NAME "PutObject"]
+                             [CoreMetric/API_CALL_SUCCESSFUL true]
+                             [CoreMetric/RETRY_COUNT 0]
+                             [CoreMetric/API_CALL_DURATION (Duration/ofMillis 5)]])]
+    (with-mocks [_mock {:target 'app.metrics/run!
+                        :throw (ex-info "boom" {})}]
+      (t/is (nil? (.publish publisher call))))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))))
+
+(t/deftest publisher-treats-missing-success-flag-as-error
+  ;; Documents the nil policy: a present operation without a success flag
+  ;; counts as an error so silent SDK changes surface on dashboards.
+  (let [metrics   (make-metrics)
+        publisher (s3m/wrap-publisher metrics :default)
+        call      (api-call [[CoreMetric/OPERATION_NAME "PutObject"]])]
+    (.publish publisher call)
+    (t/is (= 1.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "error"])))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))))
+
+(t/deftest publisher-skips-retries-and-timing-when-absent
+  (let [metrics   (make-metrics)
+        publisher (s3m/wrap-publisher metrics :default)
+        call      (api-call [[CoreMetric/OPERATION_NAME "GetObject"]
+                             [CoreMetric/API_CALL_SUCCESSFUL true]
+                             [CoreMetric/RETRY_COUNT 0]])]
+    (.publish publisher call)
+    (t/is (= 1.0 (counter-value metrics :storage-s3-requests ["GetObject" "default" "ok"])))
+    (t/is (= 0.0 (counter-value metrics :storage-s3-retries ["GetObject" "default"])))
+    (t/is (= 0.0 (histogram-sum metrics :storage-s3-timing ["GetObject" "default"])))))
 
 (t/deftest s3-backend-is-wired-with-optional-metrics
   (t/is (= (ig/ref ::mtx/metrics)
