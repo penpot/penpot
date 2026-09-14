@@ -164,7 +164,9 @@
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 6 (:delete res)))))))
+        ;; deleted = 8: the 6 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 8 (:delete res)))))))
 
 (t/deftest font-deletion-2
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -231,7 +233,9 @@
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 3 (:delete res)))))))
+        ;; deleted = 5: the 3 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 5 (:delete res)))))))
 
 (t/deftest font-deletion-3
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -279,7 +283,9 @@
     (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8 :hours 3}))]
       (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 0 (:freeze res)))
-        (t/is (= 3 (:delete res)))))))
+        ;; deleted = 5: the 3 font objects plus the 2 chunk objects touched
+        ;; by objects-gc when purging the consumed sessions
+        (t/is (= 5 (:delete res)))))))
 
 (t/deftest input-sanitization-1
   (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
