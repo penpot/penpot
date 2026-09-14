@@ -923,12 +923,12 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (let [page         (dsh/lookup-page state)
+        (let [file-id      (:current-file-id state)
+              page-id      (:current-page-id state)
+              page         (dsh/lookup-page state file-id page-id)
               page-objects (:objects page)]
           (if (page-ready? page-objects)
-            (let [file-id      (:current-file-id state)
-
-                  media-idx    (->> (:images pdata)
+            (let [media-idx    (->> (:images pdata)
                                     (d/index-by :prev-id))
 
                   selected     (:selected pdata)
