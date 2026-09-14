@@ -1,0 +1,355 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.organization-team-switch {
+  position: relative;
+  width: 100%;
+}
+
+.switch-button-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-xxs);
+  height: $sz-48;
+  width: 100%;
+}
+
+.current-selection {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-s);
+  height: $sz-48;
+  width: 100%;
+  padding: 0 var(--sp-m) 0 var(--sp-l);
+  border-radius: $br-8;
+  background-color: var(--menu-background-color);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.options-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-48;
+  width: $sz-40;
+  padding: 0;
+  border-radius: $br-8;
+  color: var(--icon-foreground);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--color-accent-primary);
+  }
+}
+
+.options-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: currentColor;
+}
+
+.current-selection-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.current-team-name {
+  @include text-ellipsis;
+  @include t.use-typography("title-small");
+
+  max-width: 100%;
+  color: var(--menu-foreground-color-hover);
+}
+
+.current-organization-name {
+  @include text-ellipsis;
+  @include t.use-typography("body-small");
+
+  max-width: 100%;
+  color: var(--color-foreground-secondary);
+}
+
+.arrow-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  transform: rotate(90deg);
+  stroke: var(--icon-foreground);
+}
+
+.tick-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-12;
+  width: $sz-12;
+  color: transparent;
+  fill: none;
+  stroke-width: 1.33px;
+  stroke: var(--icon-foreground);
+}
+
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
+.penpot-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  svg {
+    fill: var(--icon-foreground);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
+.team-picture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+}
+
+// The dropdown itself lays out its two columns side by side.
+.organization-team-dropdown {
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  margin: 0;
+  display: grid;
+  grid-template-columns: 240px 240px;
+  gap: var(--sp-m);
+  top: calc(#{$sz-48} + var(--sp-xs));
+  left: 0;
+  height: fit-content;
+  max-height: $sz-480;
+}
+
+.organizations-column,
+.teams-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.teams-column {
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+  padding-inline-start: var(--sp-m);
+}
+
+.column-label {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  list-style: none;
+  padding: $sz-6 $sz-6 $sz-6 var(--sp-m);
+  text-transform: uppercase;
+}
+
+.column-separator {
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  margin-block: var(--sp-xxs);
+}
+
+.organization-item,
+.team-item {
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-s);
+  height: $sz-40;
+  padding-inline-start: var(--sp-m);
+  border-radius: $br-8;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.organization-item.with-link,
+.team-item.with-link {
+  display: block;
+  padding-inline-start: 0;
+}
+
+.item-link {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-s);
+  height: 100%;
+  padding-inline-start: var(--sp-m);
+  text-decoration: none;
+  color: inherit;
+}
+
+.organization-text,
+.team-text {
+  @include text-ellipsis;
+
+  text-align: left;
+  color: var(--menu-foreground-color-hover);
+}
+
+.selected {
+  background-color: var(--menu-background-color-hover);
+}
+
+.action {
+  --sidebar-action-icon-color: var(--icon-foreground);
+  --sidebar-icon-backgroun-color: var(--color-background-secondary);
+
+  &:hover {
+    --sidebar-action-icon-color: var(--color-background-secondary);
+    --sidebar-icon-backgroun-color: var(--color-accent-primary);
+  }
+}
+
+.icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--sp-xxl);
+  height: var(--sp-xxl);
+  border-radius: 50%;
+  background-color: var(--sidebar-icon-backgroun-color);
+}
+
+.add-icon,
+.add-organization-icon,
+.arrow-up-right-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--sidebar-action-icon-color);
+}
+
+.organization-context-menu {
+  position: fixed;
+  z-index: var(--z-index-dropdown);
+  min-width: $sz-160;
+  padding: var(--sp-xs);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  border-radius: $br-8;
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
+}
+
+.context-menu-item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  height: $sz-32;
+  padding: 0 var(--sp-m);
+  border-radius: $br-8;
+  cursor: pointer;
+  color: var(--menu-foreground-color-hover);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.options-dropdown {
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  margin: 0;
+  top: calc(#{$sz-48} + var(--sp-xs));
+  right: 0;
+  min-width: $sz-192;
+  height: fit-content;
+  max-height: $sz-480;
+  overflow-y: auto;
+}
+
+.options-item {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  height: $sz-40;
+  padding: 0 var(--sp-m);
+  border-radius: $br-8;
+  cursor: pointer;
+  color: var(--menu-foreground-color-hover);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.options-item.warning {
+  color: var(--color-negative);
+}
+
+.options-separator {
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  margin-block: var(--sp-xxs);
+}

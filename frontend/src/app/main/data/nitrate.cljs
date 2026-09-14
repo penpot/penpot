@@ -73,19 +73,24 @@
     (cond-> (u/join public-uri "admin-console/" path)
       (seq query-params) (assoc :query (u/map->query-string query-params))))))
 
-(defn go-to-nitrate-ac
+(defn build-admin-console-href
   ([]
-   (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))
+   (build-admin-console-url ""))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
      (let [path (dm/str "organization/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
-                        "/people/")
-           href (build-admin-console-url path)]
-       (st/emit! (rt/nav-raw :href href)))
-     (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))))
+                        "/people/")]
+       (build-admin-console-url path))
+     (build-admin-console-url ""))))
+
+(defn go-to-nitrate-ac
+  ([]
+   (st/emit! (rt/nav-raw :href (build-admin-console-href))))
+  ([options]
+   (st/emit! (rt/nav-raw :href (build-admin-console-href options)))))
 
 (defn go-to-nitrate-ac-create-organization
   [event-origin]
