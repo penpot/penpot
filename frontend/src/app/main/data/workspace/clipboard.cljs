@@ -923,141 +923,140 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (if (page-ready? (:objects (dsh/lookup-page state)))
-          (let [file-id      (:current-file-id state)
-                page         (dsh/lookup-page state)
+        (let [page         (dsh/lookup-page state)
+              page-objects (:objects page)]
+          (if (page-ready? page-objects)
+            (let [file-id      (:current-file-id state)
 
-                media-idx    (->> (:images pdata)
-                                  (d/index-by :prev-id))
+                  media-idx    (->> (:images pdata)
+                                    (d/index-by :prev-id))
 
-                selected     (:selected pdata)
+                  selected     (:selected pdata)
 
-                objects      (:objects pdata)
+                  objects      (:objects pdata)
 
-                variant-props (:variant-properties pdata)
+                  variant-props (:variant-properties pdata)
 
-                position     (deref ms/mouse-position)
+                  position     (deref ms/mouse-position)
 
-                ;; Replace mode is only valid with a single selected shape.
-                ;; In that case we drop the pasted content at its position and
-                ;; delete it in the same transaction.
-                page-selected (dsh/lookup-selected state)
-                replace-id    (when (and (:replace pdata) (= 1 (count page-selected)))
-                                (first page-selected))
+                  ;; Replace mode is only valid with a single selected shape.
+                  ;; In that case we drop the pasted content at its position and
+                  ;; delete it in the same transaction.
+                  page-selected (dsh/lookup-selected state)
+                  replace-id    (when (and (:replace pdata) (= 1 (count page-selected)))
+                                  (first page-selected))
 
-                ;; Calculate position for the pasted elements
-                [candidate-parent-id
-                 delta
-                 index]      (calculate-paste-position state objects selected position replace-id)
+                  ;; Calculate position for the pasted elements
+                  [candidate-parent-id
+                   delta
+                   index]      (calculate-paste-position state objects selected position replace-id)
 
-                page-objects (:objects page)
+                  libraries    (dsh/lookup-libraries state)
+                  ldata        (dsh/lookup-file-data state file-id)
 
-                libraries    (dsh/lookup-libraries state)
-                ldata        (dsh/lookup-file-data state file-id)
+                  [parent-id
+                   frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
 
-                [parent-id
-                 frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
+                  index        (if (= candidate-parent-id parent-id)
+                                 index
+                                 0)
 
-                index        (if (= candidate-parent-id parent-id)
-                               index
-                               0)
+                  index        (if index
+                                 index
+                                 (dec (count (dm/get-in page-objects [parent-id :shapes]))))
 
-                index        (if index
-                               index
-                               (dec (count (dm/get-in page-objects [parent-id :shapes]))))
+                  selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
+                                 (into (d/ordered-set) (reverse selected))
+                                 selected)
 
-                selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
-                               (into (d/ordered-set) (reverse selected))
-                               selected)
+                  objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
 
-                objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
+                  all-objects  (merge page-objects objects)
 
-                all-objects  (merge page-objects objects)
+                  drop-cell    (when (ctl/grid-layout? all-objects parent-id)
+                                 (gslg/get-drop-cell frame-id all-objects position))
 
-                drop-cell    (when (ctl/grid-layout? all-objects parent-id)
-                               (gslg/get-drop-cell frame-id all-objects position))
+                  changes      (-> (pcb/empty-changes it)
+                                   (cll/generate-duplicate-changes all-objects page selected delta
+                                                                   libraries ldata file-id {:variant-props variant-props})
+                                   (pcb/amend-changes (partial process-rchange media-idx))
+                                   (pcb/amend-changes (partial change-add-obj-index objects selected index)))
 
-                changes      (-> (pcb/empty-changes it)
-                                 (cll/generate-duplicate-changes all-objects page selected delta
-                                                                 libraries ldata file-id {:variant-props variant-props})
-                                 (pcb/amend-changes (partial process-rchange media-idx))
-                                 (pcb/amend-changes (partial change-add-obj-index objects selected index)))
-
-                ;; Adds a resize-parents operation so the groups are
-                ;; updated. We add all the new objects
-                changes      (->> (:redo-changes changes)
-                                  (filter add-obj?)
-                                  (map :id)
-                                  (pcb/resize-parents changes))
-
-                changes      (if (some? replace-id)
-                               (second (cls/generate-delete-shapes changes #{replace-id} {}))
-                               changes)
-
-                orig-shapes  (map (d/getf all-objects) selected)
-
-                children-after (-> (pcb/get-objects changes)
-                                   (dm/get-in [parent-id :shapes])
-                                   set)
-
-                ;; At the end of the process, we want to select the new created shapes
-                ;; that are a direct child of the shape parent-id
-                selected     (into (d/ordered-set)
-                                   (comp
+                  ;; Adds a resize-parents operation so the groups are
+                  ;; updated. We add all the new objects
+                  changes      (->> (:redo-changes changes)
                                     (filter add-obj?)
-                                    (map (comp :id :obj))
-                                    (filter #(contains? children-after %)))
-                                   (:redo-changes changes))
+                                    (map :id)
+                                    (pcb/resize-parents changes))
 
-                changes      (cond-> changes
-                               (some? drop-cell)
-                               (pcb/update-shapes [parent-id]
-                                                  #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+                  changes      (if (some? replace-id)
+                                 (second (cls/generate-delete-shapes changes #{replace-id} {}))
+                                 changes)
 
-                add-component-to-variant? (and
-                                           ;; Any of the shapes is a head
-                                           (some ctk/instance-head? orig-shapes)
-                                           ;; Any ancestor of the destination parent is a variant
-                                           (->> (cfh/get-parents-with-self page-objects parent-id)
-                                                (some ctk/is-variant?)))
-                undo-id      (js/Symbol)]
+                  orig-shapes  (map (d/getf all-objects) selected)
 
-            (rx/concat
-             (->> (rx/from orig-shapes)
-                  (rx/map (fn [shape]
-                            (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
-                                  external-lib? (not= file-id (:component-file shape))
-                                  component     (ctn/get-component-from-shape shape libraries)
-                                  origin        "workspace:paste"]
+                  children-after (-> (pcb/get-objects changes)
+                                     (dm/get-in [parent-id :shapes])
+                                     set)
 
-                              ;; NOTE: we don't emit the create-shape event all the time for
-                              ;; avoid send a lot of events (that are not necessary); this
-                              ;; decision is made explicitly by the responsible team.
-                              (if (ctk/instance-head? shape)
-                                (ev/event {::ev/name "use-library-component"
-                                           ::ev/origin origin
-                                           :is-external-library external-lib?
-                                           :type (get shape :type)
-                                           :parent-type parent-type
-                                           :is-variant (ctk/is-variant? component)})
-                                (if (cfh/has-layout? objects (:parent-id shape))
-                                  (ev/event {::ev/name "layout-add-element"
+                  ;; At the end of the process, we want to select the new created shapes
+                  ;; that are a direct child of the shape parent-id
+                  selected     (into (d/ordered-set)
+                                     (comp
+                                      (filter add-obj?)
+                                      (map (comp :id :obj))
+                                      (filter #(contains? children-after %)))
+                                     (:redo-changes changes))
+
+                  changes      (cond-> changes
+                                 (some? drop-cell)
+                                 (pcb/update-shapes [parent-id]
+                                                    #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+
+                  add-component-to-variant? (and
+                                             ;; Any of the shapes is a head
+                                             (some ctk/instance-head? orig-shapes)
+                                             ;; Any ancestor of the destination parent is a variant
+                                             (->> (cfh/get-parents-with-self page-objects parent-id)
+                                                  (some ctk/is-variant?)))
+                  undo-id      (js/Symbol)]
+
+              (rx/concat
+               (->> (rx/from orig-shapes)
+                    (rx/map (fn [shape]
+                              (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
+                                    external-lib? (not= file-id (:component-file shape))
+                                    component     (ctn/get-component-from-shape shape libraries)
+                                    origin        "workspace:paste"]
+
+                                ;; NOTE: we don't emit the create-shape event all the time for
+                                ;; avoid send a lot of events (that are not necessary); this
+                                ;; decision is made explicitly by the responsible team.
+                                (if (ctk/instance-head? shape)
+                                  (ev/event {::ev/name "use-library-component"
                                              ::ev/origin origin
+                                             :is-external-library external-lib?
                                              :type (get shape :type)
-                                             :parent-type parent-type})
-                                  (ev/event {::ev/name "create-shape"
-                                             ::ev/origin origin
-                                             :type (get shape :type)
-                                             :parent-type parent-type})))))))
+                                             :parent-type parent-type
+                                             :is-variant (ctk/is-variant? component)})
+                                  (if (cfh/has-layout? objects (:parent-id shape))
+                                    (ev/event {::ev/name "layout-add-element"
+                                               ::ev/origin origin
+                                               :type (get shape :type)
+                                               :parent-type parent-type})
+                                    (ev/event {::ev/name "create-shape"
+                                               ::ev/origin origin
+                                               :type (get shape :type)
+                                               :parent-type parent-type})))))))
 
-             (rx/of (dwu/start-undo-transaction undo-id)
-                    (dch/commit-changes changes)
-                    (dws/select-shapes selected)
-                    (ptk/data-event :layout/update {:ids [frame-id]})
-                    (dwu/commit-undo-transaction undo-id)
-                    (when add-component-to-variant?
-                      (ev/event {::ev/name "add-component-to-variant"})))))
-          (rx/empty))))))
+               (rx/of (dwu/start-undo-transaction undo-id)
+                      (dch/commit-changes changes)
+                      (dws/select-shapes selected)
+                      (ptk/data-event :layout/update {:ids [frame-id]})
+                      (dwu/commit-undo-transaction undo-id)
+                      (when add-component-to-variant?
+                        (ev/event {::ev/name "add-component-to-variant"})))))
+            (rx/empty)))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)
