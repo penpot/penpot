@@ -100,7 +100,7 @@
     :profile-id profile-id
     :team-permissions team-permissions}))
 
-(def go-to-subscription-url (dm/str (u/join cf/public-uri "#/settings/subscriptions")))
+(def go-to-subscription-url (dm/str cf/public-uri "?screen=settings-subscription"))
 
 (def go-to-ac-url (build-admin-console-url ""))
 

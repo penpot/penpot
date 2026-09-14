@@ -3,7 +3,7 @@ import { RegisterPage } from "../pages/RegisterPage";
 
 test.beforeEach(async ({ page }) => {
   await RegisterPage.initWithLoggedOutUser(page);
-  await page.goto("/#/auth/register");
+  await page.goto("/?screen=auth-register");
 });
 
 test.describe("Register form errors", () => {

@@ -78,7 +78,7 @@ export class RegisterPage extends BasePage {
   }
 
   async goToVerifyToken(token = "verify-email-token") {
-    await this.page.goto(`/#/auth/verify-token?token=${token}`);
+    await this.page.goto(`/?screen=auth-verify-token&token=${token}`);
   }
 
   static async init(page) {

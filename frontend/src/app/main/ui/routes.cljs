@@ -20,7 +20,8 @@
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [reitit.core :as r]))
 
 (def ^:private sso-authorization-max-age-ms
   (* 5 60 1000))
@@ -29,6 +30,52 @@
   (atom {}))
 
 (def routes
+  "Enabled route names. Query-string routing: the `screen` query param
+  carries the route name (`?screen=<name>&params`); it is router-owned
+  and reserved, every other param travels as a plain query param."
+  (into #{:auth-login
+          :auth-register
+          :auth-register-validate
+          :auth-register-success
+          :auth-recovery-request
+          :auth-recovery
+          :auth-verify-token
+          :settings-profile
+          :settings-password
+          :settings-feedback
+          :settings-options
+          :settings-subscription
+          :settings-integrations
+          :settings-notifications
+          :settings-shortcuts
+          :frame-preview
+          :viewer
+          :render-sprite
+          :dashboard-members
+          :dashboard-invitations
+          :dashboard-webhooks
+          :dashboard-settings
+          :dashboard-recent
+          :dashboard-search
+          :dashboard-fonts
+          :dashboard-font-providers
+          :dashboard-libraries
+          :dashboard-files
+          :dashboard-deleted
+          :workspace}
+        (concat
+         (when (contains? cf/flags :admin-console)
+           [:nitrate-entry])
+         (when *assert*
+           [:debug-icons-preview
+            :debug-playground]))))
+
+;; TODO(next-version): delete the legacy hash table, `legacy-match`
+;; and the hash branch of `on-navigate` below. Legacy `#/…` URLs stop
+;; resolving after one Penpot version of compatibility.
+(def ^:private legacy-routes
+  "Pre-query-string route table, kept only to translate legacy
+  `#/…` hash URLs during the compatibility window."
   [["/auth"
     ["/login"             :auth-login]
     ["/register"          :auth-register]
@@ -78,6 +125,19 @@
     ["/deleted" :dashboard-deleted]]
 
    ["/workspace" :workspace]])
+
+(defonce ^:private legacy-router
+  (r/router legacy-routes))
+
+(defn- legacy-match
+  "Match a legacy hash path (`/workspace?...`, without the `#`) against
+  the pre-query-string table. Returns `{:name params}` or nil."
+  [hash-path]
+  (let [uri (u/uri hash-path)]
+    (when-let [match (r/match-by-path legacy-router (:path uri))]
+      {:name   (get-in match [:data :name])
+       :params (merge (:path-params match)
+                      (u/query-string->map (:query uri)))})))
 
 
 (defn- store-session-params
@@ -157,24 +217,45 @@
                                       :is-dashboard is-dashboard?}))
       (check-sso-and-navigate match send-event-info? url))))
 
+(declare on-query-navigate)
+
 (defn on-navigate
-  [router path send-event-info?]
+  "Query-string routing entry point. `token` is the history token (the
+  query string, `?screen=<name>&params`, or empty on bootstrap)."
+  [router token send-event-info?]
   (let [location        (.-location js/document)
-        [base-path qs]  (str/split path "?")
         location-path   (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        match           (rt/match router path)
-        empty-path?     (or (= base-path "") (= base-path "/"))
-        query-params    (u/query-string->map qs)]
+        legacy-hash     (.-hash location)]
 
     (cond
       (not valid-location?)
       (st/emit! (rt/assign-exception {:type :not-found}))
 
-      (some? match)
-      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
+      ;; TODO(next-version): delete with `legacy-routes`. Legacy `#/…`
+      ;; URLs translate to the query format once (replace, no extra
+      ;; history entry); the fragment never reaches the server, so this
+      ;; can only run client-side. Untranslatable hashes fall through
+      ;; to the normal query flow below.
+      (str/starts-with? legacy-hash "#/")
+      (if-let [{:keys [name params]} (legacy-match (subs legacy-hash 1))]
+        (st/emit! (rt/nav name params {::rt/replace true}))
+        (on-query-navigate router token send-event-info?))
 
       :else
+      (on-query-navigate router token send-event-info?))))
+
+(defn- on-query-navigate
+  [router token send-event-info?]
+  (let [token-query  (if (str/starts-with? (or token "") "?")
+                       (subs token 1)
+                       (or token ""))
+        query-params (u/query-string->map token-query)
+        empty-token? (str/blank? token-query)
+        match        (rt/match router token)]
+    (if (some? match)
+      (handle-sso-error-and-navigate match send-event-info? (rt/get-current-href))
+
       ;; We just recheck with an additional profile request; this
       ;; avoids some race conditions that causes unexpected redirects
       ;; on invitations workflows (and probably other cases).
@@ -190,7 +271,7 @@
                            (store-session-params query-params)
                            (st/emit! (rt/nav :auth-login)))
 
-                         empty-path?
+                         empty-token?
                          (let [default-team-id (:default-team-id profile)
                                last-team-id    (dtm/get-last-team-id)
                                team-id         (if (contains? teams last-team-id)

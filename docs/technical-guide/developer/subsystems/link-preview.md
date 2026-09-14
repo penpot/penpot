@@ -23,58 +23,50 @@ The whole feature is gated behind the `link-preview` flag (enabled with
 
 ## How it works, end to end
 
-The main obstacle is that Penpot is a SPA and all the routing state lives in
-the URL **fragment** (`#/workspace?file-id=...`). The fragment is never sent to
-the server, so with a plain URL the backend has no way to know which file the
-link points to. The feature is therefore built from three cooperating pieces:
+Penpot routes by query string: the screen and its context travel as
+normal query params (`/?screen=workspace&file-id=...`), so the backend
+sees everything directly. The feature is therefore built from three
+cooperating pieces:
 
 ```text
- user shares URL          crawler (Slackbot, ...)            regular browser
-       │                          │                                 │
-       │  https://host/?file-id=X#/workspace?...                    │
-       │                          │                                 │
-       ▼                          ▼                                 ▼
+  user shares URL          crawler (Slackbot, ...)            regular browser
+        │                          │                                 │
+        │  https://host/?screen=workspace&file-id=X                   │
+        │                          │                                 │
+        ▼                          ▼                                 ▼
    [frontend]                 [nginx]                           [nginx]
- mirrors context      user-agent matches crawler        user-agent is normal
- params before the    rewrite / -> /link-preview              serve SPA index.html
- fragment on every    (query string preserved)
- navigation                       │
-                                  ▼
-                             [backend]
-                        GET /link-preview?file-id=X
-                        query DB, render Open
-                        Graph HTML template
+   nothing special:     user-agent matches crawler        user-agent is normal
+   screen+ids are       rewrite / -> /link-preview              serve SPA index.html
+   already in the       (query string preserved)
+   query                       │
+                               ▼
+                          [backend]
+                     GET /link-preview?screen=workspace&file-id=X
+                     query DB, render Open
+                     Graph HTML template
 ```
 
-### 1. Frontend: mirroring context params on the query string
+### 1. Frontend: nothing to do
 
 File: `frontend/src/app/main/router.cljs`
 
-On every navigation, the `navigated` event reads the freshly stored
-`(:route state)` and syncs its `file-id`/`team-id`/`project-id` fragment
-params into the query string (before the fragment) using
-`history.replaceState`. Every other param in the URL is left untouched,
-so unrelated params owned by other code survive. The write is skipped
-when the resulting href already matches the address bar. The backend
-applies its own file > project > team priority, so no filtering happens
-on the frontend. The resulting URLs look like:
+No URL surgery is needed: navigation writes the query string
+directly (`screen` plus the screen params), so when the user copies
+the URL from the address bar and shares it, the context ids travel
+in a part of the URL that *does* reach the server. The resulting
+URLs look like:
 
 ```text
-https://design.penpot.app/?file-id=<uuid>#/workspace?team-id=...&file-id=...&page-id=...
-https://design.penpot.app/?team-id=<uuid>&project-id=<uuid>#/dashboard/recent?...
-https://design.penpot.app/?team-id=<uuid>#/dashboard/recent?team-id=...
+https://design.penpot.app/?screen=workspace&team-id=...&file-id=...&page-id=...
+https://design.penpot.app/?screen=dashboard-recent&team-id=...&project-id=...
+https://design.penpot.app/?screen=auth-login
 ```
 
-Routes without any of those ids (e.g. auth pages) clear them from the
-query string; `replaceState` only writes when the computed href differs
-from the current one, so no URL churn happens on navigation.
-
-This way, when the user copies the URL from the address bar and shares it, the
-context ids travel in a part of the URL that *does* reach the server.
-
-Legacy hash routes (`/workspace/:project-id/:file-id`, `/view/:file-id`,
-`/dashboard/team/:team-id/...`) were removed: those old URLs no longer
-redirect and resolve to the not-found page instead.
+Legacy hash URLs (`#/workspace?...`) from bookmarks and old emails
+are translated client-side to the query format on load (one-version
+compatibility window, see the query-string routing plan); the
+fragment never reaches the server, so this translation can only
+happen in the browser.
 
 ### 2. Nginx: detecting link preview crawlers
 
@@ -106,8 +98,12 @@ location = /link-preview {
 ```
 
 Regular browsers are not affected: they keep receiving the SPA `index.html`.
-If you self-host behind a different reverse proxy, you need to replicate this
-routing there.
+No SPA fallback rules are needed for app screens because the app lives
+on the single `/` path — the `try_files … /index.html` fallback and the
+`^/[^/]+` deep-path rule already cover everything, and no new path
+rules will ever be needed for routing. If you self-host behind a
+different reverse proxy, you only need to replicate the crawler
+rewrite on `/` there.
 
 ### 3. Backend: the `/link-preview` endpoint
 
@@ -163,12 +159,12 @@ equivalent `twitter:*` card tags and `<meta name="robots" content="noindex">`.
 The body contains a single script:
 
 ```html
-<script>location.replace((location.pathname.replace(/link-preview\/?$/, "") || "/") + location.search + location.hash);</script>
+<script>location.replace((location.pathname.replace(/link-preview\/?$/, "") || "/") + location.search);</script>
 ```
 
 so that if a *human* somehow lands on `/link-preview` (e.g. some clients let users
 click through to the fetched URL), the browser bounces back to the SPA root
-keeping the query string and the fragment, and the app loads normally. The
+keeping the query string, and the app loads normally. The
 redirect strips only the trailing `link-preview` segment so subpath
 deployments keep their prefix. Crawlers do not execute
 JavaScript, so they just read the meta tags.
@@ -240,8 +236,8 @@ indexing these preview pages, and responses are marked non-cacheable.
 
 3. In the browser (`http://localhost:3449`), open a file in the workspace and
    go back to the dashboard — leaving the workspace is what generates the
-   dashboard thumbnail. Verify the address bar now shows `?file-id=...`
-   before the `#`.
+   dashboard thumbnail. Verify the address bar now shows
+   `?screen=workspace&file-id=...` (screen plus context, no fragment).
 
 4. Hit the endpoint directly (bypasses the user-agent detection):
 
@@ -257,7 +253,7 @@ indexing these preview pages, and responses are marked non-cacheable.
    nginx → rewrite → backend path:
 
    ```bash
-   curl -A "Slackbot-LinkExpanding 1.0" "http://localhost:3449/?file-id=<FILE_ID>"
+   curl -A "Slackbot-LinkExpanding 1.0" "http://localhost:3449/?screen=workspace&file-id=<FILE_ID>"
    ```
 
    The same URL with a normal user-agent must return the SPA `index.html`.
@@ -287,9 +283,9 @@ indexing these preview pages, and responses are marked non-cacheable.
  * `backend/test/backend_tests/http_assets_test.clj`
    (`objects-handler-file-thumbnail-bucket-link-preview-flag`) — the
    `file-thumbnail` bucket is public only while the flag is enabled.
-  * `frontend/test/frontend_tests/router_test.cljs` — the `navigated` URL
-    surgery (mirror, skip, stale-strip, clear, unrelated-param
-    preservation, every-present-id, repeated-key, subpath base).
+   * `frontend/test/frontend_tests/router_test.cljs` — the `screen`
+     match/resolve rules (token building, missing/unknown screen,
+     repeated keys).
 
 ## Relevant files
 
@@ -300,6 +296,7 @@ indexing these preview pages, and responses are marked non-cacheable.
 | `backend/src/app/http/assets.clj` | Makes `file-thumbnail` bucket public under the flag |
 | `backend/src/app/http.clj`, `backend/src/app/main.clj` | Route registration and system wiring |
 | `common/src/app/common/flags.cljc` | `:link-preview` flag definition |
-| `frontend/src/app/main/router.cljs` | Mirrors context ids on the query string on navigation |
+| `frontend/src/app/main/router.cljs` | Screen match/resolve over the query string |
+| `frontend/src/app/main/ui/routes.cljs` | Route table plus the one-version legacy hash translation |
 | `docker/devenv/files/nginx.conf` | Devenv crawler detection and `/link-preview` routing |
 | `docker/images/files/nginx.conf.template` | Same routing for the production image |

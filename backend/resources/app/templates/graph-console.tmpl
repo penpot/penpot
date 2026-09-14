@@ -246,9 +246,9 @@ Graph Console
   if (!tree) return;
 
   // Make the loaded-session file name a link into the Penpot workspace.
-  // The legacy /#/workspace/<project-id>/<file-id> route resolves the team
-  // itself, and project-id is already in the files-tree payload; same
-  // origin as this page, so no base URL to configure.
+  // Query-string routing needs the team id up front; team, project and
+  // file ids are all in the files-tree payload; same origin as this
+  // page, so no base URL to configure.
   function linkLoadedFile(teams) {
     if (!penpotLink || !penpotLink.dataset.fileId) return;
     const fileId = penpotLink.dataset.fileId;
@@ -256,7 +256,7 @@ Graph Console
       (team.projects || []).forEach(function (project) {
         (project.files || []).forEach(function (file) {
           if (file.id === fileId) {
-            penpotLink.href = "/#/workspace/" + project.id + "/" + file.id;
+            penpotLink.href = "/?screen=workspace&team-id=" + team.id + "&file-id=" + file.id;
             penpotLink.title = "Open in Penpot";
             const crumbs = document.getElementById("graph-file-crumbs");
             if (crumbs) crumbs.textContent = team.name + " › " + project.name + " › ";
