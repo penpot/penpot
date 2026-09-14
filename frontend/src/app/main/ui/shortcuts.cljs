@@ -45,51 +45,81 @@
    "Tab"        "tab"
    " "          "space"})
 
+;; Mousetrap (the runtime shortcut matcher, vendored at
+;; frontend/packages/mousetrap) resolves a keydown positionally - via
+;; keyCode, `code`'s predecessor - ONLY for this punctuation set (its
+;; _KEYCODE_MAP). Letters and digits are NOT in that map, so Mousetrap falls
+;; back to `event.key.toLowerCase()` for those - i.e. glyph-based, exactly
+;; like before this map existed. Recording punctuation from `code` keeps it
+;; consistent with what actually triggers, regardless of layout (e.g. the
+;; key next to Right Shift on a US layout is always "Period", whether it
+;; types "." or ":" on a given ISO layout) - but extending this same
+;; positional treatment to letters/digits would reintroduce the identical
+;; class of bug for them (e.g. an AZERTY key typing "a" would be stored as
+;; "q", the label of its physical position, and never match what Mousetrap
+;; resolves for that keypress).
+(def ^:private code-name-map
+  {"Minus"        "-"
+   "Equal"        "="
+   "BracketLeft"  "["
+   "BracketRight" "]"
+   "Backslash"    "\\"
+   "Semicolon"    ";"
+   "Quote"        "'"
+   "Backquote"    "`"
+   "Comma"        ","
+   "Period"       "."
+   "Slash"        "/"})
+
+(defn- event->native
+  "goog.events wraps native events in a goog.events.BrowserEvent, which
+   copies `key` but not `code` - unwrap it to reach the underlying native
+   event, which is where `code` actually lives."
+  [^js event]
+  (if (fn? (.-getBrowserEvent event))
+    (or (.getBrowserEvent event) event)
+    event))
+
+(defn- normalize-key
+  [^js event]
+  (let [key  (.-key event)]
+    (when (and key (not (contains? modifier-keys key)))
+      (or (get key-name-map key)
+          (get code-name-map (.-code (event->native event)))
+          (some-> key .toLowerCase)))))
+
+(defn- event->modifier-parts
+  [^js event]
+  (cond-> []
+    (and (.-ctrlKey event)
+         (not (cf/check-platform? :macos)))
+    (conj "ctrl")
+
+    (and (.-metaKey event)
+         (cf/check-platform? :macos))
+    (conj "command")
+
+    (.-altKey event)
+    (conj "alt")
+
+    (.-shiftKey event)
+    (conj "shift")))
+
 (defn- keyboard-event->mousetrap
   [^js event]
-  (let [parts (cond-> []
-                (and (.-ctrlKey event)
-                     (not (cf/check-platform? :macos)))
-                (conj "ctrl")
-
-                (and (.-metaKey event)
-                     (cf/check-platform? :macos))
-                (conj "command")
-
-                (.-altKey event)
-                (conj "alt")
-
-                (.-shiftKey event)
-                (conj "shift"))
-        key   (.-key event)
-        key   (if (contains? modifier-keys key)
-                nil
-                (or (get key-name-map key)
-                    (.toLowerCase key)))]
+  (let [parts (event->modifier-parts event)
+        key   (normalize-key event)]
     (when key
       (str/join "+" (conj parts key)))))
 
 (defn- keyboard-event->display-parts
   [^js event]
-  (let [parts (cond-> []
-                (and (.-ctrlKey event)
-                     (not (cf/check-platform? :macos)))
-                (conj "ctrl")
-
-                (and (.-metaKey event)
-                     (cf/check-platform? :macos))
-                (conj "command")
-
-                (.-altKey event)
-                (conj "alt")
-
-                (.-shiftKey event)
-                (conj "shift"))
+  (let [parts (event->modifier-parts event)
         key   (.-key event)]
     (if (contains? modifier-keys key)
       {:modifiers parts :finalized? false}
       {:modifiers parts
-       :final-key (or (get key-name-map key) (.toLowerCase key))
+       :final-key (normalize-key event)
        :finalized? true})))
 
 (defn translation-keyname
