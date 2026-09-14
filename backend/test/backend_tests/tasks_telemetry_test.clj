@@ -135,6 +135,58 @@
       (th/run-task! :telemetry {:send? false :enabled? true})
       (t/is (not (:called? @mock))))))
 
+(t/deftest test-telemetry-excluded-host-predicate
+  (t/is (true? (cf/telemetry-excluded-host? "penpot.app")))
+  (t/is (true? (cf/telemetry-excluded-host? "penpot.dev")))
+  (t/is (true? (cf/telemetry-excluded-host? "design.penpot.app")))
+  (t/is (true? (cf/telemetry-excluded-host? "design.penpot.dev")))
+  (t/is (true? (cf/telemetry-excluded-host? "DESIGN.PENPOT.APP")))
+  (t/is (false? (cf/telemetry-excluded-host? "localhost")))
+  (t/is (false? (cf/telemetry-excluded-host? "example.com")))
+  (t/is (false? (cf/telemetry-excluded-host? "mypenpot.app.example.com")))
+  (t/is (false? (cf/telemetry-excluded-host? nil)))
+  (t/is (false? (cf/telemetry-excluded-host? ""))))
+
+(t/deftest test-telemetry-disabled-on-official-host-newsletter-only
+  ;; The limited newsletter report must not be sent from official
+  ;; instances, even when subscriptions exist.
+  (doseq [[idx public-uri] (map-indexed vector ["https://design.penpot.app"
+                                                "https://penpot.app"
+                                                "https://design.penpot.dev"
+                                                "https://penpot.dev"])]
+    (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
+                       :return nil}]
+      (with-redefs [cf/flags  #{}
+                    cf/config (assoc cf/config :public-uri public-uri)]
+        (th/create-profile* (+ 10 idx) {:is-active true
+                                        :props {:newsletter-updates true}})
+        (th/run-task! :telemetry {:send? true})
+        (t/is (not (:called? @mock)) (str "newsletter report must not send for " public-uri))))))
+
+(t/deftest test-telemetry-excluded-skips-subscriptions-query
+  ;; On official hosts the subscriptions query must not even run,
+  ;; since nothing is going to be sent.
+  (with-mocks [mock {:target 'app.tasks.telemetry/get-subscriptions
+                     :return []}]
+    (with-redefs [cf/flags  #{}
+                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+      (th/create-profile* 1 {:is-active true
+                             :props {:newsletter-updates true}})
+      (th/run-task! :telemetry {:send? true})
+      (t/is (not (:called? @mock))))))
+
+(t/deftest test-telemetry-enabled-still-sends-on-official-host
+  ;; An explicitly enabled telemetry still reports on official hosts;
+  ;; only the implicit newsletter fallback is excluded.
+  (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
+                     :return nil}]
+    (with-redefs [cf/flags  #{:telemetry}
+                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+      (th/create-profile* 1 {:is-active true
+                             :props {:newsletter-updates true}})
+      (th/run-task! :telemetry {:send? true :enabled? true})
+      (t/is (:called? @mock)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUDIT-EVENT BATCH COLLECTION TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
