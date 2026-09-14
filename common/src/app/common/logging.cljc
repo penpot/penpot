@@ -113,13 +113,17 @@
   [level]
   (contains? valid-levels level))
 
-(defn- valid-logger?
+(defn valid-logger?
   "True when `logger` is a usable logger name."
   [logger]
   (and (string? logger) (not (str/blank? logger))))
 
 (defn enabled?
-  "Check if logger has enabled logging for given level."
+  "Check if logger has enabled logging for given level.
+
+  On CLJS, invalid loggers and levels warn and return false so logging
+  can never crash the app; on CLJ, invalid levels still throw
+  IllegalArgumentException."
   [logger level]
   #?(:clj
      (let [logger (LoggerFactory/getLogger ^String logger)]
@@ -140,7 +144,7 @@
 
        (not (valid-level? level))
        (do
-         (js/console.warn "ignoring invalid log level:" (pr-str level) "logger:" logger)
+         (js/console.warn "ignoring invalid log level:" (pr-str level) "logger:" (pr-str logger))
          false)
 
        :else
@@ -184,7 +188,7 @@
       (throw (ex-info hint {:level level})))))
 
 #?(:cljs
-   (defn- level->color-safe
+   (defn level->color-safe
      "Like `level->color` but falls back to a neutral gray instead of throwing."
      [level]
      (if (valid-level? level)
@@ -192,7 +196,7 @@
        "#969896")))
 
 #?(:cljs
-   (defn- level->name-safe
+   (defn level->name-safe
      "Like `level->name` but falls back to \"UNK\" instead of throwing."
      [level]
      (if (valid-level? level)
@@ -333,46 +337,51 @@
      ;; dropped, so a corrupt record stays visible; the warn below keeps
      ;; it noticeable. The normal `log!` path never reaches here because
      ;; `enabled?` already drops such records before `emit-log`.
-     (when (or (not (valid-level? level))
-               (enabled? logger level))
-       (when-not (valid-level? level)
-         (js/console.warn "invalid level on log record, using fallback rendering:" (pr-str level) "logger:" logger))
-       (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color-safe level))
-             mstyles (str/ffmt "font-weight: 300; color: %" (level->color-safe level))
-             ts      (ct/format-inst (ct/now) "kk:mm:ss.SSSS")
-             header  (str/concat "%c" (level->name-safe level) " " ts  " [" logger "] ")
-             message (str/concat header "%c" @message)]
+     (if-not (valid-logger? logger)
+       (js/console.warn "ignoring log record with invalid logger:" (pr-str logger))
+       (when (or (not (valid-level? level))
+                 (enabled? logger level))
+         (when-not (valid-level? level)
+           (js/console.warn "invalid level on log record, using fallback rendering:" (pr-str level) "logger:" (pr-str logger)))
+         (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color-safe level))
+               mstyles (str/ffmt "font-weight: 300; color: %" (level->color-safe level))
+               ts      (ct/format-inst (ct/now) "kk:mm:ss.SSSS")
+               header  (str/concat "%c" (level->name-safe level) " " ts  " [" logger "] ")
+               message (str/concat header "%c" @message)]
 
-         (js/console.group message hstyles mstyles)
-         (doseq [[type n v] (get-special-props props)]
-           (case type
-             :js (js/console.log n v)
-             :error (if (ex/error? v)
-                      (js/console.error n (pr-str v))
-                      (js/console.error n v))))
+           (js/console.group message hstyles mstyles)
+           (doseq [[type n v] (get-special-props props)]
+             (case type
+               :js (js/console.log n v)
+               :error (if (ex/error? v)
+                        (js/console.error n (pr-str v))
+                        (js/console.error n v))))
 
-         (when (ex/exception? cause)
-           (let [data    (ex-data cause)
-                 explain (or (:explain data)
-                             (ex/explain data))]
-             (when explain
-               (js/console.log "Explain:")
-               (js/console.log explain))
+           (when (ex/exception? cause)
+             (let [data    (ex-data cause)
+                   explain (or (:explain data)
+                               (ex/explain data))]
+               (when explain
+                 (js/console.log "Explain:")
+                 (js/console.log explain))
 
-             (when (and data (not explain))
-               (js/console.log "Data:")
-               (js/console.log (pp/pprint-str data)))
+               (when (and data (not explain))
+                 (js/console.log "Data:")
+                 (js/console.log (pp/pprint-str data)))
 
-             (js/console.log @trace #_(.-stack cause))))
+               (js/console.log @trace #_(.-stack cause))))
 
-         (js/console.groupEnd message)))))
+           (js/console.groupEnd message))))))
 
 #?(:clj  (add-watch log-record ::default slf4j-log-handler)
    :cljs (add-watch log-record ::default console-log-handler))
 
 (defmacro set-level!
   "A CLJS-only macro for set logging level to current (that matches the
-  current namespace) or user specified logger."
+  current namespace) or user specified logger.
+
+  Callers passing a dynamic level must check `valid-level?` first;
+  `level->int` throws on anything outside `valid-levels`."
   ([level]
    (when (:ns &env)
      `(.set ^js/Map loggers ~(str *ns*) (level->int ~level))))

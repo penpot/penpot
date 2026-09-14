@@ -65,8 +65,7 @@
   ([ns level]
    (let [ns    (coerce-keyword ns)
          level (coerce-keyword level)]
-     (if (and (some? ns)
-              (not (str/blank? (name ns)))
+     (if (and (l/valid-logger? (some-> ns name))
               (l/valid-level? level))
        (l/set-level! (name ns) level)
        (js/console.warn "ignoring invalid logging config:" (pr-str ns) (pr-str level))))))
