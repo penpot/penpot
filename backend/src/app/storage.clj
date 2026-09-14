@@ -48,17 +48,7 @@
   "upload-session")
 
 (def valid-buckets
-  #{"file-media-object"
-    "team-font-variant"
-    "file-object-thumbnail"
-    "file-thumbnail"
-    "profile"
-    "organization"
-    tempfile-bucket
-    upload-session-bucket
-    "file-data"
-    "file-data-fragment"
-    "file-change"})
+  stsch/metadata-buckets)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State

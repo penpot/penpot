@@ -91,6 +91,12 @@
 
 (sm/register! ::metadata schema:metadata)
 
+(def metadata-buckets
+  "Canonical bucket set, derived from the schema dispatch entries
+  (`nnext` skips `:multi` and its options map). `app.storage/valid-buckets`
+  aliases it so the list lives in exactly one place."
+  (into #{} (map first) (nnext schema:metadata)))
+
 (defn- ->bucket
   [v]
   (cond
