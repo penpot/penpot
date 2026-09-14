@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PenpotMcpServer, shouldRegisterDeveloperTools } from "./PenpotMcpServer";
+import { PenpotMcpServer, shouldRegisterDeveloperTools, shouldStartReplServer } from "./PenpotMcpServer";
 
 test("registers developer tools in local devenv mode", () => {
     assert.equal(shouldRegisterDeveloperTools(true, false), true);
@@ -12,6 +12,22 @@ test("does not register developer tools in multi-user devenv mode", () => {
 
 test("does not register developer tools when devenv mode is disabled", () => {
     assert.equal(shouldRegisterDeveloperTools(false, false), false);
+});
+
+test("starts REPL server in single-user mode when enabled", () => {
+    assert.equal(shouldStartReplServer(true, false), true);
+});
+
+test("does not start REPL server in multi-user mode even when enabled", () => {
+    assert.equal(shouldStartReplServer(true, true), false);
+});
+
+test("does not start REPL server when disabled in single-user mode", () => {
+    assert.equal(shouldStartReplServer(false, false), false);
+});
+
+test("does not start REPL server when disabled in multi-user mode", () => {
+    assert.equal(shouldStartReplServer(false, true), false);
 });
 
 // ── Pure function tests ────────────────────────────────────────
@@ -125,6 +141,79 @@ test("constructor does not create ReplServer when PENPOT_MCP_REPL_ENABLE is 'fal
     }
 });
 
+test("constructor does not create ReplServer in multi-user mode even with DEVENV", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevReplEnable = process.env.PENPOT_MCP_REPL_ENABLE;
+    const prevPorts = setUniqueEnv();
+    process.env.PENPOT_MCP_DEVENV = "true";
+    delete process.env.PENPOT_MCP_REPL_ENABLE;
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(true);
+        assert.equal(server.hasReplServer(), false);
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_REPL_ENABLE", prevReplEnable);
+    }
+});
+
+test("constructor does not create ReplServer in multi-user mode even with explicit REPL_ENABLE", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevReplEnable = process.env.PENPOT_MCP_REPL_ENABLE;
+    const prevPorts = setUniqueEnv();
+    delete process.env.PENPOT_MCP_DEVENV;
+    process.env.PENPOT_MCP_REPL_ENABLE = "true";
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(true);
+        assert.equal(server.hasReplServer(), false);
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_REPL_ENABLE", prevReplEnable);
+    }
+});
+
+test("replHost defaults to localhost and ignores SERVER_HOST", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevServerHost = process.env.PENPOT_MCP_SERVER_HOST;
+    const prevReplHost = process.env.PENPOT_MCP_REPL_HOST;
+    const prevPorts = setUniqueEnv();
+    process.env.PENPOT_MCP_DEVENV = "true";
+    process.env.PENPOT_MCP_SERVER_HOST = "0.0.0.0";
+    delete process.env.PENPOT_MCP_REPL_HOST;
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(false);
+        assert.equal(server.hasReplServer(), true);
+        assert.equal(server.replHost, "localhost");
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_SERVER_HOST", prevServerHost);
+        restoreOrDelete("PENPOT_MCP_REPL_HOST", prevReplHost);
+    }
+});
+
+test("replHost respects PENPOT_MCP_REPL_HOST", async () => {
+    const prevDevEnv = process.env.PENPOT_MCP_DEVENV;
+    const prevReplHost = process.env.PENPOT_MCP_REPL_HOST;
+    const prevPorts = setUniqueEnv();
+    process.env.PENPOT_MCP_DEVENV = "true";
+    process.env.PENPOT_MCP_REPL_HOST = "0.0.0.0";
+    let server: PenpotMcpServer | undefined;
+    try {
+        server = new PenpotMcpServer(false);
+        assert.equal(server.hasReplServer(), true);
+        assert.equal(server.replHost, "0.0.0.0");
+    } finally {
+        await server?.stop();
+        restoreEnv(prevDevEnv, prevPorts);
+        restoreOrDelete("PENPOT_MCP_REPL_HOST", prevReplHost);
+    }
+});
+
 // ── Helpers ────────────────────────────────────────────────────
 
 function setUniqueEnv() {
@@ -132,15 +221,22 @@ function setUniqueEnv() {
     const prevServer = process.env.PENPOT_MCP_SERVER_PORT;
     const prevWs = process.env.PENPOT_MCP_WEBSOCKET_PORT;
     const prevRepl = process.env.PENPOT_MCP_REPL_PORT;
+    const prevReplHost = process.env.PENPOT_MCP_REPL_HOST;
     process.env.PENPOT_MCP_SERVER_PORT = String(ports.server);
     process.env.PENPOT_MCP_WEBSOCKET_PORT = String(ports.ws);
     process.env.PENPOT_MCP_REPL_PORT = String(ports.repl);
-    return { prevServer, prevWs, prevRepl };
+    delete process.env.PENPOT_MCP_REPL_HOST;
+    return { prevServer, prevWs, prevRepl, prevReplHost };
 }
 
 function restoreEnv(
     devEnv: string | undefined,
-    ports: { prevServer: string | undefined; prevWs: string | undefined; prevRepl: string | undefined }
+    ports: {
+        prevServer: string | undefined;
+        prevWs: string | undefined;
+        prevRepl: string | undefined;
+        prevReplHost: string | undefined;
+    }
 ) {
     if (devEnv !== undefined) {
         process.env.PENPOT_MCP_DEVENV = devEnv;
@@ -150,6 +246,7 @@ function restoreEnv(
     restoreOrDelete("PENPOT_MCP_SERVER_PORT", ports.prevServer);
     restoreOrDelete("PENPOT_MCP_WEBSOCKET_PORT", ports.prevWs);
     restoreOrDelete("PENPOT_MCP_REPL_PORT", ports.prevRepl);
+    restoreOrDelete("PENPOT_MCP_REPL_HOST", ports.prevReplHost);
 }
 
 function restoreOrDelete(key: string, value: string | undefined) {
