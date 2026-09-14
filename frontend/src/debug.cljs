@@ -52,9 +52,16 @@
 
 (defn ^:export set-logging
   ([level]
-   (l/set-level! :app (keyword level)))
+   (let [level (keyword level)]
+     (if (contains? l/valid-levels level)
+       (l/set-level! "app" level)
+       (js/console.warn "ignoring invalid log level:" (pr-str level)))))
   ([ns level]
-   (l/set-level! (keyword ns) (keyword level))))
+   (let [ns    (keyword ns)
+         level (keyword level)]
+     (if (and (some? ns) (contains? l/valid-levels level))
+       (l/set-level! (name ns) level)
+       (js/console.warn "ignoring invalid logging config:" (pr-str ns) (pr-str level))))))
 
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events
