@@ -330,7 +330,7 @@
   {:name ::auth
    :compile (constantly wrap-auth)})
 
-(defn- constant-time-eq?
+(defn constant-time-eq?
   "Compare strings in constant time to prevent timing attacks."
   [^String a ^String b]
   (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
@@ -350,7 +350,7 @@
                 (handler))
             {::yres/status 403}))
         {::yres/status 403}))
-    (fn [_ _]
+    (fn [_]
       {::yres/status 403})))
 
 (def shared-key-auth

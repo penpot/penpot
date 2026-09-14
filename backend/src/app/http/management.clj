@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.middleware :as mw]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
@@ -57,11 +58,11 @@
        (if key
          (fn [request]
            (if-let [key' (yreq/get-header request "x-shared-key")]
-             (if (= key key')
+             (if (mw/constant-time-eq? key key')
                (handler request)
                {::yres/status 403})
              {::yres/status 403}))
-         (fn [_ _]
+         (fn [_]
            {::yres/status 403}))))})
 
 (defmethod ig/init-key ::routes
