@@ -50,16 +50,24 @@
 
 (l/set-level! :debug)
 
+(defn- coerce-keyword
+  "Coerce `v` to a keyword when it is a string or keyword, nil otherwise."
+  [v]
+  (when (or (keyword? v) (string? v))
+    (keyword v)))
+
 (defn ^:export set-logging
   ([level]
-   (let [level (keyword level)]
-     (if (contains? l/valid-levels level)
+   (let [level (coerce-keyword level)]
+     (if (l/valid-level? level)
        (l/set-level! "app" level)
        (js/console.warn "ignoring invalid log level:" (pr-str level)))))
   ([ns level]
-   (let [ns    (keyword ns)
-         level (keyword level)]
-     (if (and (some? ns) (contains? l/valid-levels level))
+   (let [ns    (coerce-keyword ns)
+         level (coerce-keyword level)]
+     (if (and (some? ns)
+              (not (str/blank? (name ns)))
+              (l/valid-level? level))
        (l/set-level! (name ns) level)
        (js/console.warn "ignoring invalid logging config:" (pr-str ns) (pr-str level))))))
 

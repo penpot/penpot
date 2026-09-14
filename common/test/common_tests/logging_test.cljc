@@ -29,15 +29,29 @@
      (t/testing "unknown levels never throw and disable logging"
        (t/is (false? (l/enabled? "logging-test-probe-xyz" nil)))
        (t/is (false? (l/enabled? "logging-test-probe-xyz" :bogus))))
-     (t/testing "fatal filters exactly like error"
-       (t/is (= (l/enabled? "logging-test-probe-xyz" :fatal)
-                (l/enabled? "logging-test-probe-xyz" :error))))
+     (t/testing "invalid loggers never throw and disable logging"
+       (t/is (false? (l/enabled? nil :error)))
+       (t/is (false? (l/enabled? "" :error)))
+       (t/is (false? (l/enabled? 123 :error))))
+     (t/testing "unknown logger defaults to disabled"
+       (t/is (false? (l/enabled? "logging-test-probe-xyz" :fatal)))
+       (t/is (false? (l/enabled? "logging-test-probe-xyz" :error))))
+     (t/testing "fatal filters exactly like error when enabled"
+       (l/setup! {"logging-test-fatal-xyz" :debug})
+       (t/is (true? (l/enabled? "logging-test-fatal-xyz" :fatal)))
+       (t/is (= (l/enabled? "logging-test-fatal-xyz" :fatal)
+                (l/enabled? "logging-test-fatal-xyz" :error)))
+       (l/setup! {"logging-test-fatal-xyz" :error})
+       (t/is (true? (l/enabled? "logging-test-fatal-xyz" :fatal)))
+       (t/is (false? (l/enabled? "logging-test-fatal-xyz" :debug)))
+       (t/is (false? (l/enabled? "logging-test-fatal-xyz" :trace))))
      (t/testing "setup! skips invalid entries and installs valid ones"
        (t/is (do (l/setup! {"logging-test-setup-xyz" :error
                             "logging-test-bad-xyz"   nil})
                  true))
        (t/is (true? (l/enabled? "logging-test-setup-xyz" :error)))
-       (t/is (false? (l/enabled? "logging-test-setup-xyz" :bogus))))
+       (t/is (false? (l/enabled? "logging-test-setup-xyz" :bogus)))
+       (t/is (false? (l/enabled? "logging-test-bad-xyz" :error))))
      (t/testing "console handler survives a nil-level record"
        (t/is (nil? (l/console-log-handler
                     nil nil nil
@@ -48,6 +62,10 @@
 
 #?(:clj
    (t/deftest backend-strict-test
+     (t/testing "fatal does not throw"
+       (t/is (do (l/enabled? "app" :fatal) true)))
      (t/testing "JVM branch still rejects invalid levels loudly"
        (t/is (try (l/enabled? "app" nil) false
+                  (catch IllegalArgumentException _ true)))
+       (t/is (try (l/enabled? "app" :bogus) false
                   (catch IllegalArgumentException _ true))))))
