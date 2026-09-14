@@ -195,7 +195,7 @@
                           (mtx/label (or (some-> object :backend) (::backend storage))
                                      "unknown")]))
      (catch Throwable cause
-       (l/wrn :hint "unable to record storage metric" :cause cause)))))
+       (l/dbg :hint "unable to record storage metric" :cause cause)))))
 
 (defn- emit-dedup!
   "Record a deduplication outcome. Never fails."
@@ -205,7 +205,21 @@
       (mtx/run! metrics :id :storage-dedup :inc 1
                 :labels [(name result) (mtx/label bucket "unknown")]))
     (catch Throwable cause
-      (l/wrn :hint "unable to record storage dedup metric" :cause cause))))
+      (l/dbg :hint "unable to record storage dedup metric" :cause cause))))
+
+(defn- resolve-label-object
+  "Return the object used for metric labels: the value itself when it is
+  already an object, else the database row, read only when instrumented.
+  Must be called before mutating the row (e.g. del-object!). Never throws."
+  [storage object-or-id]
+  (if (impl/object? object-or-id)
+    object-or-id
+    (when (::mtx/metrics storage)
+      (try
+        ;; NOTE: get-database-object already returns a StorageObject.
+        (get-database-object (db/get-connectable storage)
+                             (:id object-or-id object-or-id))
+        (catch Throwable _ nil)))))
 
 (defn get-object
   [storage id]
@@ -304,15 +318,16 @@
   "Mark object as touched."
   [storage object-or-id]
   (assert (valid-storage? storage))
-  (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds  (db/get-connectable storage)
-        res (-> (db/update! ds :storage-object
-                            {:touched-at (ct/now)}
-                            {:id id})
-                (db/get-update-count)
-                (pos?))]
+  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+        ds     (db/get-connectable storage)
+        object (resolve-label-object storage object-or-id)
+        res    (-> (db/update! ds :storage-object
+                               {:touched-at (ct/now)}
+                               {:id id})
+                   (db/get-update-count)
+                   (pos?))]
     (when res
-      (emit-op! storage "touch" (-> object-or-id meta :bucket) object-or-id))
+      (emit-op! storage "touch" (-> object meta :bucket) object))
     res))
 
 (defn get-object-data
@@ -362,15 +377,16 @@
 (defn del-object!
   [storage object-or-id]
   (assert (valid-storage? storage))
-  (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds  (db/get-connectable storage)
-        res (-> (db/update! ds :storage-object
-                            {:deleted-at (ct/now)}
-                            {:id id})
-                (db/get-update-count)
-                (pos?))]
+  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+        ds     (db/get-connectable storage)
+        object (resolve-label-object storage object-or-id)
+        res    (-> (db/update! ds :storage-object
+                               {:deleted-at (ct/now)}
+                               {:id id})
+                   (db/get-update-count)
+                   (pos?))]
     (when res
-      (emit-op! storage "del" (-> object-or-id meta :bucket) object-or-id))
+      (emit-op! storage "del" (-> object meta :bucket) object))
     res))
 
 (dm/export impl/calculate-hash)

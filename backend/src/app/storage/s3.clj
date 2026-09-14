@@ -99,6 +99,9 @@
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
    [::endpoint {:optional true} ::sm/uri]
+   ;; Physical target id for metric labels. Only :default exists today;
+   ;; reserved for per-bucket S3 routing, do not add more targets here
+   ;; until that plan lands.
    [::target-id {:optional true} :keyword]
    [::mtx/metrics {:optional true} ::mtx/metrics]])
 
