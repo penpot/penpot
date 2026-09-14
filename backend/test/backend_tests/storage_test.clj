@@ -454,6 +454,29 @@
       (t/is (= 0 (:freeze res)))
       (t/is (= 1 (:delete res))))))
 
+(t/deftest storage-gc-touched-defers-corrupt-metadata
+  ;; A non-map metadata row neither blocks the chunk nor gets
+  ;; collected: it is logged and deferred exactly one day, keeping its
+  ;; metadata intact for a later repair.
+  (let [now     (ct/now)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poison  (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (let [row (th/db-exec-one! ["select metadata::text as metadata, touched_at from storage_object where id = ?" poison])]
+      (t/is (= "[]" (:metadata row)))
+      ;; inst-ms: timestamptz keeps micros, the frozen clock has nanos.
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))))
+
 (def ^:private migration-0155-fixtures
   ;; [id transit-metadata]: production-shaped legacy rows (nil payload
   ;; means a NULL column).

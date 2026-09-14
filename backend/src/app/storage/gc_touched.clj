@@ -111,6 +111,16 @@
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-delete-in-bulk (ct/now) ids])))
 
+(def ^:private sql:defer-in-bulk
+  "UPDATE storage_object
+      SET touched_at = ?
+    WHERE id = ANY(?::uuid[])")
+
+(defn- defer-in-bulk!
+  [conn ids timestamp]
+  (let [ids (db/create-array conn "uuid" ids)]
+    (db/exec-one! conn [sql:defer-in-bulk timestamp ids])))
+
 ;; NOTE: A getter that retrieves the key which will be used for group
 ;; ids; previously we have no value, then we introduced the
 ;; `:reference` prop, and then it is renamed to `:bucket` and now is
@@ -175,13 +185,17 @@
               :hint (dm/fmt "unknown reference '%'" bucket))))
 
 (defn process-chunk!
-  [{:keys [::db/conn]} chunk]
-  (reduce-kv (fn [[nfo ndo] bucket objects]
-               (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
-                 [(+ nfo nfo')
-                  (+ ndo ndo')]))
-             [0 0]
-             (d/group-by lookup-bucket identity #{} chunk)))
+  [{:keys [::db/conn]} chunk poison-ids]
+  (when (seq poison-ids)
+    (defer-in-bulk! conn poison-ids (ct/plus (ct/now) {:days 1})))
+  (if (seq chunk)
+    (reduce-kv (fn [[nfo ndo] bucket objects]
+                 (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
+                   [(+ nfo nfo')
+                    (+ ndo ndo')]))
+               [0 0]
+               (d/group-by lookup-bucket identity #{} chunk))
+    [0 0]))
 
 (def ^:private sql:get-touched-storage-objects
   "SELECT so.*
@@ -194,21 +208,36 @@
      SKIP LOCKED
     LIMIT 10")
 
+(defn- try-decode-row
+  "Decode a touched row, capturing corrupt metadata as poison instead
+  of aborting the whole chunk. Poison rows are deferred by the caller."
+  [row]
+  (try
+    [:ok (impl/decode-row row)]
+    (catch Throwable cause
+      (l/err :hint "storage object with corrupt metadata, deferring evaluation"
+             :id (str (:id row))
+             :cause cause)
+      [:poison (:id row)])))
+
 (defn get-chunk
   [conn timestamp]
-  (->> (db/exec! conn [sql:get-touched-storage-objects timestamp])
-       (map impl/decode-row)
-       (not-empty)))
+  (let [grouped (->> (db/exec! conn [sql:get-touched-storage-objects timestamp])
+                     (map try-decode-row)
+                     (group-by first))]
+    {:chunk  (not-empty (mapv second (:ok grouped)))
+     :poison (not-empty (mapv second (:poison grouped)))}))
 
 (defn- process-touched!
   [{:keys [::db/pool ::timestamp] :as cfg}]
   (loop [freezed 0
          deleted 0]
-    (if-let [chunk (get-chunk pool timestamp)]
-      (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
-        (recur (long (+ freezed nfo))
-               (long (+ deleted ndo))))
-      {:freeze freezed :delete deleted})))
+    (let [{:keys [chunk poison]} (get-chunk pool timestamp)]
+      (if (or (seq chunk) (seq poison))
+        (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk poison)]
+          (recur (long (+ freezed nfo))
+                 (long (+ deleted ndo))))
+        {:freeze freezed :delete deleted}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
