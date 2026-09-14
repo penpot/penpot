@@ -560,11 +560,13 @@
                       (js/console.error "Clipboard error:" cause)
                       (rx/empty))))]
 
-          (->> (clipboard/from-navigator default-options)
-               (rx/mapcat #(.text %))
-               (rx/map decode-entry)
-               (rx/take 1)
-               (rx/catch on-error)))))))
+          (if (page-ready? (dsh/lookup-page-objects state))
+            (->> (clipboard/from-navigator default-options)
+                 (rx/mapcat #(.text %))
+                 (rx/map decode-entry)
+                 (rx/take 1)
+                 (rx/catch on-error))
+            (rx/empty)))))))
 
 (defn- selected-frame? [state]
   (let [selected (dsh/lookup-selected state)
@@ -814,14 +816,13 @@
                       target-index (cfh/get-position-on-parent page-objects replace-id)]
                   [parent-id delta target-index])
 
-                ;; No selection, or selection detached from the shape tree
-                ;; (selected shapes unreachable from the root, so there is
-                ;; no base shape): paste at the pointer position. Selecting
-                ;; the root itself (uuid/zero) is a valid workflow handled
-                ;; by the frame branches below.
+                ;; No selection, or selection without a base shape that is
+                ;; not exactly the single root: paste at the pointer
+                ;; position. Selecting the root itself (uuid/zero) is a
+                ;; valid workflow handled by the frame branches below.
                 (or (empty? page-selected)
                     (and (nil? base)
-                         (not (contains? page-selected uuid/zero))))
+                         (not (= #{uuid/zero} page-selected))))
                 (let [frame-id (ctst/top-nested-frame page-objects position)
                       delta    (gpt/subtract position orig-pos)]
                   [frame-id delta])
