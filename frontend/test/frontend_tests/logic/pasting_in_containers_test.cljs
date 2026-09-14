@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 (ns frontend-tests.logic.pasting-in-containers-test
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
@@ -15,10 +16,15 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.svg-upload :as dwsvg]
+   [app.main.streams :as ms]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
    [frontend-tests.helpers.pages :as thp]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -667,3 +673,195 @@
            ;;There was 3 components, now there are still 3
            (t/is (= 3 (count components)))
            (t/is (= 3 (count components')))))))))
+
+(t/deftest paste-with-unloaded-page-is-noop
+  "Pasting while the page is not loaded (e.g. right after opening the workspace) is ignored instead of crashing"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-blue {:name "frame-blue"}))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page       (cthf/current-page file)
+          page-id    (cthf/current-page-id file)
+          file-id    (:id file)
+          frame-blue (cths/get-shape file :frame-blue)
+          features   #{}
+          version    67
+
+          pdata      (thp/simulate-copy-shape #{(:id frame-blue)} (:objects page) {(:id  file) file} page file features version)
+
+          drop-page  (ptk/reify ::drop-current-page
+                       ptk/UpdateEvent
+                       (update [_ state]
+                         (update-in state [:files file-id :data :pages-index] dissoc page-id)))
+
+          events
+          [drop-page
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file' (ths/get-file-from-state new-state)
+               page' (cthf/current-page file')]
+
+           ;; ==== Check
+           ;; The page is still not loaded and nothing was pasted anywhere
+           (t/is (some? file'))
+           (t/is (nil? page'))))))))
+
+(t/deftest paste-with-detached-selection-pastes-by-position
+  "Pasting with a selection of shapes detached from the shape tree falls back to pasting at the pointer position"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red {:name "frame-red"})
+                       (ctho/add-frame :frame-blue {:name "frame-blue"}))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page       (cthf/current-page file)
+          page-id    (cthf/current-page-id file)
+          file-id    (:id file)
+          frame-red  (cths/get-shape file :frame-red)
+          frame-blue (cths/get-shape file :frame-blue)
+          features   #{}
+          version    67
+
+          pdata      (thp/simulate-copy-shape #{(:id frame-blue)} (:objects page) {(:id  file) file} page file features version)
+
+          ;; Detach the selected shape from the tree (it stays in the
+          ;; objects map but is no longer reachable from the root)
+          detach-and-select (ptk/reify ::detach-and-select
+                              ptk/UpdateEvent
+                              (update [_ state]
+                                (-> state
+                                    (update-in [:files file-id :data :pages-index page-id :objects uuid/zero :shapes]
+                                               (fn [shapes] (vec (remove #(= % (:id frame-red)) shapes))))
+                                    (assoc-in [:workspace-local :selected] #{(:id frame-red)}))))
+
+          _          (rx/push! ms/mouse-position (gpt/point 1000 1000))
+
+          events
+          [detach-and-select
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (rx/push! ms/mouse-position nil)
+         (let [;; ==== Get
+               file'       (ths/get-file-from-state new-state)
+               page'       (cthf/current-page file')
+               frame-blue' (cths/get-shape file' :frame-blue)
+               copied'     (find-copied-shape frame-blue' page' uuid/zero)]
+
+           ;; ==== Check
+           ;; The copy lands at the pointer position on the root
+           (t/is (some? copied'))
+           (t/is (= 1000 (:x copied')))
+           (t/is (= 1000 (:y copied')))))))))
+
+(t/deftest create-shape-with-detached-selection-uses-cursor-frame
+  "Creating a shape with a selection detached from the shape tree falls back to the frame under the cursor"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red {:name "frame-red" :x 1000 :y 1000 :width 100 :height 100})
+                       (ctho/add-frame :frame-blue {:name "frame-blue" :x 0 :y 0 :width 500 :height 500})
+                       (ctho/add-rect :rect1))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page-id    (cthf/current-page-id file)
+          file-id    (:id file)
+          rect1      (cths/get-shape file :rect1)
+          frame-blue (cths/get-shape file :frame-blue)
+
+          ;; Detach the selected shape from the tree (it stays in the
+          ;; objects map but is no longer reachable from the root)
+          detach-and-select (ptk/reify ::detach-and-select
+                              ptk/UpdateEvent
+                              (update [_ state]
+                                (-> state
+                                    (update-in [:files file-id :data :pages-index page-id :objects uuid/zero :shapes]
+                                               (fn [shapes] (vec (remove #(= % (:id rect1)) shapes))))
+                                    (assoc-in [:workspace-local :selected] #{(:id rect1)}))))
+
+          events
+          [detach-and-select
+           (dwsh/create-and-add-shape :rect 100 100 {:name "detached-rect"
+                                                     :width 50 :height 50
+                                                     :x 100 :y 100})]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'  (ths/get-file-from-state new-state)
+               page'  (cthf/current-page file')
+               created' (->> (vals (:objects page'))
+                             (filter #(= (:name %) "detached-rect"))
+                             first)]
+
+           ;; ==== Check
+           ;; The shape is created inside the frame under the cursor
+           (t/is (some? created'))
+           (t/is (= (:id frame-blue) (:parent-id created')))))))))
+
+(t/deftest svg-upload-with-detached-selection-uses-cursor-frame
+  "Uploading an SVG with a selection detached from the shape tree falls back to the frame under the cursor"
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red {:name "frame-red" :x 1000 :y 1000 :width 100 :height 100})
+                       (ctho/add-frame :frame-blue {:name "frame-blue" :x 0 :y 0 :width 500 :height 500})
+                       (ctho/add-rect :rect1))
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page-id    (cthf/current-page-id file)
+          file-id    (:id file)
+          rect1      (cths/get-shape file :rect1)
+          frame-blue (cths/get-shape file :frame-blue)
+
+          ;; Detach the selected shape from the tree (it stays in the
+          ;; objects map but is no longer reachable from the root)
+          detach-and-select (ptk/reify ::detach-and-select-svg
+                              ptk/UpdateEvent
+                              (update [_ state]
+                                (-> state
+                                    (update-in [:files file-id :data :pages-index page-id :objects uuid/zero :shapes]
+                                               (fn [shapes] (vec (remove #(= % (:id rect1)) shapes))))
+                                    (assoc-in [:workspace-local :selected] #{(:id rect1)}))))
+
+          svg-data   {:name "test.svg"
+                      :attrs {:width 100 :height 100}
+                      :content [{:tag :rect
+                                 :attrs {:x "10" :y "10" :width "20" :height "20"}}]}
+
+          events
+          [detach-and-select
+           (dwsvg/add-svg-shapes nil svg-data (gpt/point 100 100) nil)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'  (ths/get-file-from-state new-state)
+               page'  (cthf/current-page file')
+               created' (->> (vals (:objects page'))
+                             (filter #(= (:name %) "test"))
+                             first)]
+
+           ;; ==== Check
+           ;; The shape is created inside the frame under the cursor
+           (t/is (some? created'))
+           (t/is (= (:id frame-blue) (:parent-id created')))))))))

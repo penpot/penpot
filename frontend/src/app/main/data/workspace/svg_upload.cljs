@@ -90,7 +90,7 @@
                                  (ctst/top-nested-frame objects position)
                                  base-id)
 
-               parent-id       (if (or selected-frame? (empty? selected))
+               parent-id       (if (or selected-frame? (empty? selected) (nil? base))
                                  frame-id
                                  base-id)
 
