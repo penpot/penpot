@@ -271,7 +271,7 @@
         original-exp (:exp (tokens/decode cfg (:token session)))
         ;; Force renewal by setting modified-at to 7 hours ago
         old-session  (assoc session :modified-at (ct/minus (ct/now) (ct/duration {:hours 7})))
-        response    (handler (make-dummy-request {:cookies {"auth-token" (:token old-session)}}))
+        response    (handler (th/make-dummy-request {:cookies {"auth-token" (:token old-session)}}))
         {:keys [token claims]} (get response ::http/auth-data)
         new-exp     (:exp claims)]
     (t/is (some? original-exp) "original token should have :exp")
