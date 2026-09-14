@@ -599,14 +599,14 @@
   "Enriches a profile map with subscription information from Nitrate.
   Adds a :subscription field containing the user's license details.
   Returns the original profile unchanged if the request fails for a reason
-  other than Nitrate being unreachable. When Nitrate is unreachable the
-  `:nitrate-unavailable` exception propagates so the request is rejected."
+  other than Nitrate being unreachable or unconfigured. When Nitrate is
+  unreachable or unconfigured the exception propagates so the request is rejected."
   [cfg profile]
   (try
     (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
       (assoc profile :subscription subscription))
     (catch Throwable cause
-      (if (= :nitrate-unavailable (-> cause ex-data :type))
+      (if (contains? #{:nitrate-unavailable :nitrate-not-configured} (-> cause ex-data :type))
         (throw cause)
         (do
           (l/error :hint "failed to get nitrate licence"
