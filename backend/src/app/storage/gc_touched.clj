@@ -128,13 +128,12 @@
   [{:keys [id metadata]}]
   (or (some-> metadata :bucket)
       (do
-        ;; The decode already normalizes legacy rows, so reaching this
-        ;; fallback means the 0155 normalization migration has not run
-        ;; over this row yet. Keep it working, but make it visible.
+        ;; Only reachable when the metadata column is NULL: the decode
+        ;; always sets :bucket on non-nil metadata (0155 also backfills
+        ;; NULL rows). Keep working, but make it visible.
         (l/wrn :hint "storage object without bucket metadata, using fallback"
                :id (str id))
-        (or (some-> metadata :reference d/name)
-            sto/default-bucket))))
+        sto/default-bucket)))
 
 (defn- process-objects!
   [conn has-refs? bucket objects]

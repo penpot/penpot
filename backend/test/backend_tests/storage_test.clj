@@ -15,6 +15,7 @@
    [app.storage.fs :as-alias sto.fs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as-alias sto.s3]
+   [app.storage.schema :as stsch]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -23,6 +24,8 @@
    [mockery.core :refer [with-mocks]]
    [promesa.core :as p])
   (:import
+   (org.postgresql.util
+    PGobject)
    (software.amazon.awssdk.services.s3
     S3AsyncClient)
    (software.amazon.awssdk.services.s3.model
@@ -436,6 +439,76 @@
     ;; and marked for deletion without any additional delay
     (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
       (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus now {:seconds 1}))))))
+
+(t/deftest storage-gc-touched-null-metadata
+  ;; A NULL metadata column (predates any normalization) flows through
+  ;; the lookup fallback with a warning instead of breaking the GC loop.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          ::sto/touch true
+                                          :content-type "text/plain"})]
+    (th/db-exec! ["update storage_object set metadata = null where id = ?" (:id object)])
+    (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res))))))
+
+(def ^:private migration-0155-fixtures
+  ;; [id transit-metadata]: production-shaped legacy rows.
+  [["11111111-1111-1111-1111-111111111111"
+    "{\"~:reference\":\"~:file-media-object\",\"~:content-type\":\"image/png\",\"~:hash\":\"blake2b:aaa\"}"]
+   ["22222222-2222-2222-2222-222222222222"
+    "{\"~:content-type\":\"image/svg+xml\"}"]
+   ["33333333-3333-3333-3333-333333333333"
+    "{\"~:bucket\":\"tempfile\",\"~:reference\":\"~:tempfile\",\"~:content-type\":\"application/zip\"}"]
+   ["44444444-4444-4444-4444-444444444444"
+    "{\"~:bucket\":\"tempfile\",\"~:content-type\":\"application/zip\",\"~:upload-id\":\"~u86907e95-1cb8-8122-8008-4eb7ba07d89d\",\"~:chunk-index\":3}"]])
+
+(defn- run-migration-0155!
+  ;; Re-runs the 0155 statements (not migratus: it already applied at
+  ;; bootstrap) over the fixture rows above.
+  []
+  (let [sql (-> (io/resource "app/migrations/sql/0155-normalize-storage-object-metadata.sql")
+                (slurp))
+        no-comments (->> (.split ^String sql "\n")
+                         (remove #(.startsWith ^String (str/trim %) "--"))
+                         (str/join "\n"))]
+    (doseq [stmt (->> (.split ^String no-comments ";")
+                      (map str/trim)
+                      (remove str/blank?))]
+      (th/db-exec! [stmt]))))
+
+(defn- get-metadata-by-id
+  [id]
+  (:metadata (th/db-exec-one! ["select metadata from storage_object where id = ?"
+                               (parse-uuid id)])))
+
+(t/deftest storage-migration-0155-normalizes-legacy-rows
+  (doseq [[id mdata] migration-0155-fixtures]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata) values (?, 'fs', ?::jsonb)"
+                  (parse-uuid id) mdata]))
+  (run-migration-0155!)
+  (let [mdata (fn [id] (stsch/decode-metadata (get-metadata-by-id id)))]
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/png"
+              :hash "blake2b:aaa"}
+             (mdata "11111111-1111-1111-1111-111111111111")))
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/svg+xml"}
+             (mdata "22222222-2222-2222-2222-222222222222")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "33333333-3333-3333-3333-333333333333")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "44444444-4444-4444-4444-444444444444"))))
+  ;; second run changes nothing (idempotent)
+  (let [raw    (fn [] (mapv #(.getValue ^PGobject (get-metadata-by-id %))
+                            (map first migration-0155-fixtures)))
+        before (raw)]
+    (run-migration-0155!)
+    (t/is (= before (raw)))))
 
 (t/deftest storage-gc-deleted-immediate
   (let [storage (-> (:app.storage/storage th/*system*)

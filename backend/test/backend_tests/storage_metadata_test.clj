@@ -84,21 +84,25 @@
     (t/is (= "text/plain;~:x" (:content-type mdata)))))
 
 (t/deftest encode-writes-transit-by-default
-  (let [encoded (stsch/encode-metadata {:bucket "file-media-object"
-                                        :content-type "image/png"
-                                        :hash "blake2b:9f1c2e"})
-        value   (.getValue ^PGobject encoded)]
-    (t/is (string? value))
-    (t/is (str/includes? value "\"~:bucket\""))
-    (t/is (not (str/includes? value "\"~:reference\"")))))
+  ;; Pinned off: without the binding this test inherits the ambient
+  ;; config and proves nothing where the flag is set.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+    (let [encoded (stsch/encode-metadata {:bucket "file-media-object"
+                                          :content-type "image/png"
+                                          :hash "blake2b:9f1c2e"})
+          value   (.getValue ^PGobject encoded)]
+      (t/is (string? value))
+      (t/is (str/includes? value "\"~:bucket\""))
+      (t/is (not (str/includes? value "\"~:reference\""))))))
 
 (t/deftest encode-normalizes-legacy-input
-  (let [encoded (stsch/encode-metadata {:reference :file-media-object
-                                        :content-type "image/png"})
-        value   (.getValue ^PGobject encoded)
-        decoded (stsch/decode-metadata encoded)]
-    (t/is (= "file-media-object" (:bucket decoded)))
-    (t/is (not (str/includes? value "\"~:reference\"")))))
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+    (let [encoded (stsch/encode-metadata {:reference :file-media-object
+                                          :content-type "image/png"})
+          value   (.getValue ^PGobject encoded)
+          decoded (stsch/decode-metadata encoded)]
+      (t/is (= "file-media-object" (:bucket decoded)))
+      (t/is (not (str/includes? value "\"~:reference\""))))))
 
 (t/deftest encode-writes-plain-json-with-flag
   (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
@@ -117,11 +121,12 @@
         (t/is (= (parse-uuid file-id) (:file-id decoded)))))))
 
 (t/deftest encode-accepts-string-uuids
-  (let [decoded (stsch/decode-metadata
-                 (stsch/encode-metadata {:bucket "tempfile"
-                                         :content-type "application/zip"
-                                         :profile-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"}))]
-    (t/is (uuid? (:profile-id decoded)))))
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+    (let [decoded (stsch/decode-metadata
+                   (stsch/encode-metadata {:bucket "tempfile"
+                                           :content-type "application/zip"
+                                           :profile-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"}))]
+      (t/is (uuid? (:profile-id decoded))))))
 
 (t/deftest encode-rejects-unknown-bucket
   (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
@@ -169,8 +174,32 @@
   (let [mdata   {:bucket "tempfile"
                  :content-type "application/zip"
                  :profile-id (parse-uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d")}
-        transit (stsch/decode-metadata (stsch/encode-metadata mdata))
+        transit (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+                  (stsch/decode-metadata (stsch/encode-metadata mdata)))
         json    (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
                   (stsch/decode-metadata (stsch/encode-metadata mdata)))]
     (t/is (= transit json))
     (t/is (= mdata json))))
+
+(t/deftest flag-on-and-off-differ-only-in-encoding-family
+  ;; The Phase 2 rollback contract: flipping the flag changes how the
+  ;; same logical metadata hits the disk, never what it means.
+  (let [mdata   {:bucket "file-media-object"
+                 :content-type "image/png"
+                 :hash "blake2b:9f1c2e"}
+        transit (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+                  (.getValue ^PGobject (stsch/encode-metadata mdata)))
+        json    (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+                  (.getValue ^PGobject (stsch/encode-metadata mdata)))]
+    (t/is (str/includes? transit "\"~:bucket\""))
+    (t/is (str/includes? json "\"bucket\""))
+    (t/is (not (str/includes? json "\"~:")))
+    (t/is (= (stsch/decode-metadata (pgobject transit))
+             (stsch/decode-metadata (pgobject json))))))
+
+(t/deftest decode-json-keeps-hash-byte-exact
+  ;; Dedup matches on the hash string; it must survive the JSON
+  ;; roundtrip untouched.
+  (let [mdata (stsch/decode-metadata
+               (pgobject "{\"bucket\":\"file-media-object\",\"content-type\":\"image/png\",\"hash\":\"blake2b:9f1c2e\"}"))]
+    (t/is (= "blake2b:9f1c2e" (:hash mdata)))))
