@@ -108,9 +108,15 @@
   "The set of log levels accepted on every runtime."
   #{:trace :debug :info :warn :error :fatal})
 
-(defn- valid-level?
+(defn valid-level?
+  "True when `level` is accepted on every runtime."
   [level]
   (contains? valid-levels level))
+
+(defn- valid-logger?
+  "True when `logger` is a usable logger name."
+  [logger]
+  (and (string? logger) (not (str/blank? logger))))
 
 (defn enabled?
   "Check if logger has enabled logging for given level."
@@ -126,12 +132,20 @@
          :fatal (and (.isErrorEnabled ^Logger logger) logger)
          (throw (IllegalArgumentException. (str "invalid level:"  level)))))
      :cljs
-     (if (valid-level? level)
-       (>= (level->int level)
-           (get-logger-level logger))
+     (cond
+       (not (valid-logger? logger))
+       (do
+         (js/console.warn "ignoring invalid logger:" (pr-str logger))
+         false)
+
+       (not (valid-level? level))
        (do
          (js/console.warn "ignoring invalid log level:" (pr-str level) "logger:" logger)
-         false))))
+         false)
+
+       :else
+       (>= (level->int level)
+           (get-logger-level logger)))))
 
 (defn- level->color
   [level]
@@ -315,6 +329,10 @@
    (defn console-log-handler
      {:no-doc true}
      [_ _ _ {:keys [::logger ::props ::level ::cause ::trace ::message]}]
+     ;; Invalid levels render with a fallback style instead of being
+     ;; dropped, so a corrupt record stays visible; the warn below keeps
+     ;; it noticeable. The normal `log!` path never reaches here because
+     ;; `enabled?` already drops such records before `emit-log`.
      (when (or (not (valid-level? level))
                (enabled? logger level))
        (when-not (valid-level? level)
@@ -366,10 +384,16 @@
    (defn setup!
      [{:as config}]
      (run! (fn [[logger level]]
-             (if (valid-level? level)
-               (let [logger (if (keyword? logger) (name logger) logger)]
-                 (.set ^js/Map loggers logger (level->int level)))
-               (js/console.warn "ignoring invalid log level in setup!:" (pr-str level) "logger:" (pr-str logger))))
+             (let [logger (if (keyword? logger) (name logger) logger)]
+               (cond
+                 (not (valid-logger? logger))
+                 (js/console.warn "ignoring invalid logger in setup!:" (pr-str logger))
+
+                 (not (valid-level? level))
+                 (js/console.warn "ignoring invalid log level in setup!:" (pr-str level) "logger:" (pr-str logger))
+
+                 :else
+                 (.set ^js/Map loggers logger (level->int level)))))
            config)))
 
 (defmacro raw!
