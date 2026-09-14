@@ -398,7 +398,7 @@
                         (contains? params :block)
                         (do
                           (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
-                          (db/delete! conn :http-session {:profile-id (:id profile)})
+                          (session/invalidate-all cfg (:id profile))
 
                           {::yres/status  200
                            ::yres/headers {"content-type" "text/plain"}

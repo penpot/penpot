@@ -9,7 +9,7 @@
 - LDAP login validates credentials against the external directory, fetches identity data, then logs in or registers a matching Penpot profile. LDAP registration is not a separate Penpot signup flow.
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
-- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/http-storage-filedata-subtleties`.
+- HTTP/session parsing details such as cookie/header precedence and SameSite behavior are in `mem:backend/http-storage-filedata-subtleties`.
 
 ## Permission model
 
