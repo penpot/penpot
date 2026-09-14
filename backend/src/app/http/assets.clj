@@ -59,7 +59,9 @@
     204 "served"
     307 "served"
     401 "unauthorized"
+    403 "unauthorized"
     404 "not-found"
+    500 "error"
     "error"))
 
 (defn- emit-asset!
@@ -170,7 +172,11 @@
                    {::yres/status 404}
 
                    :else
-                   (serve-object cfg obj))]
+                   (try
+                     (serve-object cfg obj)
+                     (catch Throwable cause
+                       (emit-asset! cfg "by-id" obj 500)
+                       (throw cause))))]
     (emit-asset! cfg "by-id" obj (::yres/status response))
     response))
 
@@ -190,12 +196,18 @@
             share-id   (get-share-id request)
             perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
+          ;; The response stays 404 to avoid leaking existence, but the
+          ;; metric records the internal 403 outcome.
           (do
-            (emit-asset! cfg route nil 404)
+            (emit-asset! cfg route nil 403)
             {::yres/status 404})
           (let [sobj (sto/get-object storage (kf mobj))]
             (if sobj
-              (let [response (serve-object cfg sobj)]
+              (let [response (try
+                               (serve-object cfg sobj)
+                               (catch Throwable cause
+                                 (emit-asset! cfg route sobj 500)
+                                 (throw cause)))]
                 (emit-asset! cfg route sobj (::yres/status response))
                 response)
               (do

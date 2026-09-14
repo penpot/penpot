@@ -7,6 +7,7 @@
 (ns backend-tests.http-assets-test
   (:require
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as-alias http]
@@ -23,6 +24,7 @@
    [clojure.test :as t]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
+   [mockery.core :refer [with-mocks]]
    [yetti.response :as-alias yres])
   (:import
    io.prometheus.client.Counter
@@ -69,8 +71,8 @@
 
 (defn- make-metrics-cfg
   "Build a handler cfg map with an isolated metrics instance."
-  [storage]
-  (assoc (make-handler-cfg storage) ::mtx/metrics (make-metrics)))
+  [storage metrics]
+  (assoc (make-handler-cfg storage) ::mtx/metrics metrics))
 
 (defn- counter-value
   [metrics labels]
@@ -858,7 +860,7 @@
   (let [storage  (-> (:app.storage/storage th/*system*)
                      (configure-storage-backend))
         metrics  (make-metrics)
-        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        cfg      (make-metrics-cfg storage metrics)
         object   (create-storage-object! storage "file-media-object" "file content")
         request  {:path-params {:id (str (:id object))}}
         response (assets/objects-handler cfg request)]
@@ -869,7 +871,7 @@
   (let [storage  (-> (:app.storage/storage th/*system*)
                      (configure-storage-backend))
         metrics  (make-metrics)
-        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        cfg      (make-metrics-cfg storage metrics)
         request  {:path-params {:id (str (uuid/next))}}
         response (assets/objects-handler cfg request)]
     (t/is (= 404 (::yres/status response)))
@@ -879,7 +881,7 @@
   (let [storage  (-> (:app.storage/storage th/*system*)
                      (configure-storage-backend))
         metrics  (make-metrics)
-        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        cfg      (make-metrics-cfg storage metrics)
         object   (create-storage-object! storage "profile" "profile photo")
         request  {:path-params {:id (str (:id object))}}
         response (assets/objects-handler cfg request)]
@@ -890,7 +892,7 @@
   (let [storage  (-> (:app.storage/storage th/*system*)
                      (configure-storage-backend))
         metrics  (make-metrics)
-        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        cfg      (make-metrics-cfg storage metrics)
         owner    (th/create-profile* 1)
         team     (th/create-team* 1 {:profile-id (:id owner)})
         project  (th/create-project* 1 {:profile-id (:id owner)
@@ -906,7 +908,66 @@
     (t/is (= 204 (::yres/status response)))
     (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))
 
+(t/deftest file-objects-handler-no-perms-emits-unauthorized-metric
+  ;; Permission-denied file-media requests answer 404 but are counted as
+  ;; unauthorized (no existence is leaked over HTTP).
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        stranger (th/create-profile* 2)
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id stranger)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "unknown" "unknown" "unauthorized"])))
+    (t/is (= 0.0 (counter-value metrics ["by-file-media-id" "unknown" "unknown" "not-found"])))))
+
 (t/deftest asset-requests-default-metrics-definition
   (let [defs main/default-metrics]
     (t/is (= "penpot_storage_asset_requests_total" (::mdef/name (:storage-asset-requests defs))))
     (t/is (= ["route" "backend" "bucket" "result"] (::mdef/labels (:storage-asset-requests defs))))))
+
+(t/deftest objects-handler-serve-failure-emits-error-and-rethrows
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        object   (create-storage-object! storage "file-media-object" "file content")
+        request  {:path-params {:id (str (:id object))}}]
+    (with-mocks [_mock {:target 'app.storage/object->relative-path
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (assets/objects-handler cfg request))))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "file-media-object" "error"])))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest objects-handler-s3-backend-emits-served-metric
+  ;; The S3 path is exercised without a real object store: the row is
+  ;; inserted directly and the presigned URL is mocked.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        id       (uuid/next)]
+    (db/insert! th/*pool* :storage-object
+                {:id id
+                 :size 9
+                 :backend "s3"
+                 :metadata (db/tjson {:bucket "file-media-object"
+                                      :content-type "text/plain"})
+                 :status "valid"})
+    (with-mocks [_mock {:target 'app.storage/get-object-url
+                        :return (fn [_ _ & _] (u/uri "https://example.invalid/object"))}]
+      (let [response (assets/objects-handler cfg {:path-params {:id (str id)}})]
+        (t/is (= 307 (::yres/status response)))))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "s3" "file-media-object" "served"])))))

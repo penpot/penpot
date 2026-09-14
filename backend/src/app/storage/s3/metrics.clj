@@ -15,21 +15,13 @@
    software.amazon.awssdk.metrics.MetricCollection
    software.amazon.awssdk.metrics.MetricPublisher))
 
-(defn- label
-  [value fallback]
-  (cond
-    (string? value)  value
-    (keyword? value) (name value)
-    (number? value)  (str value)
-    :else            fallback))
-
 (defn- operation-label
   [operation]
-  (label operation "unknown"))
+  (mtx/label operation "unknown"))
 
 (defn- target-label
   [target]
-  (label target "default"))
+  (mtx/label target "default"))
 
 (defn- result-label
   [successful?]

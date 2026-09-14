@@ -181,25 +181,21 @@
 (dm/export impl/wrap-with-hash)
 (dm/export impl/object?)
 
-(defn- label
-  [value fallback]
-  (cond
-    (string? value)  value
-    (keyword? value) (name value)
-    :else            fallback))
-
 (defn- emit-op!
   "Record a logical storage operation. Never fails: metrics must not change
   storage behavior."
-  [storage op bucket]
-  (try
-    (when-let [metrics (::mtx/metrics storage)]
-      (mtx/run! metrics :id :storage-operations :inc 1
-                :labels [op
-                         (label bucket "unknown")
-                         (label (::backend storage) "unknown")]))
-    (catch Throwable cause
-      (l/wrn :hint "unable to record storage metric" :cause cause))))
+  ([storage op bucket]
+   (emit-op! storage op bucket nil))
+  ([storage op bucket object]
+   (try
+     (when-let [metrics (::mtx/metrics storage)]
+       (mtx/run! metrics :id :storage-operations :inc 1
+                 :labels [op
+                          (mtx/label bucket "unknown")
+                          (mtx/label (or (some-> object :backend) (::backend storage))
+                                     "unknown")]))
+     (catch Throwable cause
+       (l/wrn :hint "unable to record storage metric" :cause cause)))))
 
 (defn- emit-dedup!
   "Record a deduplication outcome. Never fails."
@@ -207,7 +203,7 @@
   (try
     (when-let [metrics (::mtx/metrics storage)]
       (mtx/run! metrics :id :storage-dedup :inc 1
-                :labels [(name result) (label bucket "unknown")]))
+                :labels [(name result) (mtx/label bucket "unknown")]))
     (catch Throwable cause
       (l/wrn :hint "unable to record storage dedup metric" :cause cause))))
 
@@ -313,8 +309,7 @@
                             {:id id})
                 (db/get-update-count)
                 (pos?))]
-    (emit-op! storage "touch" (when (impl/object? object-or-id)
-                                (-> object-or-id meta :bucket)))
+    (emit-op! storage "touch" (-> object-or-id meta :bucket) object-or-id)
     res))
 
 (defn get-object-data
@@ -324,7 +319,7 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (emit-op! storage "get-data" (-> object meta :bucket))
+    (emit-op! storage "get-data" (-> object meta :bucket) object)
     (-> (impl/resolve-backend storage (:backend object))
         (impl/get-object-data object))))
 
@@ -334,7 +329,7 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (emit-op! storage "get-bytes" (-> object meta :bucket))
+    (emit-op! storage "get-bytes" (-> object meta :bucket) object)
     (-> (impl/resolve-backend storage (:backend object))
         (impl/get-object-bytes object))))
 
@@ -367,8 +362,7 @@
         res (db/update! ds :storage-object
                         {:deleted-at (ct/now)}
                         {:id id})]
-    (emit-op! storage "del" (when (impl/object? object-or-id)
-                              (-> object-or-id meta :bucket)))
+    (emit-op! storage "del" (-> object-or-id meta :bucket) object-or-id)
     (pos? (db/get-update-count res))))
 
 (dm/export impl/calculate-hash)
