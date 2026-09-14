@@ -31,3 +31,4 @@ Penpot in production lives with both: horizontal-scale deployments accept "exact
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.
 - Storage backend resolution, dedup, bucket behavior, object lifecycle, and file-data lifecycle: `mem:backend/storage`.
+- Storage operation metrics (S3 API calls, logical ops, dedup, asset requests) and the logical-bucket vs physical-target distinction: `mem:backend/storage` (Metrics section).

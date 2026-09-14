@@ -142,6 +142,42 @@
     ::mdef/labels []
     ::mdef/type :histogram}
 
+   :storage-s3-requests
+   {::mdef/name "penpot_storage_s3_requests_total"
+    ::mdef/help "Total S3 API calls performed by the storage backend."
+    ::mdef/labels ["operation" "target" "result"]
+    ::mdef/type :counter}
+
+   :storage-s3-retries
+   {::mdef/name "penpot_storage_s3_retries_total"
+    ::mdef/help "Total SDK retries observed on S3 API calls."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :counter}
+
+   :storage-s3-timing
+   {::mdef/name "penpot_storage_s3_timing"
+    ::mdef/help "S3 API call timing (milliseconds)."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :histogram}
+
+   :storage-operations
+   {::mdef/name "penpot_storage_operations_total"
+    ::mdef/help "Logical storage operations by Penpot bucket."
+    ::mdef/labels ["op" "bucket" "backend"]
+    ::mdef/type :counter}
+
+   :storage-dedup
+   {::mdef/name "penpot_storage_dedup_total"
+    ::mdef/help "Storage deduplication outcomes."
+    ::mdef/labels ["result" "bucket"]
+    ::mdef/type :counter}
+
+   :storage-asset-requests
+   {::mdef/name "penpot_storage_asset_requests_total"
+    ::mdef/help "Asset requests served by app.http.assets."
+    ::mdef/labels ["route" "backend" "bucket" "result"]
+    ::mdef/type :counter}
+
    :http-server-dispatch-timing
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
@@ -305,6 +341,7 @@
    {::http.assets/path              (cf/get :assets-path)
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
+    ::mtx/metrics                   (ig/ref ::mtx/metrics)
     ::sto/storage                   (ig/ref ::sto/storage)
     ::session/manager               (ig/ref ::session/manager)
     ::setup/props                   (ig/ref ::setup/props)
@@ -514,6 +551,7 @@
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
     ::sto/backends
     {:s3 (ig/ref :app.storage.s3/backend)
      :fs (ig/ref :app.storage.fs/backend)
@@ -533,6 +571,7 @@
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
                             (cf/get :objects-storage-s3-io-threads))
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
 
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
