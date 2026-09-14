@@ -33,7 +33,7 @@ test("Typography at a collapsed caret only styles newly typed text", async ({
   await workspace.waitForFirstRender();
 
   const fontSize = workspace.textEditor.fontSize;
-  const editorInput = page.locator("#text-editor-wasm-input");
+  const editorInput = page.getByTestId("text-editor-container");
 
   // Draw a text box, focus it, and type some text; the caret ends up collapsed
   // after it.
