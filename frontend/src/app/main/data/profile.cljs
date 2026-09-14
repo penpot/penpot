@@ -77,8 +77,7 @@
   (let [data (ex-data cause)]
     (if (and (= :authorization (:type data))
              (= :challenge-required (:code data)))
-      (let [path (rt/get-current-path)
-            href (->> path
+      (let [href (->> (rt/get-current-href)
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
         (rx/of (rt/nav-raw :href href)))
