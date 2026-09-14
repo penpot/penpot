@@ -44,8 +44,7 @@
    :selected #{}
    :collapsed #{}
    :hover nil
-   :share-id ""
-   :file-comments-users []})
+   :share-id ""})
 
 (declare fetch-comment-threads)
 (declare fetch-bundle)
