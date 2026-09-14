@@ -14,13 +14,20 @@
    [app.http.access-token :as actoken]
    [app.http.assets :as assets]
    [app.http.session :as session]
+   [app.main :as main]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token :as access-token]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
-   [yetti.response :as-alias yres]))
+   [integrant.core :as ig]
+   [yetti.response :as-alias yres])
+  (:import
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial
@@ -54,6 +61,24 @@
   [storage]
   {::sto/storage storage
    ::assets/path "/assets"})
+
+(defn- make-metrics
+  []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:storage-asset-requests])}))
+
+(defn- make-metrics-cfg
+  "Build a handler cfg map with an isolated metrics instance."
+  [storage]
+  (assoc (make-handler-cfg storage) ::mtx/metrics (make-metrics)))
+
+(defn- counter-value
+  [metrics labels]
+  (let [collector (mtx/get-collector metrics :storage-asset-requests)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
 
 ;; ----------------------------------------------------------------
 ;; Tests: get-id
@@ -847,3 +872,64 @@
                    ::session/profile-id (:id stranger)}
         response  (assets/objects-handler cfg request)]
     (t/is (= 204 (::yres/status response)))))
+
+;; ----------------------------------------------------------------
+;; Tests: asset request metrics
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-emits-served-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        object   (create-storage-object! storage "file-media-object" "file content")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest objects-handler-emits-not-found-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        request  {:path-params {:id (str (uuid/next))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "unknown" "unknown" "not-found"])))))
+
+(t/deftest objects-handler-emits-unauthorized-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        object   (create-storage-object! storage "profile" "profile photo")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 401 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "profile" "unauthorized"])))))
+
+(t/deftest file-objects-handler-emits-route-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (assoc (make-handler-cfg storage) ::mtx/metrics metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest asset-requests-default-metrics-definition
+  (let [defs main/default-metrics]
+    (t/is (= "penpot_storage_asset_requests_total" (::mdef/name (:storage-asset-requests defs))))
+    (t/is (= ["route" "backend" "bucket" "result"] (::mdef/labels (:storage-asset-requests defs))))))

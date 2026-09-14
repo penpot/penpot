@@ -118,3 +118,19 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - The `file_data.metadata.storage-ref-id` value points to the storage object.
 - `fdata/upsert!` touches a storage object from incoming metadata before it stores the new row.
 - File snapshots use `file_data` for snapshot data and `file_change` for snapshot metadata.
+
+## Metrics
+
+- `bucket` is always the Penpot logical bucket (object metadata), never an S3 bucket. Unknown/absent buckets are labeled `"unknown"`.
+- `target` is the physical S3 destination id. Today it is always `"default"`; the per-bucket routing plan will add more targets.
+- Physical S3 API calls (AWS SDK `MetricPublisher`, `app.storage.s3.metrics`):
+  - `penpot_storage_s3_requests_total{operation,target,result}` — one count per API call (`PutObject`, `GetObject`, `HeadObject`, `DeleteObject(s)`, …), including retries.
+  - `penpot_storage_s3_retries_total{operation,target}` — SDK retry count.
+  - `penpot_storage_s3_timing{operation,target}` — call latency histogram (ms).
+- Logical storage operations (`app.storage`, `::mtx/metrics` optional):
+  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. `del` only marks `deleted_at`; physical deletion is a GC concern.
+  - `penpot_storage_dedup_total{result,bucket}` — `hit`, `miss`, `repair`, `skip`.
+- Asset serving (`app.http.assets`, `::mtx/metrics` optional):
+  - `penpot_storage_asset_requests_total{route,backend,bucket,result}` — `route` is `by-id`, `by-file-media-id`, or `thumbnail`; `result` is `served`, `not-found`, `unauthorized`, or `error`. Counts backend requests that trigger a browser GET to the object store (one per cache miss), so it is a proxy for object GETs, not an exact count.
+- The physical and logical counters intentionally overlap in coverage but differ in meaning; do not sum them.
+- All storage metrics are nil-safe: components work without `::mtx/metrics`.
