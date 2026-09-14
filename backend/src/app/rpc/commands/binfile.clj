@@ -94,7 +94,9 @@
             (assoc ::bfc/project-id project-id)
             (assoc ::bfc/profile-id profile-id)
             (assoc ::bfc/name name)
-            (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
+            (assoc ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+            (assoc ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
+            (assoc ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
             (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
 
         input-path (:path file)
@@ -171,7 +173,7 @@
         manifest
         (case (int version)
           1 nil
-          3 (bf.v3/get-manifest (-> params :file :path))
+          3 (bf.v3/get-manifest cfg (-> params :file :path))
           (throw (ex-info (str "Unsupported binfile version: " version)
                           {:type :validation
                            :code :unsupported-version

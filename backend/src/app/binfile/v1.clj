@@ -174,7 +174,7 @@
     (assert-mark m :obj)
     (let [size (read-long! input)]
       (assert (pos? size) "incorrect header size found on reading header")
-      (when (> size bfc/max-object-size)
+      (when (> size bfc/default-max-binary-entry-size)
         (ex/raise :type :validation
                   :code :max-file-size-reached
                   :hint (dm/str "unable to import object with size " size " bytes")))
@@ -249,7 +249,7 @@
         p (tmp/tempfile :prefix "penpot.binfile.")]
     (assert-mark m :stream)
 
-    (when (> s bfc/max-object-size)
+    (when (> s bfc/default-max-binary-entry-size)
       (ex/raise :type :validation
                 :code :max-file-size-reached
                 :hint (str/ffmt "unable to import storage object with size % bytes" s)))
