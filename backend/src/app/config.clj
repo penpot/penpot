@@ -72,6 +72,7 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :profile-props-max-size (* 1024 1024 2) ; 2MiB
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
@@ -136,6 +137,7 @@
     [:auto-file-snapshot-every {:optional true} ::sm/int]
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
+    [:profile-props-max-size {:optional true} ::sm/int]
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]
 

@@ -1385,3 +1385,41 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+(t/deftest update-profile-props-rejects-oversized-props
+  (let [profile (th/create-profile* 1)
+        big     (apply str (repeat (* 1024 1024 3) "a"))
+        data    {::th/type :update-profile-props
+                 ::rpc/profile-id (:id profile)
+                 :props {:custom-shortcuts {:big {:key big}}}}
+        out     (th/command! data)]
+
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :props-too-large))
+
+    ;; And nothing should be persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (nil? (get-in props [:props :custom-shortcuts]))))))
+
+(t/deftest update-profile-props-accepts-shrinking-oversized-props
+  ;; An already oversized profile can still be updated as long as the
+  ;; props document does not grow
+  (let [profile (th/create-profile* 1)
+        big     (apply str (repeat (* 1024 1024 3) "a"))]
+
+    (th/db-update! :profile
+                   {:props (db/tjson {:custom-shortcuts {:big {:key big}}})}
+                   {:id (:id profile)})
+
+    (let [data {::th/type :update-profile-props
+                ::rpc/profile-id (:id profile)
+                :props {:custom-shortcuts {}}}
+          out  (th/command! data)]
+
+      (t/is (nil? (:error out)))
+
+      (let [saved (th/db-get :profile {:id (:id profile)})
+            props (profile/decode-row saved)]
+        (t/is (= {} (get-in props [:props :custom-shortcuts])))))))

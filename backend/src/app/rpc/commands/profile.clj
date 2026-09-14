@@ -33,7 +33,9 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str])
+  (:import
+   org.postgresql.util.PGobject))
 
 (declare check-profile-existence!)
 (declare decode-row)
@@ -469,6 +471,39 @@
   [:map {:title "update-profile-props"}
    [:props schema:props-writeable]])
 
+(def default-props-max-size
+  "Default maximum size (in bytes) for the encoded profile props."
+  (* 1024 1024 2))
+
+(defn- encoded-size
+  [value]
+  (if (some? value)
+    (alength (.getBytes (.getValue ^PGobject value) "UTF-8"))
+    0))
+
+(defn persist-props!
+  "Encode and persist the profile props, rejecting writes that make an
+  already oversized (or newly oversized) props document grow."
+  [conn profile-id prev-props props]
+  (let [value    (db/tjson props)
+        size     (encoded-size value)
+        max-size (or (cf/get :profile-props-max-size) default-props-max-size)]
+
+    ;; We only reject growth; shrinking or steady writes on already
+    ;; large profiles are always allowed
+    (when (and (> size max-size)
+               (> size (encoded-size (db/tjson prev-props))))
+      (ex/raise :type :validation
+                :code :props-too-large
+                :hint "profile props exceeds the maximum allowed size"
+                :size size
+                :max-size max-size))
+
+    (db/update! conn :profile
+                {:props value}
+                {:id profile-id}
+                {::db/return-keys false})))
+
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
   (let [profile (get-profile conn profile-id ::db/for-update true)
@@ -482,10 +517,7 @@
                            (:props profile)
                            (apply dissoc props system-managed-props))]
 
-    (db/update! conn :profile
-                {:props (db/tjson props)}
-                {:id profile-id}
-                {::db/return-keys false})
+    (persist-props! conn profile-id (:props profile) props)
 
     (filter-props props)))
 
