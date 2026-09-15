@@ -1323,6 +1323,16 @@
               (-> params (assoc :kind :guide
                                 :guide guide)))))))
 
+(defn show-text-context-menu
+  "Context menu for the text being edited. Unlike the shape menu it leaves the
+   shape selection alone; `has-selection?` is captured at right-click time."
+  [{:keys [position] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-text-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu (assoc params :kind :text))))))
+
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
     ptk/UpdateEvent

@@ -28,6 +28,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -1040,6 +1041,41 @@
      [:> menu-entry* {:title (tr "workspace.context-menu.guides.remove")
                       :on-click do-remove-guide}]]))
 
+(mf/defc text-context-menu*
+  "Menu shown while a text shape is being edited: it acts on the text, never on the shape."
+  {::mf/private true}
+  [{:keys [mdata]}]
+  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)
+        get-tt           #(sc/get-effective-tooltip % custom-shortcuts)
+
+        has-selection?   (get mdata :has-selection?)
+
+        do-cut           (mf/use-fn #(st/emit! (dwt/v3-cut-selection)))
+        do-copy          (mf/use-fn #(st/emit! (dwt/v3-copy-selection)))
+        do-paste         (mf/use-fn #(st/emit! (dwt/v3-paste-text)))
+        do-select-all    (mf/use-fn #(st/emit! (dwt/v3-select-all)))]
+
+    [:*
+     [:> menu-entry* {:title (tr "workspace.shape.menu.cut")
+                      :shortcut (get-tt :cut)
+                      :shortcut-key :cut
+                      :disabled (not has-selection?)
+                      :on-click do-cut}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.copy")
+                      :shortcut (get-tt :copy)
+                      :shortcut-key :copy
+                      :disabled (not has-selection?)
+                      :on-click do-copy}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.paste")
+                      :shortcut (get-tt :paste)
+                      :shortcut-key :paste
+                      :on-click do-paste}]
+     [:> menu-separator* {}]
+     [:> menu-entry* {:title (tr "workspace.header.menu.select-all")
+                      :shortcut (get-tt :select-all)
+                      :shortcut-key :select-all
+                      :on-click do-select-all}]]))
+
 ;; FIXME: optimize because it is rendered always
 
 (mf/defc context-menu*
@@ -1048,7 +1084,20 @@
         top          (- (get-in mdata [:position :y]) 20)
         left         (get-in mdata [:position :x])
         dropdown-ref (mf/use-ref)
-        read-only?   (mf/use-ctx ctx/workspace-read-only?)]
+        read-only?   (mf/use-ctx ctx/workspace-read-only?)
+
+        ;; The text menu floats over a live editing session, which ends as soon
+        ;; as the capture surface loses the focus.
+        text-menu?   (= :text (:kind mdata))
+
+        ;; `mousedown` is what moves the focus, so cancelling it keeps the editor
+        ;; alive; `click` still fires and the entries work.
+        on-mouse-down
+        (mf/use-fn
+         (mf/deps text-menu?)
+         (fn [event]
+           (when ^boolean text-menu?
+             (dom/prevent-default event))))]
 
     (mf/with-effect [mdata]
       (when-let [dropdown (mf/ref-val dropdown-ref)]
@@ -1067,6 +1116,8 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :data-testid "context-menu"
+            :data-keep-editing-on-blur (when ^boolean text-menu? true)
+            :on-mouse-down on-mouse-down
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :menu)}
@@ -1078,4 +1129,5 @@
            :grid-track [:> grid-track-context-menu* {:mdata mdata}]
            :grid-cells [:> grid-cells-context-menu* {:mdata mdata}]
            :guide      [:> guide-color-context-menu* {:mdata mdata}]
+           :text       [:> text-context-menu* {:mdata mdata}]
            [:> viewport-context-menu* {:mdata mdata}]))]]]))
