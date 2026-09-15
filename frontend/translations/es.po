@@ -807,7 +807,7 @@ msgid "dashboard.import.summary.new"
 msgstr "Nueva"
 
 msgid "dashboard.import.summary.linked"
-msgstr "Vinculada"
+msgstr "auto-vinculada"
 
 msgid "dashboard.import.summary.no-selection"
 msgstr "Ninguna biblioteca seleccionada"

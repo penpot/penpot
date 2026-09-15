@@ -476,52 +476,53 @@
                  :typography t/body-medium}
        (:name resolution-file)]]
 
-     (when (seq done)
-       [:div {:class (stl/css :summary-section)}
-        [:ul {:class (stl/css :summary-list)}
-         (for [{:keys [name]} done]
-           [:li {:class (stl/css :summary-list-item)
-                 :key (dm/str name)}
-            [:span {:class (stl/css :summary-item-name)} name]
-            [:span {:class (stl/css :summary-linked-badge)}
-             [:> icon* {:icon-id i/status-tick
-                        :class (stl/css :summary-badge-icon)
-                        :size "s"}]
-             (tr "dashboard.import.summary.linked")]])]])
+     [:div {:class (stl/css :summary-body)}
+      (when (seq done)
+        [:div {:class (stl/css :summary-section)}
+         [:ul {:class (stl/css :summary-list)}
+          (for [{:keys [name]} done]
+            [:li {:class (stl/css :summary-list-item)
+                  :key (dm/str name)}
+             [:span {:class (stl/css :summary-item-name)} name]
+             [:span {:class (stl/css :summary-linked-badge)}
+              (tr "dashboard.import.summary.linked")]])]])
 
-     (when (seq pending)
-       [:div {:class (stl/css :summary-section)}
-        [:div {:class (stl/css :summary-section-header)}
-         [:> text* {:as "span"
-                    :class (stl/css :summary-section-title)
-                    :typography t/headline-small}
-          (tr "dashboard.import.summary.manually-linked")]]
-        [:ul {:class (stl/css :summary-list)}
-         [:li {:class (stl/css :summary-list-item)
-               :key "summary-list-header"}
-          [:span {:class (stl/css :summary-item-name-header)}
-           (tr "dashboard.import.summary.original")]
+      (when (seq pending)
+        [:div {:class (stl/css :summary-section)}
+         [:div {:class (stl/css :summary-section-header)}
+          [:> text* {:as "span"
+                     :class (stl/css :summary-section-title)
+                     :typography t/headline-small}
+           (tr "dashboard.import.summary.manually-linked")]]
+         [:ul {:class (stl/css :summary-list)}
+          [:li {:class (stl/css :summary-list-item)
+                :key "summary-list-header"}
+           [:span {:class (stl/css :summary-item-name-header)}
+            (tr "dashboard.import.summary.original")]
 
-          [:span {:class (stl/css :summary-item-name-header)}
-           (tr "dashboard.import.summary.new")]]
-         (for [{:keys [id name] :as cand} pending]
-           (let [selected-id (get selection id)
-                 selected-c  (when selected-id
-                               (d/seek #(= (str (:id %)) (str selected-id)) (:candidates cand)))]
-             [:li {:class (stl/css :summary-list-item)
-                   :key (dm/str id)}
-              [:span {:class (stl/css :summary-item-name)} name]
-              [:> icon* {:icon-id i/row
-                         :size "m"
-                         :class (stl/css :summary-linked-arrow)}]
-              (if selected-c
-                [:span {:class (stl/css :summary-linked-info)}
-                 [:span {:class (stl/css :summary-linked-name)}
-                  (:name selected-c)]
-                 [:span {:class (stl/css :summary-linked-project)}
-                  (:project-name selected-c)]]
-                [:span {:class (stl/css :summary-no-selection)}
-                 (tr "dashboard.import.summary.no-selection")])]))]])]))
+           [:span {:class (stl/css :summary-item-name-header)}
+            (tr "dashboard.import.summary.new")]]
+          (for [{:keys [id name] :as cand} pending]
+            (let [selected-id (get selection id)
+                  selected-c  (when selected-id
+                                (d/seek #(= (str (:id %)) (str selected-id)) (:candidates cand)))]
+              [:li {:class (stl/css :summary-list-item)
+                    :key (dm/str id)}
+               [:span {:class (stl/css-case :summary-item-name true
+                                            :summary-item-base true)} name]
+
+               (if selected-c
+                 [:span {:class (stl/css :summary-linked-info)}
+                  [:> icon* {:icon-id i/row
+                             :size "m"
+                             :class (stl/css :summary-linked-arrow)}]
+                  [:span {:class (stl/css :summary-linked-name)}
+                   (dm/str (:name selected-c) " (" (:project-name selected-c) ")")]]
+                 [:span {:class (stl/css :summary-no-selection)}
+                  [:> icon* {:icon-id i/row
+                             :size "m"
+                             :class (stl/css :summary-linked-arrow)}]
+                  (tr "dashboard.import.summary.no-selection")])]))]])]]))
 
 (mf/defc library-resolution-summary*
   {::mf/private true}

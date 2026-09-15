@@ -42,9 +42,15 @@
   flex: 1;
   overflow: hidden auto;
   display: grid;
-  grid-template-columns: 1fr;
+
+  // minmax(0, 1fr), not a bare 1fr: a bare 1fr track's minimum size
+  // defaults to its content's min-content width, so a long unbreakable
+  // string deep inside (e.g. a library name with no spaces) can grow
+  // this column - and the fixed-width modal around it - past its
+  // intended size, since overflow:hidden can't shrink a track that
+  // already expanded to fit its content.
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-l);
-  margin-block-end: var(--sp-xxl);
   min-block-size: px2rem(40);
 }
 
@@ -246,17 +252,20 @@
 }
 
 .library-resolution-message {
+  @include use-typography("body-large");
+
   color: var(--color-foreground-secondary);
   margin-block-end: var(--sp-s);
 }
 
 .library-resolution-header {
-  @include use-typography("body-medium");
+  @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
   display: grid;
-  grid-template-columns: 1fr 32px 1fr;
-  border-block-end: $b-1 solid var(--color-foreground-secondary);
+  font-weight: 500;
+  grid-template-columns: 1fr $sz-32 1fr;
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .library-origin-name,
@@ -270,9 +279,10 @@
 
 .library-resolution-item {
   display: grid;
-  grid-template-columns: 1fr 32px 1fr;
-  block-size: $sz-32;
-  margin-block: var(--sp-s);
+  grid-template-columns: 1fr $sz-32 1fr;
+  block-size: $sz-40;
+  margin-block-start: var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
 }
 
 .library-resolution-icon {
@@ -330,6 +340,12 @@
   background: var(--color-background-primary);
 }
 
+.summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxl);
+}
+
 .summary-list {
   display: flex;
   flex-direction: column;
@@ -354,6 +370,7 @@
 
 .summary-linked-arrow {
   color: var(--color-foreground-secondary);
+  flex-shrink: 0;
 }
 
 .summary-file-icon {
@@ -383,33 +400,32 @@
 .summary-list-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--sp-s);
-  padding: var(--sp-xs) var(--sp-s);
+  padding-block: var(--sp-xs);
+  padding-inline-start: var(--sp-s);
   border-radius: $br-4;
-
-  &:hover {
-    background: var(--color-background-secondary);
-  }
 }
 
 .summary-item-name {
+  @include use-typography("body-small");
+
   color: var(--color-foreground-primary);
-  flex: 1;
+  flex: 0 1 auto;
   min-inline-size: 0;
   display: block;
-  max-inline-size: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .summary-item-name-header {
+  @include use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   flex: 1;
   min-inline-size: 0;
   display: block;
-  max-inline-size: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -420,10 +436,12 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-xs);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: $br-12;
+  padding-block: var(--sp-xxs);
+  padding-inline: var(--sp-s);
+  border-radius: $br-8;
   background: var(--color-accent-success-bg);
   color: var(--color-accent-success);
+  border: $b-1 solid var(--color-accent-success);
   font-size: px2rem(11);
   font-weight: 500;
   flex-shrink: 0;
@@ -437,39 +455,36 @@
 .summary-linked-info {
   display: flex;
   align-items: center;
-  gap: var(--sp-xs);
-  flex-shrink: 0;
+  gap: var(--sp-s);
+  flex: 1;
+  min-inline-size: 0;
 }
 
 .summary-linked-name {
-  // TODO: Typography does not match any existing DS typography token.
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: px2rem(12);
-  line-height: 1.4;
-  color: var(--color-foreground-secondary);
+  @include use-typography("body-small");
+
+  color: var(--color-foreground-primary);
   font-weight: 500;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.summary-linked-project {
-  // TODO: Typography does not match any existing DS typography token.
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-weight: 400;
-  line-height: 1.4;
+.summary-item-base {
+  flex: 1;
   color: var(--color-foreground-secondary);
-  padding: var(--sp-xxs) var(--sp-s);
-  border-radius: $br-12;
-  background: var(--color-background-quaternary);
-  font-size: px2rem(11);
 }
 
 // No selection state
 .summary-no-selection {
-  // TODO: Typography does not match any existing DS typography token.
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: px2rem(12);
-  font-weight: 400;
-  line-height: 1.4;
+  @include use-typography("body-small");
+
   color: var(--color-foreground-secondary);
   font-style: italic;
-  flex-shrink: 0;
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
