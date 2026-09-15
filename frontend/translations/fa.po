@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
+"Last-Translator: Danial Shirali <danialshirali16@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
 "Language: fa\n"
@@ -5266,6 +5266,7 @@ msgid "not-found.no-permission.file"
 msgstr "به این فایل دسترسی ندارید."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "رفتن به Penpot شما"
 
@@ -8597,10 +8598,12 @@ msgid "webgl.modals.webgl-unavailable.cta-troubleshooting"
 msgstr "راهنمای رفع اشکال"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+#, fuzzy
 msgid "nitrate.code-activation.title"
 msgstr "فعال‌سازی Nitrate"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+#, fuzzy
 msgid "nitrate.code-activation.renew-title"
 msgstr "تمدید Nitrate"
 
@@ -8728,6 +8731,7 @@ msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "تمدید با کد فعال‌سازی"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+#, fuzzy
 msgid "nitrate.subscription.renew-success"
 msgstr "اشتراک Nitrate شما تمدید شد."
 
@@ -9107,9 +9111,11 @@ msgid "nitrate.modal-success.title"
 msgstr "به طرح سازمانی خوش آمدید!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+#, fuzzy
 msgid "nitrate.code-activation.footer-before"
 msgstr "کد لازم دارید؟ درخواست کد فعال‌سازی "
 
+#, fuzzy
 msgid "nitrate.code-activation.footer-after"
 msgstr " را دانلود و با ما تماس بگیرید:"
 
@@ -9134,6 +9140,7 @@ msgstr "۱۴ روز رایگان امتحان کنید"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "اشتراک با کد فعال‌سازی"
 
+#, fuzzy
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "برای لغو اشتراک Nitrate خود، لطفاً از این طریق با ما تماس بگیرید:"
 
@@ -10263,7 +10270,7 @@ msgstr "افزودن به سازمان"
 msgid "dashboard.select-organization-modal.choose"
 msgstr "انتخاب یک سازمان:"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "در اینجا همهٔ سازمان‌هایی را می‌بینید که اجازه دارید در آن‌ها تیم بسازید یا تیم "
@@ -10273,11 +10280,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.select"
 msgstr "انتخاب یک سازمان"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "این تیم اکنون به %s تعلق دارد"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "این تیم دیگر به سازمان %s تعلق ندارد"
 
