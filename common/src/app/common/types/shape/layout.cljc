@@ -1557,6 +1557,50 @@
                                         (set in-cell-ids)
                                         (reverse in-cell-ids)))))
 
+(defn- reflow-eligible-cell?
+  [{:keys [position row-span column-span id]}]
+  (and (= position :auto)
+       (= row-span 1)
+       (= column-span 1)
+       (some? id)))
+
+(defn reflow-grid-auto-items-for-direction
+  "Reassign single-span auto grid cells to the new `:layout-grid-dir`
+  traversal order while preserving the source/layer order (`:shapes`).
+
+  Auto cell contents are read in the old direction order and
+  redistributed into the new direction order, so the visual
+  auto-placement follows the new flow instead of staying unchanged.
+
+  Only auto-positioned single-span cells take part. Manual and
+  area-positioned cells keep their explicit placements. This helper
+  intentionally does not touch `:shapes`: downstream
+  `assign-cell-positions` and `reorder-grid-children` must stay no-ops
+  for a pure direction change."
+  [parent from-dir to-dir]
+  (if (= from-dir to-dir)
+    parent
+    (let [old-auto-ids (->> (assoc parent :layout-grid-dir from-dir)
+                            (#(cells-seq % :sort? true))
+                            (filter reflow-eligible-cell?)
+                            (map :id))
+          new-auto-ids (->> (assoc parent :layout-grid-dir to-dir)
+                            (#(cells-seq % :sort? true))
+                            (filter reflow-eligible-cell?)
+                            (map :id))
+          shapes (vec (mapcat #(get-in parent [:layout-grid-cells % :shapes]) old-auto-ids))]
+      (-> parent
+          (assoc :layout-grid-dir to-dir)
+          (assoc :layout-grid-cells
+                 (reduce
+                  (fn [acc [idx cell-id]]
+                    (let [shape (get shapes idx)]
+                      (assoc acc cell-id
+                             (assoc (get acc cell-id)
+                                    :shapes (if (some? shape) [shape] [])))))
+                  (:layout-grid-cells parent)
+                  (map-indexed vector new-auto-ids)))))))
+
 (defn cells-by-row
   ([parent index]
    (cells-by-row parent index true))

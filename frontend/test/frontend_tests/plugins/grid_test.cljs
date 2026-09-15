@@ -47,3 +47,21 @@
         (t/is (thrown? js/Error (.setColumn grid 1 "fixed" 10)))
         (t/is (thrown? js/Error (.removeRow grid 1)))
         (t/is (thrown? js/Error (.removeColumn grid 1)))))))
+
+(t/deftest grid-dir-setter-uses-direction-change-event
+  (t/testing "Plugin grid.dir setter routes through change-grid-direction"
+    (thw/with-wasm-mocks*
+      (fn []
+        (let [{:keys [^js grid]} (setup-grid)
+              emitted (atom nil)
+              capture (fn
+                          ([event] (reset! emitted event))
+                          ([event _] (reset! emitted event))
+                          ([event _ _] (reset! emitted event))
+                          ([event _ _ _] (reset! emitted event))
+                          ([event _ _ _ & _] (reset! emitted event)))]
+          (with-redefs [st/emit! capture]
+            (set! (.-dir grid) "column")
+            (t/is (some? @emitted))
+            (t/is (= :app.main.data.workspace.shape-layout/change-grid-direction
+                     (ptk/type @emitted)))))))))

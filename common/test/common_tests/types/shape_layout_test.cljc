@@ -1491,3 +1491,145 @@
                      (layout/add-grid-row {:type :fixed :value 300}))
           result (layout/reorder-grid-row parent 0 2 false)]
       (t/is (= 3 (count (:layout-grid-rows result)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; reflow-grid-auto-items-for-direction (#11659)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest reflow-grid-auto-items-for-direction-test
+  (t/testing "RED: row->column redistributes auto cells, keeps :shapes"
+    (let [s1 (uuid/next) s2 (uuid/next) s3 (uuid/next) s4 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [s3])
+          c22 (make-cell :row 2 :column 2 :shapes [s4])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [s4 s3 s2 s1]
+                  :layout-grid-cells {(:id c11) c11 (:id c12) c12 (:id c21) c21 (:id c22) c22}}
+          holder (fn [p r c] (:shapes (layout/cell-by-row-column p r c)))
+          result (layout/reflow-grid-auto-items-for-direction parent :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= [s1] (holder result 1 1)))
+      (t/is (= [s3] (holder result 1 2)))
+      (t/is (= [s2] (holder result 2 1)))
+      (t/is (= [s4] (holder result 2 2)))
+      (t/testing "row->column->row round-trips to the original state"
+        (let [roundtrip (layout/reflow-grid-auto-items-for-direction
+                         result :column :row)]
+          (t/is (= :row (:layout-grid-dir roundtrip)))
+          (t/is (= (:shapes parent) (:shapes roundtrip)))
+          (t/is (= (:layout-grid-cells parent) (:layout-grid-cells roundtrip)))
+          (t/is (= (select-keys parent [:layout-grid-dir :layout-grid-cells :shapes])
+                   (select-keys roundtrip [:layout-grid-dir :layout-grid-cells :shapes]))))))))
+
+(t/deftest reflow-grid-area-span-keeps-source-order-test
+  (t/testing "area/span grids: reflow pins area, span and manual cells"
+    (let [a (uuid/next) b (uuid/next) c (uuid/next)
+          x (uuid/next) m (uuid/next)
+          span (assoc (make-cell :row 1 :column 1 :position :manual
+                                 :shapes [x])
+                      :row-span 2 :column-span 1)
+          manual (make-cell :row 1 :column 2 :position :manual
+                            :shapes [m])
+          area (assoc (make-cell :row 2 :column 2 :position :area
+                                 :area-name "a" :shapes [a])
+                      :row-span 1 :column-span 1)
+          c31 (make-cell :row 3 :column 1 :shapes [b])
+          c32 (make-cell :row 3 :column 2 :shapes [c])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [x m a c b]
+                  :layout-grid-cells {(:id span) span (:id manual) manual
+                                      (:id area) area
+                                      (:id c31) c31 (:id c32) c32}}
+          result (layout/reflow-grid-auto-items-for-direction
+                  parent :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= span (get-in result [:layout-grid-cells (:id span)])))
+      (t/is (= manual (get-in result [:layout-grid-cells (:id manual)])))
+      (t/is (= area (get-in result [:layout-grid-cells (:id area)])))
+      (t/is (= [x] (:shapes (get-in result [:layout-grid-cells (:id span)]))))
+      (t/is (= [m] (:shapes (get-in result [:layout-grid-cells (:id manual)]))))
+      (t/is (= [a] (:shapes (layout/cell-by-row-column result 2 2)))))))
+
+(t/deftest reflow-grid-sparse-auto-cells-clear-leftover-test
+  (t/testing "sparse grids: leftover target auto cells are emptied, no duplicates"
+    (let [s1 (uuid/next) s2 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [])
+          c22 (make-cell :row 2 :column 2 :shapes [])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [s2 s1]
+                  :layout-grid-cells {(:id c11) c11 (:id c12) c12
+                                      (:id c21) c21 (:id c22) c22}}
+          result (layout/reflow-grid-auto-items-for-direction
+                  parent :row :column)
+          actual (mapv :shapes (layout/cells-seq result :sort? true))]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= [[s1] [s2] [] []] actual)))))
+
+(t/deftest reflow-grid-mixed-keeps-invariants-test
+  (t/testing "mixed grids: only 1x1 auto cells move, no loss or duplicates"
+    (let [a (uuid/next) b (uuid/next) c (uuid/next) e (uuid/next)
+          x (uuid/next) d (uuid/next)
+          auto-a (make-cell :row 1 :column 1 :shapes [a])
+          span-x (assoc (make-cell :row 1 :column 2 :position :manual
+                                   :shapes [x])
+                        :row-span 2 :column-span 1)
+          auto-b (make-cell :row 2 :column 1 :shapes [b])
+          auto-c (make-cell :row 1 :column 3 :shapes [c])
+          area-d (assoc (make-cell :row 3 :column 1 :position :area
+                                   :area-name "d" :shapes [d])
+                        :row-span 1 :column-span 1)
+          auto-e (make-cell :row 3 :column 2 :shapes [e])
+          parent {:layout :grid
+                  :layout-grid-dir :row
+                  :shapes [x e d c b a]
+                  :layout-grid-cells {(:id auto-a) auto-a (:id span-x) span-x
+                                      (:id auto-b) auto-b (:id auto-c) auto-c
+                                      (:id area-d) area-d (:id auto-e) auto-e}}
+          result (layout/reflow-grid-auto-items-for-direction
+                  parent :row :column)
+          before (->> (:layout-grid-cells parent) vals (mapcat :shapes))
+          after (->> (:layout-grid-cells result) vals (mapcat :shapes))]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes parent) (:shapes result)))
+      (t/is (= span-x (get-in result [:layout-grid-cells (:id span-x)])))
+      (t/is (= area-d (get-in result [:layout-grid-cells (:id area-d)])))
+      (t/is (= [a] (:shapes (get-in result [:layout-grid-cells (:id auto-a)]))))
+      (t/is (= [c] (:shapes (get-in result [:layout-grid-cells (:id auto-b)]))))
+      (t/is (= [b] (:shapes (get-in result [:layout-grid-cells (:id auto-e)]))))
+      (t/is (= [e] (:shapes (get-in result [:layout-grid-cells (:id auto-c)]))))
+      (t/is (= (set before) (set after)))
+      (t/is (= (count after) (count (distinct after)))))))
+
+(t/deftest reflow-grid-missing-dir-normalizes-to-row-test
+  (t/testing "missing :layout-grid-dir behaves like explicit :row"
+    (let [s1 (uuid/next) s2 (uuid/next) s3 (uuid/next) s4 (uuid/next)
+          c11 (make-cell :row 1 :column 1 :shapes [s1])
+          c12 (make-cell :row 1 :column 2 :shapes [s2])
+          c21 (make-cell :row 2 :column 1 :shapes [s3])
+          c22 (make-cell :row 2 :column 2 :shapes [s4])
+          implicit {:layout :grid
+                    :shapes [s4 s3 s2 s1]
+                    :layout-grid-cells {(:id c11) c11 (:id c12) c12 (:id c21) c21 (:id c22) c22}}
+          explicit (assoc implicit :layout-grid-dir :row)
+          holder (fn [p r c] (:shapes (layout/cell-by-row-column p r c)))
+          from-missing (or (:layout-grid-dir implicit) :row)
+          result (layout/reflow-grid-auto-items-for-direction
+                  implicit from-missing :column)
+          expected (layout/reflow-grid-auto-items-for-direction
+                    explicit :row :column)]
+      (t/is (= :column (:layout-grid-dir result)))
+      (t/is (= (:shapes explicit) (:shapes result)))
+      (t/is (= (:layout-grid-cells expected) (:layout-grid-cells result)))
+      (t/is (= [s1] (holder result 1 1)))
+      (t/is (= [s3] (holder result 1 2)))
+      (t/is (= [s2] (holder result 2 1)))
+      (t/is (= [s4] (holder result 2 2))))))
