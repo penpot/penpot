@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -1110,11 +1110,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Gli inviti in sospeso ad utenti esterni verranno annullati."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
-"Qui trovi tutte le organizzazioni dove sei autorizzato a creare o "
-"aggiungere team."
+"Qui trovi tutte le organizzazioni dove sei autorizzato a creare o aggiungere "
+"team."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1244,7 +1244,7 @@ msgstr "I tuoi file sono stati spostati con successo"
 msgid "dashboard.success-move-project"
 msgstr "Il tuo progetto è stato spostato con successo"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Questo team ora appartiene a %s"
 
@@ -1256,7 +1256,7 @@ msgstr "Informazioni sul team"
 msgid "dashboard.team-members"
 msgstr "Membri del team"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Questo team non appartiene più all'organizzazione %s"
 
