@@ -918,3 +918,28 @@
              (canonical bulk (by-tempid (into {} (map (fn [[t e]] [t e])) bulk-ids)))))
     (t/is (= (queries/stats (:db-after transacted)) (queries/stats bulk)))
     (t/is (= (queries/edge-counts (:db-after transacted)) (queries/edge-counts bulk)))))
+
+(t/deftest a-reference-to-an-undefined-tempid-is-refused-on-both-paths
+  ;; `ref-resolver` answers with the tempid of whatever shape
+  ;; `ctf/find-ref-shape` names, and that shape can sit in a container the
+  ;; builder skipped, so a reference may name a tempid the transaction never
+  ;; defines. `d/db-with` refuses such a transaction outright, so the bulk
+  ;; path must refuse it too: resolving the target to nil would index a
+  ;; nil-valued reference, and allocating an entity for it would index an
+  ;; edge to nothing, and neither would say so. This is a unit test of the
+  ;; flattener rather than of a document, because no fixture reaches the
+  ;; case and the risk lives here.
+  (let [tx [{:db/id "doc" :document/id (uuid/next)}
+            {:db/id "c/1" :container/id (uuid/next) :container/document "doc"}
+            {:db/id "s/1" :shape/id (uuid/next) :shape/container "c/1"
+             :shape/refers-to "s/absent"}]]
+    (t/is (thrown? clojure.lang.ExceptionInfo (overlay/tx->datoms tx)))
+    (t/is (= :projection/dangling-reference
+             (:error (ex-data (try (overlay/tx->datoms tx) (catch Throwable e e)))))
+          "the refusal names the defect rather than the symptom")
+    (t/is (thrown? clojure.lang.ExceptionInfo (d/with (d/empty-db overlay/schema) tx))
+          "as the transact path always did")
+    (let [whole (conj tx {:db/id "s/absent" :shape/id (uuid/next) :shape/container "c/1"})]
+      (t/is (= (count (d/datoms (:db-after (d/with (d/empty-db overlay/schema) whole)) :eavt))
+               (count (d/datoms (d/init-db (overlay/tx->datoms whole) overlay/schema) :eavt)))
+            "and with the target defined, both paths carry the same datoms"))))
