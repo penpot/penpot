@@ -169,6 +169,7 @@
        :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
                 :data-testid "tokens-sidebar"
+                :data-scroll-container true
                 :on-scroll on-scroll-save
                 :ref tokens-ref}
       [:div {:class (stl/css :resize-area-horiz)
