@@ -195,6 +195,7 @@
     (sc/use-restore-scroll scroll-store :assets file-id assets-ref)
 
     [:article  {:class (stl/css :assets-bar)
+                :data-scroll-container true
                 :on-scroll on-scroll-save
                 :ref assets-ref}
      [:div {:class (stl/css :assets-header)}
