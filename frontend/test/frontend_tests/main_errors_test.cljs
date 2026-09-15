@@ -161,12 +161,12 @@
   (let [[state d1] (errors/reserve-report* (errors/initial-report-state) "fp" 1000)
         [state d2] (errors/reserve-report* state "fp" 2000)
         [state d3] (errors/reserve-report* state "fp" 3000)]
-    (t/is (true? (:emit? d1)))
+    (t/is (true? (:emit d1)))
     (t/is (= 1 (:occurrences d1)))
-    (t/is (false? (:emit? d2)))
-    (t/is (false? (:emit? d3)))
+    (t/is (false? (:emit d2)))
+    (t/is (false? (:emit d3)))
     (let [[_ d4] (errors/reserve-report* state "fp" (+ 1000 errors/report-window-ms))]
-      (t/is (true? (:emit? d4)))
+      (t/is (true? (:emit d4)))
       (t/is (= 3 (:occurrences d4))))))
 
 (t/deftest governor-evicts-oldest-entry-when-cache-is-full
@@ -179,7 +179,7 @@
                                                  (* 1000 errors/max-tracked-fingerprints))]
     (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
     (t/is (= errors/max-tracked-fingerprints (count (:order state))))
-    (t/is (true? (:emit? decision)))
+    (t/is (true? (:emit decision)))
     (t/is (nil? (get-in state [:entries "fp-0"])))
     (t/is (= "fp-1" (peek (:order state))))
     (t/is (some? (get-in state [:entries "fp-new"])))))
@@ -200,7 +200,7 @@
                                                  (+ (* 1000 errors/max-tracked-fingerprints)
                                                     errors/report-window-ms
                                                     1000))]
-    (t/is (true? (:emit? decision)))
+    (t/is (true? (:emit decision)))
     ;; FIFO: the first inserted one goes, even though it was the last
     ;; emitted and fp-1 is the oldest by :emitted-at.
     (t/is (nil? (get-in state [:entries "fp-0"])))

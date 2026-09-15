@@ -241,7 +241,7 @@
   "Pure decision step of the report governor.
 
   Given the governor `state`, an error `fingerprint` and the current time in
-  milliseconds, returns `[state' {:emit? bool :occurrences n}]` for one
+  milliseconds, returns `[state' {:emit bool :occurrences n}]` for one
   occurrence."
   [state fingerprint now]
   (let [entry   (get-in state [:entries fingerprint])
@@ -258,16 +258,16 @@
         [(-> state
              (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
              (update :order conj fingerprint))
-         {:emit? true :occurrences (inc pending)}])
+         {:emit true :occurrences (inc pending)}])
 
       ;; Known fingerprint re-emitted after the window: keep its position.
       emit?
       [(assoc-in state [:entries fingerprint] {:emitted-at now :pending 0})
-       {:emit? true :occurrences (inc pending)}]
+       {:emit true :occurrences (inc pending)}]
 
       :else
       [(update-in state [:entries fingerprint :pending] inc)
-       {:emit? false :occurrences nil}])))
+       {:emit false :occurrences nil}])))
 
 (defn reserve-report!
   "Reserve a slot for a report. Returns the decision map.
@@ -297,7 +297,7 @@
                                           (error-fingerprint event-name cause)
                                           (fallback-fingerprint event-name hint))
                                         (inst-ms (ct/now))))]
-      (when (:emit? decision)
+      (when (:emit decision)
         (st/emit!
          (ev/event {::ev/name event-name
                     :hint hint
@@ -327,7 +327,7 @@
       (let [report-hint (ex/get-hint cause)]
         (when (and (string? report-hint) (not (str/empty? report-hint)))
           (let [decision (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
-            (when (:emit? decision)
+            (when (:emit decision)
               (submit-report :event-name event-name
                              :report (generate-report cause)
                              :hint report-hint
