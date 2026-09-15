@@ -776,6 +776,12 @@ msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
 msgid "dashboard.import.resolve-libraries"
 msgstr "Algunas bibliotecas no pudieron vincularse automáticamente. Selecciona la biblioteca correcta para cada una:"
 
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "biblioteca original"
+
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "conectar a"
+
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirmar vínculos de biblioteca"
 
@@ -791,11 +797,23 @@ msgstr "Vinculadas automáticamente"
 msgid "dashboard.import.summary.your-selection"
 msgstr "Tu selección"
 
+msgid "dashboard.import.summary.manually-linked"
+msgstr "vinculada manualmente"
+
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+msgid "dashboard.import.summary.new"
+msgstr "Nueva"
+
 msgid "dashboard.import.summary.linked"
 msgstr "Vinculada"
 
 msgid "dashboard.import.summary.no-selection"
 msgstr "Ninguna biblioteca seleccionada"
+
+msgid "dashboard.import.file-name-label"
+msgstr "Nombre del archivo"
 
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"

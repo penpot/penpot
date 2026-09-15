@@ -293,8 +293,7 @@
          [:input {:type "text"
                   :auto-focus true
                   :class (stl/css :file-name-input)
-                  ;;TODO: Add translation for aria-label
-                  :aria-label "File name"
+                  :aria-label (tr "dashboard.import.file-name-label")
                   :default-value (:name entry)
                   :on-key-press on-edit-key-press
                   :on-blur on-edit-blur}]]
@@ -412,7 +411,7 @@
      [:> text* {:class (stl/css :library-resolution-message)
                 :as "p"
                 :typography t/body-large}
-      "Some libraries couldn't be linked automatically. Select the correct library for each:"]
+      (tr "dashboard.import.resolve-libraries")]
 
 
      [:table {:class (stl/css :library-resolution-table)}
@@ -422,13 +421,13 @@
          [:> icon* {:icon-id i/library
                     :class (stl/css :library-resolution-icon)
                     :size "s"}]
-         "original library"]
+         (tr "dashboard.import.resolve-libraries.original-library")]
         [:th {:class (stl/css :library-resolution-arrow)}]
         [:th {:class (stl/css :library-resolution-connection)}
          [:> icon* {:icon-id i/library
                     :class (stl/css :library-resolution-icon)
                     :size "s"}]
-         "connect to"]]]
+         (tr "dashboard.import.resolve-libraries.connect-to")]]]
       [:tbody {:class (stl/css :library-resolution-body)}
        (for [{:keys [id name candidates]} candidates]
          (let [options  (mapv (fn [c]
@@ -493,20 +492,18 @@
      (when (seq pending)
        [:div {:class (stl/css :summary-section)}
         [:div {:class (stl/css :summary-section-header)}
-         ;; TODO: Add translation for this string
-
          [:> text* {:as "span"
                     :class (stl/css :summary-section-title)
                     :typography t/headline-small}
-          "linked manually"]]
+          (tr "dashboard.import.summary.manually-linked")]]
         [:ul {:class (stl/css :summary-list)}
          [:li {:class (stl/css :summary-list-item)
                :key "summary-list-header"}
           [:span {:class (stl/css :summary-item-name-header)}
-           "Original"]
+           (tr "dashboard.import.summary.original")]
 
           [:span {:class (stl/css :summary-item-name-header)}
-           "New"]]
+           (tr "dashboard.import.summary.new")]]
          (for [{:keys [id name] :as cand} pending]
            (let [selected-id (get selection id)
                  selected-c  (when selected-id
