@@ -1013,6 +1013,68 @@
       (t/is (= :chunk-already-exists (-> out2 :error ex-data :code)))
       (t/is (= before (:count (th/db-exec-one! ["select count(*) from storage_object"])))))))
 
+(t/deftest chunked-upload-null-reservation-blocks-retry
+  ;; A reserved slot with NULL object_id (an upload that died between the
+  ;; reserve and the link) counts as occupied: retrying the index in the
+  ;; same session fails with :validation/:chunk-already-exists and stores
+  ;; nothing, so the client must start a new session.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}]
+    (th/db-exec! ["insert into upload_session_chunk (session_id, chunk_index, object_id) values (?, ?, null)"
+                  session-id 0])
+    (let [before (:count (th/db-exec-one! ["select count(*) from storage_object"]))
+          out    (th/command! {::th/type        :upload-chunk
+                               ::rpc/profile-id (:id prof)
+                               :session-id      session-id
+                               :index           0
+                               :content         mfile})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :chunk-already-exists (-> out :error ex-data :code)))
+      (t/is (= before (:count (th/db-exec-one! ["select count(*) from storage_object"])))))))
+
+(t/deftest chunked-upload-link-failure-releases-slot
+  ;; When the link UPDATE fails after a successful blob write, the
+  ;; reservation is removed so the client can retry the index in the same
+  ;; session; the orphaned blob stays touched for touched-gc.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}
+        orig        @#'app.rpc.commands.media/link-upload-session-chunk!
+        failed?     (atom false)]
+    (with-mocks [mock {:target 'app.rpc.commands.media/link-upload-session-chunk!
+                       :return (fn [pool object-id session-id index]
+                                 (if (compare-and-set! failed? false true)
+                                   (throw (ex-info "link boom" {}))
+                                   (orig pool object-id session-id index)))}]
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         mfile})]
+        (t/is (some? (:error out))))
+      ;; the failed link left no reservation behind
+      (t/is (= 0 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                           session-id]))))
+      ;; retrying the same index in the same session succeeds
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         mfile})]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (:count (th/db-exec-one! ["select count(*) from upload_session_chunk where session_id = ?"
+                                             session-id]))))))))
+
 (t/deftest chunked-upload-to-consumed-session-fails
   ;; Once assembled, the session is consumed: uploading another chunk fails
   ;; with :not-found and the session row stays, marked with deleted_at.

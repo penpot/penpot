@@ -359,6 +359,14 @@
       AND chunk_index = ?
       AND object_id IS NULL")
 
+(defn- link-upload-session-chunk!
+  "Links a stored blob to its reserved (session, index) slot. Returns the
+  number of updated mappings (0 when the mapping vanished concurrently:
+  the session was consumed or purged after the reserve)."
+  [pool object-id session-id index]
+  (-> (db/exec-one! pool [sql:link-upload-session-chunk object-id session-id index])
+      (db/get-update-count)))
+
 (sv/defmethod ::upload-chunk
   {::doc/added "2.17"
    ::sm/params schema:upload-chunk
@@ -374,11 +382,11 @@
 
     ;; NOTE: the blob is written outside any transaction on purpose (see
     ;; mem:backend/storage): a failed write must never mingle with the
-    ;; mapping transaction. If the write fails, the reserved mapping is
-    ;; removed and the error propagates, so the client retries the index
-    ;; in the same session. If the process dies between the reserve and
-    ;; the link below, a NULL mapping is left behind and the client starts
-    ;; a new session (sessions are ephemeral).
+    ;; mapping transaction. If the write or the link below fails, the
+    ;; reserved mapping is removed and the error propagates, so the client
+    ;; retries the index in the same session. If the process dies between
+    ;; the reserve and the link, a NULL mapping is left behind and the
+    ;; client starts a new session (sessions are ephemeral).
     (let [storage (sto/resolve cfg)
           data    (sto/content (:path content))
           object  (try
@@ -392,9 +400,16 @@
                       (db/delete! pool :upload-session-chunk
                                   {:session-id session-id :chunk-index index})
                       (throw cause)))
-          linked  (-> (db/exec-one! pool [sql:link-upload-session-chunk
-                                          (:id object) session-id index])
-                      (db/get-update-count))]
+          linked  (try
+                    (link-upload-session-chunk! pool (:id object) session-id index)
+                    (catch Throwable cause
+                      ;; The blob was stored but the link failed: drop the
+                      ;; reservation so the client can retry the index in
+                      ;; the same session; the orphaned object stays
+                      ;; touched so touched-gc reclaims it.
+                      (db/delete! pool :upload-session-chunk
+                                  {:session-id session-id :chunk-index index})
+                      (throw cause)))]
       (when (zero? linked)
         ;; The mapping vanished concurrently (session consumed or purged
         ;; after the reserve); the orphaned object stays touched so
@@ -439,8 +454,10 @@
                 :max-size (cf/get :upload-max-chunk-size)))
 
     ;; NOTE: a mapping with NULL object_id also counts as occupied: either
-    ;; its upload is still in flight, or it died mid-flight and the client
-    ;; must start a new session.
+    ;; its upload is still in flight, or its process died mid-flight and
+    ;; the client must start a new session. Known failures (write or link)
+    ;; remove the reservation above, so they stay retryable in the same
+    ;; session.
     (when (db/get* conn :upload-session-chunk {:session-id session-id :chunk-index index})
       (ex/raise :type :validation
                 :code :chunk-already-exists
