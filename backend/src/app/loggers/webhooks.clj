@@ -87,7 +87,7 @@
                                         {::jobs/name :run-webhook
                                          ::jobs/queue :webhooks
                                          ::jobs/max-retries 3
-                                         ::jobs/params {:event props
+                                         ::jobs/params {:event (t/encode-str props)
                                                         :config item}})))))))
 
 
@@ -159,7 +159,7 @@
                          :req-data (db/tjson req)
                          :rsp-data (db/tjson rsp)}))]
 
-    (let [event (:event props)
+    (let [event (t/decode-str (:event props))
           whook (:config props)
 
           body  (case (:mtype whook)
@@ -203,10 +203,13 @@
    [:mtype ::sm/text]])
 
 (def schema:run-webhook-params
-  "Schema declares the uuid fields the handler consumes so the JSON
-  decoder restores their types after the transit→JSON round-trip."
+  "The event travels nested in transit inside the JSON job props: plain
+  JSON cannot carry UUID (or instant/set) types, so process-webhook-event
+  transit-encodes it at submit and the handler transit-decodes it before
+  delivery. This keeps the wire payload identical to the legacy worker
+  for every mtype, whatever shape the event has."
   [:map
-   [:event [:map-of :keyword :any]]
+   [:event :string]
    [:config schema:run-webhook-config]])
 
 (defmethod ig/init-key ::run-webhook-job-def

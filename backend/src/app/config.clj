@@ -398,7 +398,7 @@
 (defn get-file-clean-delay
   []
   (or (c/get config :file-clean-delay)
-       (ct/duration {:days 2})))
+      (ct/duration {:days 2})))
 
 (defn join-uri
   "Join path segments onto a base URI, preserving a potential subpath
@@ -421,7 +421,7 @@
   progress) before the dispatcher marks it as orphan."
   []
   (or (c/get config :jobs-lease)
-       (ct/duration {:minutes 30})))
+      (ct/duration {:minutes 30})))
 
 (defn get-jobs-request-timeout
   "Default timeout for the ephemeral request! calls (waiting for the
@@ -436,8 +436,8 @@
   kept before the jobs GC deletes them; parity with the legacy tasks-gc
   deletion delay."
   []
-   (or (c/get config :jobs-retention)
-       (ct/duration {:days 7})))
+  (or (c/get config :jobs-retention)
+      (ct/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

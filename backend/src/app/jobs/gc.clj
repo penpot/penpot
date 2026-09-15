@@ -42,16 +42,24 @@
       SET touched_at = ?
     WHERE id = ANY(?::uuid[])")
 
+(def ^:private gc-batch-size 1000)
+
 (def ^:private sql:delete-expired-jobs
   "DELETE FROM job
-     WHERE expires_at < now()
+     WHERE id IN (SELECT id
+                    FROM job
+                   WHERE expires_at < now()
+                   LIMIT ?)
    RETURNING resource_id")
 
 (def ^:private sql:delete-retained-jobs
   "DELETE FROM job
-     WHERE status IN ('completed', 'failed', 'cancelled')
-       AND profile_id IS NULL
-       AND modified_at < now() - ?::interval
+     WHERE id IN (SELECT id
+                    FROM job
+                   WHERE status IN ('completed', 'failed', 'cancelled')
+                     AND profile_id IS NULL
+                     AND modified_at < now() - ?::interval
+                   LIMIT ?)
    RETURNING resource_id")
 
 (defn- touch-resources!
@@ -63,10 +71,17 @@
     0))
 
 (defn- delete-jobs!
-  [conn sql & params]
-  (let [rows         (db/exec! conn (into [sql] params))
-        resource-ids (into [] (keep :resource-id) rows)]
-    [(count rows) (touch-resources! conn resource-ids)]))
+  [cfg conn sql & params]
+  (loop [deleted 0
+         touched 0]
+    (let [rows         (db/exec! conn (conj (into [sql] params) gc-batch-size))
+          resource-ids (into [] (keep :resource-id) rows)
+          deleted'     (+ deleted (count rows))
+          touched'     (+ touched (touch-resources! conn resource-ids))]
+      (if (< (count rows) gc-batch-size)
+        [deleted' touched']
+        (do (jobs/heartbeat! cfg)
+            (recur deleted' touched'))))))
 
 (declare execute-jobs-gc!)
 
@@ -89,6 +104,9 @@
   internal terminal rows, marking the storage resources of the deleted
   rows as touched (same transaction).
 
+  Deletes run in bounded batches of 1000 rows with a heartbeat between
+  batches so long sweeps neither spike the WAL nor outrun the job lease.
+
   The `:rollback?` param (default false) forces the transaction to rollback
   instead of commit. Used for testing transactional code without side effects."
   [cfg params]
@@ -97,10 +115,10 @@
     (db/tx-run! (assoc cfg ::db/rollback (:rollback? params))
                 (fn [{:keys [::db/conn]}]
                   (let [[deleted-expired touched-expired]
-                        (delete-jobs! conn sql:delete-expired-jobs)
+                        (delete-jobs! cfg conn sql:delete-expired-jobs)
 
                         [deleted-retained touched-retained]
-                        (delete-jobs! conn sql:delete-retained-jobs
+                        (delete-jobs! cfg conn sql:delete-retained-jobs
                                       (db/interval min-age))]
                     (l/dbg :hint "jobs gc finished"
                            :deleted-expired deleted-expired

@@ -21,7 +21,11 @@
     external workers answer with `reply!`.
 
   Params payloads are stored as plain JSON (not transit) in the `props` jsonb
-  column and decoded back to typed Clojure values using the job-def decoder."
+  column and decoded back to typed Clojure values using the job-def decoder.
+
+  Any job that can run longer than `:jobs-lease` must call `heartbeat!`
+  on its loop, otherwise the dispatcher marks it orphaned while its side
+  effects continue."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -89,6 +93,11 @@
   (reset! defs-registry defs)
   (l/inf :hint "job definitions initialized" :jobs (count defs))
   defs)
+
+(defmethod ig/halt-key! ::defs
+  [_ defs]
+  (reset! defs-registry {})
+  (l/inf :hint "job definitions halted" :jobs (count defs)))
 
 (defn get-job-def
   "Resolve the job-def for the provided job name; raises if missing."
@@ -315,12 +324,21 @@
   (swap! heartbeats dissoc job-id)
   (swap! progresses dissoc job-id))
 
+(def ^:private sql:touch-heartbeat
+  "UPDATE job
+      SET modified_at = ?
+    WHERE id = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')")
+
 (defn heartbeat!
   "Touch `modified_at` on the running job (throttled: does not write when
   the last beat is more recent than ~60s). Handlers call it on every
   iteration without thinking. The job id comes from the `::job-id` key on
   the cfg, the thread-bound `*job-id*` (set by the runner), or can be
-  passed explicitly. No-op when there is no job context."
+  passed explicitly. No-op when there is no job context.
+
+  Never touches terminal rows: beating a completed/failed/cancelled job
+  would silently extend its retention window."
   ([cfg]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
@@ -328,10 +346,7 @@
   ([cfg job-id]
    (when (uuid? job-id)
      (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
-       (db/update! cfg :job
-                   {:modified-at (ct/now)}
-                   {:id job-id}
-                   {::db/return-keys false})
+       (db/exec-one! cfg [sql:touch-heartbeat (ct/now) job-id])
        nil))))
 
 (defn progress!

@@ -229,6 +229,20 @@
         (t/is (= (inst-ms (:modified-at row1))
                  (inst-ms (:modified-at row2))))))))
 
+(t/deftest heartbeat-skips-terminal-states
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params (make-params)})]
+    (t/testing "terminal states are never touched by heartbeat"
+      (th/db-update! :job {:status "completed"
+                           :modified-at (ct/in-past {:days 10})}
+                     {:id job-id})
+      (swap! @#'jobs/heartbeats dissoc job-id)
+      (let [before (jobs/get-job cfg job-id)]
+        (jobs/heartbeat! cfg job-id)
+        (t/is (= (inst-ms (:modified-at before))
+                 (inst-ms (:modified-at (jobs/get-job cfg job-id)))))))))
+
 (t/deftest progress-respects-throttle-and-skips-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit! cfg {::jobs/name   :echo
@@ -430,4 +444,15 @@
         (let [row (jobs/get-job cfg job-id)]
           (t/is (nil? (:progress row))
                 (str "progress should be nil on " status " status")))))))
+
+(t/deftest defs-halt-clears-module-registry
+  (let [prev @@#'jobs/defs-registry]
+    ;; init populates the module registry
+    (get-job-defs)
+    (t/is (contains? @@#'jobs/defs-registry :echo))
+    (try
+      (ig/halt-key! ::jobs/defs nil)
+      (t/is (= {} @@#'jobs/defs-registry))
+      (finally
+        (reset! @#'jobs/defs-registry prev)))))
 

@@ -447,13 +447,13 @@
    :app.tasks.tasks-gc/tasks-gc-job-def
    {::db/pool (ig/ref ::db/pool)}
 
-    :app.tasks.telemetry/telemetry-job-def
-    {::db/pool     (ig/ref ::db/pool)
-     ::http/client (ig/ref ::http.client/client)
-     ::setup/props (ig/ref ::setup/props)}
+   :app.tasks.telemetry/telemetry-job-def
+   {::db/pool     (ig/ref ::db/pool)
+    ::http/client (ig/ref ::http.client/client)
+    ::setup/props (ig/ref ::setup/props)}
 
-    ::session/session-gc-job-def
-    {::db/pool (ig/ref ::db/pool)}
+   ::session/session-gc-job-def
+   {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def
    {::db/pool (ig/ref ::db/pool)}

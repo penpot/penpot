@@ -191,3 +191,23 @@
     (t/is (nil? (th/db-get :job {:id job-id} :id :status)))
     (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id object)}
                                          :id :touched-at))))))
+
+(t/deftest gc-deletes-expired-jobs-in-bounded-batches
+  (let [total 2500]
+    (th/db-exec! [(str "INSERT INTO job (name, queue, status, expires_at) "
+                       "SELECT 'test-job', 'test:default', 'completed', "
+                       "now() - interval '1 hour' "
+                       "FROM generate_series(1, " total ")")])
+    ;; spread a few resources across batches so every batch touches
+    (let [objects (repeatedly 3 mk-storage-object!)]
+      (doseq [[object n] (map vector objects (range))]
+        (th/db-exec! ["UPDATE job SET resource_id = ?
+                        WHERE id = (SELECT id FROM job OFFSET ? LIMIT 1)"
+                      (:id object) (* n 1000)]))
+      (let [{:keys [deleted-expired touched-expired]} (th/run-task! :jobs-gc {})]
+        (t/is (= total deleted-expired))
+        (t/is (= (count objects) touched-expired))
+        (t/is (= 0 (count (th/db-query :job {:queue "test:default"}))))
+        (doseq [object objects]
+          (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id object)}
+                                               :id :touched-at)))))))))

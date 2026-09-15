@@ -7,10 +7,18 @@
 (ns backend-tests.migrations-test
   (:require
    [app.db :as db]
+   [app.migrations :as migrations]
+   [app.util.migrations :as mg]
    [backend-tests.helpers :as th]
+   [clojure.spec.alpha :as s]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
+
+(t/deftest migrations-registry-satisfies-steps-spec
+  (t/testing "every entry is a {:name :fn} step (guards against stray forms)"
+    (t/is (s/valid? ::mg/steps migrations/migrations)
+          (s/explain-str ::mg/steps migrations/migrations))))
 
 (defn- table-columns
   [table]

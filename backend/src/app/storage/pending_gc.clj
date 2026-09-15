@@ -77,18 +77,6 @@
         (recur (long (+ total (count rows)))))
       total)))
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected valid db pool")
-  (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage"))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [_]
-    (let [total (process! cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:processed total})))
-
 (declare execute-storage-pending-gc!)
 
 (defmethod ig/assert-key ::storage-pending-gc-job-def

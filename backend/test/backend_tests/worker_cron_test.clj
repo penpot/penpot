@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.util.cron :as ucron]
    [app.worker.cron :as cron]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -96,30 +97,36 @@
         (let [props (db/decode-json-pgobject (:props row))]
           (t/is (= {:min-age 3600000} props)))))))
 
-(t/deftest cron-no-overlap-check-prevents-duplicate-submission
-  (let [cfg     (make-cfg)
-        entries (get-cron-entries)
-        entry   (first entries)]
+(t/deftest cron-tick-submits-only-when-no-active-instance
+  (let [cfg   (make-cfg)
+        ;; strings, as produced by the cron component init (d/name);
+        ;; the cron expression must be parsed: the tick reschedules
+        ;; itself in `finally`
+        entry {:id   "session-gc-no-overlap"
+               :task "session-gc"
+               :cron (ucron/cron "0 0 0 * * ?")}]
 
-    ;; Submit first job
-    (let [job-id-1 (cron/submit-cron-job! cfg entry)]
-      (t/is (some? job-id-1))
+    ;; the tick claims this row; without it the tick silently skips
+    (th/db-insert! :scheduled-task {:id        "session-gc-no-overlap"
+                                    :cron-expr "0 0 * * *"})
 
-      ;; Check that one job exists
-      (t/is (= 1 (count-jobs cfg :name "session-gc" :label "session-gc-no-props")))
+    ;; execute-cron-task runs on a plain thread; join waits for the tick
+    (let [tick! (fn [] (.join ^Thread (#'cron/execute-cron-task cfg entry)))]
+      ;; first tick submits exactly one job
+      (tick!)
+      (t/is (= 1 (count-jobs cfg :name "session-gc"
+                             :label "session-gc-no-overlap")))
 
-      ;; Simulate the no-overlap check: count active jobs with same name+label
-      (let [active (db/exec-one! cfg
-                                 ["SELECT count(*) AS n FROM job
-                                   WHERE name = ? AND label = ?
-                                     AND status IN ('new', 'scheduled', 'running', 'retry')"
-                                  "session-gc" "session-gc-no-props"])]
-        ;; Should find 1 active job
-        (t/is (= 1 (:n active)))
+      ;; second tick with the first still active submits nothing
+      (tick!)
+      (t/is (= 1 (count-jobs cfg :name "session-gc"
+                             :label "session-gc-no-overlap")))
 
-        ;; The no-overlap logic would skip submission if active > 0
-        ;; So we verify the check works correctly
-        (t/is (pos? (:n active)))))))
+      ;; once the first reaches terminal, the next tick submits again
+      (th/db-update! :job {:status "completed"} {:label "session-gc-no-overlap"})
+      (tick!)
+      (t/is (= 2 (count-jobs cfg :name "session-gc"
+                             :label "session-gc-no-overlap"))))))
 
 (t/deftest cron-job-created-on-cron-queue-with-null-profile-id
   (let [cfg     (make-cfg)
