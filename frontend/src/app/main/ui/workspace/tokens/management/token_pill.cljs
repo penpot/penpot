@@ -55,10 +55,19 @@
 
    ;; Color
    :fill "Fill"
-   :stroke-color "Stroke Color"})
+   :stroke-color "Stroke Color"
+
+   ;; Stroke Width
+   :stroke-width-top "Top"
+   :stroke-width-right "Right"
+   :stroke-width-bottom "Bottom"
+   :stroke-width-left "Left"})
 
 (def ^:private dimensions-dictionary
-  {:stroke-width :stroke-width
+  {:stroke-width-top :stroke-width
+   :stroke-width-right :stroke-width
+   :stroke-width-bottom :stroke-width
+   :stroke-width-left :stroke-width
    :p1 :spacing
    :p2 :spacing
    :p3 :spacing

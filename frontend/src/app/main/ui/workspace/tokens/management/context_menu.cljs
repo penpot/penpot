@@ -288,7 +288,14 @@
    (dwta/update-shape-radius-for-corners value shape-ids attributes)))
 
 (def shape-attribute-actions-map
-  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
+  (let [stroke-width (partial all-or-separate-actions {:attribute-labels {:stroke-width "Stroke Width"
+                                                                          :stroke-width-top "Top"
+                                                                          :stroke-width-right "Right"
+                                                                          :stroke-width-bottom "Bottom"
+                                                                          :stroke-width-left "Left"}
+                                                       :hint (tr "workspace.tokens.stroke-width")
+                                                       :on-update-shape-all dwta/update-stroke-width
+                                                       :on-update-shape dwta/update-stroke-width-side})
         font-size (partial generic-attribute-actions #{:font-size} "Font Size")
         letter-spacing (partial generic-attribute-actions #{:letter-spacing} "Letter Spacing")
         font-family (partial generic-attribute-actions #{:font-family} "Font Family")
@@ -337,7 +344,7 @@
                         (when (seq (border-radius context-data))
                           [{:title "Border Radius" :submenu :border-radius}])
                         [:separator]
-                        (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
+                        (stroke-width context-data)
                         [:separator]
                         (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
