@@ -487,25 +487,45 @@
                 (when (= :db.type/ref (:db/valueType decl)) attr)))
         schema))
 
-(defn build-datoms
-  "The projection of `build-tx`, flattened into datoms whose entity ids are
-  already assigned, which is what `datascript.core/init-db` takes.
+(defn- intern-tempid
+  [eids tempid]
+  (if (contains? eids tempid)
+    eids
+    (assoc eids tempid (inc (count eids)))))
+
+(defn tx->datoms
+  "Flatten a `build-tx` transaction into datoms whose entity ids are already
+  assigned, which is what `datascript.core/init-db` takes.
 
   Interning the tempid strings in first-appearance order is the whole of
   the id assignment, and it is sound only because every entity is emitted
   once and takes its identity from the document rather than from an upsert.
   A build transform that read the index instead would break that property
   and force the build back onto the transact path, which is what the rule
-  in this project's entry set exists to prevent."
-  [data file]
-  (let [tx   (build-tx data file)
-        eids (reduce (fn [acc entity]
-                       (let [tempid (:db/id entity)]
-                         (if (contains? acc tempid)
-                           acc
-                           (assoc acc tempid (inc (count acc))))))
-                     {}
-                     tx)]
+  in this project's entry set exists to prevent.
+
+  A reference naming a tempid the transaction never defines is refused
+  rather than resolved, which is what `d/db-with` does with the same
+  transaction (`:error :transact/syntax`, \"Tempids used only as value\").
+  The case is reachable, because `ref-resolver` answers with the tempid of
+  whatever shape `ctf/find-ref-shape` names and that shape may sit in a
+  container the builder skipped, and it is a projection defect rather than a
+  document one. Resolving it to `nil` would put a nil-valued reference in
+  the index and allocating an entity for it would index an edge to nothing,
+  and neither would say so.
+
+  The entity ids are an artefact of this assignment and carry no meaning.
+  They are comparable between two builds of one document and not between
+  builds of two documents, because inserting one entity shifts every later
+  first appearance."
+  [tx]
+  (let [eids (reduce (fn [eids entity] (intern-tempid eids (:db/id entity))) {} tx)
+        ref! (fn [tempid]
+               (or (get eids tempid)
+                   (throw (ex-info (str "reference to a tempid the transaction never defines: "
+                                        tempid)
+                                   {:error :projection/dangling-reference
+                                    :tempid tempid}))))]
     (persistent!
      (reduce (fn [acc entity]
                (let [eid (get eids (:db/id entity))]
@@ -516,7 +536,7 @@
                       (let [ref? (contains? ref-attrs attr)
                             emit (fn [acc value]
                                    (conj! acc (d/datom eid attr
-                                                       (if ref? (get eids value) value))))]
+                                                       (if ref? (ref! value) value))))]
                         (if (contains? card-many-attrs attr)
                           (reduce emit acc value)
                           (emit acc value)))))
@@ -525,16 +545,25 @@
              (transient [])
              tx))))
 
+(defn build-datoms
+  "The projection of `build-tx`, flattened by `tx->datoms`."
+  [data file]
+  (tx->datoms (build-tx data file)))
+
 (defn build
   "Project file `data` into a fresh overlay. Pure: returns a datascript
   database value.
 
-  The index is built bottom-up from datoms rather than transacted, which
-  on a 21,218-shape file is 410 ms against 2,150 ms for the same 217,598
-  datoms, measured back to back in one JVM. The two paths produce the same
-  graph: entity ids differ, and the datom set is identical once the ids are
-  read back through their tempids, which `backend-tests.graph-overlay-test`
-  asserts."
+  The index is built bottom-up from datoms rather than transacted, which on
+  a 21,218-shape file is 500 ms warm and 800 ms on the first call, against
+  2,150 ms for the same 217,598 datoms, measured on a fresh JVM with the
+  passes reported separately. The walk in `build-tx` is 315 ms of that, so
+  the remaining cost is the document rather than the index.
+
+  The two paths produce the same graph. Entity ids differ and carry no
+  meaning, and the datom set is identical once every id is read back
+  through the tempid that minted it, which
+  `backend-tests.graph-overlay-test` asserts."
   ([data] (build data nil))
   ([data file]
    (d/init-db (build-datoms data file) schema)))
