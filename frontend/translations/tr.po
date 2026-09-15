@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-08-02 05:01+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"PO-Revision-Date: 2026-09-15 17:17+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -406,6 +406,7 @@ msgid "dashboard.create-version-menu"
 msgstr "Bu sürümü sabitle"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
+#, fuzzy
 msgid "dashboard.default-team-name"
 msgstr "Penpot'un"
 
@@ -1105,7 +1106,7 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Dış kullanıcılara gönderilen bekleyen davetler iptal edilecektir."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Burada, takım oluşturmanıza veya eklemenize izin verilen tüm "
@@ -1239,7 +1240,7 @@ msgstr "Dosyaların başarıyla taşındı"
 msgid "dashboard.success-move-project"
 msgstr "Projen başarıyla taşındı"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Bu takım artık %s organizasyonuna ait"
 
@@ -1251,7 +1252,7 @@ msgstr "Takım bilgisi"
 msgid "dashboard.team-members"
 msgstr "Takım üyeleri"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Bu takım artık %s organizasyonuna ait değil"
 
