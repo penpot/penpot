@@ -3494,6 +3494,10 @@ msgstr "Mostrar sólo tus comentarios"
 msgid "labels.sketch"
 msgstr "Sketch"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.skip"
+msgstr "Saltar"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:1070
 msgid "labels.sources"
 msgstr "Recursos"
