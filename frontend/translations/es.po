@@ -776,14 +776,20 @@ msgstr[1] "%s bibliotecas fueron vinculadas automáticamente por nombre."
 msgid "dashboard.import.resolve-libraries"
 msgstr "Algunas bibliotecas no pudieron vincularse automáticamente. Selecciona la biblioteca correcta para cada una:"
 
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "biblioteca original"
+
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "conectar a"
+
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirmar vínculos de biblioteca"
 
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
 
-msgid "dashboard.import.review-links"
-msgstr "Revisar vínculos"
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Conectar bibliotecas seleccionadas"
 
 msgid "dashboard.import.summary.auto-linked"
 msgstr "Vinculadas automáticamente"
@@ -791,11 +797,23 @@ msgstr "Vinculadas automáticamente"
 msgid "dashboard.import.summary.your-selection"
 msgstr "Tu selección"
 
+msgid "dashboard.import.summary.manually-linked"
+msgstr "vinculada manualmente"
+
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+msgid "dashboard.import.summary.new"
+msgstr "Nueva"
+
 msgid "dashboard.import.summary.linked"
-msgstr "Vinculada"
+msgstr "auto-vinculada"
 
 msgid "dashboard.import.summary.no-selection"
 msgstr "Ninguna biblioteca seleccionada"
+
+msgid "dashboard.import.file-name-label"
+msgstr "Nombre del archivo"
 
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
@@ -3491,6 +3509,10 @@ msgstr "Mostrar sólo tus comentarios"
 #: src/app/main/ui/onboarding/questions.cljs:156
 msgid "labels.sketch"
 msgstr "Sketch"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.skip"
+msgstr "Saltar"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1070
 msgid "labels.sources"

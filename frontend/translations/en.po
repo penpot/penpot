@@ -772,14 +772,20 @@ msgstr[1] "%s libraries were automatically linked by name."
 msgid "dashboard.import.resolve-libraries"
 msgstr "Some libraries couldn't be linked automatically. Select the correct library for each:"
 
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "original library"
+
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connect to"
+
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Review the library links before confirming:"
 
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirm library links"
 
-msgid "dashboard.import.review-links"
-msgstr "Review links"
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connect selected libraries"
 
 msgid "dashboard.import.summary.auto-linked"
 msgstr "Auto-linked"
@@ -787,11 +793,23 @@ msgstr "Auto-linked"
 msgid "dashboard.import.summary.your-selection"
 msgstr "Your selection"
 
+msgid "dashboard.import.summary.manually-linked"
+msgstr "linked manually"
+
+msgid "dashboard.import.summary.original"
+msgstr "Original"
+
+msgid "dashboard.import.summary.new"
+msgstr "New"
+
 msgid "dashboard.import.summary.linked"
-msgstr "Linked"
+msgstr "auto-linked"
 
 msgid "dashboard.import.summary.no-selection"
 msgstr "No library selected"
+
+msgid "dashboard.import.file-name-label"
+msgstr "File name"
 
 #: src/app/main/ui/dashboard.cljs:260
 msgid "dashboard.import.no-perms"
@@ -3593,6 +3611,10 @@ msgstr "Show only your comments"
 #: src/app/main/ui/onboarding/questions.cljs:156
 msgid "labels.sketch"
 msgstr "Sketch"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "labels.skip"
+msgstr "Skip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1070
 msgid "labels.sources"
