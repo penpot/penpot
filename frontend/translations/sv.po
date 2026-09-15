@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:19+0000\n"
-"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -1098,11 +1098,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Väntande inbjudningar till externa användare kommer att avbrytas."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
-"Här hittar du alla dina organisationer där du har rätt att skapa eller "
-"lägga till team."
+"Här hittar du alla dina organisationer där du har rätt att skapa eller lägga "
+"till team."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1232,7 +1232,7 @@ msgstr "Dina filer har flyttats"
 msgid "dashboard.success-move-project"
 msgstr "Ditt projekt har flyttats"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Detta team tillhör nu %s"
 
@@ -1244,7 +1244,7 @@ msgstr "Team info"
 msgid "dashboard.team-members"
 msgstr "Teammedlemmar"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Detta team tillhör inte längre organisation %s"
 
