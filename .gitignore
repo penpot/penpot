@@ -102,6 +102,8 @@ opencode.json
 /.devenv/mcp/
 /opencode.json
 /.agents/plans
+/.agents/local/
+/AGENTS.local.md
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs
