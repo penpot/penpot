@@ -450,6 +450,7 @@
 (defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-not-configured [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

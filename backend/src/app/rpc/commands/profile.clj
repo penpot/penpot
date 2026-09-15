@@ -139,7 +139,7 @@
 
     (catch Throwable cause
       (if (= :not-found (-> cause ex-data :type))
-        {:id uuid/zero :fullname "Anonymous User"}
+        (with-nitrate-licence {:id uuid/zero :fullname "Anonymous User"} cfg)
         (throw cause)))))
 
 (defn get-profile
