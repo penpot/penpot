@@ -14,9 +14,12 @@
 - **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
   Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
   This prevents hiding test failures. See `mem:testing` for details.
-- **`.claude/skills` is a symlink to `.agents/skills`.**
-  Edit skills only in their canonical location (`.agents/skills`); never edit
-  through `.claude/skills`.
+- **Shared skills live in `.agents/skills/`, a developer's own in
+  `.agents/local/skills/`.** Edit either only at that path, never through
+  `.claude/skills`, which may be a link into the shared one.
+- **Read `AGENTS.local.md` after this file whenever it exists.** It carries
+  the developer's steering for this project and overrides this file on prose style and
+  workflow, but not on project policy, where instructions here prevail.
 - **Commit message body lines MUST wrap at ≤76 chars** (subject ≤70 chars) and
   the commit MUST pass `./scripts/check-commit` with exit code 0 before you
   consider it done. This is mechanically checked — do not eyeball it.

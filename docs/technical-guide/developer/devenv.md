@@ -90,6 +90,11 @@ the frontend's MCP flag) is copied into each workspace on its initial sync
 only. After that the developer maintains it in each workspace; subsequent
 `--sync` runs leave the workspace copy alone.
 
+The Claude Code entry points, `CLAUDE.md` and `.claude/skills`, are seeded the
+same way: both are gitignored, so the sync does not carry them, and the first
+sync creates them as links to `AGENTS.md` and `.agents/skills`. A workspace
+that already has either path keeps what it has.
+
 Stopping is equally flexible — each workspace is independent. Shared infra
 stops only when no instances remain running:
 
