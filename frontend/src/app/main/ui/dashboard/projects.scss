@@ -151,17 +151,17 @@
 
   @include t.use-typography("body-medium");
 
+  flex: 0 0 auto;
+  margin-inline-start: auto;
   border: none;
   background: none;
   cursor: pointer;
-  position: absolute;
-  inset-block-start: var(--sp-s);
-  inset-inline-end: px2rem(52);
   display: flex;
   align-items: center;
   justify-content: space-between;
   column-gap: var(--sp-m);
   color: var(--show-more-color);
+  white-space: nowrap;
 
   &:hover {
     --show-more-color: var(--button-secondary-foreground-color-active);

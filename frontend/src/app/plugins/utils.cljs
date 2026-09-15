@@ -206,6 +206,15 @@
   (when-let [shape (locate-shape file-id page-id shape-id)]
     (get-in shape [:interactions index])))
 
+(defn locate-interaction-index
+  "Position of `interaction` within the shape's current interactions, falling
+  back to `index` while it addresses an existing interaction."
+  [file-id page-id shape-id interaction index]
+  (let [interactions (-> (locate-shape file-id page-id shape-id) :interactions)]
+    (or (d/index-of interactions interaction)
+        (when (and (int? index) (< -1 index (count interactions)))
+          index))))
+
 (defn proxy->interaction
   [proxy]
   (let [file-id (obj/get proxy "$file")

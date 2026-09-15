@@ -94,11 +94,11 @@ Penpot is the only design & prototype platform that is deployment agnostic. You 
 
 Learn how to install it with Docker, Kubernetes, Elestio or other options on [our website](https://penpot.app/self-host).
 
-<img width="100%" height="1010" alt="2" src="https://github.com/user-attachments/assets/243e796e-a140-481a-b68f-b24be6a70e37" />
-
 ## Penpot Enterprise ##
 
-Penpot Enterprise is our paid plan for organizations that need to scale their design work across multiple teams with advanced governance, security, and administration. Manage teams and access from a centralized **Admin Console**, configure advanced permissions, and connect your **identity provider through SSO**. Available for cloud and self-hosted environments, it combines enterprise controls with Penpot’s open-source foundation and open standards.
+[Penpot Enterprise](https://help.penpot.app/user-guide/account-teams/enterprise-plan/) is our paid plan for organizations that need to scale their design work across multiple teams with advanced governance, security, and administration. Manage teams and access from a centralized **Admin Console**, configure advanced permissions, and connect your **identity provider through SSO**. Available for cloud and self-hosted environments, it combines enterprise controls with Penpot’s open-source foundation and open standards.
+
+<img width="100%" height="1010" alt="2" src="https://github.com/user-attachments/assets/243e796e-a140-481a-b68f-b24be6a70e37" />
 
 ## Community ##
 

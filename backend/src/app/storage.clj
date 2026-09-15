@@ -42,6 +42,10 @@
   "Bucket name for temporary file uploads (10-minute expiry)."
   "tempfile")
 
+(def upload-session-bucket
+  "Bucket name for chunked-upload chunks."
+  "upload-session")
+
 (def valid-buckets
   #{"file-media-object"
     "team-font-variant"
@@ -50,6 +54,7 @@
     "profile"
     "organization"
     tempfile-bucket
+    upload-session-bucket
     "file-data"
     "file-data-fragment"
     "file-change"})
@@ -211,7 +216,8 @@
     (if-some [hit (when (and (::deduplicate? params)
                              (:hash mdata)
                              (:bucket mdata)
-                             (not= tempfile-bucket (:bucket mdata)))
+                             (not= tempfile-bucket (:bucket mdata))
+                             (not= upload-session-bucket (:bucket mdata)))
                     (get-database-object-by-hash pool backend
                                                  (:bucket mdata)
                                                  (:hash mdata)))]

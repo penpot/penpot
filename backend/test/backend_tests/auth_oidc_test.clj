@@ -147,7 +147,7 @@
       (let [result (#'oidc/redirect-with-error "auth-error" "hint message")
             loc    (get-in result [::yres/headers "location"])]
         (t/is (= 302 (::yres/status result)))
-        (t/is (.contains loc "http://localhost:3449/#/auth/login?"))
+        (t/is (.contains loc "http://localhost:3449?screen=auth-login&"))
         (t/is (.contains loc "error=auth-error"))
         (t/is (.contains loc "hint=hint"))))
     (t/testing "without hint omits hint param"
@@ -161,7 +161,7 @@
     (let [result (#'oidc/redirect-to-verify-token "test-token-value")
           loc    (get-in result [::yres/headers "location"])]
       (t/is (= 302 (::yres/status result)))
-      (t/is (.contains loc "http://localhost:3449/#/auth/verify-token?"))
+      (t/is (.contains loc "http://localhost:3449?screen=auth-verify-token&"))
       (t/is (.contains loc "token=test-token-value")))))
 
 (t/deftest build-redirect-uri-constructs-redirect
@@ -485,7 +485,7 @@
                     app.auth.oidc/get-profile      (constantly (assoc test-profile :is-active false))]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (.contains loc "http://localhost:3449/#/auth/register/validate?"))
+          (t/is (.contains loc "http://localhost:3449?screen=auth-register-validate&"))
           (t/is (.contains loc "token=")))))))
 
 (t/deftest callback-success-flow
@@ -503,7 +503,7 @@
                     app.loggers.audit/submit            (constantly nil)]
         (let [result (#'oidc/callback-handler cfg request)
               loc    (redirect-location result)]
-          (t/is (.contains loc "http://localhost:3449/#/auth/verify-token?"))
+          (t/is (.contains loc "http://localhost:3449?screen=auth-verify-token&"))
           (t/is (.contains loc "token=")))))))
 
 (t/deftest callback-gracefully-handles-unable-to-retrieve-user-info

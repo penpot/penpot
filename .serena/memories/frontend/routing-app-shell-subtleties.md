@@ -2,8 +2,9 @@
 
 ## Router, app shell, and errors
 
-- Routing uses browser-history hash tokens, but `on-navigate` rejects navigation if the current origin/path does not match `cf/public-uri`.
-- Route params are split into `:path` and `:query`; duplicate query params can become vectors, so use `rt/get-query-param` when a scalar is required.
+- Routing uses browser-history query tokens (`?screen=<route-name>&params`, single `/` path), but `on-navigate` rejects navigation if the current origin/path does not match `cf/public-uri`.
+- Route params live entirely in the query map under the reserved `screen` key; duplicate query params can become vectors, so use `rt/get-query-param` when a scalar is required.
+- Legacy `#/…` hash URLs translate client-side to the query format (one-version compat; see `legacy-routes` in `app.main.ui.routes`, TODO(next-version) to delete).
 - Unknown/empty routes trigger an extra `get-profile`/`get-teams` check before redirecting. This avoids invitation and root-route race conditions.
 - The root app renders an exception page from `:exception` state before the normal error boundary. `rt/navigated` clears `:exception`.
 - Frontend error handling treats stale cross-build JS chunk failures specially: messages containing `$cljs$cst$` or `$cljs$core$I` plus undefined/null/not-a-function signatures trigger throttled reload.

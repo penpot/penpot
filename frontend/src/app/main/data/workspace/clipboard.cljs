@@ -302,37 +302,13 @@
         (->> (rx/from (.text blob))
              (rx/map paste-text))))))
 
-(defn- clipboard-permission-error?
-  "Check if the given error is a clipboard permission error
-  (NotAllowedError DOMException)."
-  [cause]
-  (and (instance? js/DOMException cause)
-       (= (.-name cause) "NotAllowedError")))
-
-(defn- clipboard-unavailable-error?
-  "Check if the given error is a clipboard API unavailable error
-  (thrown when navigator.clipboard is undefined, e.g. on insecure
-   origins per the W3C Secure Contexts spec)."
-  [cause]
-  (and (instance? js/Error cause)
-       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
-
 (defn- on-clipboard-permission-error
   [cause]
-  (cond
-    (clipboard-permission-error? cause)
-    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+  (if-let [message (clipboard/error-message cause)]
+    (rx/of (ntf/show {:content message
                       :type :toast
                       :level :warning
                       :timeout 5000}))
-
-    (clipboard-unavailable-error? cause)
-    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
-                      :type :toast
-                      :level :warning
-                      :timeout 5000}))
-
-    :else
     (rx/throw cause)))
 
 (defn paste-from-clipboard
@@ -529,26 +505,16 @@
                   (-> entry t/decode-str paste-transit-props))
 
                 (on-error [cause]
-                  (cond
-                    (clipboard-permission-error? cause)
-                    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                  (if-let [message (clipboard/error-message cause)]
+                    (rx/of (ntf/show {:content message
                                       :type :toast
                                       :level :warning
                                       :timeout 5000}))
-
-                    (clipboard-unavailable-error? cause)
-                    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
-                                      :type :toast
-                                      :level :warning
-                                      :timeout 5000}))
-
-                    (:not-implemented (ex-data cause))
-                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-
-                    :else
-                    (do
-                      (js/console.error "Clipboard error:" cause)
-                      (rx/empty))))]
+                    (if (:not-implemented (ex-data cause))
+                      (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+                      (do
+                        (js/console.error "Clipboard error:" cause)
+                        (rx/empty)))))]
 
           (->> (clipboard/from-navigator default-options)
                (rx/mapcat #(.text %))
