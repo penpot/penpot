@@ -75,9 +75,22 @@ description structure, writing principles) and `mem:workflow/creating-commits`
 (commit type emojis). Derive the title and body from the commits and, when
 there is one, from the issue body. Reference the issue with `Closes #NNNN`.
 
+Repeat the `AI-assisted-by:` trailer in the body, once per model that worked
+on the branch, so the PR states the assistance where a reviewer reads it. The
+branch commits keep their own trailers, and a squash merge carries every one
+of them into the landed message.
+
+Before offering or accepting a draft PR, warn that CI doesn't run on them. Add
+`--draft` only when the user agrees to that.
+
 ```bash
-gh pr create --repo penpot/penpot --title "<TITLE>" --body-file /tmp/pr-body.md
+gh pr create --repo penpot/penpot --base "<BASE>" --title "<TITLE>" \
+  --project "Main" --body-file /tmp/pr-body.md
 ```
+
+`--base` is the branch resolved in step 1: without it the PR opens against the
+repository default, which is wrong for a branch cut from `staging`. `--project
+"Main"` is required by `mem:workflow/creating-prs`.
 
 ### 5. Report
 
