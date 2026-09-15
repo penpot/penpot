@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-09-15 17:18+0000\n"
+"Last-Translator: George Lemon <george@getvasco.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
 "Language: ro\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -367,6 +367,7 @@ msgid "dashboard.create-version-menu"
 msgstr "Fixează această versiune"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
+#, fuzzy
 msgid "dashboard.default-team-name"
 msgstr "Contul Penpot"
 
