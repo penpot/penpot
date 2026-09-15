@@ -238,6 +238,30 @@
                    (/ (- half d0) (- d1 d0)))]
         (/ (+ i frac) n)))))
 
+(def ^:private straight-handler-ratio
+  "Chord fraction that places the handlers of a straight segment."
+  (/ 1.0 3.0))
+
+(defn bend-reference-curve
+  "Returns the cubic a bend of `curve` is measured against.
+
+  A straight cubic gets its handlers spread along the chord thirds: it draws
+  the same segment with tangents that open up progressively while it bends."
+  [[start end h1 h2 :as curve]]
+  (if (and (gpt/close? start h1)
+           (gpt/close? end h2))
+    (let [offset (gpt/scale (gpt/to-vec start end) straight-handler-ratio)]
+      [start end (gpt/add start offset) (gpt/subtract end offset)])
+    curve))
+
+(defn curve-handler-deltas
+  "Returns the handler offsets that turn `curve` into `other`."
+  [[_ _ h1 h2] [_ _ o1 o2]]
+  (let [d1 (gpt/to-vec h1 o1)
+        d2 (gpt/to-vec h2 o2)]
+    {:c1x (:x d1) :c1y (:y d1)
+     :c2x (:x d2) :c2y (:y d2)}))
+
 (defn bend-curve-deltas
   "Returns the smallest handler deltas that move the point at `t` to `target`."
   [curve t target]
