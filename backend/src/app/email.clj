@@ -16,8 +16,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.jobs :as jobs]
    [app.util.template :as tmpl]
-   [app.worker :as wrk]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
    [integrant.core :as ig])
@@ -297,22 +297,27 @@
   (email-factory params))
 
 (defn send!
-  "Schedule an already defined email to be sent using asynchronously
-  using worker task."
-  [{:keys [::conn ::factory] :as params}]
-  (assert (db/connectable? conn) "expected a valid database connection or pool")
-
+  "Schedule an already defined email to be sent asynchronously
+  using the unified jobs machinery. The first `cfg` parameter is the
+  connectable context that provides the `::jobs/defs` registry (an RPC
+  method cfg or the system) and can provide a default connection; the
+  second `params` provides the email data and optionally `::factory`
+  and `::reuse-conn`. When `::reuse-conn` is true the submission
+  reuses the caller's existing `::db/conn` (from cfg) instead of
+  acquiring a fresh one from the pool."
+  [cfg {:keys [::reuse-conn ::factory] :as params}]
   (let [email (if factory
                 (factory params)
                 (-> params
-                    (dissoc params)
+                    (dissoc ::reuse-conn ::factory)
                     (check-params)))]
-    (wrk/submit! {::wrk/task :sendmail
-                  ::wrk/delay 0
-                  ::wrk/max-retries 4
-                  ::wrk/priority 200
-                  ::db/conn conn
-                  ::wrk/params email})))
+    (jobs/submit! (cond-> (dissoc cfg ::db/conn)
+                    reuse-conn (assoc ::db/conn (::db/conn cfg)))
+                  {::jobs/name :sendmail
+                   ::jobs/delay 0
+                   ::jobs/max-retries 4
+                   ::jobs/priority 200
+                   ::jobs/params email})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SENDMAIL FN / TASK HANDLER
@@ -320,39 +325,42 @@
 
 (declare send-to-logger!)
 
+(defn- sendmail-impl!
+  [cfg params]
+  (when (contains? cf/flags :smtp)
+    (let [session (create-smtp-session cfg)]
+      (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
+        (.connect ^Transport transport
+                  ^String (::host cfg)
+                  ^String (::port cfg)
+                  ^String (::username cfg)
+                  ^String (::password cfg))
+
+        (let [^MimeMessage message (create-smtp-message cfg session params)]
+          (l/dbg :hint "sendmail"
+                 :id (:id params)
+                 :to (:to params)
+                 :subject (str/trim (:subject params)))
+
+          (.sendMessage ^Transport transport
+                        ^MimeMessage message
+                        (.getAllRecipients message))))))
+
+  (when (contains? cf/flags :log-emails)
+    (send-to-logger! cfg params)))
+
 (defmethod ig/init-key ::sendmail
   [_ cfg]
   (fn [params]
-    (when (contains? cf/flags :smtp)
-      (let [session (create-smtp-session cfg)]
-        (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
-          (.connect ^Transport transport
-                    ^String (::host cfg)
-                    ^String (::port cfg)
-                    ^String (::username cfg)
-                    ^String (::password cfg))
+    (sendmail-impl! cfg params)))
 
-          (let [^MimeMessage message (create-smtp-message cfg session params)]
-            (l/dbg :hint "sendmail"
-                   :id (:id params)
-                   :to (:to params)
-                   :subject (str/trim (:subject params)))
-
-            (.sendMessage ^Transport transport
-                          ^MimeMessage message
-                          (.getAllRecipients message))))))
-
-    (when (contains? cf/flags :log-emails)
-      (send-to-logger! cfg params))))
-
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (fn? (::sendmail params)) "expected valid sendmail handler"))
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [::sendmail]}]
-  (fn [{:keys [props] :as task}]
-    (sendmail props)))
+(defmethod ig/init-key ::job-def
+  [_ {sendmail ::sendmail}]
+  {::jobs/name      :sendmail
+   ::jobs/schema    schema:params
+   ::jobs/handler   sendmail
+   ::jobs/decoder   (sm/decoder schema:params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:params)})
 
 (defn- send-to-logger!
   [_ email]

@@ -15,6 +15,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.components-list :as ctkl]
@@ -24,8 +25,8 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.jobs :as jobs]
    [app.storage :as sto]
-   [app.worker :as wrk]
    [integrant.core :as ig]))
 
 (declare get-file)
@@ -57,6 +58,7 @@
         (->> (db/exec! conn [sql:mark-file-media-object-deleted timestamp id used-media])
              (into #{} (map :id)))]
 
+    (jobs/heartbeat! cfg)
     (doseq [id unused-media]
       (l/trc :obj "media-object"
              :file-id (str id)
@@ -71,7 +73,7 @@
    RETURNING object_id")
 
 (defn- clean-file-object-thumbnails!
-  [{:keys [::db/conn ::timestamp]} {:keys [data] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [data] :as file}]
   (let [file-id (:id file)
         using   (->> (vals (:pages-index data))
                      (into #{} (comp
@@ -87,6 +89,7 @@
         unused (->> (db/exec! conn [sql:mark-file-object-thumbnails-deleted timestamp file-id ids])
                     (into #{} (map :object-id)))]
 
+    (jobs/heartbeat! cfg)
     (doseq [object-id unused]
       (l/trc :obj "object-thumbnail"
              :file-id (str file-id)
@@ -101,10 +104,11 @@
    RETURNING revn")
 
 (defn- clean-file-thumbnails!
-  [{:keys [::db/conn ::timestamp]} {:keys [id revn] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id revn] :as file}]
   (let [unused (->> (db/exec! conn [sql:mark-file-thumbnails-deleted timestamp id revn])
                     (into #{} (map :revn)))]
 
+    (jobs/heartbeat! cfg)
     (doseq [revn unused]
       (l/trc :obj "thumbnail"
              :file-id (str id)
@@ -182,12 +186,13 @@
         (mapcat feat.fdata/get-used-pointer-ids)))
 
 (defn- clean-fragments!
-  [{:keys [::db/conn ::timestamp]} {:keys [id] :as file}]
+  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
   (let [used   (into #{} xf:collect-pointers [file])
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments timestamp id
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]
 
+    (jobs/heartbeat! cfg)
     (doseq [id unused]
       (l/trc :obj "fragment"
              :file-id (str id)
@@ -240,28 +245,39 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
-  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
+(defn execute-file-gc!
+  "Plain job handler: clean the media/thumbnails/fdata of one file."
+  [cfg params]
+  (try
+    (-> cfg
+        (assoc ::db/rollback (:rollback? params))
+        (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
+                      (let [cfg        (-> cfg
+                                           (update ::sto/storage sto/configure conn)
+                                           (assoc ::timestamp (ct/now)))
+                            processed? (process-file! cfg params)]
 
-(defmethod ig/init-key ::handler
+                        (when (and processed? (contains? cf/flags :tiered-file-data-storage))
+                          (jobs/submit! cfg
+                                        {::jobs/name :offload-file-data
+                                         ::jobs/params params
+                                         ::jobs/priority 10
+                                         ::jobs/delay 1000}))
+                        processed?))))
+    (catch Throwable cause
+      (l/err :hint "error on cleaning file"
+             :file-id (str (:file-id params))
+             :cause cause))))
+
+(def schema:file-gc-params
+  [:map
+   [:file-id ::sm/uuid]
+   [:revn ::sm/int]])
+
+(defmethod ig/init-key ::file-gc-job-def
   [_ cfg]
-  (fn [{:keys [props] :as task}]
-    (try
-      (-> cfg
-          (assoc ::db/rollback (:rollback? props))
-          (assoc ::timestamp (ct/now))
-          (db/tx-run! (fn [cfg]
-                        (let [processed? (process-file! cfg props)]
-                          (when (and processed? (contains? cf/flags :tiered-file-data-storage))
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :offload-file-data)
-                                             (assoc ::wrk/params props)
-                                             (assoc ::wrk/priority 10)
-                                             (assoc ::wrk/delay 1000))))
-                          processed?))))
-      (catch Throwable cause
-        (l/err :hint "error on cleaning file"
-               :file-id (str (:file-id props))
-               :cause cause)))))
+  {::jobs/name      :file-gc
+   ::jobs/schema    schema:file-gc-params
+   ::jobs/handler   (partial execute-file-gc! cfg)
+   ::jobs/decoder   (sm/decoder schema:file-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:file-gc-params)})
