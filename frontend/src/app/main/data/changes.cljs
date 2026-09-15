@@ -245,8 +245,10 @@
             features    (get state :features)
             permissions (get state :permissions)]
 
-        ;; Prevent commit changes by a viewer team member (it really should never happen)
-        (when (:can-edit permissions)
+        ;; Historical previews must not create edits to the live file. Check
+        ;; this when creating commits so previously queued edits can still save.
+        (when (and (:can-edit permissions)
+                   (not (dm/get-in state [:workspace-global :preview-id])))
           (log/trace :hint "commit-changes" :redo-changes redo-changes)
           (let [selected (dm/get-in state [:workspace-local :selected])]
             (rx/of (-> params
