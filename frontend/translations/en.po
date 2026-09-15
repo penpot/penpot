@@ -881,9 +881,9 @@ msgstr "connect to"
 msgid "dashboard.import.resolve-libraries.original-library"
 msgstr "original library"
 
-#: src/app/main/ui/dashboard/import.cljs:672
-msgid "dashboard.import.review-links"
-msgstr "Review links"
+#: src/app/main/ui/dashboard/import.cljs:675
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connect selected libraries"
 
 #, unused
 msgid "dashboard.import.summary.auto-linked"
