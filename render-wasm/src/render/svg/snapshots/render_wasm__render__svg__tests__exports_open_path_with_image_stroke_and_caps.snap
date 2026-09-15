@@ -1,0 +1,10 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="344" height="294" viewBox="0 0 344 294"><defs><clipPath id="imgstrokeclip0" clipPathUnits="userSpaceOnUse">
+	<path transform="translate(102 102)" d="M146 -6L0 -6L0 6L134 6L134 84L0 84L0 96L146 96L146 -6Z" clip-rule="evenodd"/>
+	<path transform="translate(102 102)" d="M-24 0L24 48L24 -48L-24 0Z"/>
+	<ellipse transform="translate(102 102)" cx="0" cy="90" rx="24" ry="24"/>
+</clipPath></defs><g clip-path="url(#imgstrokeclip0)"><image href="images/test-fill.svg" x="-48" y="-48" width="236" height="186" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 102 102)"/></g></svg>

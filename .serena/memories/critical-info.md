@@ -11,7 +11,7 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 # Development workflow
 
 - Commit/PR/issue creation is **on explicit request only**. Before any of these actions, read the relevant memory — don't infer format from prior examples:
-  - Before `git commit` → `mem:workflow/creating-commits` (subject format, body, `AI-assisted-by: model-name` trailer)
+  - Before `git commit` → `mem:workflow/creating-commits` (subject/body format, 76-char body wrapping enforced by `scripts/check-commit`, `AI-assisted-by: model-name` trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, labels, Issue Type)
   - Before `gh pr create` / `gh pr edit` → `mem:workflow/creating-prs` (title format, body structure, "Note:" line)
 - Before a repo-wide pnpm version update → `mem:workflow/updating-pnpm` (workspace

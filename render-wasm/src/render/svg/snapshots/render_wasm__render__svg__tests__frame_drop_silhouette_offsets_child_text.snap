@@ -1,0 +1,18 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="332.4282" height="212.4282" viewBox="0 0 332.4282 212.4282"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="332.4282" height="212.4282" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="2.809401" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.8980392 0 0 0 0 0.0627451 0 0 0 0 0.13725491 0 0 0 0.5019608 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter><filter id="txmorph1" filterUnits="userSpaceOnUse" x="0" y="0" width="332.4282" height="212.4282" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="4" result="m"/><feFlood flood-color="#000000" flood-opacity="1" result="f"/><feComposite in="f" in2="m" operator="in"/></filter><filter id="fx2" filterUnits="userSpaceOnUse" x="0" y="0" width="332.4282" height="212.4282" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feMorphology in="alpha" operator="dilate" radius="4" result="spread"/><feOffset in="spread" dx="10" dy="10" result="off"/><feGaussianBlur in="off" stdDeviation="2.809401" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.21960784 0 0 0 0 0 0 0 0 0 0.93333334 0 0 0 0.5019608 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/><feBlend mode="normal" in="SourceGraphic" in2="drop0" result="shape"/></filter></defs><g filter="url(#fx0)"><g filter="url(#txmorph1)">
+	<text transform="translate(20 20)" font-size="40" font-family="Source Sans Pro" x="40, 66.074219, 92.617188, 112.16797" y="76">
+			HOLA
+	</text>
+</g>
+	<path transform="translate(20 20)" d="M300 0L0 0L0 180L300 180L300 0ZM5 5L5 175L295 175L295 5L5 5Z" fill-rule="evenodd"/>
+</g><g filter="url(#fx2)">
+	<text font-size="40" font-family="Source Sans Pro" x="40, 66.074219, 92.617188, 112.16797" y="76">
+			HOLA
+	</text>
+</g>
+	<path d="M300 0L0 0L0 180L300 180L300 0ZM5 5L5 175L295 175L295 5L5 5Z" fill-rule="evenodd"/>
+</svg>

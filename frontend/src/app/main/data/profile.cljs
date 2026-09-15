@@ -77,8 +77,7 @@
   (let [data (ex-data cause)]
     (if (and (= :authorization (:type data))
              (= :challenge-required (:code data)))
-      (let [path (rt/get-current-path)
-            href (->> path
+      (let [href (->> (rt/get-current-href)
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
         (rx/of (rt/nav-raw :href href)))
@@ -376,20 +375,6 @@
            (rx/catch (fn [cause]
                        (js/console.error "delete-photo failed" cause)
                        (rx/of (refresh-profile))))))))
-
-(defn fetch-file-comments-users
-  [{:keys [team-id]}]
-  (assert (uuid? team-id) "expected a valid uuid for `team-id`")
-  (letfn [(fetched [users state]
-            (->> users
-                 (d/index-by :id)
-                 (assoc state :file-comments-users)))]
-    (ptk/reify ::fetch-file-comments-users
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
-               (rx/map #(partial fetched %))))))))
 
 ;; --- EVENT: request-account-deletion
 

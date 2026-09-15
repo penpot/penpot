@@ -204,4 +204,52 @@
         ;; Team member should see both share-links
         (t/is (= 2 (count share-links)))
         (t/is (some #(= link-a-id (:id %)) share-links))
-        (t/is (some #(= link-b-id (:id %)) share-links))))))
+        (t/is (some #(= link-b-id (:id %)) share-links))))
+
+    (t/testing "share-link viewer does not query sibling share-links"
+      ;; Direct regression test for the predicate-pushdown invariant:
+      ;; on the share-link path the bundle must resolve the caller's
+      ;; row with a composite (id, file-id) single-row lookup and must
+      ;; never run the full {:file-id} query that would load sibling
+      ;; tokens into the backend process. The with-redefs spies only
+      ;; record and delegate, following the instrumentation style used
+      ;; elsewhere in this suite (e.g. auth-ldap-test).
+      (let [share-queries (atom [])
+            share-gets    (atom [])
+            orig-query    @#'db/query
+            orig-get*     @#'db/get*]
+        (with-redefs [db/query (fn [conn table params & opts]
+                                 (when (= :share-link table)
+                                   (swap! share-queries conj params))
+                                 (apply orig-query conn table params opts))
+                      db/get*  (fn [conn table params & opts]
+                                 (when (= :share-link table)
+                                   (swap! share-gets conj params))
+                                 (apply orig-get* conn table params opts))]
+          (let [out    (th/command! {::th/type :get-view-only-bundle
+                                     :share-id link-a-id
+                                     :file-id (:id file)})
+                result (:result out)]
+            (t/is (nil? (:error out)))
+            (t/is (= 1 (count (:share-links result))))
+            (t/is (= link-a-id (:id (first (:share-links result)))))
+            ;; No full-file sibling query ran on this path.
+            (t/is (empty? @share-queries))
+            ;; Only composite single-row lookups ran (the permission
+            ;; check plus the bundle itself, same predicate in both).
+            (t/is (seq @share-gets))
+            (t/is (every? #(= {:id link-a-id :file-id (:id file)} %)
+                          @share-gets))))))
+
+    (t/testing "cross-file share-id replay fails closed"
+      (let [other-file (th/create-file* 2 {:profile-id (:id owner)
+                                           :project-id proj-id
+                                           :is-shared false})
+            out (th/command! {::th/type :get-view-only-bundle
+                              :share-id link-a-id
+                              :file-id (:id other-file)})
+            error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= :not-found (:type error-data)))
+        (t/is (= :object-not-found (:code error-data)))))))

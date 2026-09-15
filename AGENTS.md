@@ -14,6 +14,12 @@
 - **Never pipe test output directly to filters** (`| head`, `| tail`, `| grep`, etc.).
   Always redirect to a file first: `command > /tmp/output.txt 2>&1`, then read/grep the file.
   This prevents hiding test failures. See `mem:testing` for details.
+- **`.claude/skills` is a symlink to `.agents/skills`.**
+  Edit skills only in their canonical location (`.agents/skills`); never edit
+  through `.claude/skills`.
+- **Commit message body lines MUST wrap at ≤76 chars** (subject ≤70 chars) and
+  the commit MUST pass `./scripts/check-commit` with exit code 0 before you
+  consider it done. This is mechanically checked — do not eyeball it.
 - **Read the workflow memory BEFORE the corresponding action**:
   - Before `git commit` → `mem:workflow/creating-commits` (commit format, AI-assisted-by trailer)
   - Before `gh issue create` → `mem:workflow/creating-issues` (title derivation, body template, Issue Type)

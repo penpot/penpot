@@ -7,6 +7,7 @@
 (ns frontend-tests.logic.path-actions-test
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.types.path :as path]
    [app.main.data.workspace.path.helpers :as path.helpers]
    [app.main.ui.workspace.viewport.path-actions :as path.actions]
@@ -22,7 +23,8 @@
     (t/is (true? (:make-corner enabled)))
     (t/is (true? (:make-curve enabled)))))
 
-(t/deftest action-eligibility-keeps-coincident-node-identities
+(t/deftest action-eligibility-treats-coincident-commands-as-one-node
+  ;; Both commands sit at (0,0): one node, with a corner and a curve on it.
   (let [content (path/content
                  [{:command :move-to :params {:x 0 :y 0}}
                   {:command :line-to :params {:x 10 :y 0}}
@@ -32,8 +34,42 @@
         enabled (path.helpers/check-enabled content #{0 2})]
     (t/is (true? (:make-corner enabled)))
     (t/is (true? (:make-curve enabled)))
-    (t/is (true? (:merge-nodes enabled)))
-    (t/is (true? (:join-nodes enabled)))))
+    ;; there is a single node, so there is nothing to merge it with
+    (t/is (false? (:merge-nodes enabled)))
+    (t/is (false? (:join-nodes enabled)))
+    (t/is (true? (:separate-nodes enabled)))))
+
+(t/deftest a-junction-node-offers-the-same-actions-however-it-is-selected
+  ;; Three lines meeting at (50,50); a rubber band catches every command
+  ;; there while a click catches one of them.
+  (let [content  (path/content
+                  [{:command :move-to :params {:x 0 :y 0}}
+                   {:command :line-to :params {:x 50 :y 50}}
+                   {:command :move-to :params {:x 100 :y 0}}
+                   {:command :line-to :params {:x 50 :y 50}}
+                   {:command :move-to :params {:x 50 :y 100}}
+                   {:command :line-to :params {:x 50 :y 50}}])
+        in-rect  (path.helpers/nodes-in-rect content (grc/make-rect 45 45 10 10))
+        clicked  (path.helpers/check-enabled content #{1})
+        dragged  (path.helpers/check-enabled content in-rect)]
+    (t/is (= #{1 3 5} in-rect))
+    (t/is (= clicked dragged))
+    ;; and they are the actions of a single node
+    (t/is (false? (:merge-nodes dragged)))
+    (t/is (false? (:join-nodes dragged)))
+    (t/is (true? (:separate-nodes dragged)))
+    ;; two distinct nodes offer the multiple-node actions
+    (t/is (true? (:merge-nodes (path.helpers/check-enabled content #{1 4}))))))
+
+(t/deftest selected-node-count-counts-a-junction-once
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :line-to :params {:x 50 :y 50}}
+                  {:command :move-to :params {:x 100 :y 0}}
+                  {:command :line-to :params {:x 50 :y 50}}])]
+    (t/is (= 1 (path.helpers/selected-node-count content {:nodes #{1 3}})))
+    (t/is (= 2 (path.helpers/selected-node-count content {:nodes #{0 1}})))
+    (t/is (= 0 (path.helpers/selected-node-count content {})))))
 
 (t/deftest toolbar-separators-only-render-between-visible-tool-groups
   (t/are [structural? shape? handler? expected]

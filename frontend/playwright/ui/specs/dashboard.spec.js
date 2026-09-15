@@ -10,7 +10,7 @@ test("Dashboard page has title ", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.page).toHaveURL(/dashboard/);
+  await expect(dashboardPage.page).toHaveURL(/screen=dashboard/);
   await expect(dashboardPage.mainHeading).toBeVisible();
 });
 

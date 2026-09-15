@@ -9,6 +9,7 @@
    ["./clipboard.js" :as impl]
    [app.common.transit :as t]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -214,3 +215,34 @@
 
       :else
       (unavailable-error))))
+
+(defn read-text
+  "Read the system clipboard as plain text. Always returns a Promise, rejecting
+   like `to-clipboard` when the asynchronous Clipboard API is not exposed."
+  []
+  (let [clipboard (get-clipboard)]
+    (if (and clipboard (unchecked-get clipboard "readText"))
+      (.readText ^js clipboard)
+      (unavailable-error))))
+
+(defn permission-error?
+  "True for the `NotAllowedError` DOMException raised when access is denied."
+  [cause]
+  (and (instance? js/DOMException cause)
+       (= (.-name cause) "NotAllowedError")))
+
+(defn unavailable-error?
+  "True when `navigator.clipboard` is undefined, e.g. on an insecure origin."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
+(defn error-message
+  "Translated message for a clipboard failure, or nil for any other error."
+  [cause]
+  (cond
+    (permission-error? cause)
+    (tr "errors.clipboard-permission-denied")
+
+    (unavailable-error? cause)
+    (tr "errors.clipboard-api-unavailable")))

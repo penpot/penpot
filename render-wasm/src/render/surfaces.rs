@@ -40,7 +40,9 @@ fn draw_surface_src_rect_to_dst(
         return;
     }
     to_canvas.save();
-    to_canvas.clip_rect(dst, None, true);
+    // Hard clip: AA softens shared tile edges so the backbuffer background
+    // shows through as 1px seams when tiles are composed with SrcOver.
+    to_canvas.clip_rect(dst, None, false);
     let sx = dst.width() / src.width();
     let sy = dst.height() / src.height();
     to_canvas.translate((dst.left, dst.top));

@@ -41,6 +41,7 @@
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
+   [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [cuerdas.core :as str]))
 
@@ -960,13 +961,18 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::check-organization-sso
   "Validate an organization SSO configuration by generating a login redirect URL.
   Nitrate calls this while configuring SSO to verify client credentials and OIDC
-  discovery before saving the settings."
+  discovery before saving the settings. The issuer URL is nitrate-supplied
+  (customer-configured), so it is checked against the SSRF blocklist before
+  any outbound request is attempted."
   {::doc/added "2.18"
    ::sm/params cto/schema:nitrate-sso
    ::sm/result schema:check-organization-sso-result
    ::rpc/auth false}
   [cfg params]
-  {:valid (oidc/is-organization-sso-config-valid? cfg params)})
+  (let [issuer (oidc/organization-sso-discovery-uri params)]
+    {:valid (boolean (and issuer
+                          (ssrf/safe-url? issuer)
+                          (oidc/is-organization-sso-config-valid? cfg params)))}))
 
 ;; ---- API: notify-organization-sso-change
 (sv/defmethod ::notify-organization-sso-change

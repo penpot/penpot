@@ -438,6 +438,7 @@ pub(crate) struct RenderState {
     pub viewport_presented: bool,
 }
 
+#[derive(Clone)]
 pub struct InteractiveDragCrop {
     pub src_doc_bounds: Rect,
     pub src_selrect: Rect,
@@ -3725,7 +3726,21 @@ impl RenderState {
                 );
 
                 if use_cached {
-                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id) {
+                    if let Some(crop) = self.backbuffer_crop_cache.get(&node_id).cloned() {
+                        self.surfaces.canvas(target_surface).save();
+                        self.surfaces.canvas(target_surface).reset_matrix();
+
+                        if let Some(clips) = clip_bounds.as_ref() {
+                            let antialias = element
+                                .should_use_antialias(scale, self.options.antialias_threshold);
+                            self.clip_target_surface_to_stack(
+                                clips,
+                                target_surface,
+                                scale,
+                                antialias,
+                            );
+                        }
+
                         let crop_image = &crop.image;
                         let crop_src_selrect = crop.src_selrect;
 
@@ -3737,14 +3752,11 @@ impl RenderState {
                             ),
                             None => (0.0, 0.0),
                         };
-                        let scale = self.get_scale();
                         let translation = self
                             .surfaces
                             .get_render_context_translation(self.render_area, scale);
 
                         let canvas = self.surfaces.canvas(target_surface);
-                        canvas.save();
-                        canvas.reset_matrix();
                         // If the crop includes shadows/blur (extrect pixels outside the fill/stroke
                         // silhouette), do NOT apply the silhouette clip or we'd cut those pixels.
                         let should_clip_crop = element.shadows.is_empty() && element.blur.is_none();

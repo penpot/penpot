@@ -60,7 +60,13 @@
 
 (defmethod handle-error :restriction
   [err request _]
-  (let [{:keys [code] :as data} (ex-data err)]
+  (let [data    (ex-data err)
+        code    (get data :code)
+        explain (ex/explain data)
+        data    (-> data
+                    (dissoc ::sm/explain)
+                    (cond-> explain (assoc :explain explain)))]
+
     (if (= code :method-not-allowed)
       {::yres/status 405
        ::yres/body data}
@@ -159,6 +165,13 @@
     ;; full context is already logged above for operators.
     {::yres/status 503
      ::yres/body {:type :nitrate-unavailable}}))
+
+(defmethod handle-error :nitrate-not-configured
+  [err request _]
+  (binding [l/*context* (request->context request)]
+    (l/warn :hint "nitrate is not configured; blocking request" :cause err)
+    {::yres/status 503
+     ::yres/body {:type :nitrate-not-configured}}))
 
 (defmethod handle-error :internal
   [error request parent-cause]

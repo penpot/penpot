@@ -245,16 +245,20 @@
 
         overlaps-parent?
         (fn [clip-parents]
-          (->> clip-parents (some (comp not overlaps?)) not))]
+          (->> clip-parents
+               ;; When clip-children? is false (e.g. deep/penetrate selection with
+               ;; a modifier key held) we still must not reach into the clipped-away,
+               ;; invisible area of an ancestor board with clip content enabled.
+               ;; Only the bool/mask clip-parents (non-frame) are relaxed in that case.
+               (remove #(and (not clip-children?) (not ^boolean (cfh/frame-shape? %))))
+               (every? overlaps?)))]
 
     ;; Shapes after filters of overlapping and criteria
     (into (d/ordered-set)
           (comp (map #(unchecked-get % "data"))
                 (filter match-criteria?)
                 (filter overlaps?)
-                (filter (if clip-children?
-                          (comp overlaps-parent? :clip-parents)
-                          (constantly true)))
+                (filter (comp overlaps-parent? :clip-parents))
                 (keep :id))
           result)))
 

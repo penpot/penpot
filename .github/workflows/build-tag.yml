@@ -46,7 +46,7 @@ jobs:
 
   notify:
     name: Notifications
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     needs:
       - build-docker
       - build-docker-admin-console
