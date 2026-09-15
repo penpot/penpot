@@ -112,11 +112,13 @@ Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
 | Task | `IT_kwDOAcyBPM4AX5NY` |
 | Question | `IT_kwDOAcyBPM4B_IQj` |
 | Docs | `IT_kwDOAcyBPM4B_IQz` |
+| EPIC | `IT_kwDOAcyBPM4CEMzF` |
 
 **Map:**
 - Bug report (steps to reproduce, expected vs. actual) → Bug
 - Enhancement / new feature → Enhancement
 - Feature/epic → Feature
+- Umbrella/EPIC tracking issue that groups sub-issues → EPIC
 - Docs → Docs
 - None of the above → Task
 
