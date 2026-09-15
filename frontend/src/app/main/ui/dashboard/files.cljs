@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
@@ -37,9 +38,10 @@
   (let [project-id (:id project)
 
         local
-        (mf/use-state
-         {:menu-open false
-          :edition false})
+        (mf/use-state {:edition false})
+
+        menu-open*
+        (mf/use-state false)
 
         on-create-click
         (mf/use-fn
@@ -51,22 +53,27 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
-             (swap! local assoc :menu-open true :menu-pos position))))
-
-        on-menu-close
-        (mf/use-fn #(swap! local assoc :menu-open false))
+           (dom/prevent-default event)
+           (swap! menu-open* not)))
 
         on-edit
-        (mf/use-fn #(swap! local assoc :edition true :menu-open false))
+        (mf/use-fn
+         (fn []
+           (reset! menu-open* false)
+           (swap! local assoc :edition true)))
 
         toggle-pin
         (mf/use-fn
          (mf/deps project)
          #(st/emit! (dd/toggle-project-pin project)))
 
-        on-import
+        file-input
+        (mf/use-ref nil)
+
+        on-import-click
+        (mf/use-fn #(dom/click (mf/ref-val file-input)))
+
+        on-finish-import
         (mf/use-fn
          (mf/deps project-id)
          (fn []
@@ -118,23 +125,32 @@
           :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
 
       (when ^boolean can-edit
-        [:div {:class (stl/css :icon)
-               :tab-index "0"
-               :on-click on-menu-click
-               :title (tr "dashboard.options")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (on-menu-click event)))}
-         menu-icon])
-
-      (when ^boolean can-edit
-        [:> project-menu* {:project project
-                           :show (:menu-open @local)
-                           :left (- (:x (:menu-pos @local)) 180)
-                           :top (:y (:menu-pos @local))
-                           :on-edit on-edit
-                           :on-close on-menu-close
-                           :on-import on-import}])]]))
+        [:*
+         [:> project-menu*
+          {:project project
+           :is-open (deref menu-open*)
+           :on-open-change #(reset! menu-open* %)
+           :on-edit on-edit
+           :on-import-click on-import-click
+           :trigger
+           (mf/html
+            [:div {:class (stl/css :icon)
+                   :tab-index "0"
+                   :on-click on-menu-click
+                   :title (tr "dashboard.options")
+                   :on-key-down (fn [event]
+                                  (when (kbd/enter? event)
+                                    (on-menu-click event)))}
+             menu-icon])}]
+         ;; Kept mounted for as long as this header is, regardless of the
+         ;; menu's own open state: the popover really unmounts its content on
+         ;; close (unlike the old context-menu-a11y, which just hid it), and
+         ;; selecting "Import" closes the menu in the same tick — a ref owned
+         ;; inside the popover could already be gone by the time its own
+         ;; click handler fires.
+         [:> udi/import-form* {:ref file-input
+                               :project-id project-id
+                               :on-finish-import on-finish-import}]])]]))
 
 (mf/defc files-section*
   [{:keys [project team layout on-layout-change]}]

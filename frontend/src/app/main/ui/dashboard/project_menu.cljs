@@ -12,23 +12,34 @@
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.dashboard.import :as udi]
-   [app.util.dom :as dom]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator* sub-menu*]]
    [app.util.i18n :as i18n :refer [tr]]
-   [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc project-menu*
-  [{:keys [project show on-edit on-close top left on-import]}]
-  (let [top  (or top 0)
-        left (or left 0)
+;; The menu items only, with no popover of their own — shared by project-menu*
+;; below (opened from the "..." button, via Menu) and by projects.cljs's own
+;; right-click handling (via ContextMenu), so both triggers show the exact
+;; same options.
+;;
+;; on-import-click, rather than this owning its own file input/ref: the
+;; popover this renders inside really unmounts its content on close (unlike
+;; the old context-menu-a11y, which just hid it), and selecting "Import"
+;; closes the menu in the same tick — so a ref owned here can already be
+;; gone by the time its own click handler would fire. The caller keeps the
+;; hidden input mounted for as long as the row itself exists instead.
+(mf/defc project-menu-items*
+  {::mf/private true}
+  [{:keys [project on-edit on-import-click]}]
 
-        current-team-id (mf/use-ctx ctx/current-team-id)
-        teams           (mf/deref refs/teams)
-        teams           (-> teams (dissoc current-team-id) vals vec)
+  (assert (some? project) "missing `project` prop")
+  (assert (fn? on-edit) "missing `on-edit` prop")
+
+  (let [is-default?      (:is-default project)
+
+        current-team-id  (mf/use-ctx ctx/current-team-id)
+        teams            (mf/deref refs/teams)
+        other-teams      (-> teams (dissoc current-team-id) vals)
 
         on-duplicate-success
         (fn [new-project]
@@ -71,73 +82,46 @@
                         :title (tr "modals.delete-project-confirm.title")
                         :message (tr "modals.delete-project-confirm.message")
                         :accept-label (tr "modals.delete-project-confirm.accept")
-                        :on-accept delete-fn})))
-
-        file-input
-        (mf/use-ref nil)
-
-        on-import-files
-        (fn [] (dom/click (mf/ref-val file-input)))
-
-        on-finish-import
-        (mf/use-fn
-         (fn [] (when (fn? on-import) (on-import))))
-
-        options
-        [(when-not (:is-default project)
-           {:name   (tr "labels.rename")
-            :id     "project-rename"
-            :handler on-edit})
-         (when-not (:is-default project)
-           {:name (tr "dashboard.duplicate")
-            :id   "project-duplicate"
-            :handler on-duplicate})
-         (when-not (:is-default project)
-           {:name (tr "dashboard.pin-unpin")
-            :id   "project-pin"
-            :handler toggle-pin})
-
-         (when (and (seq teams) (not (:is-default project)))
-           {:name    (tr "dashboard.move-to")
-            :id      "project-move-to"
-            :options (for [team teams]
-                       {:name    (:name team)
-                        :id      (str "move-to-" (:id team))
-                        :handler (on-move (:id team))})})
-
-         (when (some? on-import)
-           {:name    (tr "dashboard.import")
-            :id      "file-import"
-            :handler on-import-files})
-         (when-not (:is-default project)
-           {:name :separator})
-         (when-not (:is-default project)
-           {:name    (tr "labels.delete")
-            :id      "project-delete"
-            :handler on-delete})]]
-
-    (mf/with-effect [show on-close]
-      (when ^boolean show
-        (st/emit! (ptk/data-event :dropdown/open {:id "project-menu"}))
-        (let [stream (->> st/stream
-                          (rx/filter (ptk/type? :dropdown/open))
-                          (rx/map deref)
-                          (rx/filter #(not= "project-menu" (:id %)))
-                          (rx/take 1))
-              subs   (rx/subs! nil nil on-close stream)]
-          (fn []
-            (rx/dispose! subs)))))
+                        :on-accept delete-fn})))]
 
     [:*
-     [:> context-menu*
-      {:on-close on-close
-       :show show
-       :fixed (or (not= top 0) (not= left 0))
-       :min-width true
-       :top top
-       :left left
-       :options options}]
-     [:> udi/import-form* {:ref file-input
-                           :project-id (:id project)
-                           :on-finish-import on-finish-import}]]))
+     (when-not is-default?
+       [:> menu-item* {:id "project-rename" :on-action on-edit}
+        (tr "labels.rename")])
 
+     (when-not is-default?
+       [:> menu-item* {:id "project-duplicate" :on-action on-duplicate}
+        (tr "dashboard.duplicate")])
+
+     (when-not is-default?
+       [:> menu-item* {:id "project-pin" :on-action toggle-pin}
+        (tr "dashboard.pin-unpin")])
+
+     (when (and (seq other-teams) (not is-default?))
+       [:> sub-menu* {:id "project-move-to" :trigger (tr "dashboard.move-to") :variant "drilldown"}
+        (for [team other-teams]
+          [:> menu-item* {:key (:id team)
+                          :id (str "move-to-" (:id team))
+                          :on-action (on-move (:id team))}
+           (:name team)])])
+
+     (when (some? on-import-click)
+       [:> menu-item* {:id "file-import" :on-action on-import-click}
+        (tr "dashboard.import")])
+
+     (when-not is-default?
+       [:*
+        [:> menu-separator*]
+        [:> menu-item* {:id "project-delete" :on-action on-delete}
+         (tr "labels.delete")]])]))
+
+(mf/defc project-menu*
+  [{:keys [project is-open on-open-change on-edit on-import-click trigger]}]
+  [:> menu*
+   {:is-open is-open
+    :on-open-change on-open-change
+    :placement "bottom end"
+    :trigger trigger}
+   [:> project-menu-items* {:project project
+                            :on-edit on-edit
+                            :on-import-click on-import-click}]])

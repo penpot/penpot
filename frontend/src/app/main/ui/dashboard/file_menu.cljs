@@ -16,12 +16,10 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.context :as ctx]
-   [app.util.dom :as dom]
+   [app.main.ui.ds.layout.menu :refer [menu* menu-item* menu-separator* sub-menu*]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-project-name
@@ -55,18 +53,50 @@
           {}
           projects))
 
-(mf/defc file-menu*
-  [{:keys [files on-edit on-close top left navigate origin parent-id can-edit can-restore]}]
+;; The "move to" tree can be arbitrarily deep (current team's projects, then
+;; every other team's own projects), so every level here uses SubMenu's
+;; drilldown variant instead of a flyout: opening a chain of flyouts that
+;; deep would run off-screen well before it ran out of teams.
+(mf/defc move-to-items*
+  {::mf/private true}
+  [{:keys [current-projects other-teams current-team-id on-move]}]
+  [:*
+   (for [project current-projects]
+     [:> menu-item* {:key (get-project-id project)
+                     :id (get-project-id project)
+                     :on-action (on-move current-team-id (:id project))}
+      (get-project-name project)])
+
+   (when (seq other-teams)
+     [:> sub-menu* {:key "move-to-other-team"
+                    :id "move-to-other-team"
+                    :trigger (tr "dashboard.move-to-other-team")
+                    :variant "drilldown"}
+      (for [team other-teams]
+        [:> sub-menu* {:key (get-project-id team)
+                       :id (get-project-id team)
+                       :trigger (get-team-name team)
+                       :variant "drilldown"}
+         (for [sub-project (:projects team)]
+           [:> menu-item* {:key (get-project-id sub-project)
+                           :id (get-project-id sub-project)
+                           :on-action (on-move (:id team) (:id sub-project))}
+            (get-project-name sub-project)])])])])
+
+;; The menu items only, with no popover of their own — shared by file-menu*
+;; below (opened from the "..." button, via Menu) and by grid.cljs's own
+;; right-click handling (via ContextMenu), so both triggers show the exact
+;; same options.
+
+(mf/defc file-menu-items*
+  [{:keys [files on-edit navigate origin can-edit can-restore]}]
 
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
-  (assert (fn? on-close) "missing `on-close` prop")
   (assert (boolean? navigate) "missing `navigate` prop")
 
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
-        top              (or top 0)
-        left             (or left 0)
 
         file             (first files)
         file-count       (count files)
@@ -83,13 +113,13 @@
                                  (:projects current-team))
 
         on-new-tab
-        (fn [_]
+        (fn []
           (st/emit! (dcm/go-to-workspace
                      {:file-id (:id file)
                       ::rt/new-window true})))
 
         on-duplicate
-        (fn [_]
+        (fn []
           (apply st/emit! (map dd/duplicate-file files))
           (st/emit! (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c file-count)))))
 
@@ -100,8 +130,7 @@
                     (dd/clear-selected-files)))
 
         on-delete
-        (fn [event]
-          (dom/stop-propagation event)
+        (fn []
           (let [num-shared (filter #(:is-shared %) files)]
 
             (if (< 0 (count num-shared))
@@ -149,7 +178,6 @@
           (let [params  {:ids (into #{} (map :id) files)
                          :project-id project-id}]
             (fn []
-
               (let [num-shared (filter #(:is-shared %) files)]
                 (if (and (< 0 (count num-shared))
                          (not= team-id current-team-id))
@@ -171,14 +199,11 @@
           (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files))
 
         on-add-shared
-        (fn [event]
-          (dom/stop-propagation event)
+        (fn []
           (st/emit! (dcm/show-shared-dialog (:id file) add-shared)))
 
         on-del-shared
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
+        (fn []
           (st/emit! (modal/show
                      {:type :delete-shared-libraries
                       :origin :unpublish
@@ -224,126 +249,101 @@
                           :on-accept accept-fn}))))]
 
     (mf/with-effect []
-      (->> (rp/cmd! :get-all-projects)
-           (rx/map group-by-team)
-           (rx/subs! #(reset! teams* %))))
+      (let [subs (->> (rp/cmd! :get-all-projects)
+                      (rx/map group-by-team)
+                      (rx/subs! #(reset! teams* %)))]
+        #(rx/dispose! subs)))
 
-    (mf/with-effect [on-close]
-      (st/emit! (ptk/data-event :dropdown/open {:id "file-menu"}))
-      (let [stream (->> st/stream
-                        (rx/filter (ptk/type? :dropdown/open))
-                        (rx/map deref)
-                        (rx/filter #(not= "file-menu" (:id %)))
-                        (rx/take 1))
-            subs   (rx/subs! nil nil on-close stream)]
-        (fn []
-          (rx/dispose! subs))))
+    (cond
+      can-restore
+      [:*
+       [:> menu-item* {:id "restore-file" :on-action on-restore-immediately}
+        (tr "dashboard.file-menu.restore-files-option" (i18n/c file-count))]
+       [:> menu-item* {:id "delete-file" :on-action on-delete-immediately}
+        (tr "dashboard.file-menu.delete-files-permanently-option" (i18n/c file-count))]]
 
-    (let [sub-options
-          (concat
-           (for [project current-projects]
-             {:name (get-project-name project)
-              :id (get-project-id project)
-              :handler (on-move current-team-id (:id project))})
-           (when (seq other-teams)
-             [{:name (tr "dashboard.move-to-other-team")
-               :id "move-to-other-team"
-               :options
-               (for [team other-teams]
-                 {:name (get-team-name team)
-                  :id (get-project-id team)
-                  :options
-                  (for [sub-project (:projects team)]
-                    {:name (get-project-name sub-project)
-                     :id (get-project-id sub-project)
-                     :handler (on-move (:id team)
-                                       (:id sub-project))})})}]))
+      multi?
+      [:*
+       (when can-edit
+         [:> menu-item* {:id "duplicate-multi" :on-action on-duplicate :datatest-id "duplicate-multi"}
+          (tr "dashboard.duplicate-multi" file-count)])
 
-          options
-          (if can-restore
-            [{:name    (tr "dashboard.file-menu.restore-files-option" (i18n/c file-count))
-              :id      "restore-file"
-              :handler on-restore-immediately}
-             {:name    (tr "dashboard.file-menu.delete-files-permanently-option" (i18n/c file-count))
-              :id      "delete-file"
-              :handler on-delete-immediately}]
-            (if multi?
-              [(when can-edit
-                 {:name    (tr "dashboard.duplicate-multi" file-count)
-                  :id      "duplicate-multi"
-                  :handler on-duplicate})
+       (when (and (or (seq current-projects) (seq other-teams)) can-edit)
+         [:> sub-menu* {:id "file-move-multi" :trigger (tr "dashboard.move-to-multi" file-count) :variant "drilldown"}
+          [:> move-to-items* {:current-projects current-projects
+                              :other-teams other-teams
+                              :current-team-id current-team-id
+                              :on-move on-move}]])
 
-               (when (and (or (seq current-projects) (seq other-teams)) can-edit)
-                 {:name    (tr "dashboard.move-to-multi" file-count)
-                  :id      "file-move-multi"
-                  :options    sub-options})
+       [:> menu-item* {:id "file-binary-export-multi" :on-action on-export-binary-files}
+        (tr "dashboard.export-binary-multi" file-count)]
 
-               {:name    (tr "dashboard.export-binary-multi" file-count)
-                :id      "file-binary-export-multi"
-                :handler on-export-binary-files}
+       (when (and (:is-shared file) can-edit)
+         [:> menu-item* {:id "file-unpublish-multi" :on-action on-del-shared}
+          (tr "labels.unpublish-multi-files" file-count)])
 
-               (when (and (:is-shared file) can-edit)
-                 {:name    (tr "labels.unpublish-multi-files" file-count)
-                  :id      "file-unpublish-multi"
-                  :handler on-del-shared})
+       (when (and (not is-lib-page?) can-edit)
+         [:*
+          [:> menu-separator*]
+          [:> menu-item* {:id "file-delete-multi" :on-action on-delete}
+           (tr "labels.delete-multi-files" file-count)]])]
 
-               (when (and (not is-lib-page?) can-edit)
-                 {:name    :separator}
-                 {:name    (tr "labels.delete-multi-files" file-count)
-                  :id      "file-delete-multi"
-                  :handler on-delete})]
+      :else
+      [:*
+       [:> menu-item* {:id "file-open-new-tab" :on-action on-new-tab}
+        (tr "dashboard.open-in-new-tab")]
 
-              [{:name    (tr "dashboard.open-in-new-tab")
-                :id      "file-open-new-tab"
-                :handler on-new-tab}
-               (when (and (not is-search-page?) can-edit)
-                 {:name    (tr "labels.rename")
-                  :id      "file-rename"
-                  :handler on-edit})
+       (when (and (not is-search-page?) can-edit)
+         [:> menu-item* {:id "file-rename" :on-action on-edit}
+          (tr "labels.rename")])
 
-               (when (and (not is-search-page?) can-edit)
-                 {:name    (tr "dashboard.duplicate")
-                  :id      "file-duplicate"
-                  :handler on-duplicate})
+       (when (and (not is-search-page?) can-edit)
+         [:> menu-item* {:id "file-duplicate" :on-action on-duplicate}
+          (tr "dashboard.duplicate")])
 
-               (when (and (not is-lib-page?)
-                          (not is-search-page?)
-                          (or (seq current-projects) (seq other-teams))
-                          can-edit)
-                 {:name    (tr "dashboard.move-to")
-                  :id      "file-move-to"
-                  :options sub-options})
+       (when (and (not is-lib-page?)
+                  (not is-search-page?)
+                  (or (seq current-projects) (seq other-teams))
+                  can-edit)
+         [:> sub-menu* {:id "file-move-to" :trigger (tr "dashboard.move-to") :variant "drilldown"}
+          [:> move-to-items* {:current-projects current-projects
+                              :other-teams other-teams
+                              :current-team-id current-team-id
+                              :on-move on-move}]])
 
-               (when (and (not is-search-page?)
-                          can-edit)
-                 (if (:is-shared file)
-                   {:name    (tr "dashboard.unpublish-shared")
-                    :id      "file-del-shared"
-                    :handler on-del-shared}
-                   {:name    (tr "dashboard.add-shared")
-                    :id      "file-add-shared"
-                    :handler on-add-shared}))
+       (when (and (not is-search-page?) can-edit)
+         ;; Same id in both branches: :is-shared can flip while this menu
+         ;; instance stays mounted (the on-add-shared/on-del-shared action
+         ;; itself changes it), and react-stately's Collection requires an
+         ;; item's id to stay stable across such an update rather than swap
+         ;; to a differently-id'd item in the same slot.
+         (if (:is-shared file)
+           [:> menu-item* {:id "file-shared-toggle" :on-action on-del-shared}
+            (tr "dashboard.unpublish-shared")]
+           [:> menu-item* {:id "file-shared-toggle" :on-action on-add-shared}
+            (tr "dashboard.add-shared")]))
 
-               {:name   :separator}
+       [:> menu-separator*]
 
-               {:name    (tr "dashboard.download-binary-file")
-                :id      "download-binary-file"
-                :handler on-export-binary-files}
+       [:> menu-item* {:id "download-binary-file" :on-action on-export-binary-files}
+        (tr "dashboard.download-binary-file")]
 
-               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
-                 {:name   :separator})
+       (when (and (not is-lib-page?) (not is-search-page?) can-edit)
+         [:*
+          [:> menu-separator*]
+          [:> menu-item* {:id "file-delete" :on-action on-delete}
+           (tr "labels.delete")]])])))
 
-               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
-                 {:name    (tr "labels.delete")
-                  :id      "file-delete"
-                  :handler on-delete})]))]
-
-      [:> context-menu*
-       {:on-close on-close
-        :fixed (or (not= top 0) (not= left 0))
-        :show true
-        :min-width true
-        :top top
-        :left left
-        :options options
-        :origin parent-id}])))
+(mf/defc file-menu*
+  [{:keys [files on-edit is-open on-open-change trigger navigate origin can-edit can-restore]}]
+  [:> menu*
+   {:is-open is-open
+    :on-open-change on-open-change
+    :placement "bottom end"
+    :trigger trigger}
+   [:> file-menu-items* {:files files
+                         :on-edit on-edit
+                         :navigate navigate
+                         :origin origin
+                         :can-edit can-edit
+                         :can-restore can-restore}]])
