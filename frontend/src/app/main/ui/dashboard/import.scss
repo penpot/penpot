@@ -423,12 +423,16 @@
   @include use-typography("body-small");
 
   color: var(--color-foreground-secondary);
-  flex: 1;
+  flex: 2 1 0%;
   min-inline-size: 0;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &:last-child {
+    flex: 3 1 0%;
+  }
 }
 
 // Auto-linked badge
@@ -456,7 +460,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-s);
-  flex: 1;
+  flex: 3 1 0%;
   min-inline-size: 0;
 }
 
@@ -472,7 +476,7 @@
 }
 
 .summary-item-base {
-  flex: 1;
+  flex: 2 1 0%;
   color: var(--color-foreground-secondary);
 }
 
@@ -485,7 +489,7 @@
   gap: var(--sp-s);
   color: var(--color-foreground-secondary);
   font-style: italic;
-  flex: 1;
+  flex: 3 1 0%;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
