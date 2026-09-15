@@ -152,6 +152,9 @@
 
         ;; STATE REFS
         disable-paste-ref (mf/use-ref false)
+        ;; Set on the pointer-up that ends a :move transform; the trailing
+        ;; browser `click` must not reselect the stale hover shape.
+        just-finished-move-ref (mf/use-ref false)
         in-viewport-ref   (mf/use-ref false)
 
         ;; STREAMS
@@ -200,7 +203,7 @@
 
         mode-inspect?     (= options-mode :inspect)
 
-        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z?)
+        on-click          (actions/on-click hover selected edition path-drawing? drawing-tool space? selrect z? just-finished-move-ref)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
         on-double-click   (actions/on-double-click hover hover-ids selected hover-top-frame-id path-drawing? base-objects edition drawing-tool z? read-only?)
 
@@ -212,7 +215,7 @@
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? path-editing? grid-editing?
                                                    path-drawing? create-comment? space? panning z? read-only?)
 
-        on-pointer-up     (actions/on-pointer-up disable-paste-ref)
+        on-pointer-up     (actions/on-pointer-up disable-paste-ref just-finished-move-ref transform)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport-ref)
         on-pointer-leave  (actions/on-pointer-leave in-viewport-ref)
