@@ -870,3 +870,51 @@
               :refers-to       6
               :fills-swap-slot 1}
              (queries/ladybug-parity-counts db)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; the build path
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest the-bulk-build-and-a-transaction-produce-one-graph
+  ;; `overlay/build` assigns entity ids itself and loads the index bottom-up,
+  ;; where transacting the same entity maps lets datascript assign them. The
+  ;; two must index the same graph, and a transform that read the half-built
+  ;; index instead of the document is the way that stops being true: the
+  ;; bulk path has no half-built index to read, so such a transform would
+  ;; silently see nothing here and see something on the transact path.
+  ;;
+  ;; Entity ids differ between the paths and carry no meaning, so the
+  ;; comparison reads every id back through the tempid that minted it.
+  (let [{:keys [file]} (semantic-fixture)
+        tx          (overlay/build-tx (:data file) file)
+        transacted  (d/with (d/empty-db overlay/schema) tx)
+        by-tempid   (fn [tempids]
+                      (into {} (map (fn [[tempid eid]] [eid tempid]))
+                            (dissoc tempids :db/current-tx)))
+        ref-attr?   (into #{}
+                          (keep (fn [[attr decl]]
+                                  (when (= :db.type/ref (:db/valueType decl)) attr)))
+                          overlay/schema)
+        canonical   (fn [db eid->tempid]
+                      (into #{}
+                            (map (fn [datom]
+                                   [(get eid->tempid (:e datom) (:e datom))
+                                    (:a datom)
+                                    (if (ref-attr? (:a datom))
+                                      (get eid->tempid (:v datom) (:v datom))
+                                      (:v datom))]))
+                            (d/datoms db :eavt)))
+        bulk        (overlay/build (:data file) file)
+        bulk-ids    (reduce (fn [acc entity]
+                              (let [tempid (:db/id entity)]
+                                (if (contains? acc tempid)
+                                  acc
+                                  (assoc acc tempid (inc (count acc))))))
+                            {}
+                            tx)]
+    (t/is (= (count (d/datoms (:db-after transacted) :eavt))
+             (count (d/datoms bulk :eavt))))
+    (t/is (= (canonical (:db-after transacted) (by-tempid (:tempids transacted)))
+             (canonical bulk (by-tempid (into {} (map (fn [[t e]] [t e])) bulk-ids)))))
+    (t/is (= (queries/stats (:db-after transacted)) (queries/stats bulk)))
+    (t/is (= (queries/edge-counts (:db-after transacted)) (queries/edge-counts bulk)))))
