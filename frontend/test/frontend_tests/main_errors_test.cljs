@@ -158,49 +158,51 @@
               (errors/fallback-fingerprint "exception-page" "other"))))
 
 (t/deftest governor-emits-first-occurrence-and-suppresses-repeats
-  (let [[state d1] (errors/reserve-report* (errors/initial-report-state) "fp" 1000)
-        [state d2] (errors/reserve-report* state "fp" 2000)
-        [state d3] (errors/reserve-report* state "fp" 3000)]
-    (t/is (true? (:emit d1)))
-    (t/is (= 1 (:occurrences d1)))
-    (t/is (false? (:emit d2)))
-    (t/is (false? (:emit d3)))
-    (let [[_ d4] (errors/reserve-report* state "fp" (+ 1000 errors/report-window-ms))]
-      (t/is (true? (:emit d4)))
-      (t/is (= 3 (:occurrences d4))))))
+  (let [d1 (errors/reserve-report* (errors/initial-report-state) "fp" 1000)
+        d2 (errors/reserve-report* d1 "fp" 2000)
+        d3 (errors/reserve-report* d2 "fp" 3000)
+        d4 (errors/reserve-report* d3 "fp" (+ 1000 errors/report-window-ms))]
+    (t/is (true? (::errors/emit d1)))
+    (t/is (= 1 (::errors/occurrences d1)))
+    (t/is (false? (::errors/emit d2)))
+    (t/is (nil? (::errors/occurrences d2)))
+    (t/is (false? (::errors/emit d3)))
+    (t/is (nil? (::errors/occurrences d3)))
+    (t/is (true? (::errors/emit d4)))
+    (t/is (= 3 (::errors/occurrences d4)))))
 
 (t/deftest governor-evicts-oldest-entry-when-cache-is-full
-  (let [state (reduce (fn [state i]
-                        (first (errors/reserve-report* state (str "fp-" i) (* 1000 i))))
+  (let [base  (reduce (fn [state i]
+                        (errors/reserve-report* state (str "fp-" i) (* 1000 i)))
                       (errors/initial-report-state)
                       (range errors/max-tracked-fingerprints))
-        [state decision] (errors/reserve-report* state
-                                                 "fp-new"
-                                                 (* 1000 errors/max-tracked-fingerprints))]
+        state (errors/reserve-report* base
+                                      "fp-new"
+                                      (* 1000 errors/max-tracked-fingerprints))]
     (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
     (t/is (= errors/max-tracked-fingerprints (count (:order state))))
-    (t/is (true? (:emit decision)))
+    (t/is (true? (::errors/emit state)))
     (t/is (nil? (get-in state [:entries "fp-0"])))
     (t/is (= "fp-1" (peek (:order state))))
     (t/is (some? (get-in state [:entries "fp-new"])))))
 
 (t/deftest governor-evicts-by-insertion-order-not-by-last-emission
-  (let [state (reduce (fn [state i]
-                        (first (errors/reserve-report* state (str "fp-" i) (* 1000 i))))
-                      (errors/initial-report-state)
-                      (range errors/max-tracked-fingerprints))
+  (let [base       (reduce (fn [state i]
+                             (errors/reserve-report* state (str "fp-" i) (* 1000 i)))
+                           (errors/initial-report-state)
+                           (range errors/max-tracked-fingerprints))
         ;; fp-0 re-emits after the window, so its :emitted-at becomes the
         ;; most recent one, but it keeps its insertion position.
-        [state _] (errors/reserve-report* state
-                                          "fp-0"
-                                          (+ (* 1000 errors/max-tracked-fingerprints)
-                                             errors/report-window-ms))
-        [state decision] (errors/reserve-report* state
-                                                 "fp-new"
-                                                 (+ (* 1000 errors/max-tracked-fingerprints)
-                                                    errors/report-window-ms
-                                                    1000))]
-    (t/is (true? (:emit decision)))
+        re-emitted  (errors/reserve-report* base
+                                            "fp-0"
+                                            (+ (* 1000 errors/max-tracked-fingerprints)
+                                               errors/report-window-ms))
+        state       (errors/reserve-report* re-emitted
+                                            "fp-new"
+                                            (+ (* 1000 errors/max-tracked-fingerprints)
+                                               errors/report-window-ms
+                                               1000))]
+    (t/is (true? (::errors/emit state)))
     ;; FIFO: the first inserted one goes, even though it was the last
     ;; emitted and fp-1 is the oldest by :emitted-at.
     (t/is (nil? (get-in state [:entries "fp-0"])))

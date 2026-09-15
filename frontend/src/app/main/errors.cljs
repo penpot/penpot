@@ -241,8 +241,9 @@
   "Pure decision step of the report governor.
 
   Given the governor `state`, an error `fingerprint` and the current time in
-  milliseconds, returns `[state' {:emit bool :occurrences n}]` for one
-  occurrence."
+  milliseconds, returns the next governor state with this occurrence's
+  decision attached: `::emit` tells whether it must be emitted and
+  `::occurrences` carries the counter (present only when `::emit` is true)."
   [state fingerprint now]
   (let [entry   (get-in state [:entries fingerprint])
         emit?   (or (nil? entry)
@@ -255,55 +256,52 @@
       (let [state (cond-> state
                     (>= (count (:entries state)) max-tracked-fingerprints)
                     (evict-oldest))]
-        [(-> state
-             (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
-             (update :order conj fingerprint))
-         {:emit true :occurrences (inc pending)}])
+        (-> state
+            (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
+            (update :order conj fingerprint)
+            (assoc ::emit true)
+            (assoc ::occurrences (inc pending))))
 
       ;; Known fingerprint re-emitted after the window: keep its position.
       emit?
-      [(assoc-in state [:entries fingerprint] {:emitted-at now :pending 0})
-       {:emit true :occurrences (inc pending)}]
+      (-> state
+          (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
+          (assoc ::emit true)
+          (assoc ::occurrences (inc pending)))
 
+      ;; Suppressed occurrence: only the counter moves.
       :else
-      [(update-in state [:entries fingerprint :pending] inc)
-       {:emit false :occurrences nil}])))
+      (-> state
+          (update-in [:entries fingerprint :pending] inc)
+          (assoc ::emit false)
+          (dissoc ::occurrences)))))
 
 (defn reserve-report!
-  "Reserve a slot for a report. Returns the decision map.
-
-  `swap!` may retry the update function; `reserve-report*` is pure, so the
-  last accepted run wins and the captured decision matches the committed
-  state."
+  "Reserve a slot for a report. Returns the updated governor state, whose
+  `::emit`/`::occurrences` describe the decision for this occurrence."
   [fingerprint now]
-  (let [decision (volatile! nil)]
-    (swap! report-governor
-           (fn [state]
-             (let [[state* result] (reserve-report* state fingerprint now)]
-               (vreset! decision result)
-               state*)))
-    @decision))
+  (swap! report-governor reserve-report* fingerprint now))
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
   report governor."
-  [& {:keys [event-name report hint cause reserved]
+  [& {:keys [event-name report hint cause governor-state]
       :or {event-name "unhandled-exception"}}]
   (when (and (not (str/empty? hint))
              (string? report)
              (string? event-name))
-    (let [decision (or reserved
-                       (reserve-report! (if (ex/exception? cause)
-                                          (error-fingerprint event-name cause)
-                                          (fallback-fingerprint event-name hint))
-                                        (inst-ms (ct/now))))]
-      (when (:emit decision)
+    (let [state (or governor-state
+                    (reserve-report! (if (ex/exception? cause)
+                                       (error-fingerprint event-name cause)
+                                       (fallback-fingerprint event-name hint))
+                                     (inst-ms (ct/now))))]
+      (when (::emit state)
         (st/emit!
          (ev/event {::ev/name event-name
                     :hint hint
                     :href (rt/get-current-href)
                     :report report
-                    :occurrences (:occurrences decision)}))))))
+                    :occurrences (::occurrences state)}))))))
 
 (defn flash
   "Show error notification banner and emit error report.
@@ -326,12 +324,12 @@
                             :silent nil)]
       (let [report-hint (ex/get-hint cause)]
         (when (and (string? report-hint) (not (str/empty? report-hint)))
-          (let [decision (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
-            (when (:emit decision)
+          (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
+            (when (::emit state)
               (submit-report :event-name event-name
                              :report (generate-report cause)
                              :hint report-hint
-                             :reserved decision)))))))
+                             :governor-state state)))))))
 
   (ts/schedule
    #(st/emit!
