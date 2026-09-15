@@ -190,24 +190,12 @@
              file-id    (some-> params :file-id uuid/parse*)
              page-id    (some-> params :page-id uuid/parse*)
              layout     (some-> params :layout keyword)]
-         [:? {}
-          (when (cf/external-feature-flag "onboarding-03" "test")
-            (cond
-              show-question-modal?
-              [:& questions-modal]
-
-              show-team-modal?
-              [:> onboarding-team-modal* {:go-to-team false}]
-
-              show-release-modal?
-              [:& release-notes-modal {:version (:main cf/version)}]))
-
-          [:> team-container* {:team-id team-id}
-           [:> workspace-page* {:team-id team-id
-                                :file-id file-id
-                                :page-id page-id
-                                :layout-name layout
-                                :key file-id}]]])
+         [:> team-container* {:team-id team-id}
+          [:> workspace-page* {:team-id team-id
+                               :file-id file-id
+                               :page-id page-id
+                               :layout-name layout
+                               :key file-id}]])
 
        :viewer
        (let [params   (get params :query)

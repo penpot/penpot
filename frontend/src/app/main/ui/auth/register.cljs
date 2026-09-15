@@ -160,14 +160,7 @@
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 cdata
-                 (cond-> (:clean-data @form)
-                   create-welcome-file?
-                   (assoc :create-welcome-file true))]
-
+           (let [cdata (:clean-data @form)]
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/subs! on-register-profile on-error #(reset! submitted? false))))))]
 
@@ -326,13 +319,7 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 params
-                 (cond-> (:clean-data @form)
-                   create-welcome-file? (assoc :create-welcome-file true))]
-
+           (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]
