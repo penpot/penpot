@@ -25,6 +25,7 @@
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -90,6 +91,240 @@
     (let [err  (ex-info "fallback message" {:type :validation})
           data (errors/exception->error-data err)]
       (t/is (= "fallback message" (:hint data))))))
+
+;; ---------------------------------------------------------------------------
+;; Error report governor
+;;
+;; The governor deduplicates report by fingerprint: the first occurrence is
+;; always emitted, repeats inside a 2 minute window are counted, and the
+;; fingerprint cache is bounded (the oldest entry is evicted when full).
+;; ---------------------------------------------------------------------------
+
+(t/use-fixtures :each {:before #(errors/reset-report-governor!)})
+
+(defn- error-cause
+  [& {:keys [type code hint]}]
+  (ex-info (or hint "boom")
+           (cond-> {}
+             (some? type) (assoc :type type)
+             (some? code) (assoc :code code)
+             (some? hint) (assoc :hint hint))))
+
+(defn- capture-reports!
+  "Run `f` capturing the events emitted through `st/emit!`."
+  [f]
+  (let [events (atom [])]
+    (with-redefs [st/emit!            (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  rt/get-current-href (constantly "https://penpot.example.com/#/workspace")]
+      (f)
+      @events)))
+
+(t/deftest fingerprint-is-stable-for-equivalent-errors
+  (let [cause-a (error-cause :type :network :code :fetch-failed :hint "unable to perform fetch operation")
+        cause-b (error-cause :type :network :code :fetch-failed :hint "unable to perform fetch operation")]
+    (t/is (= (errors/error-fingerprint "handled-exception" cause-a)
+             (errors/error-fingerprint "handled-exception" cause-b)))))
+
+(t/deftest fingerprint-changes-with-error-identity
+  (let [base (error-cause :type :network :code :fetch-failed :hint "boom")]
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :network :code :fetch-failed :hint "other"))))
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :validation :code :fetch-failed :hint "boom"))))
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :network :code :other :hint "boom"))))))
+
+(t/deftest fingerprint-includes-the-report-name
+  (let [cause (error-cause :type :network :hint "boom")]
+    (t/is (not= (errors/error-fingerprint "handled-exception" cause)
+                (errors/error-fingerprint "unhandled-exception" cause)))
+    (t/is (not= (errors/error-fingerprint "handled-exception" cause)
+                (errors/error-fingerprint "exception-page" cause)))))
+
+(t/deftest fingerprint-handles-missing-type-and-code
+  (let [fingerprint (errors/error-fingerprint "handled-exception" (js/Error. "plain failure"))]
+    (t/is (string? fingerprint))
+    (t/is (str/starts-with? fingerprint "handled-exception|unknown|unknown|"))))
+
+(t/deftest fallback-fingerprint-is-stable-and-discriminating
+  (t/is (= (errors/fallback-fingerprint "exception-page" "boom")
+           (errors/fallback-fingerprint "exception-page" "boom")))
+  (t/is (not= (errors/fallback-fingerprint "exception-page" "boom")
+              (errors/fallback-fingerprint "handled-exception" "boom")))
+  (t/is (not= (errors/fallback-fingerprint "exception-page" "boom")
+              (errors/fallback-fingerprint "exception-page" "other"))))
+
+(t/deftest governor-emits-first-occurrence-and-suppresses-repeats
+  (let [d1 (errors/reserve-report* (errors/initial-report-state) "fp" 1000)
+        d2 (errors/reserve-report* d1 "fp" 2000)
+        d3 (errors/reserve-report* d2 "fp" 3000)
+        d4 (errors/reserve-report* d3 "fp" (+ 1000 errors/report-window-ms))]
+    (t/is (true? (::errors/emit d1)))
+    (t/is (= 1 (::errors/occurrences d1)))
+    (t/is (false? (::errors/emit d2)))
+    (t/is (nil? (::errors/occurrences d2)))
+    (t/is (false? (::errors/emit d3)))
+    (t/is (nil? (::errors/occurrences d3)))
+    (t/is (true? (::errors/emit d4)))
+    (t/is (= 3 (::errors/occurrences d4)))))
+
+(t/deftest governor-evicts-oldest-entry-when-cache-is-full
+  (let [base  (reduce (fn [state i]
+                        (errors/reserve-report* state (str "fp-" i) (* 1000 i)))
+                      (errors/initial-report-state)
+                      (range errors/max-tracked-fingerprints))
+        state (errors/reserve-report* base
+                                      "fp-new"
+                                      (* 1000 errors/max-tracked-fingerprints))]
+    (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
+    (t/is (= errors/max-tracked-fingerprints (count (:order state))))
+    (t/is (true? (::errors/emit state)))
+    (t/is (nil? (get-in state [:entries "fp-0"])))
+    (t/is (= "fp-1" (peek (:order state))))
+    (t/is (some? (get-in state [:entries "fp-new"])))))
+
+(t/deftest governor-evicts-by-insertion-order-not-by-last-emission
+  (let [base       (reduce (fn [state i]
+                             (errors/reserve-report* state (str "fp-" i) (* 1000 i)))
+                           (errors/initial-report-state)
+                           (range errors/max-tracked-fingerprints))
+        ;; fp-0 re-emits after the window, so its :emitted-at becomes the
+        ;; most recent one, but it keeps its insertion position.
+        re-emitted  (errors/reserve-report* base
+                                            "fp-0"
+                                            (+ (* 1000 errors/max-tracked-fingerprints)
+                                               errors/report-window-ms))
+        state       (errors/reserve-report* re-emitted
+                                            "fp-new"
+                                            (+ (* 1000 errors/max-tracked-fingerprints)
+                                               errors/report-window-ms
+                                               1000))]
+    (t/is (true? (::errors/emit state)))
+    ;; FIFO: the first inserted one goes, even though it was the last
+    ;; emitted and fp-1 is the oldest by :emitted-at.
+    (t/is (nil? (get-in state [:entries "fp-0"])))
+    (t/is (some? (get-in state [:entries "fp-1"])))
+    (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
+    (t/is (= errors/max-tracked-fingerprints (count (:order state))))))
+
+(t/deftest submit-report-is-governed-and-reports-occurrences
+  (let [cause  (error-cause :type :network :code :fetch-failed :hint "boom")
+        events (capture-reports!
+                (fn []
+                  (dotimes [_ 5]
+                    (errors/submit-report :event-name "handled-exception"
+                                          :report "report"
+                                          :hint "boom"
+                                          :cause cause))))]
+    (t/is (= 1 (count events)))
+    (t/is (= 1 (:occurrences (deref (first events)))))))
+
+(t/deftest invalid-report-does-not-consume-a-reservation
+  (let [cause  (error-cause :type :network :hint "boom")
+        events (capture-reports!
+                (fn []
+                  (errors/submit-report :event-name "handled-exception"
+                                        :report nil :hint "boom" :cause cause)
+                  (errors/submit-report :event-name "handled-exception"
+                                        :report "report" :hint "boom" :cause cause)))]
+    (t/is (= 1 (count events)))
+    (t/is (= 1 (:occurrences (deref (first events)))))))
+
+(t/deftest governor-applies-to-every-report-name
+  (let [events (capture-reports!
+                (fn []
+                  (doseq [event-name ["handled-exception" "unhandled-exception" "exception-page"]]
+                    (errors/submit-report :event-name event-name :report "report" :hint event-name)
+                    (errors/submit-report :event-name event-name :report "report" :hint event-name))))]
+    (t/is (= 3 (count events)))))
+
+(t/deftest submit-report-without-cause-dedups-by-fallback-fingerprint
+  (let [events (capture-reports!
+                (fn []
+                  (errors/submit-report :event-name "exception-page" :report "report" :hint "boom")
+                  (errors/submit-report :event-name "exception-page" :report "report" :hint "boom")
+                  (errors/submit-report :event-name "exception-page" :report "report" :hint "other")))]
+    (t/is (= 2 (count events)))))
+
+(t/deftest governor-bounds-an-incident-like-loop
+  (let [cause  (error-cause :type :network :hint "unable to perform fetch operation")
+        events (capture-reports!
+                (fn []
+                  (dotimes [_ 10000]
+                    (errors/submit-report :event-name "handled-exception"
+                                          :report "report"
+                                          :hint "unable to perform fetch operation"
+                                          :cause cause))))]
+    (t/is (= 1 (count events)))))
+
+(t/deftest flash-suppressed-occurrence-does-not-build-a-report
+  (let [generated (atom 0)
+        cause     (error-cause :type :network :hint "unable to perform fetch operation")
+        events    (atom [])]
+    (with-redefs [errors/generate-report (fn [_] (swap! generated inc) "report")
+                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
+                  tm/schedule            mock/noop]
+      (dotimes [_ 3]
+        (errors/flash :cause cause :type :handled))
+      (t/is (= 1 (count @events)))
+      (t/is (= 1 @generated)))))
+
+(t/deftest flash-bounds-an-incident-like-loop
+  (let [generated (atom 0)
+        cause     (error-cause :type :network :hint "unable to perform fetch operation")
+        events    (atom [])]
+    (with-redefs [errors/generate-report (fn [_] (swap! generated inc) "report")
+                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
+                  tm/schedule            mock/noop]
+      (dotimes [_ 10000]
+        (errors/flash :cause cause :type :handled))
+      (t/is (= 1 (count @events)))
+      (t/is (= 1 @generated)))))
+
+(t/deftest generate-report-is-total-when-formatting-fails
+  (with-redefs [st/format-last-events (mock/stub (fn [& _] (throw (ex-info "formatting failed" {}))))]
+    (let [report (errors/generate-report (error-cause :type :network :hint "boom"))]
+      (t/is (string? report)))))
+
+(t/deftest flash-emits-a-fallback-report-when-generation-fails
+  (let [events (atom [])]
+    (with-redefs [st/format-last-events (mock/stub (fn [& _] (throw (ex-info "formatting failed" {}))))
+                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
+                  tm/schedule            mock/noop]
+      (errors/flash :cause (error-cause :type :network :hint "boom") :type :handled)
+      (t/is (= 1 (count @events)))
+      (t/is (string? (:report (deref (first @events))))))))
+
+(t/deftest exception-page-reports-dedup-by-cause
+  (let [cause-a (error-cause :type :internal :code :unable-to-process-repository-response :hint "boom")
+        cause-b (error-cause :type :internal :code :other :hint "other")
+        events  (capture-reports!
+                 (fn []
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "boom" :cause cause-a)
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "different hint" :cause cause-a)
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "other" :cause cause-b)))]
+    (t/is (= 2 (count events)))))
+
+(t/deftest reports-of-the-same-cause-under-different-names-do-not-coalesce
+  (let [cause  (error-cause :type :internal :hint "boom")
+        events (capture-reports!
+                (fn []
+                  (errors/submit-report :event-name "handled-exception"
+                                        :report "report" :hint "boom" :cause cause)
+                  (errors/submit-report :event-name "unhandled-exception"
+                                        :report "report" :hint "boom" :cause cause)
+                  (errors/submit-report :event-name "exception-page"
+                                        :report "report" :hint "boom" :cause cause)))]
+    (t/is (= 3 (count events)))))
 
 ;; ---------------------------------------------------------------------------
 ;; on-error dispatches to ptk/handle-error
@@ -423,9 +658,8 @@
         store    (ptk/store {:state {} :on-error errors/on-error})
         cause    (ex-info "Save failed" {:type :network})]
     (with-redefs [refs/persistence pstate
-                  errors/submit-report (fn [& params]
-                                         (swap! reports conj (apply hash-map params)))
-                  tm/schedule (mock/stub (fn [_]))]
+                  st/emit!         (mock/stub (fn [& emitted] (swap! reports into emitted)))
+                  tm/schedule      (mock/stub (fn [_]))]
       (try
         (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
         (reset! pstate (:persistence @store))
@@ -438,9 +672,12 @@
         (t/is (= 2 (count @rejected)))
         (t/is (= 1 (count @reports)))
         ;; A standalone timeout and a later save failure are new incidents.
+        ;; The later failure carries a distinct signature: repeating the same
+        ;; one inside the governor window is coalesced by design.
         (errors/on-error (ex-info "Save timed out" {:type :persistence :code :save-timeout}))
         (t/is (= 2 (count @reports)))
-        (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
+        (ptk/emit! store (#'dps/persistence-failed (uuid/next)
+                                                   (ex-info "Save failed again" {:type :network})))
         (t/is (= 3 (count @reports)))
         (finally
           (rx/dispose! store))))))

@@ -565,7 +565,8 @@
                  (not (contains? #{:not-found :authentication} type)))
         (errors/submit-report :event-name "exception-page"
                               :report report
-                              :hint (ex/get-hint cause))))
+                              :hint (ex/get-hint cause)
+                              :cause cause)))
 
     (case type
       :not-found
