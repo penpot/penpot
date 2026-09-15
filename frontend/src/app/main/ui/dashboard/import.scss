@@ -480,6 +480,9 @@
 .summary-no-selection {
   @include use-typography("body-small");
 
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
   color: var(--color-foreground-secondary);
   font-style: italic;
   flex: 1;
