@@ -61,6 +61,11 @@ Run all checks before reporting, then report every failure together:
    branch was never pushed, or has commits the remote does not have. Never
    push yourself; ask the user to push and to run `/create-pr` again
    afterwards, then stop.
+6. **Branch behind the base.** `git rev-list --count HEAD..origin/<base>` is
+   not zero — the checks would run against head merged into base, so they
+   would report on a tree nobody will ship. Ask the user to rebase onto the
+   base and push, then stop. Rebasing before the PR exists is allowed.
+   Force-pushing during review is not.
 
 ### 3. Already-open PR
 
@@ -75,9 +80,21 @@ description structure, writing principles) and `mem:workflow/creating-commits`
 (commit type emojis). Derive the title and body from the commits and, when
 there is one, from the issue body. Reference the issue with `Closes #NNNN`.
 
+Put the `AI-assisted-by:` trailer in the body, not only on the commits. Penpot
+squash-merges, so the landed commit message is built from the PR title and the
+body, and a trailer that lives only on branch commits disappears at merge.
+
+Before offering or accepting a draft PR, warn that CI doesn't run on them. Add
+`--draft` only when the user agrees to that.
+
 ```bash
-gh pr create --repo penpot/penpot --title "<TITLE>" --body-file /tmp/pr-body.md
+gh pr create --repo penpot/penpot --base "<BASE>" --title "<TITLE>" \
+  --project "Main" --body-file /tmp/pr-body.md
 ```
+
+`--base` is the branch resolved in step 1: without it the PR opens against the
+repository default, which is wrong for a branch cut from `staging`. `--project
+"Main"` is required by `mem:workflow/creating-prs`.
 
 ### 5. Report
 
