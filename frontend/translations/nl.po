@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
 "Language: nl\n"
@@ -3665,6 +3665,7 @@ msgid "not-found.no-permission.file"
 msgstr "Je hebt geen toegang tot dit bestand."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Ga naar je Penpot"
 
@@ -9048,6 +9049,7 @@ msgid "labels.delete-profile-photo.title"
 msgstr "Profielfoto verwijderen"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+#, fuzzy
 msgid "nitrate.code-activation.title"
 msgstr "Nitrate inschakelen"
 
@@ -9320,6 +9322,7 @@ msgid "nitrate.code-activation.placeholder"
 msgstr "Plak hier je activeringscode"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+#, fuzzy
 msgid "nitrate.code-activation.renew-title"
 msgstr "NITRATE VERLENGEN"
 
@@ -9481,6 +9484,7 @@ msgid "subscription.dashboard.banner.renew-subscription"
 msgstr "Verleng je abonnement"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+#, fuzzy
 msgid "nitrate.subscription.renew-success"
 msgstr "Je Nitrate abonnement is verlengd."
 
@@ -9945,7 +9949,7 @@ msgstr ""
 "Uitnodigingen aan externe gebruikers die nog in behandeling zijn worden "
 "geannuleerd."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Hier vind je al je organisaties waar je teams mag aanmaken of toevoegen."
@@ -9958,11 +9962,11 @@ msgstr "Kies een organisatie"
 msgid "dashboard.select-organization-modal.title"
 msgstr "Team toevoegen aan een organisatie"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Dit team behoort nu tot %s"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Dit team behoort niet langer tot de organisatie %s"
 
@@ -10126,9 +10130,11 @@ msgid "nitrate.modal-success.title"
 msgstr "Welkom bij Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+#, fuzzy
 msgid "nitrate.code-activation.footer-before"
 msgstr "Een code nodig? Download je "
 
+#, fuzzy
 msgid "nitrate.code-activation.footer-after"
 msgstr " en neem contact met ons op:"
 
@@ -10155,6 +10161,7 @@ msgstr "Probeer het 14 dagen gratis"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "Abonneren met een activeringscode"
 
+#, fuzzy
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr ""
 "Om je Nitrate-abonnement te annuleren, kun je contact met ons opnemen via:"
