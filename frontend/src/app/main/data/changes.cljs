@@ -244,8 +244,11 @@
             features    (get state :features)
             permissions (get state :permissions)]
 
-        ;; Prevent commit changes by a viewer team member (it really should never happen)
-        (when (:can-edit permissions)
+        ;; Prevent commit changes by a viewer team member (it really should never
+        ;; happen). Also skip while version preview has swapped in snapshot
+        ;; data: derived watchers must not create commits against the snapshot.
+        (when (and (:can-edit permissions)
+                   (nil? (get-in state [:workspace-global :preview-id])))
           (log/trace :hint "commit-changes" :redo-changes redo-changes)
           (let [selected (dm/get-in state [:workspace-local :selected])]
             (rx/of (-> params

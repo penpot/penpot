@@ -176,6 +176,9 @@
         (-> state
             (update :workspace-versions dissoc :backup)
             (update :workspace-global dissoc :read-only? :preview-id)
+            ;; Drop any persistence that might have been queued while the
+            ;; snapshot was on screen (should be none if commits are gated).
+            (dissoc :persistence)
             (update :files assoc (:id backup) backup))))))
 
 (defn exit-preview
@@ -205,7 +208,8 @@
       ;; Clear preview state if we're restoring from preview mode
       (-> state
           (update :workspace-versions dissoc :backup)
-          (update :workspace-global dissoc :read-only? :preview-id)))
+          (update :workspace-global dissoc :read-only? :preview-id)
+          (dissoc :persistence)))
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
@@ -254,21 +258,25 @@
     (update [_ state]
       (update state :files assoc id snapshot))))
 
-(defn enter-preview
-  "Load a snapshot into the workspace for read-only preview without
-  modifying any database state. Sets a read-only flag so no changes
-  are persisted while previewing and enter on the preview mode"
+(defn- lock-preview-state
+  "Backup the live file and mark version preview. Call only after
+  pending live edits have been persisted."
   [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-
-  (ptk/reify ::enter-preview
+  (ptk/reify ::lock-preview-state
     ptk/UpdateEvent
     (update [_ state]
       (let [file (dsh/lookup-file state)]
         (-> state
             (update :workspace-versions assoc :backup file)
-            (update :workspace-global assoc :read-only? true :preview-id id))))
+            (update :workspace-global assoc :read-only? true :preview-id id))))))
 
+(defn enter-preview
+  "Flush pending live saves, then load a snapshot for read-only preview
+  without modifying database state."
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+
+  (ptk/reify ::enter-preview
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id  (:current-file-id state)
@@ -296,45 +304,56 @@
                        (or (:label snapshot)
                            (tr "workspace.versions.preview.unnamed")))
             output-s (rx/subject)]
-        (rx/merge
-         output-s
-
-         (rx/of (ntf/dialog
-                 :content (tr "workspace.versions.preview-banner-title" label)
-                 :controls :inline-actions
-                 :cancel {:label (tr "labels.exit")
-                          :callback #(do
-                                       (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (exit-preview))
-                                       (rx/end! output-s))}
-                 :accept {:label (tr "labels.restore")
-                          :callback #(do
-                                       (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (enter-restore id))
-                                       (rx/end! output-s))}
-                 :tag :preview-dialog))
-
-         (->> (rp/cmd! :get-file-snapshot
-                       {:file-id file-id
-                        :id id
-                        :features features})
+        (rx/concat
+         ;; Persist live edits before swapping in snapshot data / setting
+         ;; preview-id (which blocks further update-file calls).
+         (rx/of ::dwp/force-persist)
+         (->> (dwp/wait-persisted)
               (rx/mapcat
-               (fn [snapshot]
-                 (rx/of
-                  ;; Swap the file data in state with snapshot content.
-                  ;; Passing id sets workspace-file-version-id, which
-                  ;; causes the WASM viewport to reload its shape buffer.
-                  (apply-snapshot snapshot)
-                  ;; Re-initialize the page to rebuild its search index
-                  ;; and page-local state with the new snapshot
-                  ;; objects.
-                  (dwpg/initialize-page file-id page-id))))
+               (fn [_]
+                 (rx/merge
+                  output-s
 
-              (rx/catch (fn [err]
-                          ;; On error roll back the read-only flag so the
-                          ;; user is not stuck in a broken preview state.
-                          (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
-                          (rx/of (exit-preview))))))))))
+                  (rx/of (lock-preview-state id)
+                         (ntf/dialog
+                          :content (tr "workspace.versions.preview-banner-title" label)
+                          :controls :inline-actions
+                          :cancel {:label (tr "labels.exit")
+                                   :callback #(do
+                                                (rx/push! output-s (ntf/hide))
+                                                (rx/push! output-s (exit-preview))
+                                                (rx/end! output-s))}
+                          :accept {:label (tr "labels.restore")
+                                   :callback #(do
+                                                (rx/push! output-s (ntf/hide))
+                                                (rx/push! output-s (enter-restore id))
+                                                (rx/end! output-s))}
+                          :tag :preview-dialog))
+
+                  (->> (rp/cmd! :get-file-snapshot
+                                {:file-id file-id
+                                 :id id
+                                 :features features})
+                       (rx/mapcat
+                        (fn [snapshot]
+                          (rx/of
+                           ;; Swap the file data in state with snapshot content.
+                           ;; Passing id sets workspace-file-version-id, which
+                           ;; causes the WASM viewport to reload its shape buffer.
+                           (apply-snapshot snapshot)
+                           ;; Re-initialize the page to rebuild its search index
+                           ;; and page-local state with the new snapshot
+                           ;; objects.
+                           (dwpg/initialize-page file-id page-id))))
+
+                       (rx/catch (fn [err]
+                                   ;; On error roll back preview flags so the
+                                   ;; user is not stuck in a broken preview.
+                                   (log/error :hint "failed to load snapshot"
+                                              :cause err
+                                              :file-id file-id
+                                              :snapshot-id id)
+                                   (rx/of (exit-preview))))))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
