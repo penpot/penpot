@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:17+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -4310,6 +4310,7 @@ msgid "nitrate.code-activation.placeholder"
 msgstr "Etkinleştirme kodunuzu buraya yapıştırın"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+#, fuzzy
 msgid "nitrate.code-activation.renew-title"
 msgstr "NITRATE'Yİ YENİLE"
 
@@ -4318,6 +4319,7 @@ msgid "nitrate.code-activation.submit"
 msgstr "Etkinleştir"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+#, fuzzy
 msgid "nitrate.code-activation.title"
 msgstr "Nitrate'yi etkinleştir"
 
@@ -4418,6 +4420,7 @@ msgid "nitrate.subscription.active-until"
 msgstr "%s tarihine kadar etkin"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+#, fuzzy
 msgid "nitrate.subscription.renew-success"
 msgstr "Nitrate aboneliğiniz yenilendi."
 
@@ -4502,6 +4505,7 @@ msgid "not-found.no-permission.file"
 msgstr "Bu dosyaya erişiminiz yok."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Penpot'unuza gidin"
 
@@ -10080,9 +10084,11 @@ msgid "nitrate.modal-success.title"
 msgstr "Kurumsal plana hoş geldiniz!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+#, fuzzy
 msgid "nitrate.code-activation.footer-before"
 msgstr "Koda mı ihtiyacınız var? "
 
+#, fuzzy
 msgid "nitrate.code-activation.footer-after"
 msgstr " ve bizimle iletişime geçin:"
 
@@ -10104,6 +10110,7 @@ msgstr "14 gün boyunca ücretsiz deneyin"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "Etkinleştirme koduyla abone olun"
 
+#, fuzzy
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "Nitrate aboneliğinizi iptal etmek için lütfen bizimle iletişime geçin:"
 
