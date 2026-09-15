@@ -107,7 +107,10 @@
                        (not per-side-disabled)
                        (true? (:stroke-per-side stroke)))
 
-        per-side-expanded* (mf/use-state false)
+        per-side-inactive? (and (true? (:stroke-per-side stroke))
+                                (not per-side?))
+
+        per-side-expanded* (mf/use-state per-side?)
         per-side-expanded? (deref per-side-expanded*)
 
         all-sides-equal?
@@ -119,7 +122,12 @@
                 left   (d/nilv (:stroke-width-left stroke) width)]
             (= top right bottom left)))
 
-        show-multiple-placeholder? (or per-side-expanded? (not all-sides-equal?))
+        display-stroke-width (if per-side-inactive?
+                               (d/nilv (:stroke-width-top stroke) stroke-width)
+                               stroke-width)
+
+        show-multiple-placeholder? (and (not per-side-inactive?)
+                                        (or per-side-expanded? (not all-sides-equal?)))
 
         per-side-toggle-label
         (if per-side-disabled
@@ -159,9 +167,9 @@
 
         on-width-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-change ids per-side?)
+         (mf/deps index on-stroke-width-change ids stroke)
          (fn [value]
-           (if per-side?
+           (if (true? (:stroke-per-side stroke))
              (st/emit! (dc/change-stroke-attrs
                         ids
                         {:stroke-width value
@@ -348,8 +356,9 @@
                                                    (tr "settings.multiple")
                                                    "--")
                                     :nillable true
-                                    :value (if all-sides-equal?
-                                             stroke-width
+                                    :value (if (or all-sides-equal?
+                                                   per-side-inactive?)
+                                             display-stroke-width
                                              nil)}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
@@ -384,7 +393,7 @@
                     :size "s"}]
          [:> deprecated-input/numeric-input* {:value (if show-multiple-placeholder?
                                                        nil
-                                                       stroke-width)
+                                                       display-stroke-width)
                                               :min 0
                                               :placeholder (if show-multiple-placeholder?
                                                              (tr "settings.multiple")
