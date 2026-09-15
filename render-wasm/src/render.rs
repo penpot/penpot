@@ -2815,6 +2815,13 @@ impl RenderState {
         crate::get_gpu_state().context.flush(None);
     }
 
+    /// Gating for the masked-group layer filter: its shadows follow the
+    /// container drop-shadow rules, its blur follows fast mode.
+    #[inline]
+    pub(crate) fn masked_group_layer_skips(&self) -> (bool, bool) {
+        (self.should_skip_drop_shadows(), self.options.is_fast_mode())
+    }
+
     /// Skip all drop/inner shadows in fast mode, or when even a large design-space
     /// shadow would be subpixel. Otherwise filter per shadow via
     /// [`Shadow::is_perceptible_at_scale_for`] (stricter for recursive shapes).
@@ -2881,18 +2888,30 @@ impl RenderState {
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
             let fills = &element.fills;
-            let shadows = &element.shadows;
             self.nested_fills.push(fills.to_vec());
-            self.nested_shadows.push(shadows.to_vec());
+
+            // A masked group's own shadows are applied to the masked result by
+            // the layer filter below, so descendants must not inherit them.
+            if group.masked {
+                self.nested_shadows.push(Vec::new());
+            } else {
+                self.nested_shadows.push(element.shadows.to_vec());
+            }
 
             if group.masked {
-                // A masked group's blur is applied as a single layer blur over
-                // the whole masked result.
-                let mask_group_blur = element.masked_group_layer_blur().is_some();
-                if mask_group_blur {
-                    self.surfaces.canvas(target_surface).save();
+                // A masked group's blur and shadows are applied as a single
+                // image filter over the whole masked result.
+                let scale = self.get_scale();
+                let (skip_shadows, skip_blur) = self.masked_group_layer_skips();
+                let filter = element.masked_group_layer_filter(scale, skip_shadows, skip_blur);
+
+                // Unconditional: `render_shape_exit` runs on a later walker pass
+                // and restores this from the shape type alone. Gating it on the
+                // filter would let fast mode or zoom change in between and leave
+                // the save stack (and its clip) unbalanced.
+                self.surfaces.canvas(target_surface).save();
+                if filter.is_some() {
                     if let Some(clips) = clip_bounds {
-                        let scale = self.get_scale();
                         let antialias = !self.options.is_fast_mode()
                             && element
                                 .should_use_antialias(scale, self.options.antialias_threshold);
@@ -2901,16 +2920,8 @@ impl RenderState {
                 }
 
                 let mut paint = skia::Paint::default();
-                if !self.options.is_fast_mode() {
-                    if let Some(blur) = element.masked_group_layer_blur() {
-                        let scale = self.get_scale();
-                        let sigma = radius_to_sigma(blur.value * scale);
-                        if let Some(filter) =
-                            skia::image_filters::blur((sigma, sigma), None, None, None)
-                        {
-                            paint.set_image_filter(filter);
-                        }
-                    }
+                if let Some(filter) = filter {
+                    paint.set_image_filter(filter);
                 }
 
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -3068,7 +3079,10 @@ impl RenderState {
             self.surfaces.canvas(target_surface).restore();
         }
 
-        if visited_mask && element.masked_group_layer_blur().is_some() {
+        // Pairs with the unconditional `save()` `render_shape_enter` does for a
+        // masked group. Keyed on the shape alone so it cannot disagree with the
+        // enter side, which runs on an earlier walker pass.
+        if visited_mask && element.is_masked_group() {
             self.surfaces.canvas(target_surface).restore();
         }
 
@@ -3472,6 +3486,13 @@ impl RenderState {
                 .drop_shadows_visible()
                 .any(|s| s.is_perceptible_at_scale_for(scale, element.is_recursive()))
         {
+            return Ok(false);
+        }
+
+        // A masked group's own shadows ride on its layer filter (see
+        // `Shape::masked_group_layer_filter`). Compositing them here would
+        // paint them inside the layer that the mask pass then erases.
+        if element.is_masked_group() {
             return Ok(false);
         }
 

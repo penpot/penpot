@@ -362,7 +362,9 @@ pub fn render_fill_inner_shadows(
     antialias: bool,
     surface_id: SurfaceId,
 ) {
-    if !shape.has_fills() || render_state.should_skip_drop_shadows() {
+    // A masked group's inner shadows are applied to the masked result by its
+    // layer filter (see `Shape::masked_group_layer_filter`).
+    if !shape.has_fills() || shape.is_masked_group() || render_state.should_skip_drop_shadows() {
         return;
     }
     let scale = render_state.get_scale();
