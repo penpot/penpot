@@ -1134,10 +1134,6 @@ msgstr "ईमेल"
 msgid "dashboard.your-name"
 msgstr "आपका नाम"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "आपका पेनपॉट"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "ठीक है"
@@ -1709,36 +1705,6 @@ msgstr "मुद्दा"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* इसमें कॉम्पोनेंट्स, ग्राफिक्स, रंग और/या टाइपोग्राफ़ी शामिल हो सकते हैं।"
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"साझा की गई लाइब्रेरीज़ वाली फ़ाइलें निर्यात में शामिल की जाएँगी, और उनका "
-"लिंक बनाए रखा जाएगा।"
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "साझा लाइब्रेरीज़ निर्यात करें"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"साझा की गई लाइब्रेरीज़ निर्यात में शामिल नहीं की जाएँगी और लाइब्रेरी में "
-"कोई एसेट्स नहीं जोड़े जाएँगे। "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "साझा की गई लाइब्रेरी के एसेट्स को बुनियादी ऑब्जेक्ट्स के रूप में मानें"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"आपकी फ़ाइल निर्यात की जाएगी और सभी बाहरी एसेट्स(assets) फ़ाइल लाइब्रेरी में "
-"विलय कर दिए जाएँगे।"
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "साझा की गई लाइब्रेरी के एसेट्स को फ़ाइल लाइब्रेरी में शामिल करें"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

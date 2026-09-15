@@ -720,10 +720,6 @@ msgstr "E-mel"
 msgid "dashboard.your-name"
 msgstr "Nama anda"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Penpot anda"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -999,36 +995,6 @@ msgstr "Akaun sokongan Twitter"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Mungkin termasuk komponen, grafik, warna dan/atau tipografi."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
-"hubungannya."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Eksport perpustakaan kongsi"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Perpustakaan kongsi tidak akan disertakan dalam eksport dan tiada aset akan "
-"ditambahkan ke perpustakaan. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Anggap aset perpustakaan kongsi sebagai objek asas"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Fail anda akan dieksport dengan semua aset luaran digabungkan ke dalam "
-"pustaka fail."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Sertakan aset perpustakaan kongsi dalam pustaka fail"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

@@ -1238,10 +1238,6 @@ msgstr "E-mail"
 msgid "dashboard.your-name"
 msgstr "Naam"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Jouw Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Oké"
@@ -1833,36 +1829,6 @@ msgstr "Probleem"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Kan componenten, afbeeldingen, kleuren en/of typografie bevatten."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Bestanden met gedeelde bibliotheken worden meegenomen in de export, incl. "
-"behoud van hun koppelingen."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Gedeelde bibliotheken exporteren"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Gedeelde bibliotheken worden niet opgenomen in de export en er worden geen "
-"activa aan de bibliotheek toegevoegd. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Gedeelde bibliotheek-activa als basisobjecten behandelen"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Je bestand wordt geëxporteerd met alle externe activa samengevoegd in de "
-"bestandsbibliotheek."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Inclusief gedeelde bibliotheek-activa in bestandsbibliotheken"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -8703,10 +8669,6 @@ msgstr ""
 "Je hebt geen toestemming om mensen uit te nodigen om zich bij dit team aan "
 "te sluiten of om uitnodigingen te bewerken of te verwijderen."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "Mijn Teams"
-
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
 msgstr ""
@@ -9552,12 +9514,6 @@ msgstr ""
 "De betaling is niet voltooid. Probeer het alsjeblieft nog eens. Als het "
 "probleem aanhoudt, neem dan contact met ons op: support@penpot.app."
 
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"We konden je abonnement niet bevestigen. Controleer je abonnementsstatus op "
-"de Abonnementspagina. Indien nodig kun je het opnieuw proberen."
-
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.activate-by-code"
 msgstr "Activatiecode invoeren"
@@ -10023,9 +9979,6 @@ msgstr "Alleen mensen binnen je organisatie kunnen worden uitgenodigd."
 msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Je bent geen lid meer van de organisatie %s"
 
-msgid "dashboard.my-files"
-msgstr "Mijn bestanden"
-
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Token {%s} zit niet in een actieve set of heeft een ongeldige waarde."
@@ -10174,9 +10127,6 @@ msgstr "Welkom bij Enterprise!"
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
 msgid "nitrate.code-activation.footer-before"
 msgstr "Een code nodig? Download je "
-
-msgid "nitrate.code-activation.footer-link"
-msgstr "aanvraag voor activeringscode"
 
 msgid "nitrate.code-activation.footer-after"
 msgstr " en neem contact met ons op:"

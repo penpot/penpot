@@ -680,10 +680,6 @@ msgstr "ímeèlì"
 msgid "dashboard.your-name"
 msgstr "ímeèlì rẹ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "pẹ́ńpọtì rẹ"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "ó dára"
@@ -913,37 +909,6 @@ msgstr "Àkáùnti àtìlẹ́yìn fún Tíwítà"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* ó le ní àwọn ẹ̀yà ara, àwòrán àti àwon àwọ̀ àti / tàbí àtẹ̀jáde."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"àwọn fáìli tí ó wà nínú yàrá ìkàwé pípín á dàpọ̀ mọ́ ti ìfiráńṣẹ́, fún "
-"síṣetọ́jútheir linkage ìsopọ̀ wọn."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "ṣe ìfiráńṣẹ́ yàrá ìkàwé pípín"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Shared libraries will not be included in the export and no assets will be "
-"yàrá ìkàwé pípín kò ní sí nínú ti ìfiráńṣẹ́ àti pé kò ni ohun ìní kan   tí "
-"a ó fi kún yàrá ìkàwé. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "ṣe ìtọ́jú ohun ìní iyàrá ìkàwé pípín bí i nǹkan tó jẹ́ kókó"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"á fi fáìlì rẹ ráńṣẹ́ pẹ̀lú gbogbo àwọn ohun ìní tó wà láyìíka ni a ó papọ̀ "
-"sínú fáìlì yàrá ìkàwé."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "da ohun ìní yàrá ìkàwé pípín pọ̀ mọ́ fáìlì yàrá ìkàwé"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

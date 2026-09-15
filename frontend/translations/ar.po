@@ -711,10 +711,6 @@ msgstr "البريد الالكتروني"
 msgid "dashboard.your-name"
 msgstr "اسمك"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Penpot الخاص بك"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "حسنًا"
@@ -945,32 +941,6 @@ msgstr "رد عنوان تويتر"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* ربما يحتوي على مكوّنات، رسوميات والوان و/أو خطوط."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "صدّر المكتبات المشتركة"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى "
-"المكتبة. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "عامل أصول المكتبة المشتركة كعناصر بسيطة"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "سيتم تصدير ملفك مع دمج جميع الأصول الخارجية في مكتبة الملفات."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "تضمين أصول المكتبة المشتركة في مكتبات الملفات"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

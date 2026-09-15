@@ -972,10 +972,6 @@ msgstr "E-mail"
 msgid "dashboard.your-name"
 msgstr "Vaše jméno"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Váš Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "OK"
@@ -1278,36 +1274,6 @@ msgstr "Účet podpory na X"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Může obsahovat komponenty, grafiku, barvy a/nebo typografii."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
-"jejich propojení."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Exportovat sdílené knihovny"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Sdílené knihovny nebudou zahrnuty do exportu a do knihovny nebudou přidány "
-"žádné položky. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Zacházet s položkami sdílené knihovny jako se základními objekty"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Váš soubor bude exportován se všemi externími položkami sloučenými do "
-"knihovny souborů."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Zahrnout sdílené položky knihovny do knihoven souborů"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

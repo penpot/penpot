@@ -675,10 +675,6 @@ msgstr "Correu electrònic"
 msgid "dashboard.your-name"
 msgstr "Nom"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "El meu Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "D'acord"
@@ -873,38 +869,6 @@ msgstr "Compte de X d'ajuda"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Pot incloure components, gràfics, colors i/o tipografies."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Els fitxers amb biblioteques compartides s’inclouran a l’exportació, "
-"mantenint la vinculació."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Exporta les biblioteques compartides"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Les biblioteques compartides no s'inclouran en l'exportació i no s'afegiran "
-"recursos a la biblioteca. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Tracta els recursos de la biblioteca compartida com a objectes bàsics"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"El fitxer s'exportarà amb tots els recursos externs fusionats a la "
-"biblioteca de fitxers."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr ""
-"Inclou els recursos de la biblioteca compartida a les biblioteques del "
-"fitxer"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

@@ -713,10 +713,6 @@ msgstr "ایمیل"
 msgid "dashboard.your-name"
 msgstr "نام شما"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "پن‌پات شما"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "خیلی خوب"
@@ -894,36 +890,6 @@ msgstr "حساب پشتیبانی در توییتر"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* ممکن است شامل کامپوننت‌ها، گرافیک، رنگ‌ها و/یا تایپوگرافی باشد."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را "
-"حفظ می‌کنند."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "اکسپورت کتابخانه‌های مشترک"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"کتابخانه‌های مشترک در صادرات گنجانده نخواهند شد و هیچ دارایی به کتابخانه "
-"اضافه نخواهد شد. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "دارایی‌های کتابخانه مشترک را به عنوان اشیاء اساسی در نظر بگیرید"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"فایل شما با تمام دارایی‌های خارجی که در کتابخانه فایل ادغام شده‌اند اکسپورت "
-"می‌شود."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "دارایی‌های کتابخانه مشترک را در کتابخانه‌های فایل قرار دهید"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"
@@ -7711,10 +7677,6 @@ msgid "errors.webgl-context-lost.desc-message"
 msgstr ""
 "WebGL دیگر کار نمی‌کند. لطفاً برای بازنشانی، صفحه را دوباره بارگیری کنید"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "تیم‌های من"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:354
 msgid "dashboard.section.organizations"
 msgstr "سازمان‌ها"
@@ -8178,12 +8140,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "پرداخت تکمیل نشد. لطفاً دوباره امتحان کنید. اگر مشکل ادامه داشت، با ما تماس "
 "بگیرید: support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"نتوانستیم اشتراک شما را تأیید کنیم. لطفاً وضعیت اشتراک را در صفحهٔ اشتراک "
-"بررسی کنید. در صورت نیاز می‌توانید دوباره امتحان کنید."
 
 #: src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.organization-member-month"
@@ -9033,9 +8989,6 @@ msgstr "اجازه ندارید این تیم را به هیچ‌یک از سا�
 msgid "dashboard.team-organization.disabled-organization-tooltip"
 msgstr "فقط افراد داخل سازمان شما را می‌توان دعوت کرد."
 
-msgid "dashboard.my-files"
-msgstr "فایل‌های من"
-
 msgid "errors.circular-library-reference"
 msgstr "امکان افزودن کتابخانه وجود ندارد: این کار وابستگی دوری ایجاد می‌کند"
 
@@ -9155,9 +9108,6 @@ msgstr "به طرح سازمانی خوش آمدید!"
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
 msgid "nitrate.code-activation.footer-before"
 msgstr "کد لازم دارید؟ درخواست کد فعال‌سازی "
-
-msgid "nitrate.code-activation.footer-link"
-msgstr "درخواست کد فعال‌سازی"
 
 msgid "nitrate.code-activation.footer-after"
 msgstr " را دانلود و با ما تماس بگیرید:"

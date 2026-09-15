@@ -1182,10 +1182,6 @@ msgstr "이메일"
 msgid "dashboard.your-name"
 msgstr "이름"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "내 Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "확인"
@@ -1626,30 +1622,6 @@ msgstr "이슈/문제"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* 컴포넌트, 그래픽, 컬러 및/또는 타이포그래피가 포함될 수 있습니다."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "공유 라이브러리가 포함된 파일이 연결 상태를 유지하며 내보내기에 포함됩니다."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "공유 라이브러리 내보내기"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr "공유 라이브러리는 내보내기에 포함되지 않으며, 라이브러리에 에셋이 추가되지 않습니다. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "공유 라이브러리 에셋을 일반 객체로 변환"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "모든 외부 에셋이 파일 라이브러리에 병합된 상태로 파일이 내보내집니다."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "공유 라이브러리 에셋을 파일 라이브러리에 포함"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"

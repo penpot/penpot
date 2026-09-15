@@ -1010,10 +1010,6 @@ msgstr "Surel"
 msgid "dashboard.your-name"
 msgstr "Nama Anda"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Penpot Anda"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Oke"
@@ -1391,34 +1387,6 @@ msgstr "Akun dukungan X"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Dapat mencakup komponen, grafik, warna dan/atau tipografi."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "Berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Ekspor pustaka bersama"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Pustaka bersama tidak akan dimasukkan dalam hasil ekspor dan tidak ada aset "
-"yang akan ditambahkan ke pustaka. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Perlakukan aset pustaka terbagi sebagai objek dasar"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Berkas Anda akan diekspor dengan semua aset eksternal tergabung dalam "
-"pustaka berkas."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Termasuk aset pustaka terbagi dalam pustaka berkas"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

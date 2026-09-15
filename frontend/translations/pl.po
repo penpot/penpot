@@ -700,10 +700,6 @@ msgstr "Email"
 msgid "dashboard.your-name"
 msgstr "Twoje imię"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Twój Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -952,36 +948,6 @@ msgstr "Konto wsparcia na Xze"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Może zawierać komponenty, grafikę, kolory i/lub typografię."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Pliki z bibliotekami współdzielonymi zostaną uwzględnione w eksporcie, z "
-"zachowaniem ich powiązania."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Eksportuj biblioteki udostępnione"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Biblioteki udostępnione nie zostaną uwzględnione w eksporcie i żadne zasoby "
-"nie zostaną dodane do biblioteki. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Traktuj zasoby biblioteki współdzielonej jako podstawowe obiekty"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Twój plik zostanie wyeksportowany ze wszystkimi zasobami zewnętrznymi "
-"połączonymi z biblioteką plików."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Uwzględnij zasoby bibliotek współdzielonych w bibliotekach plików"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

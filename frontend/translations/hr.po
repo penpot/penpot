@@ -970,10 +970,6 @@ msgstr "E-mail"
 msgid "dashboard.your-name"
 msgstr "Ime"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Tvoj Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "U redu"
@@ -1272,36 +1268,6 @@ msgstr "X korisnički račun za podršku"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Može uključivati komponente, grafike, boje i/ili tipografije."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
-"njihovu poveznicu."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Izvezi zajedničke biblioteke"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće "
-"biti dodani u biblioteku. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Tretiraj stavke zajedničke biblioteke kao osnovne objekte"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Tvoja će datoteka biti izvezena sa svim vanjskim stavkama spojenim u "
-"biblioteku datoteka."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Uključi stavke zajedničke biblioteke u biblioteke datoteka"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

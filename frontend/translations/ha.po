@@ -707,10 +707,6 @@ msgstr "imel"
 msgid "dashboard.your-name"
 msgstr "sunanka"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "fenfot na ka"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "haka"
@@ -955,32 +951,6 @@ msgstr "wurin karvar qorafin tiwita"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "*akwai sassan,hotuna,launuka,da/kozane-zane."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "Manhajar tura kundi ta kunshi fitarwa, tattali mahaxarsu."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "fitar da manhajar tura kundi"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr "manhajar tura kundi ba ta shiga cikin fitarwa, wani amfaniqarawa a taska. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "lura da bayanan da ke cikin manhajar tura kundi"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"za ka iya fitar da kundi tare da haxe muhimman abubuwa, na waje a "
-"kunditaskira."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "tura taska ya qunshi bayanan da ke cikin kundin taskoki"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

@@ -621,10 +621,6 @@ msgstr "Ebe Ntinye ihe gị"
 msgid "dashboard.your-email"
 msgstr "Ozi-n"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Ite mkpịsị. gị"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Okay"
@@ -835,26 +831,6 @@ msgstr "Ebe inyere gị aka n'ajụjụ nkà gị ."
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Nwere Ike ịgụnye ngwa , esereese gasị, agwụgwara na/ma ọ bụ akara nkụpụta."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"A ga-atinye ederede nwere ọba ederede nkekọrịta ma gụnyere mbupu  , ma "
-"jidekwa ụkpụrụ njikọ ha"
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Bupu ọba ederede nkekọrịta"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Agaghị a tinye ọba ederede nkekọrịta na mbupu ma o nweghị ihe nnwe a ga a "
-"tinye ọ a ederede . "
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Tinye ihe nnwe ọba ederede nkekọrịta n'ime ọ a ederede."
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

@@ -1237,10 +1237,6 @@ msgstr "Електронна пошта"
 msgid "dashboard.your-name"
 msgstr "Ваше ім'я"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Ваш Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Добре"
@@ -1769,36 +1765,6 @@ msgstr "Вада"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* цебто компоненти, графіки, кольори та/або типографіки."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Файли з спільними бібліотеками буде додано до експорту зі збереженням "
-"зв'язків між ними."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Експортувати спільні бібліотеки"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Спільні бібліотеки не буде додано до експорту, а ресурси не будуть додані "
-"до бібліотеки. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Розглядати ресурси спільної бібліотеки як базові об'єкти"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Ваш файл буде експортовано зі всіма зовнішніми ресурсами, об'єднаними у "
-"файл бібліотеки."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Додати ресурси спільної бібліотеки до файлу бібліотеки"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -8612,11 +8578,6 @@ msgid "dashboard.invitations.no-permission"
 msgstr ""
 "Ви не маєте дозволів на створення, редагування чи видалення запрошень до "
 "команди."
-
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-#, fuzzy
-msgid "dashboard.my-teams"
-msgstr "Мої команди"
 
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"

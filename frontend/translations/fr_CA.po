@@ -875,10 +875,6 @@ msgstr "Déplacer %s fichiers vers"
 msgid "dashboard.move-to-other-team"
 msgstr "Déplacer vers une autre équipe"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "Mes équipes"
-
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
 msgstr "+ Nouveau fichier"
@@ -1436,10 +1432,6 @@ msgstr "Adresse courriel"
 #: src/app/main/ui/settings/profile.cljs:62
 msgid "dashboard.your-name"
 msgstr "Ton nom"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Ton Penpot"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -2098,38 +2090,6 @@ msgid "files-download-modal.description-2"
 msgstr ""
 "* Peut inclure des composantes, graphismes, couleurs et/ou polices de "
 "caractère."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Les fichiers avec des bibliothèques partagées seront inclus dans "
-"l'exportation, et maintiendront leur liaison."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Exporter les bibliothèques partagées"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Les bibliothèques partagées ne seront pas incluses dans l'export et aucun "
-"atout ne sera ajouté à la bibliothèque. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Traîter les atouts des bibliothèques partagées comme des objets de base"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Tous les atouts externes seront intégrés à la bibliothèque du fichier "
-"exporté."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr ""
-"Inclure les atouts des bibliothèques partagées dans la bibliothèque du "
-"fichier"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -5849,12 +5809,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "Le paiement n'a pas été complété. Essayer de nouveau. Si le problème "
 "persiste, contacte-nous : support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"Nous n'avons pu valider l'abonnement. Vérifier le statut de l'abonnement "
-"sur la page Abonnement. Essayer à nouveau au besoin."
 
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
@@ -10082,9 +10036,6 @@ msgstr "Vue en liste"
 msgid "dashboard.section.teams"
 msgstr "Équipes"
 
-msgid "dashboard.my-files"
-msgstr "Mes fichiers"
-
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr ""
@@ -10127,9 +10078,6 @@ msgstr "Bienvenue à Entreprise!"
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
 msgid "nitrate.code-activation.footer-before"
 msgstr "Besoin d'un code ? Télécharge ton "
-
-msgid "nitrate.code-activation.footer-link"
-msgstr "requête de code d'activation"
 
 msgid "nitrate.code-activation.footer-after"
 msgstr " et contacte-nous :"

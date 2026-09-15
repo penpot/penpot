@@ -1080,10 +1080,6 @@ msgstr "Email"
 msgid "dashboard.your-name"
 msgstr "Numele tău"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Contul Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -1594,36 +1590,6 @@ msgstr "Cont de asistență X"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Poate include componente, elemente grafice, culori și/sau tipografii."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Fișierele cu biblioteci partajate vor fi incluse în export, menținându-le "
-"legătura."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Exportă biblioteci partajate"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Bibliotecile partajate nu vor fi incluse în export și nu vor fi adăugate "
-"elemente în bibliotecă. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Tratează obiectele bibliotecii partajate ca obiecte de bază"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Fișierul dvs. va fi exportat cu toate activele externe îmbinate în "
-"biblioteca de fișiere."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Include obiectele bibliotecii partajate în bibliotecile de fișiere"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

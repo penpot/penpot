@@ -714,10 +714,6 @@ msgstr "Eposta"
 msgid "dashboard.your-name"
 msgstr "Izena"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Zure Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -967,34 +963,6 @@ msgstr "Laguntzarako X kontua"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Osagaiak, grafikoak, koloreak edo/eta tipografiak izan ditzakete."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Partekatutako liburutegiak dituzten fitxategiak esportazio paketean sartuko "
-"dira eta loturak mantenduko dituzte."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Esportatu partekatutako liburutegiak"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Partekatutako liburutegiak ez dira esportazioan sartuko eta baliabide bat "
-"ere ez da liburutegian sartuko. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Erabili baliabideak oinarrizko objektu bezala"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "Zure fitxategia baliabide guztiak bere baitan dituela esportatuko da."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Sartu partekatutako liburutegiak fitxategiaren liburutegietan"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

@@ -1210,10 +1210,6 @@ msgstr "דוא״ל"
 msgid "dashboard.your-name"
 msgstr "שמך"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "ה־Penpot שלך"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "אישור"
@@ -1772,30 +1768,6 @@ msgstr "בעיה"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* עשוי לכלול רכיבים, גרפיקה, צבעים ו/או טיפוגרפיות."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "קבצים עם ספריות משותפות יצורפו לייצוא, תוך שימור הקישוריות שלהם."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "ייצוא ספריות משותפות"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr "ספריות משותפות לא יצורפו לייצוא ואף משאב לא יתווסף לספריה. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "להתייחס למשאבים בספריות משותפות כעצמים בסיסיים"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "הקובץ שלך ייוצא כשכל המשאבים החיצוניים ממוזגים לספריית הקבצים."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "לכלול משאבי ספריה משותפת בספריות הקבצים"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
@@ -8556,10 +8528,6 @@ msgstr "לא הצלחנו לאמת את הקובץ הזה."
 msgid "dashboard.import.import-error.corrupt-file"
 msgstr "נראה שהקובץ הזה פגום."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "הצוותים שלי"
-
 #: src/app/main/ui/dashboard/team_form.cljs:156
 msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "אין לך הרשאות להוסיף צוותים לאף אחד מהארגונים שלך."
@@ -8732,9 +8700,6 @@ msgstr "מצב"
 #: src/app/main/ui/settings/options.cljs:108
 msgid "dashboard.webgl-switch.title"
 msgstr "תיצוג עם WebGL"
-
-msgid "dashboard.my-files"
-msgstr "הקבצים שלי"
 
 msgid "errors.circular-library-reference"
 msgstr "אי אפשר להוסיף ספרייה: תיווצר תלות מעגלית בעקבות זאת"

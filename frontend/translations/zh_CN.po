@@ -1007,10 +1007,6 @@ msgstr "电子邮件"
 msgid "dashboard.your-name"
 msgstr "你的姓名"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "你的 Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "确定"
@@ -1460,30 +1456,6 @@ msgstr "X 支持账号"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* 可能包括组件、图形、颜色和/或排版。"
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "使用共享库的文件会连同共享库一起导出，并保持引用关系。"
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "导出共享库"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr "导出内容中不会包含共享库，也不会向文件库添加任何素材。 "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "将共享库素材作为基本对象"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "导出文件时，所有外部素材都会合并到文件库中。"
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "将共享库素材加入文件库"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"
@@ -7549,11 +7521,6 @@ msgstr "重新发送邀请"
 msgid "dashboard.invitations.no-permission"
 msgstr "你没有权限邀请他人加入此团队，也没有权限编辑或删除邀请。"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-#, fuzzy
-msgid "dashboard.my-teams"
-msgstr "我的团队"
-
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
 msgstr "你无权在 %s 组织内创建团队。如需更多信息，请联系该组织的负责人。"
@@ -8653,10 +8620,6 @@ msgstr "付款尚未完成。准备好后可随时重试。"
 #, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr "无法开始结算流程，请重试。如果问题仍然存在，请联系我们：support@penpot.app。"
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr "无法确认你的订阅。请在“订阅”页面检查订阅状态，如有需要可重试。"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.activate-by-code"

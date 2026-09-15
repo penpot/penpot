@@ -1230,10 +1230,6 @@ msgstr "Эл. почта"
 msgid "dashboard.your-name"
 msgstr "Ваше имя"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Ваш Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "Ок"
@@ -1695,34 +1691,6 @@ msgstr "Вопрос"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* Могут содержать компоненты, цвета, графику, и/или типографику."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "Файлы с общих библиотек будут включены в экспорт, сохраняя свою привязку."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Экспорт общих библиотек"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
-"попадут в библиотеку экспорта. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Воспринимать ресурсы общей библиотеки как обычные объекты"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Ваш файл будет экспортирован с включением всех внешних ресурсов в "
-"библиотеку экспорта."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Включить ресурсы общей библиотеки в файловые библиотеки"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"

@@ -933,10 +933,6 @@ msgstr "電子郵件"
 msgid "dashboard.your-name"
 msgstr "你的名字"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "你的 Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "確認"
@@ -1224,30 +1220,6 @@ msgstr "X支援帳戶"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* 可能會包含元件、圖像、顏色及／或文字編排。"
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr "使用了共用資料庫的檔案將被包含在匯出內，並保持他們的連結關係。"
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "匯出共享媒體庫"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr "共用資料庫將不包含在匯出檔案內，且資產不會被加入資料庫。 "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "將檔案庫資源視為基本物件"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr "您的檔案將連同所有外部資源將一併匯出到檔案庫中。"
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "將共享資料庫的內容加入檔案資料庫"
 
 #: src/app/main/ui/settings/password.cljs:31
 msgid "generic.error"

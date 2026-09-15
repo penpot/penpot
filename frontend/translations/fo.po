@@ -626,10 +626,6 @@ msgstr "Ókey"
 msgid "errors.profile-blocked"
 msgstr "Vangamyndin er stongd"
 
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Útflyt deild søvn"
-
 #: src/app/main/ui/dashboard/file_menu.cljs:292
 msgid "labels.delete-multi-files"
 msgstr "Strikað %s fílur"

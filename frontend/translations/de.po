@@ -1250,10 +1250,6 @@ msgstr "E-Mail"
 msgid "dashboard.your-name"
 msgstr "Ihr Name"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Ihr Penpot"
-
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
 msgstr "OK"
@@ -1831,36 +1827,6 @@ msgstr "Problem"
 #: src/app/main/ui/exports/files.cljs:132
 msgid "files-download-modal.description-2"
 msgstr "* kann Komponenten, Grafiken, Farben und/oder Textstile enthalten."
-
-#: src/app/main/ui/exports/files.cljs:140
-msgid "files-download-modal.options.all.message"
-msgstr ""
-"Dateien mit geteilten Bibliotheken werden exportiert, und ihre "
-"Verknüpfungen bleiben erhalten."
-
-#: src/app/main/ui/exports/files.cljs:141
-msgid "files-download-modal.options.all.title"
-msgstr "Geteilte Bibliotheken exportieren"
-
-#: src/app/main/ui/exports/files.cljs:142
-msgid "files-download-modal.options.detach.message"
-msgstr ""
-"Geteilte Bibliotheken werden nicht exportiert und der Bibliothek werden "
-"keine Assets hinzugefügt. "
-
-#: src/app/main/ui/exports/files.cljs:143
-msgid "files-download-modal.options.detach.title"
-msgstr "Assets aus geteilten Bibliotheken als gewöhnliche Objekte behandeln"
-
-#: src/app/main/ui/exports/files.cljs:144
-msgid "files-download-modal.options.merge.message"
-msgstr ""
-"Ihre Datei wird exportiert, und alle externen Assets werden der "
-"Dateibibliothek hinzugefügt."
-
-#: src/app/main/ui/exports/files.cljs:145
-msgid "files-download-modal.options.merge.title"
-msgstr "Assets aus geteilten Bibliotheken in die Dateibibliothek aufnehmen"
 
 #: src/app/main/ui/exports/files.cljs:123
 msgid "files-download-modal.title"
