@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:17+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"Last-Translator: Surfoo <surfooo@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9685,7 +9685,7 @@ msgstr ""
 "Les invitations en attente destinées à des utilisateurs externes seront "
 "annulées."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Vous trouverez ici toutes vos organisations où vous êtes autorisé à créer ou "
@@ -9699,11 +9699,11 @@ msgstr "Sélectionner une organisation"
 msgid "dashboard.select-organization-modal.title"
 msgstr "Ajouter l'équipe à une organisation"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Cette équipe appartient désormais à %s"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Cette équipe n'appartient plus à l'organisation %s"
 
@@ -9722,10 +9722,12 @@ msgid "dashboard.user-no-longer-belong-organization"
 msgstr "Vous n'êtes plus membre de l'organisation %s"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+#, fuzzy
 msgid "nitrate.code-activation.title"
 msgstr "Activer Nitrate"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+#, fuzzy
 msgid "nitrate.code-activation.renew-title"
 msgstr "RENOUVELER NITRATE"
 
@@ -9852,6 +9854,7 @@ msgid "nitrate.subscription.settings.renew-with-code"
 msgstr "Renouveler avec un code d'activation"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+#, fuzzy
 msgid "nitrate.subscription.renew-success"
 msgstr "Votre abonnement Nitrate a été renouvelé."
 
@@ -9864,9 +9867,11 @@ msgid "nitrate.modal-success.title"
 msgstr "Bienvenue dans Entreprise !"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+#, fuzzy
 msgid "nitrate.code-activation.footer-before"
 msgstr "Besoin d'un code ? Téléchargez votre "
 
+#, fuzzy
 msgid "nitrate.code-activation.footer-after"
 msgstr " et contactez-nous :"
 
@@ -9891,6 +9896,7 @@ msgstr "Essayez 14 jours gratuitement"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "S'abonner avec un code d'activation"
 
+#, fuzzy
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "Pour annuler votre abonnement Nitrate, veuillez nous contacter à :"
 
