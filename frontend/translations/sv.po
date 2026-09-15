@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:19+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -4306,6 +4306,7 @@ msgid "nitrate.code-activation.placeholder"
 msgstr "Klistra in din aktiveringskod här"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:79
+#, fuzzy
 msgid "nitrate.code-activation.renew-title"
 msgstr "FÖRNYA NITRATE"
 
@@ -4314,6 +4315,7 @@ msgid "nitrate.code-activation.submit"
 msgstr "Aktivera"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:80
+#, fuzzy
 msgid "nitrate.code-activation.title"
 msgstr "Aktivera Nitrate"
 
@@ -4414,6 +4416,7 @@ msgid "nitrate.subscription.active-until"
 msgstr "Aktiv till %s"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:50
+#, fuzzy
 msgid "nitrate.subscription.renew-success"
 msgstr "Din Nitrate-prenumeration har förnyats."
 
