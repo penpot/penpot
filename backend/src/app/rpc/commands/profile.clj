@@ -13,6 +13,7 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.plugins :as ctp]
+   [app.common.types.profile :as types.profile]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -89,6 +90,7 @@
    [:email ::sm/email]
    [:theme {:optional true} :string]
    [:is-admin {:optional true} ::sm/boolean]
+   [:is-oidc {:optional true} ::sm/boolean]
    [:is-active {:optional true} ::sm/boolean]
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
@@ -196,6 +198,13 @@
 
 ;; --- MUTATION: Update Password
 
+(defn check-local-credentials!
+  [profile]
+  (when (types.profile/oidc? profile)
+    (ex/raise :type :restriction
+              :code :profile-managed-by-oidc
+              :hint "Account credentials are managed by the OIDC provider")))
+
 (declare validate-password!)
 (declare update-profile-password!)
 
@@ -232,7 +241,8 @@
 
 (defn- validate-password!
   [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
-  (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
+  (let [profile (get-profile conn profile-id ::sql/for-update true)]
+    (check-local-credentials! profile)
     (when (and (not= (:password profile) "!")
                (not (:valid (auth/verify-password old-password (:password profile)))))
       (ex/raise :type :validation
@@ -389,10 +399,11 @@
   [cfg {:keys [::rpc/profile-id email] :as params}]
   (db/tx-run! cfg
               (fn [cfg]
-                (let [profile (db/get-by-id cfg :profile profile-id)
+                (let [profile (get-profile cfg profile-id ::sql/for-update true)
                       params  (assoc params
                                      :profile profile
                                      :email (clean-email email))]
+                  (check-local-credentials! profile)
                   (if (contains? cf/flags :smtp)
                     (request-email-change! cfg params)
                     (change-email-immediately! cfg params))))))
@@ -646,7 +657,9 @@
 (defn strip-private-attrs
   "Only selects a publicly visible profile attrs."
   [row]
-  (dissoc row :password :deleted-at))
+  (-> row
+      (assoc :is-oidc (types.profile/oidc? row))
+      (dissoc :password :deleted-at)))
 
 (defn filter-props
   "Removes all namespace qualified props from `props` attr."

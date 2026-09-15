@@ -15,6 +15,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.profile :as types.profile]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -179,6 +180,7 @@
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
+            (profile/check-local-credentials! (profile/get-profile conn profile-id ::db/for-update true))
             (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
               nil))]
@@ -632,6 +634,9 @@
         (not profile)
         (l/wrn :hint "attempt of profile recovery: no profile found"
                :profile-email email)
+
+        (types.profile/oidc? profile)
+        nil
 
         (not (eml/allow-send-emails? conn profile))
         (l/wrn :hint "attempt of profile recovery: profile is muted"
