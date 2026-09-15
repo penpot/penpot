@@ -1,4 +1,4 @@
-use crate::render::text::calculate_decoration_metrics;
+use crate::render::text::decoration_segments;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -320,7 +320,19 @@ pub struct TextDecorationSegment {
     pub width: f32,
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+impl TextDecorationSegment {
+    /// The bar to paint, centered on `y`.
+    pub fn rect(&self) -> Rect {
+        Rect::new(
+            self.left,
+            self.y - self.thickness / 2.0,
+            self.left + self.width,
+            self.y + self.thickness / 2.0,
+        )
+    }
+}
+
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -408,6 +420,10 @@ pub struct TextContent {
     content_version: u64,
     layout_version: u64,
     layout_width: Option<f32>,
+    /// Canvas origin used when absolute fill shaders (image/gradient) were baked
+    /// into cached Skia paragraphs. Kept across move clones so paint can
+    /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
+    layout_paint_origin: Option<Point>,
 }
 
 impl PartialEq for TextContent {
@@ -431,6 +447,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 
@@ -446,11 +463,29 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 
     pub fn bounds(&self) -> Rect {
         self.bounds
+    }
+
+    /// Anchor used when painting from the layout cache. Absolute image/gradient
+    /// shaders were built in this coordinate space; paint glyphs here and apply
+    /// [`cached_layout_paint_offset`] on the canvas so both move together.
+    pub fn cached_layout_paint_anchor(&self, selrect: &Rect) -> Point {
+        self.layout_paint_origin
+            .unwrap_or_else(|| Point::new(selrect.x(), selrect.y()))
+    }
+
+    /// Canvas translation from the baked paint origin to the current selrect.
+    /// Zero when there is no recorded origin (fall back to painting at selrect).
+    pub fn cached_layout_paint_offset(&self, selrect: &Rect) -> Point {
+        match self.layout_paint_origin {
+            Some(origin) => Point::new(selrect.x() - origin.x, selrect.y() - origin.y),
+            None => Point::new(0.0, 0.0),
+        }
     }
 
     /// Text content for paint when [`Rect`] size may differ from stored bounds
@@ -796,13 +831,13 @@ impl TextContent {
         &self,
         use_shadow: Option<bool>,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(use_shadow, false, None, None)
+        self.paragraph_builders(use_shadow, false, None, None, None, None)
     }
 
     /// Creates paragraph builders with always-opaque paint (BLACK @ alpha 255).
     /// Used as a clip mask for inner stroke rendering.
     pub fn paragraph_builder_group_opaque(&self) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, true, None, None)
+        self.paragraph_builders(None, true, None, None, None, None)
     }
 
     /// Maximum number of stacked fills across every span in this text block.
@@ -821,7 +856,42 @@ impl TextContent {
         &self,
         layer_from_bottom: usize,
     ) -> Vec<ParagraphBuilderGroup> {
-        self.paragraph_builders(None, false, None, Some(layer_from_bottom))
+        self.paragraph_builders(None, false, None, Some(layer_from_bottom), None, None)
+    }
+
+    /// Like [`paragraph_builder_group_for_fill_layer`], but spans whose fill at
+    /// this layer is an image in `skip_image_ids` get transparent paint (those
+    /// fills are re-emitted as linked SVG `<image>` elements).
+    pub fn paragraph_builder_group_for_fill_layer_skipping_images(
+        &self,
+        layer_from_bottom: usize,
+        skip_image_ids: &HashSet<Uuid>,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            Some(layer_from_bottom),
+            None,
+            Some(skip_image_ids),
+        )
+    }
+
+    /// Opaque black glyphs only for spans whose fill at `layer_from_bottom` is
+    /// the given image — used as an SVG `<clipPath>` for linked image fills.
+    pub fn paragraph_builder_group_opaque_for_image_layer(
+        &self,
+        layer_from_bottom: usize,
+        image_id: Uuid,
+    ) -> Vec<ParagraphBuilderGroup> {
+        self.paragraph_builders(
+            None,
+            false,
+            None,
+            None,
+            Some((layer_from_bottom, image_id)),
+            None,
+        )
     }
 
     fn paragraph_builders(
@@ -830,6 +900,8 @@ impl TextContent {
         opaque: bool,
         align_override: Option<skia::textlayout::TextAlign>,
         fill_layer: Option<usize>,
+        opaque_image_layer: Option<(usize, Uuid)>,
+        skip_image_ids: Option<&HashSet<Uuid>>,
     ) -> Vec<ParagraphBuilderGroup> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
@@ -843,15 +915,63 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             for span in paragraph.children() {
-                let remove_alpha =
-                    opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
-                let text_style = span.to_style_with_paint(
-                    &self.bounds(),
-                    fallback_fonts,
-                    remove_alpha,
-                    paragraph.line_height(),
-                    fill_layer,
-                );
+                let text_style = if let Some((layer, image_id)) = opaque_image_layer {
+                    let mut style = span.to_style(
+                        &self.bounds(),
+                        fallback_fonts,
+                        false,
+                        paragraph.line_height(),
+                    );
+                    let mut paint = paint::Paint::default();
+                    match span.fills_from_bottom(layer) {
+                        Some(shapes::Fill::Image(img)) if img.id() == image_id => {
+                            paint.set_color(skia::Color::BLACK);
+                            paint.set_alpha(255);
+                        }
+                        _ => {
+                            paint.set_color(skia::Color::TRANSPARENT);
+                        }
+                    }
+                    style.set_foreground_paint(&paint);
+                    style
+                } else if let (Some(layer), Some(skip)) = (fill_layer, skip_image_ids) {
+                    let skip_span = matches!(
+                        span.fills_from_bottom(layer),
+                        Some(shapes::Fill::Image(img)) if skip.contains(&img.id())
+                    );
+                    if skip_span {
+                        let mut style = span.to_style(
+                            &self.bounds(),
+                            fallback_fonts,
+                            false,
+                            paragraph.line_height(),
+                        );
+                        let mut paint = paint::Paint::default();
+                        paint.set_color(skia::Color::TRANSPARENT);
+                        style.set_foreground_paint(&paint);
+                        style
+                    } else {
+                        let remove_alpha =
+                            opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                        span.to_style_with_paint(
+                            &self.bounds(),
+                            fallback_fonts,
+                            remove_alpha,
+                            paragraph.line_height(),
+                            fill_layer,
+                        )
+                    }
+                } else {
+                    let remove_alpha =
+                        opaque || (use_shadow.unwrap_or(false) && !span.is_transparent());
+                    span.to_style_with_paint(
+                        &self.bounds(),
+                        fallback_fonts,
+                        remove_alpha,
+                        paragraph.line_height(),
+                        fill_layer,
+                    )
+                };
                 let text: String = span.apply_text_transform();
                 if !text.is_empty() {
                     has_text = true;
@@ -871,8 +991,14 @@ impl TextContent {
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
         // Left-aligned MAX-width pass: longest_line() is glyph width, not the huge container.
-        let mut measure_builders =
-            self.paragraph_builders(None, false, Some(skia::textlayout::TextAlign::Left), None);
+        let mut measure_builders = self.paragraph_builders(
+            None,
+            false,
+            Some(skia::textlayout::TextAlign::Left),
+            None,
+            None,
+            None,
+        );
 
         let normalized_line_height =
             calculate_normalized_line_height(&mut measure_builders, f32::MAX);
@@ -1027,10 +1153,14 @@ impl TextContent {
         self.layout.set(result.0, result.1);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
+        // Paragraph paints (incl. absolute image/gradient shaders) were built
+        // against `self.bounds()` in `paragraph_builder_group_from_text`.
+        self.layout_paint_origin = Some(Point::new(self.bounds.x(), self.bounds.y()));
     }
 
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
+        self.layout_paint_origin = None;
         self.layout.cached_extrect.set(None);
         // Bump the content version so update_layout can't early-return: auto-width
         // shapes always match their container and clearing the cache above doesn't
@@ -1039,6 +1169,10 @@ impl TextContent {
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        // Keep bounds in sync before building paints so absolute fill shaders
+        // match the container we are laying out for.
+        self.set_xywh(selrect.x(), selrect.y(), selrect.width(), selrect.height());
+
         // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
         let layout_matches_container = self.grow_type() == GrowType::AutoWidth
             || self
@@ -1216,6 +1350,7 @@ impl Default for TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 }
@@ -1464,6 +1599,15 @@ pub struct TextSpan {
 }
 
 impl TextSpan {
+    /// Fill at `layer` counting from the bottom (`0` = last / bottommost fill).
+    pub fn fills_from_bottom(&self, layer: usize) -> Option<&shapes::Fill> {
+        if layer < self.fills.len() {
+            Some(&self.fills[self.fills.len() - 1 - layer])
+        } else {
+            None
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,
@@ -1715,78 +1859,19 @@ pub fn calculate_text_layout_data(
 
     // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
-    let vertical_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
-        VerticalAlign::Bottom => selrect_height - total_text_height,
-        _ => 0.0,
-    };
+    let vertical_offset =
+        vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = text_paragraphs
+                .get(i)
+                .map(|text_paragraph| {
+                    decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
+                })
+                .unwrap_or_default();
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
@@ -1882,6 +1967,39 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vertical_align_top_keeps_the_content_at_the_origin() {
+        assert_eq!(vertical_align_offset(200.0, 60.0, VerticalAlign::Top), 0.0);
+    }
+
+    #[test]
+    fn vertical_align_center_takes_half_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Center),
+            70.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_bottom_takes_all_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Bottom),
+            140.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_offset_is_negative_when_content_overflows() {
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Center),
+            -70.0
+        );
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Bottom),
+            -140.0
+        );
+    }
 
     #[test]
     fn capitalize_basic_words() {
@@ -2167,6 +2285,86 @@ mod tests {
             }
             Cow::Borrowed(_) => panic!("expected rebound content"),
         }
+    }
+
+    #[test]
+    fn layout_paint_origin_set_when_layout_result_applied() {
+        let mut content = sample_text_content();
+        content.set_xywh(40.0, 60.0, 200.0, 100.0);
+        let empty =
+            TextContentLayoutResult(vec![], vec![], TextContentSize::new_with_size(200.0, 100.0));
+        content.set_layout_from_result(empty, 200.0, 100.0);
+        let selrect = Rect::from_xywh(40.0, 60.0, 200.0, 100.0);
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(40.0, 60.0)
+        );
+        assert_eq!(
+            content.cached_layout_paint_offset(&selrect),
+            Point::new(0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn cached_layout_paint_offset_tracks_selrect_move() {
+        let mut content = sample_text_content();
+        content.layout_paint_origin = Some(Point::new(10.0, 20.0));
+        // Simulate a move clone: bounds follow the new selrect, origin stays.
+        content.set_xywh(110.0, 220.0, 200.0, 100.0);
+        let selrect = Rect::from_xywh(110.0, 220.0, 200.0, 100.0);
+        let offset = content.cached_layout_paint_offset(&selrect);
+        assert_eq!(offset, Point::new(100.0, 200.0));
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(10.0, 20.0)
+        );
+    }
+
+    #[test]
+    fn cached_layout_paint_offset_zero_without_origin() {
+        let content = sample_text_content();
+        let selrect = Rect::from_xywh(50.0, 75.0, 200.0, 100.0);
+        assert_eq!(
+            content.cached_layout_paint_offset(&selrect),
+            Point::new(0.0, 0.0)
+        );
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(50.0, 75.0)
+        );
+    }
+
+    #[test]
+    fn layout_paint_origin_survives_bounds_transform_on_clone() {
+        let mut content = sample_text_content();
+        content.set_xywh(10.0, 20.0, 200.0, 100.0);
+        content.layout_paint_origin = Some(Point::new(10.0, 20.0));
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 1;
+        content.content_version = 1;
+
+        let mut moved = content.clone();
+        let mut move_matrix = Matrix::new_identity();
+        move_matrix.set_translate_x(50.0);
+        move_matrix.set_translate_y(30.0);
+        moved.transform(&move_matrix);
+
+        assert_eq!(moved.bounds().x(), 60.0);
+        assert_eq!(moved.bounds().y(), 50.0);
+        assert!(Rc::ptr_eq(
+            &content.layout.paragraphs,
+            &moved.layout.paragraphs
+        ));
+        let selrect = Rect::from_xywh(60.0, 50.0, 200.0, 100.0);
+        assert_eq!(
+            moved.cached_layout_paint_anchor(&selrect),
+            Point::new(10.0, 20.0)
+        );
+        assert_eq!(
+            moved.cached_layout_paint_offset(&selrect),
+            Point::new(50.0, 30.0)
+        );
     }
 
     #[test]

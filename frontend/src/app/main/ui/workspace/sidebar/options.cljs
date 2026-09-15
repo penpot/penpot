@@ -15,6 +15,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.path.helpers :as path.helpers]
    [app.main.data.workspace.path.state :as path.state]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -115,8 +116,16 @@
         path-editing?
         (path.state/editing? edit-path edition)
 
+        path-content
+        (dm/get-in drawing [:object :content])
+
+        selected-nodes
+        (:nodes (:selection edit-path-state))
+
+        ;; Coincident commands are one node, so count positions.
         path-node-count
-        (count (dm/get-in edit-path-state [:selection :nodes]))
+        (mf/with-memo [path-content selected-nodes]
+          (path.helpers/selected-node-count path-content {:nodes selected-nodes}))
 
         files
         (mf/deref refs/files)

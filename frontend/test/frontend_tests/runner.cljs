@@ -8,9 +8,11 @@
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
+   [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.store-test]
@@ -27,6 +29,7 @@
    [frontend-tests.data.workspace-shortcuts-test]
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
+   [frontend-tests.data.workspace-versions-test]
    [frontend-tests.errors-test]
    [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
@@ -45,10 +48,13 @@
    [frontend-tests.logic.sidebar-transform-coalescing-test]
    [frontend-tests.logic.update-position-test]
    [frontend-tests.logic.wasm-modifiers-nil-id-test]
+   [frontend-tests.logic.wasm-pixel-snap-test]
    [frontend-tests.main-errors-test]
+   [frontend-tests.main.refs-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.plugins.file-test]
+   [frontend-tests.plugins.flex-test]
    [frontend-tests.plugins.format-test]
    [frontend-tests.plugins.grid-test]
    [frontend-tests.plugins.interactions-test]
@@ -60,12 +66,14 @@
    [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
+   [frontend-tests.plugins.user-test]
    [frontend-tests.plugins.utils-test]
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
+   [frontend-tests.router-test]
    [frontend-tests.svg-fills-test]
    [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.copy-paste-props-test]
@@ -115,8 +123,10 @@
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
+   'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
@@ -134,6 +144,7 @@
    'frontend-tests.data.workspace-shortcuts-test
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
+   'frontend-tests.data.workspace-versions-test
    'frontend-tests.errors-test
    'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
@@ -149,13 +160,16 @@
    'frontend-tests.logic.path-lifecycle-test
    'frontend-tests.logic.path-tools-test
    'frontend-tests.logic.pasting-in-containers-test
+   'frontend-tests.main.refs-test
    'frontend-tests.main-errors-test
    'frontend-tests.logic.sidebar-transform-coalescing-test
    'frontend-tests.logic.update-position-test
    'frontend-tests.logic.wasm-modifiers-nil-id-test
+   'frontend-tests.logic.wasm-pixel-snap-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.file-test
+   'frontend-tests.plugins.flex-test
    'frontend-tests.plugins.format-test
    'frontend-tests.plugins.grid-test
    'frontend-tests.plugins.interactions-test
@@ -167,11 +181,13 @@
    'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test
+   'frontend-tests.plugins.user-test
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
+   'frontend-tests.router-test
    'frontend-tests.svg-fills-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.import-export-test

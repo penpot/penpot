@@ -99,7 +99,9 @@
     :layout-item-margin-type
     :layout-grid-cells
     :layout-grid-columns
-    :layout-grid-rows})
+    :layout-grid-rows
+    :fills
+    :fill-image})
 
 ;; -- temporary modifiers -------------------------------------------
 
@@ -703,9 +705,9 @@
 
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis
                         subtree-ids-by-id selection-rect-cache]
-                 :or {ignore-constraints false ignore-snap-pixel false}
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil}
                  :as params}]
   (let [modif-tree (without-nil-ids modif-tree)]
     (ptk/reify ::set-wasm-modifiers
@@ -756,7 +758,7 @@
                   root-modifiers
 
                   :else
-                  (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel?)]
+                  (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)]
                     (if (seq propagated) propagated root-modifiers)))]
             (when wasm-ready?
               (wasm.api/set-modifiers modifiers))
@@ -831,10 +833,8 @@
                   ;; primaries and descendants would snap back to their
                   ;; pre-drag positions on drop.
                   ;;
-                  ;; Skipped when `snap-pixel?` is on: WASM applies
-                  ;; per-shape pixel correction (different scale/translate
-                  ;; per descendant) which we can't replicate cheaply on
-                  ;; the CLJS side.
+                  ;; Only without `snap-pixel?`: the delta that lands
+                  ;; the shape on the pixel grid is known to WASM alone.
                   (reduce
                    (fn [acc [id data]]
                      (let [t (:transform data)
@@ -864,7 +864,7 @@
                           geometry-entries))
 
                   :else
-                  (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?)))
+                  (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)))
 
                 ignore-tree
                 (calculate-ignore-tree-wasm transforms objects)

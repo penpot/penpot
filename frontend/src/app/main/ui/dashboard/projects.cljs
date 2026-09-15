@@ -216,8 +216,7 @@
          (fn [event]
            (when (kbd/enter? event)
              (dom/stop-propagation event)
-             (on-menu-click event))))
-        title-width (/ 100 limit)]
+             (on-menu-click event))))]
 
     [:article {:class (stl/css-case :dashboard-project-row true :first is-first)}
      [:header {:class (stl/css :project)}
@@ -227,7 +226,6 @@
                              :on-end on-edit
                              :max-length 250}]
          [:h2 {:on-click on-nav
-               :style {:max-width (str title-width "%")}
                :class (stl/css :project-name)
                :title (if (:is-default project)
                         (tr "labels.drafts")
@@ -281,7 +279,18 @@
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open
             :on-close on-menu-close
-            :on-import on-import}])]]]
+            :on-import on-import}])]
+
+       (when (and (> limit 0)
+                  (> file-count limit))
+         [:button {:class (stl/css :show-more)
+                   :on-click on-nav
+                   :tab-index "0"
+                   :on-key-down (fn [event]
+                                  (when (kbd/enter? event)
+                                    (on-nav)))}
+          [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
+          show-more-icon])]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       (if ^boolean empty?
@@ -300,18 +309,7 @@
                         :create-fn create-file
                         :can-edit can-edit
                         :limit limit
-                        :layout layout}])]
-
-     (when (and (> limit 0)
-                (> file-count limit))
-       [:button {:class (stl/css :show-more)
-                 :on-click on-nav
-                 :tab-index "0"
-                 :on-key-down (fn [event]
-                                (when (kbd/enter? event)
-                                  (on-nav)))}
-        [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
-        show-more-icon])]))
+                        :layout layout}])]]))
 
 (def ^:private ref:recent-files
   (l/derived :recent-files st/state))

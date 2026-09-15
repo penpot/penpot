@@ -19,6 +19,7 @@
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -441,7 +442,6 @@
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
 
-;; FIXME: revisit
 (defn retrieve-unread-comment-threads
   "A event used mainly in dashboard for retrieve all unread threads of a team."
   [team-id]
@@ -449,18 +449,9 @@
   (ptk/reify ::retrieve-unread-comment-threads
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [fetched-comments #(assoc %2 :comment-threads (d/index-by :id %1))
-            fetched-users #(assoc %2 :current-team-comments-users %1)]
+      (let [fetched-comments #(assoc %2 :comment-threads (d/index-by :id %1))]
         (->> (rp/cmd! :get-unread-comment-threads {:team-id team-id})
-             (rx/merge-map
-              (fn [comments]
-                (rx/concat
-                 (rx/of (partial fetched-comments comments))
-
-                 (->> (rx/from (into #{} (map :file-id) comments))
-                      (rx/merge-map #(rp/cmd! :get-profiles-for-file-comments {:file-id %}))
-                      (rx/reduce #(merge %1 (d/index-by :id %2)) {})
-                      (rx/map #(partial fetched-users %))))))
+             (rx/map #(partial fetched-comments %))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
 (defn mark-all-threads-as-read
@@ -531,6 +522,35 @@
     (update [_ state]
       (update state :comments-local dissoc :expanded))))
 
+(def ^:private hide-resolved-comments-storage-key
+  :app.main.data.comments/hide-resolved-comments?)
+
+(defn- load-hide-resolved-comments?
+  []
+  (= true (get @storage/user hide-resolved-comments-storage-key)))
+
+(defn- persist-hide-resolved-comments!
+  [hide?]
+  (swap! storage/user assoc hide-resolved-comments-storage-key hide?))
+
+(defn merge-persisted-filters
+  "Merge persisted hide-resolved preference into comments local state."
+  [local]
+  (let [local (or local {})]
+    (if (contains? local :show)
+      local
+      (assoc local :show (if (load-hide-resolved-comments?)
+                           :pending
+                           :all)))))
+
+(defn initialize-comments-filters
+  "Load persisted comment filter preferences into `:comments-local`."
+  []
+  (ptk/reify ::initialize-comments-filters
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :comments-local merge-persisted-filters))))
+
 (defn update-filters
   [{:keys [mode show list] :as params}]
   (ptk/reify ::update-filters
@@ -546,7 +566,12 @@
                   (assoc :show show)
 
                   (some? list)
-                  (assoc :list list)))))))
+                  (assoc :list list)))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when (some? show)
+        (persist-hide-resolved-comments! (= :pending show))))))
 
 (defn update-options
   [params]

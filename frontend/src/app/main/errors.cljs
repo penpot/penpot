@@ -172,6 +172,7 @@
 
 (defn flash
   "Show error notification banner and emit error report.
+  A nil timeout keeps the notification visible until dismissed or replaced.
 
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
@@ -179,7 +180,7 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause] :or {type :handled}}]
+  [& {:keys [type hint cause timeout] :or {type :handled timeout 5000}}]
   (when (ex/exception? cause)
     (when-let [event-name (case type
                             :handled "handled-exception"
@@ -195,7 +196,7 @@
      (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
                 :type :toast
                 :level :error
-                :timeout 5000}))))
+                :timeout timeout}))))
 
 (defmethod ptk/handle-error :network
   [error]
@@ -205,6 +206,21 @@
   (when-let [cause (::instance error)]
     (ex/print-throwable cause :prefix "Network Error"))
   (flash :cause (::instance error) :type :handled))
+
+(defn flash-persistence
+  [cause]
+  (let [{:keys [type cause-type]} (ex-data cause)]
+    ;; Authentication has its own UI. `flash :silent` only skips reporting;
+    ;; it still shows a toast, so do not call it for these failures.
+    (when-not (or (= :authentication type) (= :authentication cause-type))
+      (flash :cause cause :type :handled :timeout nil :hint (tr "errors.save-failed")))))
+
+(defmethod ptk/handle-error :persistence
+  [error]
+  ;; The persistence failure event reports the original cause. Waiters still
+  ;; reject, but must not report that same incident again.
+  (when-not (::handled? error)
+    (flash-persistence (::instance error))))
 
 (defmethod ptk/handle-error :internal
   [error]
@@ -450,6 +466,7 @@
 (defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-not-configured [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

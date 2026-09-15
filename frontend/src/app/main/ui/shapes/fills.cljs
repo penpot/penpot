@@ -119,31 +119,43 @@
                (if (:fill-image value)
                  (let [uri (cf/resolve-file-media (:fill-image value))
                        keep-ar? (-> value :fill-image :keep-aspect-ratio)
+                       tf (-> value :fill-image :transform)
+                       img-x (if (some? tf) (* (get tf :x 0) width) 0)
+                       img-y (if (some? tf) (* (get tf :y 0) height) 0)
+                       img-w (if (some? tf) (* (get tf :width 1) width) width)
+                       img-h (if (some? tf) (* (get tf :height 1) height) height)
                        image-props #js {:id (dm/str "fill-image-" render-id "-" fill-index)
                                         :href (get embed uri uri)
                                         :preserveAspectRatio (if keep-ar? "xMidYMid slice" "none")
-                                        :width width
-                                        :height height
+                                        :x img-x
+                                        :y img-y
+                                        :width img-w
+                                        :height img-h
                                         :key (dm/str fill-index)
                                         :opacity (:fill-opacity value)}]
                    [:> :image image-props])
                  [:> :rect props])))
 
            (when ^boolean has-image?
-             [:g
-              ;; We add this shape to add a padding so the patter won't repeat
-              ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
-              [:rect {:x 0
-                      :y 0
-                      :width (* width no-repeat-padding)
-                      :height (* height no-repeat-padding)
-                      :fill "none"}]
-              [:image {:href uri
-                       :preserveAspectRatio "none"
-                       :x 0
-                       :y 0
-                       :width width
-                       :height height}]])]])])))
+             (let [tf (-> image :transform)
+                   img-x (if (some? tf) (* (get tf :x 0) width) 0)
+                   img-y (if (some? tf) (* (get tf :y 0) height) 0)
+                   img-w (if (some? tf) (* (get tf :width 1) width) width)
+                   img-h (if (some? tf) (* (get tf :height 1) height) height)]
+               [:g
+                ;; We add this shape to add a padding so the patter won't repeat
+                ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
+                [:rect {:x 0
+                        :y 0
+                        :width (* width no-repeat-padding)
+                        :height (* height no-repeat-padding)
+                        :fill "none"}]
+                [:image {:href uri
+                         :preserveAspectRatio "none"
+                         :x img-x
+                         :y img-y
+                         :width img-w
+                         :height img-h}]]))]])])))
 
 (mf/defc fills
   {::mf/wrap-props false}

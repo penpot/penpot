@@ -162,6 +162,20 @@
     border-radius: $br-circle;
     background-color: var(--color-accent-primary);
   }
+
+  a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  strong {
+    color: var(--color-foreground-primary);
+    font-weight: 700;
+  }
 }
 
 .modal-footer {

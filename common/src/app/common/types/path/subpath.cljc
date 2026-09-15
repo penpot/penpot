@@ -99,25 +99,30 @@
 
 (defn- merge-paths
   "Tries to merge into candidate the subpaths. Will return the candidate with the subpaths merged
-  and removed from subpaths the subpaths merged"
-  [candidate subpaths]
-  (let [merge-with-candidate
+  and removed from subpaths the subpaths merged. Only meeting points accepted
+  by `meet?` are joined"
+  [candidate subpaths meet?]
+  (let [joins?
+        (fn [point other]
+          (and (pt= point other) (meet? point)))
+
+        merge-with-candidate
         (fn [[candidate result] current]
           (cond
             (pt= (:to current) (:from current))
             ;; Subpath is already a closed path
             [candidate (conj result current)]
 
-            (pt= (:to candidate) (:from current))
+            (joins? (:to candidate) (:from current))
             [(subpaths-join candidate current) result]
 
-            (pt= (:from candidate) (:to current))
+            (joins? (:from candidate) (:to current))
             [(subpaths-join current candidate) result]
 
-            (pt= (:to candidate) (:to current))
+            (joins? (:to candidate) (:to current))
             [(subpaths-join candidate (reverse-subpath current)) result]
 
-            (pt= (:from candidate) (:from current))
+            (joins? (:from candidate) (:from current))
             [(subpaths-join (reverse-subpath current) candidate) result]
 
             :else
@@ -163,35 +168,37 @@
     (into [] xf-mapcat-data merged)))
 
 (defn close-subpaths
-  "Searches a path for possible subpaths that can create closed loops and merge them"
-  [content]
-  (let [subpaths (get-subpaths content)
-        closed-subpaths
-        (loop [result []
-               current (first subpaths)
-               subpaths (rest subpaths)]
+  "Searches a path for possible subpaths that can create closed loops and merge them.
+  When `meet?` is given only subpaths that touch at an accepted point are merged"
+  ([content]
+   (close-subpaths content (constantly true)))
+  ([content meet?]
+   (let [subpaths (get-subpaths content)
+         closed-subpaths
+         (loop [result []
+                current (first subpaths)
+                subpaths (rest subpaths)]
 
-          (if (some? current)
-            (let [[new-current new-subpaths]
-                  (if (is-closed? current)
-                    [current subpaths]
-                    (merge-paths current subpaths))]
+           (if (some? current)
+             (let [[new-current new-subpaths]
+                   (if (is-closed? current)
+                     [current subpaths]
+                     (merge-paths current subpaths meet?))]
 
-              (if (= current new-current)
-                ;; If equal we haven't found any matching subpaths we advance
-                (recur (conj result new-current)
-                       (first new-subpaths)
-                       (rest new-subpaths))
+               (if (= current new-current)
+                 ;; If equal we haven't found any matching subpaths we advance
+                 (recur (conj result new-current)
+                        (first new-subpaths)
+                        (rest new-subpaths))
 
-                ;; If different we need to pass again the merge to check for additional
-                ;; subpaths to join
-                (recur result
-                       new-current
-                       new-subpaths)))
-            result))]
+                 ;; If different we need to pass again the merge to check for additional
+                 ;; subpaths to join
+                 (recur result
+                        new-current
+                        new-subpaths)))
+             result))]
 
-
-    (into [] xf-mapcat-data closed-subpaths)))
+     (into [] xf-mapcat-data closed-subpaths))))
 
 (defn- close-loop
   "Adds an explicit close command when a subpath's endpoints meet."

@@ -158,7 +158,7 @@ export class ShortcutsPage extends BaseWebSocketPage {
   }
 
   async goToShortcuts() {
-    await this.page.goto("#/settings/shortcuts");
+    await this.page.goto("/?screen=settings-shortcuts");
     await expect(this.shortcutsSection).toBeVisible();
   }
 

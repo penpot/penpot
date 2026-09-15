@@ -2,6 +2,12 @@
 
 ## 2.19.0 (Unreleased)
 
+### :rocket: Epics and highlights
+
+- Add configurable keyboard shortcuts [#9924](https://github.com/penpot/penpot/issues/9924) (PR: [#10237](https://github.com/penpot/penpot/pull/10237))
+- Improve path operations and edition in the path editor [#10889](https://github.com/penpot/penpot/issues/10889) (PR: [#10807](https://github.com/penpot/penpot/pull/10807))
+- Add auto-linking of libraries during import based on slugified name [#9263](https://github.com/penpot/penpot/issues/9263) (PR: [#9958](https://github.com/penpot/penpot/pull/9958))
+
 ### :bug: Bugs fixed
 
 - Fix copying text from Penpot to the clipboard not working on MS Windows [#11303](https://github.com/penpot/penpot/issues/11303) (PR: [#11305](https://github.com/penpot/penpot/pull/11305))
@@ -11,6 +17,20 @@
 - Fix overlay shifting left when shown with top-center alignment in viewer prototype (by @filipsajdak) [#9048](https://github.com/penpot/penpot/issues/9048) (PR: [#10454](https://github.com/penpot/penpot/pull/10454))
 - Fix internal error when clicking the Copy button on the Access Token page (by @0xTHAC0) [#8496](https://github.com/penpot/penpot/issues/8496) (PR: [#11156](https://github.com/penpot/penpot/pull/11156))
 - Fix `disable-registration` flag not preventing non-users from creating accounts in the share prototypes page (by @0xTHAC0) [#5164](https://github.com/penpot/penpot/issues/5164) (PR: [#11199](https://github.com/penpot/penpot/pull/11199))
+- Fix "Cannot assign to read only property 'toString'" error during text resize (by @makesomethingshit) [#10168](https://github.com/penpot/penpot/issues/10168) (PR: [#11521](https://github.com/penpot/penpot/pull/11521))
+- Fix plugin postMessage channel broadcasting messages to all plugins without origin validation [#10968](https://github.com/penpot/penpot/issues/10968) (PR: [#10970](https://github.com/penpot/penpot/pull/10970))
+- Fix MCP plugin page navigation while connected crashing the workspace (by @makesomethingshit) [#11001](https://github.com/penpot/penpot/issues/11001) (PR: [#11521](https://github.com/penpot/penpot/pull/11521))
+- Fix shortcut search never matching on key combination, only on action label [#11003](https://github.com/penpot/penpot/issues/11003) (PR: [#11081](https://github.com/penpot/penpot/pull/11081))
+- Fix Shift + special character key shortcut capturing the shifted character instead of the physical key [#11004](https://github.com/penpot/penpot/issues/11004) (PR: [#11081](https://github.com/penpot/penpot/pull/11081))
+- Fix reassigning the "Paste" shortcut not updating the UI or taking effect in the workspace [#11005](https://github.com/penpot/penpot/issues/11005) (PR: [#11081](https://github.com/penpot/penpot/pull/11081))
+- Fix font-size dropdown clipping multi-digit values in Firefox (by @0xTHAC0) [#11008](https://github.com/penpot/penpot/issues/11008) (PR: [#11162](https://github.com/penpot/penpot/pull/11162), [#11500](https://github.com/penpot/penpot/pull/11500))
+- Fix exporting shortcuts producing an invalid "toggle-fullscreen" entry that breaks re-import [#11032](https://github.com/penpot/penpot/issues/11032) (PR: [#11081](https://github.com/penpot/penpot/pull/11081))
+- Fix plugin API missing permission checks in tokens, shapes, variants, flows, layouts, and user identity [#11137](https://github.com/penpot/penpot/issues/11137) (PR: [#11139](https://github.com/penpot/penpot/pull/11139))
+- Fix library summary Redis cache keys omitting the tenant [#11407](https://github.com/penpot/penpot/issues/11407) (PR: [#11408](https://github.com/penpot/penpot/pull/11408))
+- Fix active theme name in the inspect tab displaying an id instead of the name [#11437](https://github.com/penpot/penpot/issues/11437) (PR: [#11439](https://github.com/penpot/penpot/pull/11439))
+- Fix triple-click not selecting the full line in text editor v3 [#11483](https://github.com/penpot/penpot/issues/11483) (PR: [#11493](https://github.com/penpot/penpot/pull/11493))
+- Fix pasted text losing formatting on last lines after resizing and adding new lines from the top [#11501](https://github.com/penpot/penpot/issues/11501) (PR: [#11503](https://github.com/penpot/penpot/pull/11503))
+- Fix variant property dropdown appearing empty and throwing an internal error when the component has no sibling variants [#11524](https://github.com/penpot/penpot/issues/11524) (PR: [#11499](https://github.com/penpot/penpot/pull/11499))
 
 ### :sparkles: New features & Enhancements
 
@@ -19,8 +39,21 @@
 - Improve path operations and edition in the path editor [#10889](https://github.com/penpot/penpot/issues/10889) (PR: [#10807](https://github.com/penpot/penpot/pull/10807))
 - Add configurable keyboard shortcuts [#9924](https://github.com/penpot/penpot/issues/9924) (PR: [#10237](https://github.com/penpot/penpot/pull/10237))
 - Add auto-linking of libraries during import based on slugified name [#9263](https://github.com/penpot/penpot/issues/9263) (PR: [#9958](https://github.com/penpot/penpot/pull/9958))
+- Add support for internal libraries and file sync for Design Tokens [#9334](https://github.com/penpot/penpot/issues/9334)
+- Warn self-hosted users when their Penpot version is outdated and surface what they're missing [#10497](https://github.com/penpot/penpot/issues/10497) (PR: [#11411](https://github.com/penpot/penpot/pull/11411))
+- Add dedicated RPC methods for plugin registry operations with permission validation [#10952](https://github.com/penpot/penpot/issues/10952) (PR: [#10957](https://github.com/penpot/penpot/pull/10957))
+- Document MCP and internal resolver environment variables (by @ShreyashAgare26) [#11318](https://github.com/penpot/penpot/issues/11318) (PR: [#11572](https://github.com/penpot/penpot/pull/11572))
+- Add tokens source indicator to assets tab [#11365](https://github.com/penpot/penpot/issues/11365) (PR: [#11439](https://github.com/penpot/penpot/pull/11439))
+- Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
+- Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
 ## 2.18.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+- Group toolbar drawing tools into shape and free-draw flyouts [#9316](https://github.com/penpot/penpot/issues/9316) (PR: [#9480](https://github.com/penpot/penpot/pull/9480), [#10354](https://github.com/penpot/penpot/pull/10354))
+- Add dedicated Line and Arrow drawing tools (by @davidv399) [#9145](https://github.com/penpot/penpot/issues/9145) (PR: [#9146](https://github.com/penpot/penpot/pull/9146))
+- Show and manage comments while designing in the workspace [#10239](https://github.com/penpot/penpot/issues/10239) (PR: [#10275](https://github.com/penpot/penpot/pull/10275))
 
 ### :bug: Bugs fixed
 
@@ -123,6 +156,21 @@
 - Fix incorrect permission handling when managing share links on a file [#11289](https://github.com/penpot/penpot/issues/11289) (PR: [#11290](https://github.com/penpot/penpot/pull/11290))
 - Fix backend session remaining valid after logout when the auth-token cookie is replayed [#11316](https://github.com/penpot/penpot/issues/11316) (PR: [#11317](https://github.com/penpot/penpot/pull/11317))
 - Fix get-team-invitation-token requiring only read permissions [#11358](https://github.com/penpot/penpot/issues/11358) (PR: [#11359](https://github.com/penpot/penpot/pull/11359))
+- Fix missing text in legacy SVG board thumbnails [#10182](https://github.com/penpot/penpot/issues/10182) (PR: [#11552](https://github.com/penpot/penpot/pull/11552))
+- Fix workspace crash when applying transform modifiers in the WASM renderer [#10894](https://github.com/penpot/penpot/issues/10894) (PR: [#10896](https://github.com/penpot/penpot/pull/10896))
+- Limit ZIP entry count and object size on V3 binfile import [#11021](https://github.com/penpot/penpot/issues/11021) (PR: [#11022](https://github.com/penpot/penpot/pull/11022))
+- Block plugin UI iframe URLs targeting the Penpot domain [#11271](https://github.com/penpot/penpot/issues/11271) (PR: [#11273](https://github.com/penpot/penpot/pull/11273))
+- Restrict the MCP REPL code execution endpoint to development environments [#11283](https://github.com/penpot/penpot/issues/11283) (PR: [#11282](https://github.com/penpot/penpot/pull/11282))
+- Filter share-link tokens from the get-view-only-bundle response [#11285](https://github.com/penpot/penpot/issues/11285) (PR: [#11286](https://github.com/penpot/penpot/pull/11286))
+- Disable MCP developer tools in multi-user mode [#11291](https://github.com/penpot/penpot/issues/11291) (PR: [#11310](https://github.com/penpot/penpot/pull/11310))
+- Fix Hide comments setting being ignored after opening the Comments section [#11308](https://github.com/penpot/penpot/issues/11308) (PR: [#11492](https://github.com/penpot/penpot/pull/11492))
+- Block NAT64/6to4/Teredo IPv6 transition addresses in the SSRF guard [#11319](https://github.com/penpot/penpot/issues/11319) (PR: [#11320](https://github.com/penpot/penpot/pull/11320))
+- Prevent team admins from removing the team owner [#11367](https://github.com/penpot/penpot/issues/11367) (PR: [#11368](https://github.com/penpot/penpot/pull/11368))
+- Enforce share-link comment permissions and page scope [#11370](https://github.com/penpot/penpot/issues/11370) (PR: [#11371](https://github.com/penpot/penpot/pull/11371))
+- Clean up orphaned teams, projects and files on profile deletion [#11394](https://github.com/penpot/penpot/issues/11394) (PR: [#11395](https://github.com/penpot/penpot/pull/11395))
+- Fix crash when pressing Ctrl+D with no shape selected [#11448](https://github.com/penpot/penpot/issues/11448) (PR: [#11491](https://github.com/penpot/penpot/pull/11491))
+- Fix text layout not updating when auto-width is set by double-clicking the bounding box [#11480](https://github.com/penpot/penpot/issues/11480) (PR: [#11541](https://github.com/penpot/penpot/pull/11541))
+- Fix boolean shapes rendering deformed in the WASM renderer and exports [#11482](https://github.com/penpot/penpot/issues/11482) (PR: [#11551](https://github.com/penpot/penpot/pull/11551))
 
 ### :sparkles: New features & Enhancements
 
@@ -185,6 +233,10 @@
 ### :rocket: Epics and highlights
 
 - Render prototype viewer with WASM (Skia) engine instead of SVG [#10037](https://github.com/penpot/penpot/issues/10037) (PR: [#10038](https://github.com/penpot/penpot/pull/10038))
+- Add layer blur effect for visual depth and styling [#9844](https://github.com/penpot/penpot/issues/9844) (PR: [#10034](https://github.com/penpot/penpot/pull/10034))
+- Render guides in WebGL for consistent viewer performance [#10068](https://github.com/penpot/penpot/issues/10068) (PR: [#10014](https://github.com/penpot/penpot/pull/10014))
+- Add concurrency limiter and status indicators for MCP server communications [#9493](https://github.com/penpot/penpot/issues/9493) (PR: [#9748](https://github.com/penpot/penpot/pull/9748))
+- Add typography token row to multiselected texts for better token visibility [#9336](https://github.com/penpot/penpot/issues/9336) (PR: [#9128](https://github.com/penpot/penpot/pull/9128))
 
 ### :sparkles: New features & Enhancements
 
@@ -360,7 +412,7 @@
 
 ### :rocket: Epics and highlights
 
-- WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR:[9113](https://github.com/penpot/penpot/pull/9113))
+- WebGL rendering (beta) user preference [#9683](https://github.com/penpot/penpot/issues/9683) (PR: [#9113](https://github.com/penpot/penpot/pull/9113))
 - Design Tokens at the design tab: numeric fields with token selection in place [#9358](https://github.com/penpot/penpot/issues/9358)
 
 ### :sparkles: New features & Enhancements
@@ -538,6 +590,10 @@
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [#9137](https://github.com/penpot/penpot/issues/9137) (PR: [#9138](https://github.com/penpot/penpot/pull/9138))
 
 ## 2.15.0
+
+### :rocket: Epics and highlights
+
+- Add MCP server integration for AI-assisted design workflows [#9174](https://github.com/penpot/penpot/issues/9174) (PR: [#9032](https://github.com/penpot/penpot/pull/9032), [#9321](https://github.com/penpot/penpot/pull/9321))
 
 ### :sparkles: New features & Enhancements
 

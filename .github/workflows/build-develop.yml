@@ -1,7 +1,16 @@
 name: _DEVELOP
 
+run-name: >-
+  _DEVELOP (develop @ ${{ github.sha }})
+
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild and overwrite even if already built/promoted'
+        type: boolean
+        required: false
+        default: false
   schedule:
     - cron: '16 5-20 * * 1-5'
 
@@ -15,6 +24,7 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "develop"
+      force: ${{ inputs.force || false }}
 
   build-docker:
     needs: build-bundle
@@ -22,9 +32,11 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "develop"
+      force: ${{ inputs.force || false }}
 
   build-docker-admin-console:
     uses: ./.github/workflows/build-docker-admin-console.yml
     secrets: inherit
     with:
       gh_ref: "develop"
+      force: ${{ inputs.force || false }}

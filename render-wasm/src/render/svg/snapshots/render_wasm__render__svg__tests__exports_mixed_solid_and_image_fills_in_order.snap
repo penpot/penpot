@@ -1,0 +1,10 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="408" height="128" viewBox="0 0 408 128"><defs><clipPath id="imgclip0" clipPathUnits="userSpaceOnUse">
+	<rect transform="translate(-100 -50)" x="100" y="50" width="408" height="128"/>
+</clipPath></defs><g clip-path="url(#imgclip0)"><image href="images/test-fill.svg" x="100" y="50" width="408" height="128" preserveAspectRatio="none" opacity="0.5019608" transform="matrix(1 0 0 1 -100 -50)"/></g>
+	<rect fill="#003FFF" fill-opacity="0.50196081" transform="translate(-100 -50)" x="100" y="50" width="408" height="128"/>
+</svg>

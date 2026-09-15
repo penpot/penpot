@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.vars.outputs.gh_ref }}
       release_notes: ${{ steps.extract_release_notes.outputs.release_notes }}

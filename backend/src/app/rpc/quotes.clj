@@ -535,7 +535,8 @@
 (def ^:private sql:get-upload-sessions-per-profile
   "SELECT count(*) AS total
      FROM upload_session
-    WHERE profile_id = ?")
+    WHERE profile_id = ?
+      AND deleted_at IS NULL")
 
 (defmethod check-quote ::upload-sessions-per-profile
   [{:keys [::profile-id ::target] :as quote}]

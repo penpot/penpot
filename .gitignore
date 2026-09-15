@@ -24,7 +24,6 @@ opencode.json
 !AGENTS.md
 !CODE_OF_CONDUCT.md
 !SECURITY.md
-!HIGHLIGHTS.md
 /*.png
 /*.svg
 /*.sql
@@ -103,7 +102,7 @@ opencode.json
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
-/.opencode/plans
+/.agents/plans
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs

@@ -3,7 +3,6 @@ import type { Context } from '@penpot/plugin-types';
 import { loadManifest } from './parse-manifest.js';
 import { Manifest } from './models/manifest.model.js';
 import { createPlugin } from './create-plugin.js';
-import { ses } from './ses.js';
 
 let plugins: Awaited<ReturnType<typeof createPlugin>>[] = [];
 
@@ -54,8 +53,23 @@ export const loadPlugin = async function (
 
     closeAllPlugins();
 
+    // The host context is not deeply frozen at this load stage.
+    //
+    // The context still contains host-internal function objects and shared
+    // prototypes that the host may legitimately extend after plugin load
+    // (for example, by assigning custom properties). Deep-freezing here
+    // would freeze those prototypes before SES override taming completes,
+    // preventing later host-side mutations with a "Cannot assign to read
+    // only property" TypeError.
+    //
+    // Responsibility boundary: this function forwards the context to the
+    // sandbox layer without deep-freezing it. The public API that plugins
+    // consume is constructed by the API module (`api/index.ts`), and
+    // `createSandbox`'s proxy handler applies `ses.safeReturn` to values
+    // crossing into the sandbox. Compartment isolation and intrinsics
+    // hardening are performed by createSandbox, not here.
     const plugin = await createPlugin(
-      ses.harden(context) as Context,
+      context,
       manifest,
       () => {
         plugins = plugins.filter((api) => api !== plugin);

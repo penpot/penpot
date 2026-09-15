@@ -460,6 +460,9 @@ test("BUG 11177 - Font size input not showing 'mixed' when needed", async ({
   await workspace.clickLeafLayer("Ipsum");
   await workspace.clickLeafLayer("Lorem", { modifiers: ["Shift"] });
 
+  await workspace.expectSelectedLayer("Ipsum");
+  await workspace.expectSelectedLayer("Lorem");
+
   const fontSizeInput = workspace.page.getByLabel("Font size");
 
   await expect(fontSizeInput).toHaveValue("");

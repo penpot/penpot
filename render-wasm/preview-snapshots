@@ -12,6 +12,7 @@
 #
 # Text snapshots reference `fonts/sourcesanspro-regular.ttf`; this script copies
 # the bundled font into `target/svg-preview/fonts/` so the gallery renders text.
+# Image-fill snapshots reference `images/test-fill.svg`; same idea for fills.
 #
 # When a test produced a pending change there will be a `*.snap.new` next to the
 # accepted `*.snap`; the gallery then shows "accepted" vs "new" side by side.
@@ -27,10 +28,14 @@ OUT_DIR="$SCRIPT_DIR/target/svg-preview"
 OUT="$OUT_DIR/index.html"
 FONT_SRC="$SCRIPT_DIR/src/fonts/sourcesanspro-regular.ttf"
 FONT_DIR="$OUT_DIR/fonts"
+IMAGE_SRC="$SCRIPT_DIR/src/render/svg/fixtures/test-fill.svg"
+IMAGE_DIR="$OUT_DIR/images"
 
 mkdir -p "$OUT_DIR"
 mkdir -p "$FONT_DIR"
+mkdir -p "$IMAGE_DIR"
 cp "$FONT_SRC" "$FONT_DIR/"
+cp "$IMAGE_SRC" "$IMAGE_DIR/"
 
 # Prints the SVG body of a snapshot file: everything after the second `---`
 # line (the YAML front matter insta writes).

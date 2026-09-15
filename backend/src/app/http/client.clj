@@ -15,6 +15,7 @@
   (:require
    [app.common.schema :as sm]
    [app.util.ssrf :as ssrf]
+   [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [java-http-clj.core :as http])
@@ -23,6 +24,8 @@
    java.net.URI))
 
 (def default-max-redirects 5)
+(def default-connect-timeout 30000)
+(def default-request-timeout 30000)
 
 (defn client?
   [o]
@@ -33,15 +36,17 @@
   :pred client?})
 
 (defmethod ig/init-key ::client
-  [_ _]
-  (http/build-client {:connect-timeout 30000
+  [_ {:keys [::wrk/executor]}]
+  (http/build-client {:connect-timeout default-connect-timeout
+                      :executor executor
                       :follow-redirects :never}))
 
 (defn send!
   ([client req] (send! client req {}))
   ([client req {:keys [response-type] :or {response-type :string}}]
    (assert (client? client) "expected valid http client")
-   (http/send req {:client client :as response-type})))
+   (http/send (merge {:timeout default-request-timeout} req)
+              {:client client :as response-type})))
 
 (defn- resolve-client
   [params]

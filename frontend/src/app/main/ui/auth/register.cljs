@@ -79,6 +79,7 @@
 
         on-error
         (mf/use-fn
+         (mf/deps form)
          (fn [cause]
            (reset! submitted? false)
            (let [{:keys [type code] :as edata} (ex-data cause)]
@@ -98,8 +99,12 @@
                [:restriction :email-has-complaints]
                (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
+               ;; Reported on the email input itself, the way the recovery and
+               ;; password forms report server side errors, so the field that
+               ;; needs fixing is the one marked as invalid
                [:validation :email-already-exists]
-               (st/emit! (ntf/error (tr "errors.email-already-exists")))
+               (swap! form assoc-in [:extra-errors :email]
+                      {:message (tr "errors.email-already-exists")})
 
                [:validation :email-as-password]
                (st/emit! (ntf/error (tr "errors.email-as-password")))
