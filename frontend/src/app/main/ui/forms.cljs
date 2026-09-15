@@ -204,7 +204,17 @@
 
         props
         (mf/spread-props props {:on-change handle-change
-                                :value value})]
+                                :value value})
+
+        ;; select* resets its label to `default-selected` whenever its
+        ;; options change identity, and callers usually build the options
+        ;; inline, so every re-render snapped the label back to the default
+        ;; while the form kept the picked value. Pass the form value as the
+        ;; default so that reset lands on the picked option.
+        props
+        (if (and (string? value) (not (str/blank? value)))
+          (mf/spread-props props {:default-selected value})
+          props)]
 
     [:> select* props]))
 
