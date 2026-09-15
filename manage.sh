@@ -511,6 +511,18 @@ function sync-workspace {
         install -D "$PWD/$cfg" "$workspace/$cfg"
     fi
 
+    # Initial seed of the Claude Code entry points. Both are gitignored, so
+    # git ls-files does not list them, yet Claude Code needs them to read
+    # AGENTS.md and the shared skills. Seeded only when absent: afterwards
+    # the workspace copy belongs to the user, who may keep their own.
+    if [[ ! -e "$workspace/CLAUDE.md" && ! -L "$workspace/CLAUDE.md" ]]; then
+        ln -s AGENTS.md "$workspace/CLAUDE.md"
+    fi
+    if [[ ! -e "$workspace/.claude/skills" && ! -L "$workspace/.claude/skills" ]]; then
+        mkdir -p "$workspace/.claude"
+        ln -s ../.agents/skills "$workspace/.claude/skills"
+    fi
+
     (
         cd "$workspace"
         git switch -C "${instance}/${CURRENT_BRANCH}" >/dev/null

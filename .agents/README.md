@@ -34,6 +34,25 @@ the "agentic devenv" (`--agentic`) from the technical guide, which
 runs the client outside devenv and wires it in over MCP — here the
 client lives inside the sandboxed devenv docker.
 
+The content lives at the paths the ecosystem agreed on: `AGENTS.md` at the
+repository root and the skills in this folder, `.agents/skills/`. Codex,
+opencode, Cursor, Zed, Amp, omp and pi read both without any setup. Claude
+Code reads `CLAUDE.md` and `.claude/skills`, neither of which is committed,
+so create them once per clone:
+
+```bash
+ln -s AGENTS.md CLAUDE.md
+mkdir -p .claude && ln -s ../.agents/skills .claude/skills
+# or, with Node:
+npx skills add ./.agents/skills --agent claude-code
+```
+
+Both paths are gitignored, so your own `CLAUDE.md` or your own skills keep
+working and no checkout overwrites them. Inside the devenv, `ws0` sees the
+links from the live checkout, and `ws1` and above are seeded on their first
+sync. Personal steering that should not be shared goes in `AGENTS.local.md`
+and `.agents/local/skills/<name>/`, which are gitignored too.
+
 Unlike the agentic devenv, running the client inside the devenv
 docker gives it full access to the live environment: every
 dependency already resolved by the image, so the agent can write

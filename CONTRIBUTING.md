@@ -38,6 +38,15 @@ Center](https://help.penpot.app/).
 - **Issue tracker**: We use [GitHub Issues](https://github.com/penpot/penpot/issues)
   for public bugs and [Taiga](https://tree.taiga.io/project/penpot/) for
   internal project management. Changelog entries reference both.
+- **AI coding agents**: guidance lives in `AGENTS.md` and the skills in
+  `.agents/skills/`, which Codex, opencode, Cursor, Zed, Amp, omp and pi read
+  without setup. Claude Code reads `CLAUDE.md` and `.claude/skills`, neither
+  of which is committed, so create them once per clone with
+  `ln -s AGENTS.md CLAUDE.md` and
+  `mkdir -p .claude && ln -s ../.agents/skills .claude/skills`, or with
+  `npx skills add ./.agents/skills --agent claude-code`. Both paths are
+  gitignored, as are `AGENTS.local.md` and `.agents/local/`, which is where
+  personal instructions and personal skills belong.
 
 ## Reporting Bugs
 
