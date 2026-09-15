@@ -647,7 +647,7 @@
   {::mf/private true}
   [{:keys [current-unresolved-file selection on-select
            visited all-visited?
-           on-wizard-prev on-wizard-next]}]
+           on-wizard-prev on-wizard-next on-wizard-skip]}]
   [:*
    [:div {:class (stl/css :modal-content)}
     [:> library-resolution*
@@ -662,6 +662,11 @@
                     :variant "secondary"
                     :on-click on-wizard-prev}
         (tr "labels.previous")])
+     [:> button* {:class (stl/css :secondary-btn)
+                  :variant "secondary"
+                  :on-click on-wizard-skip}
+      (tr "labels.skip")]
+
      [:> button* {:class (stl/css :accept-btn)
                   :variant "primary"
                   :on-click on-wizard-next}
@@ -853,6 +858,15 @@
            (let [file-id (:id current-unresolved-file)]
              (swap! visited* disj file-id))))
 
+        on-wizard-skip
+        (mf/use-fn
+         (mf/deps current-unresolved-file)
+         (fn []
+           (let [file-id (:id current-unresolved-file)
+                 pending-ids (mapv :id (:pending current-unresolved-file))]
+             (swap! selection* #(apply dissoc % pending-ids))
+             (swap! visited* conj file-id))))
+
         on-summary-back
         (mf/use-fn
          (mf/deps visited)
@@ -969,7 +983,8 @@
           :visited visited
           :all-visited? all-visited?
           :on-wizard-prev on-wizard-prev
-          :on-wizard-next on-wizard-next}]
+          :on-wizard-next on-wizard-next
+          :on-wizard-skip on-wizard-skip}]
 
         :library-summary
         [:> import-library-summary-stage*
