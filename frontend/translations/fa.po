@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:09+0000\n"
-"Last-Translator: Danial Shirali <danialshirali16@gmail.com>\n"
+"PO-Revision-Date: 2026-09-15 17:18+0000\n"
+"Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
 "Language: fa\n"
@@ -341,6 +341,7 @@ msgid "dashboard.create-new-team"
 msgstr "ایجاد تیم جدید"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
+#, fuzzy
 msgid "dashboard.default-team-name"
 msgstr "Penpot شما"
 
