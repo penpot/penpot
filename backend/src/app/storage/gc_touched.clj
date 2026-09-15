@@ -155,14 +155,15 @@
 (defn- process-bucket!
   [conn bucket objects]
   (cond
-    (= bucket "file-media-object")     (process-objects! conn has-file-media-object-refs? bucket objects)
-    (= bucket "team-font-variant")     (process-objects! conn has-team-font-variant-refs? bucket objects)
-    (= bucket "file-object-thumbnail") (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
-    (= bucket "file-thumbnail")        (process-objects! conn has-file-thumbnails-refs? bucket objects)
-    (= bucket "profile")               (process-objects! conn has-profile-refs? bucket objects)
-    (= bucket "file-data")             (process-objects! conn has-file-data-refs? bucket objects)
-    (= bucket sto/tempfile-bucket)     (process-objects! conn (constantly false) sto/tempfile-bucket objects)
-    (= bucket "organization")          (process-objects! conn (constantly false) bucket objects)
+    (= bucket "file-media-object")       (process-objects! conn has-file-media-object-refs? bucket objects)
+    (= bucket "team-font-variant")       (process-objects! conn has-team-font-variant-refs? bucket objects)
+    (= bucket "file-object-thumbnail")   (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
+    (= bucket "file-thumbnail")          (process-objects! conn has-file-thumbnails-refs? bucket objects)
+    (= bucket "profile")                 (process-objects! conn has-profile-refs? bucket objects)
+    (= bucket "file-data")               (process-objects! conn has-file-data-refs? bucket objects)
+    (= bucket sto/tempfile-bucket)       (process-objects! conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket sto/upload-session-bucket) (process-objects! conn (constantly false) sto/upload-session-bucket objects)
+    (= bucket "organization")            (process-objects! conn (constantly false) bucket objects)
     :else
     (ex/raise :type :internal
               :code :unexpected-unknown-reference

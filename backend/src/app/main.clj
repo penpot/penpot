@@ -20,6 +20,7 @@
    [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
    [app.http.debug :as-alias http.debug]
+   [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
@@ -283,8 +284,12 @@
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
+    ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
+
+   ::http.link-preview/routes
+   {::db/pool         (ig/ref ::db/pool)}
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
@@ -390,7 +395,6 @@
      :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :upload-session-gc  (ig/ref :app.tasks.upload-session-gc/handler)
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
@@ -427,9 +431,6 @@
    {::email/sendmail (ig/ref ::email/sendmail)}
 
    :app.tasks.tasks-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.upload-session-gc/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.objects-gc/handler
@@ -563,9 +564,6 @@
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :tasks-gc}
-
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :upload-session-gc}
 
      {:cron #penpot/cron "0 0 2 * * ?" ;; daily
       :task :file-gc-scheduler}

@@ -279,7 +279,18 @@
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open
             :on-close on-menu-close
-            :on-import on-import}])]]]
+            :on-import on-import}])]
+
+       (when (and (> limit 0)
+                  (> file-count limit))
+         [:button {:class (stl/css :show-more)
+                   :on-click on-nav
+                   :tab-index "0"
+                   :on-key-down (fn [event]
+                                  (when (kbd/enter? event)
+                                    (on-nav)))}
+          [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
+          show-more-icon])]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       (if ^boolean empty?
@@ -298,18 +309,7 @@
                         :create-fn create-file
                         :can-edit can-edit
                         :limit limit
-                        :layout layout}])]
-
-     (when (and (> limit 0)
-                (> file-count limit))
-       [:button {:class (stl/css :show-more)
-                 :on-click on-nav
-                 :tab-index "0"
-                 :on-key-down (fn [event]
-                                (when (kbd/enter? event)
-                                  (on-nav)))}
-        [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
-        show-more-icon])]))
+                        :layout layout}])]]))
 
 (def ^:private ref:recent-files
   (l/derived :recent-files st/state))

@@ -685,10 +685,8 @@
 (defn- redirect-with-error
   ([error] (redirect-with-error error nil))
   ([error hint]
-   (let [params {:error error :hint hint}
-         params (d/without-nils params)
+   (let [params {:screen "auth-login" :error error :hint hint}
          uri    (-> (u/uri (cf/get :public-uri))
-                    (assoc :path "/#/auth/login")
                     (assoc :query (u/map->query-string params)))]
      (redirect-response uri))))
 
@@ -707,21 +705,19 @@
                       :iss :prepared-register
                       :exp (ct/in-future {:hours 48}))
 
-        params {:token (tokens/generate cfg info)
+        params {:screen "auth-register-validate"
+                :token (tokens/generate cfg info)
                 :provider (:provider (:id provider))
-                :fullname (:fullname info)}
-        params (d/without-nils params)]
+                :fullname (:fullname info)}]
 
     (redirect-response
      (-> (u/uri (cf/get :public-uri))
-         (assoc :path "/#/auth/register/validate")
          (assoc :query (u/map->query-string params))))))
 
 (defn- redirect-to-verify-token
   [token]
-  (let [params {:token token}
+  (let [params {:screen "auth-verify-token" :token token}
         uri    (-> (u/uri (cf/get :public-uri))
-                   (assoc :path "/#/auth/verify-token")
                    (assoc :query (u/map->query-string params)))]
 
     (redirect-response uri)))

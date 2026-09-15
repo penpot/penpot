@@ -683,11 +683,9 @@
 
         (->> (rp/cmd! :get-team-invitation-token params)
              (rx/map (fn [params]
-                       (rt/resolve router :auth-verify-token params)))
-             (rx/map (fn [fragment]
-                       (assoc cf/public-uri :fragment fragment)))
+                       (rt/resolve-uri router :auth-verify-token params)))
              (rx/tap (fn [uri]
-                       (clipboard/to-clipboard (str uri))))
+                       (clipboard/to-clipboard uri)))
              (rx/tap on-success)
              (rx/ignore)
              (rx/catch on-error))))))
