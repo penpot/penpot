@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-14 17:51+0000\n"
+"PO-Revision-Date: 2026-09-15 17:18+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -364,6 +364,7 @@ msgid "dashboard.create-version-menu"
 msgstr "נעיצת הגרסה הזאת"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
+#, fuzzy
 msgid "dashboard.default-team-name"
 msgstr "ה־Penpot שלך"
 
@@ -3582,6 +3583,7 @@ msgid "not-found.no-permission.file"
 msgstr "אין לך גישה לקובץ הזה."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "מעבר ל־Penpot שלך"
 
@@ -8576,7 +8578,7 @@ msgstr "בחירת ארגון:"
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "הזמנות ממתינות למשתמשים חיצוניים תבוטלנה."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr "כאן אפשר למצוא את כל הארגונים שלך שבהם מותר לך ליצור או להוסיף צוותים."
 
@@ -8588,11 +8590,11 @@ msgstr "בחירת ארגון"
 msgid "dashboard.select-organization-modal.title"
 msgstr "הוספת צוות לארגון"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "הצוות הזה שייך מעתה ל־%s"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "הצוות הזה לא שייך יותר לארגון %s"
 
