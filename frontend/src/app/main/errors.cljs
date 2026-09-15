@@ -172,8 +172,9 @@
 ;; is part of the fingerprint, so a handled report never coalesces with an
 ;; unhandled/exception-page report of the same cause.
 ;;
-;; The fingerprint cache is bounded: when it is full, the oldest entry is
-;; evicted, so memory cannot grow without limit.
+;; The fingerprint cache is bounded: when it is full, the fingerprint
+;; inserted first is evicted (FIFO order), so memory cannot grow without
+;; limit.
 
 (def report-window-ms
   "Minimum time between two reports with the same fingerprint."
@@ -185,7 +186,8 @@
 
 (defn initial-report-state
   []
-  {:entries {}})
+  {:entries {}
+   :order   #queue []})
 
 (defonce ^:private report-governor
   (atom (initial-report-state)))
@@ -212,7 +214,7 @@
   [event-name cause]
   (let [data  (ex-data cause)
         ftype (or (:type data) :unknown)
-        code  (or (:code data) :-)
+        code  (or (:code data) :unknown)
         hint  (or (ex/get-hint cause) "")
         ;; A JS stack string starts with "Error: <message>"; the first
         ;; actual frame is the second line.
@@ -227,10 +229,13 @@
   (str (label event-name) "|" (str/prune (or hint "") 120)))
 
 (defn- evict-oldest
+  "Drops the fingerprint inserted first. `:order` mirrors the insertion
+  order of `:entries`, so this is O(1)."
   [state]
-  (if-let [entry (apply min-key (comp :emitted-at val) (:entries state))]
-    (update state :entries dissoc (key entry))
-    state))
+  (let [fingerprint (peek (:order state))]
+    (-> state
+        (update :entries dissoc fingerprint)
+        (update :order pop))))
 
 (defn reserve-report*
   "Pure decision step of the report governor.
@@ -242,16 +247,25 @@
   (let [entry   (get-in state [:entries fingerprint])
         emit?   (or (nil? entry)
                     (>= (- now (:emitted-at entry)) report-window-ms))
-        pending (or (:pending entry) 0)
-        state   (cond-> state
-                  (and emit?
-                       (nil? entry)
-                       (>= (count (:entries state)) max-tracked-fingerprints))
-                  (evict-oldest))]
-    (if emit?
-      [(assoc-in state [:entries fingerprint]
-                 {:emitted-at now :pending 0})
+        pending (or (:pending entry) 0)]
+    (cond
+      ;; New fingerprint: insert it, evicting the oldest when the cache
+      ;; is full.
+      (and emit? (nil? entry))
+      (let [state (cond-> state
+                    (>= (count (:entries state)) max-tracked-fingerprints)
+                    (evict-oldest))]
+        [(-> state
+             (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
+             (update :order conj fingerprint))
+         {:emit? true :occurrences (inc pending)}])
+
+      ;; Known fingerprint re-emitted after the window: keep its position.
+      emit?
+      [(assoc-in state [:entries fingerprint] {:emitted-at now :pending 0})
        {:emit? true :occurrences (inc pending)}]
+
+      :else
       [(update-in state [:entries fingerprint :pending] inc)
        {:emit? false :occurrences nil}])))
 

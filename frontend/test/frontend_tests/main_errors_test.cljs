@@ -147,7 +147,7 @@
 (t/deftest fingerprint-handles-missing-type-and-code
   (let [fingerprint (errors/error-fingerprint "handled-exception" (js/Error. "plain failure"))]
     (t/is (string? fingerprint))
-    (t/is (str/starts-with? fingerprint "handled-exception|unknown|-|"))))
+    (t/is (str/starts-with? fingerprint "handled-exception|unknown|unknown|"))))
 
 (t/deftest fallback-fingerprint-is-stable-and-discriminating
   (t/is (= (errors/fallback-fingerprint "exception-page" "boom")
@@ -178,9 +178,35 @@
                                                  "fp-new"
                                                  (* 1000 errors/max-tracked-fingerprints))]
     (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
+    (t/is (= errors/max-tracked-fingerprints (count (:order state))))
     (t/is (true? (:emit? decision)))
     (t/is (nil? (get-in state [:entries "fp-0"])))
+    (t/is (= "fp-1" (peek (:order state))))
     (t/is (some? (get-in state [:entries "fp-new"])))))
+
+(t/deftest governor-evicts-by-insertion-order-not-by-last-emission
+  (let [state (reduce (fn [state i]
+                        (first (errors/reserve-report* state (str "fp-" i) (* 1000 i))))
+                      (errors/initial-report-state)
+                      (range errors/max-tracked-fingerprints))
+        ;; fp-0 re-emits after the window, so its :emitted-at becomes the
+        ;; most recent one, but it keeps its insertion position.
+        [state _] (errors/reserve-report* state
+                                          "fp-0"
+                                          (+ (* 1000 errors/max-tracked-fingerprints)
+                                             errors/report-window-ms))
+        [state decision] (errors/reserve-report* state
+                                                 "fp-new"
+                                                 (+ (* 1000 errors/max-tracked-fingerprints)
+                                                    errors/report-window-ms
+                                                    1000))]
+    (t/is (true? (:emit? decision)))
+    ;; FIFO: the first inserted one goes, even though it was the last
+    ;; emitted and fp-1 is the oldest by :emitted-at.
+    (t/is (nil? (get-in state [:entries "fp-0"])))
+    (t/is (some? (get-in state [:entries "fp-1"])))
+    (t/is (= errors/max-tracked-fingerprints (count (:entries state))))
+    (t/is (= errors/max-tracked-fingerprints (count (:order state))))))
 
 (t/deftest submit-report-is-governed-and-reports-occurrences
   (let [cause  (error-cause :type :network :code :fetch-failed :hint "boom")
