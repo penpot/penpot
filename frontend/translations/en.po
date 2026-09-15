@@ -788,6 +788,10 @@ msgstr "Confirm library links"
 msgid "dashboard.import.error"
 msgstr "Import failed. Please try again"
 
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "File name"
+
 #: src/app/main/ui/dashboard/import.cljs:292
 #, unused
 msgid "dashboard.import.import-error"
@@ -869,6 +873,14 @@ msgstr ""
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Review the library links before confirming:"
 
+#: src/app/main/ui/dashboard/import.cljs:430
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connect to"
+
+#: src/app/main/ui/dashboard/import.cljs:424
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "original library"
+
 #: src/app/main/ui/dashboard/import.cljs:672
 msgid "dashboard.import.review-links"
 msgstr "Review links"
@@ -881,9 +893,21 @@ msgstr "Auto-linked"
 msgid "dashboard.import.summary.linked"
 msgstr "Linked"
 
+#: src/app/main/ui/dashboard/import.cljs:498
+msgid "dashboard.import.summary.manually-linked"
+msgstr "linked manually"
+
+#: src/app/main/ui/dashboard/import.cljs:506
+msgid "dashboard.import.summary.new"
+msgstr "New"
+
 #: src/app/main/ui/dashboard/import.cljs:527
 msgid "dashboard.import.summary.no-selection"
 msgstr "No library selected"
+
+#: src/app/main/ui/dashboard/import.cljs:503
+msgid "dashboard.import.summary.original"
+msgstr "Original"
 
 #, unused
 msgid "dashboard.import.summary.your-selection"

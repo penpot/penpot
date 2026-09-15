@@ -786,6 +786,10 @@ msgstr "Confirmar vínculos de biblioteca"
 msgid "dashboard.import.error"
 msgstr "La importación ha fallado. Intentalo de nuevo, por favor"
 
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Nombre del archivo"
+
 #: src/app/main/ui/dashboard/import.cljs:292
 #, unused
 msgid "dashboard.import.import-error"
@@ -867,6 +871,14 @@ msgstr ""
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
 
+#: src/app/main/ui/dashboard/import.cljs:430
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "conectar a"
+
+#: src/app/main/ui/dashboard/import.cljs:424
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "biblioteca original"
+
 #: src/app/main/ui/dashboard/import.cljs:672
 msgid "dashboard.import.review-links"
 msgstr "Revisar vínculos"
@@ -879,9 +891,21 @@ msgstr "Vinculadas automáticamente"
 msgid "dashboard.import.summary.linked"
 msgstr "Vinculada"
 
+#: src/app/main/ui/dashboard/import.cljs:498
+msgid "dashboard.import.summary.manually-linked"
+msgstr "vinculada manualmente"
+
+#: src/app/main/ui/dashboard/import.cljs:506
+msgid "dashboard.import.summary.new"
+msgstr "Nueva"
+
 #: src/app/main/ui/dashboard/import.cljs:527
 msgid "dashboard.import.summary.no-selection"
 msgstr "Ninguna biblioteca seleccionada"
+
+#: src/app/main/ui/dashboard/import.cljs:503
+msgid "dashboard.import.summary.original"
+msgstr "Original"
 
 #, unused
 msgid "dashboard.import.summary.your-selection"
