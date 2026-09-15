@@ -9,6 +9,8 @@
 - The root app renders an exception page from `:exception` state before the normal error boundary. `rt/navigated` clears `:exception`.
 - Frontend error handling treats stale cross-build JS chunk failures specially: messages containing `$cljs$cst$` or `$cljs$core$I` plus undefined/null/not-a-function signatures trigger throttled reload.
 - Plugin-originated uncaught errors are identified through the plugin runtime hook and logged rather than turning into the global exception page.
+- `app.main.errors/submit-report` is governed by a dedup governor: each report carries a fingerprint (`type|code|hint|first stack frame`), the first occurrence is always emitted, repeats within 2 minutes are counted and included in the next emitted report as `:occurrences`, and the fingerprint cache is bounded (oldest entry evicted) so memory stays fixed. It applies to `handled-exception`, `unhandled-exception` and `exception-page`.
+- `flash` reserves the report before generating it, so suppressed occurrences do not pay the `generate-report` cost; the toast is unchanged.
 
 ## Store and websocket
 

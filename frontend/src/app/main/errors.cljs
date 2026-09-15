@@ -158,21 +158,135 @@
       (.error js/console "error on generating report" cause)
       nil)))
 
+;; --- Error report governor
+;;
+;; Bounds the volume of reports emitted by a single browser session. Each
+;; report carries a fingerprint; the first occurrence is always emitted and
+;; repeated occurrences of the same fingerprint within `report-window-ms`
+;; are counted but not emitted. The next emitted report carries the number
+;; of occurrences since the previous one as `:occurrences`.
+;;
+;; The fingerprint cache is bounded: when it is full, the oldest entry is
+;; evicted, so memory cannot grow without limit.
+
+(def report-window-ms
+  "Minimum time between two reports with the same fingerprint."
+  (* 2 60 1000))
+
+(def max-tracked-fingerprints
+  "Maximum number of fingerprints kept in the governor cache."
+  2000)
+
+(defn initial-report-state
+  []
+  {:entries {}})
+
+(defonce ^:private report-governor
+  (atom (initial-report-state)))
+
+(defn reset-report-governor!
+  "Testing helper: clear the governor state."
+  []
+  (reset! report-governor (initial-report-state)))
+
+(defn- label
+  [v]
+  (cond
+    (nil? v)     ""
+    (keyword? v) (name v)
+    (string? v)  v
+    :else        (str v)))
+
+(defn error-fingerprint
+  "Stable identity of an error, used to group repeated reports."
+  [cause]
+  (let [data  (ex-data cause)
+        ftype (or (:type data) :unknown)
+        code  (or (:code data) :-)
+        hint  (or (ex/get-hint cause) "")
+        ;; A JS stack string starts with "Error: <message>"; the first
+        ;; actual frame is the second line.
+        frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
+    (str (label ftype) "|" (label code) "|"
+         (str/prune hint 120) "|" (str/prune frame 120))))
+
+(defn fallback-fingerprint
+  "Fingerprint for reports submitted without a `cause` (e.g. the exception
+  page or a stalled save)."
+  [event-name hint]
+  (str (label event-name) "|" (str/prune (or hint "") 120)))
+
+(defn- evict-oldest
+  [state]
+  (if-let [entry (apply min-key (comp :emitted-at val) (:entries state))]
+    (update state :entries dissoc (key entry))
+    state))
+
+(defn reserve-report*
+  "Pure decision step of the report governor.
+
+  Given the governor `state`, an error `fingerprint` and the current time in
+  milliseconds, returns `[state' {:emit? bool :occurrences n}]` for one
+  occurrence."
+  [state fingerprint now]
+  (let [entry   (get-in state [:entries fingerprint])
+        emit?   (or (nil? entry)
+                    (>= (- now (:emitted-at entry)) report-window-ms))
+        pending (or (:pending entry) 0)
+        state   (cond-> state
+                  (and emit?
+                       (nil? entry)
+                       (>= (count (:entries state)) max-tracked-fingerprints))
+                  (evict-oldest))]
+    (if emit?
+      [(assoc-in state [:entries fingerprint]
+                 {:emitted-at now :pending 0})
+       {:emit? true :occurrences (inc pending)}]
+      [(update-in state [:entries fingerprint :pending] inc)
+       {:emit? false :occurrences nil}])))
+
+(defn reserve-report!
+  "Reserve a slot for a report. Returns the decision map.
+
+  `swap!` may retry the update function; `reserve-report*` is pure, so the
+  last accepted run wins and the captured decision matches the committed
+  state."
+  [fingerprint now]
+  (let [decision (volatile! nil)]
+    (swap! report-governor
+           (fn [state]
+             (let [[state* result] (reserve-report* state fingerprint now)]
+               (vreset! decision result)
+               state*)))
+    @decision))
+
 (defn submit-report
-  "Report the error report to the audit log subsystem"
-  [& {:keys [event-name report hint] :or {event-name "unhandled-exception"}}]
+  "Report the error report to the audit log subsystem, subject to the
+  report governor."
+  [& {:keys [event-name report hint cause reserved]
+      :or {event-name "unhandled-exception"}}]
   (when (and (not (str/empty? hint))
              (string? report)
              (string? event-name))
-    (st/emit!
-     (ev/event {::ev/name event-name
-                :hint hint
-                :href (rt/get-current-href)
-                :report report}))))
+    (let [decision (or reserved
+                       (reserve-report! (if (ex/exception? cause)
+                                          (error-fingerprint cause)
+                                          (fallback-fingerprint event-name hint))
+                                        (inst-ms (ct/now))))]
+      (when (:emit? decision)
+        (st/emit!
+         (ev/event {::ev/name event-name
+                    :hint hint
+                    :href (rt/get-current-href)
+                    :report report
+                    :occurrences (:occurrences decision)}))))))
 
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
+
+  The report is reserved before being generated, so repeated errors that
+  fall inside the governor window do not pay the report-building cost.
 
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
@@ -186,10 +300,14 @@
                             :handled "handled-exception"
                             :unhandled "unhandled-exception"
                             :silent nil)]
-      (let [report (generate-report cause)]
-        (submit-report :event-name event-name
-                       :report report
-                       :hint (ex/get-hint cause)))))
+      (let [report-hint (ex/get-hint cause)]
+        (when (and (string? report-hint) (not (str/empty? report-hint)))
+          (let [decision (reserve-report! (error-fingerprint cause) (inst-ms (ct/now)))]
+            (when (:emit? decision)
+              (submit-report :event-name event-name
+                             :report (generate-report cause)
+                             :hint report-hint
+                             :reserved decision)))))))
 
   (ts/schedule
    #(st/emit!
