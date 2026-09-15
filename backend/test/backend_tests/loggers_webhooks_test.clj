@@ -6,6 +6,7 @@
 
 (ns backend-tests.loggers-webhooks-test
   (:require
+   [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -48,7 +49,7 @@
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook
-                             {:event evt
+                             {:event (transit/encode-str evt)
                               :config whk})]
 
       (t/is (= 1 (:call-count @http-mock)))
@@ -70,7 +71,7 @@
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook
-                             {:event evt
+                             {:event (transit/encode-str evt)
                               :config whk})]
 
       (t/is (= 1 (:call-count @http-mock)))
@@ -88,11 +89,11 @@
       ;; RUN 2 times more
 
       (th/run-task! :run-webhook
-                    {:event evt
+                    {:event (transit/encode-str evt)
                      :config whk})
 
       (th/run-task! :run-webhook
-                    {:event evt
+                    {:event (transit/encode-str evt)
                      :config whk})
 
 
@@ -132,4 +133,27 @@
       ;; Refresh webhook
       (let [whk' (th/db-get :webhook {:id (:id whk)})]
         (t/is (nil? (:error-code whk')))))))
+
+(t/deftest webhook-transit-round-trip-preserves-uuid-types
+  "The run-webhook event travels nested in transit inside the JSON job
+  props, so transit deliveries keep UUID types (no wire change vs the
+  legacy worker)."
+  (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
+    (let [prof (th/create-profile* 1 {:is-active true})
+          whk  (th/create-webhook* {:team-id (:default-team-id prof)
+                                    :mtype "application/transit+json"})
+          evt  {:type "command"
+                :name "create-project"
+                :props {:team-id (:default-team-id prof)}}]
+
+      ;; through the real pipeline: process submits run-webhook, the
+      ;; runner decodes it from JSON and delivers it
+      (th/run-task! :process-webhook-event evt)
+      (th/run-pending-jobs!)
+
+      (t/is (= 1 (:call-count @http-mock)))
+      (let [req   (second (:call-args @http-mock))
+            event (transit/decode-str (:body req))]
+        (t/is (= "application/transit+json" (get-in req [:headers "content-type"])))
+        (t/is (uuid? (get-in event [:props :team-id])))))))
 
