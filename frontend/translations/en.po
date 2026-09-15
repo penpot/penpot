@@ -784,8 +784,8 @@ msgstr "Review the library links before confirming:"
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirm library links"
 
-msgid "dashboard.import.review-links"
-msgstr "Review links"
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connect selected libraries"
 
 msgid "dashboard.import.summary.auto-linked"
 msgstr "Auto-linked"

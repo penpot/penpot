@@ -788,8 +788,8 @@ msgstr "Confirmar vínculos de biblioteca"
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
 
-msgid "dashboard.import.review-links"
-msgstr "Revisar vínculos"
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Conectar bibliotecas seleccionadas"
 
 msgid "dashboard.import.summary.auto-linked"
 msgstr "Vinculadas automáticamente"

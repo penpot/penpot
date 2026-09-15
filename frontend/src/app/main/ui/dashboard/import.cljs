@@ -672,7 +672,7 @@
                   :on-click on-wizard-next}
       (if all-visited?
         (tr "labels.next")
-        (tr "dashboard.import.review-links"))]]]])
+        (tr "dashboard.import.connect-selected-libraries"))]]]])
 
 (mf/defc import-library-summary-stage*
   {::mf/private true}
