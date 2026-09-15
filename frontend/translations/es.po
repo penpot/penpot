@@ -889,7 +889,7 @@ msgstr "Vinculadas automáticamente"
 
 #: src/app/main/ui/dashboard/import.cljs:491
 msgid "dashboard.import.summary.linked"
-msgstr "Vinculada"
+msgstr "auto-vinculada"
 
 #: src/app/main/ui/dashboard/import.cljs:498
 msgid "dashboard.import.summary.manually-linked"

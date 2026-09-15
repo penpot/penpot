@@ -891,7 +891,7 @@ msgstr "Auto-linked"
 
 #: src/app/main/ui/dashboard/import.cljs:491
 msgid "dashboard.import.summary.linked"
-msgstr "Linked"
+msgstr "auto-linked"
 
 #: src/app/main/ui/dashboard/import.cljs:498
 msgid "dashboard.import.summary.manually-linked"
