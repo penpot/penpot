@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:19+0000\n"
-"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
 "Language: fr_CA\n"
@@ -1110,11 +1110,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Les invitations en attente à des usagers externes seront annulées."
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
-"Ici tu trouveras toutes les organisations auxquelles tu as le droit de "
-"créer ou ajouter des équipes."
+"Ici tu trouveras toutes les organisations auxquelles tu as le droit de créer "
+"ou ajouter des équipes."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1244,7 +1244,7 @@ msgstr "Les fichiers ont été déplacés avec succès"
 msgid "dashboard.success-move-project"
 msgstr "Le projet a été déplacé avec succès"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-belong-organization"
 msgstr "Cette équipe appartient maintenant à l'organisation %s"
 
@@ -1256,7 +1256,7 @@ msgstr "Information de l'équipe"
 msgid "dashboard.team-members"
 msgstr "Membres de l'équipe"
 
-#, unused
+#, fuzzy, unused
 msgid "dashboard.team-no-longer-belong-organization"
 msgstr "Cette équipe n'appartient plus à l'organisation %s"
 
