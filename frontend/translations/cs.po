@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: matl-17 <lmlmlmlmlm71@gmail.com>\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/"
 "cs/>\n"
 "Language: cs\n"
@@ -2748,6 +2748,7 @@ msgid "not-found.no-permission.file"
 msgstr "K tomuto souboru nemáte přístup."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Přejděte na svůj Penpot"
 
