@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -4070,6 +4070,7 @@ msgid "not-found.no-permission.file"
 msgstr "Non hai accesso a questo file."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Vai al tuo Penpot"
 
