@@ -395,7 +395,6 @@
      :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :upload-session-gc  (ig/ref :app.tasks.upload-session-gc/handler)
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
@@ -432,9 +431,6 @@
    {::email/sendmail (ig/ref ::email/sendmail)}
 
    :app.tasks.tasks-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.upload-session-gc/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.objects-gc/handler
@@ -568,9 +564,6 @@
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :tasks-gc}
-
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :upload-session-gc}
 
      {:cron #penpot/cron "0 0 2 * * ?" ;; daily
       :task :file-gc-scheduler}
