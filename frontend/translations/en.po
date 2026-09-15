@@ -1796,6 +1796,13 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
 
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"Your latest changes are not confirmed as saved. Saving may not resume "
+"automatically. Do not close or reload this tab: you may lose changes. "
+"Contact support for help."
+
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG is invalid or malformed"
