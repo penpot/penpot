@@ -2412,6 +2412,27 @@ mod tests {
     }
 
     #[test]
+    fn masked_group_splits_its_mask_from_its_content() {
+        // The masked-group shadow silhouette relies on this split: the mask is
+        // the first child, and iterating the children yields only the content.
+        let mut group = any_shape();
+        group.set_shape_type(Type::Group(Group { masked: true }));
+
+        let mask_id = Uuid::new_v4();
+        let content_a = Uuid::new_v4();
+        let content_b = Uuid::new_v4();
+        group.children = vec![mask_id, content_a, content_b];
+
+        assert_eq!(group.mask_id(), Some(&mask_id));
+
+        let content: Vec<Uuid> = group.children_ids_iter(false).copied().collect();
+        assert_eq!(content.len(), 2);
+        assert!(content.contains(&content_a));
+        assert!(content.contains(&content_b));
+        assert!(!content.contains(&mask_id));
+    }
+
+    #[test]
     fn masked_group_extrect_grows_with_a_drop_shadow() {
         let mut pool = ShapesPool::new();
         pool.initialize(3);
