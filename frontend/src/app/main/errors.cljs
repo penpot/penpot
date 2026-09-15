@@ -154,9 +154,13 @@
         (println "--------------------")
         (println (st/format-last-events))
         (println)))
-    (catch :default cause
-      (.error js/console "error on generating report" cause)
-      nil)))
+    (catch :default err
+      (.error js/console "error on generating report" err)
+      ;; Keep this function total: `flash` reserves a report slot before
+      ;; generating it, so returning nil here would consume the slot
+      ;; without emitting anything.
+      (str "Report generation failed: " (or (ex-message err) "--")
+           "\nOriginal hint: " (or (ex/get-hint cause) "--")))))
 
 ;; --- Error report governor
 ;;
@@ -164,7 +168,9 @@
 ;; report carries a fingerprint; the first occurrence is always emitted and
 ;; repeated occurrences of the same fingerprint within `report-window-ms`
 ;; are counted but not emitted. The next emitted report carries the number
-;; of occurrences since the previous one as `:occurrences`.
+;; of occurrences since the previous one as `:occurrences`. The report name
+;; is part of the fingerprint, so a handled report never coalesces with an
+;; unhandled/exception-page report of the same cause.
 ;;
 ;; The fingerprint cache is bounded: when it is full, the oldest entry is
 ;; evicted, so memory cannot grow without limit.
@@ -198,8 +204,12 @@
     :else        (str v)))
 
 (defn error-fingerprint
-  "Stable identity of an error, used to group repeated reports."
-  [cause]
+  "Stable identity of an error, used to group repeated reports.
+
+  The report name is part of the identity, so a `handled-exception` report
+  never coalesces with an `unhandled-exception`/`exception-page` report of
+  the same cause (those two do reach the error reports and alerts)."
+  [event-name cause]
   (let [data  (ex-data cause)
         ftype (or (:type data) :unknown)
         code  (or (:code data) :-)
@@ -207,7 +217,7 @@
         ;; A JS stack string starts with "Error: <message>"; the first
         ;; actual frame is the second line.
         frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
-    (str (label ftype) "|" (label code) "|"
+    (str (label event-name) "|" (label ftype) "|" (label code) "|"
          (str/prune hint 120) "|" (str/prune frame 120))))
 
 (defn fallback-fingerprint
@@ -270,7 +280,7 @@
              (string? event-name))
     (let [decision (or reserved
                        (reserve-report! (if (ex/exception? cause)
-                                          (error-fingerprint cause)
+                                          (error-fingerprint event-name cause)
                                           (fallback-fingerprint event-name hint))
                                         (inst-ms (ct/now))))]
       (when (:emit? decision)
@@ -302,7 +312,7 @@
                             :silent nil)]
       (let [report-hint (ex/get-hint cause)]
         (when (and (string? report-hint) (not (str/empty? report-hint)))
-          (let [decision (reserve-report! (error-fingerprint cause) (inst-ms (ct/now)))]
+          (let [decision (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
             (when (:emit? decision)
               (submit-report :event-name event-name
                              :report (generate-report cause)

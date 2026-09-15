@@ -25,6 +25,7 @@
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -121,22 +122,32 @@
 (t/deftest fingerprint-is-stable-for-equivalent-errors
   (let [cause-a (error-cause :type :network :code :fetch-failed :hint "unable to perform fetch operation")
         cause-b (error-cause :type :network :code :fetch-failed :hint "unable to perform fetch operation")]
-    (t/is (= (errors/error-fingerprint cause-a)
-             (errors/error-fingerprint cause-b)))))
+    (t/is (= (errors/error-fingerprint "handled-exception" cause-a)
+             (errors/error-fingerprint "handled-exception" cause-b)))))
 
 (t/deftest fingerprint-changes-with-error-identity
   (let [base (error-cause :type :network :code :fetch-failed :hint "boom")]
-    (t/is (not= (errors/error-fingerprint base)
-                (errors/error-fingerprint (error-cause :type :network :code :fetch-failed :hint "other"))))
-    (t/is (not= (errors/error-fingerprint base)
-                (errors/error-fingerprint (error-cause :type :validation :code :fetch-failed :hint "boom"))))
-    (t/is (not= (errors/error-fingerprint base)
-                (errors/error-fingerprint (error-cause :type :network :code :other :hint "boom"))))))
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :network :code :fetch-failed :hint "other"))))
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :validation :code :fetch-failed :hint "boom"))))
+    (t/is (not= (errors/error-fingerprint "handled-exception" base)
+                (errors/error-fingerprint "handled-exception"
+                                          (error-cause :type :network :code :other :hint "boom"))))))
+
+(t/deftest fingerprint-includes-the-report-name
+  (let [cause (error-cause :type :network :hint "boom")]
+    (t/is (not= (errors/error-fingerprint "handled-exception" cause)
+                (errors/error-fingerprint "unhandled-exception" cause)))
+    (t/is (not= (errors/error-fingerprint "handled-exception" cause)
+                (errors/error-fingerprint "exception-page" cause)))))
 
 (t/deftest fingerprint-handles-missing-type-and-code
-  (let [fingerprint (errors/error-fingerprint (js/Error. "plain failure"))]
+  (let [fingerprint (errors/error-fingerprint "handled-exception" (js/Error. "plain failure"))]
     (t/is (string? fingerprint))
-    (t/is (= "unknown|-|" (subs fingerprint 0 10)))))
+    (t/is (str/starts-with? fingerprint "handled-exception|unknown|-|"))))
 
 (t/deftest fallback-fingerprint-is-stable-and-discriminating
   (t/is (= (errors/fallback-fingerprint "exception-page" "boom")
@@ -246,6 +257,46 @@
         (errors/flash :cause cause :type :handled))
       (t/is (= 1 (count @events)))
       (t/is (= 1 @generated)))))
+
+(t/deftest generate-report-is-total-when-formatting-fails
+  (with-redefs [st/format-last-events (mock/stub (fn [& _] (throw (ex-info "formatting failed" {}))))]
+    (let [report (errors/generate-report (error-cause :type :network :hint "boom"))]
+      (t/is (string? report)))))
+
+(t/deftest flash-emits-a-fallback-report-when-generation-fails
+  (let [events (atom [])]
+    (with-redefs [st/format-last-events (mock/stub (fn [& _] (throw (ex-info "formatting failed" {}))))
+                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
+                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
+                  tm/schedule            mock/noop]
+      (errors/flash :cause (error-cause :type :network :hint "boom") :type :handled)
+      (t/is (= 1 (count @events)))
+      (t/is (string? (:report (deref (first @events))))))))
+
+(t/deftest exception-page-reports-dedup-by-cause
+  (let [cause-a (error-cause :type :internal :code :unable-to-process-repository-response :hint "boom")
+        cause-b (error-cause :type :internal :code :other :hint "other")
+        events  (capture-reports!
+                 (fn []
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "boom" :cause cause-a)
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "different hint" :cause cause-a)
+                   (errors/submit-report :event-name "exception-page"
+                                         :report "report" :hint "other" :cause cause-b)))]
+    (t/is (= 2 (count events)))))
+
+(t/deftest reports-of-the-same-cause-under-different-names-do-not-coalesce
+  (let [cause  (error-cause :type :internal :hint "boom")
+        events (capture-reports!
+                (fn []
+                  (errors/submit-report :event-name "handled-exception"
+                                        :report "report" :hint "boom" :cause cause)
+                  (errors/submit-report :event-name "unhandled-exception"
+                                        :report "report" :hint "boom" :cause cause)
+                  (errors/submit-report :event-name "exception-page"
+                                        :report "report" :hint "boom" :cause cause)))]
+    (t/is (= 3 (count events)))))
 
 ;; ---------------------------------------------------------------------------
 ;; on-error dispatches to ptk/handle-error
