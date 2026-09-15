@@ -95,6 +95,10 @@ or
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile --skip-tutorial --skip-walkthrough
 ```
 
+**NOTE:** profiles created with this command have no verified email. If the
+`disable-email-verification` flag is set, inviting these users to a team adds them to it
+directly, without sending any invitation email, so SMTP is not required for this flow.
+Check the [Configuration][1] section for more detail.
 
 **NOTE:** the exact container name depends on your docker version and platform.
 For example it could be <code class="language-bash">penpot-penpot-backend-1</code> or <code class="language-bash">penpot_penpot-backend-1</code>.
