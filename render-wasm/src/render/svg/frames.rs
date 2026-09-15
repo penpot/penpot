@@ -17,6 +17,9 @@ pub(super) fn render_frame(
     tree: ShapesPoolRef,
     scale: f32,
 ) -> Result<()> {
+    // Frames break SVG fill inheritance (GPU pushes an empty nested_fills entry).
+    builder.nested_fills.push(Vec::new());
+
     // Opacity/blend wrap silhouette + content (GPU opens the opacity save_layer
     // before the shadow composite).
     let composite = opacity_blend_attrs(element);
@@ -61,6 +64,7 @@ pub(super) fn render_frame(
     if composite.is_some() {
         builder.close_group();
     }
+    builder.nested_fills.pop();
     Ok(())
 }
 
