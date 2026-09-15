@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: Andy Li <andyli2456@gmail.com>\n"
+"Last-Translator: william chen <william.fromtw@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -2613,6 +2613,7 @@ msgid "not-found.no-permission.file"
 msgstr "您無權存取此文件。"
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "前往您的 Penpot"
 
