@@ -13,13 +13,16 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as sto.gc-deleted]
    [app.storage.impl :as impl]
+   [app.storage.pending-gc :as sto.pending-gc]
    [app.storage.s3 :as-alias sto.s3]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
+   [integrant.core :as ig]
    [mockery.core :refer [with-mocks]]
    [promesa.core :as p])
   (:import
@@ -40,6 +43,17 @@
   backend for assets."
   [storage]
   (assoc storage ::sto/backend :fs))
+
+(declare fake-s3-backend-with-targets)
+
+(defn configure-s3-storage
+  "Returns a storage configured with the fake S3 backend and the given
+  semantic-bucket -> target routing."
+  [bucket->target]
+  (-> (:app.storage/storage th/*system*)
+      (assoc ::sto/backend :s3)
+      (assoc-in [::sto/backends :s3] (fake-s3-backend-with-targets))
+      (assoc ::sto/bucket->target bucket->target)))
 
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -708,7 +722,7 @@
                    {:id (:id object)})
 
     (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
-                        :return (fn [_ ids] (set ids))}]
+                        :return (fn [_ _ ids] (set ids))}]
       (let [res (th/run-task! :storage-gc-deleted {})]
         (t/is (= 0 (:deleted res)))))
 
@@ -832,9 +846,145 @@
 
 (defn- fake-s3-backend
   []
-  {::sto/type         :s3
-   ::sto.s3/client    (reify S3AsyncClient)
-   ::sto.s3/presigner (reify S3Presigner)})
+  {::sto/type              :s3
+   ::sto.s3/default-target :default
+   ::sto.s3/targets
+   {:default {::sto.s3/client    (reify S3AsyncClient)
+              ::sto.s3/presigner (reify S3Presigner)
+              ::sto.s3/bucket    "test-bucket"
+              ::sto.s3/prefix    nil}}})
+
+(defn- fake-s3-target
+  [bucket prefix]
+  {::sto.s3/client    (reify S3AsyncClient)
+   ::sto.s3/presigner (reify S3Presigner)
+   ::sto.s3/bucket    bucket
+   ::sto.s3/prefix    prefix})
+
+(defn- fake-s3-backend-with-targets
+  []
+  (assoc (fake-s3-backend)
+         ::sto.s3/targets
+         {:default (fake-s3-target "default" nil)
+          :temp    (fake-s3-target "temp" "tmp/")}))
+
+(t/deftest s3-bulk-delete-resolves-target
+  (let [backend  (fake-s3-backend-with-targets)
+        captured (atom nil)]
+    (with-mocks [_mock {:target 'app.storage.s3/del-object-in-bulk
+                        :return (fn [target _ids]
+                                  (reset! captured target)
+                                  (p/resolved nil))}]
+      (t/is (= #{} (impl/del-objects-in-bulk backend :temp #{(uuid/next)})))
+      (t/is (= "temp" (::sto.s3/bucket @captured)))
+      (t/is (= "tmp/" (::sto.s3/prefix @captured))))))
+
+(t/deftest s3-bulk-delete-rejects-unknown-target
+  (let [backend  (fake-s3-backend-with-targets)
+        captured (atom nil)]
+    (with-mocks [_mock {:target 'app.storage.s3/del-object-in-bulk
+                        :return (fn [target _ids]
+                                  (reset! captured target)
+                                  (p/resolved nil))}]
+      (let [ex (try
+                 (impl/del-objects-in-bulk backend :missing #{(uuid/next)})
+                 nil
+                 (catch Throwable cause cause))]
+        (t/is (some? ex))
+        (t/is (= :invalid-storage-target (:code (ex-data ex))))
+        (t/is (nil? @captured))))))
+
+(t/deftest s3-get-object-url-rejects-unknown-target
+  (let [backend (fake-s3-backend-with-targets)
+        ex      (try
+                  (impl/get-object-url backend (with-meta {:id (uuid/next)}
+                                                 {:storage-target "ghost"}) {})
+                  nil
+                  (catch Throwable cause cause))]
+    (t/is (some? ex))
+    (t/is (= :invalid-storage-target (:code (ex-data ex))))))
+
+(t/deftest s3-get-object-data-rejects-unknown-target
+  (let [backend (fake-s3-backend-with-targets)
+        ex      (try
+                  (impl/get-object-data backend (with-meta {:id (uuid/next) :size 1}
+                                                  {:storage-target "ghost"}))
+                  nil
+                  (catch Throwable cause cause))]
+    (t/is (some? ex))
+    (t/is (= :invalid-storage-target (:code (ex-data ex))))))
+
+(t/deftest s3-target-resolvable-checks-configured-targets
+  (let [backend (fake-s3-backend-with-targets)]
+    (t/is (true? (impl/target-resolvable? backend nil)))
+    (t/is (true? (impl/target-resolvable? backend "default")))
+    (t/is (true? (impl/target-resolvable? backend :temp)))
+    (t/is (false? (impl/target-resolvable? backend "ghost")))))
+
+(t/deftest fs-target-is-always-resolvable
+  (t/is (true? (impl/target-resolvable? {::sto/type :fs} "anything"))))
+
+(t/deftest s3-build-targets-shares-clients-and-closes-them
+  (let [clients     (atom [])
+        close-count (atom 0)
+        mk-client   (fn [_]
+                      (let [c (reify
+                                clojure.lang.IDeref
+                                (deref [_] (Object.))
+                                java.lang.AutoCloseable
+                                (close [_] (swap! close-count inc)))]
+                        (swap! clients conj c)
+                        c))]
+    (with-mocks [_c {:target 'app.storage.s3/build-s3-client
+                     :return mk-client}
+                 _p {:target 'app.storage.s3/build-s3-presigner
+                     :return (fn [_] (reify S3Presigner))}]
+      (let [backend (ig/init-key :app.storage.s3/backend
+                                 {:app.storage.s3/region :eu-central-1
+                                  :app.storage.s3/bucket "main"
+                                  :app.worker/netty-io-executor :executor
+                                  :app.storage.s3/targets
+                                  {:same  {:bucket "same"}
+                                   :other {:bucket "other" :region :us-east-1}}})]
+        ;; one client pair per distinct [region endpoint]
+        (t/is (= 2 (count @clients)))
+        ;; same region reuses the default client
+        (t/is (= (get-in backend [:app.storage.s3/targets :default :app.storage.s3/client])
+                 (get-in backend [:app.storage.s3/targets :same :app.storage.s3/client])))
+        ;; different region gets its own client
+        (t/is (not= (get-in backend [:app.storage.s3/targets :default :app.storage.s3/client])
+                    (get-in backend [:app.storage.s3/targets :other :app.storage.s3/client])))
+
+        (ig/halt-key! :app.storage.s3/backend backend)
+        (t/is (= 2 @close-count))))))
+
+(t/deftest s3-build-targets-closes-clients-on-failure
+  (let [close-count (atom 0)
+        mk-client   (fn [params]
+                      (when (= :us-east-1 (:app.storage.s3/region params))
+                        (throw (RuntimeException. "boom")))
+                      (reify
+                        clojure.lang.IDeref
+                        (deref [_] (Object.))
+                        java.lang.AutoCloseable
+                        (close [_] (swap! close-count inc))))]
+    (with-mocks [_c {:target 'app.storage.s3/build-s3-client
+                     :return mk-client}
+                 _p {:target 'app.storage.s3/build-s3-presigner
+                     :return (fn [_] (reify S3Presigner))}]
+      (let [ex (try
+                 (ig/init-key :app.storage.s3/backend
+                              {:app.storage.s3/region :eu-central-1
+                               :app.storage.s3/bucket "main"
+                               :app.worker/netty-io-executor :executor
+                               :app.storage.s3/targets
+                               {:same  {:bucket "same"}
+                                :other {:bucket "other" :region :us-east-1}}})
+                 nil
+                 (catch Throwable cause cause))]
+        (t/is (some? ex))
+        ;; the pair built before the failing one is closed
+        (t/is (= 1 @close-count))))))
 
 (t/deftest s3-exists-object-returns-true-on-found
   (with-mocks [mock {:target 'app.storage.s3/head-object
@@ -874,3 +1024,311 @@
       (t/is (= "boom" (ex-message (ex-cause ex)))))
     ;; one initial attempt plus max-retries
     (t/is (= 4 (:call-count @mock)))))
+
+;; --- Storage target metadata / dedup
+
+(t/deftest put-object-routes-bucket-to-storage-target
+  (let [storage (configure-s3-storage {"tempfile" :temp})]
+    (with-mocks [_mock {:target 'app.storage.impl/put-object
+                        :return (fn [_ object _] object)}]
+      (let [object (sto/put-object! storage {::sto/content (sto/content "content")
+                                             :bucket "tempfile"
+                                             :content-type "text/plain"})
+            row    (th/db-exec-one!
+                    ["select backend, metadata->>'~:storage-target' as target
+                        from storage_object where id = ?" (:id object)])]
+        (t/is (= "s3" (:backend row)))
+        (t/is (= "temp" (:target row)))))))
+
+(t/deftest put-object-falls-back-to-default-storage-target
+  (let [storage (configure-s3-storage {"tempfile" :temp})]
+    (with-mocks [_mock {:target 'app.storage.impl/put-object
+                        :return (fn [_ object _] object)}]
+      (let [object (sto/put-object! storage {::sto/content (sto/content "content")
+                                             :bucket "file-media-object"
+                                             :content-type "text/plain"})
+            row    (th/db-exec-one!
+                    ["select metadata->>'~:storage-target' as target
+                        from storage_object where id = ?" (:id object)])]
+        (t/is (= "default" (:target row)))))))
+
+(t/deftest put-object-fs-does-not-set-storage-target
+  (let [storage (configure-storage-backend (:app.storage/storage th/*system*))
+        object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                          :bucket "file-media-object"
+                                          :content-type "text/plain"})
+        row     (th/db-exec-one!
+                 ["select metadata->>'~:storage-target' as target
+                     from storage_object where id = ?" (:id object)])]
+    (t/is (nil? (:target row)))))
+
+(t/deftest dedup-is-isolated-per-storage-target
+  (let [routed   (configure-s3-storage {"file-data" :temp})
+        unrouted (configure-s3-storage {})
+        content  (-> (sto/content "content")
+                     (sto/wrap-with-hash "same-hash"))]
+    (with-mocks [_mock {:target 'app.storage.impl/put-object
+                        :return (fn [_ object _] object)}]
+      (let [object1 (sto/put-object! routed {::sto/content content
+                                             ::sto/deduplicate? true
+                                             :bucket "file-data"
+                                             :content-type "text/plain"})
+            object2 (sto/put-object! unrouted {::sto/content content
+                                               ::sto/deduplicate? true
+                                               :bucket "file-data"
+                                               :content-type "text/plain"})
+            row     (th/db-exec-one! ["select count(*) from storage_object"])]
+        ;; same semantic bucket, different target: no dedup hit, two rows
+        (t/is (not= (:id object1) (:id object2)))
+        (t/is (= 2 (:count row)))))))
+
+(t/deftest dedup-reuses-object-within-same-storage-target
+  (let [storage (configure-s3-storage {"file-data" :temp})
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))]
+    (with-mocks [_p {:target 'app.storage.impl/put-object
+                     :return (fn [_ object _] object)}
+                 _e {:target 'app.storage.impl/exists-object?
+                     :return (fn [_ _] true)}]
+      (let [object1 (sto/put-object! storage {::sto/content content
+                                              ::sto/deduplicate? true
+                                              :bucket "file-data"
+                                              :content-type "text/plain"})
+            object2 (sto/put-object! storage {::sto/content content
+                                              ::sto/deduplicate? true
+                                              :bucket "file-data"
+                                              :content-type "text/plain"})]
+        ;; same semantic bucket and target: dedup reuses the object
+        (t/is (= (:id object1) (:id object2)))))))
+
+(t/deftest dedup-hit-carries-storage-target-metadata
+  (let [storage  (configure-s3-storage {"file-data" :temp})
+        content  (-> (sto/content "content")
+                     (sto/wrap-with-hash "same-hash"))
+        captured (atom nil)]
+    (with-mocks [_p {:target 'app.storage.impl/put-object
+                     :return (fn [_ object _] object)}
+                 _e {:target 'app.storage.impl/exists-object?
+                     :return (fn [_ object]
+                               (reset! captured object)
+                               true)}]
+      (sto/put-object! storage {::sto/content content
+                                ::sto/deduplicate? true
+                                :bucket "file-data"
+                                :content-type "text/plain"})
+      (sto/put-object! storage {::sto/content content
+                                ::sto/deduplicate? true
+                                :bucket "file-data"
+                                :content-type "text/plain"})
+      (t/is (some? @captured))
+      (t/is (= "temp" (:storage-target (meta @captured)))))))
+
+(t/deftest dedup-repair-carries-storage-target-metadata
+  (let [storage  (configure-s3-storage {"file-data" :temp})
+        content  (-> (sto/content "content")
+                     (sto/wrap-with-hash "same-hash"))
+        calls    (atom [])]
+    (with-mocks [_p {:target 'app.storage.impl/put-object
+                     :return (fn [_ object _]
+                               (swap! calls conj object)
+                               object)}
+                 _h {:target 'app.storage.s3/head-object
+                     :return (p/rejected (-> (NoSuchKeyException/builder)
+                                             (.message "no key")
+                                             (.build)))}]
+      (let [object1 (sto/put-object! storage {::sto/content content
+                                              ::sto/deduplicate? true
+                                              :bucket "file-data"
+                                              :content-type "text/plain"})
+            ;; second put finds the row but the real exists-object? sees a
+            ;; missing blob and repairs it in place
+            object2 (sto/put-object! storage {::sto/content content
+                                              ::sto/deduplicate? true
+                                              :bucket "file-data"
+                                              :content-type "text/plain"})
+            row     (th/db-exec-one!
+                     ["select status from storage_object where id = ?" (:id object1)])
+            count   (th/db-exec-one! ["select count(*) from storage_object"])]
+        (t/is (= (:id object1) (:id object2)))
+        (t/is (= "valid" (:status row)))
+        (t/is (= 1 (:count count)))
+        (t/is (= "temp" (:storage-target (meta (last @calls)))))))))
+
+;; --- GC target routing
+
+(defn- storage-with-s3-targets
+  []
+  (assoc (:app.storage/storage th/*system*)
+         ::sto/backends
+         {:s3 (fake-s3-backend-with-targets)}))
+
+(t/deftest gc-deleted-deletes-from-routed-target
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)
+        captured (atom nil)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status)
+                   values (?, 1, 's3', ?, ?, 'valid')"
+                  id
+                  (db/tjson {:bucket "file-data" :storage-target "temp"})
+                  (ct/in-past {:minutes 1})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ target _ids]
+                                  (reset! captured target)
+                                  #{})}]
+      (t/is (= 1 (:deleted (#'sto.gc-deleted/clean-deleted! cfg))))
+      (t/is (= "temp" @captured)))))
+
+(t/deftest gc-deleted-refuses-unknown-target-and-keeps-row
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status)
+                   values (?, 1, 's3', ?, ?, 'valid')"
+                  id
+                  (db/tjson {:bucket "file-data" :storage-target "ghost"})
+                  (ct/in-past {:minutes 1})])
+    (with-mocks [mock {:target 'app.storage.impl/del-objects-in-bulk
+                       :return (fn [_ _ _] #{})}]
+      (let [result (#'sto.gc-deleted/clean-deleted! cfg)
+            row    (th/db-exec-one!
+                    ["select status, deleted_at, deletion_attempts
+                          from storage_object where id = ?" id])]
+        (t/is (= 0 (:deleted result)))
+        (t/is (= 1 (:parked result)))
+        (t/is (= 0 (:call-count @mock)))
+        (t/is (= "valid" (:status row)))
+        (t/is (ct/is-after? (:deleted-at row) (ct/now)))
+        (t/is (= 0 (:deletion-attempts row)))))))
+
+(t/deftest gc-deleted-give-up-not-applied-to-unknown-target
+  (let [storage (storage-with-s3-targets)
+        cfg     {::db/pool th/*pool* ::sto/storage storage}
+        id      (uuid/next)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status, deletion_attempts)
+                   values (?, 1, 's3', ?, ?, 'valid', 10)"
+                  id
+                  (db/tjson {:bucket "file-data" :storage-target "ghost"})
+                  (ct/in-past {:minutes 1})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ _ _] #{})}]
+      (#'sto.gc-deleted/clean-deleted! cfg))
+    (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
+      (t/is (= 1 (:count row))))))
+
+(t/deftest gc-deleted-normal-failure-defers-and-gives-up
+  (let [storage (storage-with-s3-targets)
+        cfg     {::db/pool th/*pool* ::sto/storage storage}
+        id      (uuid/next)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status)
+                   values (?, 1, 's3', ?, ?, 'valid')"
+                  id
+                  (db/tjson {:bucket "file-data" :storage-target "temp"})
+                  (ct/in-past {:minutes 1})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ _ ids] (set ids))}]
+      (let [result (#'sto.gc-deleted/clean-deleted! cfg)
+            row    (th/db-exec-one!
+                    ["select deleted_at, deletion_attempts
+                        from storage_object where id = ?" id])]
+        (t/is (= 0 (:deleted result)))
+        (t/is (= 0 (:parked result)))
+        (t/is (ct/is-after? (:deleted-at row) (ct/now)))
+        (t/is (= 1 (:deletion-attempts row))))
+
+      ;; force the give-up threshold and let the next pass remove the row
+      (th/db-update! :storage-object
+                     {:deletion-attempts 7
+                      :deleted-at (ct/in-past {:minutes 1})}
+                     {:id id})
+      (let [result (#'sto.gc-deleted/clean-deleted! cfg)]
+        (t/is (= 0 (:deleted result)))
+        (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
+          (t/is (= 0 (:count row))))))))
+
+(t/deftest pending-gc-deletes-resolvable-target
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)
+        captured (atom nil)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, created_at, status)
+                   values (?, 1, 's3', ?, ?, 'pending')"
+                  id
+                  (db/tjson {:storage-target "temp"})
+                  (ct/in-past {:days 2})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-object
+                        :return (fn [_ object]
+                                  (reset! captured object)
+                                  nil)}]
+      (let [result (#'sto.pending-gc/process! cfg)]
+        (t/is (= 1 (:processed result)))
+        (t/is (= 0 (:parked result)))
+        (t/is (= "temp" (:storage-target (meta @captured))))
+        (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
+          (t/is (= 0 (:count row))))))))
+
+(t/deftest pending-gc-refuses-unknown-target-and-keeps-row
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)
+        captured (atom nil)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, created_at, status)
+                   values (?, 1, 's3', ?, ?, 'pending')"
+                  id
+                  (db/tjson {:storage-target "ghost"})
+                  (ct/in-past {:days 2})])
+    (with-mocks [mock {:target 'app.storage.impl/del-object
+                       :return (fn [_ object]
+                                 (reset! captured object)
+                                 nil)}]
+      (let [result (#'sto.pending-gc/process! cfg)
+            row    (th/db-exec-one!
+                    ["select status, deleted_at from storage_object where id = ?" id])]
+        (t/is (= 0 (:processed result)))
+        (t/is (= 1 (:parked result)))
+        (t/is (= 0 (:call-count @mock)))
+        (t/is (nil? @captured))
+        (t/is (= "pending" (:status row)))
+        (t/is (ct/is-after? (:deleted-at row) (ct/now)))))))
+
+(t/deftest gc-deleted-legacy-rows-delete-from-default-target
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)
+        captured (atom nil)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, deleted_at, status)
+                   values (?, 1, 's3', ?, ?, 'valid')"
+                  id
+                  (db/tjson {:bucket "file-data"})
+                  (ct/in-past {:minutes 1})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-objects-in-bulk
+                        :return (fn [_ target _ids]
+                                  (reset! captured target)
+                                  #{})}]
+      (let [result (#'sto.gc-deleted/clean-deleted! cfg)]
+        (t/is (= 1 (:deleted result)))
+        (t/is (= 0 (:parked result)))
+        (t/is (= "default" @captured))
+        (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
+          (t/is (= 0 (:count row))))))))
+
+(t/deftest pending-gc-legacy-rows-delete-from-default-target
+  (let [storage  (storage-with-s3-targets)
+        cfg      {::db/pool th/*pool* ::sto/storage storage}
+        id       (uuid/next)
+        captured (atom nil)]
+    (th/db-exec! ["insert into storage_object (id, size, backend, metadata, created_at, status)
+                   values (?, 1, 's3', ?, ?, 'pending')"
+                  id
+                  (db/tjson {:bucket "file-data"})
+                  (ct/in-past {:days 2})])
+    (with-mocks [_mock {:target 'app.storage.impl/del-object
+                        :return (fn [_ object]
+                                  (reset! captured object)
+                                  nil)}]
+      (let [result (#'sto.pending-gc/process! cfg)]
+        (t/is (= 1 (:processed result)))
+        (t/is (= 0 (:parked result)))
+        (t/is (= "default" (:storage-target (meta @captured))))
+        (let [row (th/db-exec-one! ["select count(*) from storage_object where id = ?" id])]
+          (t/is (= 0 (:count row))))))))

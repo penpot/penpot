@@ -157,6 +157,11 @@ services:
       # PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <ENDPOINT>
       # PENPOT_OBJECTS_STORAGE_S3_BUCKET: <BUKET_NAME>
 
+      ## Optional: route specific internal semantic buckets (for example
+      ## tempfile) to additional S3 targets. The file is EDN; see
+      ## docs/technical-guide/configuration.md for the format.
+      # PENPOT_OBJECTS_STORAGE_S3_ROUTES_FILE: /opt/data/storage-routes.edn
+
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
       ## instance. Telemetry data will enable us to learn how the application is used,
       ## based on real scenarios. If you want to help us, please leave it enabled. You can

@@ -72,12 +72,14 @@
             :context cfg))
 
 (defmulti del-objects-in-bulk
-  "Delete multiple objects in bulk. Returns #{fail-ids} — the set of ids
-  whose blob deletion failed. Empty set = all succeeded."
-  (fn [cfg _] (::sto/type cfg)))
+  "Delete multiple objects in bulk. `target` is an optional backend-specific
+  destination id (used by the S3 storage targets); backends that do not route
+  ignore it. Returns #{fail-ids} — the set of ids whose blob deletion failed.
+  Empty set = all succeeded."
+  (fn [cfg _ _] (::sto/type cfg)))
 
 (defmethod del-objects-in-bulk :default
-  [cfg _]
+  [cfg _ _]
   (ex/raise :type :internal
             :code :invalid-storage-backend
             :context cfg))
@@ -85,6 +87,17 @@
 (defmulti exists-object? (fn [cfg _] (::sto/type cfg)))
 
 (defmethod exists-object? :default
+  [cfg _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
+(defmulti target-resolvable?
+  "Returns true when the backend can resolve `target` to a real destination.
+  GC callers must refuse deletion (and keep the row) when this is false."
+  (fn [cfg _] (::sto/type cfg)))
+
+(defmethod target-resolvable? :default
   [cfg _]
   (ex/raise :type :internal
             :code :invalid-storage-backend
