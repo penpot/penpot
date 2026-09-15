@@ -29,6 +29,7 @@
 (mf/defc stroke-row*
   [{:keys [index
            stroke
+           merged-per-side
            title
            show-caps
            on-color-change
@@ -103,31 +104,52 @@
 
         stroke-width (:stroke-width stroke)
 
+        ;; Use merged per-side values when available (multi-selection),
+        ;; otherwise fall back to single-stroke values.
+        effective-per-side (or merged-per-side stroke)
+        per-side-stroke-per-side (:stroke-per-side effective-per-side)
+
         per-side? (and per-side-available
                        (not per-side-disabled)
-                       (true? (:stroke-per-side stroke)))
+                       (or (true? per-side-stroke-per-side)
+                           (= :multiple per-side-stroke-per-side)))
 
-        per-side-inactive? (and (true? (:stroke-per-side stroke))
+        per-side-inactive? (and (true? per-side-stroke-per-side)
                                 (not per-side?))
 
         per-side-expanded* (mf/use-state per-side?)
         per-side-expanded? (deref per-side-expanded*)
 
         all-sides-equal?
-        (mf/with-memo [stroke]
-          (let [width  (:stroke-width stroke)
-                top    (d/nilv (:stroke-width-top stroke) width)
-                right  (d/nilv (:stroke-width-right stroke) width)
-                bottom (d/nilv (:stroke-width-bottom stroke) width)
-                left   (d/nilv (:stroke-width-left stroke) width)]
-            (= top right bottom left)))
+        (mf/with-memo [effective-per-side]
+          (let [width  (:stroke-width effective-per-side)
+                top    (:stroke-width-top effective-per-side)
+                right  (:stroke-width-right effective-per-side)
+                bottom (:stroke-width-bottom effective-per-side)
+                left   (:stroke-width-left effective-per-side)]
+            (when (and (number? top)
+                       (number? right)
+                       (number? bottom)
+                       (number? left))
+              (= top right bottom left))))
 
-        display-stroke-width (if per-side-inactive?
-                               (d/nilv (:stroke-width-top stroke) stroke-width)
-                               stroke-width)
+        display-stroke-width
+        (mf/with-memo [per-side-inactive? effective-per-side stroke-width]
+          (if per-side-inactive?
+            (d/nilv (:stroke-width-top effective-per-side) stroke-width)
+            (let [width (:stroke-width effective-per-side)]
+              (if (= :multiple width) :multiple width))))
 
-        show-multiple-placeholder? (and (not per-side-inactive?)
-                                        (or per-side-expanded? (not all-sides-equal?)))
+        show-multiple-placeholder?
+        (mf/with-memo [per-side-inactive? per-side-expanded? all-sides-equal?
+                        effective-per-side]
+          (and (not per-side-inactive?)
+               (or per-side-expanded?
+                   (not all-sides-equal?)
+                   (= :multiple (:stroke-width-top effective-per-side))
+                   (= :multiple (:stroke-width-right effective-per-side))
+                   (= :multiple (:stroke-width-bottom effective-per-side))
+                   (= :multiple (:stroke-width-left effective-per-side)))))
 
         per-side-toggle-label
         (if per-side-disabled
@@ -167,9 +189,10 @@
 
         on-width-change
         (mf/use-fn
-         (mf/deps index on-stroke-width-change ids stroke)
+         (mf/deps index on-stroke-width-change ids stroke per-side?)
          (fn [value]
-           (if (true? (:stroke-per-side stroke))
+           (if (or (true? (:stroke-per-side stroke))
+                   (= :multiple (:stroke-per-side stroke)))
              (st/emit! (dc/change-stroke-attrs
                         ids
                         {:stroke-width value
@@ -433,8 +456,10 @@
                :title (tr "workspace.options.stroke-width-top")}
          [:> icon* {:icon-id i/stroke-top
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-top stroke) stroke-width)
+         [:> deprecated-input/numeric-input* {:value (let [v (:stroke-width-top effective-per-side)]
+                                                       (if (= :multiple v) v (d/nilv v (:stroke-width effective-per-side))))
                                               :min 0
+                                              :placeholder (tr "settings.multiple")
                                               :on-change on-width-top-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
@@ -443,8 +468,10 @@
                :title (tr "workspace.options.stroke-width-right")}
          [:> icon* {:icon-id i/stroke-right
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-right stroke) stroke-width)
+         [:> deprecated-input/numeric-input* {:value (let [v (:stroke-width-right effective-per-side)]
+                                                       (if (= :multiple v) v (d/nilv v (:stroke-width effective-per-side))))
                                               :min 0
+                                              :placeholder (tr "settings.multiple")
                                               :on-change on-width-right-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
@@ -453,8 +480,10 @@
                :title (tr "workspace.options.stroke-width-bottom")}
          [:> icon* {:icon-id i/stroke-bottom
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-bottom stroke) stroke-width)
+         [:> deprecated-input/numeric-input* {:value (let [v (:stroke-width-bottom effective-per-side)]
+                                                       (if (= :multiple v) v (d/nilv v (:stroke-width effective-per-side))))
                                               :min 0
+                                              :placeholder (tr "settings.multiple")
                                               :on-change on-width-bottom-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus
@@ -463,8 +492,10 @@
                :title (tr "workspace.options.stroke-width-left")}
          [:> icon* {:icon-id i/stroke-left
                     :size "s"}]
-         [:> deprecated-input/numeric-input* {:value (d/nilv (:stroke-width-left stroke) stroke-width)
+         [:> deprecated-input/numeric-input* {:value (let [v (:stroke-width-left effective-per-side)]
+                                                       (if (= :multiple v) v (d/nilv v (:stroke-width effective-per-side))))
                                               :min 0
+                                              :placeholder (tr "settings.multiple")
                                               :on-change on-width-left-change
                                               :on-focus on-focus
                                               :select-on-focus select-on-focus

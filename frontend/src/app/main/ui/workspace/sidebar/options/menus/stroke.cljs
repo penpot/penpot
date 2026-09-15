@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.types.stroke :as cts]
    [app.config :as cf]
    [app.main.data.workspace :as udw]
@@ -41,6 +42,60 @@
    :stroke-cap-start
    :stroke-cap-end])
 
+(defn- merge-per-side-values
+  "Merges per-side stroke attributes across multiple selected shapes.
+   Compares per-side values from each shape's original strokes (not the
+   already-merged strokes) so we can detect per-side differences even
+   when the merge step has collapsed them to :multiple."
+  [shapes]
+  (let [side-keys [:stroke-per-side :stroke-width-top :stroke-width-right
+                   :stroke-width-bottom :stroke-width-left]
+        merge-pair
+        (fn [v1 v2]
+          (cond
+            (= v1 ::unset) v2
+            (= v2 ::unset) v1
+            (= v1 :multiple) :multiple
+            (= v2 :multiple) :multiple
+            (and (number? v1) (number? v2) (mth/close? v1 v2)) v1
+            :else :multiple))
+        merge-stroke-pair
+        (fn [acc stroke]
+          (let [width (:stroke-width stroke)
+                width (if (number? width) width 0)]
+            (reduce
+             (fn [acc side]
+               (let [val (if (= side :stroke-per-side)
+                           (:stroke-per-side stroke)
+                           (d/nilv (get stroke side) width))]
+                 (if (contains? acc side)
+                   (update acc side merge-pair val)
+                   (assoc acc side val))))
+             acc
+             side-keys)))]
+    (when (seq shapes)
+      (let [;; Collect strokes from each shape (handling :multiple strokes)
+            shape-strokes-list
+            (mapv (fn [shape]
+                    (let [strokes (:strokes shape)]
+                      (if (= :multiple strokes) [] (or strokes []))))
+                  shapes)
+            ;; Find the maximum stroke count across all shapes
+            max-count (if (empty? shape-strokes-list)
+                        0
+                        (apply max (map count shape-strokes-list)))]
+        (when (pos? max-count)
+          ;; For each stroke index, merge per-side values across shapes
+          (reduce
+           (fn [result idx]
+             (let [strokes-at-idx
+                   (keep #(get % idx) shape-strokes-list)
+                   merged
+                   (reduce merge-stroke-pair {} strokes-at-idx)]
+               (assoc result idx merged)))
+           {}
+           (range max-count)))))))
+
 (defn- stroke-menu-check-props
   "A stroke-menu specific memoize check function that only checks if
   specific values are changed on provided props. This allows pass the
@@ -57,6 +112,8 @@
                    (unchecked-get o-props "showCaps"))
        (identical? (unchecked-get n-props "disableStrokeStyle")
                    (unchecked-get o-props "disableStrokeStyle"))
+       (identical? (unchecked-get n-props "shapes")
+                   (unchecked-get o-props "shapes"))
        (let [o-vals  (unchecked-get o-props "values")
              n-vals  (unchecked-get n-props "values")
              o-strokes (get o-vals :strokes)
@@ -65,7 +122,7 @@
 
 (mf/defc stroke-menu*
   {::mf/wrap [#(mf/memo' % stroke-menu-check-props)]}
-  [{:keys [ids type values show-caps disable-stroke-style applied-tokens]}]
+  [{:keys [ids type shapes values show-caps disable-stroke-style applied-tokens]}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -79,6 +136,62 @@
 
         strokes         (:strokes values)
         has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
+
+        ;; When strokes is :multiple, check if shapes have the same number
+        ;; of strokes so we can show individual rows with merged values.
+        same-stroke-count?
+        (mf/with-memo [strokes shapes]
+          (if (not= :multiple strokes)
+            true
+            (let [counts (mapv #(count (or (:strokes %) [])) shapes)]
+              (apply = counts))))
+
+        ;; Compute merged strokes vector when :strokes is :multiple
+        ;; but shapes have the same number of strokes.
+        strokes-to-render
+        (mf/with-memo [strokes shapes same-stroke-count?]
+          (if (and (= :multiple strokes) same-stroke-count? (seq shapes))
+            (let [max-count (apply max (map #(count (or (:strokes %) [])) shapes))
+                  ;; Non-per-side attrs to merge from each stroke
+                  merge-keys [:stroke-style :stroke-alignment :stroke-width
+                              :stroke-dash :stroke-gap :stroke-color
+                              :stroke-color-ref-id :stroke-color-ref-file
+                              :stroke-opacity :stroke-color-gradient
+                              :stroke-cap-start :stroke-cap-end :hidden]
+                  per-side-keys [:stroke-per-side :stroke-width-top
+                                 :stroke-width-right :stroke-width-bottom
+                                 :stroke-width-left]]
+              (mapv
+               (fn [idx]
+                 (let [strokes-at-idx (keep #(get (:strokes %) idx) shapes)]
+                   (reduce
+                    (fn [merged stroke]
+                      (let [width (or (:stroke-width stroke) 0)
+                            merged
+                            (reduce-kv
+                             (fn [m k v]
+                               (let [existing (get m k ::none)]
+                                 (cond
+                                   (= existing ::none) (assoc m k v)
+                                   (= existing v) m
+                                   :else (assoc m k :multiple))))
+                             merged
+                             (select-keys stroke merge-keys))]
+                        ;; Merge per-side keys with fallback to uniform width
+                        (reduce
+                         (fn [m k]
+                           (let [v (d/nilv (get stroke k) width)
+                                 existing (get m k ::none)]
+                             (cond
+                               (= existing ::none) (assoc m k v)
+                               (= existing v) m
+                               :else (assoc m k :multiple))))
+                         merged
+                         per-side-keys)))
+                    {}
+                    strokes-at-idx)))
+               (range max-count)))
+            strokes))
 
 
         on-color-change
@@ -143,33 +256,38 @@
 
         per-side-available?
         (and (contains? cf/flags :stroke-per-side)
-             (or (= type :rect) (= type :frame)))
+             (if (seq shapes)
+               (every? #(or (= (:type %) :rect) (= (:type %) :frame)) shapes)
+               (or (= type :rect) (= type :frame))))
 
         per-side-disabled?
         (not wasm-render?)
 
+        merged-per-side-values
+        (mf/with-memo [shapes strokes]
+          (when (seq shapes)
+            (merge-per-side-values shapes)))
+
         on-stroke-per-side-toggle
         (fn [index]
           (let [stroke  (get-in values [:strokes index])
-                active? (:stroke-per-side stroke)
-                width   (:stroke-width stroke)
-                width   (if (number? width) width 1)]
+                active? (:stroke-per-side stroke)]
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (if active?
               (st/emit! (dc/change-stroke-attrs ids {:stroke-per-side false} index))
-              ;; Entering per-side mode seeds any missing side from the
-              ;; uniform width, so previous per-side edits are preserved.
-              ;; The top value doubles as the global :stroke-width.
-              (let [top (d/nilv (:stroke-width-top stroke) width)]
-                (st/emit! (dc/change-stroke-attrs
-                           ids
-                           {:stroke-per-side true
-                            :stroke-width top
-                            :stroke-width-top top
-                            :stroke-width-right (d/nilv (:stroke-width-right stroke) width)
-                            :stroke-width-bottom (d/nilv (:stroke-width-bottom stroke) width)
-                            :stroke-width-left (d/nilv (:stroke-width-left stroke) width)}
-                           index))))))
+              (let [width (:stroke-width stroke)]
+                (if (number? width)
+                  (let [top (d/nilv (:stroke-width-top stroke) width)]
+                    (st/emit! (dc/change-stroke-attrs
+                               ids
+                               {:stroke-per-side true
+                                :stroke-width top
+                                :stroke-width-top top
+                                :stroke-width-right (d/nilv (:stroke-width-right stroke) width)
+                                :stroke-width-bottom (d/nilv (:stroke-width-bottom stroke) width)
+                                :stroke-width-left (d/nilv (:stroke-width-left stroke) width)}
+                               index)))
+                  (st/emit! (dc/change-stroke-attrs ids {:stroke-per-side true} index)))))))
 
         on-stroke-width-side-change
         (fn [index attr value]
@@ -227,7 +345,7 @@
         (fn [_]
           (st/emit! (udw/trigger-bounding-box-cloaking ids))
           (st/emit! (dc/add-stroke ids cts/default-stroke))
-          (when (not (some? (seq strokes))) (open-content)))
+          (when (and (not= :multiple strokes) (not (some? (seq strokes)))) (open-content)))
 
         disable-drag    (mf/use-state false)
 
@@ -265,7 +383,7 @@
         (cond
           (or (= :multiple (:stroke-color applied-tokens))
               (= :multiple (:stroke-width applied-tokens))
-              (= :multiple strokes))
+              (and (= :multiple strokes) (not same-stroke-count?)))
           [:div {:class (stl/css :stroke-multiple)}
            [:div {:class (stl/css :stroke-multiple-label)}
             (tr "settings.multiple")]
@@ -273,36 +391,39 @@
                              :aria-label (tr "workspace.options.stroke.remove-stroke")
                              :on-click handle-remove-all
                              :icon i/remove}]]
-          (seq strokes)
-          [:> h/sortable-container* {}
-           (for [[index value] (d/enumerate (:strokes values []))]
-             [:> stroke-row* {:key (dm/str "stroke-" index)
-                              :index index
-                              :stroke value
-                              :title (tr "workspace.options.stroke-color")
-                              :show-caps show-caps
-                              :on-color-change on-color-change
-                              :on-reorder handle-reorder
-                              :on-color-detach on-color-detach
-                              :on-remove on-remove
-                              :on-stroke-width-change on-stroke-width-change
-                              :per-side-available per-side-available?
-                              :per-side-disabled per-side-disabled?
-                              :on-stroke-per-side-toggle on-stroke-per-side-toggle
-                              :on-stroke-width-side-change on-stroke-width-side-change
-                              :on-stroke-dash-change on-stroke-dash-change
-                              :on-stroke-gap-change on-stroke-gap-change
-                              :on-stroke-style-change on-stroke-style-change
-                              :on-stroke-alignment-change on-stroke-alignment-change
-                              :on-stroke-cap-start-change on-stroke-cap-start-change
-                              :on-stroke-cap-end-change on-stroke-cap-end-change
-                              :on-stroke-cap-switch on-stroke-cap-switch
-                              :on-toggle-visibility on-toggle-visibility
-                              :disable-drag disable-drag
-                              :on-focus on-focus
-                              :on-blur on-blur
-                              :applied-tokens (when (= 0 index) applied-tokens)
-                              :on-detach-token on-detach-token
-                              :disable-stroke-style disable-stroke-style
-                              :select-on-focus (not @disable-drag)
-                              :ids ids}])])])]))
+          (or (and (= :multiple strokes) same-stroke-count?)
+              (seq strokes))
+           [:> h/sortable-container* {}
+            (for [[index value] (d/enumerate strokes-to-render)]
+              (let [merged-side (get merged-per-side-values index)]
+                [:> stroke-row* {:key (dm/str "stroke-" index)
+                                 :index index
+                                 :stroke value
+                                 :merged-per-side merged-side
+                                 :title (tr "workspace.options.stroke-color")
+                                 :show-caps show-caps
+                                 :on-color-change on-color-change
+                                 :on-reorder handle-reorder
+                                 :on-color-detach on-color-detach
+                                 :on-remove on-remove
+                                 :on-stroke-width-change on-stroke-width-change
+                                 :per-side-available per-side-available?
+                                 :per-side-disabled per-side-disabled?
+                                 :on-stroke-per-side-toggle on-stroke-per-side-toggle
+                                 :on-stroke-width-side-change on-stroke-width-side-change
+                                 :on-stroke-dash-change on-stroke-dash-change
+                                 :on-stroke-gap-change on-stroke-gap-change
+                                 :on-stroke-style-change on-stroke-style-change
+                                 :on-stroke-alignment-change on-stroke-alignment-change
+                                 :on-stroke-cap-start-change on-stroke-cap-start-change
+                                 :on-stroke-cap-end-change on-stroke-cap-end-change
+                                 :on-stroke-cap-switch on-stroke-cap-switch
+                                 :on-toggle-visibility on-toggle-visibility
+                                 :disable-drag disable-drag
+                                 :on-focus on-focus
+                                 :on-blur on-blur
+                                 :applied-tokens (when (= 0 index) applied-tokens)
+                                 :on-detach-token on-detach-token
+                                 :disable-stroke-style disable-stroke-style
+                                 :select-on-focus (not @disable-drag)
+                                 :ids ids}]))])])]))

@@ -586,12 +586,13 @@
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
-       [:> stroke-menu* {:type type
-                         :ids stroke-ids
-                         :show-caps show-caps?
-                         :values stroke-values
-                         :disable-stroke-style has-text?
-                         :applied-tokens stroke-tokens}])
+        [:> stroke-menu* {:type type
+                          :ids stroke-ids
+                          :show-caps show-caps?
+                          :shapes shapes
+                          :values stroke-values
+                          :disable-stroke-style has-text?
+                          :applied-tokens stroke-tokens}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
