@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-09-15 17:19+0000\n"
+"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.8.dev0\n"
+"X-Generator: Weblate 2026.10.dev0\n"
 
 #: src/app/main/ui/auth/register.cljs:214, src/app/main/ui/static.cljs:180, src/app/main/ui/viewer/login.cljs:100
 msgid "auth.already-have-account"
@@ -405,6 +405,7 @@ msgid "dashboard.create-version-menu"
 msgstr "Nåla fast denna version"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
+#, fuzzy
 msgid "dashboard.default-team-name"
 msgstr "Ditt Penpot"
 
@@ -4495,6 +4496,7 @@ msgid "not-found.no-permission.file"
 msgstr "Du har inte tillgång till den här filen."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
+#, fuzzy
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Gå till din Penpot"
 
