@@ -16,6 +16,7 @@
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page*]]
+   [app.main.ui.settings.instance-users :refer [instance-users-page*]]
    [app.main.ui.settings.integrations :refer [integrations-page*]]
    [app.main.ui.settings.notifications :refer [notifications-page*]]
    [app.main.ui.settings.options :refer [options-page*]]
@@ -58,6 +59,11 @@
        [:> header*]
        [:div {:class (stl/css :dashboard-container)}
         (case section
+          :settings-instance-users
+          (if (:is-instance-admin profile)
+            [:> instance-users-page*]
+            [:p {:role "alert"} (tr "admin.users.forbidden")])
+
           :settings-profile
           [:> profile-page*]
 

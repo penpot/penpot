@@ -396,6 +396,7 @@
           'app.rpc.commands.files-update
           'app.rpc.commands.files-snapshot
           'app.rpc.commands.files-thumbnails
+          'app.rpc.commands.instance-admin
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media
