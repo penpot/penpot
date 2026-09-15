@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-07-31 17:02+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2026-08-02 05:01+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -870,7 +870,6 @@ msgid "dashboard.move-to-other-team"
 msgstr "Başka takıma taşı"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-#, fuzzy
 msgid "dashboard.my-teams"
 msgstr "Takımlarım"
 
@@ -4334,11 +4333,10 @@ msgid "nitrate.activation-success.enjoy"
 msgstr "Planınızın tadını çıkarın!"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:60
-#, fuzzy
 msgid "nitrate.activation-success.manage-info"
 msgstr ""
-"Hesap ayarlarınızdaki Abonelik sayfasından aboneliğinizi istediğiniz zaman "
-"yönetebilirsiniz."
+"Aboneliğinizi, hesap ayrıntılarınızdaki 'Abonelik' sayfasından istediğiniz "
+"zaman düzenleyebilirsiniz."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4428,10 +4426,9 @@ msgid "nitrate.form.enterprise-feature-3"
 msgstr "Organizasyonunuzun ihtiyaç duyduğu yönetim ile tam açık kaynak özgürlüğü"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:54
-#, fuzzy
 msgid "nitrate.form.enterprise-intro"
 msgstr ""
-"Takımlarınızın güvenli ve geniş ölçekte çalışabilmesi için gereken her şey:"
+"Takımlarınızın güvenli ve geniş ölçekte çalışabilmesi için gereken her şey%s"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:66, src/app/main/ui/settings/subscription.cljs:767
 msgid "nitrate.form.enterprise.price"
@@ -4875,7 +4872,7 @@ msgstr "Takımınızın büyüklüğü nedir?"
 
 #: src/app/main/ui/onboarding/questions.cljs:242
 msgid "onboarding.questions.step3.title"
-msgstr "Bize işiniz hakkında bilgi verin"
+msgstr "Şirketinizin büyüklüğü nedir?"
 
 #: src/app/main/ui/onboarding/questions.cljs:300
 msgid "onboarding.questions.step4.title"
@@ -4975,7 +4972,6 @@ msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:42, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:101, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:108
-#, fuzzy
 msgid "options.deleted-token"
 msgstr "Bu token yok veya silindi."
 
@@ -5816,11 +5812,10 @@ msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Ödeme işlemi tamamlanmadı. Hazır olduğunuzda lütfen tekrar deneyin."
 
 #: src/app/main/ui/settings/subscription.cljs:427
-#, fuzzy
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"Ödeme işlemini başlatamadık. Lütfen tekrar deneyin. Sorun devam ederse "
-"bizimle iletişime geçin: support@penpot.app."
+"Ödeme işlemi tamamlanmadı. Lütfen tekrar deneyin. Sorun devam ederse bizimle "
+"iletişime geçin: support@penpot.app."
 
 #: src/app/main/ui/settings/subscription.cljs:407
 msgid "subscription.error.nitrate.checkout-finish-failed"
@@ -5953,9 +5948,8 @@ msgid "subscription.settings.more-information"
 msgstr "Daha fazla bilgi"
 
 #: src/app/main/ui/settings/subscription.cljs:724
-#, fuzzy
 msgid "subscription.settings.organization-member-month"
-msgstr "aylık organizasyon üyesi"
+msgstr "organizasyon üyesi / ay"
 
 #: src/app/main/ui/settings/subscription.cljs:665
 msgid "subscription.settings.other-plans"
@@ -8945,7 +8939,7 @@ msgstr "Şununla değiştir..."
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:566
 msgid "workspace.sidebar.layers.search"
-msgstr "Katmanları ara"
+msgstr "Bul…"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:575
 msgid "workspace.sidebar.layers.search-and-replace"
@@ -10088,3 +10082,308 @@ msgstr "101 - 500"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:144
 msgid "workspace.options.blur-options.blur-type-select"
 msgstr "Bulanıklık türü seçimi"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.grid"
+msgstr "Izgara görünümü"
+
+#: src/app/main/ui/dashboard/files_layout.cljs
+msgid "dashboard.files-layout.list"
+msgstr "Liste görünümü"
+
+msgid "dashboard.section.teams"
+msgstr "Takımlar"
+
+msgid "dashboard.my-files"
+msgstr "Dosyalarım"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:48
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"{%s} herhangi bir etkin kümede bulunmuyor veya geçersiz bir değere sahip."
+
+msgid "errors.circular-library-reference"
+msgstr "Kütüphane eklenemiyor: bu, döngüsel bir bağımlılık oluşturur"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.current"
+msgstr "Geçerli"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "labels.default"
+msgstr "Öntanımlı"
+
+#: src/app/main/ui/workspace/context_menu.cljs:712
+msgid "modals.delete-pages.body"
+msgstr "Seçilen sayfaları silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:711
+msgid "modals.delete-pages.title"
+msgstr "Sayfaları sil"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:53
+msgid "nitrate.modal-success.title"
+msgstr "Kurumsal plana hoş geldiniz!"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
+msgid "nitrate.code-activation.footer-before"
+msgstr "Koda mı ihtiyacınız var? "
+
+msgid "nitrate.code-activation.footer-link"
+msgstr "Etkinleştirme kodu isteğinizi indirin"
+
+msgid "nitrate.code-activation.footer-after"
+msgstr " ve bizimle iletişime geçin:"
+
+msgid "nitrate.form.enterprise-description"
+msgstr ""
+"Şu anda herhangi bir ücret tahsil edilmeyecek. Ödeme, deneme süresinin "
+"sonunda gerçekleştirilecek. İstediğiniz zaman iptal edebilirsiniz."
+
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "Kurumsal planı 14 gün boyunca denemek için bizimle iletişime geçin:"
+
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "Kurumsal plana geçmek için bizimle iletişime geçin:"
+
+msgid "nitrate.form.free-trial-button"
+msgstr "14 gün boyunca ücretsiz deneyin"
+
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/nitrate/nitrate_form.cljs:98
+msgid "nitrate.form.subscribe-with-code"
+msgstr "Etkinleştirme koduyla abone olun"
+
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "Nitrate aboneliğinizi iptal etmek için lütfen bizimle iletişime geçin:"
+
+msgid "onboarding.choice.team-up.create-team-name"
+msgstr "Takım adı"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:184
+msgid "onboarding.choice.team-up.create-team-enter"
+msgstr "Takım adını girin"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Geliştiriciler, tasarımcılar, yöneticiler... herkese kapımız açık. Daha "
+"sonra başkalarını da davet edebilirsiniz."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs
+msgid "options.deleted-token-with-name"
+msgstr "{%s} tokeni yok veya silindi."
+
+#: src/app/plugins/utils.cljs:533
+msgid "plugins.validation.invalid-value"
+msgstr "%s bekleniyor, %s alındı (%s)"
+
+#: src/app/plugins/utils.cljs:536
+msgid "plugins.validation.received-value"
+msgstr "%s alındı (%s)"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.show-measure"
+msgstr "Ölçüleri göster"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.page"
+msgstr "Kısayollar sayfası"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reset"
+msgstr "Öntanımlıya sıfırla"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disable"
+msgstr "Kısayolu devre dışı bırak"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled-shortcut"
+msgstr "Kısayol devre dışı bırakıldı"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.overwritten-by"
+msgstr "Bu kısayol %s olarak yeniden atandı"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-personalized"
+msgstr "Kısayollarınızı özelleştirmeye başlamak için Tümü bölümüne gidin."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-disabled"
+msgstr "Devre dışı bırakılan kısayol yok"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.reload-hint"
+msgstr ""
+"Kısayolları düzenledikten sonra, değişikliklerin geçerli olması için açık "
+"olan diğer Penpot sekmelerini yeniden yükleyin."
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.no-shortcuts"
+msgstr "Aramanızla eşleşen kısayol yok"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.personalized"
+msgstr "Kişiselleştirildi"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.disabled"
+msgstr "Devre dışı"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-arrow"
+msgstr "Ok"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.draw-line"
+msgstr "Çizgi"
+
+#: src/app/main/ui/settings/shortcuts.cljs
+msgid "shortcuts.import-export"
+msgstr "İçe/Dışa aktar"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.key-combo"
+msgstr "Tuş birleşimine basın"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.conflict"
+msgstr "Birleşim \"%s\" olarak atandı. Kaydedildiğinde buradan kaldırılacak."
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "Kaydederseniz, bu kısayol orijinal değerine geri dönecek:"
+
+#: src/app/main/ui/shortcuts.cljs
+msgid "shortcuts.edit-modal.success"
+msgstr ""
+"Bu tuş birleşimi kullanılabilir durumda ve herhangi bir çakışma olmadan "
+"atanabilir."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "Yorumların görünürlüğünü değiştir"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.edit-on-settings"
+msgstr "Ayarlarda özelleştir"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-title"
+msgstr "Öntanımlı yapılandırmayı geri yükle"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.modal-text"
+msgstr "Şu kısayollar öntanımlı değerlerine geri yüklenecek."
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.acction"
+msgstr "Eylem"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs
+msgid "restore-shortcuts.restore"
+msgstr "Geri yükle"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-title"
+msgstr "Kısayolları içe aktar"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.diff-modal-text"
+msgstr "Şu kısayollar içe aktarılan yapılandırma ile değiştirilecek."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.no-changes"
+msgstr "Geçerli ve içe aktarılan kısayollar arasında bir fark bulunamadı."
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs
+msgid "import-shortcuts.apply"
+msgstr "Uygula"
+
+#: src/app/main/ui/dashboard/subscription.cljs:203
+msgid "subscription.dashboard.banner.unlock-features-description-text"
+msgstr ""
+"Takımınızın sevdiği açık kaynak özgürlüğünden ödün vermeden, ayrıntılı "
+"izinler belirleyin ve denetimi elinizde tutun."
+
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
+msgstr "Tüm Sınırsız plan faydaları ve:"
+
+msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
+msgstr "Çoklu Organizasyon Yönetimi:"
+
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr "Karmaşık takım yapıları ve ayrı alt organizasyonlar için destek."
+
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "Kurumsal Güvenlik:"
+
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr "Uyumluluk raporlaması için yerel SAML/SSO ve tam denetim izi günlüğü."
+
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "Gelişmiş Denetim:"
+
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr ""
+"Yapay zeka bağlantısı için güvenli ve yalıtılmış MCP sunucumuz dahil olmak "
+"üzere, eklentiler için ayrıntılı beyaz liste oluşturma özelliği."
+
+msgid "subscription.settings.admin-console"
+msgstr "Yönetici Arayüzü"
+
+#: src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:692
+msgid "subscription.settings.price-user-month"
+msgstr "kullanıcı / ay"
+
+#: src/app/main/ui/settings/subscription.cljs:679
+msgid "subscription.settings.subscribed-since"
+msgstr "%s planındasınız (%s tarihinden bu yana)."
+
+#: src/app/main/ui/workspace/context_menu.cljs:733
+msgid "workspace.assets.delete-pages"
+msgstr "Sayfaları sil"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-top"
+msgstr "En üst (blok başlangıcı)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-right"
+msgstr "Sağ (satır içi sonu)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-bottom"
+msgstr "En alt (blok sonu)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke-width-left"
+msgstr "Sol (satır içi başlangıcı)"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side"
+msgstr "Kenar başına çerçeve"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr ""
+"Kenar başına çerçeve özelliği yalnızca yeni görselleştirmede kullanılabilir. "
+"Kullanmak için görselleştirmeyi değiştirin."
+
+msgid "workspace.shape.menu.copy-id"
+msgstr "Kimliği kopyala"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+msgid "workspace.tokens.ref-not-valid"
+msgstr ""
+"{%s} içindeki referans geçerli değil veya herhangi bir etkin kümede "
+"bulunmuyor."
+
+msgid "workspace.toolbar.arrow"
+msgstr "Ok (%s)"
+
+msgid "workspace.toolbar.line"
+msgstr "Çizgi (%s)"
+
+msgid "notifications.invitation-canceled"
+msgstr "Bu davet artık geçerli değil."
