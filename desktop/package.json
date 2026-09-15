@@ -1,0 +1,58 @@
+{
+  "name": "@penpot/desktop",
+  "version": "0.1.0",
+  "description": "Desktop launcher for a local self-hosted Penpot instance",
+  "homepage": "https://github.com/penpot/penpot",
+  "main": "src/main.cjs",
+  "author": "Penpot contributors",
+  "desktopName": "penpot-desktop",
+  "license": "MPL-2.0",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "build": "electron-builder --linux AppImage deb",
+    "build:dir": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "43.1.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "app.penpot.desktop",
+    "productName": "Penpot Desktop",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../docker/images/docker-compose.yaml",
+        "to": "docker/docker-compose.yaml"
+      },
+      {
+        "from": "../frontend/resources/images/favicon.png",
+        "to": "icon.png"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "icon": "resources/icon.svg",
+      "executableName": "penpot-desktop",
+      "maintainer": "Penpot contributors <support@penpot.app>",
+      "syncDesktopName": true,
+      "artifactName": "Penpot-Desktop-${version}-${arch}.${ext}"
+    },
+    "deb": {
+      "priority": "optional",
+      "synopsis": "Desktop launcher for local Penpot",
+      "description": "Starts and opens a local self-hosted Penpot instance in a secure desktop window."
+    }
+  }
+}
