@@ -128,7 +128,8 @@
                                 :render-context-lost? (dm/get-in state [:render-state :lost])})]
         (errors/submit-report :event-name "handled-exception"
                               :hint hint
-                              :report (errors/generate-report cause))))))
+                              :report (errors/generate-report cause)
+                              :cause cause)))))
 
 (defn- check-persistence
   []

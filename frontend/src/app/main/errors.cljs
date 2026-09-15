@@ -156,21 +156,159 @@
         (println "--------------------")
         (println (st/format-last-events))
         (println)))
-    (catch :default cause
-      (.error js/console "error on generating report" cause)
-      nil)))
+    (catch :default err
+      (.error js/console "error on generating report" err)
+      ;; Keep this function total: `flash` reserves a report slot before
+      ;; generating it, so returning nil here would consume the slot
+      ;; without emitting anything.
+      (str "Report generation failed: " (or (ex-message err) "--")
+           "\nOriginal hint: " (or (ex/get-hint cause) "--")))))
+
+;; --- Error report governor
+;;
+;; Bounds the volume of reports emitted by a single browser session. Each
+;; report carries a fingerprint; the first occurrence is always emitted and
+;; repeated occurrences of the same fingerprint within `report-window-ms`
+;; are counted but not emitted. The next emitted report carries the number
+;; of occurrences since the previous one as `:occurrences`. The report name
+;; is part of the fingerprint, so a handled report never coalesces with an
+;; unhandled/exception-page report of the same cause.
+;;
+;; The fingerprint cache is bounded: when it is full, the fingerprint
+;; inserted first is evicted (FIFO order), so memory cannot grow without
+;; limit.
+
+(def report-window-ms
+  "Minimum time between two reports with the same fingerprint."
+  (* 2 60 1000))
+
+(def max-tracked-fingerprints
+  "Maximum number of fingerprints kept in the governor cache."
+  2000)
+
+(defn initial-report-state
+  []
+  {:entries {}
+   :order   #queue []})
+
+(defonce ^:private report-governor
+  (atom (initial-report-state)))
+
+(defn reset-report-governor!
+  "Testing helper: clear the governor state."
+  []
+  (reset! report-governor (initial-report-state)))
+
+(defn- label
+  [v]
+  (cond
+    (nil? v)     ""
+    (keyword? v) (name v)
+    (string? v)  v
+    :else        (str v)))
+
+(defn error-fingerprint
+  "Stable identity of an error, used to group repeated reports.
+
+  The report name is part of the identity, so a `handled-exception` report
+  never coalesces with an `unhandled-exception`/`exception-page` report of
+  the same cause (those two do reach the error reports and alerts)."
+  [event-name cause]
+  (let [data  (ex-data cause)
+        ftype (or (:type data) :unknown)
+        code  (or (:code data) :unknown)
+        hint  (or (ex/get-hint cause) "")
+        ;; A JS stack string starts with "Error: <message>"; the first
+        ;; actual frame is the second line.
+        frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
+    (str (label event-name) "|" (label ftype) "|" (label code) "|"
+         (str/prune hint 120) "|" (str/prune frame 120))))
+
+(defn fallback-fingerprint
+  "Fingerprint for reports submitted without a `cause` (e.g. the exception
+  page or a stalled save)."
+  [event-name hint]
+  (str (label event-name) "|" (str/prune (or hint "") 120)))
+
+(defn- evict-oldest
+  "Drops the fingerprint inserted first. `:order` mirrors the insertion
+  order of `:entries`, so this is O(1)."
+  [state]
+  (let [fingerprint (peek (:order state))]
+    (-> state
+        (update :entries dissoc fingerprint)
+        (update :order pop))))
+
+(defn reserve-report*
+  "Pure decision step of the report governor.
+
+  Given the governor `state`, an error `fingerprint` and the current time in
+  milliseconds, returns the next governor state with this occurrence's
+  decision attached: `::emit` tells whether it must be emitted and
+  `::occurrences` carries the counter (present only when `::emit` is true)."
+  [state fingerprint now]
+  (let [entry   (get-in state [:entries fingerprint])
+        emit?   (or (nil? entry)
+                    (>= (- now (:emitted-at entry)) report-window-ms))
+        pending (or (:pending entry) 0)]
+    (cond
+      ;; New fingerprint: insert it, evicting the oldest when the cache
+      ;; is full.
+      (and emit? (nil? entry))
+      (let [state (cond-> state
+                    (>= (count (:entries state)) max-tracked-fingerprints)
+                    (evict-oldest))]
+        (-> state
+            (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
+            (update :order conj fingerprint)
+            (assoc ::emit true)
+            (assoc ::occurrences (inc pending))))
+
+      ;; Known fingerprint re-emitted after the window: keep its position.
+      emit?
+      (-> state
+          (assoc-in [:entries fingerprint] {:emitted-at now :pending 0})
+          (assoc ::emit true)
+          (assoc ::occurrences (inc pending)))
+
+      ;; Suppressed occurrence: only the counter moves.
+      :else
+      (-> state
+          (update-in [:entries fingerprint :pending] inc)
+          (assoc ::emit false)
+          (dissoc ::occurrences)))))
+
+(defn reserve-report!
+  "Reserve a slot for a report. Returns the updated governor state, whose
+  `::emit`/`::occurrences` describe the decision for this occurrence."
+  [fingerprint now]
+  (swap! report-governor reserve-report* fingerprint now))
+
+(defn- emit-report!
+  "Emit the audit event for a report that is already reserved by the
+  governor."
+  [event-name report hint occurrences]
+  (st/emit!
+   (ev/event {::ev/name event-name
+              :hint hint
+              :href (rt/get-current-href)
+              :report report
+              :occurrences occurrences})))
 
 (defn submit-report
-  "Report the error report to the audit log subsystem"
-  [& {:keys [event-name report hint] :or {event-name "unhandled-exception"}}]
+  "Report the error report to the audit log subsystem, subject to the
+  report governor."
+  [& {:keys [event-name report hint cause]
+      :or {event-name "unhandled-exception"}}]
   (when (and (not (str/empty? hint))
              (string? report)
              (string? event-name))
-    (st/emit!
-     (ev/event {::ev/name event-name
-                :hint hint
-                :href (rt/get-current-href)
-                :report report}))))
+    (let [state (reserve-report! (if (ex/exception? cause)
+                                   (error-fingerprint event-name cause)
+                                   (fallback-fingerprint event-name hint))
+                                 (inst-ms (ct/now)))]
+      (when (::emit state)
+        (emit-report! event-name report hint (::occurrences state))))))
 
 (defn- download-report!
   [report event]
@@ -184,6 +322,9 @@
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
 
+  The report is reserved before being generated, so repeated errors that
+  fall inside the governor window do not pay the report-building cost.
+
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
   error-handling pipeline is still on the call stack.  Emitting
@@ -192,15 +333,21 @@
   (RangeError: Maximum call stack size exceeded)."
   [& {:keys [type hint cause timeout report-link?]
       :or {type :handled timeout 5000}}]
-  (let [report (when (ex/exception? cause) (generate-report cause))]
-    (when report
-      (when-let [event-name (case type
-                              :handled "handled-exception"
-                              :unhandled "unhandled-exception"
-                              :silent nil)]
-        (submit-report :event-name event-name
-                       :report report
-                       :hint (ex/get-hint cause))))
+  (let [report (when (ex/exception? cause)
+                 (when-let [event-name (case type
+                                         :handled "handled-exception"
+                                         :unhandled "unhandled-exception"
+                                         :silent nil)]
+                   (let [report-hint (ex/get-hint cause)]
+                     (when (and (string? report-hint) (not (str/empty? report-hint)))
+                       (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
+                         (when (::emit state)
+                           (let [generated (generate-report cause)]
+                             (emit-report! event-name
+                                           generated
+                                           report-hint
+                                           (::occurrences state))
+                             generated)))))))]
 
     (ts/schedule
      #(st/emit!
