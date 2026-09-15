@@ -658,9 +658,8 @@
         store    (ptk/store {:state {} :on-error errors/on-error})
         cause    (ex-info "Save failed" {:type :network})]
     (with-redefs [refs/persistence pstate
-                  errors/submit-report (fn [& params]
-                                         (swap! reports conj (apply hash-map params)))
-                  tm/schedule (mock/stub (fn [_]))]
+                  st/emit!         (mock/stub (fn [& emitted] (swap! reports into emitted)))
+                  tm/schedule      (mock/stub (fn [_]))]
       (try
         (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
         (reset! pstate (:persistence @store))

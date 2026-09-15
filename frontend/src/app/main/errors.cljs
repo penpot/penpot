@@ -282,26 +282,31 @@
   [fingerprint now]
   (swap! report-governor reserve-report* fingerprint now))
 
+(defn- emit-report!
+  "Emit the audit event for a report that is already reserved by the
+  governor."
+  [event-name report hint occurrences]
+  (st/emit!
+   (ev/event {::ev/name event-name
+              :hint hint
+              :href (rt/get-current-href)
+              :report report
+              :occurrences occurrences})))
+
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
   report governor."
-  [& {:keys [event-name report hint cause governor-state]
+  [& {:keys [event-name report hint cause]
       :or {event-name "unhandled-exception"}}]
   (when (and (not (str/empty? hint))
              (string? report)
              (string? event-name))
-    (let [state (or governor-state
-                    (reserve-report! (if (ex/exception? cause)
-                                       (error-fingerprint event-name cause)
-                                       (fallback-fingerprint event-name hint))
-                                     (inst-ms (ct/now))))]
+    (let [state (reserve-report! (if (ex/exception? cause)
+                                   (error-fingerprint event-name cause)
+                                   (fallback-fingerprint event-name hint))
+                                 (inst-ms (ct/now)))]
       (when (::emit state)
-        (st/emit!
-         (ev/event {::ev/name event-name
-                    :hint hint
-                    :href (rt/get-current-href)
-                    :report report
-                    :occurrences (::occurrences state)}))))))
+        (emit-report! event-name report hint (::occurrences state))))))
 
 (defn flash
   "Show error notification banner and emit error report.
@@ -326,10 +331,10 @@
         (when (and (string? report-hint) (not (str/empty? report-hint)))
           (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
             (when (::emit state)
-              (submit-report :event-name event-name
-                             :report (generate-report cause)
-                             :hint report-hint
-                             :governor-state state)))))))
+              (emit-report! event-name
+                            (generate-report cause)
+                            report-hint
+                            (::occurrences state))))))))
 
   (ts/schedule
    #(st/emit!
