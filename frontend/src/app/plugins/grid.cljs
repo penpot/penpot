@@ -56,7 +56,7 @@
            (u/not-valid plugin-id :dir "Cannot modify a page that is not currently active")
 
            :else
-           (st/emit! (dwsl/change-grid-direction #{id} value))))}
+           (st/emit! (dwsl/change-grid-direction #{id} value)))))}
 
     :rows
     {:this true
