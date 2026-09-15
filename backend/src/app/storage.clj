@@ -16,6 +16,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
@@ -70,6 +71,7 @@
   [:map {:title "storage"}
    [::backends schema:backends]
    [::backend [:enum :s3 :fs]]
+   [::mtx/metrics {:optional true} ::mtx/metrics]
    ::db/pool])
 
 (def valid-storage?
@@ -179,6 +181,46 @@
 (dm/export impl/wrap-with-hash)
 (dm/export impl/object?)
 
+(defn- emit-op!
+  "Record a logical storage operation. Never fails: metrics must not change
+  storage behavior."
+  ([storage op bucket]
+   (emit-op! storage op bucket nil))
+  ([storage op bucket object]
+   (try
+     (when-let [metrics (::mtx/metrics storage)]
+       (mtx/run! metrics :id :storage-operations :inc 1
+                 :labels [op
+                          (mtx/label bucket "unknown")
+                          (mtx/label (or (some-> object :backend) (::backend storage))
+                                     "unknown")]))
+     (catch Throwable cause
+       (l/dbg :hint "unable to record storage metric" :cause cause)))))
+
+(defn- emit-dedup!
+  "Record a deduplication outcome. Never fails."
+  [storage result bucket]
+  (try
+    (when-let [metrics (::mtx/metrics storage)]
+      (mtx/run! metrics :id :storage-dedup :inc 1
+                :labels [(name result) (mtx/label bucket "unknown")]))
+    (catch Throwable cause
+      (l/dbg :hint "unable to record storage dedup metric" :cause cause))))
+
+(defn- resolve-label-object
+  "Return the object used for metric labels: the value itself when it is
+  already an object, else the database row, read only when instrumented.
+  Must be called before mutating the row (e.g. del-object!). Never throws."
+  [storage object-or-id]
+  (if (impl/object? object-or-id)
+    object-or-id
+    (when (::mtx/metrics storage)
+      (try
+        ;; NOTE: get-database-object already returns a StorageObject.
+        (get-database-object (db/get-connectable storage)
+                             (:id object-or-id object-or-id))
+        (catch Throwable _ nil)))))
+
 (defn get-object
   [storage id]
   (assert (valid-storage? storage))
@@ -201,27 +243,34 @@
                      (or touched-at (ct/now))
                      touched-at)
 
-        backend'   (impl/resolve-backend storage backend)]
+        backend'   (impl/resolve-backend storage backend)
+
+        bucket     (:bucket mdata)
+        dedupable? (and (::deduplicate? params)
+                        (:hash mdata)
+                        (some? bucket)
+                        (not= tempfile-bucket bucket))
+
+        hit        (when dedupable?
+                     (get-database-object-by-hash pool backend bucket (:hash mdata)))]
 
     ;; NOTE: for now we don't reuse the deleted objects, but in futute
     ;; we can consider reusing deleted objects if we found a duplicated
     ;; one and is marked for deletion but still not deleted.
 
-    ;; PHASE 1: deduplication lookup.
-    (if-some [hit (when (and (::deduplicate? params)
-                             (:hash mdata)
-                             (:bucket mdata)
-                             (not= tempfile-bucket (:bucket mdata)))
-                    (get-database-object-by-hash pool backend
-                                                 (:bucket mdata)
-                                                 (:hash mdata)))]
+    ;; PHASE 1: deduplication lookup (see `dedupable?` and `hit` above).
+    (if-some [hit hit]
 
       ;; PHASE 2: an existing reference is found: reuse or repair it.
+      ;; The `exists` op is emitted only after a successful probe so every
+      ;; count stays paired with its `hit`/`repair` outcome.
       (if (impl/exists-object? backend' hit)
 
         ;; PHASE 2a: healthy reference. Optionally refresh touched_at
         ;; and reuse the object as it is.
         (do
+          (emit-op! storage "exists" bucket)
+          (emit-dedup! storage :hit bucket)
           (when touch
             (db/update! pool :storage-object
                         {:touched-at touched-at}
@@ -240,6 +289,9 @@
                  :id (:id object)
                  :backend (name backend))
           (impl/put-object backend' object content)
+          (emit-op! storage "exists" bucket)
+          (emit-op! storage "repair" bucket)
+          (emit-dedup! storage :repair bucket)
           (promote-object! storage object)
           object))
 
@@ -257,6 +309,8 @@
                                 :status "pending"})
             object (row->storage-object row)]
         (impl/put-object backend' object content)
+        (emit-op! storage "put" bucket)
+        (emit-dedup! storage (if dedupable? :miss :skip) bucket)
         (promote-object! storage object)
         object))))
 
@@ -264,13 +318,17 @@
   "Mark object as touched."
   [storage object-or-id]
   (assert (valid-storage? storage))
-  (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds (db/get-connectable storage)]
-    (-> (db/update! ds :storage-object
-                    {:touched-at (ct/now)}
-                    {:id id})
-        (db/get-update-count)
-        (pos?))))
+  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+        ds     (db/get-connectable storage)
+        object (resolve-label-object storage object-or-id)
+        res    (-> (db/update! ds :storage-object
+                               {:touched-at (ct/now)}
+                               {:id id})
+                   (db/get-update-count)
+                   (pos?))]
+    (when res
+      (emit-op! storage "touch" (-> object meta :bucket) object))
+    res))
 
 (defn get-object-data
   "Return an input stream instance of the object content."
@@ -279,8 +337,10 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (-> (impl/resolve-backend storage (:backend object))
-        (impl/get-object-data object))))
+    (let [result (-> (impl/resolve-backend storage (:backend object))
+                     (impl/get-object-data object))]
+      (emit-op! storage "get-data" (-> object meta :bucket) object)
+      result)))
 
 (defn get-object-bytes
   "Returns a byte array of object content."
@@ -288,8 +348,10 @@
   (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (ct/is-after? (:expired-at object) (ct/now)))
-    (-> (impl/resolve-backend storage (:backend object))
-        (impl/get-object-bytes object))))
+    (let [result (-> (impl/resolve-backend storage (:backend object))
+                     (impl/get-object-bytes object))]
+      (emit-op! storage "get-bytes" (-> object meta :bucket) object)
+      result)))
 
 (defn get-object-url
   ([storage object]
@@ -315,12 +377,17 @@
 (defn del-object!
   [storage object-or-id]
   (assert (valid-storage? storage))
-  (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds  (db/get-connectable storage)
-        res (db/update! ds :storage-object
-                        {:deleted-at (ct/now)}
-                        {:id id})]
-    (pos? (db/get-update-count res))))
+  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
+        ds     (db/get-connectable storage)
+        object (resolve-label-object storage object-or-id)
+        res    (-> (db/update! ds :storage-object
+                               {:deleted-at (ct/now)}
+                               {:id id})
+                   (db/get-update-count)
+                   (pos?))]
+    (when res
+      (emit-op! storage "del" (-> object meta :bucket) object))
+    res))
 
 (dm/export impl/calculate-hash)
 (dm/export impl/get-hash)

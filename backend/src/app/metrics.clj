@@ -131,6 +131,15 @@
 (def default-histogram-buckets
   [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500])
 
+(defn label
+  "Coerce a metric label value to string, falling back when absent."
+  [value fallback]
+  (cond
+    (string? value)  value
+    (keyword? value) (name value)
+    (number? value)  (str value)
+    :else            fallback))
+
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 

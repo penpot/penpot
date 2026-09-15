@@ -9,11 +9,13 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
+   [app.metrics :as mtx]
    [app.rpc.permissions :as perms]
    [app.storage :as sto]
    [integrant.core :as ig]
@@ -50,6 +52,30 @@
 (defn- get-file-media-object
   [pool id]
   (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
+
+(defn- result-label
+  [status]
+  (let [code (long (or status 500))]
+    (cond
+      (<= 200 code 399) "served"
+      (= code 401) "unauthorized"
+      (= code 403) "unauthorized"
+      (= code 404) "not-found"
+      :else "error")))
+
+(defn- emit-asset!
+  "Record an asset request. `route` is the handler route, `obj` the resolved
+  storage object (or nil when it could not be resolved). Never fails."
+  [cfg route obj status]
+  (try
+    (when-let [metrics (::mtx/metrics cfg)]
+      (mtx/run! metrics :id :storage-asset-requests :inc 1
+                :labels [route
+                         (mtx/label (some-> obj :backend) "unknown")
+                         (mtx/label (some-> obj meta :bucket) "unknown")
+                         (result-label status)]))
+    (catch Throwable cause
+      (l/dbg :hint "unable to record asset metric" :cause cause))))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
@@ -95,7 +121,10 @@
   [cfg {:keys [backend] :as obj}]
   (case backend
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
-    (:fs :assets-fs) (serve-object-from-fs cfg obj)))
+    (:fs :assets-fs) (serve-object-from-fs cfg obj)
+    (ex/raise :type :internal
+              :hint "unknown storage backend"
+              :backend backend)))
 
 (defn- requires-auth?
   "Check if the storage object requires authentication based on its bucket."
@@ -134,49 +163,77 @@
         obj (sto/get-object storage id)]
     (cond
       (nil? obj)
-      {::yres/status 404}
+      (do
+        (emit-asset! cfg "by-id" nil 404)
+        {::yres/status 404})
 
       (and (requires-auth? obj)
            (not (authenticated? request)))
-      {::yres/status 401}
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 401})
 
+      ;; The response stays 404 to avoid leaking existence, but the
+      ;; metric records the internal 401 outcome.
       (and (= (-> obj meta :bucket) sto/tempfile-bucket)
            (not (tempfile-owner-match? obj request)))
-      {::yres/status 404}
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 404})
 
       :else
-      (serve-object cfg obj))))
+      (try
+        (let [response (serve-object cfg obj)]
+          (emit-asset! cfg "by-id" obj (::yres/status response))
+          response)
+        (catch Throwable cause
+          (emit-asset! cfg "by-id" obj 500)
+          (throw cause))))))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
-  [{:keys [::sto/storage] :as cfg} request kf]
+  [{:keys [::sto/storage] :as cfg} request route kf]
   (let [pool       (::db/pool storage)
         id         (get-id request)
         mobj       (get-file-media-object pool id)]
     (if (nil? mobj)
-      {::yres/status 404}
+      (do
+        (emit-asset! cfg route nil 404)
+        {::yres/status 404})
       (let [file-id    (:file-id mobj)
             profile-id (or (::session/profile-id request)
                            (::actoken/profile-id request))
             share-id   (get-share-id request)
             perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
-          {::yres/status 404}
+          ;; The response stays 404 to avoid leaking existence, but the
+          ;; metric records the internal 403 outcome.
+          (do
+            (emit-asset! cfg route nil 403)
+            {::yres/status 404})
           (let [sobj (sto/get-object storage (kf mobj))]
             (if sobj
-              (serve-object cfg sobj)
-              {::yres/status 404})))))))
+              (let [response (try
+                               (serve-object cfg sobj)
+                               (catch Throwable cause
+                                 (emit-asset! cfg route sobj 500)
+                                 (throw cause)))]
+                (emit-asset! cfg route sobj (::yres/status response))
+                response)
+              (do
+                (emit-asset! cfg route nil 404)
+                {::yres/status 404}))))))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."
   [cfg request]
-  (generic-handler cfg request :media-id))
+  (generic-handler cfg request "by-file-media-id" :media-id))
 
 (defn file-thumbnails-handler
   "Handler that serves storage objects by thumbnail-id and quick
   fallback to file-media-id if no thumbnail is available."
   [cfg request]
-  (generic-handler cfg request #(or (:thumbnail-id %) (:media-id %))))
+  (generic-handler cfg request "thumbnail" #(or (:thumbnail-id %) (:media-id %))))
 
 ;; --- Initialization
 
