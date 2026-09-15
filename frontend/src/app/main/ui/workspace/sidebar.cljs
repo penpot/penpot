@@ -78,7 +78,7 @@
 (mf/defc layers-content*
   {::mf/private true
    ::mf/memo true}
-  [{:keys [width layout]}]
+  [{:keys [width layout scroll-store]}]
   (let [{on-pointer-down :on-pointer-down
          on-lost-pointer-capture :on-lost-pointer-capture
          on-pointer-move :on-pointer-move
@@ -111,15 +111,17 @@
 
         [:div {:class (stl/css :layers-tab-resize-handle)}]])
 
-     [:> layers-toolbox* {:size-parent width}]]))
+     [:> layers-toolbox* {:size-parent width
+                          :scroll-store scroll-store}]]))
 
 
 (mf/defc left-sidebar*
   {::mf/memo true}
   [{:keys [layout file tokens-lib active-tokens resolved-active-tokens]}]
-  (let [options-mode   (mf/deref refs/options-mode-global)
-        project        (mf/deref refs/project)
-        file-id        (get file :id)
+  (let [options-mode    (mf/deref refs/options-mode-global)
+        project         (mf/deref refs/project)
+        file-id         (get file :id)
+        scroll-store*   (mf/use-var {})
 
         design-tokens? (features/use-feature "design-tokens/v1")
         mode-inspect?  (= options-mode :inspect)
@@ -212,16 +214,19 @@
           (case section
             :assets
             [:> assets-toolbox* {:size (- width  58)
-                                 :file-id file-id}]
+                                 :file-id file-id
+                                 :scroll-store scroll-store*}]
 
             :tokens
             [:> tokens-sidebar-tab* {:tokens-lib tokens-lib
                                      :active-tokens active-tokens
-                                     :resolved-active-tokens resolved-active-tokens}]
+                                     :resolved-active-tokens resolved-active-tokens
+                                     :scroll-store scroll-store*}]
 
             :layers
             [:> layers-content* {:layout layout
-                                 :width width}])]])]]))
+                                 :width width
+                                 :scroll-store scroll-store*}])]])]]))
 
 ;; --- Right Sidebar (Component)
 
