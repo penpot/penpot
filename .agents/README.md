@@ -344,6 +344,39 @@ delegating when it helps), review it when the task is complex
 (`/review-plan`), implement it (`/implement-plan`), and mark progress
 on the roadmap as you land each piece.
 
+### Plan file naming (base + derivatives)
+
+Base plans live in `.agents/plans/` as `YYYY-MM-DD-<slug>.md`.
+Derived plans reuse the parent basename verbatim and append one
+suffix per level with `--`, with no new date — the parent prefix
+keeps everything adjacent in `ls`:
+
+- Review followup on implemented work:
+  `2026-09-14-paste-before-init-crash.md` →
+  `2026-09-14-paste-before-init-crash--review-01.md`
+- Roadmap sub-plan (task number from the roadmap):
+  `2026-09-20-upload-pipeline-roadmap.md` →
+  `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`
+- Chained: `...--task-02-gc--review-01.md`
+
+While a plan is still unimplemented, `/make-a-plan` revises it in
+place. Once implemented and reviewed, it writes a new followup file.
+Full rules live in the `planner` skill.
+
+### Plan status lifecycle
+
+Every plan carries `Status: draft | reviewed | done` plus an
+append-only `Review Log` (UTC ISO 8601, one line per entry):
+
+- `draft` — fresh from `/make-a-plan`.
+- `reviewed` — review feedback incorporated. `/review-plan` stays
+  read-only; only your explicit "apply" makes `/make-a-plan` apply
+  the changes, flip the status, and log one line.
+- `done` — `/implement-plan` closes it on completion, logging the
+  issue URL when one exists (never commit hashes).
+
+A plan approved with no changes goes `draft` → `done` directly.
+
 ## 7. Connecting `gh` CLI with a token
 
 The `create-issue` and `create-pr` flows need an authenticated `gh`

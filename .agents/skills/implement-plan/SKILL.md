@@ -102,8 +102,14 @@ Implement every task in one go. Work methodically, keeping changes
 focused on what the issue requires. Respect the plan's proposed
 parallelization when it applies.
 
-When the implementation is complete, load the **`create-commit`** skill
-and follow its workflow to commit the changes. Provide a brief summary
+When the implementation is complete, close the plan file first: flip its
+`Status` to `done` and append one UTC ISO 8601 line to its `Review Log`
+with the issue URL when one exists (standalone mode, e.g.
+`https://github.com/penpot/penpot/issues/NNNN`); in continue/direct
+mode with no issue, just `done` with no invented identifier. Never
+record commit hashes. Then load the **`create-commit`** skill
+and follow its workflow to commit the changes together with the
+closed plan file, so plan and code land in the same commit. Provide a brief summary
 of what was implemented and why, the issue reference (`issue-NNNN`) when
 there is one, and the model name you are running as so the
 `AI-assisted-by` trailer is set correctly.
@@ -117,6 +123,9 @@ per task" — loop one task at a time:
 - Commit it now: load the **`create-commit`** skill and follow it —
   one commit per task, never two tasks in one commit. Same inputs as
   always: what and why, the issue reference, your model name.
+- After the final task, close the plan file (`Status: done`, one
+  `Review Log` line with the issue URL when one exists) and include
+  it in that last commit.
 - Show the user the result (what changed, files touched, how it was
   verified).
 - WAIT for the user's confirmation before starting the next task.
