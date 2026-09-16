@@ -95,12 +95,7 @@
 
         ;; An uploaded video asset needs no source field, only playback.
         video-asset?
-        (and render-wasm? (some? (video/video-fill shape)))
-
-        ;; The composited path is a flat draw, so a shape carrying opacity, a
-        ;; blend mode, a blur, a shadow or a stroke does not play at all.
-        video-blocked-reason
-        (when (some? video-image-id) (video/refuses-to-play shape))]
+        (and render-wasm? (some? (video/video-fill shape)))]
 
     [:*
      [:> layer-menu* {:ids ids
@@ -151,8 +146,7 @@
        [:> video-menu* {:ids ids
                         :image-id video-image-id
                         :source (video/shape-source shape)
-                        :is-asset video-asset?
-                        :blocked-reason video-blocked-reason}])
+                        :is-asset video-asset?}])
 
      [:> stroke-menu* {:ids ids
                        :type type

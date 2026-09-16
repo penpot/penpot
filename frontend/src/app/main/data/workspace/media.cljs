@@ -65,6 +65,16 @@
                                       :hint "could not read the video dimensions"))))
        (set! (.-src element) url)))))
 
+(defn- media-dimensions
+  "Stream of the dimensions an upload has to be stored with: the size the
+   client decoded for a video, and nothing at all for a still, which the
+   backend measures itself. Every upload path runs through this, so a video
+   cannot reach the backend without them."
+  [blob]
+  (if (media/video-type? (.-type blob))
+    (rx/from (read-video-dimensions blob))
+    (rx/of nil)))
+
 (defn- optimize
   [input]
   (svgo/optimize input svgo/defaultOptions))
@@ -218,10 +228,8 @@
                                 dimensions)))))
 
           (upload-blob [blob]
-            (if (media/video-type? (.-type blob))
-              (->> (rx/from (read-video-dimensions blob))
-                   (rx/mapcat #(upload-blob* blob %)))
-              (upload-blob* blob nil)))
+            (->> (media-dimensions blob)
+                 (rx/mapcat #(upload-blob* blob %))))
 
           (extract-content [blob]
             (let [name (or name (.-name blob))]
@@ -341,7 +349,9 @@
         (dmm/notify-start-loading)
         (->> (rx/of file)
              (rx/map dmm/validate-file)
-             (rx/map prepare)
+             (rx/mapcat (fn [content]
+                          (->> (media-dimensions content)
+                               (rx/map #(merge (prepare content) %)))))
              (rx/mapcat #(rp/cmd! :upload-file-media-object %))
              (rx/tap on-upload-success)
              (rx/catch handle-media-error))))))

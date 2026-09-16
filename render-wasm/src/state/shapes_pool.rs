@@ -521,6 +521,8 @@ impl ShapesPoolImpl {
             modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
+            revision: 0,
+            image_index: None,
         }
     }
 

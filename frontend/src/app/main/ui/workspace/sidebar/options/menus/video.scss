@@ -4,7 +4,6 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as t;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
 .element-set {
@@ -21,11 +20,4 @@
 .source-input {
   flex-grow: 1;
   min-width: 0;
-}
-
-.blocked {
-  @include t.use-typography("body-small");
-
-  color: var(--input-foreground-color-disabled);
-  margin-bottom: var(--sp-s);
 }

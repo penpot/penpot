@@ -43,7 +43,7 @@ use crate::{get_gpu_state, get_resources, performance};
 
 pub use fonts::*;
 pub use images::*;
-pub use video::{shape_overlay_blockers, video_overlay_eligibility, VideoIneligible, VideoRegistry};
+pub use video::VideoRegistry;
 pub(crate) use resources::RenderResources;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;

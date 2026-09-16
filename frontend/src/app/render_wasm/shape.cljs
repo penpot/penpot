@@ -166,8 +166,12 @@
         :transform
         (api/set-shape-transform v)
 
+        ;; An uploaded video carries its source in the fill, so replacing the
+        ;; fill is what starts or stops playback.
         :fills
-        (api/set-shape-fills id v false)
+        (let [pending (into [] (api/set-shape-fills id v false))]
+          (video/sync-shape! shape)
+          pending)
 
         :strokes
         (let [pending (into [] (api/set-shape-strokes id v false))]
