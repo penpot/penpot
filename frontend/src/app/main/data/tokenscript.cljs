@@ -8,9 +8,12 @@
                                   processTokens
                                   TokenSymbol
                                   makeConfig]]
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.time :as ct]
-   [app.main.data.workspace.tokens.errors :as wte]))
+   [app.common.types.token :as cto]
+   [app.main.data.workspace.tokens.errors :as wte]
+   [cuerdas.core :as str]))
 
 (l/set-level! :debug)
 
@@ -78,6 +81,17 @@
 
 (declare tokenscript-symbols->penpot-unit)
 
+(defn font-family-symbols->penpot-unit
+  "Converts a resolved font-family value into a vector of family names.
+  Each family name is the string form of its whole entry, which is a list of
+  word symbols when the family reached tokenscript unquoted."
+  [^js v]
+  (when (some? v)
+    (let [entries (.-value v)]
+      (if (instance? js/Array entries)
+        (mapv str entries)
+        [(str v)]))))
+
 (defn structured-token->penpot-map
   "Converts structured token (record or array) to penpot map format.
   Structured tokens are non-primitive token types like `typography` or `box-shadow`."
@@ -85,9 +99,13 @@
   (if (instance? js/Array (.-value token-symbol))
     (mapv tokenscript-symbols->penpot-unit (.-value token-symbol))
     (let [entries (es6-iterator-seq (.entries (.-value token-symbol)))]
-      (into {} (map (fn [[k v :as V]]
-                      [(keyword k) (tokenscript-symbols->penpot-unit v)])
-                    entries)))))
+      (into {} (map (fn [[k v]]
+                      (let [k (keyword k)]
+                        ;; The font-family member of a composite is a family list
+                        [k (if (= :font-family k)
+                             (font-family-symbols->penpot-unit v)
+                             (tokenscript-symbols->penpot-unit v))])))
+            entries))))
 
 (defn tokenscript-symbols->penpot-unit [^js v]
   (cond
@@ -98,6 +116,15 @@
     (rem-number-with-unit? v) (rem->px v)
     (percent-number-with-unit? v) (/ (.-value v) 100)
     :else (.-value v)))
+
+(defn resolved-value->penpot-unit
+  "Converts the resolved value of a token of the given `type`.
+  Font families need the type: a list of symbols is a list of families at the
+  top level and the words of a single family name inside an entry."
+  [type ^js v]
+  (if (= :font-family type)
+    (font-family-symbols->penpot-unit v)
+    (tokenscript-symbols->penpot-unit v)))
 
 ;; Processors ------------------------------------------------------------------
 ;; The processor resolves tokens
@@ -130,11 +157,45 @@
          :onError on-error
          :getResult get-result}))
 
+(defn- quote-font-family
+  "Quotes a font family name so tokenscript reads it as one string instead of
+  parsing its words (`Red` would become a color, `2P` a number and a word).
+  Entries with a token reference or already quoted are kept as they are."
+  [family]
+  (cond
+    (or (not (string? family))
+        (seq (cto/find-token-value-references family))
+        (re-matches #"^(['\"]).*\1$" family))
+    family
+
+    (not (str/includes? family "\""))
+    (str "\"" family "\"")
+
+    (not (str/includes? family "'"))
+    (str "'" family "'")
+
+    :else
+    family))
+
+(defn- quote-font-families
+  [value]
+  (if (sequential? value)
+    (mapv quote-font-family value)
+    value))
+
+(defn- token-value->tokenscript-value
+  [type value]
+  (case type
+    :font-family (quote-font-families value)
+    :typography  (cond-> value
+                   (map? value) (d/update-when :font-family quote-font-families))
+    value))
+
 (defn clj->token->tokenscript-token
   "Convert penpot token into a format that tokenscript can handle."
   [{:keys [type value]}]
   #js {"$type" (name type)
-       "$value" (clj->js value)})
+       "$value" (clj->js (token-value->tokenscript-value type value))})
 
 (defn clj-tokens->tokenscript-tokens
   "Convert penpot map of tokens into tokenscript map structure.
