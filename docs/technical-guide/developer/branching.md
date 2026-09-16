@@ -592,10 +592,13 @@ refusing it would take the panel away rather than protect it, and its cost
 is bounded by the summary cache instead.
 
 Every branch operation attaches `:branch-operation`, `:branch-outcome` and
-`:branch-duration-ms` to its own audit event (`audited`), because the
-generic RPC event records who called what and not how long it took, and
-duration is the number the first enterprise trial will be asked about. Every
-outcome carries them, the no-op merge and the two refusal shapes included.
+`:branch-duration-ms` to its own audit event, because the generic RPC event
+records who called what and not how long it took, and duration is the number
+the first enterprise trial will be asked about. Creation, compare, merge,
+update-from-main and materialise attach them through `audited`; a save routed
+to a branch's op log attaches them on the `update-file` event, whose props it
+replaces. Every outcome carries them, the no-op merge, the idempotent
+materialise and both refusal shapes included.
 
 ## RPC API summary
 
