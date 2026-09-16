@@ -153,6 +153,45 @@ Announce the save path `.agents/plans/YYYY-MM-DD-<slug>.md` (today's date,
 lowercase hyphen-separated slug, e.g. `2026-09-10-add-batch-get-profiles`;
 an explicit user path wins).
 
+### Derived plans
+
+Never invent a fresh slug when the plan derives from an existing one.
+The derived name is `<parent-basename>` plus one suffix per level,
+joined with `--` (double hyphen; single hyphens already separate
+slug words, so `--` marks where the derivation starts). The parent
+name is never edited, and no new date is added — the parent prefix
+already carries its date, which keeps parent and derivatives adjacent
+in `ls`. Record the real creation date inside the plan (`Created:`).
+
+Valid names match:
+
+```
+^\d{4}-\d{2}-\d{2}-[a-z0-9-]+(--(review-\d{2}|task-\d{2})(-[a-z0-9-]+)?)*\.md$
+```
+
+- `review-NN` — a new plan addressing findings of a `review-code` or
+  `review-plan` on already-implemented work. `NN` counts reviews of
+  that parent from `01`. Example: parent
+  `2026-09-14-paste-before-init-crash.md` →
+  `2026-09-14-paste-before-init-crash--review-01.md`,
+  then `--review-02.md`.
+- `task-NN-<short-slug>` — sub-plan for task `NN` of a high-level
+  roadmap plan. `NN` is the roadmap task number. Example: parent
+  `2026-09-20-upload-pipeline-roadmap.md` →
+  `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`.
+  Levels chain: `...--task-02-gc--review-01.md`.
+
+Never use `v2`, `final`, `new`, or `fix2` as suffixes. Keep the
+optional short slug to 3-4 lowercase hyphen-separated words.
+
+Every derived plan opens its `Context` with:
+
+```markdown
+Parent: `<parent-basename>.md`
+Source: review-code over `<commit>` (branch `<branch>`) | task `NN` of roadmap `<parent-basename>.md`
+Created: YYYY-MM-DD
+```
+
 End the response by suggesting the next steps: `/review-plan` to get a second
 opinion on the plan and `/implement-plan` to execute it.
 

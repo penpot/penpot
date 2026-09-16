@@ -16,8 +16,13 @@ stop — this skill needs the build agent to save the plan.
 - The user asks to plan, design, or break down a task, in any phrasing:
   "make a plan", "how would we build X", "design an approach for Y" —
   or runs `/make-a-plan`.
-- The user asks to rework or extend an existing plan (for example, after
-  review findings) — revise the saved plan file in place.
+- The user asks to rework or extend an existing plan. While the plan is
+  still unimplemented (pre-`implement-plan` iteration, e.g. after
+  `/review-plan` findings or user feedback), revise the saved plan file
+  in place. Once the plan has been implemented and reviewed (post
+  `/review-code` findings on committed work), write a new derived plan
+  file instead — never rewrite the executed plan. The `planner` skill
+   defines the derived naming (`--review-NN`, `--task-NN`).
 
 Do not use it to execute a plan — that is the `implement-plan` flow.
 
@@ -34,8 +39,11 @@ Do not use it to execute a plan — that is the `implement-plan` flow.
 3. Once all decisions are answered and the plan is final, save it verbatim to the
    announced path under `.agents/plans/` (create the directory if it does not
    exist). This step is the flow's explicit authorization to write the plan
-   file — the only write allowed here. If I later ask for changes, update the
-   saved file directly.
+   file — the only write allowed here. A fresh plan uses
+   `.agents/plans/YYYY-MM-DD-<slug>.md`; a derived plan uses the parent
+   basename plus the `planner` suffix (`--review-NN`, `--task-NN`) in its
+   own new file. If I later ask for changes to a still-unimplemented plan,
+   update the saved file directly.
 4. Present me with a clear, self-contained summary of the plan's most relevant points
    only after all required decisions have been answered. Write it for someone who knows
    only the project's high-level goal and may not know the plan's low-level context.
