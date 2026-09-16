@@ -72,7 +72,10 @@ fn render_frame_body(
     scale: f32,
 ) -> Result<()> {
     let spread = builder.silhouette_spread;
-    let clipped = element.clip_content;
+    // Clip only on the real content pass. Drop silhouettes are painted outside
+    // the content clip (GPU), so spread/offset rings are not truncated by an
+    // un-outset / unshifted clipPath.
+    let clipped = element.clip_content && !builder.suppress_filters;
     if clipped {
         let clip_id = builder.unique("clip");
         builder.push_clip_path(&clip_id, element, tree);
