@@ -9,11 +9,16 @@
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.data.nitrate-audit :as nitrate-audit]
+   [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dt]
    [app.main.store :as st]
    [app.main.ui.auth.verify-token :as verify-token]
-   [cljs.test :as t :include-macros true]))
+   [beicon.v2.core :as rx]
+   [cljs.test :as t :include-macros true]
+   [potok.v2.core :as ptk]))
 
 (t/deftest account-age-days-test
   (with-redefs [ct/now (constantly (ct/inst "2026-07-27T12:00:00Z"))]
@@ -215,6 +220,64 @@
   (t/testing "must be a string so licenses/billing?callback=... survives query encoding"
     (t/is (string? dnt/go-to-subscription-url))
     (t/is (not (u/uri? dnt/go-to-subscription-url)))))
+
+(t/deftest organization-teams-filters-by-organization-id
+  (let [teams [{:id "t1" :organization {:id "org-a"}}
+               {:id "t2" :organization {:id "org-b"}}
+               {:id "t3" :is-default true}
+               {:id "t4" :organization {:id "org-a"}}]]
+    (t/is (= ["t1" "t4"] (map :id (dnt/organization-teams teams "org-a"))))
+    (t/is (= [] (dnt/organization-teams teams "org-c")))))
+
+(t/deftest organization-leave-info-splits-owned-and-not-owned-teams
+  (let [org-teams [{:id "default" :is-default true}
+                   {:id "owned-1" :permissions {:is-owner true}}
+                   {:id "owned-2" :permissions {:is-owner true}}
+                   {:id "member-1" :permissions {:is-owner false}}]
+        info (dnt/organization-leave-info org-teams)]
+    (t/is (= "default" (:default-team-id info)))
+    (t/is (= ["owned-1" "owned-2"] (map :id (:owned-teams info))))
+    (t/is (= ["member-1"] (map :id (:not-owned-teams info))))))
+
+(t/deftest transferable-teams-boundary-at-one-member
+  (let [owned-teams [{:id "solo" :members [{:id "m1"}]}
+                     {:id "pair" :members [{:id "m1"} {:id "m2"}]}
+                     {:id "empty" :members []}]]
+    (t/is (= ["pair"] (map :id (dnt/transferable-teams owned-teams))))))
+
+(t/deftest team-leave-on-error-matrix
+  (t/testing "known error code shows a translated notification"
+    (let [emitted (atom [])]
+      (->> (dnt/team-leave-on-error (ex-info "boom" {:code :owner-cant-leave-team}))
+           (rx/subs! #(swap! emitted conj %)))
+      (t/is (= 1 (count @emitted)))
+      (t/is (= :visible (:status (:notification (ptk/update (first @emitted) {})))))))
+
+  (t/testing "unknown error code rethrows the original error"
+    (let [error (ex-info "boom" {:code :something-unmapped})
+          rejected (atom [])]
+      (->> (dnt/team-leave-on-error error)
+           (rx/subs! (fn [_]) #(swap! rejected conj %)))
+      (t/is (= [error] @rejected)))))
+
+(t/deftest org-leave-on-error-matrix
+  (t/testing "known error code refetches teams, hides the modal, and notifies"
+    (let [emitted (atom [])]
+      (->> (dnt/org-leave-on-error (ex-info "boom" {:code :not-valid-teams}))
+           (rx/subs! #(swap! emitted conj %)))
+      (t/is (= 3 (count @emitted)))
+      (t/is (some (ptk/type? ::dt/fetch-teams) @emitted))
+      (t/is (some (ptk/type? ::modal/hide-modal) @emitted))
+      (let [notification-event (first (filter (ptk/type? ::ntf/show) @emitted))]
+        (t/is (some? notification-event))
+        (t/is (= :visible (:status (:notification (ptk/update notification-event {}))))))))
+
+  (t/testing "unknown error code rethrows the original error"
+    (let [error (ex-info "boom" {:code :something-unmapped})
+          rejected (atom [])]
+      (->> (dnt/org-leave-on-error error)
+           (rx/subs! (fn [_]) #(swap! rejected conj %)))
+      (t/is (= [error] @rejected)))))
 
 (t/deftest build-admin-console-billing-url-encodes-string-callback
   (t/testing "billing callback query param round-trips as a real URL string"
