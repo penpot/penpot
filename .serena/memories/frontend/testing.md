@@ -6,7 +6,7 @@ Frontend validation: CLJS + React/Rumext + RxJS/Potok; SCSS modules; shared CLJC
 
 READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all CLJS/JS test runs.
 
-Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access.
+Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access. Mock through `frontend-tests.helpers.mock`: prefer `mock/with-mocks` (installs with `set!`, so it survives async boundaries) over `with-redefs`. The `:esm` test build dispatches calls to multi-arity vars as `cljs$core$IFn$_invoke$arity$N`, so stub multi-arity vars with `mock/stub` (arities 0-6); for variadic call sites with more than 6 args use a plain variadic `fn` instead. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses). Async tests wrap the body in `t/async` and thread its `done` into `mock/with-mocks` as the outer callback; `done'` must be called exactly once (calling it twice only prints a warning; not calling it stalls the run and leaks the mocks).
 
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
