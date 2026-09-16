@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
+"PO-Revision-Date: 2026-09-16 21:00+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2427,7 +2427,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Etkin temalar"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "CSS kısaltmasını panoya kopyala"
 
@@ -9850,7 +9849,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s etkin küme"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Orijinal değer: %s"
 
@@ -9923,7 +9921,6 @@ msgstr ""
 "adlandırılacak"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Çözülen değer: %s"
 
@@ -10058,7 +10055,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Tema listesi"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Açıklama"
 
@@ -10525,3 +10521,323 @@ msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#, unused
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Projeler ve dosyalar takım üyeleri tarafından erişilebilir olmaya devam "
+"edecek. Takım, yeni organizasyondan yapılandırmayı alacak."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Yeni sürümler, kurulumunuzu güncel tutan performans iyileştirmeleri, yeni "
+"özellikler ve düzeltmeler içerir."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "YENİ BİR PENPOT SÜRÜMÜ VAR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Yenilikler - Öne Çıkanlar"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Kurulu sürüm"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "En son sürüm"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Tekrar deneyin"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Ağ veya örnek yapılandırmanızı gözden geçirin ve tekrar deneyin."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "Bu kurulum, Penpot sürümleri hizmetine erişemedi."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "GÜNCELLEMELER DENETLENEMİYOR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "En son kararlı sürümü kullanıyorsunuz:"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT GÜNCEL"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Tüm değişiklik günlüğünü görüntüle"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Sürüm notlarını görüntüle"
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Son değişiklik tarihi %s"
+
+#: src/app/main/ui/dashboard/import.cljs:566
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 kütüphane, adına göre otomatik olarak bağlandı."
+msgstr[1] "%s kütüphane, adına göre otomatik olarak bağlandı."
+
+#: src/app/main/ui/dashboard/import.cljs:694
+msgid "dashboard.import.confirm-library-links"
+msgstr "Kütüphane bağlantılarını doğrula"
+
+#, unused
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Bazı kütüphaneler otomatik olarak bağlanamadı. Her biri için doğru "
+"kütüphaneyi seçin:"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Onaylamadan önce kütüphane bağlantılarını gözden geçirin:"
+
+#: src/app/main/ui/dashboard/import.cljs:672
+msgid "dashboard.import.review-links"
+msgstr "Bağlantıları gözden geçir"
+
+#, unused
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Otomatik bağlandı"
+
+#: src/app/main/ui/dashboard/import.cljs:491
+msgid "dashboard.import.summary.linked"
+msgstr "Bağlandı"
+
+#: src/app/main/ui/dashboard/import.cljs:527
+msgid "dashboard.import.summary.no-selection"
+msgstr "Kütüphane seçilmedi"
+
+#, unused
+msgid "dashboard.import.summary.your-selection"
+msgstr "Seçiminiz"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Bu takıma kişi davet etme izniniz yok"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:375, src/app/main/ui/dashboard/sidebar.cljs:376, src/app/main/ui/dashboard/sidebar.cljs:839
+msgid "dashboard.other-teams"
+msgstr "Diğer takımlar"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:358, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:442, src/app/main/ui/dashboard/sidebar.cljs:976, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1531, src/app/main/ui/dashboard/team.cljs:1638
+msgid "dashboard.personal-projects"
+msgstr "Kişisel Projeler"
+
+#, unused
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"Burada, parçası olduğunuz ve takım oluşturmanıza veya eklemenize izin "
+"verilen organizasyonları bulabilirsiniz."
+
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"En son yaptığınız değişiklikler kaydedildi olarak onaylanmadı. Kaydetme "
+"işlemi otomatik devam etmeyebilir. Bu sekmeyi kapatmayın veya yeniden "
+"yüklemeyin: değişiklikleriniz kaybolabilir. Yardım için destek ile iletişime "
+"geçin."
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+msgid "errors.weak-password"
+msgstr "Parola gereksinimleri karşılamıyor"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.in-dictionary"
+msgstr "Parola çok yaygın"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-digits"
+msgstr "En az 1 rakam"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "En az 1 küçük harf"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-special"
+msgstr "En az 1 özel karakter"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "En az 1 büyük harf"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.too-short"
+msgstr "En az 8 karakter"
+
+#: src/app/main/ui/exports/files.cljs:141
+#, unused
+msgid "files-export-modal.options.all.title"
+msgstr "Dosyayı ve kütüphaneleri dışa aktar"
+
+#: src/app/main/ui/exports/files.cljs:164
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "Bağlantılı kütüphane varlıkları dosyaya dahil edilmeyecek."
+
+#: src/app/main/ui/exports/files.cljs:163
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Varlıkları temel nesneler olarak değerlendir"
+
+#: src/app/main/ui/exports/files.cljs:142
+#, unused
+msgid "files-export-modal.options.detach.message"
+msgstr "Bağlantılı kütüphane varlıkları dosyaya dahil edilmeyecek."
+
+#: src/app/main/ui/exports/files.cljs:143
+#, unused
+msgid "files-export-modal.options.detach.title"
+msgstr "Varlıkları temel nesneler olarak değerlendir"
+
+#: src/app/main/ui/exports/files.cljs:158
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Bağlantılı kütüphaneler içeren dosyalar, bağlantıları korunacak şekilde dışa "
+"aktarıma dahil edilecek. "
+
+#: src/app/main/ui/exports/files.cljs:157
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Dosyayı ve kütüphaneleri dışa aktar"
+
+#: src/app/main/ui/exports/files.cljs:167
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"İçe aktarıldığında, aynı ada sahip var olan kütüphaneleri birbirine "
+"bağlayabileceksiniz."
+
+#: src/app/main/ui/exports/files.cljs:166
+msgid "files-export-modal.options.link-later.title"
+msgstr "İçe aktarımda eşleşen kütüphaneleri bağla"
+
+#: src/app/main/ui/exports/files.cljs:161
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Dosyanız, kütüphane varlığı yerel kütüphaneye birleştirilmiş olarak dışa "
+"aktarılacak."
+
+#: src/app/main/ui/exports/files.cljs:160
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Kütüphane varlıklarını dosyaya göm"
+
+#: src/app/main/ui/exports/files.cljs:145
+#, unused
+msgid "files-export-modal.options.merge.title"
+msgstr "Kütüphane varlıklarını dosyaya göm"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1330
+msgid "labels.check-for-updates"
+msgstr "Güncellemeleri denetle"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1329
+msgid "labels.checking-for-updates"
+msgstr "Güncellemeler denetleniyor..."
+
+#: src/app/main/ui/static.cljs:353
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"Bu örnek, en son sürümle birlikte gelen bir kurulum adımına ihtiyaç duyuyor."
+
+#: src/app/main/ui/static.cljs:356
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Göz atın"
+
+#: src/app/main/ui/static.cljs:351
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot henüz başlatılamıyor."
+
+#: src/app/main/ui/static.cljs:361
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "teknik kılavuz"
+
+#: src/app/main/ui/static.cljs:545
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"Organizasyonunuzun kimlik sağlayıcısıyla oturum açma işlemi tamamlanmadı. "
+"Sağlayıcı şu anda kullanılamıyor olabilir veya hesabınız henüz sağlayıcının "
+"dizininde yer almıyor olabilir."
+
+#: src/app/main/ui/static.cljs:546
+msgid "labels.sso-error.retry"
+msgstr "Tekrar deneyin"
+
+#: src/app/main/ui/static.cljs:544
+msgid "labels.sso-error.title"
+msgstr "%s için oturum açamadık"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.used-error"
+msgstr "Bu kod daha önce kullanıldı."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+msgid "nitrate.code-activation.footer-download"
+msgstr "İndirme isteği"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+msgid "nitrate.code-activation.footer-title"
+msgstr "Koda mı ihtiyacınız var?"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+#, unused
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Düğümü ve bölümleri sil"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+#, unused
+msgid "shortcuts.deselect-all"
+msgstr "Tüm seçimi kaldır"
+
+#: src/app/main/ui/exports/assets.cljs:332
+msgid "workspace.options.cancel-export"
+msgstr "İptal"
+
+#: src/app/main/ui/exports/assets.cljs:267
+msgid "workspace.options.exporting-busy"
+msgstr "Dışa aktarma hizmeti meşgul, lütfen daha sonra tekrar deneyin"
+
+#: src/app/main/ui/exports/assets.cljs:270
+msgid "workspace.options.exporting-cancelled"
+msgstr "Dışa aktarma iptal edildi"
+
+#: src/app/main/ui/exports/assets.cljs:269
+msgid "workspace.options.exporting-cancelling"
+msgstr "İptal ediliyor..."
+
+#: src/app/main/ui/exports/assets.cljs:271
+msgid "workspace.options.exporting-queued"
+msgstr "Bekleniyor..."
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Hizalandı"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:169
+msgid "workspace.path.actions.handler-independent"
+msgstr "Bağımsız"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:161
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Eşit"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.handler-type"
+msgstr "İşleyici davranışı"
