@@ -77,6 +77,15 @@
   gap: var(--sp-l);
 }
 
+// Groups the trailing buttons (e.g. skip/accept) and pins them to the end,
+// leaving any leading button (e.g. previous/back) at the start - regardless
+// of whether that leading button is rendered.
+.action-buttons-end {
+  display: flex;
+  gap: var(--sp-l);
+  margin-inline-start: auto;
+}
+
 .file-entry {
   --file-entry-fg-color: var(--color-foreground-secondary);
 

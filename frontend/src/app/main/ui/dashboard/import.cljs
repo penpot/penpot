@@ -662,17 +662,18 @@
                     :variant "secondary"
                     :on-click on-wizard-prev}
         (tr "labels.previous")])
-     [:> button* {:class (stl/css :secondary-btn)
-                  :variant "secondary"
-                  :on-click on-wizard-skip}
-      (tr "labels.skip")]
+     [:div {:class (stl/css :action-buttons-end)}
+      [:> button* {:class (stl/css :secondary-btn)
+                   :variant "secondary"
+                   :on-click on-wizard-skip}
+       (tr "labels.skip")]
 
-     [:> button* {:class (stl/css :accept-btn)
-                  :variant "primary"
-                  :on-click on-wizard-next}
-      (if all-visited?
-        (tr "labels.next")
-        (tr "dashboard.import.connect-selected-libraries"))]]]])
+      [:> button* {:class (stl/css :accept-btn)
+                   :variant "primary"
+                   :on-click on-wizard-next}
+       (if all-visited?
+         (tr "labels.next")
+         (tr "dashboard.import.connect-selected-libraries"))]]]]])
 
 (mf/defc import-library-summary-stage*
   {::mf/private true}
@@ -691,10 +692,11 @@
                     :variant "secondary"
                     :on-click on-summary-back}
         (tr "labels.back")])
-     [:> button* {:class (stl/css :accept-btn)
-                  :variant "primary"
-                  :on-click on-confirm-library-links}
-      (tr "dashboard.import.confirm-library-links")]]]])
+     [:div {:class (stl/css :action-buttons-end)}
+      [:> button* {:class (stl/css :accept-btn)
+                   :variant "primary"
+                   :on-click on-confirm-library-links}
+       (tr "dashboard.import.confirm-library-links")]]]]])
 
 (mf/defc import-dialog
   {::mf/register modal/components
