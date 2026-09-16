@@ -269,20 +269,30 @@ pub fn tile_atlas_slot_size(needed_slots: usize, atlas_px: i32) -> i32 {
     (atlas_px / side).clamp(MIN_SLOT, TILE_SIZE as i32)
 }
 
-/// Inset (texels) applied when sampling a packed atlas slot with Linear
-/// filtering, so upsample kernels do not bleed into the neighboring cell.
+/// 1px pad around packed-slot content so Linear compose does not bleed into
+/// the next cell. The drawable is written into the inner rect (full spatial
+/// coverage); sampling that inner rect avoids the edge-drop gaps of #11696.
 pub const TILE_ATLAS_SAMPLE_INSET: f32 = 1.0;
 
-/// Source size inside a packed slot after the Linear-filter inset.
-pub fn tile_atlas_compose_src_size(slot_size: i32) -> f32 {
+/// Rect inside `slot` that holds the tile drawable (inset when packed).
+pub fn tile_atlas_content_rect(slot: skia::Rect, slot_size: i32) -> skia::Rect {
     if slot_size < TILE_SIZE as i32 {
-        (slot_size as f32 - 2.0 * TILE_ATLAS_SAMPLE_INSET).max(1.0)
+        let i = TILE_ATLAS_SAMPLE_INSET;
+        skia::Rect::new(slot.left + i, slot.top + i, slot.right - i, slot.bottom - i)
     } else {
-        slot_size as f32
+        slot
     }
 }
 
-/// `draw_atlas` scale so the destination sprite stays `TILE_SIZE` after inset.
+pub fn tile_atlas_compose_src_size(slot_size: i32) -> f32 {
+    tile_atlas_content_rect(
+        skia::Rect::from_wh(slot_size as f32, slot_size as f32),
+        slot_size,
+    )
+    .width()
+    .max(1.0)
+}
+
 pub fn tile_atlas_compose_scale(slot_size: i32) -> f32 {
     TILE_SIZE / tile_atlas_compose_src_size(slot_size)
 }
@@ -517,6 +527,15 @@ mod tests {
         let src = tile_atlas_compose_src_size(slot);
         assert!((scale * src - TILE_SIZE).abs() < 1e-4);
         assert!(src < slot as f32);
+    }
+
+    #[test]
+    fn atlas_content_rect_matches_compose_src_when_packed() {
+        let slot = skia::Rect::from_xywh(10.0, 20.0, 315.0, 315.0);
+        let inner = tile_atlas_content_rect(slot, 315);
+        assert_eq!(inner, skia::Rect::new(11.0, 21.0, 324.0, 334.0));
+        assert_eq!(tile_atlas_content_rect(slot, 512), slot);
+        assert!((inner.width() - tile_atlas_compose_src_size(315)).abs() < 1e-4);
     }
 
     #[test]
