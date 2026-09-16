@@ -591,14 +591,20 @@ The listing is deliberately not gated. It renders the branch panel, so
 refusing it would take the panel away rather than protect it, and its cost
 is bounded by the summary cache instead.
 
-Every branch operation attaches `:branch-operation`, `:branch-outcome` and
-`:branch-duration-ms` to its own audit event, because the generic RPC event
-records who called what and not how long it took, and duration is the number
-the first enterprise trial will be asked about. Creation, compare, merge,
-update-from-main and materialise attach them through `audited`; a save routed
-to a branch's op log attaches them on the `update-file` event, whose props it
-replaces. Every outcome carries them, the no-op merge, the idempotent
-materialise and both refusal shapes included.
+Every mutation on a branch attaches `:branch-operation`, `:branch-outcome`
+and `:branch-duration-ms` to its own audit event, because the generic RPC
+event records who called what and not how long it took, and duration is the
+number the first enterprise trial will be asked about. Creation, compare,
+merge, update-from-main and materialise attach them through `audited`; a save
+routed to a branch's op log attaches them on the `update-file` event, whose
+props it replaces. Every outcome carries them, the no-op merge, the
+idempotent materialise and both refusal shapes included.
+
+Three mutations are the exception: `update-file-branch`,
+`archive-file-branch` and `delete-file-branch` are single-row metadata
+updates that carry only the generic event. The three reads are the same:
+the listing, the branch context and the limits are hot paths, and the
+listing's own cost is recorded by the summary cache instead.
 
 ## RPC API summary
 
