@@ -363,6 +363,20 @@ While a plan is still unimplemented, `/make-a-plan` revises it in
 place. Once implemented and reviewed, it writes a new followup file.
 Full rules live in the `planner` skill.
 
+### Plan status lifecycle
+
+Every plan carries `Status: draft | reviewed | done` plus an
+append-only `Review Log` (UTC ISO 8601, one line per entry):
+
+- `draft` — fresh from `/make-a-plan`.
+- `reviewed` — review feedback incorporated. `/review-plan` stays
+  read-only; only your explicit "apply" makes `/make-a-plan` apply
+  the changes, flip the status, and log one line.
+- `done` — `/implement-plan` closes it on completion, logging the
+  issue URL when one exists (never commit hashes).
+
+A plan approved with no changes goes `draft` → `done` directly.
+
 ## 7. Connecting `gh` CLI with a token
 
 The `create-issue` and `create-pr` flows need an authenticated `gh`

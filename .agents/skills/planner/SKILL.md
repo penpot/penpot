@@ -70,7 +70,7 @@ Skipping this step is the #1 cause of incorrect or incomplete plans.
 Each task follows this structure:
 
 ```markdown
-## Task [N]: [Short descriptive title]
+### Task [N]: [Short descriptive title]
 
 **Description:** One or two paragraphs explaining what this task accomplishes.
 Should be clear and concise.
@@ -202,6 +202,10 @@ Use this document shape:
 ```markdown
 # Plan: Title
 
+Status: draft | reviewed | done
+Review Log:
+- YYYY-MM-DDTHH:MM:SSZ — <what changed and why, one line per entry>
+
 ## Context
 ## Affected Modules
 ## Architecture Decisions
@@ -212,6 +216,23 @@ Use this document shape:
 ## Parallelization
 ## Open Questions
 ```
+
+`Status` and `Review Log` are write-restricted metadata, not free text:
+
+- `make-a-plan` creates every plan with `Status: draft` and an empty
+  log. `reviewed` never means "a review was emitted" — it means
+  "review feedback was incorporated". A plan approved with no changes
+  goes `draft` → `done` without passing through `reviewed`.
+- Only a user-triggered apply step writes them before implementation:
+  when the user says to apply `review-plan` findings, `make-a-plan`
+  applies the changes, flips to `reviewed`, and appends one UTC
+  ISO 8601 line describing what changed.
+- `implement-plan` flips to `done` on completion and appends one line
+  with the issue URL when one exists (standalone mode); otherwise
+  just `done`. Never record commit hashes — they rot on amend/rebase
+  and git already links the commit.
+- The log is append-only: never rewrite or delete lines.
+- `review-plan` and `review-code` never write these fields.
 
 Omit empty sections only when they do not apply. Every implementation task
 still requires acceptance criteria, verification, dependencies, likely files,
