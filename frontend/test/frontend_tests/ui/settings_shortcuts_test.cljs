@@ -1,5 +1,6 @@
 (ns frontend-tests.ui.settings-shortcuts-test
   (:require
+   [app.config :as cf]
    [app.main.data.profile :as du]
    [app.main.ui.settings.import-shortcuts-diff-modal :as diff-modal]
    [app.main.ui.settings.restore-shortcuts-modal :as restore-modal]
@@ -291,3 +292,139 @@
       ;; by command
       (t/is (or (matches-search (:translation shortcut) "ctrl")
                 (matches-search (ui-shortcuts/shortcut->command-string shortcut) "ctrl"))))))
+
+;; --- keyboard-event->mousetrap across keyboard layouts -------------------
+;; `keyboard-event->mousetrap` (private, exercised via #') turns a recorded
+;; keydown into a Mousetrap-style combo string. The runtime shortcut matcher
+;; (Mousetrap) resolves keydown events positionally, based on the physical key,
+;; not the character the layout+Shift combination happens to produce. So the
+;; recorder must key off `event.code` (layout-independent) rather than
+;; `event.key` (which varies per layout and per Shift state), or a recorded
+;; combo could end up never matching what actually fires. Real key events are
+;; always wrapped by goog.events in a goog.events.BrowserEvent, which forwards
+;; `key` but not `code` — the fixture below simulates that wrapper via
+;; `getBrowserEvent`, which is how the recorder reaches the underlying `code`.
+
+(defn- mock-wrapped-keydown
+  "Simulates a goog.events.BrowserEvent-wrapped keydown: `key`/modifiers are
+   forwarded directly (as goog.events does), but `code` is only reachable via
+   `getBrowserEvent`, mirroring the real wrapper's behavior. `key` is passed
+   through as-is (not defaulted) so callers can simulate a genuinely missing
+   `event.key` with `:key nil` - an empty string is truthy in ClojureScript,
+   so silently substituting \"\" here would defeat that case."
+  [{:keys [key code shift ctrl alt meta]}]
+  #js {:key key
+       :shiftKey (boolean shift)
+       :ctrlKey (boolean ctrl)
+       :altKey (boolean alt)
+       :metaKey (boolean meta)
+       :getBrowserEvent (fn [] #js {:code code})})
+
+(defn- mock-native-keydown
+  "Simulates a plain, unwrapped native KeyboardEvent (no getBrowserEvent),
+   exercising the recorder's defensive fallback to read `code` directly."
+  [{:keys [key code shift ctrl alt meta]}]
+  #js {:key key
+       :code code
+       :shiftKey (boolean shift)
+       :ctrlKey (boolean ctrl)
+       :altKey (boolean alt)
+       :metaKey (boolean meta)})
+
+(t/deftest mousetrap-shift-period-on-us-layout
+  (t/testing "US layout: Shift + Period key types \">\""
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+."
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key ">" :code "Period" :shift true})))))))
+
+(t/deftest mousetrap-shift-period-on-spanish-iso-layout
+  (t/testing "Spanish (ISO) layout: Shift + Period key types \":\" instead of
+              \">\" - this is the layout that originally reported \"shift+.\"
+              being recorded as \"shift+:\". The physical key (code \"Period\")
+              is the same as on a US layout, so the recorded combo must match."
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+."
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key ":" :code "Period" :shift true})))))))
+
+(t/deftest mousetrap-shift-period-on-arbitrary-layout
+  (t/testing "an arbitrary layout where Shift + Period produces a character
+              unrelated to \".\" or \":\" still normalizes to \"shift+.\",
+              since matching is driven by the physical key, not the glyph"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+."
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "?" :code "Period" :shift true})))))))
+
+(t/deftest mousetrap-letter-key-on-azerty-layout
+  (t/testing "French AZERTY swaps the Q and A letters relative to a US QWERTY
+              layout: the physical key printed \"A\" on the keycap sits where
+              \"Q\" is on a US layout (code \"KeyQ\") and types \"a\". Unlike
+              punctuation, Mousetrap's own matcher does NOT resolve letters
+              positionally (they're absent from its _MAP/_KEYCODE_MAP) - it
+              falls back to the typed character. So recording must stay
+              glyph-based here too (\"a\", not \"q\"), or the recorded combo
+              would never match what that physical key actually triggers."
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "a"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "a" :code "KeyQ"})))))))
+
+(t/deftest mousetrap-digit-key-on-azerty-layout
+  (t/testing "on French AZERTY, the unshifted top-row key at the US \"1\"
+              position (code \"Digit1\") types \"&\", not \"1\" - Shift is
+              needed for the digit. Digits are absent from Mousetrap's
+              _MAP/_KEYCODE_MAP just like letters, so recording must stay
+              glyph-based (\"&\") rather than resolving positionally to \"1\",
+              which would silently record the wrong, unreachable combo."
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "&"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "&" :code "Digit1"})))))))
+
+(t/deftest mousetrap-reads-code-from-unwrapped-native-event
+  (t/testing "falls back to reading `code` straight off the event when it is
+              not a goog.events.BrowserEvent wrapper (no getBrowserEvent)"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "shift+."
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-native-keydown {:key ":" :code "Period" :shift true})))))))
+
+(t/deftest mousetrap-tolerates-getBrowserEvent-returning-nil
+  (t/testing "does not throw when getBrowserEvent() itself returns nil/undefined
+              (defensive: not reachable via goog.events' real dispatch today,
+              but normalize-key must not crash the recorder if it happens)"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (let [event #js {:key ":" :shiftKey true :ctrlKey false :altKey false
+                       :metaKey false :getBrowserEvent (fn [] nil)}]
+        (t/is (= "shift+:"
+                 (#'ui-shortcuts/keyboard-event->mousetrap event)))))))
+
+(t/deftest mousetrap-tolerates-missing-key
+  (t/testing "does not throw when `event.key` itself is nil/undefined"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (nil? (#'ui-shortcuts/keyboard-event->mousetrap
+                   (mock-wrapped-keydown {:key nil :code "Period"})))))))
+
+(t/deftest mousetrap-ignores-bare-modifier-press
+  (t/testing "pressing only Shift (no other key yet) records nothing"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (nil? (#'ui-shortcuts/keyboard-event->mousetrap
+                   (mock-wrapped-keydown {:key "Shift" :shift true})))))))
+
+(t/deftest mousetrap-falls-back-to-lowercased-key-when-unmapped
+  (t/testing "a key with no entry in the named-key or code maps (e.g. a
+              function key) falls back to the lowercased `key` value"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "f13"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "F13" :code "F13"})))))))
+
+(t/deftest mousetrap-full-modifier-combo-on-non-mac
+  (t/testing "ctrl+alt+shift all combine with the normalized key, in order"
+    (with-redefs [cf/check-platform? (constantly false)]
+      (t/is (= "ctrl+alt+shift+q"
+               (#'ui-shortcuts/keyboard-event->mousetrap
+                (mock-wrapped-keydown {:key "q" :code "KeyQ"
+                                       :ctrl true :alt true :shift true})))))))
