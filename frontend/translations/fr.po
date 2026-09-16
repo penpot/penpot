@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
-"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2026-09-17 21:51+0000\n"
+"Last-Translator: Surfoo <surfooo@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -1550,7 +1550,7 @@ msgstr ""
 #: src/app/main/ui/settings/integrations.cljs:93, src/app/util/clipboard.cljs:248
 msgid "errors.clipboard-api-unavailable"
 msgstr ""
-"L'API du presse-papiers n'est pas disponible. Servez Penpot via HTTPS pour "
+"L'API du presse-papiers n'est pas disponible. Utilisez Penpot en HTTPS pour "
 "activer l'accès au presse-papiers"
 
 #: src/app/main/data/workspace/clipboard.cljs:514
@@ -1560,8 +1560,8 @@ msgstr "Votre navigateur ne peut pas effectuer cette opération"
 #: src/app/util/clipboard.cljs:245
 msgid "errors.clipboard-permission-denied"
 msgstr ""
-"Accès au presse-papiers refusé. Veuillez autoriser les permissions du "
-"presse-papiers dans votre navigateur pour coller du contenu"
+"Accès au presse-papiers refusé. Veuillez autoriser l'accès au presse-papiers "
+"dans les paramètres de votre navigateur pour coller du contenu"
 
 #: src/app/main/errors.cljs:451
 msgid "errors.comment-error"
@@ -2530,10 +2530,9 @@ msgstr "Tokens d'accès personnels"
 #: src/app/main/ui/settings/integrations.cljs:611
 msgid "integrations.access-tokens.personal.description"
 msgstr ""
-"Les tokens d'accès personnels fonctionnent comme une alternative à notre "
-"système d'authentification par identifiant/mot de passe et peuvent être "
-"utilisés pour permettre à une application d'accéder à l'API interne de "
-"Penpot"
+"Les tokens d'accès personnels constituent une alternative à notre système "
+"d'authentification par identifiant/mot de passe et peuvent être utilisés "
+"pour permettre à une application d'accéder à l'API interne de Penpot"
 
 #: src/app/main/ui/settings/integrations.cljs:68
 msgid "integrations.copy-to-clipboard"
@@ -2638,8 +2637,8 @@ msgstr "Comment configurer les clients MCP"
 #: src/app/main/ui/settings/integrations.cljs:568
 msgid "integrations.mcp-server.mcp-keys.info"
 msgstr ""
-"Voici l'URL du serveur dont vous aurez besoin pour configurer votre client "
-"MCP afin de le connecter au serveur MCP de Penpot."
+"Voici l'URL du serveur à utiliser pour configurer votre client MCP et le "
+"connecter au serveur MCP de Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:548
 msgid "integrations.mcp-server.mcp-keys.regenerate"
@@ -2691,7 +2690,7 @@ msgstr "Nom"
 
 #: src/app/main/ui/settings/integrations.cljs:201
 msgid "integrations.name.placeholder"
-msgstr "Le nom peut aider à savoir à quoi sert le token"
+msgstr "Le nom permet de savoir à quoi sert le token"
 
 #: src/app/main/ui/settings/integrations.cljs:392
 msgid "integrations.no-expiration"
@@ -7888,8 +7887,8 @@ msgstr "Sont du même type."
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr ""
-"Les rectangles, ellipses, chemins et opérations booléennes comptent comme "
-"étant du même type."
+"Les rectangles, ellipses, chemins et opérations booléennes sont considérés "
+"comme étant du même type."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
@@ -10055,9 +10054,8 @@ msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Vos tokens seront automatiquement renommés en %s.(suffix).(tokenName)"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
-msgstr "Valeur déduite : %s"
+msgstr "Valeur résolue : %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:248
 msgid "workspace.tokens.save-theme"
@@ -10653,3 +10651,331 @@ msgstr "Les versions auto-enregistrées seront conservées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#, unused
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Les projets et fichiers resteront disponibles pour les membres de l'équipe. "
+"L'équipe récupérera la configuration de la nouvelle organisation."
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Dernière modification %s"
+
+#, unused
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Certaines bibliothèques n'ont pas pu être liées automatiquement. "
+"Sélectionnez la bonne bibliothèque pour chacune :"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Vérifiez les liens des bibliothèques avant de confirmer :"
+
+#: src/app/main/ui/dashboard/import.cljs:694
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmer les liens des bibliothèques"
+
+#: src/app/main/ui/dashboard/import.cljs:672
+msgid "dashboard.import.review-links"
+msgstr "Vérifier les liens"
+
+#, unused
+msgid "dashboard.import.summary.auto-linked"
+msgstr "Lié automatiquement"
+
+#, unused
+msgid "dashboard.import.summary.your-selection"
+msgstr "Votre sélection"
+
+#: src/app/main/ui/dashboard/import.cljs:491
+msgid "dashboard.import.summary.linked"
+msgstr "Lié"
+
+#: src/app/main/ui/dashboard/import.cljs:527
+msgid "dashboard.import.summary.no-selection"
+msgstr "Aucune bibliothèque sélectionnée"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:375, src/app/main/ui/dashboard/sidebar.cljs:376, src/app/main/ui/dashboard/sidebar.cljs:839
+msgid "dashboard.other-teams"
+msgstr "Autres équipes"
+
+#, unused
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"Vous trouverez ici les organisations dont vous faites partie et où vous êtes "
+"autorisé à créer ou ajouter des équipes."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:358, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:442, src/app/main/ui/dashboard/sidebar.cljs:976, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1531, src/app/main/ui/dashboard/team.cljs:1638
+msgid "dashboard.personal-projects"
+msgstr "Projets personnels"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+msgid "errors.weak-password"
+msgstr "Le mot de passe ne respecte pas les exigences"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.too-short"
+msgstr "Au moins 8 caractères"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Au moins 1 lettre minuscule"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Au moins 1 lettre majuscule"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Au moins 1 chiffre"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.insufficient-special"
+msgstr "Au moins 1 caractère spécial"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
+#, unused
+msgid "errors.weak-password.in-dictionary"
+msgstr "Ce mot de passe est trop courant"
+
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"Vos dernières modifications ne sont pas confirmées comme enregistrées. "
+"L'enregistrement ne reprendra peut-être pas automatiquement. Ne fermez pas "
+"et ne rechargez pas cet onglet : vous risquez de perdre des modifications. "
+"Contactez le support pour obtenir de l'aide."
+
+#: src/app/main/ui/exports/files.cljs:158
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Les fichiers avec des bibliothèques liées seront inclus dans l'exportation, "
+"en conservant leur liaison. "
+
+#: src/app/main/ui/exports/files.cljs:141
+#, unused
+msgid "files-export-modal.options.all.title"
+msgstr "Exporter le fichier + les bibliothèques"
+
+#: src/app/main/ui/exports/files.cljs:157
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Exporter le fichier + les bibliothèques"
+
+#: src/app/main/ui/exports/files.cljs:142
+#, unused
+msgid "files-export-modal.options.detach.message"
+msgstr ""
+"Les ressources des bibliothèques liées ne seront pas incluses dans le "
+"fichier."
+
+#: src/app/main/ui/exports/files.cljs:164
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr ""
+"Les ressources des bibliothèques liées ne seront pas incluses dans le "
+"fichier."
+
+#: src/app/main/ui/exports/files.cljs:166
+msgid "files-export-modal.options.link-later.title"
+msgstr "Lier les bibliothèques correspondantes à l'importation"
+
+#: src/app/main/ui/exports/files.cljs:167
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"Une fois importé, vous pourrez lier les bibliothèques existantes portant des "
+"noms correspondants."
+
+#: src/app/main/ui/exports/files.cljs:143
+#, unused
+msgid "files-export-modal.options.detach.title"
+msgstr "Considérer les ressources comme des objets basiques"
+
+#: src/app/main/ui/exports/files.cljs:163
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Considérer les ressources comme des objets basiques"
+
+#: src/app/main/ui/exports/files.cljs:161
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Votre fichier sera exporté avec les ressources de la bibliothèque fusionnées "
+"dans la bibliothèque locale."
+
+#: src/app/main/ui/exports/files.cljs:145
+#, unused
+msgid "files-export-modal.options.merge.title"
+msgstr "Intégrer les ressources de la bibliothèque dans le fichier"
+
+#: src/app/main/ui/exports/files.cljs:160
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Intégrer les ressources de la bibliothèque dans le fichier"
+
+#: src/app/main/ui/static.cljs:351
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot ne peut pas encore démarrer."
+
+#: src/app/main/ui/static.cljs:353
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"Cette instance nécessite une étape de configuration incluse dans la dernière "
+"version."
+
+#: src/app/main/ui/static.cljs:356
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Consultez notre"
+
+#: src/app/main/ui/static.cljs:361
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "guide technique"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1330
+msgid "labels.check-for-updates"
+msgstr "Rechercher des mises à jour"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1329
+msgid "labels.checking-for-updates"
+msgstr "Recherche de mises à jour…"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "UNE NOUVELLE VERSION DE PENPOT EST DISPONIBLE"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Les nouvelles versions apportent des améliorations de performance, de "
+"nouvelles fonctionnalités et des correctifs qui maintiennent votre "
+"installation à jour."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Version installée"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "Dernière version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Nouveautés - Points forts"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Voir le journal des modifications complet"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Voir les notes de version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "IMPOSSIBLE DE VÉRIFIER LES MISES À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr ""
+"Cette installation n'a pas pu contacter le service de publications de Penpot."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr ""
+"Vérifiez votre réseau ou la configuration de l'instance, puis réessayez."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT EST À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Vous utilisez la dernière version stable :"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.used-error"
+msgstr "Ce code a déjà été utilisé."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+msgid "nitrate.code-activation.footer-title"
+msgstr "Besoin d'un code ?"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+msgid "nitrate.code-activation.footer-download"
+msgstr "Télécharger la demande"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+#, unused
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Supprimer le nœud et les segments"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
+#, unused
+msgid "shortcuts.deselect-all"
+msgstr "Tout désélectionner"
+
+#: src/app/main/ui/exports/assets.cljs:332
+msgid "workspace.options.cancel-export"
+msgstr "Annuler"
+
+#: src/app/main/ui/exports/assets.cljs:270
+msgid "workspace.options.exporting-cancelled"
+msgstr "Export annulé"
+
+#: src/app/main/ui/exports/assets.cljs:269
+msgid "workspace.options.exporting-cancelling"
+msgstr "Annulation…"
+
+#: src/app/main/ui/exports/assets.cljs:271
+msgid "workspace.options.exporting-queued"
+msgstr "En attente…"
+
+#: src/app/main/ui/exports/assets.cljs:267
+msgid "workspace.options.exporting-busy"
+msgstr "Le service d'export est occupé, veuillez réessayer plus tard"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.handler-type"
+msgstr "Comportement des poignées"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:161
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Symétrique"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Aligné"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:169
+msgid "workspace.path.actions.handler-independent"
+msgstr "Indépendant"
+
+#: src/app/main/ui/static.cljs:544
+msgid "labels.sso-error.title"
+msgstr "Nous n'avons pas pu vous connecter à %s"
+
+#: src/app/main/ui/static.cljs:545
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"La connexion avec le fournisseur d'identité de votre organisation n'a pas "
+"abouti. Le fournisseur est peut-être indisponible, ou votre compte n'est "
+"peut-être pas encore présent dans son annuaire."
+
+#: src/app/main/ui/static.cljs:546
+msgid "labels.sso-error.retry"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Vous n'avez pas la permission d'inviter des personnes dans cette équipe"
+
+#: src/app/main/ui/dashboard/import.cljs:566
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 bibliothèque a été liée automatiquement par son nom."
+msgstr[1] "%s bibliothèques ont été liées automatiquement par leur nom."
