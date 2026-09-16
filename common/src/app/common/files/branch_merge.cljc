@@ -123,6 +123,36 @@
               (transient {})
               (or objects {}))))
 
+(defn- strip-nil-attrs
+  "Drop keys whose value is `nil`, deeply, so that a key present with a
+  `nil` value compares equal to an absent key.
+
+  A branch copy re-points its local references through the duplication
+  pipeline, which leaves keys like `:fill-color-ref-file` and
+  `:typography-ref-file` present with `nil` where the source omitted them;
+  the same asymmetry appears inside a text `:content`. Comparing the two
+  forms as different makes an untouched entity look edited on one side, and
+  when the other side really moved it the engine reports a false
+  `:modify-modify` conflict — 368 of them on the design-system file's
+  screenshots of the shape trees, before this existed. Absent and nil mean
+  the same thing for a shape attribute, so the comparison should not see
+  the difference."
+  [v]
+  (cond
+    (map? v)
+    (persistent!
+     (reduce-kv (fn [acc k x]
+                  (let [x' (strip-nil-attrs x)]
+                    (if (nil? x')
+                      acc
+                      (assoc! acc k x'))))
+                (transient {})
+                v))
+
+    (vector? v) (mapv strip-nil-attrs v)
+    (set? v)    (into #{} (map strip-nil-attrs) v)
+    :else       v))
+
 (defn- shape-display-meta
   "Display-only metadata for a shape diff entry — its type and component
   nature — so the compare view can pick a type-accurate icon and label
@@ -162,9 +192,9 @@
               (merge extra extras {:kind kind :status status}))]
     (reduce
      (fn [acc id]
-       (let [b (get base id)
-             t (get theirs id)
-             o (get ours id)
+       (let [b (strip-nil-attrs (get base id))
+             t (strip-nil-attrs (get theirs id))
+             o (strip-nil-attrs (get ours id))
              in-b? (contains? base id)
              in-t? (contains? theirs id)
              in-o? (contains? ours id)]
