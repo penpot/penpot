@@ -127,35 +127,91 @@
 ;; Set the main potok error handler
 (reset! st/on-error on-error)
 
-(defn generate-report
+;; --- Environment failures
+;;
+;; Failures caused by the user's environment (connectivity, a degraded or
+;; misconfigured service) are not application defects. They are reported to the
+;; audit log as compact events and must never reach the internal error reports
+;; (`unhandled-exception`/`exception-page`), which trigger alerts.
+
+(def environment-error-types
+  "Error types produced by the environment rather than by an application
+  defect."
+  #{:network
+    :offline
+    :bad-gateway
+    :service-unavailable
+    :nitrate-unavailable
+    :nitrate-not-configured})
+
+(defn environment-error?
   [cause]
+  (contains? environment-error-types (:type (ex-data cause))))
+
+(defn- report-context
+  "Common context header for every report format."
+  [cause]
+  (let [team-id    (:current-team-id @st/state)
+        file-id    (:current-file-id @st/state)
+        profile-id (:profile-id @st/state)
+        data       (ex-data cause)]
+    (with-out-str
+      (println "Context:")
+      (println "--------------------")
+      (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
+      (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
+      (println "Prof ID:  " (str (or profile-id "--")))
+      (println "Team ID:  " (str (or team-id "--")))
+      (when-let [file-id (or (:file-id data) file-id)]
+        (println "File ID:  " (str file-id)))
+      (println "Version:  " (:full cf/version))
+      (println "HREF:     " (rt/get-current-href)))))
+
+(defn- generate-full-report
+  "Complete report: context, formatted throwable (including `ex-data`) and the
+  last events."
+  [cause]
+  (with-out-str
+    (print (report-context cause))
+    (println)
+
+    (println
+     (ex/format-throwable cause))
+    (println)
+
+    (println "Last events:")
+    (println "--------------------")
+    (println (st/format-last-events))
+    (println)))
+
+(defn- generate-compact-report
+  "Reduced report for environment failures: context plus the error type, code
+  and uri. It skips the stack trace, the `ex-data` dump (which may contain
+  request headers) and the last-events list."
+  [cause]
+  (let [data (ex-data cause)]
+    (with-out-str
+      (print (report-context cause))
+      (println)
+      (println "Error:")
+      (println "--------------------")
+      (println "Type: " (or (:type data) "--"))
+      (println "Code: " (or (:code data) "--"))
+      (when-let [uri (:uri data)]
+        (println "URI:  " uri)))))
+
+(defn generate-report
+  "Build the report string for `cause`.
+
+  `:format` selects the payload: `:full` (default) includes the formatted
+  throwable and the last events; `:compact` keeps only the context and the
+  error type/code/uri, for environment failures. The option is accepted both
+  as keyword arguments and as a trailing map."
+  [cause & {:keys [format] :or {format :full}}]
   (try
-    (let [team-id    (:current-team-id @st/state)
-          file-id    (:current-file-id @st/state)
-          profile-id (:profile-id @st/state)
-          data       (ex-data cause)]
-
-      (with-out-str
-        (println "Context:")
-        (println "--------------------")
-        (println "Timestamp:" (ct/format-inst (ct/now) :rfc1123))
-        (println "Hint:     " (or (:hint data) (ex-message cause) "--"))
-        (println "Prof ID:  " (str (or profile-id "--")))
-        (println "Team ID:  " (str (or team-id "--")))
-        (when-let [file-id (or (:file-id data) file-id)]
-          (println "File ID:  " (str file-id)))
-        (println "Version:  " (:full cf/version))
-        (println "HREF:     " (rt/get-current-href))
-        (println)
-
-        (println
-         (ex/format-throwable cause))
-        (println)
-
-        (println "Last events:")
-        (println "--------------------")
-        (println (st/format-last-events))
-        (println)))
+    (case format
+      :compact (generate-compact-report cause)
+      (generate-full-report cause))
     (catch :default err
       (.error js/console "error on generating report" err)
       ;; Keep this function total: `flash` reserves a report slot before
@@ -212,23 +268,23 @@
 
   The report name is part of the identity, so a `handled-exception` report
   never coalesces with an `unhandled-exception`/`exception-page` report of
-  the same cause (those two do reach the error reports and alerts)."
+  the same cause (those two do reach the error reports and alerts).
+
+  Environment failures drop the stack frame: their internal call site is an
+  implementation detail, and keeping it would fragment the grouping."
   [event-name cause]
   (let [data  (ex-data cause)
         ftype (or (:type data) :unknown)
         code  (or (:code data) :unknown)
         hint  (or (ex/get-hint cause) "")
-        ;; A JS stack string starts with "Error: <message>"; the first
-        ;; actual frame is the second line.
-        frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
-    (str (label event-name) "|" (label ftype) "|" (label code) "|"
-         (str/prune hint 120) "|" (str/prune frame 120))))
-
-(defn fallback-fingerprint
-  "Fingerprint for reports submitted without a `cause` (e.g. the exception
-  page or a stalled save)."
-  [event-name hint]
-  (str (label event-name) "|" (str/prune (or hint "") 120)))
+        base  (str (label event-name) "|" (label ftype) "|" (label code) "|"
+                   (str/prune hint 120))]
+    (if (environment-error? cause)
+      base
+      (let [;; A JS stack string starts with "Error: <message>"; the first
+            ;; actual frame is the second line.
+            frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
+        (str base "|" (str/prune frame 120))))))
 
 (defn- evict-oldest
   "Drops the fingerprint inserted first. `:order` mirrors the insertion
@@ -297,15 +353,18 @@
 
 (defn submit-report
   "Report the error report to the audit log subsystem, subject to the
-  report governor."
+  report governor.
+
+  `cause` must be the exception the report describes: a report without a
+  cause is ignored (and does not consume a governor reservation), so every
+  report shares the same fingerprint format."
   [& {:keys [event-name report hint cause]
       :or {event-name "unhandled-exception"}}]
-  (when (and (not (str/empty? hint))
+  (when (and (ex/exception? cause)
+             (not (str/empty? hint))
              (string? report)
              (string? event-name))
-    (let [state (reserve-report! (if (ex/exception? cause)
-                                   (error-fingerprint event-name cause)
-                                   (fallback-fingerprint event-name hint))
+    (let [state (reserve-report! (error-fingerprint event-name cause)
                                  (inst-ms (ct/now)))]
       (when (::emit state)
         (emit-report! event-name report hint (::occurrences state))))))
@@ -321,6 +380,11 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
+
+  The payload format is derived from the cause: environment failures get a
+  compact report. The audit event name is the canonical one requested by
+  `:type` (`handled-exception`/`unhandled-exception`); it is an external
+  contract, so flash never reclassifies it.
 
   The report is reserved before being generated, so repeated errors that
   fall inside the governor window do not pay the report-building cost.
@@ -338,11 +402,12 @@
                                          :handled "handled-exception"
                                          :unhandled "unhandled-exception"
                                          :silent nil)]
-                   (let [report-hint (ex/get-hint cause)]
+                   (let [format      (if (environment-error? cause) :compact :full)
+                         report-hint (ex/get-hint cause)]
                      (when (and (string? report-hint) (not (str/empty? report-hint)))
                        (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
                          (when (::emit state)
-                           (let [generated (generate-report cause)]
+                           (let [generated (generate-report cause {:format format})]
                              (emit-report! event-name
                                            generated
                                            report-hint
@@ -360,14 +425,29 @@
           (assoc :links [{:label (tr "labels.download" "report.txt")
                           :callback (partial download-report! report)}])))))))
 
+(defn- handle-connectivity-error
+  "Report a failure caused by the user's connectivity. These are audit-only
+  telemetry with a compact payload: they never reach the internal error
+  reports and a stack trace adds nothing for a network condition."
+  [error prefix]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix prefix))
+  (flash :cause (::instance error)
+         :type :handled
+         :hint (tr "errors.connection-error")))
+
 (defmethod ptk/handle-error :network
   [error]
   ;; Transient network errors (e.g. lost connectivity, DNS failure)
   ;; should not replace the entire page with an error screen. Show a
   ;; non-intrusive toast instead and let the user continue working.
-  (when-let [cause (::instance error)]
-    (ex/print-throwable cause :prefix "Network Error"))
-  (flash :cause (::instance error) :type :handled))
+  (handle-connectivity-error error "Network Error"))
+
+(defmethod ptk/handle-error :offline
+  [error]
+  ;; Status 0 (browser offline) must not fall through to `:default`:
+  ;; that would report it as an unhandled application error.
+  (handle-connectivity-error error "Offline Error"))
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the

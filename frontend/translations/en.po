@@ -1646,6 +1646,10 @@ msgstr ""
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
+#: src/app/main/errors.cljs:429
+msgid "errors.connection-error"
+msgstr "Cannot reach the server. Check your connection and try again."
+
 #: src/app/main/errors.cljs:520
 msgid "errors.deprecated"
 msgstr ""
