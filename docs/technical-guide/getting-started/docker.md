@@ -115,7 +115,90 @@ This will fetch the latest images. When you do <code class="language-bash">docke
     It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
 </p>
 
-**Important: Upgrade from version 1.x to 2.0**
+#### Upgrade to 2.18
+
+This version deploys a new service, **`penpot-admin-console`**, in the official `docker-compose.yaml`
+example. If you maintain your own compose file, you need to replicate the following changes manually:
+
+**1. Add the `enable-admin-console` flag**
+
+**NOTE:** Enabling the Admin Console is not required in this version, but it will be in a future release.
+We recommend setting it up now to avoid a more complex upgrade later.
+
+This step (the `enable-admin-console` flag) only applies to this version 2.18. In a future release, the
+Admin Console will be enabled by default and this flag will be removed. If you're upgrading directly to a
+version where the flag has already been removed, skip step 1 and go straight to steps 2–4, which remain
+required.
+
+Wherever you set `PENPOT_FLAGS` (frontend and backend):
+
+```diff
+- PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp
++ PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
+```
+
+**2. Add the new `penpot-admin-console` service**
+
+```yaml
+  penpot-admin-console:
+    image: "penpotapp/admin-console:2.18"
+    restart: always
+
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+
+    networks:
+      - penpot
+
+    environment:
+      PENPOT_PUBLIC_URI: http://localhost:9001
+      PENPOT_SECRET_KEY: change-this-insecure-key
+      PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
+      PENPOT_DATABASE_USERNAME: penpot
+      PENPOT_DATABASE_PASSWORD: penpot
+
+      # Don't touch it; this uses an internal docker network to
+      # communicate with the frontend.
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+```
+> Use the same `PENPOT_PUBLIC_URI`, `PENPOT_SECRET_KEY`, and database credentials you already have configured for `penpot-backend`.
+
+**3. Update `penpot-frontend`**
+
+- Add `penpot-admin-console` to `depends_on`.
+- Add the following environment variable:
+
+```diff
+    environment:
+      PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+      PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+      PENPOT_PUBLIC_URI: http://localhost:9001
++
++     # Don't touch it; this uses an internal docker network to
++     # communicate with the admin-console.
++     PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
+```
+
+**4. Update `penpot-backend`**
+
+Add the same variable:
+
+```diff
+    environment:
+      PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp enable-admin-console
+      PENPOT_PUBLIC_URI: http://localhost:9001
+      PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+      PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+      PENPOT_SECRET_KEY: change-this-insecure-key
++
++     # Don't touch it; this uses an internal docker network to
++     # communicate with the admin-console.
++     PENPOT_ADMIN_CONSOLE_URI: http://penpot-admin-console:3000
+```
+
+#### Upgrade from version 1.x to 2.0
 
 The migration to version 2.0, due to the incorporation of the new v2 components, includes
 an additional process that runs automatically as soon as the application starts. If your
