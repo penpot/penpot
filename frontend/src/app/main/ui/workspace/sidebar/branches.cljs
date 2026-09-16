@@ -1531,7 +1531,7 @@
 (mf/defc branch-conflicts-dialog*
   {::mf/register modal/components
    ::mf/register-as :branch-conflicts}
-  [{:keys [branch mode]}]
+  [{:keys [branch mode conflicts]}]
   (let [{:keys [diff selected resolutions status]} (mf/deref branch-diff)
 
         loading?    (= status :loading)
@@ -1551,7 +1551,12 @@
                           you (tr "workspace.branches.conflicts.card.you")]
                       (if ago (str ago " · " you) you))
 
-        conflicts   (:conflicts diff)
+        ;; the command that opened this modal returned its own conflict set,
+        ;; computed in the frame it resolves against; the diff this dialog can
+        ;; fetch may have been computed in another frame and disagree, which
+        ;; left the dialog showing 0 of 0 with an Apply that could never
+        ;; enable (vcs:tp-update-conflict-frame). Prefer what the command said.
+        conflicts   (if (seq conflicts) conflicts (:conflicts diff))
         resolutions (or resolutions {})
         total       (count conflicts)
         resolved    (count (filterv #(bm/conflict-resolved? % (get resolutions (:id %))) conflicts))

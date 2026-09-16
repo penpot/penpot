@@ -412,6 +412,30 @@
                        (rx/empty)))))
                  (rx/catch (fn [_] (rx/of (set-branch-context file-id nil)))))))))))
 
+(defn open-conflict-resolutions
+  "Open the conflict-resolution modal and seed the store with the conflict set
+  the command just returned.
+
+  Those conflicts are authoritative for the whole modal: they are the very
+  ones the command's own `resolved?` matches against, while the diff the modal
+  can fetch on its own is computed in another id frame and may list a
+  different set, or none at all (`pp:vcs:tp-update-conflict-frame`). Keeping
+  them in the store also lets the bulk actions resolve the same set the modal
+  shows."
+  [{:keys [branch mode conflicts]}]
+  (ptk/reify ::open-conflict-resolutions
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-branch-conflicts
+             {:branch-id (:id branch)
+              :mode mode
+              :conflicts (vec conflicts)}))
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (modal/show :branch-conflicts {:branch branch
+                                            :mode mode
+                                            :conflicts conflicts})))))
+
 (defn update-branch-from-main
   "Bring main's changes into the branch (reverse of merge). `branch` is the
   branch row. With conflicts and no `resolutions`, opens the conflict
@@ -426,13 +450,19 @@
         (->> (rp/cmd! :update-branch-from-main (cond-> {:branch-id (:id branch)}
                                                  (seq resolutions) (assoc :resolutions resolutions)))
              (rx/mapcat
-              (fn [{:keys [status]}]
+              (fn [{:keys [status conflicts]}]
                 (case status
                   ;; the open branch file just changed server-side: hard-reload
                   ;; it so the pulled changes are shown
                   :updated     (rx/of (ntf/success (tr "workspace.branches.update.success"))
                                       (reload-file-window))
-                  :conflicts   (rx/of (modal/show :branch-conflicts {:branch branch :mode :update}))
+                  ;; the returned conflicts are authoritative: they are the very
+                  ;; ones the command computes `resolved?` against, and the diff
+                  ;; the modal could fetch on its own is computed in another id
+                  ;; frame, which can disagree with them (vcs:tp-update-conflict-frame)
+                  :conflicts   (rx/of (open-conflict-resolutions {:branch branch
+                                                                  :mode :update
+                                                                  :conflicts conflicts}))
                   :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
                   (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
              (rx/catch (fn [cause]
@@ -472,7 +502,8 @@
   (ptk/reify ::set-all-resolutions
     ptk/UpdateEvent
     (update [_ state]
-      (let [conflicts (get-in state [:workspace-branch-diff :diff :conflicts])
+      (let [conflicts (or (get-in state [:workspace-branch-conflicts :conflicts])
+                          (get-in state [:workspace-branch-diff :diff :conflicts]))
             res       (into {} (map (fn [c] [(:id c) choice])) conflicts)]
         (assoc-in state [:workspace-branch-diff :resolutions] res)))))
 
@@ -512,7 +543,7 @@
                           keep-branch        (assoc :keep-branch true)
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
-                (fn [{:keys [status source-file-id]}]
+                (fn [{:keys [status source-file-id conflicts]}]
                   (case status
                     ;; the merged result lives in main: take the user there
                     ;; to see it (navigate if elsewhere, hard-reload if
@@ -521,7 +552,9 @@
                     ;; kept) already happened server-side.
                     :merged      (rx/of (ntf/success (tr "workspace.branches.merge.success"))
                                         (show-merge-result source-file-id))
-                    :conflicts   (rx/of (modal/show :branch-conflicts {:branch branch :mode :merge}))
+                    :conflicts   (rx/of (open-conflict-resolutions {:branch branch
+                                                                    :mode :merge
+                                                                    :conflicts conflicts}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.merge.error"))))))
                (rx/catch
