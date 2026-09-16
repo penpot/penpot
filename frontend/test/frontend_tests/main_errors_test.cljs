@@ -18,6 +18,7 @@
     - delegated save failures     – causes handled by the handler for their type"
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace :as-alias dw]
    [app.main.errors :as errors]
@@ -155,13 +156,21 @@
     (t/is (string? fingerprint))
     (t/is (str/starts-with? fingerprint "handled-exception|unknown|unknown|"))))
 
-(t/deftest fallback-fingerprint-is-stable-and-discriminating
-  (t/is (= (errors/fallback-fingerprint "exception-page" "boom")
-           (errors/fallback-fingerprint "exception-page" "boom")))
-  (t/is (not= (errors/fallback-fingerprint "exception-page" "boom")
-              (errors/fallback-fingerprint "handled-exception" "boom")))
-  (t/is (not= (errors/fallback-fingerprint "exception-page" "boom")
-              (errors/fallback-fingerprint "exception-page" "other"))))
+(t/deftest environment-fingerprints-ignore-the-stack-frame
+  (let [cause-a  (doto (ex-info "http error" {:type :offline :hint "http error"})
+                   (unchecked-set "stack" "Error: http error\n    at call-site-a (app.js:1)"))
+        cause-b  (doto (ex-info "http error" {:type :offline :hint "http error"})
+                   (unchecked-set "stack" "Error: http error\n    at call-site-b (app.js:2)"))
+        defect-a (doto (ex-info "boom" {:type :internal :hint "boom"})
+                   (unchecked-set "stack" "Error: boom\n    at call-site-a (app.js:1)"))
+        defect-b (doto (ex-info "boom" {:type :internal :hint "boom"})
+                   (unchecked-set "stack" "Error: boom\n    at call-site-b (app.js:2)"))]
+    (t/testing "environment failures group across internal call sites"
+      (t/is (= (errors/error-fingerprint "handled-exception" cause-a)
+               (errors/error-fingerprint "handled-exception" cause-b))))
+    (t/testing "application defects keep the stack frame in their identity"
+      (t/is (not= (errors/error-fingerprint "handled-exception" defect-a)
+                  (errors/error-fingerprint "handled-exception" defect-b))))))
 
 (t/deftest governor-emits-first-occurrence-and-suppresses-repeats
   (let [d1 (errors/reserve-report* (errors/initial-report-state) "fp" 1000)
@@ -243,17 +252,29 @@
   (let [events (capture-reports!
                 (fn []
                   (doseq [event-name ["handled-exception" "unhandled-exception" "exception-page"]]
-                    (errors/submit-report :event-name event-name :report "report" :hint event-name)
-                    (errors/submit-report :event-name event-name :report "report" :hint event-name))))]
+                    (let [cause (error-cause :type :internal :hint event-name)]
+                      (errors/submit-report :event-name event-name
+                                            :report "report"
+                                            :hint event-name
+                                            :cause cause)
+                      (errors/submit-report :event-name event-name
+                                            :report "report"
+                                            :hint event-name
+                                            :cause cause)))))]
     (t/is (= 3 (count events)))))
 
-(t/deftest submit-report-without-cause-dedups-by-fallback-fingerprint
+(t/deftest submit-report-without-cause-is-ignored
   (let [events (capture-reports!
                 (fn []
                   (errors/submit-report :event-name "exception-page" :report "report" :hint "boom")
-                  (errors/submit-report :event-name "exception-page" :report "report" :hint "boom")
-                  (errors/submit-report :event-name "exception-page" :report "report" :hint "other")))]
-    (t/is (= 2 (count events)))))
+                  (errors/submit-report :event-name "exception-page"
+                                        :report "report"
+                                        :hint "boom"
+                                        :cause (error-cause :type :internal :hint "boom"))))]
+    ;; The cause-less call is ignored and must not consume the reservation
+    ;; of the cause-based report.
+    (t/is (= 1 (count events)))
+    (t/is (= 1 (:occurrences (deref (first events)))))))
 
 (t/deftest governor-bounds-an-incident-like-loop
   (let [cause  (error-cause :type :network :hint "unable to perform fetch operation")
@@ -268,29 +289,37 @@
 
 (t/deftest flash-suppressed-occurrence-does-not-build-a-report
   (let [generated (atom 0)
-        cause     (error-cause :type :network :hint "unable to perform fetch operation")
+        cause     (error-cause :type :internal :hint "unable to perform fetch operation")
         events    (atom [])]
-    (with-redefs [errors/generate-report (fn [_] (swap! generated inc) "report")
-                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
-                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
-                  tm/schedule            mock/noop]
-      (dotimes [_ 3]
-        (errors/flash :cause cause :type :handled))
-      (t/is (= 1 (count @events)))
-      (t/is (= 1 @generated)))))
+    (mock/with-mocks
+      {st/format-last-events (mock/stub (fn [& _] (swap! generated inc) "report"))
+       st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+       rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+       tm/schedule           mock/noop}
+      (fn [done']
+        (dotimes [_ 3]
+          (errors/flash :cause cause :type :handled))
+        (t/is (= 1 (count @events)))
+        (t/is (= 1 @generated))
+        (done'))
+      (fn []))))
 
 (t/deftest flash-bounds-an-incident-like-loop
   (let [generated (atom 0)
-        cause     (error-cause :type :network :hint "unable to perform fetch operation")
+        cause     (error-cause :type :internal :hint "unable to perform fetch operation")
         events    (atom [])]
-    (with-redefs [errors/generate-report (fn [_] (swap! generated inc) "report")
-                  st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
-                  rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
-                  tm/schedule            mock/noop]
-      (dotimes [_ 10000]
-        (errors/flash :cause cause :type :handled))
-      (t/is (= 1 (count @events)))
-      (t/is (= 1 @generated)))))
+    (mock/with-mocks
+      {st/format-last-events (mock/stub (fn [& _] (swap! generated inc) "report"))
+       st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+       rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+       tm/schedule           mock/noop}
+      (fn [done']
+        (dotimes [_ 10000]
+          (errors/flash :cause cause :type :handled))
+        (t/is (= 1 (count @events)))
+        (t/is (= 1 @generated))
+        (done'))
+      (fn []))))
 
 (t/deftest generate-report-is-total-when-formatting-fails
   (with-redefs [st/format-last-events (mock/stub (fn [& _] (throw (ex-info "formatting failed" {}))))]
@@ -303,9 +332,148 @@
                   st/emit!               (mock/stub (fn [& emitted] (swap! events into emitted)))
                   rt/get-current-href    (constantly "https://penpot.example.com/#/workspace")
                   tm/schedule            mock/noop]
-      (errors/flash :cause (error-cause :type :network :hint "boom") :type :handled)
+      (errors/flash :cause (error-cause :type :internal :hint "boom") :type :handled)
       (t/is (= 1 (count @events)))
       (t/is (string? (:report (deref (first @events))))))))
+
+;; ---------------------------------------------------------------------------
+;; Environment failures
+;;
+;; Connectivity and service failures are not application defects: they are
+;; audit-only telemetry with a compact report and a dedicated toast.
+;; ---------------------------------------------------------------------------
+
+(t/deftest environment-error-classification
+  (t/testing "environment failures are recognised"
+    (doseq [type [:network :offline :bad-gateway :service-unavailable
+                  :nitrate-unavailable :nitrate-not-configured]]
+      (t/is (true? (errors/environment-error? (error-cause :type type)))
+            (str "expected environment error: " type))))
+  (t/testing "application defects are not environment failures"
+    (doseq [type [:internal :assertion :persistence :validation :authentication]]
+      (t/is (false? (errors/environment-error? (error-cause :type type)))
+            (str "did not expect environment error: " type))))
+  (t/testing "causes without ex-data are not environment failures"
+    (t/is (false? (errors/environment-error? (js/Error. "plain failure"))))
+    (t/is (false? (errors/environment-error? nil)))))
+
+(t/deftest generate-report-compact-omits-stack-data-and-last-events
+  (mock/with-mocks
+    {st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))
+     rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+    (fn [done']
+      (let [cause  (ex-info "http error" {:type :offline
+                                          :hint "http error"
+                                          :uri "/api/rpc/command/update-file"
+                                          :headers {"x-session-id" "secret"}})
+            report (errors/generate-report cause {:format :compact})]
+        (t/is (string? report))
+        (t/is (str/includes? report "Hint:"))
+        (t/is (str/includes? report "http error"))
+        (t/is (str/includes? report ":offline"))
+        (t/is (str/includes? report "/api/rpc/command/update-file"))
+        (t/is (not (str/includes? report "Last events:")))
+        (t/is (not (str/includes? report "Data:")))
+        (t/is (not (str/includes? report "====")))
+        (t/is (not (str/includes? report "secret"))))
+      (done'))
+    (fn [])))
+
+(t/deftest generate-report-defaults-to-the-full-format
+  (mock/with-mocks
+    {st/format-last-events (mock/stub (fn [& _] "(stub last events)"))
+     rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")}
+    (fn [done']
+      (let [report (errors/generate-report (error-cause :type :internal :hint "boom"))]
+        (t/is (str/includes? report "Last events:"))
+        (t/is (str/includes? report "(stub last events)")))
+      (done'))
+    (fn [])))
+
+(t/deftest connectivity-handlers-report-governed-compact-audit-events
+  (doseq [type [:network :offline]]
+    (errors/reset-report-governor!)
+    (let [events (atom [])
+          cause  (ex-info "http error" {:type type :hint "http error"})]
+      (mock/with-mocks
+        {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+         rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+         tm/schedule           (mock/stub (fn [f] (f)))
+         st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
+        (fn [done']
+          (errors/on-error cause)
+          ;; `flash` emits the report first and schedules the toast right after.
+          (t/is (= 2 (count @events)) (str "unexpected event count for " type))
+          (let [report-event (first @events)
+                toast-event  (second @events)
+                props        (deref report-event)]
+            (t/is (= "handled-exception" (::ev/name props)))
+            (t/is (not (str/includes? (:report props) "Last events:")))
+            (t/is (= (i18n/tr "errors.connection-error")
+                     (get-in (ptk/update toast-event {}) [:notification :content]))))
+          (done'))
+        (fn [])))))
+
+(t/deftest flash-keeps-the-canonical-event-name-and-derives-the-format
+  (let [cause (ex-info "http error" {:type :network
+                                     :hint "http error"
+                                     :headers {"x-session-id" "secret"}})]
+    (doseq [[type event-name] [[:handled "handled-exception"]
+                               [:unhandled "unhandled-exception"]]]
+      (errors/reset-report-governor!)
+      (let [events (atom [])]
+        (mock/with-mocks
+          {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+           rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+           tm/schedule           mock/noop
+           st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
+          (fn [done']
+            ;; The event name is the canonical one requested by the caller;
+            ;; only the payload format is derived from the cause.
+            (errors/flash :cause cause :type type)
+            (t/is (= 1 (count @events)) (str "unexpected event count for " type))
+            (let [props  (deref (first @events))
+                  report (:report props)]
+              (t/is (= event-name (::ev/name props)) (str "event name for " type))
+              (t/is (not (str/includes? report "Last events:")))
+              (t/is (not (str/includes? report "secret"))))
+            (done'))
+          (fn []))))))
+
+(t/deftest offline-loop-is-governed-and-never-unhandled
+  (let [events (atom [])
+        cause  (ex-info "http error" {:type :offline :hint "http error"})]
+    (mock/with-mocks
+      {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+       rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+       tm/schedule           mock/noop
+       st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
+      (fn [done']
+        (dotimes [_ 10000]
+          (errors/on-error cause))
+        (t/is (= 1 (count @events)))
+        (t/is (= "handled-exception" (::ev/name (deref (first @events)))))
+        (done'))
+      (fn []))))
+
+(t/deftest flash-persistence-uses-compact-reports-for-environment-failures
+  (let [events (atom [])]
+    (mock/with-mocks
+      {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+       rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+       tm/schedule           mock/noop
+       st/format-last-events (mock/stub (fn [& _] (throw (ex-info "must not be called" {}))))}
+      (fn [done']
+        (errors/flash-persistence (ex-info "http error" {:type :offline
+                                                         :hint "http error"
+                                                         :headers {"x-session-id" "secret"}}))
+        (t/is (= 1 (count @events)))
+        (let [props (deref (first @events))]
+          (t/is (= "handled-exception" (::ev/name props)))
+          (t/is (not (str/includes? (:report props) "Last events:")))
+          (t/is (not (str/includes? (:report props) "secret"))))
+        (done'))
+      (fn []))))
 
 (t/deftest exception-page-reports-dedup-by-cause
   (let [cause-a (error-cause :type :internal :code :unable-to-process-repository-response :hint "boom")
