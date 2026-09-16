@@ -210,7 +210,7 @@
     (binding [l/*context* (some-> (meta params)
                                   (get :app.http/request)
                                   (errors/request->context))]
-      (-> (update-file* cfg params)
+      (-> (update-file* cfg params tpoint)
           (rph/with-defer #(let [elapsed (tpoint)]
                              (l/trace :hint "update-file" :time (ct/format-duration elapsed))))))))
 
@@ -221,9 +221,14 @@
 
   Follow the inner implementation to `update-file-data!` function.
 
+  `tpoint` is the request's own timer, threaded in so that a save routed
+  to a branch's op log can report its duration on the audit event the way
+  the other branch commands do.
+
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
+   {:keys [profile-id file team features changes session-id skip-validate] :as params}
+   tpoint]
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             pmap/*load-fn* (partial fdata/load-pointer cfg (:id file))]
@@ -286,11 +291,21 @@
 
       (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
         {::audit/replace-props
-         {:id         (:id file)
-          :name       (:name file)
-          :features   (:features file)
-          :project-id (:project-id file)
-          :team-id    (:team-id file)}}))))
+         (cond-> {:id         (:id file)
+                  :name       (:name file)
+                  :features   (:features file)
+                  :project-id (:project-id file)
+                  :team-id    (:team-id file)}
+
+           ;; A save routed to a branch's op log is the preview's most
+           ;; frequent operation, so it reports its duration and outcome on
+           ;; its own audit event like every other branch command. The
+           ;; ordinary save path is untouched: the props above are the ones
+           ;; it has always carried.
+           (:is-branch file)
+           (assoc :branch-operation "save-branch"
+                  :branch-outcome "saved"
+                  :branch-duration-ms (inst-ms (tpoint))))}))))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."

@@ -1249,4 +1249,46 @@
           (t/is (nil? (:error out)))
           (t/is (= "merge" (:branch-operation props)))
           (t/is (= "merged" (:branch-outcome props)))
+          (t/is (int? (:branch-duration-ms props)))))
+
+      (t/testing "a save routed to the branch reports the same three"
+        ;; the ordinary save path replaces its props, so the branch keys
+        ;; travel in `::audit/replace-props` and not in `::audit/props`
+        (let [created  (th/command! {::th/type :create-file-branch
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:id file)
+                                     :name "audited-save"})
+              bfid     (-> created :result :branch-file-id)
+              file-row (th/db-get :file {:id bfid})
+              out      (th/command! {::th/type :update-file
+                                     ::rpc/profile-id (:id profile)
+                                     :id bfid
+                                     :session-id (uuid/random)
+                                     :revn (:revn file-row)
+                                     :vern (:vern file-row)
+                                     :features cfeat/supported-features
+                                     :changes [{:type :add-color
+                                                :color {:id (uuid/random)
+                                                        :name "audited"
+                                                        :color "#112233"
+                                                        :opacity 1}}]})
+              props    (-> out :result meta :app.loggers.audit/replace-props)]
+          (t/is (nil? (:error out)))
+          (t/is (= "save-branch" (:branch-operation props)))
+          (t/is (= "saved" (:branch-outcome props)))
+          (t/is (int? (:branch-duration-ms props)))
+          (t/is (= bfid (:id props)))))
+
+      (t/testing "materialising reports its own operation and outcome"
+        (let [created (th/command! {::th/type :create-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id (:id file)
+                                    :name "audited-exit"})
+              out     (th/command! {::th/type :materialize-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id (-> created :result :branch-file-id)})
+              props   (-> out :result meta :app.loggers.audit/props)]
+          (t/is (nil? (:error out)))
+          (t/is (= "materialize" (:branch-operation props)))
+          (t/is (= "materialized" (:branch-outcome props)))
           (t/is (int? (:branch-duration-ms props))))))))
