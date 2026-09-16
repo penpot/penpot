@@ -88,7 +88,7 @@
                                          ::jobs/queue :webhooks
                                          ::jobs/max-retries 3
                                          ::jobs/params {:event (t/encode-str props)
-                                                        :config item}})))))))
+                                                        :config (select-keys item [:id :uri :mtype])}})))))))
 
 
 (def schema:process-webhook-event-params

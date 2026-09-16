@@ -187,6 +187,8 @@
     [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
+    [:worker-binfile-parallelism {:optional true} ::sm/int]
+    [:worker-cron-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]

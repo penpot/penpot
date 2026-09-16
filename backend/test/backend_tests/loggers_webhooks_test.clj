@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -40,6 +41,22 @@
 
       (t/is (= 1 (:call-count @submit-mock)))
       (t/is (nil? res)))))
+
+(t/deftest process-event-submits-consumed-config-subset
+  (with-mocks [submit-mock {:target 'app.jobs/submit! :return nil}]
+    (let [prof (th/create-profile* 1 {:is-active true})
+          whk  (th/create-webhook* {:team-id (:default-team-id prof)})]
+      (th/run-task! :process-webhook-event
+                    {:type "command"
+                     :name "create-project"
+                     :props {:team-id (:default-team-id prof)}})
+      (t/is (= 1 (:call-count @submit-mock)))
+      (let [options (second (:call-args @submit-mock))
+            config  (get-in options [::jobs/params :config])]
+        (t/is (= #{:id :uri :mtype} (set (keys config))))
+        (t/is (= (:id whk) (:id config)))
+        (t/is (= (:uri whk) (:uri config)))
+        (t/is (= (:mtype whk) (:mtype config)))))))
 
 (t/deftest run-webhook-handler-1
   (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]

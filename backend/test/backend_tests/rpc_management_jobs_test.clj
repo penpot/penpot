@@ -135,6 +135,17 @@
       (t/is (= {:value 42} (:result row)))
       (t/is (some? (:completed-at row))))))
 
+(t/deftest complete-job-accepts-nested-result
+  (let [cfg    {::db/pool th/*pool*}
+        job-id (mk-job! {})
+        _      (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+        result {:value 42 :nested {:items [1 2 {:three 3}] :ok true}}
+        out    (mgmt! :complete-job {:job-id job-id :result result})]
+    (t/is (nil? (:error out)))
+    (let [row (get-row job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (= result (:result row))))))
+
 (t/deftest complete-job-without-result-stores-null
   (let [cfg    {::db/pool th/*pool*}
         job-id (mk-job! {})

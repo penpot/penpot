@@ -25,7 +25,13 @@
 
   Any job that can run longer than `:jobs-lease` must call `heartbeat!`
   on its loop, otherwise the dispatcher marks it orphaned while its side
-  effects continue."
+  effects continue.
+
+  Reserved ledger columns (`profile_id`, `target`, `progress`, `error`,
+  `result`, `resource_id`, `expires_at`) have no producers yet: `submit!`
+  only inserts dispatch columns. The expiration branch, the retention
+  carve-out and the resource touch already account for them; user-facing
+  jobs (phase B) will define their semantics."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -218,7 +224,7 @@
   "UPDATE job
       SET status='cancelled', modified_at=?
     WHERE id=?
-      AND status = ANY(?)")
+      AND status IN ('new','scheduled','retry')")
 
 (defn- decode-json-col
   [row key]
@@ -244,11 +250,9 @@
   untouched (the conditional claim in the runner/management API will skip
   them)."
   [cfg job-id]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (-> (db/exec-one! conn [sql:cancel-job (ct/now) job-id
-                                        (db/create-array conn "text" ["new" "scheduled" "retry"])])
-                    (db/get-update-count)))))
+  (-> (db/exec-one! (db/get-connectable cfg)
+                    [sql:cancel-job (ct/now) job-id])
+      (db/get-update-count)))
 
 (defn get-user-status
   "Map the internal job status to the user-facing status."
@@ -338,7 +342,12 @@
   passed explicitly. No-op when there is no job context.
 
   Never touches terminal rows: beating a completed/failed/cancelled job
-  would silently extend its retention window."
+  would silently extend its retention window.
+
+  Always writes through the connection pool (`::db/pool` on the cfg),
+  never through the caller's transaction: the beat must stay visible
+  even if the surrounding work rolls back. Without a pool on the cfg
+  it falls back to the given connectable."
   ([cfg]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
@@ -346,7 +355,8 @@
   ([cfg job-id]
    (when (uuid? job-id)
      (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
-       (db/exec-one! cfg [sql:touch-heartbeat (ct/now) job-id])
+       (db/exec-one! (or (::db/pool cfg) cfg)
+                     [sql:touch-heartbeat (ct/now) job-id])
        nil))))
 
 (defn progress!
@@ -354,7 +364,10 @@
   ~250ms; only writes on non-terminal job states). The job id comes from
   the `::job-id` key on the cfg, the thread-bound `*job-id*` (set by the
   runner), or can be passed explicitly. No-op when there is no job
-  context."
+  context.
+
+  Like `heartbeat!`, always writes through the connection pool, never
+  through the caller's transaction."
   ([cfg progress]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
@@ -362,7 +375,7 @@
   ([cfg job-id progress]
    (when (uuid? job-id)
      (when (should-write? progresses job-id (ct/now) progress-interval)
-       (db/tx-run! cfg
+       (db/tx-run! (or (::db/pool cfg) cfg)
                    (fn [{:keys [::db/conn]}]
                      (let [now (ct/now)]
                        (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id

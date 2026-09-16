@@ -10,6 +10,7 @@
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
@@ -20,11 +21,11 @@
   "DELETE FROM task WHERE scheduled_at < now() - ?::interval")
 
 (def schema:tasks-gc-params
-  "The min-age is a duration object when passed in-process and a text
-  (json) when received over the job pipeline; decoded by ct/duration in
-  the handler."
+  "The min-age is int millis or text (json) when received over the job
+  pipeline, a duration object when passed in-process; decoded by
+  ct/duration (resp. db/interval) in the handler."
   [:map
-   [:min-age {:optional true} :any]])
+   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
 
 (declare execute-tasks-gc!)
 

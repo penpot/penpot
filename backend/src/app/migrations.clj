@@ -508,7 +508,10 @@
     :fn (mg/resource "app/migrations/sql/0154-add-upload-session-chunk-table.sql")}
 
    {:name "0154-add-job-table"
-    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0154-add-job-table.sql")}
+
+   {:name "0155-add-job-indexes"
+    :fn (mg/resource "app/migrations/sql/0155-add-job-indexes.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

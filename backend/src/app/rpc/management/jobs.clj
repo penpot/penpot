@@ -80,9 +80,10 @@
 (def ^:private schema:complete-job-params
   [:map {:title "complete-job-params"}
    [:job-id ::sm/uuid]
-   ;; Per-job result: flat map of JSON scalars, nil when the job returns
-   ;; nothing. The key is always present; results must survive db/json.
-   [:result [:maybe [:map-of :keyword [:or :string :int :double :boolean :nil]]]]])
+   ;; Per-job result: any JSON-encodable value, nil when the job returns
+   ;; nothing. Nested maps and vectors are allowed; unserializable
+   ;; values are dropped to nil by jobs/encode-result with a warning.
+   [:result [:maybe :any]]])
 
 (def ^:private schema:complete-job-result
   [:map {:title "complete-job-result"}])

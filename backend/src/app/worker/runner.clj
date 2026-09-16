@@ -32,7 +32,8 @@
   "UPDATE job
       SET status='running', started_at=now(), modified_at=now()
     WHERE id=?
-       AND status IN ('new','scheduled','retry')")
+      AND scheduled_at=?
+      AND status IN ('new','scheduled','retry')")
 
 (def ^:private sql:retry-job
   "UPDATE job
@@ -43,10 +44,13 @@
 (defn- claim-job!
   "Conditional claim: only transition pending jobs (new/scheduled/retry)
   to running. A cancelled or terminal job produces 0 affected rows and is
-  skipped without touching its state (first-terminal-wins companion)."
-  [cfg job-id]
+  skipped without touching its state (first-terminal-wins companion).
+  Also predicates the payload scheduled_at: a row rescheduled after the
+  payload was pushed (dispatcher re-pushes on reschedule) is never
+  claimed with the stale payload."
+  [cfg job-id scheduled-at]
   (-> (db/exec-one! (db/get-connectable cfg)
-                    [sql:claim-job job-id])
+                    [sql:claim-job job-id scheduled-at])
       (db/get-update-count)))
 
 (defn- encode-result
@@ -100,7 +104,7 @@
            :runner-id id
            :retry (:retry-num job))
 
-    (if (zero? (claim-job! cfg (:id job)))
+    (if (zero? (claim-job! cfg (:id job) (:scheduled-at job)))
       (l/wrn :hint "skipping job, not claimable"
              :id (str (:id job))
              :name (:name job)

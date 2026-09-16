@@ -456,3 +456,27 @@
       (finally
         (reset! @#'jobs/defs-registry prev)))))
 
+(t/deftest heartbeat-bypasses-caller-transaction
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params (make-params)})]
+    ;; backdate so the beat is strictly greater (no same-millis flake)
+    (th/db-update! :job {:modified-at (ct/in-past {:minutes 5})} {:id job-id})
+    ;; beat inside a transaction that is rolled back: the beat must
+    ;; still be visible (it went through the pool, not the tx)
+    (db/tx-run! (assoc cfg ::db/rollback true)
+                (fn [{:keys [::db/conn]}]
+                  (jobs/heartbeat! (assoc cfg ::db/conn conn) job-id)))
+    (let [row (jobs/get-job cfg job-id)]
+      (t/is (> (inst-ms (:modified-at row))
+               (inst-ms (ct/in-past {:minutes 5})))))))
+
+(t/deftest progress-bypasses-caller-transaction
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params (make-params)})]
+    (db/tx-run! (assoc cfg ::db/rollback true)
+                (fn [{:keys [::db/conn]}]
+                  (jobs/progress! (assoc cfg ::db/conn conn) job-id {:step 1})))
+    (t/is (= {:step 1} (:progress (jobs/get-job cfg job-id))))))
+

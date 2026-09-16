@@ -238,6 +238,38 @@
         (t/is (= {:code "orphan"} (:error row)))
         (t/is (nil? (:completed-at row)))))))
 
+(t/deftest runner-claim-requires-current-scheduled-at
+  (let [at     (ct/truncate (ct/now) :millisecond)
+        job-id (mk-job! {:status "scheduled" :scheduled-at at})
+        stale  (ct/minus at (ct/duration {:minutes 6}))]
+    (t/testing "stale scheduled_at claims nothing"
+      (t/is (zero? (#'wrkr/claim-job! (mk-cfg {}) job-id stale)))
+      (t/is (= "scheduled" (:status (get-row job-id)))))
+    (t/testing "current scheduled_at claims the row"
+      (t/is (= 1 (#'wrkr/claim-job! (mk-cfg {}) job-id at)))
+      (t/is (= "running" (:status (get-row job-id)))))))
+
+(t/deftest runner-skips-stale-payload-after-reschedule
+  (let [stale-at (ct/truncate (ct/now) :millisecond)
+        job-id   (mk-job! {:scheduled-at stale-at})
+        fresh-at (ct/plus stale-at (ct/duration {:minutes 6}))]
+    ;; dispatcher reschedules: new scheduled_at + fresh payload
+    (th/db-update! :job {:status "scheduled" :scheduled-at fresh-at} {:id job-id})
+
+    (t/testing "stale payload is skipped, handler never invoked"
+      (push-payload! job-id stale-at)
+      (run-one! (mk-cfg {}))
+      (t/is (empty? @received))
+      (let [row (get-row job-id)]
+        (t/is (= "scheduled" (:status row)))
+        (t/is (nil? (:started-at row)))))
+
+    (t/testing "fresh payload still executes"
+      (push-payload! job-id fresh-at)
+      (run-one! (mk-cfg {}))
+      (t/is (= 1 (count @received)))
+      (t/is (= "completed" (:status (get-row job-id)))))))
+
 (t/deftest invoke-executes-handlers-in-process-with-decoded-params
   (let [raw-params {:object "snapshot"
                     :deleted-at "2026-01-01T00:00:00Z"

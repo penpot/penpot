@@ -9,6 +9,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.jobs.gc :as gc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
@@ -211,3 +212,48 @@
         (doseq [object objects]
           (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id object)}
                                                :id :touched-at)))))))))
+
+(t/deftest gc-commits-each-batch-separately
+  (let [total 2500
+        calls (atom 0)
+        orig  @#'gc/touch-resources!]
+    (th/db-exec! [(str "INSERT INTO job (name, queue, status, expires_at) "
+                       "SELECT 'test-job', 'test:default', 'completed', "
+                       "now() - interval '1 hour' "
+                       "FROM generate_series(1, " total ")")])
+    ;; blow up on the 3rd batch: earlier batches must stay committed
+    (alter-var-root #'gc/touch-resources!
+                    (constantly (fn [conn ids]
+                                  (when (= 3 (swap! calls inc))
+                                    (throw (ex-info "boom" {})))
+                                  (orig conn ids))))
+    (try
+      (t/is (thrown? Exception (th/run-task! :jobs-gc {})))
+      (t/is (= 500 (count (th/db-query :job {:queue "test:default"}))))
+      (finally
+        (alter-var-root #'gc/touch-resources! (constantly orig))))
+    ;; the next tick completes the sweep
+    (let [{:keys [deleted-expired]} (th/run-task! :jobs-gc {})]
+      (t/is (= 500 deleted-expired))
+      (t/is (zero? (count (th/db-query :job {:queue "test:default"})))))))
+
+(t/deftest gc-expiration-skips-active-rows
+  (let [running-id (uuid/next)
+        retry-id   (uuid/next)]
+    (doseq [[id status] [[running-id "running"] [retry-id "retry"]]]
+      (th/db-insert! :job {:id           id
+                           :name         "test-job"
+                           :queue        "test:default"
+                           :props        (db/json {})
+                           :priority     100
+                           :max-retries  3
+                           :retry-num    0
+                           :status       status
+                           :expires-at   (ct/in-past {:minutes 5})
+                           :scheduled-at (ct/now)
+                           :created-at   (ct/now)
+                           :modified-at  (ct/now)}))
+    (th/run-task! :jobs-gc {})
+    (t/testing "active rows survive expiration"
+      (t/is (some? (th/db-get :job {:id running-id} :id :status)))
+      (t/is (some? (th/db-get :job {:id retry-id} :id :status))))))

@@ -59,9 +59,10 @@
   {k (assoc v ::min-age (cf/get-file-clean-delay))})
 
 (def schema:file-gc-scheduler-params
-  "min-age: duration object in-process; text over the job pipeline."
+  "min-age: int millis or text over the job pipeline, duration object
+  in-process (repl runs)."
   [:map
-   [:min-age {:optional true} :any]])
+   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
 
 (defmethod ig/init-key ::file-gc-scheduler-job-def
   [_ cfg]

@@ -57,6 +57,14 @@
   (t/is (contains? (table-indexes "job") "job__orphan__idx"))
   (t/is (contains? (table-indexes "job") "job__profile__idx")))
 
+(t/deftest job-table-has-sweep-path-indexes
+  (t/testing "dispatcher reschedule of lost scheduled rows"
+    (t/is (contains? (table-indexes "job") "job__scheduled__idx")))
+  (t/testing "jobs-GC expiration scan"
+    (t/is (contains? (table-indexes "job") "job__expires__idx")))
+  (t/testing "jobs-GC retention scan"
+    (t/is (contains? (table-indexes "job") "job__retention__idx"))))
+
 (t/deftest job-table-has-expected-foreign-keys
   (t/testing "profile_id cascades on profile deletion"
     (t/is (contains? (table-foreign-keys "job")

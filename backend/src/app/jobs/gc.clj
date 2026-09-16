@@ -25,9 +25,9 @@
   already marked with `touched_at` — without the explicit touch the
   object would be orphaned.
 
-  The touch and the delete statements run in one transaction: a crash
-  rolls everything back, so an object can never lose its referencing
-  row without being marked for reclaim."
+  Each batch deletes and touches in its own transaction: a crash
+  leaves the remaining batches for the next tick, and an object can
+  never lose its referencing row without being marked for reclaim."
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -49,6 +49,7 @@
      WHERE id IN (SELECT id
                     FROM job
                    WHERE expires_at < now()
+                     AND status NOT IN ('running', 'retry')
                    LIMIT ?)
    RETURNING resource_id")
 
@@ -71,13 +72,18 @@
     0))
 
 (defn- delete-jobs!
-  [cfg conn sql & params]
+  [cfg sql & params]
   (loop [deleted 0
          touched 0]
-    (let [rows         (db/exec! conn (conj (into [sql] params) gc-batch-size))
-          resource-ids (into [] (keep :resource-id) rows)
-          deleted'     (+ deleted (count rows))
-          touched'     (+ touched (touch-resources! conn resource-ids))]
+    (let [[rows touched-now]
+          (db/tx-run! cfg
+                      (fn [{:keys [::db/conn]}]
+                        (let [rows         (db/exec! conn (conj (into [sql] params)
+                                                                gc-batch-size))
+                              resource-ids (into [] (keep :resource-id) rows)]
+                          [rows (touch-resources! conn resource-ids)])))
+          deleted' (+ deleted (count rows))
+          touched' (+ touched touched-now)]
       (if (< (count rows) gc-batch-size)
         [deleted' touched']
         (do (jobs/heartbeat! cfg)
@@ -102,31 +108,32 @@
 (defn execute-jobs-gc!
   "Plain job handler: delete expired rows (expires_at) and retained
   internal terminal rows, marking the storage resources of the deleted
-  rows as touched (same transaction).
+  rows as touched.
 
-  Deletes run in bounded batches of 1000 rows with a heartbeat between
-  batches so long sweeps neither spike the WAL nor outrun the job lease.
+  Deletes run in bounded batches of 1000 rows, each batch in its own
+  transaction, with a heartbeat between batches so long sweeps neither
+  spike the WAL nor outrun the job lease.
 
-  The `:rollback?` param (default false) forces the transaction to rollback
-  instead of commit. Used for testing transactional code without side effects."
+  The `:rollback?` param (default false) forces every batch transaction
+  to rollback instead of commit. Used for testing transactional code
+  without side effects."
   [cfg params]
   (let [min-age (ct/duration (or (:min-age params)
-                                 (cf/get-jobs-retention)))]
-    (db/tx-run! (assoc cfg ::db/rollback (:rollback? params))
-                (fn [{:keys [::db/conn]}]
-                  (let [[deleted-expired touched-expired]
-                        (delete-jobs! cfg conn sql:delete-expired-jobs)
+                                 (cf/get-jobs-retention)))
+        cfg     (assoc cfg ::db/rollback (:rollback? params))
+        [deleted-expired touched-expired]
+        (delete-jobs! cfg sql:delete-expired-jobs)
 
-                        [deleted-retained touched-retained]
-                        (delete-jobs! cfg conn sql:delete-retained-jobs
-                                      (db/interval min-age))]
-                    (l/dbg :hint "jobs gc finished"
-                           :deleted-expired deleted-expired
-                           :touched-expired touched-expired
-                           :deleted-retained deleted-retained
-                           :touched-retained touched-retained)
-                    {:deleted-expired    deleted-expired
-                     :touched-expired    touched-expired
-                     :deleted-retained   deleted-retained
-                     :touched-retained   touched-retained})))))
+        [deleted-retained touched-retained]
+        (delete-jobs! cfg sql:delete-retained-jobs
+                      (db/interval min-age))]
+    (l/dbg :hint "jobs gc finished"
+           :deleted-expired deleted-expired
+           :touched-expired touched-expired
+           :deleted-retained deleted-retained
+           :touched-retained touched-retained)
+    {:deleted-expired    deleted-expired
+     :touched-expired    touched-expired
+     :deleted-retained   deleted-retained
+     :touched-retained   touched-retained}))
 

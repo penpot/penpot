@@ -596,7 +596,7 @@
     ::wrk/tenant  (cf/get :tenant)}
 
    [::default ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
+   {::wrk/parallelism (cf/get :worker-default-parallelism 1)
     ::wrk/queue       :default
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
@@ -605,7 +605,7 @@
     ::db/pool         (ig/ref ::db/pool)}
 
    [::webhook ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
+   {::wrk/parallelism (cf/get :worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
@@ -614,7 +614,7 @@
     ::db/pool         (ig/ref ::db/pool)}
 
    [::binfile ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-binfile-parallelism 1)
+   {::wrk/parallelism (cf/get :worker-binfile-parallelism 1)
     ::wrk/queue       :binfile
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
@@ -623,7 +623,7 @@
     ::db/pool         (ig/ref ::db/pool)}
 
    [::cron ::wrk/runner]
-   {::wrk/parallelism (cf/get ::worker-cron-parallelism 2)
+   {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
     ::wrk/queue       :cron
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
