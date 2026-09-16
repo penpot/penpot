@@ -93,6 +93,7 @@
    [frontend-tests.ui.gradient-handlers-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
+   [frontend-tests.ui.organization-team-switch-test]
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
@@ -206,6 +207,7 @@
    'frontend-tests.ui.gradient-handlers-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
+   'frontend-tests.ui.organization-team-switch-test
    'frontend-tests.ui.routes-test
    'frontend-tests.render-dimensions-test
    'frontend-tests.text-editor-paste-guard-test
