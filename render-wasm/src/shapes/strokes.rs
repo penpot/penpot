@@ -463,6 +463,9 @@ impl Stroke {
     /// so this is a no-op on closed paths and avoids the extra fill draw the
     /// manual caps would otherwise require on open paths.
     pub fn to_skia_linecap(&self) -> Option<skia::paint::Cap> {
+        if self.style != StrokeStyle::Solid {
+            return None;
+        }
         match (self.cap_start, self.cap_end) {
             (Some(StrokeCap::Round), Some(StrokeCap::Round)) => Some(skia::paint::Cap::Round),
             (Some(StrokeCap::Square), Some(StrokeCap::Square)) => Some(skia::paint::Cap::Square),
@@ -585,6 +588,32 @@ mod tests {
         assert_eq!(dashed.style_at_scale(0.03), StrokeStyle::Solid);
         // period 20 * 0.05 = 1.0 >= 0.75, keep dashed
         assert_eq!(dashed.style_at_scale(0.05), StrokeStyle::Dashed);
+    }
+
+    #[test]
+    fn native_linecap_is_used_for_solid_strokes() {
+        let solid = Stroke::new_center_stroke(
+            4.0,
+            StrokeStyle::Solid,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            None,
+            None,
+        );
+        assert_eq!(solid.to_skia_linecap(), Some(skia::paint::Cap::Round));
+    }
+
+    #[test]
+    fn native_linecap_is_skipped_for_dashed_strokes() {
+        let dashed = Stroke::new_center_stroke(
+            4.0,
+            StrokeStyle::Dashed,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            None,
+            None,
+        );
+        assert_eq!(dashed.to_skia_linecap(), None);
     }
 
     #[test]

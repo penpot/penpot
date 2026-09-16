@@ -423,4 +423,43 @@ mod tests {
         assert!(bounds.left < -1., "bounds: {bounds:?}");
         assert!(bounds.right > 104., "bounds: {bounds:?}");
     }
+
+    #[test]
+    fn dashed_stroke_keeps_solid_caps() {
+        let stroke = Stroke::new_center_stroke(
+            4.,
+            StrokeStyle::Dashed,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            Some(7.),
+            Some(7.),
+        );
+        let selrect = Rect::from_xywh(0., 0., 100., 0.);
+        let path = stroke_to_path(&stroke, &horizontal_line(), None, &selrect, None, false)
+            .expect("stroke outline")
+            .to_skia_path(None);
+
+        assert!(path.contains((-1.5, 0.)), "start cap missing");
+        assert!(path.contains((101.5, 0.)), "end cap missing");
+    }
+
+    #[test]
+    fn dashed_stroke_marker_caps_are_not_dashed() {
+        let stroke = Stroke::new_center_stroke(
+            4.,
+            StrokeStyle::Dashed,
+            None,
+            Some(StrokeCap::SquareMarker),
+            Some(3.),
+            Some(3.),
+        );
+        let selrect = Rect::from_xywh(0., 0., 100., 0.);
+        let path = stroke_to_path(&stroke, &horizontal_line(), None, &selrect, None, false)
+            .expect("stroke outline")
+            .to_skia_path(None);
+
+        for x in [100., 102., 104., 106., 107.5] {
+            assert!(path.contains((x, 0.)), "marker has a gap at x = {x}");
+        }
+    }
 }
