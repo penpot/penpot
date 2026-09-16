@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq dist-upgrade; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         python3 \
         unzip \
@@ -417,7 +417,7 @@ RUN set -ex; \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq dist-upgrade; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install init-system-helpers; \
     apt-get -qqy install --no-install-recommends \
       redis-tools \
