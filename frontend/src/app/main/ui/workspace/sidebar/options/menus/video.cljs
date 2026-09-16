@@ -5,11 +5,16 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.video
-  "Proof of concept: plays a video into a shape's image fill.
+  "Plays a video into a shape's image fill.
 
-   Nothing uploads video, so the source is a path the browser can already
+   The source is an uploaded video asset, or a path the browser can already
    reach — a file under `frontend/resources/public/images/` or a full URL. Only
-   the render-wasm renderer paints it; elsewhere the image fill still shows."
+   the render-wasm renderer paints it; elsewhere the image fill still shows.
+
+   A video is stamped when the frame is composed, which is a flat draw: it
+   cannot carry opacity, a blend mode, a blur, a shadow or a stroke. A shape
+   with one of those does not play, and this menu says which one is in the
+   way."
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.workspace.shapes :as dwsh]
@@ -33,14 +38,25 @@
                               (dissoc shape :video)
                               (assoc shape :video source)))))
 
+(def ^:private reason-labels
+  {:opacity "workspace.options.video.blocked.opacity"
+   :blend-mode "workspace.options.video.blocked.blend-mode"
+   :blur "workspace.options.video.blocked.blur"
+   :shadow "workspace.options.video.blocked.shadow"
+   :stroke "workspace.options.video.blocked.stroke"
+   :masked "workspace.options.video.blocked.masked"})
+
 (mf/defc video-menu*
-  [{:keys [ids image-id source is-asset]}]
+  [{:keys [ids image-id source is-asset blocked-reason]}]
   (let [;; `video/playing?` reads the element, which is outside app state, so
         ;; the button tracks it locally.
         playing* (mf/use-state #(video/playing? image-id))
         playing  (deref playing*)
 
-        has-source (not (str/blank? source))
+        blocked-label (get reason-labels blocked-reason)
+
+        has-source (and (not (str/blank? source))
+                        (nil? blocked-label))
 
         on-change
         (mf/use-fn
@@ -75,6 +91,11 @@
                            :selected playing
                            :tooltip-placement "top-left"
                            :icon i/play}])]]
+     ;; Playback was refused: say which property is in the way, so a video that
+     ;; stops after a shadow is added does not look broken.
+     (when (some? blocked-label)
+       [:div {:class (stl/css :blocked)}
+        (tr blocked-label)])
      ;; An uploaded video has nothing to type: its source is the asset itself,
      ;; and removing it means deleting the shape.
      (when-not is-asset

@@ -170,13 +170,17 @@
         (api/set-shape-fills id v false)
 
         :strokes
-        (into [] (api/set-shape-strokes id v false))
+        (let [pending (into [] (api/set-shape-strokes id v false))]
+          (video/sync-shape! shape)
+          pending)
 
         :blend-mode
-        (api/set-shape-blend-mode v)
+        (do (api/set-shape-blend-mode v)
+            (video/sync-shape! shape))
 
         :opacity
-        (api/set-shape-opacity v)
+        (do (api/set-shape-opacity v)
+            (video/sync-shape! shape))
 
         :hidden
         (api/set-shape-hidden v)
@@ -185,13 +189,15 @@
         (api/set-shape-children v)
 
         :blur
-        (api/set-shape-blur v)
+        (do (api/set-shape-blur v)
+            (video/sync-shape! shape))
 
         :background-blur
         (api/set-shape-background-blur v)
 
         :shadow
-        (api/set-shape-shadows v)
+        (do (api/set-shape-shadows v)
+            (video/sync-shape! shape))
 
         :constraints-h
         (api/set-constraints-h v)
@@ -314,6 +320,9 @@
           (ctl/flex-layout? shape)
           (api/set-flex-layout shape))
 
+        ;; Also reached from the effect cases above: a flat video stamp cannot
+        ;; carry opacity, blending, a blur, a shadow or a stroke, so gaining one
+        ;; has to stop playback.
         :video
         (video/sync-shape! shape)
 

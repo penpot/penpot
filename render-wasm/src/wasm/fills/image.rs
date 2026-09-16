@@ -1,8 +1,8 @@
 use crate::error::{Error, Result};
 use crate::get_gpu_state;
+use crate::get_render_state;
 use crate::get_resources;
 use crate::mem;
-use crate::shapes::Fill;
 use crate::state::State;
 use crate::uuid::Uuid;
 use crate::with_state;
@@ -10,23 +10,25 @@ use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 use macros::wasm_error;
 
 fn touch_shapes_with_image(state: &mut State, image_id: Uuid) {
-    let ids: Vec<Uuid> = state
-        .shapes
-        .iter()
-        .filter(|shape| {
-            shape
-                .fills()
-                .any(|f| matches!(f, Fill::Image(i) if i.id() == image_id))
-                || shape
-                    .strokes
-                    .iter()
-                    .any(|s| matches!(&s.fill, Fill::Image(i) if i.id() == image_id))
-        })
-        .map(|shape| shape.id)
-        .collect();
+    let ids: Vec<Uuid> = state.shapes.shapes_with_image(image_id).to_vec();
 
     for id in ids {
         state.touch_shape(id);
+    }
+}
+
+/// Like `touch_shapes_with_image`, but leaves out the shapes whose video is
+/// stamped at compose time: their tiles hold a transparent hole, so a new frame
+/// costs a recomposition and no tile work at all. A shape painting the same
+/// video that cannot be composited — one carrying a shadow, say — still needs
+/// its tiles back.
+fn touch_shapes_not_compositing_image(state: &mut State, image_id: Uuid) {
+    let ids: Vec<Uuid> = state.shapes.shapes_with_image(image_id).to_vec();
+
+    for id in ids {
+        if !get_render_state().is_composited_video(&id, &image_id) {
+            state.touch_shape(id);
+        }
     }
 }
 
@@ -290,7 +292,8 @@ pub extern "C" fn update_image_from_texture() -> Result<()> {
         ) {
             eprintln!("update_image_from_texture error: {}", msg);
         }
-        touch_shapes_with_image(state, upload.ids.image_id);
+
+        touch_shapes_not_compositing_image(state, upload.ids.image_id);
     });
 
     mem::free_bytes()?;

@@ -59,6 +59,14 @@ pub struct ShapesPoolImpl {
     structure: HashMap<usize, Vec<StructureEntry>>,
     /// Scale content values, keyed by index
     scale_content: HashMap<usize, f32>,
+
+    /// Bumped whenever a shape is added or handed out mutably, so derived
+    /// indexes can tell a cached answer from a stale one.
+    revision: u64,
+    /// Image id -> shapes painting it, with the revision it was built at.
+    /// Rebuilt on demand; while nothing mutates shapes (video playback, for
+    /// instance) the lookup stays O(1) instead of walking the whole pool.
+    image_index: Option<(u64, HashMap<Uuid, Vec<Uuid>>)>,
 }
 
 // Type aliases - no longer need lifetimes!
@@ -78,11 +86,19 @@ impl ShapesPoolImpl {
             modifier_uuids: Vec::new(),
             structure: HashMap::default(),
             scale_content: HashMap::default(),
+            revision: 0,
+            image_index: None,
         }
+    }
+
+    #[inline]
+    fn bump_revision(&mut self) {
+        self.revision = self.revision.wrapping_add(1);
     }
 
     pub fn initialize(&mut self, capacity: usize) {
         performance::begin_measure!("shapes_pool_initialize");
+        self.bump_revision();
         self.counter = 0;
         self.uuid_to_idx = HashMap::with_capacity(capacity);
 
@@ -102,6 +118,7 @@ impl ShapesPoolImpl {
     }
 
     pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
+        self.bump_revision();
         if self.counter >= self.shapes.len() {
             // We need more space
             let current_capacity = self.shapes.capacity();
@@ -144,7 +161,40 @@ impl ShapesPoolImpl {
 
     pub fn get_mut(&mut self, id: &Uuid) -> Option<&mut Shape> {
         let idx = *self.uuid_to_idx.get(id)?;
+        self.bump_revision();
         Some(&mut self.shapes[idx])
+    }
+
+    /// Shapes whose fills or strokes paint `image_id`. The index behind it is
+    /// rebuilt only after a shape changed, so a caller that runs every frame
+    /// (video frame uploads) pays for the walk once, not once per frame.
+    pub fn shapes_with_image(&mut self, image_id: Uuid) -> &[Uuid] {
+        let stale = !matches!(&self.image_index, Some((rev, _)) if *rev == self.revision);
+        if stale {
+            self.image_index = Some((self.revision, self.build_image_index()));
+        }
+
+        self.image_index
+            .as_ref()
+            .and_then(|(_, index)| index.get(&image_id))
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    fn build_image_index(&self) -> HashMap<Uuid, Vec<Uuid>> {
+        let mut index: HashMap<Uuid, Vec<Uuid>> = HashMap::default();
+        for shape in self.shapes.iter() {
+            if shape.id.is_nil() || shape.deleted() {
+                continue;
+            }
+            for image_id in shape.image_ids() {
+                let shapes = index.entry(image_id).or_default();
+                if !shapes.contains(&shape.id) {
+                    shapes.push(shape.id);
+                }
+            }
+        }
+        index
     }
 
     /// Returns the current transform modifier matrix for the shape, if any.
@@ -241,6 +291,7 @@ impl ShapesPoolImpl {
 
     #[allow(dead_code)]
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Shape> {
+        self.bump_revision();
         self.shapes.iter_mut()
     }
 
@@ -552,6 +603,98 @@ impl Clone for ShapesPoolImpl {
             modifier_uuids: self.modifier_uuids.clone(),
             structure: self.structure.clone(),
             scale_content: self.scale_content.clone(),
+            revision: self.revision,
+            // Derived like modified_shape_cache: dropped on clone and rebuilt
+            // on demand.
+            image_index: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{Fill, ImageFill};
+
+    fn image_fill(id: Uuid) -> Fill {
+        Fill::Image(ImageFill::new(id, 255, 10, 10, false))
+    }
+
+    fn pool_with_shape(image_id: Uuid) -> (ShapesPool, Uuid) {
+        let mut pool = ShapesPool::new();
+        let shape_id = Uuid::new_v4();
+        pool.add_shape(shape_id).add_fill(image_fill(image_id));
+        (pool, shape_id)
+    }
+
+    #[test]
+    fn finds_the_shapes_painting_an_image() {
+        let image_id = Uuid::new_v4();
+        let (mut pool, shape_id) = pool_with_shape(image_id);
+
+        assert_eq!(pool.shapes_with_image(image_id), &[shape_id]);
+        assert!(pool.shapes_with_image(Uuid::new_v4()).is_empty());
+    }
+
+    #[test]
+    fn lists_every_shape_painting_the_same_image() {
+        let image_id = Uuid::new_v4();
+        let (mut pool, first) = pool_with_shape(image_id);
+        let second = Uuid::new_v4();
+        pool.add_shape(second).add_fill(image_fill(image_id));
+
+        let found = pool.shapes_with_image(image_id).to_vec();
+        assert_eq!(found.len(), 2);
+        assert!(found.contains(&first));
+        assert!(found.contains(&second));
+    }
+
+    #[test]
+    fn a_replaced_fill_is_picked_up() {
+        let image_id = Uuid::new_v4();
+        let replacement = Uuid::new_v4();
+        let (mut pool, shape_id) = pool_with_shape(image_id);
+        assert_eq!(pool.shapes_with_image(image_id), &[shape_id]);
+
+        pool.get_mut(&shape_id)
+            .unwrap()
+            .set_fills(vec![image_fill(replacement)]);
+
+        assert!(pool.shapes_with_image(image_id).is_empty());
+        assert_eq!(pool.shapes_with_image(replacement), &[shape_id]);
+    }
+
+    #[test]
+    fn a_cleared_fill_is_picked_up() {
+        let image_id = Uuid::new_v4();
+        let (mut pool, shape_id) = pool_with_shape(image_id);
+        assert_eq!(pool.shapes_with_image(image_id), &[shape_id]);
+
+        pool.get_mut(&shape_id).unwrap().clear_fills();
+
+        assert!(pool.shapes_with_image(image_id).is_empty());
+    }
+
+    #[test]
+    fn a_deleted_shape_drops_out() {
+        let image_id = Uuid::new_v4();
+        let (mut pool, shape_id) = pool_with_shape(image_id);
+        assert_eq!(pool.shapes_with_image(image_id), &[shape_id]);
+
+        pool.get_mut(&shape_id).unwrap().set_deleted(true);
+
+        assert!(pool.shapes_with_image(image_id).is_empty());
+    }
+
+    #[test]
+    fn a_shape_added_after_the_first_lookup_is_found() {
+        let image_id = Uuid::new_v4();
+        let mut pool = ShapesPool::new();
+        assert!(pool.shapes_with_image(image_id).is_empty());
+
+        let shape_id = Uuid::new_v4();
+        pool.add_shape(shape_id).add_fill(image_fill(image_id));
+
+        assert_eq!(pool.shapes_with_image(image_id), &[shape_id]);
     }
 }

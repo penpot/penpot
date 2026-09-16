@@ -34,11 +34,23 @@
     new-id))
 
 (defn upload-texture-source!
-  "Uploads `source` — an HTMLImageElement, ImageBitmap or HTMLVideoElement — into
-   an existing texture."
+  "Allocates the texture storage and fills it with `source` — an
+   HTMLImageElement, ImageBitmap or HTMLVideoElement. Redefines the texture
+   level, so it is the call to make once per texture (or when the source
+   changes size), not the one to repeat per frame."
   [gl texture source]
   (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
   (.texImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 (.-RGBA ^js gl) (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) source)
+  (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil))
+
+(defn update-texture-source!
+  "Overwrites the pixels of an already-allocated texture with `source`, which
+   must have the same size the texture was allocated with. Used for video
+   frames: unlike `upload-texture-source!` it does not redefine the level, so
+   the storage is not reallocated on every frame."
+  [gl texture source]
+  (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
+  (.texSubImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 0 0 (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) source)
   (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil))
 
 (defn create-webgl-texture-from-image

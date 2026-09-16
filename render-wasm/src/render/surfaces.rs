@@ -988,6 +988,19 @@ impl Surfaces {
         );
     }
 
+    /// Draw `Backbuffer` over whatever `Target` already holds, without clearing
+    /// it first. Used when something was painted underneath — a video frame
+    /// showing through the backbuffer's transparent hole.
+    pub fn draw_backbuffer_over_target(&mut self) {
+        let sampling_options = self.sampling_options;
+        self.backbuffer.draw(
+            self.target.canvas(),
+            (0.0, 0.0),
+            sampling_options,
+            Some(&skia::Paint::default()),
+        );
+    }
+
     /// Replace `Target` pixels with `Backbuffer` (Src blend).
     ///
     /// Used for viewer masked passes: transparent backbuffer regions must not

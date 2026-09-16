@@ -57,6 +57,7 @@
     "text-editor/v2"
     "text-editor-wasm/v1"
     "render-wasm/v1"
+    "video-overlay-wasm/v1"
     "wasm-export/v1"
     "variants/v1"})
 
@@ -84,6 +85,7 @@
     "text-editor-wasm/v1"
     "tokens/numeric-input"
     "render-wasm/v1"
+    "video-overlay-wasm/v1"
     "wasm-export/v1"})
 
 ;; Features that are mainly backend only or there are a proper
@@ -134,6 +136,7 @@
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-text-editor-wasm "text-editor-wasm/v1"
     :feature-render-wasm "render-wasm/v1"
+    :feature-video-overlay-wasm "video-overlay-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"
     nil))

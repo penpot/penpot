@@ -73,6 +73,12 @@ fn draw_image_fill(
     antialias: bool,
     surface_id: SurfaceId,
 ) {
+    // A video stamped at compose time leaves a transparent hole here, so the
+    // frame drawn underneath the backbuffer shows through.
+    if render_state.is_composited_video(&shape.id, &image_fill.id()) {
+        return;
+    }
+
     if draw_svg_image_fill(
         render_state,
         shape,

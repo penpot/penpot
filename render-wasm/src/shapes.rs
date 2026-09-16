@@ -678,6 +678,16 @@ impl Shape {
         self.fills.iter()
     }
 
+    /// Every image this shape paints, from its fills and from its strokes.
+    pub fn image_ids(&self) -> impl Iterator<Item = Uuid> + '_ {
+        let fills = self.fills.iter();
+        let strokes = self.strokes.iter().map(|stroke| &stroke.fill);
+        fills.chain(strokes).filter_map(|fill| match fill {
+            Fill::Image(image) => Some(image.id()),
+            _ => None,
+        })
+    }
+
     pub fn set_fills(&mut self, fills: Vec<Fill>) {
         self.deferred_batch_fills = None;
         self.fills = fills;
@@ -2032,6 +2042,35 @@ mod tests {
             shape.fills.first(),
             Some(&Fill::Solid(SolidColor(Color::TRANSPARENT)))
         )
+    }
+
+    fn image_fill(id: Uuid) -> Fill {
+        Fill::Image(ImageFill::new(id, 255, 10, 10, false))
+    }
+
+    #[test]
+    fn image_ids_reports_fill_and_stroke_images() {
+        let fill_image = Uuid::new_v4();
+        let stroke_image = Uuid::new_v4();
+
+        let mut shape = any_shape();
+        shape.add_fill(Fill::Solid(SolidColor(Color::TRANSPARENT)));
+        shape.add_fill(image_fill(fill_image));
+
+        let mut stroke = Stroke::new_center_stroke(2.0, StrokeStyle::Solid, None, None, None, None);
+        stroke.fill = image_fill(stroke_image);
+        shape.add_stroke(stroke);
+
+        let ids: Vec<Uuid> = shape.image_ids().collect();
+        assert_eq!(ids, vec![fill_image, stroke_image]);
+    }
+
+    #[test]
+    fn image_ids_is_empty_without_image_fills() {
+        let mut shape = any_shape();
+        shape.add_fill(Fill::Solid(SolidColor(Color::TRANSPARENT)));
+
+        assert_eq!(shape.image_ids().count(), 0);
     }
 
     #[test]

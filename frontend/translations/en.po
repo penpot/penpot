@@ -8899,6 +8899,30 @@ msgstr "Use the play button at the header to run the prototype view."
 msgid "workspace.options.video"
 msgstr "Video"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:44
+msgid "workspace.options.video.blocked.blend-mode"
+msgstr "Video does not play on a shape with a blend mode."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:45
+msgid "workspace.options.video.blocked.blur"
+msgstr "Video does not play on a shape with a blur."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:47
+msgid "workspace.options.video.blocked.masked"
+msgstr "Video does not play inside a mask."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:43
+msgid "workspace.options.video.blocked.opacity"
+msgstr "Video does not play on a shape below full opacity."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:46
+msgid "workspace.options.video.blocked.shadow"
+msgstr "Video does not play on a shape with a shadow."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:48
+msgid "workspace.options.video.blocked.stroke"
+msgstr "Video does not play on a shape with a stroke."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:73
 msgid "workspace.options.video.pause"
 msgstr "Pause video"

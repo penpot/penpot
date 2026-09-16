@@ -13,3 +13,4 @@ pub mod text;
 pub mod text_editor;
 pub mod transforms;
 pub mod ui;
+pub mod video;

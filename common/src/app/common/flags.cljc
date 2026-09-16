@@ -214,6 +214,7 @@
    :enable-inspect-styles
    :enable-feature-fdata-objects-map
    :enable-feature-render-wasm
+   :enable-feature-video-overlay-wasm
    :enable-token-import-from-library
    :enable-render-switch
    :enable-render-wasm-info

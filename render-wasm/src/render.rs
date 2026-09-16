@@ -18,6 +18,7 @@ pub mod text;
 pub mod text_editor;
 mod ui;
 mod vector;
+pub mod video;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
@@ -42,9 +43,81 @@ use crate::{get_gpu_state, get_resources, performance};
 
 pub use fonts::*;
 pub use images::*;
+pub use video::{shape_overlay_blockers, video_overlay_eligibility, VideoIneligible, VideoRegistry};
 pub(crate) use resources::RenderResources;
 
 type ClipStack = Vec<(Rect, Option<Corners>, Matrix)>;
+
+/// A shape's own contribution to a clip stack: its bounds, its corner radii and
+/// the transform they are expressed in. Shared by the tree walk and by
+/// `ancestor_clip_stack`, so a caller drawing outside the walk clips exactly the
+/// same way.
+fn clip_entry(
+    element: &Shape,
+    offset: Option<(f32, f32)>,
+    clip_inset: Option<f32>,
+) -> (Rect, Option<Corners>, Matrix) {
+    let mut bounds = element.selrect();
+    if let Some(offset) = offset {
+        let x = bounds.x() - offset.0;
+        let y = bounds.y() - offset.1;
+        let width = bounds.width();
+        let height = bounds.height();
+        bounds.set_xywh(x, y, width, height);
+    }
+    let mut transform = element.transform;
+    transform.post_translate(bounds.center());
+    transform.pre_translate(-bounds.center());
+
+    let corners = match &element.shape_type {
+        Type::Rect(data) => data.corners,
+        Type::Frame(data) => data.corners,
+        _ => None,
+    };
+
+    if let Some(clip_inset) = clip_inset.filter(|&e| e > 0.0) {
+        bounds.inset((clip_inset, clip_inset));
+    }
+
+    (bounds, corners, transform)
+}
+
+/// The pool is not guaranteed acyclic while a file is loading, so ancestor
+/// walks outside the render tree are bounded rather than trusting it.
+const MAX_CLIP_ANCESTOR_DEPTH: u32 = 1024;
+
+/// The clip stack a shape inherits from its ancestors, outermost first — the
+/// same stack `get_children_clip_bounds` accumulates while descending the tree.
+/// Needed by callers that draw a shape outside that walk, such as the video
+/// overlay, which would otherwise paint straight through a clipping board.
+pub(crate) fn ancestor_clip_stack(shapes: ShapesPoolRef, shape: &Shape) -> Option<ClipStack> {
+    let mut clips: ClipStack = Vec::new();
+    let mut current = shape.parent_id;
+    let mut depth = 0;
+
+    while let Some(parent_id) = current.filter(|id| !id.is_nil()) {
+        depth += 1;
+        if depth > MAX_CLIP_ANCESTOR_DEPTH {
+            break;
+        }
+        let Some(parent) = shapes.get(&parent_id) else {
+            break;
+        };
+        if parent.clip() {
+            clips.push(clip_entry(parent, None, None));
+        }
+        current = parent.parent_id;
+    }
+
+    if clips.is_empty() {
+        return None;
+    }
+
+    // Collected innermost first while walking up; the walk produces them
+    // outermost first.
+    clips.reverse();
+    Some(clips)
+}
 
 #[repr(u8)]
 pub enum FrameType {
@@ -141,29 +214,10 @@ impl NodeRenderState {
             return self.clip_bounds.clone();
         }
 
-        let mut bounds = element.selrect();
-        if let Some(offset) = offset {
-            let x = bounds.x() - offset.0;
-            let y = bounds.y() - offset.1;
-            let width = bounds.width();
-            let height = bounds.height();
-            bounds.set_xywh(x, y, width, height);
-        }
-        let mut transform = element.transform;
-        transform.post_translate(bounds.center());
-        transform.pre_translate(-bounds.center());
-
-        let corners = match &element.shape_type {
-            Type::Rect(data) => data.corners,
-            Type::Frame(data) => data.corners,
-            _ => None,
-        };
-
-        if let Some(clip_inset) = clip_inset.filter(|&e| e > 0.0) {
-            bounds.inset((clip_inset, clip_inset));
-        }
-
-        Self::append_clip(self.clip_bounds.clone(), (bounds, corners, transform))
+        Self::append_clip(
+            self.clip_bounds.clone(),
+            clip_entry(element, offset, clip_inset),
+        )
     }
 
     /// Calculates the clip bounds for shadow rendering of a given shape.
@@ -391,6 +445,17 @@ pub(crate) struct RenderState {
     /// Frame id passed as `base_object` for viewer renders; always traversed.
     pub viewer_render_root: Option<Uuid>,
     pub touched_ids: HashSet<Uuid>,
+    /// Images currently backed by a playing video. Frames for these are
+    /// stamped during composition instead of rastered into the tiles.
+    pub videos: VideoRegistry,
+    /// Shape id -> video image id, for the shapes whose video is stamped at
+    /// compose time this frame. Their image fill is left out of the tiles so
+    /// the frame shows through. Refreshed on attach/detach and at the start of
+    /// every render loop.
+    pub composited_videos: HashMap<Uuid, Uuid>,
+    /// `video-overlay-wasm/v1`. With it off the renderer keeps painting video
+    /// frames through the tiles, exactly as before.
+    pub video_overlay_enabled: bool,
     /// Pre-edit extrects for old∪new tile eviction (captured on first touch).
     touched_prev_extrects: HashMap<Uuid, Rect>,
     /// Temporary flag used for off-screen passes (drop-shadow masks, filter surfaces, etc.)
@@ -613,6 +678,9 @@ impl RenderState {
             include_filter: None,
             viewer_render_root: None,
             touched_ids: HashSet::default(),
+            videos: VideoRegistry::new(),
+            composited_videos: HashMap::default(),
+            video_overlay_enabled: false,
             touched_prev_extrects: HashMap::default(),
             ignore_nested_blurs: false,
             preview_mode: false,
@@ -988,6 +1056,13 @@ impl RenderState {
         if self.viewer_masked_pass() {
             self.surfaces.clear_target(skia::Color::TRANSPARENT);
             self.surfaces.copy_backbuffer_to_target_replace();
+        } else if self.has_composited_video() {
+            // Background, then the video frames, then the backbuffer over them.
+            // The backbuffer is transparent where an eligible video sits, so
+            // the frame shows through and anything stacked above it still wins.
+            self.surfaces.clear_target(self.background_color);
+            self.render_video_overlay(tree);
+            self.surfaces.draw_backbuffer_over_target();
         } else {
             self.surfaces
                 .copy_backbuffer_to_target(self.background_color);
@@ -1001,6 +1076,144 @@ impl RenderState {
             ui::render(self, tree);
         }
         debug::render_wasm_label(self);
+    }
+
+    /// What the tile composite clears the backbuffer to. Transparent while a
+    /// video is stamped at compose time, so the hole left in the tiles is not
+    /// filled in with the page background before the frame is drawn under it.
+    /// `compose_frame` paints the background itself in that case.
+    pub fn backbuffer_clear_color(&self) -> skia::Color {
+        if self.has_composited_video() {
+            skia::Color::TRANSPARENT
+        } else {
+            self.background_color
+        }
+    }
+
+    /// Recomputes which shapes have their video stamped at compose time.
+    /// Cheap: one pass over the registered video images, and each of them is
+    /// carried by a handful of shapes at most.
+    pub fn refresh_composited_videos(&mut self, tree: ShapesPoolRef) {
+        self.composited_videos.clear();
+        if !self.video_overlay_enabled || self.videos.is_empty() {
+            return;
+        }
+
+        for shape in tree.iter() {
+            if shape.id.is_nil() || shape.deleted() {
+                continue;
+            }
+            if let Ok(image_id) = video::video_overlay_eligibility(tree, shape, &self.videos) {
+                self.composited_videos.insert(shape.id, image_id);
+            }
+        }
+    }
+
+    /// True when `image_id` is the video this shape has stamped at compose
+    /// time, so the tiles must leave a transparent hole instead of painting the
+    /// poster frame.
+    pub fn is_composited_video(&self, shape_id: &Uuid, image_id: &Uuid) -> bool {
+        self.composited_videos.get(shape_id) == Some(image_id)
+    }
+
+    /// Whether anything is being stamped at compose time. While it is, the tile
+    /// composite leaves the backbuffer transparent so the stamp shows through.
+    pub fn has_composited_video(&self) -> bool {
+        !self.composited_videos.is_empty()
+    }
+
+    /// Stamps each playing video onto Target, before the backbuffer is drawn
+    /// over it. The backbuffer carries a transparent hole where the video sits,
+    /// so shapes above the video still occlude it and shapes below stay hidden.
+    fn render_video_overlay(&mut self, tree: ShapesPoolRef) {
+        if self.composited_videos.is_empty() {
+            return;
+        }
+
+        let zoom = self.viewbox.zoom * self.options.dpr;
+        let pan = self.viewbox.area;
+        let entries: Vec<(Uuid, Uuid)> = self
+            .composited_videos
+            .iter()
+            .map(|(shape_id, image_id)| (*shape_id, *image_id))
+            .collect();
+
+        for (shape_id, image_id) in entries {
+            let Some(shape) = tree.get(&shape_id) else {
+                continue;
+            };
+            let Some(image) = get_resources().images.get(&image_id) else {
+                continue;
+            };
+            let Some(image_fill) = shape.fills().find_map(|fill| match fill {
+                Fill::Image(image_fill) if image_fill.id() == image_id => Some(image_fill.clone()),
+                _ => None,
+            }) else {
+                continue;
+            };
+
+            let clips = ancestor_clip_stack(tree, shape);
+            let container = &shape.selrect;
+            let dest_rect = images::get_image_dest_rect(container, &image_fill);
+            let src_rect = images::get_source_rect(image.dimensions(), &dest_rect, &image_fill);
+            let corners = match &shape.shape_type {
+                Type::Rect(data) => data.corners,
+                Type::Frame(data) => data.corners,
+                _ => None,
+            };
+
+            let mut transform = shape.transform;
+            transform.post_translate(container.center());
+            transform.pre_translate(-container.center());
+
+            let sampling = get_resources().sampling_options;
+            let canvas = self.surfaces.canvas(SurfaceId::Target);
+            canvas.save();
+            canvas.scale((zoom, zoom));
+            canvas.translate((-pan.left, -pan.top));
+
+            if let Some(clips) = clips.as_ref() {
+                for (bounds, clip_corners, clip_transform) in clips.iter() {
+                    canvas.concat(clip_transform);
+                    match clip_corners {
+                        Some(clip_corners) => {
+                            canvas.clip_rrect(
+                                RRect::new_rect_radii(*bounds, clip_corners),
+                                skia::ClipOp::Intersect,
+                                true,
+                            );
+                        }
+                        None => {
+                            canvas.clip_rect(*bounds, skia::ClipOp::Intersect, true);
+                        }
+                    }
+                    canvas.concat(&clip_transform.invert().unwrap_or_default());
+                }
+            }
+
+            canvas.concat(&transform);
+            match corners {
+                Some(corners) => {
+                    canvas.clip_rrect(
+                        RRect::new_rect_radii(*container, &corners),
+                        skia::ClipOp::Intersect,
+                        true,
+                    );
+                }
+                None => {
+                    canvas.clip_rect(*container, skia::ClipOp::Intersect, true);
+                }
+            }
+
+            canvas.draw_image_rect_with_sampling_options(
+                image,
+                Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+                dest_rect,
+                sampling,
+                &skia::Paint::default(),
+            );
+            canvas.restore();
+        }
     }
 
     /// Drawn on Target before the UI surface is composited, so rulers and guides
@@ -2323,11 +2536,9 @@ impl RenderState {
     pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let _start = performance::begin_timed_log!("render_from_cache");
         performance::begin_measure!("render_from_cache");
-        self.surfaces.draw_combined_atlas_to_backbuffer(
-            &self.viewbox,
-            &self.tile_viewbox,
-            self.background_color,
-        );
+        let clear_color = self.backbuffer_clear_color();
+        self.surfaces
+            .draw_combined_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox, clear_color);
         self.present_frame(shapes);
 
         performance::end_measure!("render_from_cache");
@@ -2394,6 +2605,9 @@ impl RenderState {
         sync_render: bool,
     ) -> Result<FrameType> {
         self.clear(tree);
+        // Shape edits can make a playing video eligible or not, so the set is
+        // settled before any tile is rastered with (or without) its hole.
+        self.refresh_composited_videos(tree);
 
         let _start = performance::begin_timed_log!("start_render_loop");
         let scale = self.get_scale();
@@ -2566,17 +2780,18 @@ impl RenderState {
         if should_compose {
             // Fast mode skips the tile atlas; use the same doc-atlas + scale
             // overlays as render_from_cache instead of composing empty slots.
+            let clear_color = self.backbuffer_clear_color();
             if self.options.is_fast_mode() {
                 self.surfaces.draw_combined_atlas_to_backbuffer(
                     &self.viewbox,
                     &self.tile_viewbox,
-                    self.background_color,
+                    clear_color,
                 );
             } else {
                 self.surfaces.draw_tile_atlas_to_backbuffer(
                     &self.viewbox,
                     &self.tile_viewbox,
-                    self.background_color,
+                    clear_color,
                 );
             }
         }
@@ -2634,11 +2849,9 @@ impl RenderState {
         // Same composition as `continue_render_loop` for full frames: snapshot only the
         // drawable tile rect into the atlas (no blur-margin overlap), then blit once.
         if !self.viewer_masked_pass() {
-            self.surfaces.draw_tile_atlas_to_backbuffer(
-                &self.viewbox,
-                &self.tile_viewbox,
-                self.background_color,
-            );
+            let clear_color = self.backbuffer_clear_color();
+            self.surfaces
+                .draw_tile_atlas_to_backbuffer(&self.viewbox, &self.tile_viewbox, clear_color);
         }
 
         let saved_preview_mode = self.preview_mode;
@@ -4585,5 +4798,81 @@ impl RenderState {
 
     pub fn free_gpu_resources(&mut self) {
         get_gpu_state().context.free_gpu_resources();
+    }
+}
+
+#[cfg(test)]
+mod clip_stack_tests {
+    use super::*;
+    use crate::shapes::Type;
+    use crate::state::ShapesPool;
+
+    fn add_board(pool: &mut ShapesPool, clip: bool, x: f32, y: f32) -> Uuid {
+        let id = Uuid::new_v4();
+        let board = pool.add_shape(id);
+        board.set_shape_type(Type::Frame(Default::default()));
+        board.set_selrect(x, y, x + 100.0, y + 100.0);
+        board.set_clip(clip);
+        id
+    }
+
+    fn add_child(pool: &mut ShapesPool, parent_id: Uuid) -> Uuid {
+        let id = Uuid::new_v4();
+        let child = pool.add_shape(id);
+        child.set_shape_type(Type::Rect(Default::default()));
+        child.set_selrect(0.0, 0.0, 10.0, 10.0);
+        child.parent_id = Some(parent_id);
+        id
+    }
+
+    #[test]
+    fn a_shape_without_clipping_ancestors_has_no_clip_stack() {
+        let mut pool = ShapesPool::new();
+        let board = add_board(&mut pool, false, 0.0, 0.0);
+        let child = add_child(&mut pool, board);
+
+        let shape = pool.get(&child).unwrap();
+        assert!(ancestor_clip_stack(&pool, shape).is_none());
+    }
+
+    #[test]
+    fn a_clipping_board_contributes_its_bounds() {
+        let mut pool = ShapesPool::new();
+        let board = add_board(&mut pool, true, 5.0, 7.0);
+        let child = add_child(&mut pool, board);
+
+        let shape = pool.get(&child).unwrap();
+        let clips = ancestor_clip_stack(&pool, shape).expect("a clip stack");
+        assert_eq!(clips.len(), 1);
+        assert_eq!(clips[0].0, pool.get(&board).unwrap().selrect());
+    }
+
+    #[test]
+    fn nested_boards_are_ordered_outermost_first() {
+        let mut pool = ShapesPool::new();
+        let outer = add_board(&mut pool, true, 0.0, 0.0);
+        let inner = add_board(&mut pool, true, 20.0, 20.0);
+        pool.get_mut(&inner).unwrap().parent_id = Some(outer);
+        let child = add_child(&mut pool, inner);
+
+        let shape = pool.get(&child).unwrap();
+        let clips = ancestor_clip_stack(&pool, shape).expect("a clip stack");
+        assert_eq!(clips.len(), 2);
+        assert_eq!(clips[0].0, pool.get(&outer).unwrap().selrect());
+        assert_eq!(clips[1].0, pool.get(&inner).unwrap().selrect());
+    }
+
+    #[test]
+    fn a_board_showing_overflow_contributes_nothing() {
+        let mut pool = ShapesPool::new();
+        let outer = add_board(&mut pool, true, 0.0, 0.0);
+        let inner = add_board(&mut pool, false, 20.0, 20.0);
+        pool.get_mut(&inner).unwrap().parent_id = Some(outer);
+        let child = add_child(&mut pool, inner);
+
+        let shape = pool.get(&child).unwrap();
+        let clips = ancestor_clip_stack(&pool, shape).expect("a clip stack");
+        assert_eq!(clips.len(), 1);
+        assert_eq!(clips[0].0, pool.get(&outer).unwrap().selrect());
     }
 }
