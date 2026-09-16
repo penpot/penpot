@@ -831,6 +831,10 @@ msgstr[1] "%s files have been imported successfully."
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
 
+#: src/app/main/ui/dashboard/import.cljs:704
+msgid "dashboard.import.next-file"
+msgstr "Next file"
+
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
@@ -884,6 +888,10 @@ msgstr "original library"
 #: src/app/main/ui/dashboard/import.cljs:675
 msgid "dashboard.import.connect-selected-libraries"
 msgstr "Connect selected libraries"
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "dashboard.import.review-links"
+msgstr "Review library links"
 
 #, unused
 msgid "dashboard.import.summary.auto-linked"

@@ -829,6 +829,10 @@ msgstr[1] "%s ficheros se han importado correctamente."
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
+#: src/app/main/ui/dashboard/import.cljs:704
+msgid "dashboard.import.next-file"
+msgstr "Siguiente archivo"
+
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
@@ -882,6 +886,10 @@ msgstr "biblioteca original"
 #: src/app/main/ui/dashboard/import.cljs:675
 msgid "dashboard.import.connect-selected-libraries"
 msgstr "Conectar bibliotecas seleccionadas"
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "dashboard.import.review-links"
+msgstr "Revisar vínculos de biblioteca"
 
 #, unused
 msgid "dashboard.import.summary.auto-linked"
