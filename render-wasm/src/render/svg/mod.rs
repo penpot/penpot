@@ -61,9 +61,11 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// `<clipPath>`.
 ///
 /// Layer blur and drop/inner shadows are re-emitted as a native SVG `<filter>`
-/// wrapper. Masks and text strokes still need dedicated SVG re-emission.
+/// wrapper. Masks still need dedicated SVG re-emission.
 /// Solid Inner/Outer and dotted/dashed strokes go out as filled outlines;
-/// image-filled strokes use a linked `<image>` clipped to the stroke.
+/// image-filled strokes use a linked `<image>` clipped to the stroke;
+/// text strokes use `<g opacity>` / glyph clipPath / inverse glyph mask, and
+/// image-filled text strokes use a linked `<image>` under a stroke luminance mask.
 pub fn render_to_svg(
     shared: &mut RenderResources,
     id: &Uuid,
@@ -133,7 +135,7 @@ mod text;
 use document::SvgLayerCanvas;
 use frames::render_frame;
 use groups::render_group;
-use text::render_text_fill;
+use text::{render_text_fill, render_text_strokes};
 
 use document::{effect_attrs, push_text_silhouette_spread_filter, shape_with_selrect_outset};
 use images::{emit_fills, emit_strokes};
@@ -208,6 +210,7 @@ fn render_leaf(
                 builder.open_group(&format!("filter=\"url(#{id})\""));
             }
             render_text_fill(builder, shared, element, draw_matrix)?;
+            render_text_strokes(builder, shared, element, draw_matrix)?;
             if morph_id.is_some() {
                 builder.close_group();
             }
