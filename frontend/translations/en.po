@@ -8895,6 +8895,30 @@ msgstr "Uppercase"
 msgid "workspace.options.use-play-button"
 msgstr "Use the play button at the header to run the prototype view."
 
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:66
+msgid "workspace.options.video"
+msgstr "Video"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:73
+msgid "workspace.options.video.pause"
+msgstr "Pause video"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:80
+msgid "workspace.options.video.placeholder"
+msgstr "clip.mp4"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:74
+msgid "workspace.options.video.play"
+msgstr "Play video"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:86
+msgid "workspace.options.video.remove"
+msgstr "Remove video"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/video.cljs:82
+msgid "workspace.options.video.source"
+msgstr "Video source"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:538, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:560
 msgid "workspace.options.width"
 msgstr "Width"

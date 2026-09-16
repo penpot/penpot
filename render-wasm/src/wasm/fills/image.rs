@@ -1,4 +1,5 @@
 use crate::error::{Error, Result};
+use crate::get_gpu_state;
 use crate::get_resources;
 use crate::mem;
 use crate::shapes::Fill;
@@ -183,6 +184,56 @@ pub extern "C" fn store_image_url(a: u32, b: u32, c: u32, d: u32) -> Result<()> 
     Ok(())
 }
 
+/// A GL texture handed over from JS, as written by `store-image-texture` /
+/// `upload-video-frame!` on the CLJS side.
+struct TextureUpload {
+    ids: ShapeImageIds,
+    is_thumbnail: bool,
+    texture_id: u32,
+    width: i32,
+    height: i32,
+}
+
+const TEXTURE_UPLOAD_SIZE: usize = 48; // header + texture id + width + height
+
+/// Reads a `TextureUpload` out of the shared buffer. The buffer is freed by the
+/// caller on success and here on failure, so a malformed payload cannot leak it.
+fn read_texture_upload() -> Result<TextureUpload> {
+    let bytes = mem::bytes();
+
+    if bytes.len() < TEXTURE_UPLOAD_SIZE {
+        // FIXME: Review if this should be an critical or a recoverable error.
+        eprintln!("read_texture_upload: insufficient data");
+        mem::free_bytes()?;
+        return Err(Error::RecoverableError(
+            "read_texture_upload: insufficient data".to_string(),
+        ));
+    }
+
+    let ids = ShapeImageIds::try_from(&bytes[0..IMAGE_IDS_SIZE])
+        .map_err(|_| Error::CriticalError("Invalid image ids".to_string()))?;
+
+    // FIXME: read bytes in a safe way
+    let read_u32 = |range: std::ops::Range<usize>, what: &str| -> Result<u32> {
+        Ok(u32::from_le_bytes((&bytes[range]).try_into().map_err(
+            |_| Error::CriticalError(format!("Invalid bytes for {}", what)),
+        )?))
+    };
+
+    let is_thumbnail = read_u32(IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE, "is_thumbnail flag")? != 0;
+    let texture_id = read_u32(36..40, "texture id")?;
+    let width = read_u32(40..44, "width")? as i32;
+    let height = read_u32(44..48, "height")? as i32;
+
+    Ok(TextureUpload {
+        ids,
+        is_thumbnail,
+        texture_id,
+        width,
+        height,
+    })
+}
+
 /// Stores an image from an existing WebGL texture, avoiding re-decoding
 /// Expected memory layout:
 /// - bytes 0-15: shape UUID
@@ -194,66 +245,52 @@ pub extern "C" fn store_image_url(a: u32, b: u32, c: u32, d: u32) -> Result<()> 
 #[no_mangle]
 #[wasm_error]
 pub extern "C" fn store_image_from_texture() -> Result<()> {
-    let bytes = mem::bytes();
-
-    // FIXME: where does this 48 come from?
-    if bytes.len() < 48 {
-        // FIXME: Review if this should be an critical or a recoverable error.
-        eprintln!("store_image_from_texture: insufficient data");
-        mem::free_bytes()?;
-        return Err(Error::RecoverableError(
-            "store_image_from_texture: insufficient data".to_string(),
-        ));
-    }
-
-    let ids = ShapeImageIds::try_from(&bytes[0..IMAGE_IDS_SIZE])
-        .map_err(|_| Error::CriticalError("Invalid image ids".to_string()))?;
-
-    // FIXME: read bytes in a safe way
-
-    // Read is_thumbnail flag (4 bytes as u32)
-    let is_thumbnail_bytes = &bytes[IMAGE_IDS_SIZE..IMAGE_HEADER_SIZE];
-    let is_thumbnail_value =
-        u32::from_le_bytes(is_thumbnail_bytes.try_into().map_err(|_| {
-            Error::CriticalError("Invalid bytes for is_thumbnail flag".to_string())
-        })?);
-    let is_thumbnail = is_thumbnail_value != 0;
-
-    // Read GL texture ID (4 bytes as u32)
-    let texture_id_bytes = &bytes[36..40];
-    let texture_id = u32::from_le_bytes(
-        texture_id_bytes
-            .try_into()
-            .map_err(|_| Error::CriticalError("Invalid bytes for texture id".to_string()))?,
-    );
-
-    // Read width and height (8 bytes as two i32s)
-    let width_bytes = &bytes[40..44];
-    let width = i32::from_le_bytes(
-        width_bytes
-            .try_into()
-            .map_err(|_| Error::CriticalError("Invalid bytes for width".to_string()))?,
-    );
-
-    let height_bytes = &bytes[44..48];
-    let height = i32::from_le_bytes(
-        height_bytes
-            .try_into()
-            .map_err(|_| Error::CriticalError("Invalid bytes for height".to_string()))?,
-    );
+    let upload = read_texture_upload()?;
 
     with_state!(state, {
         if let Err(msg) = get_resources().images.add_image_from_gl_texture(
-            ids.image_id,
-            is_thumbnail,
-            texture_id,
-            width,
-            height,
+            upload.ids.image_id,
+            upload.is_thumbnail,
+            upload.texture_id,
+            upload.width,
+            upload.height,
         ) {
             // FIXME: Review if we should return a RecoverableError
             eprintln!("store_image_from_texture error: {}", msg);
         }
-        touch_shapes_with_image(state, ids.image_id);
+        touch_shapes_with_image(state, upload.ids.image_id);
+    });
+
+    mem::free_bytes()?;
+    Ok(())
+}
+
+/// Rebinds an already-stored image to the current contents of a GL texture and
+/// invalidates the tiles of every shape that paints it. Same memory layout as
+/// `store_image_from_texture`.
+///
+/// This is the per-frame entry point for video: the CLJS side owns one texture
+/// per playing video, uploads the decoded frame into it and calls this.
+#[no_mangle]
+#[wasm_error]
+pub extern "C" fn update_image_from_texture() -> Result<()> {
+    let upload = read_texture_upload()?;
+
+    // The caller just bound and wrote the texture from JS, which Skia has no
+    // way to observe. Drop its cached bindings before it samples the texture.
+    get_gpu_state().reset_texture_bindings();
+
+    with_state!(state, {
+        if let Err(msg) = get_resources().images.rebind_gl_texture(
+            upload.ids.image_id,
+            upload.is_thumbnail,
+            upload.texture_id,
+            upload.width,
+            upload.height,
+        ) {
+            eprintln!("update_image_from_texture error: {}", msg);
+        }
+        touch_shapes_with_image(state, upload.ids.image_id);
     });
 
     mem::free_bytes()?;

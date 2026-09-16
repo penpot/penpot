@@ -276,7 +276,13 @@
    [:svg-attrs {:optional true} :map]
    [:svg-defs {:optional true} :map]
    [:svg-transform {:optional true} :map]
-   [:svg-viewbox {:optional true} :map]])
+   [:svg-viewbox {:optional true} :map]
+
+   ;; Video proof of concept: the source played into the shape's image fill,
+   ;; either a name under the static asset folder or a full URL. Only the
+   ;; render-wasm renderer paints it; every other consumer keeps showing the
+   ;; image fill, which doubles as the poster frame.
+   [:video {:optional true} [:maybe :string]]])
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}
@@ -516,7 +522,7 @@
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
-    :plugin-data})
+    :plugin-data :video})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform

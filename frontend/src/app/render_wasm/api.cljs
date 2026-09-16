@@ -16,6 +16,7 @@
    [app.common.fonts :as cfnt]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.media :as cm]
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.helpers :as h]
@@ -45,6 +46,7 @@
    [app.render-wasm.api.enums]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.api.texts :as t]
+   [app.render-wasm.api.video :as video]
    [app.render-wasm.api.webgl :as webgl]
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.gesture :as wasm-gesture]
@@ -490,6 +492,10 @@
 (defn- render
   [timestamp]
   (when (wasm/live?)
+    ;; Upload pending video frames before drawing, so this frame paints the
+    ;; current one instead of the previous.
+    (video/tick!)
+
     ;; SYNC-TILES makes WASM keep the last presented frame while the new tiles
     ;; are rasterized, rather than clearing to the background first. The flag is
     ;; one-shot on both sides: WASM clears it when the render loop starts, so
@@ -510,6 +516,12 @@
         (js/console.error "text-editor overlay/update failed:" e)))
 
     (set! wasm/internal-frame-id nil)
+
+    ;; Playing video has no other trigger to keep the loop alive. Requested
+    ;; after the frame id is cleared so the scheduled frame is the one kept.
+    (when (video/active?)
+      (request-render "video-frame"))
+
     (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
 (defn render-ui-only
@@ -662,6 +674,8 @@
                                 (end-page-transition!)
                                 (throw e))))))]
           (set! wasm/internal-frame-id frame-id))))))
+
+(video/set-render-requester! request-render)
 
 (defn request-render-preserving-target
   "Like `request-render`, but keeps the previously presented frame on screen
@@ -845,15 +859,6 @@
   nil)
 
 
-(defn- get-texture-id-for-gl-object
-  "Registers a WebGL texture with Emscripten's GL object system and returns its ID"
-  [texture]
-  (let [gl-obj (unchecked-get wasm/internal-module "GL")
-        textures (.-textures ^js gl-obj)
-        new-id (.getNewId ^js gl-obj textures)]
-    (aset textures new-id texture)
-    new-id))
-
 (defn- svg-blob?
   [^js blob]
   (str/starts-with? (.-type blob) "image/svg"))
@@ -905,7 +910,7 @@
   [shape-id image-id thumbnail? img]
   (when-let [gl (webgl/get-webgl-context)]
     (let [texture (webgl/create-webgl-texture-from-image gl img)
-          texture-id (get-texture-id-for-gl-object texture)
+          texture-id (webgl/register-texture! texture)
           width  (.-width ^js img)
           height (.-height ^js img)
           ;; Header: 32 bytes (2 UUIDs) + 4 bytes (thumbnail)
@@ -964,6 +969,17 @@
                           :cause cause)
                (rx/empty)))))}))
 
+(defn- still-image-ids
+  "Image ids the renderer has to fetch. Video fills are skipped: their frames
+   are uploaded by `app.render-wasm.api.video`, so downloading the container as
+   an image would burn the bandwidth and then fail to decode."
+  [fills]
+  (into #{}
+        (comp (keep :fill-image)
+              (remove #(cm/video-type? (:mtype %)))
+              (map :id))
+        (seq fills)))
+
 (defn- get-fill-images
   [leaf]
   (filter :fill-image (:fills leaf)))
@@ -1018,7 +1034,7 @@
                  (store-image-url! id (cf/resolve-file-media {:id id} thumbnail?))
                  (when (zero? cached-image?)
                    (fetch-image shape-id id thumbnail?))))
-             (types.fills/get-image-ids fills))))))
+             (still-image-ids fills))))))
 
 (defn- stroke-image-ids
   [strokes]
@@ -1743,6 +1759,9 @@
    update-text-layouts fires for all text shapes after fonts load — not
    just the first shape that triggered the fetch."
   [shapes]
+  ;; Newly added shapes never reach `set-wasm-attr!`, which is what starts a
+  ;; video on an edit, so a shape created with one is started here instead.
+  (run! video/sync-shape! shapes)
   (let [total-shapes (count shapes)
         {:keys [thumbnails full text-font-state]}
         (loop [index 0
@@ -2035,6 +2054,9 @@
    (set-objects objects render-callback nil false))
   ([objects render-callback on-shapes-ready force-sync]
    (when (wasm/live?)
+     ;; Start (and stop) the videos this page asks for. Cheap: one pass over
+     ;; the objects, and attachments that did not change keep playing.
+     (video/sync-shapes! objects)
      (perf/begin-measure "set-objects")
      (let [shapes (shapes-in-tree-order objects)
            total-shapes (count shapes)]
@@ -2611,6 +2633,9 @@
     :as payload}]
   (ug/dispatch! (ug/event "penpot:wasm:reload-start"))
   (reset! wasm/reloading? true)
+  ;; Attached videos hold texture ids from the context that is about to be
+  ;; destroyed; a frame uploaded after the reload would wrap a stale texture.
+  (video/detach-all!)
   (let [fonts (derive-font-resources base-objects fonts)]
     (-> (p/resolved nil)
         ;; Keep teardown strict (`_clean_up` + deleteContext) but do not

@@ -55,6 +55,14 @@ impl GpuState {
         })
     }
 
+    /// Drops the texture bindings Skia believes are current. Required whenever
+    /// JS writes a texture behind Ganesh's back (`texImage2D` from the CLJS
+    /// side): Skia caches which texture is bound to each unit, so after an
+    /// external bind it would keep drawing with a stale one.
+    pub fn reset_texture_bindings(&mut self) {
+        self.context.reset_gl_texture_bindings();
+    }
+
     pub fn max_texture_size(&self) -> i32 {
         self.context
             .max_texture_size()

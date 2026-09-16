@@ -33,7 +33,9 @@
   (sm/check-fn schema:input))
 
 (defn validate-media-type!
-  ([upload] (validate-media-type! upload cm/image-types))
+  ;; `upload-types` rather than `image-types`: a file can also hold video.
+  ;; Callers that must stay image-only pass `cm/image-types` explicitly.
+  ([upload] (validate-media-type! upload cm/upload-types))
   ([upload allowed]
    (when-not (contains? allowed (:mtype upload))
      (ex/raise :type :validation

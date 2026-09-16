@@ -40,7 +40,7 @@
 (defn validate-file
   "Check that a file obtained with the file javascript API is valid."
   [file]
-  (when-not (contains? cm/image-types (.-type file))
+  (when-not (contains? cm/upload-types (.-type file))
     (ex/raise :type :validation
               :code :media-type-not-allowed
               :hint (str/ffmt "media type % is not supported" (.-type file))))

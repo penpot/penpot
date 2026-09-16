@@ -160,7 +160,9 @@
                   "image/png"     0x02
                   "image/gif"     0x03
                   "image/webp"    0x04
-                  "image/svg+xml" 0x05)]
+                  "image/svg+xml" 0x05
+                  "video/mp4"     0x06
+                  "video/webm"    0x07)]
         (buf/write-short buffer (+ offset 2) val)))
 
     (if (and (some? ref-file)
@@ -241,7 +243,10 @@
                                     0x02 "image/png"
                                     0x03 "image/gif"
                                     0x04 "image/webp"
-                                    0x05 "image/svg+xml")]
+                                    0x05 "image/svg+xml"
+                                    0x06 "video/mp4"
+                                    0x07 "video/webm"
+                                    nil)]
                     {:fill-opacity opacity
                      :fill-image   (cond-> {:id                id
                                             :width             width

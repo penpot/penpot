@@ -38,7 +38,32 @@
    [tubax.core :as tubax]))
 
 (def accept-image-types
-  (str/join "," media/image-types))
+  (str/join "," media/upload-types))
+
+(defn- read-video-dimensions
+  "Resolves the intrinsic size of a video blob. Nothing on the backend decodes
+   video, so the client is what reports the dimensions an upload is stored
+   with."
+  [blob]
+  (p/create
+   (fn [resolve reject]
+     (let [url (js/URL.createObjectURL blob)
+           element (js/document.createElement "video")
+           done (fn [f value]
+                  (js/URL.revokeObjectURL url)
+                  (f value))]
+       (set! (.-preload element) "metadata")
+       (set! (.-muted element) true)
+       (set! (.-onloadedmetadata element)
+             (fn [_]
+               (done resolve {:width (.-videoWidth element)
+                              :height (.-videoHeight element)})))
+       (set! (.-onerror element)
+             (fn [_]
+               (done reject (ex/error :type :validation
+                                      :code :invalid-video
+                                      :hint "could not read the video dimensions"))))
+       (set! (.-src element) url)))))
 
 (defn- optimize
   [input]
@@ -123,17 +148,19 @@
   "Uploads `blob` to `file-id` as a chunked media object using the
   three-step session API.  Returns an observable that emits the
   assembled file-media-object map."
-  [{:keys [file-id name is-local blob]}]
+  [{:keys [file-id name is-local blob width height]}]
   (let [mtype (.-type blob)]
     (->> (uploads/upload-blob-chunked blob)
          (rx/mapcat
           (fn [{:keys [session-id]}]
             (rp/cmd! :assemble-file-media-object
-                     {:session-id session-id
-                      :file-id    file-id
-                      :is-local   is-local
-                      :name       name
-                      :mtype      mtype}))))))
+                     (cond-> {:session-id session-id
+                              :file-id    file-id
+                              :is-local   is-local
+                              :name       name
+                              :mtype      mtype}
+                       (some? width)  (assoc :width width)
+                       (some? height) (assoc :height height))))))))
 
 (defn process-uris
   [{:keys [file-id local? name uris mtype on-image on-svg]}]
@@ -175,18 +202,26 @@
             (and (not force-media)
                  (= (.-type blob) "image/svg+xml")))
 
-          (upload-blob [blob]
-            (let [params {:file-id  file-id
-                          :name     (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))
-                          :is-local local?
-                          :blob     blob}]
+          (upload-blob* [blob dimensions]
+            (let [params (merge {:file-id  file-id
+                                 :name     (or name (if (dmm/file? blob) (media/strip-image-extension (.-name blob)) "blob"))
+                                 :is-local local?
+                                 :blob     blob}
+                                dimensions)]
               (if (>= (.-size blob) chunk-size)
                 (upload-blob-chunked params)
                 (rp/cmd! :upload-file-media-object
-                         {:file-id  file-id
-                          :name     (:name params)
-                          :is-local local?
-                          :content  blob}))))
+                         (merge {:file-id  file-id
+                                 :name     (:name params)
+                                 :is-local local?
+                                 :content  blob}
+                                dimensions)))))
+
+          (upload-blob [blob]
+            (if (media/video-type? (.-type blob))
+              (->> (rx/from (read-video-dimensions blob))
+                   (rx/mapcat #(upload-blob* blob %)))
+              (upload-blob* blob nil)))
 
           (extract-content [blob]
             (let [name (or name (.-name blob))]

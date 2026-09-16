@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu*]]
@@ -21,6 +22,8 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.video :refer [video-menu*]]
+   [app.render-wasm.api.video :as video]
    [rumext.v2 :as mf]))
 
 (mf/defc options*
@@ -80,7 +83,19 @@
           (refs/parents-by-ids ids))
 
         parents
-        (mf/deref parents-by-ids-ref)]
+        (mf/deref parents-by-ids-ref)
+
+        ;; Video is painted by re-uploading frames into the shape's image fill,
+        ;; and only the wasm renderer does that.
+        render-wasm?
+        (features/use-feature "render-wasm/v1")
+
+        video-image-id
+        (when render-wasm? (video/image-fill-id shape))
+
+        ;; An uploaded video asset needs no source field, only playback.
+        video-asset?
+        (and render-wasm? (some? (video/video-fill shape)))]
 
     [:*
      [:> layer-menu* {:ids ids
@@ -126,6 +141,12 @@
        :type type
        :values shape
        :applied-tokens applied-tokens}]
+
+     (when (some? video-image-id)
+       [:> video-menu* {:ids ids
+                        :image-id video-image-id
+                        :source (video/shape-source shape)
+                        :is-asset video-asset?}])
 
      [:> stroke-menu* {:ids ids
                        :type type

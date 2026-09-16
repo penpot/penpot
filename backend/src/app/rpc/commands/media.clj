@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -52,7 +53,11 @@
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
-   [:content media.v/schema:upload]])
+   [:content media.v/schema:upload]
+   ;; Only video sends these: nothing on the backend can read them from the
+   ;; file, so the client reports what it decoded.
+   [:width {:optional true} ::sm/int]
+   [:height {:optional true} ::sm/int]])
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"
@@ -170,9 +175,31 @@
       :always
       (assoc ::image (process-main-image info)))))
 
+(defn- process-video
+  "Video is stored and served, never decoded: nothing here reads its
+   dimensions or renders a frame to thumbnail. The client sends the dimensions
+   it read from the file. Shaped like `process-image` so the caller does not
+   care which one ran."
+  [content width height]
+  (when-not (and width height)
+    (ex/raise :type :validation
+              :code :missing-video-dimensions
+              :hint "video uploads must report the dimensions the client decoded"))
+  (let [info (assoc content
+                    :ts (ct/now)
+                    :width width
+                    :height height)]
+    (assoc info ::image (process-main-image info))))
+
+(defn- process-content
+  [cfg {:keys [mtype] :as content} width height]
+  (if (cm/video-type? mtype)
+    (process-video content width height)
+    (process-image cfg content)))
+
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
-   {:keys [id file-id is-local name content from-url? from-chunks?]}]
+   {:keys [id file-id is-local name content width height from-url? from-chunks?]}]
 
   (let [tpoint (ct/tpoint)
         id     (or id (uuid/next))
@@ -192,7 +219,7 @@
            :path (str (:path content))
            :origin origin)
 
-    (let [result  (process-image cfg content)
+    (let [result  (process-content cfg content width height)
           image   (sto/put-object! storage (::image result))
           thumb   (when-let [params (::thumb result)]
                     (sto/put-object! storage params))
@@ -453,7 +480,9 @@
    [:is-local   ::sm/boolean]
    [:name       [:string {:max 250}]]
    [:mtype      :string]
-   [:id         {:optional true} ::sm/uuid]])
+   [:id         {:optional true} ::sm/uuid]
+   [:width      {:optional true} ::sm/int]
+   [:height     {:optional true} ::sm/int]])
 
 (sv/defmethod ::assemble-file-media-object
   {::doc/added "2.17"

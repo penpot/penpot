@@ -398,6 +398,38 @@ impl ImageStore {
         Ok(())
     }
 
+    /// Rebinds an already-registered image to a different GL texture, or to the
+    /// same texture after its contents changed. Video frames go through here:
+    /// the CLJS side uploads each decoded frame into one texture it owns and
+    /// calls this, which re-wraps it as a fresh `skia::Image`. Mutating the
+    /// texture under a live `Image` is not enough — Skia keys its caches
+    /// (filters, mipmaps, tile contents) on the image's unique id, so it would
+    /// keep serving the frame it first saw.
+    pub fn rebind_gl_texture(
+        &mut self,
+        id: Uuid,
+        is_thumbnail: bool,
+        texture_id: u32,
+        width: i32,
+        height: i32,
+    ) -> Result<()> {
+        let Some(context) = self.context.as_mut() else {
+            return Err(crate::error::Error::CriticalError(
+                "Cannot rebind a GL texture without a GPU context".to_string(),
+            ));
+        };
+        let image = create_image_from_gl_texture(context, texture_id, width, height)?;
+
+        let key = (id, is_thumbnail);
+        if let Some(previous) = self.images.remove(&key) {
+            self.total_bytes -= previous.bytes;
+        }
+        let bytes = (width as usize) * (height as usize) * 4;
+        self.insert_entry(key, StoredImage::Gpu(image), bytes);
+
+        Ok(())
+    }
+
     pub fn contains(&self, id: &Uuid, is_thumbnail: bool) -> bool {
         self.images.contains_key(&(*id, is_thumbnail))
     }

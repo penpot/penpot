@@ -14,6 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
+   [app.render-wasm.api.video :as video]
    [app.render-wasm.svg-filters :as svg-filters]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
@@ -312,6 +313,9 @@
 
           (ctl/flex-layout? shape)
           (api/set-flex-layout shape))
+
+        :video
+        (video/sync-shape! shape)
 
         ;; Property not in WASM
         nil))))

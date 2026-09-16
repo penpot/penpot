@@ -23,6 +23,24 @@
           (when current-ctx
             (.-GLctx ^js current-ctx)))))))
 
+(defn register-texture!
+  "Registers a WebGL texture with Emscripten's GL object system and returns its ID,
+   which is what WASM needs to wrap the texture as a Skia image."
+  [texture]
+  (let [gl-obj (unchecked-get wasm/internal-module "GL")
+        textures (.-textures ^js gl-obj)
+        new-id (.getNewId ^js gl-obj textures)]
+    (aset textures new-id texture)
+    new-id))
+
+(defn upload-texture-source!
+  "Uploads `source` — an HTMLImageElement, ImageBitmap or HTMLVideoElement — into
+   an existing texture."
+  [gl texture source]
+  (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) texture)
+  (.texImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 (.-RGBA ^js gl) (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) source)
+  (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil))
+
 (defn create-webgl-texture-from-image
   "Creates a WebGL texture from an HTMLImageElement or ImageBitmap and returns the texture object"
   [gl image-element]
@@ -32,8 +50,8 @@
     (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_WRAP_T ^js gl) (.-CLAMP_TO_EDGE ^js gl))
     (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MIN_FILTER ^js gl) (.-LINEAR ^js gl))
     (.texParameteri ^js gl (.-TEXTURE_2D ^js gl) (.-TEXTURE_MAG_FILTER ^js gl) (.-LINEAR ^js gl))
-    (.texImage2D ^js gl (.-TEXTURE_2D ^js gl) 0 (.-RGBA ^js gl) (.-RGBA ^js gl) (.-UNSIGNED_BYTE ^js gl) image-element)
     (.bindTexture ^js gl (.-TEXTURE_2D ^js gl) nil)
+    (upload-texture-source! gl texture image-element)
     texture))
 
 ;; FIXME: temporary function until we are able to keep the same <canvas> across pages.
