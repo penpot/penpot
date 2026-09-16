@@ -1066,6 +1066,10 @@ impl RenderState {
     pub fn prepare_sync_shape_render(&mut self) {
         self.surfaces.clear_tile_atlas();
         self.surfaces.invalidate_tile_cache();
+
+        if self.viewer_masked_pass() {
+            self.surfaces.clear_backbuffer(skia::Color::TRANSPARENT);
+        }
     }
 
     /// NOTE:
