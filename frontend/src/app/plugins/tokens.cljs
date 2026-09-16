@@ -149,13 +149,10 @@
 
 (defn- font-families-resolved-value->js
   "Converts a resolved fontFamilies value (a tokenscript list symbol) into the
-   documented `string[]` shape rather than leaking the raw tokenscript structure."
+   documented `string[]` shape."
   [resolved-value]
-  (let [v (ts/tokenscript-symbols->penpot-unit resolved-value)]
-    (cond
-      (nil? v) nil
-      (sequential? v) (clj->js v)
-      :else #js [v])))
+  (some-> (ts/font-family-symbols->penpot-unit resolved-value)
+          (clj->js)))
 
 (defn- get-resolved-value
   [token tokens-tree]
