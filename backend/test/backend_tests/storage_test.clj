@@ -487,7 +487,12 @@
 
       ;; without skip-delay the future deleted row is not processed
       (let [res (th/run-task! :objects-gc {})]
-        (t/is (= 0 (:processed res)))))))
+        (t/is (= 0 (:processed res))))
+
+      ;; with skip-delay the future deleted row IS processed immediately
+      (let [res (th/run-task! :objects-gc {:skip-delay true})]
+        (t/is (= 1 (:processed res)))
+        (t/is (nil? (th/db-get :file-media-object {:id (:id result-1)})))))))
 
 (t/deftest put-object-write-failure-leaves-pending-row
   (let [storage (-> (:app.storage/storage th/*system*)

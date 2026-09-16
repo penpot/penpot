@@ -122,6 +122,17 @@
                                 :progress {:total 100 :current 100}}))))
     (t/is (nil? (:progress (get-row job-id))))))
 
+(t/deftest report-job-progress-persists-rapid-reports
+  (let [job-id (mk-job! {})
+        _      (jobs/claim! {::db/pool th/*pool*} job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+        _      (mgmt! :report-job-progress {:job-id  job-id
+                                            :progress {:total 10 :current 3}})
+        _      (mgmt! :report-job-progress {:job-id  job-id
+                                            :progress {:total 10 :current 4}})
+        row    (get-row job-id)]
+    (t/testing "the second immediate report is not throttled away"
+      (t/is (= {:total 10 :current 4} (:progress row))))))
+
 (t/deftest complete-job-marks-completed-with-result
   (let [cfg    {::db/pool th/*pool*}
         job-id (mk-job! {})
@@ -155,6 +166,28 @@
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
       (t/is (nil? (:result row))))))
+
+(t/deftest complete-job-with-unserializable-result-stores-null
+  (let [cfg    {::db/pool th/*pool*}
+        job-id (mk-job! {})
+        _      (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
+    (jobs/complete! cfg job-id (Object.))
+    (let [row (get-row job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (nil? (:result row))))))
+
+(t/deftest complete-and-fail-clean-throttle-state
+  (let [cfg     {::db/pool th/*pool*}
+        job-id1 (mk-job! {})
+        job-id2 (mk-job! {})]
+    (jobs/claim! cfg job-id1 (:scheduled-at (th/db-get :job {:id job-id1} :id :scheduled-at)))
+    (jobs/claim! cfg job-id2 (:scheduled-at (th/db-get :job {:id job-id2} :id :scheduled-at)))
+    (jobs/heartbeat! cfg job-id1)
+    (jobs/progress! cfg job-id2 {:step 1})
+    (jobs/complete! cfg job-id1)
+    (jobs/fail! cfg job-id2 {:code "x"})
+    (t/is (not (contains? @@#'jobs/heartbeats job-id1)))
+    (t/is (not (contains? @@#'jobs/progresses job-id2)))))
 
 (t/deftest complete-and-fail-respect-first-terminal-wins
   (let [cfg        {::db/pool th/*pool*}

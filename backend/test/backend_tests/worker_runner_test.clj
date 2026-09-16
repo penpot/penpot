@@ -270,6 +270,20 @@
       (t/is (= 1 (count @received)))
       (t/is (= "completed" (:status (get-row job-id)))))))
 
+(t/deftest runner-unknown-job-name-fails-fast
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job! {:name "no-such-job"
+                               :scheduled-at scheduled-at
+                               :max-retries 3})]
+    (push-payload! job-id scheduled-at)
+    (run-one! (mk-cfg {}))
+    (let [row (get-row job-id)]
+      (t/testing "no retries burned on a permanently-unknown name"
+        (t/is (= "failed" (:status row)))
+        (t/is (= 0 (:retry-num row)))
+        (t/is (nil? (:completed-at row)))
+        (t/is (= "not-found" (:ex-type (:error row))))))))
+
 (t/deftest invoke-executes-handlers-in-process-with-decoded-params
   (let [raw-params {:object "snapshot"
                     :deleted-at "2026-01-01T00:00:00Z"

@@ -201,6 +201,44 @@
     (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
                                         WHERE label = ?" label]))))))
 
+(t/deftest submit-dedupe-rolls-back-on-insert-failure
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        opts   {::jobs/name   :echo
+                ::jobs/params params
+                ::jobs/dedupe true
+                ::jobs/label  "atomic-label"}
+        kept   (jobs/submit! cfg opts)
+        calls  (atom 0)
+        orig   @#'db/exec-one!]
+    ;; fault the INSERT (2nd statement): the DELETE must roll back too
+    (alter-var-root #'db/exec-one!
+                    (constantly (fn [& args]
+                                  (when (= 2 (swap! calls inc))
+                                    (throw (ex-info "boom" {})))
+                                  (apply orig args))))
+    (try
+      (t/is (thrown? Exception (jobs/submit! cfg opts)))
+      (t/testing "the original row survives, no duplicate left behind"
+        (t/is (some? (jobs/get-job cfg kept)))
+        (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-label"])))))
+      (finally
+        (alter-var-root #'db/exec-one! (constantly orig))))))
+
+(t/deftest submit-accepts-bare-connectable-cfg
+  ;; callers like file-snapshots pass a raw connection/pool instead of a
+  ;; cfg map (regression: contains? on a connection object throws)
+  (let [defs (get-job-defs)
+        prev @@#'jobs/defs-registry]
+    (try
+      (reset! @#'jobs/defs-registry defs)
+      (let [job-id (jobs/submit! th/*pool* {::jobs/name   :echo
+                                            ::jobs/params (make-params)})]
+        (t/is (uuid? job-id))
+        (t/is (some? (jobs/get-job th/*pool* job-id))))
+      (finally
+        (reset! @#'jobs/defs-registry prev)))))
+
 (t/deftest plain-handler-is-testable-without-integrant
   (let [params (make-params)]
     (t/is (= params (echo-handler {} params))))

@@ -53,16 +53,6 @@
                     [sql:claim-job job-id scheduled-at])
       (db/get-update-count)))
 
-(defn- encode-result
-  [job-name result]
-  (try
-    (db/json result)
-    (catch Throwable cause
-      (l/err :hint "unable to serialize job result to JSON"
-             :job-name job-name
-             :cause cause)
-      nil)))
-
 (defn- get-exception-type
   "Extract a human-readable exception type for observability."
   [error]
@@ -154,7 +144,11 @@
             (l/err :hint "unhandled exception on job"
                    ::l/context (assoc (cf/logging-context) :params job)
                    :cause cause)
-            (if (>= (:retry-num job) (:max-retries job))
+            ;; Unknown job names never heal by retrying (no rolling
+            ;; deploy will register them on this backend), so they fail
+            ;; fast without burning max-retries or churning modified_at.
+            (if (or (>= (:retry-num job) (:max-retries job))
+                    (= :no-job-definition (:code edata)))
               {:status "failed" :error cause}
               {:status "retry" :error cause})))))
     (finally
@@ -230,7 +224,7 @@
                             [jobs/sql:complete-job
                              (ct/now)
                              (ct/now)
-                             (encode-result (:name job) (:result result))
+                             (jobs/encode-result (:name job) (:result result))
                              (:id job)])
               nil))
 

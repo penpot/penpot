@@ -205,6 +205,25 @@
                                    ::jobs/params {:x 1}
                                    ::jobs/timeout (ct/duration {:seconds 130})}))))))
 
+(t/deftest request-raises-connection-timeout-to-per-call-override
+  (let [pool     (make-pool)
+        cfg      (make-cfg pool)
+        seen     (atom nil)
+        orig     rds/set-timeout
+        override (ct/duration {:seconds 999})
+        _        (with-responder pool (fn [_params] {:ok {:fast 1}}))]
+    ;; an override above the pool default is honored, not capped
+    (with-redefs [rds/set-timeout (fn [conn timeout]
+                                    (reset! seen timeout)
+                                    (orig conn timeout))]
+      (t/is (= {:fast 1}
+               (jobs/request! cfg {::jobs/queue  :media
+                                   ::jobs/cmd    :process
+                                   ::jobs/params {:x 1}
+                                   ::jobs/timeout override}))))
+    (t/is (= (.toMillis ^java.time.Duration (ct/plus override (ct/duration {:seconds 30})))
+             (.toMillis ^java.time.Duration @seen)))))
+
 (t/deftest late-reply-is-cleaned-by-the-worker-expire
   (let [pool (make-pool)
         cfg  (make-cfg pool)

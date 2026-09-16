@@ -72,7 +72,7 @@
    ::sm/result schema:report-job-progress-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id progress]}]
-  (jobs/progress! cfg job-id progress)
+  (jobs/progress! cfg job-id progress {::jobs/force? true})
   {})
 
 ;; ---- RPC METHOD: COMPLETE-JOB

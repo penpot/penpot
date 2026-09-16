@@ -427,8 +427,9 @@
 
 (defn get-jobs-request-timeout
   "Default timeout for the ephemeral request! calls (waiting for the
-  reply-key blpop); can be overridden per call (must stay below the
-  pooled connection command timeout, which is raised per call)."
+  reply-key blpop); can be overridden per call. Any override is applied
+  by raising the pooled connection command timeout for the duration of
+  the call, which the pool restores on return."
   []
   (or (c/get config :jobs-request-timeout)
       (ct/duration {:minutes 2})))

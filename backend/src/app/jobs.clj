@@ -78,8 +78,8 @@
 (defn get-defs
   "The registry for submit/lookup: the one provided on the cfg has
   precedence over the module-level one (used by tests)."
-  [cfg defs]
-  (or defs (get cfg ::defs) @defs-registry))
+  [cfg]
+  (or (get cfg ::defs) @defs-registry))
 
 (def ^:private definitions-validator (sm/validator schema:job-defs))
 
@@ -168,11 +168,11 @@
   encodes them as plain JSON and inserts a row into the `job` table.
   Fire-and-forget: returns the job id immediately.
 
-  NOTE: the dedupe semantics match the legacy `wrk/submit!`: a non-atomic
-  DELETE of not-yet-due 'new' rows with the same name/queue/label followed by
-  the INSERT. Concurrent cross-backend submissions can, in rare race
-  conditions, produce duplicated 'new' rows (accepted risk, see
-  prod-infra documentation)."
+  NOTE: the dedupe DELETE and the INSERT run atomically: joined to
+  the caller's transaction when the cfg provides `::db/conn`, wrapped
+  in their own transaction otherwise. Concurrent cross-backend
+  submissions can, in rare race conditions, produce duplicated 'new'
+  rows (accepted risk, see prod-infra documentation)."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
                ::dedupe ::label]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
@@ -180,7 +180,7 @@
 
   (check-options! options)
 
-  (let [job-def      (get-job-def (get-defs cfg nil) name)
+  (let [job-def      (get-job-def (get-defs cfg) name)
         params       (validate-params! job-def params)
         delay        (ct/duration delay)
         now          (ct/now)
@@ -191,29 +191,33 @@
         tenant       (cf/get :tenant)
         job-name     (d/name name)
         queue        (str/ffmt "%:%" tenant (d/name queue))
-        conn         (db/get-connectable cfg)
-        ;; Dedupe is non-atomic: we delete not-started jobs with the same
-        ;; name/queue/label, then insert. A race between backends could create
-        ;; duplicates, but this is acceptable: cross-backend races are rare,
-        ;; jobs are idempotent, and dedupe is best-effort.
-        deleted      (when dedupe
-                       (-> (db/exec-one! conn [sql:remove-not-started-jobs
-                                               job-name queue label now])
-                           (db/get-update-count)))]
-
-    (l/trc :hint "submit job"
-           :name job-name
-           :job-id (str id)
-           :queue queue
-           :label label
-           :dedupe (boolean dedupe)
-           :delay (ct/format-duration delay)
-           :replace (or deleted 0))
-
-    (db/exec-one! conn [sql:insert-new-job id job-name props queue
-                        label priority max-retries
-                        now now scheduled-at])
-
+        ;; Dedupe is best-effort: we delete not-started jobs with the
+        ;; same name/queue/label, then insert. A race between backends
+        ;; could create duplicates, but this is acceptable:
+        ;; cross-backend races are rare, jobs are idempotent, and
+        ;; dedupe is best-effort.
+        insert!      (fn [conn]
+                       (let [deleted (when dedupe
+                                       (-> (db/exec-one! conn [sql:remove-not-started-jobs
+                                                               job-name queue label now])
+                                           (db/get-update-count)))]
+                         (l/trc :hint "submit job"
+                                :name job-name
+                                :job-id (str id)
+                                :queue queue
+                                :label label
+                                :dedupe (boolean dedupe)
+                                :delay (ct/format-duration delay)
+                                :replace (or deleted 0))
+                         (db/exec-one! conn [sql:insert-new-job id job-name props queue
+                                             label priority max-retries
+                                             now now scheduled-at])))]
+    ;; Without a caller connection both statements share one
+    ;; transaction so a failed INSERT cannot orphan a committed
+    ;; DELETE; with one they join the caller transaction as before.
+    (if (and (map? cfg) (contains? cfg ::db/conn))
+      (insert! (::db/conn cfg))
+      (db/tx-run! cfg (fn [{:keys [::db/conn]}] (insert! conn))))
     id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -367,14 +371,20 @@
   context.
 
   Like `heartbeat!`, always writes through the connection pool, never
-  through the caller's transaction."
+  through the caller's transaction.
+
+  The `::force?` option bypasses the throttle: coarse external callers
+  (e.g. the management API) report sparse significant milestones where
+  every report counts, unlike hot in-runner loops where intermediate
+  beats are redundant."
   ([cfg progress]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
        (progress! cfg job-id progress))))
-  ([cfg job-id progress]
+  ([cfg job-id progress] (progress! cfg job-id progress nil))
+  ([cfg job-id progress {:keys [::force?]}]
    (when (uuid? job-id)
-     (when (should-write? progresses job-id (ct/now) progress-interval)
+     (when (or force? (should-write? progresses job-id (ct/now) progress-interval))
        (db/tx-run! (or (::db/pool cfg) cfg)
                    (fn [{:keys [::db/conn]}]
                      (let [now (ct/now)]
@@ -416,6 +426,20 @@
                     [sql:claim-external-job job-id scheduled-at])
       (db/get-update-count)))
 
+(defn encode-result
+  "Serialize a job result to JSON, dropping unserializable values to nil
+  with a warning instead of throwing (a throw here would leave the row
+  stuck in `running` until the orphan lease fires). Shared by the runner
+  and the management API."
+  [job-name result]
+  (try
+    (db/json result)
+    (catch Throwable cause
+      (l/err :hint "unable to serialize job result to JSON"
+             :job-name (some-> job-name str)
+             :cause cause)
+      nil)))
+
 (defn complete!
   "Mark a running job as completed with the (JSON-encodable) result.
   Conditional on the non-terminal running/retry states (first-terminal
@@ -425,19 +449,23 @@
   ([cfg job-id]
    (complete! cfg job-id nil))
   ([cfg job-id result]
-   (-> (db/exec-one! (db/get-connectable cfg)
-                     [sql:complete-job (ct/now) (ct/now)
-                      (when (some? result) (db/json result)) job-id])
-       (db/get-update-count))))
+   (let [n (-> (db/exec-one! (db/get-connectable cfg)
+                             [sql:complete-job (ct/now) (ct/now)
+                              (when (some? result) (encode-result nil result)) job-id])
+               (db/get-update-count))]
+     (cleanup-throttle! job-id)
+     n)))
 
 (defn fail!
   "Mark a running job as failed with the error payload (a JSON object
   with at least a :code). Conditional on the non-terminal running/retry
   states (first-terminal wins). Returns the number of affected rows."
   [cfg job-id error]
-  (-> (db/exec-one! (db/get-connectable cfg)
-                    [sql:fail-job (ct/now) (db/json error) job-id])
-      (db/get-update-count)))
+  (let [n (-> (db/exec-one! (db/get-connectable cfg)
+                            [sql:fail-job (ct/now) (db/json error) job-id])
+              (db/get-update-count))]
+    (cleanup-throttle! job-id)
+    n))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REQUEST (ephemeral request/response, no row, no dispatcher)
@@ -509,9 +537,9 @@
   "Ephemeral request/response (no job row, no dispatcher): pushes a JSON
   payload [request-id, reply-key, cmd, params] to the target queue and
   blocks on the reply-key with a per-call timeout (defaults to
-  :jobs-request-timeout; a per-call override must stay below the pooled
-  connection command timeout, which is raised for the duration of the
-  call and restored by the pool dispose-fn on return).
+  :jobs-request-timeout). Any per-call override is applied by raising
+  the pooled connection command timeout for the duration of the call,
+  which the pool dispose-fn restores on return.
 
   On success returns the decoded `:ok` payload; an `:error` reply
   propagates as an exception; on timeout raises `:request-timeout` and
@@ -579,7 +607,7 @@
 
   Returns the handler result."
   [cfg]
-  (let [job-def (get-job-def (get-defs cfg nil) (get cfg ::name))
+  (let [job-def (get-job-def (get-defs cfg) (get cfg ::name))
         decoded (decode-params job-def (get cfg ::params))]
     (binding [*job-id* (get cfg ::job-id)]
       ((::handler job-def) decoded))))
