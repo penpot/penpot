@@ -366,7 +366,10 @@ mod tests {
             .compute_tight_bounds();
 
         // Center stroke of width 4 grows the square by 2 on every side.
-        assert!(bounds.left > -2.5 && bounds.right < 102.5, "bounds: {bounds:?}");
+        assert!(
+            bounds.left > -2.5 && bounds.right < 102.5,
+            "bounds: {bounds:?}"
+        );
     }
 
     #[test]

@@ -366,8 +366,8 @@ mod tests {
     /// Samples a converted circle and returns its largest radius error.
     fn circle_conversion_error(radius: f32) -> f32 {
         let center = skia::Point::new(0., 0.);
-        let converted =
-            Path::from_skia_path_accurate(skia::Path::circle(center, radius, None)).to_skia_path(None);
+        let converted = Path::from_skia_path_accurate(skia::Path::circle(center, radius, None))
+            .to_skia_path(None);
 
         let mut measure = skia::PathMeasure::new(&converted, false, None);
         let length = measure.length();
