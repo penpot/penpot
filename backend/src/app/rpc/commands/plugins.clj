@@ -45,10 +45,15 @@
         plugins (-> plugins
                     (update :ids #(vec (distinct (conj % plugin-id))))
                     (assoc-in [:data plugin-id] plugin))]
-    (db/update! conn :profile
-                {:props (db/tjson (assoc (:props profile) :plugins plugins))}
-                {:id profile-id}
-                {::db/return-keys false})
+
+    (when (> (count (:ids plugins)) ctp/max-registry-entries)
+      (ex/raise :type :validation
+                :code :too-many-plugins
+                :hint "the plugin registry has reached its maximum size"
+                :max-entries ctp/max-registry-entries))
+
+    (profile/persist-props! conn profile-id (:props profile)
+                            (assoc (:props profile) :plugins plugins))
     plugin))
 
 (def ^:private
@@ -68,8 +73,6 @@
         plugins (-> plugins
                     (update :ids #(vec (remove (partial = plugin-id-str) %)))
                     (update :data dissoc plugin-id-str))]
-    (db/update! conn :profile
-                {:props (db/tjson (assoc (:props profile) :plugins plugins))}
-                {:id profile-id}
-                {::db/return-keys false})
+    (profile/persist-props! conn profile-id (:props profile)
+                            (assoc (:props profile) :plugins plugins))
     nil))
