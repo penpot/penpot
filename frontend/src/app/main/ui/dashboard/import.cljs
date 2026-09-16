@@ -390,16 +390,17 @@
 
 (mf/defc library-resolution*
   {::mf/private true}
-  [{:keys [unresolved-file selection on-select]}]
+  [{:keys [unresolved-file selection on-select on-disconnect]}]
   (let [candidates (:pending unresolved-file)
-        disconnected* (mf/use-state #{})
-        disconnected  (deref disconnected*)
         on-change-disconnected
         (mf/use-fn
+         (mf/deps selection candidates on-select on-disconnect)
          (fn [id]
-           (swap! disconnected*
-                  (fn [s]
-                    (if (contains? s id) (disj s id) (conj s id))))))]
+           (if (contains? selection id)
+             (on-disconnect id)
+             (let [{:keys [candidates]} (d/seek #(= id (:id %)) candidates)]
+               (when-let [first-c (first candidates)]
+                 (on-select id (str (:id first-c))))))))]
 
     ;; Pre-select first candidate for each library
     (mf/with-effect [candidates]
@@ -436,7 +437,7 @@
                                  :label (str (:name c) " (" (:project-name c) ")")})
                               candidates)
                selected (get selection id)
-               is-conected (not (contains? disconnected id))]
+               is-conected (contains? selection id)]
            [:tr {:class (stl/css :library-resolution-item)
                  :key (dm/str id)}
             [:td {:class (stl/css :library-resolution-item-name)}
@@ -647,7 +648,7 @@
 
 (mf/defc import-library-resolution-stage*
   {::mf/private true}
-  [{:keys [current-unresolved-file selection on-select
+  [{:keys [current-unresolved-file selection on-select on-disconnect
            visited all-visited?
            on-wizard-prev on-wizard-next]}]
   [:*
@@ -655,7 +656,8 @@
     [:> library-resolution*
      {:unresolved-file current-unresolved-file
       :selection selection
-      :on-select on-select}]]
+      :on-select on-select
+      :on-disconnect on-disconnect}]]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
@@ -899,7 +901,12 @@
         (mf/use-fn
          (mf/deps selection)
          (fn [old-lib-id candidate-id]
-           (swap! selection* assoc old-lib-id candidate-id)))]
+           (swap! selection* assoc old-lib-id candidate-id)))
+
+        manage-on-disconnect
+        (mf/use-fn
+         (fn [old-lib-id]
+           (swap! selection* dissoc old-lib-id)))]
 
     (mf/with-effect [visited unresolved-files]
       (when (and (seq unresolved-files)
@@ -968,6 +975,7 @@
          {:current-unresolved-file current-unresolved-file
           :selection selection
           :on-select manage-on-select
+          :on-disconnect manage-on-disconnect
           :visited visited
           :all-visited? all-visited?
           :on-wizard-prev on-wizard-prev
