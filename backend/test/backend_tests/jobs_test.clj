@@ -256,6 +256,10 @@
                                   ::jobs/params (make-params)})]
 
     (t/testing "first heartbeat writes"
+      ;; Backdate modified-at: submit and heartbeat can land in the same
+      ;; millisecond, which would make a strict > assertion flaky.
+      (th/db-update! :job {:modified-at (ct/in-past {:seconds 5})}
+                     {:id job-id})
       (jobs/heartbeat! cfg job-id)
       (let [row (jobs/get-job cfg job-id)]
         (t/is (> (inst-ms (:modified-at row)) (inst-ms (:created-at row))))))
