@@ -135,6 +135,23 @@ async function requireFile(filename, instruction) {
   }
 }
 
+// Cargo metadata --no-deps reads the manifest without requiring unused targets'
+// dependencies to be cached. Only local feature aliases need expansion here.
+export function defaultFeatures(definitions) {
+  const enabled = new Set();
+  const visit = (name) => {
+    if (enabled.has(name)) return;
+    enabled.add(name);
+    for (const child of definitions[name] ?? []) visit(child);
+  };
+  visit("default");
+  if ([...enabled].some((name) => /^(stats|profile)(-|$)/.test(name)))
+    throw new Error(
+      "Default Cargo features enable renderer diagnostics; use a plain release manifest",
+    );
+  return [...enabled].sort();
+}
+
 async function preflight(options) {
   await requireFile(
     "/opt/emsdk/emsdk_env.sh",
@@ -220,7 +237,8 @@ export async function run(options) {
       },
       build: {
         mode: "release",
-        features: [],
+        featurePolicy: "manifest-defaults",
+        features: null,
         target: "frontend",
         prepared: true,
       },
@@ -304,6 +322,27 @@ export async function run(options) {
       ),
     );
     result.metadata.environment.playwright = packageJson.version;
+    const manifest = JSON.parse(
+      execFileSync(
+        "cargo",
+        [
+          "metadata",
+          "--offline",
+          "--locked",
+          "--no-deps",
+          "--format-version",
+          "1",
+        ],
+        { cwd: path.join(root, "render-wasm"), encoding: "utf8" },
+      ),
+    );
+    const renderer = manifest.packages.find(
+      (item) =>
+        item.manifest_path === path.join(root, "render-wasm/Cargo.toml"),
+    );
+    if (!renderer)
+      throw new Error("Renderer package missing from Cargo metadata");
+    result.metadata.build.features = defaultFeatures(renderer.features);
     // Disallow package-manager network fallback in a prepared run.
     const buildStart = performance.now();
     await execute("./build", ["frontend", "--offline", "--locked"], {
@@ -312,6 +351,7 @@ export async function run(options) {
       env: {
         ...process.env,
         PENPOT_WASM_PREPARED: "1",
+        PENPOT_WASM_FUNCTION_NAMES: "0",
         BUILD_MODE: "release",
         NODE_ENV: "production",
         RENDER_TARGET: "frontend",

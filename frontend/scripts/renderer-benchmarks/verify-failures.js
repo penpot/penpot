@@ -30,6 +30,7 @@ try {
     "cancel-frame",
     "blocked-wasm",
     "page-crash",
+    "report",
   ]) {
     const context = await browser.newContext({
       viewport: options.viewport,
@@ -84,7 +85,36 @@ try {
             return 1;
           };
         });
-      if (fault === "page-crash") {
+      if (fault === "report") {
+        const report = await page.evaluate((c) => {
+          const value = {
+            scope: "Diagnostic report",
+            metadata: {},
+            warnings: [],
+            cases: [
+              {
+                ...c,
+                status: "complete",
+                unattempted: 0,
+                attempts: [
+                  { warmup: false, status: "ok", metrics: { timeToFullMs: 2 } },
+                ],
+              },
+            ],
+          };
+          globalThis.rendererBenchmark.showResult(value);
+          return {
+            result: globalThis.rendererBenchmarkResult,
+            text: document.querySelector("pre").textContent,
+          };
+        }, benchmarkCase);
+        assert.equal(
+          report.result.cases[0].attempts[0].metrics.timeToFullMs,
+          2,
+        );
+        assert.match(report.text, /median 2\.000/);
+        assert.match(report.text, /1 valid, 0 invalid/);
+      } else if (fault === "page-crash") {
         const crashed = page.waitForEvent("crash");
         const cdp = await context.newCDPSession(page);
         void cdp.send("Page.crash").catch(() => {});
