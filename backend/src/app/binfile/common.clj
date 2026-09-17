@@ -325,8 +325,14 @@
   same numbers travel on the returned file's metadata as `::audit/props`,
   so the RPC command that paid for the derive reports them on its own
   audit event. An ordinary file read never reaches this function, so an
-  ordinary read neither times nor logs anything."
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode?]
+  ordinary read neither times nor logs anything.
+
+  With `include-base-data?` true the returned file also carries the
+  decoded merge-base document under `::base-data`, which is the value
+  the replay starts from. A caller that is about to compare the branch
+  with its base reads the branch file with that flag and takes the
+  value, and it never decodes the same snapshot a second time."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode? include-base-data?]
   (let [tpoint (ct/tpoint)
 
         branch (db/get* conn :file-branch {:branch-file-id id})
@@ -367,6 +373,14 @@
 
         rows (db/exec! conn [sql:get-branch-changes id])
 
+        ;; the decoded merge-base document. It is what the replay starts
+        ;; from, and `process-changes` builds its result with persistent
+        ;; updates and never writes into its input, so this value stays
+        ;; the pre-replay state while `data` becomes the branch. A caller
+        ;; that needs the merge base takes this value instead of decoding
+        ;; the same snapshot a second time.
+        base-data (:data base)
+
         ;; the derive replays the log batch by batch, so each batch is
         ;; decoded exactly once. `depth` is the flattened op count, the
         ;; quantity `files_branch.clj::check-oplog-depth-limit!` limits,
@@ -376,7 +390,7 @@
                   (let [changes (blob/decode changes)]
                     [(cpc/process-changes data changes)
                      (+ depth (count changes))]))
-                [(:data base) 0]
+                [base-data 0]
                 rows)
 
         data (if decode? data (blob/encode data))
@@ -402,6 +416,12 @@
         (assoc :version (or (:version base) (:version file)))
         (cond-> (some? (:migrations base))
           (assoc :migrations (:migrations base)))
+        (cond-> include-base-data?
+          ;; the comparison's `base` is the value the replay started from,
+          ;; which is the merge base as decoded. The replay returns the
+          ;; branch's own state in `data`, so a comparison handed `data`
+          ;; as its base would compare the branch with itself.
+          (assoc ::base-data base-data))
         ;; the numbers travel with the value, because the RPC audit event
         ;; of the read that paid for this derive reads `::audit/props` off
         ;; the result metadata
@@ -422,7 +442,8 @@
            load-data?
            throw-if-not-exists?
            lock-for-update?
-           lock-for-share?]
+           lock-for-share?
+           include-base-data?]
     :or {lock-for-update? false
          lock-for-share? false
          load-data? true
@@ -430,7 +451,8 @@
          decode? true
          include-deleted? false
          throw-if-not-exists? true
-         realize? false}
+         realize? false
+         include-base-data? false}
     :as options}]
 
   (assert (db/connection? conn) "expected cfg with valid connection")
@@ -475,7 +497,7 @@
 
               file
               (if branch?
-                (branch-file-data cfg file decode?)
+                (branch-file-data cfg file decode? include-base-data?)
                 (->> file
                      (fmigr/resolve-applied-migrations cfg)
                      (fdata/resolve-file-data cfg)))

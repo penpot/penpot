@@ -243,7 +243,12 @@
 (defn- get-base-data
   "The merge-base `:data` from the branch's base snapshot. Raises when the
   snapshot cannot be resolved: silently falling back to main would degrade
-  the three-way merge into \"branch overwrites main\" without conflicts."
+  the three-way merge into \"branch overwrites main\" without conflicts.
+
+  Prefer `branch-base-data` where the branch file was read with
+  `:include-base-data? true`: the derive decoded the merge base to replay
+  the op log over it, so this function would decode the same snapshot a
+  second time."
   [cfg {:keys [source-file-id base-snapshot-id] :as branch}]
   (when-not base-snapshot-id
     (ex/raise :type :not-found
@@ -251,6 +256,20 @@
               :hint "the branch has no merge-base snapshot"
               :branch-id (:id branch)))
   (:data (fsnap/get-snapshot cfg source-file-id base-snapshot-id)))
+
+(defn- branch-base-data
+  "The comparison's `base`: the merge-base document that a branch file
+  read with `:include-base-data? true` carries under `::bfc/base-data`.
+  That document is the state the branch's op log was replayed over, that
+  is the merge base before the replay. The file's `:data` holds the
+  branch's own state, so a comparison against `:data` would compare the
+  branch with itself. Raises when the key is absent, so a read that
+  forgot the flag fails loudly instead of comparing against nil."
+  [branch-file]
+  (or (::bfc/base-data branch-file)
+      (ex/raise :type :assertion
+                :code :branch-base-data-missing
+                :hint "the branch file was read without `:include-base-data? true`")))
 
 (defn- release-base-snapshot!
   "Reschedule a branch's base snapshot for normal deletion: it is pinned
@@ -593,14 +612,19 @@
   Raises on failure instead of degrading: the caller decides whether the
   result is worth caching, and a value computed from an error must never
   enter the summary cache."
-  [cfg main-data {:keys [source-file-id branch-file-id ahead-revn behind-revn] :as branch}]
+  [cfg main-data {:keys [source-file-id branch-file-id ahead-revn behind-revn]}]
   (if (and (zero? ahead-revn) (zero? behind-revn))
     [0 0 0]
     (let [main-data   (or main-data (:data (bfc/get-file cfg source-file-id :realize? true)))
+          ;; the derive hands back the merge base it replayed the log over,
+          ;; so the comparison's `base` costs one decode of the snapshot
+          ;; rather than two
+          branch-file (bfc/get-file cfg branch-file-id :realize? true
+                                    :include-base-data? true)
           branch-data (bm/remap-refs
-                       (:data (bfc/get-file cfg branch-file-id :realize? true))
+                       (:data branch-file)
                        (branch-id-map cfg branch-file-id source-file-id))
-          base-data   (get-base-data cfg branch)
+          base-data   (branch-base-data branch-file)
           clean-count (fn [m] (let [s (:stats m)]
                                 (+ (:added s) (:modified s) (:deleted s))))
           fwd (when (pos? ahead-revn)
@@ -646,8 +670,9 @@
 (defn cached-diff-counts
   "`branch-diff-counts!` behind the summary cache, degrading to zeros with
   a warning when the base snapshot cannot be resolved: a listing is
-  read-only, and merge/update DO refuse loudly in that situation
-  (`get-base-data`). A value computed from an error never enters the cache.
+  read-only, and merge/update DO refuse loudly in that situation (reading
+  the branch file raises `:base-snapshot-missing`). A value computed from
+  an error never enters the cache.
 
   `branch` carries the key tuple and the pair being compared, with
   `source-file-id` naming main and `branch-file-id` the branch, whichever
@@ -759,14 +784,15 @@
           dir         (or direction :branch->main)
           main-file   (-> (bfc/get-file cfg (:source-file-id branch) :realize? true)
                           (check-file-size-limits! :compare))
-          branch-file (bfc/get-file cfg (:branch-file-id branch) :realize? true)
+          branch-file (bfc/get-file cfg (:branch-file-id branch)
+                                    :realize? true :include-base-data? true)
           log         (-> (branch-log cfg (:branch-file-id branch))
                           (check-oplog-depth-limit! (:branch-file-id branch) :compare))
           main-data   (:data main-file)
           branch-data (bm/remap-refs
                        (:data branch-file)
                        (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
-          base-data   (get-base-data cfg branch)
+          base-data   (branch-base-data branch-file)
           ;; only the branch->main direction may be bounded to the pages
           ;; the branch touched: the other direction is main's changes and
           ;; nothing here knows which pages those are
@@ -849,8 +875,9 @@
                                (check-file-size-limits! :merge))
                _           (-> (branch-log cfg branch-file-id)
                                (check-oplog-depth-limit! branch-file-id :merge))
-               branch-file (bfc/get-file cfg branch-file-id :realize? true)
-               base-data   (get-base-data cfg branch)
+               branch-file (bfc/get-file cfg branch-file-id
+                                         :realize? true :include-base-data? true)
+               base-data   (branch-base-data branch-file)
 
                ;; canonicalize the branch's local refs to main's ids: the
                ;; branch file id (components, library color/typography
@@ -1070,19 +1097,39 @@
                team  (teams/get-team conn :profile-id profile-id :file-id branch-file-id)
                delay (ldel/get-deletion-delay team)
 
-               ;; update applies main's changes INTO the branch, so the
-               ;; canonical local ids are the branch's: re-point main/base
-               ;; local refs (file id + paired media) to the branch's ids;
-               ;; media ADDED on main gets fresh ids pre-allocated here and
-               ;; its rows copied into the branch only if the update applies.
+               ;; Two id maps, one per direction of the crossing.
+               ;;
+               ;; The COMPARISON runs in main's frame, the frame the merge
+               ;; base was captured in, the frame the compare view uses
+               ;; (`files_branch.clj::branch-id-map` in
+               ;; `files_branch.clj::get-branch-diff`), and the only frame
+               ;; the branch's inherited content agrees with. A branch stores
+               ;; no data, so `binfile.clj::branch-file-data` replays its op
+               ;; log over that base and everything it inherited carries the
+               ;; base's ids. Comparing in the branch's frame instead
+               ;; rewrites main's and the base's local references to the
+               ;; branch file id, and a self reference in main is then
+               ;; unequal to the branch's own copy of it, so every shape
+               ;; main touched that carries one reads as an edit on both
+               ;; sides.
+               base-data   base-raw
+               main-raw    (:data main-file)
+               branch-cmp  (bm/remap-refs (:data branch-file)
+                                          (branch-id-map cfg branch-file-id main-id))
+
+               ;; The WRITE runs in the branch's frame: a reference is only a
+               ;; reference in the file it names, so main's file id and
+               ;; main's media rows are re-pointed at the branch's ids before
+               ;; the change reaches the branch. Media ADDED on main has no
+               ;; branch row yet, so it gets a fresh id here and its row is
+               ;; copied below only if the update applies.
                pairs       (media-pairs cfg main-id branch-file-id)
-               new-media   (unpaired-media-rows cfg main-id (:data main-file) pairs)
+               new-media   (unpaired-media-rows cfg main-id main-raw pairs)
                fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
-               id-map      (-> pairs
+               apply-map   (-> pairs
                                (merge fresh-map)
                                (assoc main-id branch-file-id))
-               base-data   (bm/remap-refs base-raw id-map)
-               main-data   (bm/remap-refs (:data main-file) id-map)
+               main-data   (bm/remap-refs main-raw apply-map)
 
                ;; did the branch carry its OWN changes before this update?
                ;; (revn moved since the base was last positioned)
@@ -1116,8 +1163,7 @@
                                {::db/return-keys false})))
 
                merge-summary
-               (bm/compute-merge base-data main-data
-                                 (:data branch-file) :main->branch)
+               (bm/compute-merge base-data main-raw branch-cmp :main->branch)
 
                conflicts  (:conflicts merge-summary)
                resolved?  (fn [c] (bm/conflict-resolved? c (get resolutions (:id c))))
@@ -1145,7 +1191,7 @@
              ;; assignment compute-changes uses internally here, so it can
              ;; be reused for the unsupported-kinds gate without re-diffing.
              (let [{:keys [changes unsupported]}
-                   (bm/compute-changes base-data (:data branch-file) main-data
+                   (bm/compute-changes base-data branch-cmp main-raw
                                        (or inverted {})
                                        merge-summary)]
                (cond
@@ -1178,9 +1224,10 @@
                      ;; under the pre-allocated ids the changes reference
                      (copy-media-rows! conn branch-file-id fresh-map new-media)
 
-                     (let [updated (-> branch-file
+                     (let [applied (bm/remap-changes changes apply-map)
+                           updated (-> branch-file
                                        (update :revn inc)
-                                       (update :data #(cpc/process-changes % changes)))
+                                       (update :data #(cpc/process-changes % applied)))
                            libs    (bfc/get-resolved-file-libraries cfg updated)
                            errors  (not-empty (cfv/validate-file updated libs))
                            updated (if errors
@@ -1199,7 +1246,7 @@
                                     :revn (:revn updated)
                                     :version (:version updated)
                                     :features (into-array (:features updated))
-                                    :changes (blob/encode (vec changes))}
+                                    :changes (blob/encode (vec applied))}
                                    {::db/return-keys false})
 
                        ;; SQUASH: the new base (main's current state)

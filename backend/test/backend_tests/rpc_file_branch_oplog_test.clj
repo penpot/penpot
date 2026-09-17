@@ -14,6 +14,7 @@
   (:require
    [app.common.features :as cfeat]
    [app.common.time :as ct]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.rpc :as-alias rpc]
@@ -208,3 +209,101 @@
                           (or (nil? deleted-at)
                               (ct/is-after? deleted-at (ct/in-future {:days 400}))))
                         rows)))))))
+
+(t/deftest update-from-main-compares-in-main-frame
+  ;; A branch stores no data: its document is the base snapshot plus the op
+  ;; log, so every reference it inherited names MAIN. A local reference is a
+  ;; self reference in both files, because a branch keeps main's colours and
+  ;; typographies under the same entity ids, so the comparison must run in
+  ;; main's frame and the change that lands in the branch must still name the
+  ;; branch.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          main-id  (:id file)
+          page-id  (-> (th/command! {::th/type :get-file
+                                     ::rpc/profile-id (:id profile)
+                                     :id main-id})
+                       :result :data :pages first)
+          color-id (uuid/random)
+          shape-id (uuid/random)
+          fills    (fn [ref-file color]
+                     [{:fill-color color
+                       :fill-opacity 1
+                       :fill-color-ref-id color-id
+                       :fill-color-ref-file ref-file}])]
+
+      ;; main publishes a colour of its own and one of its shapes uses it, so
+      ;; the shape carries main's file id in a self reference
+      (apply-change* profile main-id
+                     {:type :add-color
+                      :color {:id color-id :name "Brand" :color "#ff0000" :opacity 1}})
+      (apply-change* profile main-id
+                     {:type :add-obj
+                      :page-id page-id
+                      :id shape-id
+                      :parent-id uuid/zero
+                      :frame-id uuid/zero
+                      :obj (-> (cts/setup-shape
+                                {:id shape-id :name "Referenced" :type :rect
+                                 :parent-id uuid/zero :frame-id uuid/zero})
+                               (assoc :fills (fills main-id "#ff0000")))})
+
+      (let [create         (create-branch* profile main-id "main-frame")
+            branch-id      (:id create)
+            branch-file-id (:branch-file-id create)]
+
+        (t/testing "main's repaint is not a conflict, and is not logged as a branch change"
+          (apply-change* profile main-id
+                         {:type :mod-obj
+                          :page-id page-id
+                          :id shape-id
+                          :operations [{:type :set :attr :fills :val (fills main-id "#00ff00")}]})
+          (let [out (th/command! {::th/type :update-branch-from-main
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :updated (-> out :result :status))))
+          (let [out (th/command! {::th/type :get-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id branch-file-id})]
+            (t/is (= "#00ff00" (get-in out [:result :data :pages-index page-id
+                                             :objects shape-id :fills 0 :fill-color]))))
+          ;; main's own change arrives through the repositioned base, so the
+          ;; net the update writes is empty. A ref left in main's frame would
+          ;; make this shape differ from the new base and put it in the log.
+          (t/is (empty? (oplog-rows branch-file-id))))
+
+        (t/testing "a genuine conflict still reports"
+          (apply-change* profile main-id
+                         {:type :mod-obj
+                          :page-id page-id
+                          :id shape-id
+                          :operations [{:type :set :attr :fills :val (fills main-id "#0000ff")}]})
+          (apply-change* profile branch-file-id
+                         {:type :mod-obj
+                          :page-id page-id
+                          :id shape-id
+                          :operations [{:type :set :attr :fills :val (fills branch-file-id "#ffffff")}]})
+          (let [out (th/command! {::th/type :update-branch-from-main
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id})]
+            (t/is (= :conflicts (-> out :result :status)))
+            (t/is (= 1 (count (-> out :result :conflicts))))
+            (t/is (= shape-id (-> out :result :conflicts first :id)))))
+
+        (t/testing "taking main keeps the branch writeable"
+          (let [out (th/command! {::th/type :update-branch-from-main
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id
+                                  :resolutions {shape-id :main}})]
+            (t/is (nil? (:error out)))
+            (t/is (= :updated (-> out :result :status))))
+          (let [out (th/command! {::th/type :get-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id branch-file-id})]
+            (t/is (= "#0000ff" (get-in out [:result :data :pages-index page-id
+                                             :objects shape-id :fills 0 :fill-color])))))))))

@@ -644,6 +644,57 @@
                                       colors
                                       colors)))))))
 
+(def ^:private reference-attrs
+  "Shape attrs whose value IS a reference to the file that owns the entity.
+  `relink-refs` finds them inside a shape map, where the attr and the value
+  travel together. An operation that sets one of them carries the id alone."
+  #{:component-file :fill-color-ref-file :stroke-color-ref-file :typography-ref-file})
+
+(defn- remap-op
+  "Rewrite the reference of one `:mod-obj` operation through `id-map`.
+  `shape-set-ops` emits one `:set` per differing attr, so a reference can
+  arrive either as the attr's own value or, for an image shape, as the media
+  map under `:metadata`."
+  [op id-map]
+  (let [attr (:attr op)
+        val  (:val op)]
+    (cond
+      (and (contains? reference-attrs attr) (uuid? val))
+      (assoc op :val (get id-map val val))
+
+      (and (= :metadata attr) (uuid? (:id val)))
+      (assoc op :val (update val :id #(get id-map % %)))
+
+      :else op)))
+
+(defn remap-changes
+  "Rewrite the cross-file references of a change vector through `id-map`,
+  the counterpart of `remap-refs` for the changes `compute-changes` emits.
+  A change computed in the source file's frame has to be applied in the
+  target's, because a reference is only a reference in the file it names: a
+  fill whose `:fill-color-ref-file` names another file loses its link, and so
+  does an instance whose `:component-file` does.
+
+  Every payload `compute-changes` can emit is covered. `relink-refs` walks a
+  whole map, so `:obj`, `:page`, `:params`, and a component's `:objects` are
+  complete on their own. The two payloads it cannot see are the values that
+  ARE the reference: a media object's `:id` (its `:media-id` is a storage key
+  and must not be touched), and an operation value that is the reference
+  itself. Token changes are left alone: no id in `id-map` is a token id."
+  [changes id-map]
+  (if (empty? id-map)
+    changes
+    (let [lookup #(get id-map % %)
+          relink #(cfh/relink-refs % lookup)]
+      (mapv (fn [change]
+              (cond-> (relink change)
+                (uuid? (:id (:object change)))
+                (update-in [:object :id] lookup)
+
+                (seq (:operations change))
+                (update :operations #(mapv (fn [op] (remap-op op id-map)) %))))
+            changes))))
+
 (defn- strip-modified-at
   "Remove the `:modified-at` bookkeeping timestamp from every entry of an
   indexed collection (components, colors, typographies).
