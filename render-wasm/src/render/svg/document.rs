@@ -188,6 +188,31 @@ impl SvgLayerCanvas {
         )
     }
 
+    /// Maps a shape-local rect through the page CTM into SVG user space.
+    pub(super) fn map_selrect_to_page(
+        &self,
+        local: &skia::Rect,
+        draw_matrix: &skia::Matrix,
+    ) -> skia::Rect {
+        self.page_ctm(draw_matrix).map_rect(*local).0
+    }
+
+    /// Maps a shape-local path through the page CTM into SVG user space.
+    pub(super) fn map_path_to_page(
+        &self,
+        path: &skia::Path,
+        draw_matrix: &skia::Matrix,
+    ) -> skia::Path {
+        path.make_transform(&self.page_ctm(draw_matrix))
+    }
+
+    /// Scale × translate × `draw_matrix` (same CTM as SVG fragment canvases).
+    fn page_ctm(&self, draw_matrix: &skia::Matrix) -> skia::Matrix {
+        let mut ctm = skia::Matrix::scale((self.scale, self.scale));
+        ctm = ctm * skia::Matrix::translate((self.tx, self.ty));
+        ctm * *draw_matrix
+    }
+
     /// Emits a `<clipPath>` from a shape's geometry (in device/page space).
     ///
     /// A mask can be a group too. Since a group has no geometry of its own, we

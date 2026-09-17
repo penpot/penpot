@@ -3,6 +3,7 @@ use crate::shapes::{Shadow, Shape, Type};
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
+use super::background_blur::emit_background_blur;
 use super::document::{
     content_effect_attrs, opacity_blend_attrs, push_container_drop_filter, SvgLayerCanvas,
 };
@@ -18,6 +19,8 @@ pub(super) fn render_group(
 ) -> Result<()> {
     // Group fills inherit to empty-fill children (GPU nested_fills / SVG fill).
     builder.nested_fills.push(element.fills.clone());
+
+    emit_background_blur(builder, element, scale)?;
 
     // Opacity/blend wrap silhouette + content (GPU opens the opacity save_layer
     // before the shadow composite).

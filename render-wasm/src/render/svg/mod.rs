@@ -61,7 +61,8 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
 /// `<clipPath>`.
 ///
 /// Layer blur and drop/inner shadows are re-emitted as a native SVG `<filter>`
-/// wrapper. Masked groups use a native alpha `<mask>`.
+/// wrapper. Masked groups use a native alpha `<mask>`. Background blur uses an
+/// XHTML `foreignObject` with CSS `backdrop-filter` (browser rendering).
 /// Solid Inner/Outer and dotted/dashed strokes go out as filled outlines;
 /// image-filled strokes use a linked `<image>` clipped to the stroke;
 /// text strokes use `<g opacity>` / glyph clipPath / inverse glyph mask, and
@@ -126,12 +127,14 @@ pub(crate) fn render_tree_to_svg(
     Ok(out.into_bytes())
 }
 
+mod background_blur;
 mod document;
 mod frames;
 mod groups;
 mod images;
 mod text;
 
+use background_blur::emit_background_blur;
 use document::SvgLayerCanvas;
 use frames::render_frame;
 use groups::render_group;
@@ -199,6 +202,8 @@ fn render_leaf(
         return render_leaf_text(builder, shared, element, scale);
     }
 
+    emit_background_blur(builder, element, scale)?;
+
     let composite = opacity_blend_attrs(element);
     if let Some(attrs) = &composite {
         builder.open_group(attrs);
@@ -246,6 +251,8 @@ fn render_leaf_text(
     element: &Shape,
     scale: f32,
 ) -> Result<()> {
+    emit_background_blur(builder, element, scale)?;
+
     let effects = effect_attrs(builder, element);
     if let Some(attrs) = &effects {
         builder.open_group(attrs);
@@ -268,7 +275,6 @@ fn render_leaf_text(
     if effects.is_some() {
         builder.close_group();
     }
-    let _ = scale;
     Ok(())
 }
 

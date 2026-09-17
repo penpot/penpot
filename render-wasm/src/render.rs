@@ -727,12 +727,9 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
-    /// Builds the background-blur clip region for a shape whose strokes
-    /// extend beyond the fill geometry: the fill path expanded (via union)
-    /// with a solid stroke coverage of the maximum outward stroke reach.
-    /// Dash/dot stroke styles are treated as solid, so dash gaps also get
-    /// a blurred backdrop.
-    fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
+    /// Fill ∪ stroke-outset silhouette for background blur (GPU, vector, SVG).
+    /// Dash/dot strokes are treated as solid so gaps still get a blurred backdrop.
+    pub(crate) fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
         let base = match &shape.shape_type {
             Type::Rect(data) if data.corners.is_some() => {
                 let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
@@ -749,9 +746,16 @@ impl RenderState {
                 .unwrap_or_else(|| skia::Path::rect(shape.selrect, None)),
         };
 
-        // Expand outward by the max stroke reach: a centered stroke of
-        // 2× the outset covers exactly `stroke_outset` beyond the path
-        // (the inward half disappears in the union with the fill).
+        Self::union_stroke_outset(base, stroke_outset)
+    }
+
+    /// Unions a centered stroke of width `2 * stroke_outset` into `base`.
+    /// The inward half disappears in the union, leaving `stroke_outset` beyond
+    /// the fill outline.
+    pub(crate) fn union_stroke_outset(base: skia::Path, stroke_outset: f32) -> skia::Path {
+        if stroke_outset <= 0.0 {
+            return base;
+        }
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_stroke_width(stroke_outset * 2.0);
