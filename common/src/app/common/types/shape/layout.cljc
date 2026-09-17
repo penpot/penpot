@@ -1565,18 +1565,8 @@
        (some? id)))
 
 (defn reflow-grid-auto-items-for-direction
-  "Reassign single-span auto grid cells to the new `:layout-grid-dir`
-  traversal order while preserving the source/layer order (`:shapes`).
-
-  Auto cell contents are read in the old direction order and
-  redistributed into the new direction order, so the visual
-  auto-placement follows the new flow instead of staying unchanged.
-
-  Only auto-positioned single-span cells take part. Manual and
-  area-positioned cells keep their explicit placements. This helper
-  intentionally does not touch `:shapes`: downstream
-  `assign-cell-positions` and `reorder-grid-children` must stay no-ops
-  for a pure direction change."
+  "Reflow single-span auto cells for `to-dir` without changing explicit
+  placements or `:shapes`."
   [parent from-dir to-dir]
   (if (= from-dir to-dir)
     parent

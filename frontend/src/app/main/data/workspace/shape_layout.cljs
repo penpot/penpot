@@ -320,10 +320,7 @@
             (rx/of (with-meta event (meta it)))))))))
 
 (defn change-grid-direction
-  "Change a grid container flow direction, redistributing only
-  single-span auto-positioned items into the new direction traversal
-  order while preserving the source/layer order and keeping an atomic
-  undo step for the direction + cell reassignment."
+  "Set grid direction and reflow single-span auto items in one undo step."
   [ids dir]
   (ptk/reify ::change-grid-direction
     ptk/WatchEvent
@@ -334,17 +331,20 @@
                 ids
                 (fn [shape]
                   (let [from-dir (d/nilv (:layout-grid-dir shape) :row)]
-                    (cond-> shape
-                      (and (= :grid (:layout shape))
-                           (contains? #{:row :column} dir)
-                           (not= from-dir dir))
-                      (ctl/reflow-grid-auto-items-for-direction from-dir dir))))
-                ;; Reflowing already places every eligible auto item,
-                ;; so skip only the generic grid cell pass and its
-                ;; blind child reorder: it would rewrite :shapes
-                ;; around pinned manual/area cells in area/span
-                ;; grids. Keep translation/component-sync metadata
-                ;; untouched so copies still sync.
+                    (cond
+                      (not= :grid (:layout shape))
+                      shape
+
+                      (not (contains? #{:row :column} dir))
+                      shape
+
+                      (= from-dir dir)
+                      (assoc shape :layout-grid-dir dir)
+
+                      :else
+                      (ctl/reflow-grid-auto-items-for-direction shape from-dir dir))))
+                ;; Auto cells are already reflowed, so skip generic reassignment
+                ;; and child reordering.
                 {:skip-grid-reassignment? true})
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))

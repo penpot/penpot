@@ -86,11 +86,8 @@
                    (cond-> changes
                      (some? objects) (pcb/with-objects objects))
                    ids)
-        ;; Translation doesn't shift children between grid cells, so
-        ;; cell reassignment + child reorder are no-ops. Direction
-        ;; changes reflow eligible items explicitly and skip the same
-        ;; generic pass; unlike translation this keeps component sync
-        ;; and reflow metadata untouched.
+        ;; Translation keeps cell assignments; direction changes reflow them
+        ;; explicitly.
         grid-ids (when-not (or translation? skip-grid-reassignment?)
                    (->> ids (filter (partial ctl/grid-layout? objects))))
         changes (cond-> changes
