@@ -18,12 +18,27 @@ import {
 import {
   compareRuns,
   formatComparison,
+  tagExpectedFeatureDiff,
 } from "./renderer-benchmarks/compare.js";
 
 const frontend = fileURLToPath(new URL("../", import.meta.url));
 const root = path.resolve(frontend, "..");
 const LIMITS =
   "Renderer submission timings only: not GPU completion, displayed pixels, whole-editor responsiveness, or visual correctness.";
+
+// Runner-controlled build overrides shared by run and ab. VERSION stays out:
+// every run stamps its own runId as VERSION in the child environment.
+export const BUILD_ENV = {
+  PENPOT_WASM_PREPARED: "1",
+  PENPOT_WASM_FUNCTION_NAMES: "0",
+  BUILD_MODE: "release",
+  NODE_ENV: "production",
+  RENDER_TARGET: "frontend",
+  BUILD_NAME: "render-wasm-benchmark",
+  CARGO_BUILD_TARGET: "wasm32-unknown-emscripten",
+  COREPACK_ENABLE_NETWORK: "0",
+  CARGO_NET_OFFLINE: "true",
+};
 
 export function readOptions(argv) {
   const { values, positionals } = parseArgs({
@@ -40,10 +55,14 @@ export function readOptions(argv) {
       warmups: { type: "string", default: "3" },
       repetitions: { type: "string", default: "10" },
       "timeout-ms": { type: "string", default: "30000" },
+      features: { type: "string", default: "" },
+      "max-features": { type: "string", default: "3" },
+      confirm: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
     },
   });
   const command = positionals[0] ?? "run";
-  if (!["run", "compare"].includes(command))
+  if (!["run", "compare", "ab"].includes(command))
     throw new Error(`Unknown command: ${command}`);
   const number = (name, minimum, maximum) => {
     const value = Number(values[name]);
@@ -53,11 +72,35 @@ export function readOptions(argv) {
   };
   if (
     !values.help &&
-    (command === "run" ? positionals.length > 1 : positionals.length !== 3)
+    (command === "compare" ? positionals.length !== 3 : positionals.length > 1)
   )
     throw new Error(
-      "Use run [options] or compare baseline.json candidate.json [options]",
+      "Use run [options], ab --features a,b [options], or compare baseline.json candidate.json [options]",
     );
+  const featureList = values.features
+    .split(",")
+    .map((token) => token.trim())
+    .filter(Boolean);
+  for (const token of featureList) {
+    if (!/^[a-z0-9-]+$/.test(token))
+      throw new Error(`Invalid --features token: ${token}`);
+  }
+  const features = [...new Set(featureList)].sort();
+  const maxFeatures = number("max-features", 1, 6);
+  if (command !== "ab" && values["dry-run"])
+    throw new Error("--dry-run is only valid for ab");
+  if (command === "ab" && !values.help) {
+    if (features.some((name) => /^(stats|profile)(-|$)/.test(name)))
+      throw new Error(
+        "ab rejects renderer diagnostic features; record them with run --features instead",
+      );
+    if (features.length < 1)
+      throw new Error("ab requires --features with at least one feature");
+    if (features.length > maxFeatures)
+      throw new Error(
+        `ab requests ${features.length} features but --max-features is ${maxFeatures}`,
+      );
+  }
   const baseUrl = new URL(values["base-url"]);
   if (
     !["http:", "https:"].includes(baseUrl.protocol) ||
@@ -80,7 +123,41 @@ export function readOptions(argv) {
     warmups: number("warmups", 0, 1000),
     repetitions: number("repetitions", 1, 10000),
     timeoutMs: number("timeout-ms", 100, 600000),
+    features,
+    maxFeatures,
+    confirm: values.confirm,
+    dryRun: values["dry-run"],
   };
+}
+
+// All on/off configurations of sorted unique feature names in binary-reflected
+// Gray order, plus the Boolean-lattice edges (pairs differing in exactly one
+// feature). features[0] is the most significant bit. Pure: no I/O.
+export function planFeatureMatrix(features) {
+  const configurations = [];
+  for (let index = 0; index < 2 ** features.length; index++) {
+    const gray = index ^ (index >> 1);
+    const slug = features
+      .map((_, bit) => (gray & (1 << (features.length - 1 - bit)) ? "1" : "0"))
+      .join("");
+    configurations.push({
+      slug,
+      features: features.filter((_, bit) => slug[bit] === "1"),
+    });
+  }
+  const edges = [];
+  configurations.forEach((config) => {
+    features.forEach((name, bit) => {
+      if (config.slug[bit] === "0") {
+        edges.push({
+          from: config.slug,
+          to: config.slug.slice(0, bit) + "1" + config.slug.slice(bit + 1),
+          toggledFeature: name,
+        });
+      }
+    });
+  });
+  return { configurations, edges };
 }
 
 export async function bounded(operation, milliseconds, signal) {
@@ -150,6 +227,81 @@ export function defaultFeatures(definitions) {
       "Default Cargo features enable renderer diagnostics; use a plain release manifest",
     );
   return [...enabled].sort();
+}
+
+// Reads the renderer package's feature definitions from the Cargo manifest
+// without requiring unused targets' dependencies to be cached.
+export function readRendererManifest() {
+  const manifest = JSON.parse(
+    execFileSync(
+      "cargo",
+      [
+        "metadata",
+        "--offline",
+        "--locked",
+        "--no-deps",
+        "--format-version",
+        "1",
+      ],
+      { cwd: path.join(root, "render-wasm"), encoding: "utf8" },
+    ),
+  );
+  const renderer = manifest.packages.find(
+    (item) => item.manifest_path === path.join(root, "render-wasm/Cargo.toml"),
+  );
+  if (!renderer)
+    throw new Error("Renderer package missing from Cargo metadata");
+  return renderer.features;
+}
+
+// Validates requested explicit features against the manifest definitions.
+// Returns the resolved manifest defaults (synthetic "default" node included).
+// Pure: no I/O.
+export function validateFeatureSelection(definitions, features, command) {
+  const resolved = defaultFeatures(definitions);
+  const enabled = resolved.filter((name) => name !== "default");
+  for (const name of features) {
+    if (!Object.hasOwn(definitions, name))
+      throw new Error(`Unknown Cargo feature: ${name}`);
+  }
+  const overlap = features.filter((name) => enabled.includes(name));
+  if (overlap.length)
+    throw new Error(
+      `Requested features already enabled by default: ${overlap.join(",")}`,
+    );
+  if (command === "ab" && enabled.length)
+    throw new Error(
+      `ab requires an empty default feature set; found: ${enabled.join(",")}`,
+    );
+  return resolved;
+}
+
+const AMBIENT_ENV_EXACT = new Set([
+  "RUSTFLAGS",
+  "RUSTC_WRAPPER",
+  "CARGO_TARGET_DIR",
+  "CARGO_HOME",
+  "CC",
+  "CFLAGS",
+  "CXXFLAGS",
+  "LDFLAGS",
+  "PENPOT_WASM_FUNCTION_NAMES",
+]);
+
+// Records the ambient build environment allowlist. Never the full process
+// environment. Pure: no I/O.
+export function recordAmbientEnv(env = process.env) {
+  const recorded = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (
+      AMBIENT_ENV_EXACT.has(key) ||
+      key.startsWith("CARGO_PROFILE_") ||
+      key.startsWith("EMSDK")
+    ) {
+      recorded[key] = String(value);
+    }
+  }
+  return recorded;
 }
 
 async function preflight(options) {
@@ -224,7 +376,7 @@ export async function run(options) {
   const git = (args) =>
     execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
   const result = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     runId,
     timestamp: new Date().toISOString(),
     status: "running",
@@ -238,7 +390,7 @@ export async function run(options) {
       build: {
         mode: "release",
         featurePolicy: "manifest-defaults",
-        features: null,
+        features: [],
         target: "frontend",
         prepared: true,
       },
@@ -322,46 +474,33 @@ export async function run(options) {
       ),
     );
     result.metadata.environment.playwright = packageJson.version;
-    const manifest = JSON.parse(
-      execFileSync(
-        "cargo",
-        [
-          "metadata",
-          "--offline",
-          "--locked",
-          "--no-deps",
-          "--format-version",
-          "1",
-        ],
-        { cwd: path.join(root, "render-wasm"), encoding: "utf8" },
-      ),
+    const requested = [...(options.features ?? [])].sort();
+    const resolved = validateFeatureSelection(
+      readRendererManifest(),
+      requested,
+      options.command,
     );
-    const renderer = manifest.packages.find(
-      (item) =>
-        item.manifest_path === path.join(root, "render-wasm/Cargo.toml"),
-    );
-    if (!renderer)
-      throw new Error("Renderer package missing from Cargo metadata");
-    result.metadata.build.features = defaultFeatures(renderer.features);
+    result.metadata.build.features = requested;
+    result.metadata.build.defaultFeatures = resolved;
+    if (requested.length) result.metadata.build.featurePolicy = "explicit";
+    result.metadata.build.env = { ...BUILD_ENV };
+    result.metadata.build.ambientEnv = recordAmbientEnv();
     // Disallow package-manager network fallback in a prepared run.
     const buildStart = performance.now();
-    await execute("./build", ["frontend", "--offline", "--locked"], {
-      cwd: path.join(root, "render-wasm"),
-      signal: abort.signal,
-      env: {
-        ...process.env,
-        PENPOT_WASM_PREPARED: "1",
-        PENPOT_WASM_FUNCTION_NAMES: "0",
-        BUILD_MODE: "release",
-        NODE_ENV: "production",
-        RENDER_TARGET: "frontend",
-        BUILD_NAME: "render-wasm-benchmark",
-        CARGO_BUILD_TARGET: "wasm32-unknown-emscripten",
-        COREPACK_ENABLE_NETWORK: "0",
-        CARGO_NET_OFFLINE: "true",
-        VERSION: runId,
+    await execute(
+      "./build",
+      [
+        "frontend",
+        "--offline",
+        "--locked",
+        ...(requested.length ? ["--features", requested.join(",")] : []),
+      ],
+      {
+        cwd: path.join(root, "render-wasm"),
+        signal: abort.signal,
+        env: { ...process.env, ...BUILD_ENV, VERSION: runId },
       },
-    });
+    );
     result.metadata.build.durationMs = performance.now() - buildStart;
     const { copyWasmPlayground } = await import("./_helpers.js");
     const previousCwd = process.cwd();
@@ -529,11 +668,241 @@ export async function run(options) {
   return result.status === "complete" ? 0 : 1;
 }
 
+// Classifies one configuration output for the feature-matrix loop: whether the
+// matrix continues with the next configuration or stops and marks the rest
+// unattempted. Takes the parsed config JSON, or null when the file is missing
+// or unparseable. Pure: no I/O.
+export function classifyConfigResult(result) {
+  if (result === null || result === undefined)
+    return {
+      outcome: "stop",
+      status: "unattempted",
+      error: "configuration output is missing or invalid",
+    };
+  if (result.status === "interrupted")
+    return { outcome: "stop", status: "interrupted" };
+  if (typeof result.metadata?.build?.durationMs !== "number")
+    return {
+      outcome: "stop",
+      status: "failed",
+      error: "build or preflight failed before any suite ran",
+    };
+  const attempts = (result.cases ?? []).reduce(
+    (sum, benchmarkCase) => sum + (benchmarkCase.attempts?.length ?? 0),
+    0,
+  );
+  if (attempts === 0)
+    return {
+      outcome: "stop",
+      status: "failed",
+      error: "suite recorded no attempts",
+    };
+  return {
+    outcome: "continue",
+    status: result.status === "complete" ? "complete" : "failed",
+  };
+}
+
+// Refuses an existing feature-matrix output root: it must be absent, or an
+// empty directory. Never deletes or overwrites previous matrix output.
+async function ensureFreshAbOutputRoot(outputRoot) {
+  let stat;
+  try {
+    stat = await fs.stat(outputRoot);
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  if (!stat.isDirectory())
+    throw new Error(`ab output root already exists: ${outputRoot}`);
+  if ((await fs.readdir(outputRoot)).length)
+    throw new Error(
+      `ab output root already exists and is not empty: ${outputRoot}`,
+    );
+}
+
+// Builds and runs every on/off configuration of the requested features, then
+// compares the Boolean-lattice edges. Each configuration runs in Gray order
+// with its own build and browser. Diagnostic tooling only: exit 0 reports
+// that every edge has a comparison, never a performance verdict. An
+// interruption between configurations or edges still writes matrix.json and
+// exits 1. Callers may inject an AbortSignal; otherwise ab watches SIGINT and
+// SIGTERM itself.
+export async function ab(
+  options,
+  {
+    runFn = run,
+    compareFn = compareRuns,
+    manifestFn = readRendererManifest,
+    signal = null,
+  } = {},
+) {
+  const abId = randomUUID();
+  const outputRoot = options.output
+    ? path.resolve(options.output)
+    : path.join(
+        os.tmpdir(),
+        `renderer-ab-${new Date().toISOString().replaceAll(":", "-")}-${abId.slice(0, 8)}`,
+      );
+  await ensureFreshAbOutputRoot(outputRoot);
+  const definitions = await manifestFn();
+  validateFeatureSelection(definitions, options.features, "ab");
+  const { configurations, edges } = planFeatureMatrix(options.features);
+  const cases = collectCases(scenarios, options.seed, options.filter);
+  const attemptsPerCase = options.warmups + options.repetitions;
+  const plan = [
+    `Feature matrix: ${options.features.join(",")}`,
+    ...configurations.map(
+      (config) => `  ${config.slug}: [${config.features.join(",")}]`,
+    ),
+    ...edges.map(
+      (edge) => `  ${edge.from}__${edge.to}: ${edge.toggledFeature}`,
+    ),
+    `${cases.length} cases, ${attemptsPerCase} attempts per case, one browser per configuration.`,
+  ].join("\n");
+  console.log(plan);
+  if (options.dryRun) return 0;
+  if ((configurations.length > 8 || options.filter === "") && !options.confirm)
+    throw new Error(
+      "ab plans more work than confirmed; rerun with --confirm to proceed",
+    );
+  let watched = signal;
+  let releaseSignal = null;
+  if (watched === null) {
+    const abort = new AbortController();
+    watched = abort.signal;
+    const interrupt = () => abort.abort(new Error("Benchmark interrupted"));
+    process.once("SIGINT", interrupt);
+    process.once("SIGTERM", interrupt);
+    releaseSignal = () => {
+      process.removeListener("SIGINT", interrupt);
+      process.removeListener("SIGTERM", interrupt);
+    };
+  }
+  await fs.mkdir(path.join(outputRoot, "configs"), { recursive: true });
+  await fs.mkdir(path.join(outputRoot, "comparisons"), { recursive: true });
+  const parsed = new Map();
+  const configurationRecords = [];
+  let stopped = false;
+  const unattemptedRecord = (config) => ({
+    slug: config.slug,
+    features: config.features,
+    status: "unattempted",
+    file: path.join(outputRoot, "configs", `${config.slug}.json`),
+    runId: null,
+    runStatus: "unattempted",
+  });
+  for (const config of configurations) {
+    if (watched.aborted) {
+      configurationRecords.push({
+        ...unattemptedRecord(config),
+        error: "Benchmark interrupted",
+      });
+      continue;
+    }
+    if (stopped) {
+      configurationRecords.push(unattemptedRecord(config));
+      continue;
+    }
+    const configPath = path.join(outputRoot, "configs", `${config.slug}.json`);
+    await runFn({
+      ...options,
+      command: "ab",
+      features: config.features,
+      output: configPath,
+    });
+    let result = null;
+    try {
+      result = JSON.parse(await fs.readFile(configPath, "utf8"));
+    } catch {
+      result = null;
+    }
+    const verdict = classifyConfigResult(result);
+    if (result !== null) parsed.set(config.slug, result);
+    configurationRecords.push({
+      slug: config.slug,
+      features: config.features,
+      status: verdict.status,
+      file: configPath,
+      runId: result?.runId ?? null,
+      runStatus: result?.status ?? "unattempted",
+      ...(verdict.error ? { error: verdict.error } : {}),
+    });
+    console.log(`${config.slug}: ${verdict.status}`);
+    if (verdict.outcome === "stop") stopped = true;
+  }
+  const comparisonRecords = [];
+  for (const edge of edges) {
+    if (watched.aborted) {
+      comparisonRecords.push({ ...edge, status: "not-attempted", file: null });
+      continue;
+    }
+    const from = parsed.get(edge.from);
+    const to = parsed.get(edge.to);
+    if (!from || !to) {
+      comparisonRecords.push({ ...edge, status: "not-attempted", file: null });
+      continue;
+    }
+    const comparison = tagExpectedFeatureDiff(
+      await compareFn(from, to, { diagnostic: true }),
+      edge.toggledFeature,
+    );
+    // An edge is controlled when the intended feature toggle is the only
+    // mismatch. Anything else (environment, seeds, manifest defaults shifting
+    // mid-matrix) keeps the strong diagnostic-only reading.
+    const controlled =
+      comparison.mismatches?.every((entry) => entry.expected === true) ?? false;
+    const comparisonPath = path.join(
+      outputRoot,
+      "comparisons",
+      `${edge.from}__${edge.to}.json`,
+    );
+    await save(comparisonPath, { ...comparison, edge, controlled });
+    console.log(`${edge.from}__${edge.to}: ${comparisonPath}`);
+    if (!controlled)
+      console.warn(
+        `${edge.from}__${edge.to}: unexpected mismatches beyond the intended feature toggle`,
+      );
+    comparisonRecords.push({
+      ...edge,
+      status: "compared",
+      file: comparisonPath,
+      compatible: comparison.compatible,
+      diagnostic: comparison.diagnostic,
+      controlled,
+    });
+  }
+  const status =
+    configurationRecords.every((record) =>
+      ["complete", "failed"].includes(record.status),
+    ) && comparisonRecords.every((record) => record.status === "compared")
+      ? "complete"
+      : "failed";
+  await save(path.join(outputRoot, "matrix.json"), {
+    schemaVersion: 1,
+    abId,
+    timestamp: new Date().toISOString(),
+    features: options.features,
+    maxFeatures: options.maxFeatures,
+    filter: options.filter,
+    outputRoot,
+    configurations: configurationRecords,
+    comparisons: comparisonRecords,
+    status,
+    warnings: [LIMITS],
+  });
+  console.log(`Matrix: ${path.join(outputRoot, "matrix.json")}`);
+  // ab runs once per process; release before the single return. An unexpected
+  // throw past this point exits through main's handler with the listeners.
+  releaseSignal?.();
+  return status === "complete" ? 0 : 1;
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const options = readOptions(argv);
   if (options.help) {
     console.log(
-      "Renderer benchmarks\n  node scripts/renderer-benchmarks.js run [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--output FILE]\n  node scripts/renderer-benchmarks.js compare BASELINE CANDIDATE [--diagnostic] [--output FILE]\nRun requires a prepared development container and an existing static server on port 3000. Defaults: 3 warmups, 10 measured attempts, 30s timeout; provisional pending calibration.\n" +
+      "Renderer benchmarks\n  node scripts/renderer-benchmarks.js run [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--features a,b] [--output FILE]\n  node scripts/renderer-benchmarks.js ab --features a,b [--max-features N] [--confirm] [--dry-run] [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--output DIR]\n  node scripts/renderer-benchmarks.js compare BASELINE CANDIDATE [--diagnostic] [--output FILE]\nRun requires a prepared development container and an existing static server on port 3000. Defaults: 3 warmups, 10 measured attempts, 30s timeout; provisional pending calibration.\n" +
         LIMITS,
     );
     return 0;
@@ -552,6 +921,7 @@ export async function main(argv = process.argv.slice(2)) {
     if (options.output) await save(path.resolve(options.output), comparison);
     return 0;
   }
+  if (options.command === "ab") return ab(options);
   return run(options);
 }
 
