@@ -666,9 +666,6 @@
 (def updating-library
   (l/derived :updating-library st/state))
 
-(def persistence-state
-  (l/derived (comp :status :persistence) st/state))
-
 (def progress
   (l/derived :progress st/state))
 
