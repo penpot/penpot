@@ -129,6 +129,26 @@ These runs used dirty source trees and are workflow evidence, not a comparison
 of renderer changes. Shadow visual validation and default sampling remain open.
 Keep the full workloads and provisional defaults until these limits are resolved.
 
+Isolated September 17 probes reproduce the shadow pattern without changing
+workloads or defaults. `verify.js --filter shadows/default/load` passes through
+`Full` on SwiftShader; `--filter shadows/default/pan` and
+`--filter shadows/default/zoom` fail with `WebGL context lost` in the warm
+interaction loop that calls `_render_from_cache` per frame. Load success records
+renderer submission only, not displayed pixels. The fixture keeps 1000 shapes
+with two drop shadows and one inner shadow, seven FFI arguments per shadow,
+style 0 for drop and 1 for inner, and a boolean hidden flag, matching
+`render-wasm/src/wasm/shadows.rs`. No fixture defect, workload reduction, or
+renderer change is claimed.
+
+Sampling stays provisional at 3 warm-ups, 10 measured attempts, and 30s timeout.
+The full pilot ran 240 attempts in 1543337 ms, about 6.4 s per attempt; the
+one-attempt workflow run took 156466 ms for 21 attempts, about 7.4 s per
+attempt. The 2-5 minute goal allows roughly 18-46 attempts in total, or one to
+two per case across 21 cases, below the 10 valid attempts needed for median
+intervals. Use zero-warm-up single attempts with `--filter` for workflow
+checks; use the full provisional counts for intervals. Final calibration needs
+a stable graphics environment with passing shadows.
+
 The implementation roadmap, pilot evidence, and remaining calibration work live
 in Serena memory `render-wasm/performance/core` and its numbered tickets. The
 2-5 minute full-suite goal excludes build time and is a target, not a guarantee
