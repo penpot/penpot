@@ -81,38 +81,90 @@
    :truncated? truncated?
    :row-count (count rows)})
 
+(defn- mark-stale
+  "Record a staleness verdict in a session's sync state, once.
+
+  Every verdict `app.graph.overlay.sync/staleness` returns is a permanent
+  divergence: the index has folded a state no rebuild produces, and the
+  batches after it fold onto that state. So a later clean batch must not
+  erase the mark, and only `load-session!` clears it, by building fresh
+  metadata from the file."
+  [sync verdict]
+  (cond-> sync
+    (and (some? verdict) (nil? (:stale sync)))
+    (assoc :stale verdict)))
+
+(defn- stale-meta
+  "Session metadata for a batch that never reached the applier."
+  [meta verdict message]
+  (update meta :sync #(-> %
+                          (assoc :error message)
+                          (mark-stale verdict))))
+
+(defn- applied-meta
+  "Session metadata after one applied batch.
+
+  The revision is stamped for every message, not only for a batch that
+  applied something: a batch whose every change was skipped still
+  advanced the file, and stamping only the productive ones leaves
+  `:graph-revn` reading like a caught-up index. `:graph-revn` is
+  therefore the revision this session has *seen*, and the staleness mark
+  beside it is what says whether the index still agrees with it."
+  [meta revn sync-at result verdict]
+  (-> meta
+      (cond-> (number? revn) (assoc :graph-revn (long revn)))
+      (update :sync #(-> %
+                         (dissoc :error)
+                         (assoc :last-at      sync-at
+                                :last-applied (:applied result)
+                                :last-skipped (:skipped result))
+                         (mark-stale verdict)))))
+
 (defn- apply-file-change!
   [profile-id {:keys [changes revn file-id]}]
-  (try
-    (when-let [current (get @sessions (session-key profile-id))]
-      (when (= file-id (:file-id current))
-        (let [result  (overlay.sync/apply-changes @(:db-atom current) changes)
-              sync-at (ct/now)]
-          (reset! (:db-atom current) (:db result))
-          (swap! sessions update-in [(session-key profile-id) :meta]
-                 (fn [meta]
-                   (cond-> (-> meta
-                               (update :sync dissoc :error)
-                               (assoc-in [:sync :last-at] sync-at)
-                               (assoc-in [:sync :last-applied] (:applied result))
-                               (assoc-in [:sync :last-skipped] (:skipped result)))
-                     (seq (:applied result))
-                     (assoc :graph-revn (long revn)))))
-          (when (seq (:skipped result))
-            (l/dbg :hint "graph sync skipped changes"
-                   :file-id (str file-id)
-                   :revn revn
-                   :skipped (:skipped result))))))
-    (catch Throwable cause
-      (l/wrn :hint "graph sync failed"
-             :file-id (str file-id)
-             :cause cause)
-      (swap! sessions assoc-in [(session-key profile-id) :meta :sync :error]
-             (ex-message cause)))))
+  (let [key (session-key profile-id)]
+    (try
+      (when-let [current (get @sessions key)]
+        (when (= file-id (:file-id current))
+          (let [result  (overlay.sync/apply-changes @(:db-atom current) changes)
+                sync-at (ct/now)
+                verdict (overlay.sync/staleness (get-in current [:meta :graph-revn])
+                                                revn result)]
+            (reset! (:db-atom current) (:db result))
+            (swap! sessions update-in [key :meta]
+                   applied-meta revn sync-at result verdict)
+            (when (seq (:skipped result))
+              (l/dbg :hint "graph sync skipped changes"
+                     :file-id (str file-id)
+                     :revn revn
+                     :skipped (:skipped result)))
+            (when verdict
+              (l/wrn :hint "graph index is stale"
+                     :file-id (str file-id)
+                     :revn revn
+                     :reason (name (:reason verdict))
+                     :verdict (pr-str verdict))))))
+      (catch Throwable cause
+        (l/wrn :hint "graph sync failed"
+               :file-id (str file-id)
+               :cause cause)
+        ;; the message may be nil, and a verdict may not be: a batch that
+        ;; threw left the index at a prefix nothing names
+        (let [message (or (ex-message cause) (.getName (class cause)))]
+          (when (contains? @sessions key)
+            (swap! sessions update-in [key :meta]
+                   stale-meta
+                   (overlay.sync/staleness nil nil {:error message})
+                   message)))))))
 
 (defn- start-sync-loop!
   [{:keys [profile-id file-id] :as session}]
   (if-let [msgbus (:msgbus session)]
+    ;; A dropping buffer is the silence this subsystem cannot see: a full
+    ;; buffer discards a message with no log line and no revision change.
+    ;; `app.graph.overlay.sync/staleness` catches it one message later,
+    ;; because the next message's revision is then two beyond the
+    ;; index's, and the read gates refuse until a reload rebuilds.
     (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
       (mbus/sub! msgbus :topic file-id :chan sync-ch)
       ;; Recur ONLY while the channel is open. A bare `(recur)` after
@@ -139,13 +191,23 @@
      :loaded-at      (ct/format-inst loaded-at :iso)}))
 
 (defn sync-status
-  "Return incremental sync status for the active session."
+  "Return incremental sync status for the active session.
+
+  `:stale` is the verdict `app.graph.overlay.sync/staleness` returned for
+  the batch that broke the index, nil while the index still equals a
+  rebuild, and `:reason` names which of the three cases it was. The two
+  revisions are reported beside it and neither is the gate: `:revn` is
+  the file's revision when this session was built and `:graph-revn` the
+  last revision the session saw, so a subtraction says nothing about a
+  batch whose changes were skipped or dropped."
   [profile-id]
   (when-let [session (get @sessions (session-key profile-id))]
     (let [{:keys [file-id meta loaded-at]} session]
       {:file-id    file-id
        :revn       (:revn meta)
        :graph-revn (:graph-revn meta)
+       :stale      (get-in meta [:sync :stale])
+       :reason     (get-in meta [:sync :stale :reason])
        :sync       (:sync meta)
        :loaded-at  (ct/format-inst loaded-at :iso)})))
 
@@ -173,7 +235,11 @@
     [file-id file]))
 
 (defn load-session!
-  "Build the overlay of `file-id` for `profile-id`."
+  "Build the overlay of `file-id` for `profile-id`.
+
+  This is the only repair for a stale index: the metadata is fresh, so
+  the staleness mark `apply-file-change!` records is gone with the
+  session that carried it."
   [cfg profile-id file-id]
   (unload-session! profile-id)
   (let [msgbus         (::mbus/msgbus cfg)
@@ -199,24 +265,39 @@
     (swap! sessions assoc (session-key profile-id) session)
     meta))
 
-(defn session-db
-  "The current overlay value for `profile-id`, or nil."
-  [profile-id]
-  (some-> (get @sessions (session-key profile-id)) :db-atom deref))
+(defn- check-fresh!
+  "Refuse a read from an index that has fallen behind.
+
+  The mark is `app.graph.overlay.sync/staleness`'s verdict, recorded by
+  `apply-file-change!`, and a reload clears it by rebuilding
+  (`load-session!`). This refusal is what makes partial change-type
+  coverage a performance property rather than a correctness one: a
+  refused read falls back to the whole document, and a silently stale
+  answer has no fallback at all."
+  [session]
+  (when-let [stale (get-in session [:meta :sync :stale])]
+    (ex/raise :type :restriction
+              :code :graph-index-stale
+              :hint "the graph index has fallen behind the file; reload the session"
+              :reason (:reason stale)
+              :stale stale)))
 
 (defn query-session!
   "Run a Datalog `statement` against the overlay for `profile-id`.
 
-  Read-only by construction — `d/q` cannot transact — and gated against
-  function smuggling by `app.graph.overlay.console/check-query!`."
+  Read-only by construction (`d/q` cannot transact), gated against
+  function smuggling by `app.graph.overlay.console/check-query!`, and
+  gated against a stale index by `check-fresh!`."
   [profile-id statement]
   (when (or (nil? statement) (= "" statement))
     (ex/raise :type :validation
               :code :missing-query
               :hint "datalog query is required"))
-  (if-let [db (session-db profile-id)]
-    (-> (console/run-query db statement)
-        format-query-result)
+  (if-let [session (get @sessions (session-key profile-id))]
+    (do
+      (check-fresh! session)
+      (-> (console/run-query @(:db-atom session) statement)
+          format-query-result))
     (ex/raise :type :not-found
               :code :graph-session-not-loaded
               :hint "load a file graph before running queries")))
@@ -283,9 +364,13 @@
 
 (defn export-graph-data!
   "Export the node/edge inventory of the overlay for `profile-id` as plain
-  data for the debug graph view. Returns nil when no session is loaded."
+  data for the debug graph view. Returns nil when no session is loaded,
+  and refuses through `check-fresh!` when the index has fallen behind:
+  the graph view is the second read gate, and it hands out every node and
+  edge the index holds."
   [profile-id]
-  (when-let [{:keys [db-atom file-id meta]} (get @sessions (session-key profile-id))]
+  (when-let [{:keys [db-atom file-id meta] :as session} (get @sessions (session-key profile-id))]
+    (check-fresh! session)
     (let [db    @db-atom
           eids  (into (sorted-set)
                       (mapcat #(map :e (d/datoms db :avet %)))
