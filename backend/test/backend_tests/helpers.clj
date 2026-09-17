@@ -325,19 +325,25 @@
   ([params] (update-file* *system* params))
   ([system {:keys [file-id changes session-id profile-id revn]
             :or {session-id (uuid/next) revn 0}}]
-   (-> system
-       (assoc ::files.update/timestamp (ct/now))
-       (db/tx-run! (fn [{:keys [::db/conn] :as system}]
-                     (let [file (files.update/get-file conn file-id)]
-                       (#'files.update/update-file* system
-                                                    {:id file-id
-                                                     :revn revn
-                                                     :vern 0
-                                                     :file file
-                                                     :features (:features file)
-                                                     :changes changes
-                                                     :session-id session-id
-                                                     :profile-id profile-id})))))))
+   ;; `update-file*` takes the request's own timer, so that a save routed
+   ;; to a branch's op log can report its duration on the audit event the
+   ;; way the other branch commands do. A test drives the private fn
+   ;; directly, so it opens the timer the RPC method would have opened.
+   (let [tpoint (ct/tpoint)]
+     (-> system
+         (assoc ::files.update/timestamp (ct/now))
+         (db/tx-run! (fn [{:keys [::db/conn] :as system}]
+                       (let [file (files.update/get-file conn file-id)]
+                         (#'files.update/update-file* system
+                                                      {:id file-id
+                                                       :revn revn
+                                                       :vern 0
+                                                       :file file
+                                                       :features (:features file)
+                                                       :changes changes
+                                                       :session-id session-id
+                                                       :profile-id profile-id}
+                                                      tpoint))))))))
 
 (declare command!)
 

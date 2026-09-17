@@ -57,4 +57,120 @@
  {:permits 4}
 
  :profile-plugin-ops/by-profile
- {:permits 1 :queue 2}}
+ {:permits 1 :queue 2}
+
+ ;; Every limit below is provisional. The container that runs the preview
+ ;; has no heap cap: `docker/devenv/files/entrypoint.sh` and
+ ;; `backend/scripts/_env` both replace JAVA_OPTS without `-Xmx`, and the
+ ;; live JVM command line carries none, so the budget is the JVM default
+ ;; and it is unmeasured. The permit counts are derived from the
+ ;; neighbours above instead of from a memory figure, and they stay
+ ;; provisional until a peak-heap measurement of a cold compare on the
+ ;; design-system file replaces them.
+ ;;
+ ;; The anchor is the snapshot pair above: `:create-file-snapshot/global`
+ ;; admits three whole-file operations at once, each realizing one
+ ;; document and writing one snapshot, and `:restore-file-snapshot/global`
+ ;; admits the same three for an operation that also writes a rollback
+ ;; snapshot and the older payload back into the file. A branch operation
+ ;; realizes more than one document, so it has to admit fewer at once to
+ ;; keep the same number of realized documents in flight.
+ ;;
+ ;; What each operation holds, read from the code:
+ ;;  * `create-file-branch` realizes main once and writes one snapshot
+ ;;    (`backend/src/app/rpc/commands/files_branch.clj::create-file-branch`),
+ ;;    which is the anchor's shape and the anchor's cost.
+ ;;  * `merge-file-branch` and `update-branch-from-main` hold three
+ ;;    realized documents at once: main, the derived branch, and the base
+ ;;    snapshot (`files_branch.clj::merge-file-branch`,
+ ;;    `files_branch.clj::update-branch-from-main`). Both also write a
+ ;;    snapshot and a whole file payload, and the update computes a
+ ;;    second diff for the squash, so they earn the tightest count.
+ ;;  * `materialize-file-branch` realizes the branch and the libraries it
+ ;;    validates against, then writes the whole payload
+ ;;    (`files_branch.clj::materialize-file-branch`), so it sits between
+ ;;    the anchor and the merge pair.
+ ;;  * `create-pull-request` and `update-pull-request-snapshot` realize the
+ ;;    branch once and write one review snapshot
+ ;;    (`files_pull_request.clj::create-pull-request`,
+ ;;    `files_pull_request.clj::update-pull-request-snapshot`), which is
+ ;;    the anchor's shape again.
+ ;;
+ ;; The write-side operations carry a queue and a timeout so that a
+ ;; refusal follows a bounded wait rather than arriving instantly. The
+ ;; queue sits on the per-profile entry, following the anchor, and on the
+ ;; global entry where the command declares no per-profile queue. The
+ ;; per-profile entry of one permit keeps a single designer to one
+ ;; operation at a time. The two read-side entries are generous by design
+ ;; and carry no queue and no timeout, so a panel open waits for its turn
+ ;; instead of being refused: six three-document comparisons hold
+ ;; eighteen realized documents, fewer than the twenty one-document saves
+ ;; `:update-file/global` already admits.
+
+ ;; create-file-branch realizes main and writes one snapshot, the shape
+ ;; of `:create-file-snapshot` above, so it takes the anchor's numbers
+ ;; unchanged. Provisional.
+ :create-file-branch/global
+ {:permits 3}
+
+ :create-file-branch/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; A merge holds three realized documents, a snapshot write, and a
+ ;; whole-file write into main, so one instance-wide operation holds the
+ ;; anchor's whole three-permit budget on its own. Provisional.
+ :merge-file-branch/global
+ {:permits 1}
+
+ :merge-file-branch/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; An update from main holds the same three documents and pays for a
+ ;; snapshot write and a squash diff on top, so it takes the merge's
+ ;; count. Provisional.
+ :update-branch-from-main/global
+ {:permits 1}
+
+ :update-branch-from-main/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; Materialize realizes one document plus its libraries and writes the
+ ;; payload, which is cheaper than a merge and dearer than the anchor,
+ ;; so it admits two where the merge admits one and the anchor admits
+ ;; three. Provisional.
+ :materialize-file-branch/global
+ {:permits 2}
+
+ :materialize-file-branch/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; A cold listing realizes main once and derives every uncached branch,
+ ;; which makes it the slowest read of the preview. Six at once is above
+ ;; what a panel open needs under normal use, and six three-document
+ ;; operations hold eighteen realized documents, below the twenty
+ ;; one-document saves `:update-file/global` above already admits.
+ ;; Provisional.
+ :get-file-branches/global
+ {:permits 6}
+
+ ;; The compare dialog's query holds main, the derived branch, and the
+ ;; base at once, the same three documents the listing holds, so it takes
+ ;; the same count. Provisional.
+ :get-branch-diff/global
+ {:permits 6}
+
+ ;; Creating a pull request realizes the branch and pins one review
+ ;; snapshot, the anchor's shape. Provisional.
+ :create-pull-request/global
+ {:permits 3}
+
+ :create-pull-request/by-profile
+ {:permits 1 :queue 2 :timeout 60000}
+
+ ;; Publishing the branch state also realizes the branch and pins one
+ ;; snapshot. The command declares a single instance-wide queue
+ ;; (`files_pull_request.clj::update-pull-request-snapshot`), so the
+ ;; bounded wait sits on the global entry here rather than on a
+ ;; per-profile entry. Provisional.
+ :update-pull-request-snapshot/global
+ {:permits 3 :queue 4 :timeout 60000}}

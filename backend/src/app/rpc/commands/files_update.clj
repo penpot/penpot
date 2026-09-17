@@ -149,7 +149,17 @@
   (files/check-edition-permissions! conn profile-id id)
   (db/xact-lock! conn id)
 
-  (let [file     (get-file cfg id)
+  ;; The timer starts BEFORE `get-file`. A branch file stores no payload,
+  ;; so that read folds the merge-base snapshot and the op log into the
+  ;; derived document, and every other branch command (compare, merge,
+  ;; update-from-main, materialize) creates its timer ahead of its own
+  ;; file reads. Starting here puts a branch save's `branch-duration-ms`
+  ;; on the same footing as theirs: the number covers the read, and for a
+  ;; branch the derive inside it, as well as the rest of the save. The
+  ;; trace below covers the read for an ordinary save as well, which is
+  ;; what the request actually cost.
+  (let [tpoint   (ct/tpoint)
+        file     (get-file cfg id)
         team     (teams/get-team conn
                                  :profile-id profile-id
                                  :team-id (:team-id file))
@@ -169,9 +179,7 @@
                      (assoc :file file)
                      (assoc :changes changes))
 
-        cfg      (assoc cfg ::timestamp (ct/now))
-
-        tpoint   (ct/tpoint)]
+        cfg      (assoc cfg ::timestamp (ct/now))]
 
     (when (not= (:vern params)
                 (:vern file))
@@ -223,7 +231,9 @@
 
   `tpoint` is the request's own timer, threaded in so that a save routed
   to a branch's op log can report its duration on the audit event the way
-  the other branch commands do.
+  the other branch commands do. The timer is started by `update-file`
+  before it reads the file, so a branch save's number includes the derive
+  that every other branch command includes too.
 
   Only intended for internal use on this module."
   [{:keys [::db/conn ::timestamp] :as cfg}
@@ -289,23 +299,33 @@
       ;; Send asynchronous notifications
       (send-notifications! cfg params file)
 
-      (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
-        {::audit/replace-props
-         (cond-> {:id         (:id file)
-                  :name       (:name file)
-                  :features   (:features file)
-                  :project-id (:project-id file)
-                  :team-id    (:team-id file)}
+      (let [branch?  (:is-branch file)
+            duration (inst-ms (tpoint))]
 
-           ;; A save routed to a branch's op log is the preview's most
-           ;; frequent operation, so it reports its duration and outcome on
-           ;; its own audit event like every other branch command. The
-           ;; ordinary save path is untouched: the props above are the ones
-           ;; it has always carried.
-           (:is-branch file)
-           (assoc :branch-operation "save-branch"
-                  :branch-outcome "saved"
-                  :branch-duration-ms (inst-ms (tpoint))))}))))
+        ;; A save routed to a branch's op log is the preview's most
+        ;; frequent operation, so it reports its duration and outcome in
+        ;; the log exactly like the other branch commands print theirs.
+        ;; Without this line the backend log shows five operation kinds
+        ;; where the audit table records six. An ordinary save prints
+        ;; nothing at all.
+        (when branch?
+          (l/inf :hint "branch operation" :operation "save-branch"
+                 :outcome "saved" :duration duration))
+
+        (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
+          {::audit/replace-props
+           (cond-> {:id         (:id file)
+                    :name       (:name file)
+                    :features   (:features file)
+                    :project-id (:project-id file)
+                    :team-id    (:team-id file)}
+
+             ;; The ordinary save path is untouched: the props above are
+             ;; the ones it has always carried.
+             branch?
+             (assoc :branch-operation "save-branch"
+                    :branch-outcome "saved"
+                    :branch-duration-ms duration))})))))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."

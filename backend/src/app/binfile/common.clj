@@ -315,9 +315,21 @@
 
   Returns the file with `:data` decoded (plain maps); callers that asked
   for `:decode? false` get it re-encoded as bytes so the update-file
-  pipeline (which always blob-decodes) is unaffected."
+  pipeline (which always blob-decodes) is unaffected.
+
+  This function carries the whole cost of reading a branch: the file row
+  stores no payload, so every open pays the base load and the replay. It
+  therefore reports its own duration and the depth of the log it
+  replayed, because the depth is what predicts the cost, and the depth is
+  the quantity `files_branch.clj::check-oplog-depth-limit!` gates. The
+  same numbers travel on the returned file's metadata as `::audit/props`,
+  so the RPC command that paid for the derive reports them on its own
+  audit event. An ordinary file read never reaches this function, so an
+  ordinary read neither times nor logs anything."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode?]
-  (let [branch (db/get* conn :file-branch {:branch-file-id id})
+  (let [tpoint (ct/tpoint)
+
+        branch (db/get* conn :file-branch {:branch-file-id id})
 
         _ (when (nil? branch)
             (ex/raise :type :not-found
@@ -355,12 +367,31 @@
 
         rows (db/exec! conn [sql:get-branch-changes id])
 
-        data (reduce (fn [data {:keys [changes]}]
-                       (cpc/process-changes data (blob/decode changes)))
-                     (:data base)
-                     rows)
+        ;; the derive replays the log batch by batch, so each batch is
+        ;; decoded exactly once. `depth` is the flattened op count, the
+        ;; quantity `files_branch.clj::check-oplog-depth-limit!` limits,
+        ;; and the one that predicts the cost of the replay.
+        [data depth]
+        (reduce (fn [[data depth] {:keys [changes]}]
+                  (let [changes (blob/decode changes)]
+                    [(cpc/process-changes data changes)
+                     (+ depth (count changes))]))
+                [(:data base) 0]
+                rows)
 
-        data (if decode? data (blob/encode data))]
+        data (if decode? data (blob/encode data))
+
+        ;; measured once so the log line and the audit props carry the same
+        ;; number. The timer covers the re-encode as well when the caller
+        ;; asked for raw bytes: that encode is part of what it waits for.
+        duration (inst-ms (tpoint))]
+
+    (l/inf :hint "branch file derive"
+           :file-id (str id)
+           :oplog-depth depth
+           :oplog-batches (count rows)
+           :duration-ms duration)
+
     (-> file
         ;; the derived data is the BASE's data plus the op log, so the
         ;; file carries the base's version and migration set; this keeps
@@ -370,7 +401,17 @@
         (assoc :data data)
         (assoc :version (or (:version base) (:version file)))
         (cond-> (some? (:migrations base))
-          (assoc :migrations (:migrations base))))))
+          (assoc :migrations (:migrations base)))
+        ;; the numbers travel with the value, because the RPC audit event
+        ;; of the read that paid for this derive reads `::audit/props` off
+        ;; the result metadata
+        ;; (`app/loggers/audit.clj::prepare-rpc-event`), and a branch open
+        ;; returns exactly this file. An ordinary file never reaches this
+        ;; function, so an ordinary read attaches nothing.
+        (vary-meta assoc ::audit/props
+                   {:branch-derive-ms duration
+                    :branch-oplog-depth depth
+                    :branch-oplog-batches (count rows)}))))
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
    {:keys [migrate?

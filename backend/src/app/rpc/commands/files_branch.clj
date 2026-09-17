@@ -152,17 +152,29 @@
 ;; operation attaches it to its own event.
 
 (defn- audited
-  "Attach `:duration-ms` and `:outcome` to the audit event of a branch
-  operation. `result` is returned unchanged to the caller."
-  [result tpoint operation]
-  (let [duration (inst-ms (tpoint))]
-    (l/inf :hint "branch operation" :operation (name operation)
-           :outcome (name (or (:status result) :ok))
-           :duration duration)
-    (vary-meta result update ::audit/props merge
-               {:branch-operation (name operation)
-                :branch-outcome (name (or (:status result) :ok))
-                :branch-duration-ms duration})))
+  "Attach the `:duration-ms` and `:outcome` props to the audit event of a
+  branch operation, and print the matching log line. `result` is returned
+  unchanged to the caller, and `extra` lets an operation add numbers of
+  its own to the same record.
+
+  A listing returns a vector rather than a map, and a vector carries
+  metadata exactly like the maps the other commands return, so the props
+  reach the audit middleware (`app/loggers/audit.clj::prepare-rpc-event`
+  reads `(meta result)`) the way they always have. Nothing between the
+  handler and that middleware rebuilds the value."
+  ([result tpoint operation]
+   (audited result tpoint operation nil))
+  ([result tpoint operation extra]
+   (let [duration (inst-ms (tpoint))
+         outcome  (name (or (:status result) :ok))]
+     (l/inf :hint "branch operation" :operation (name operation)
+            :outcome outcome
+            :duration duration)
+     (vary-meta result update ::audit/props merge
+                (cond-> {:branch-operation (name operation)
+                         :branch-outcome outcome
+                         :branch-duration-ms duration}
+                  (seq extra) (merge extra))))))
 
 ;; --- Helpers: media pairing
 ;;
@@ -663,6 +675,12 @@
   in-sync branches skip the diff entirely; `main` is realized once and
   shared across branches.
 
+  A cold listing is one of the slowest things a user meets, so the listing
+  reports its own duration to `audit_log` and to the log, together with
+  the two numbers that explain that duration: how many open diverged
+  branches it had to look a comparison up for, and how many of those the
+  summary cache answered without computing anything.
+
   The per-branch summary is cached by `(base-snapshot-id, source-revn,
   branch-revn)`: a repeated listing with no intervening save performs no
   comparison work, and the tuple names exactly the inputs the computation
@@ -670,32 +688,40 @@
   The pull-request listing reads the same cache, so either surface can
   arrive warm."
   {::doc/added "2.16"
-   ::sm/params schema:get-file-branches}
+   ::sm/params schema:get-file-branches
+   ::climit/id [[:get-file-branches/global]]}
   [cfg {:keys [::rpc/profile-id file-id include-archived]}]
   (check-branching-enabled!)
   (db/run! cfg
            (fn [{:keys [::db/conn] :as cfg}]
              (files/check-read-permissions! cfg profile-id file-id)
-             (let [rows      (db/exec! conn [sql:get-file-branches file-id (boolean include-archived)])
+             (let [tpoint    (ct/tpoint)
+                   rows      (db/exec! conn [sql:get-file-branches file-id (boolean include-archived)])
                    ;; only OPEN branches get diff counts: merged/archived ones
                    ;; are not going to be merged as-is, so the expensive diff
                    ;; would be wasted work (and their base may be released)
                    open?     (fn [row] (= "open" (:status row)))
-                   ;; realize main once, only if some open branch diverged
-                   ;; AND its summary is not cached
-                   need?     (some (fn [r] (and (open? r)
-                                                (nil? (cached-summary r))
-                                                (let [[a b] (revn-deltas r)] (or (pos? a) (pos? b)))))
-                                   rows)
-                   main-data (when need? (:data (bfc/get-file cfg file-id :realize? true)))]
-               (mapv (fn [row]
-                       (let [[ahead behind conflicts] (if (open? row)
-                                                        (cached-diff-counts cfg main-data row)
-                                                        [0 0 0])]
-                         (-> row
-                             (assoc :ahead ahead :behind behind :conflicts conflicts)
-                             (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))))
-                     rows)))))
+                   ;; an open branch whose cheap revn deltas say it diverged is
+                   ;; the only one the listing looks a comparison up for
+                   diverged? (fn [row] (let [[a b] (revn-deltas row)] (or (pos? a) (pos? b))))
+                   compared  (filterv (fn [row] (and (open? row) (diverged? row))) rows)
+                   ;; the rows the summary cache answers without computing
+                   cached    (filterv (comp some? cached-summary) compared)
+                   ;; realize main once, only if some compared branch is not
+                   ;; already cached
+                   need?     (< (count cached) (count compared))
+                   main-data (when need? (:data (bfc/get-file cfg file-id :realize? true)))
+                   branches  (mapv (fn [row]
+                                     (let [[ahead behind conflicts] (if (open? row)
+                                                                      (cached-diff-counts cfg main-data row)
+                                                                      [0 0 0])]
+                                       (-> row
+                                           (assoc :ahead ahead :behind behind :conflicts conflicts)
+                                           (dissoc :branch-revn :source-revn :base-snapshot-id :base-branch-revn))))
+                                   rows)]
+               (audited branches tpoint :list-branches
+                        {:branches-compared (count compared)
+                         :branches-cached (count cached)})))))
 
 ;; --- COMMAND QUERY: get-branch-diff
 
@@ -716,6 +742,7 @@
   later refinement."
   {::doc/added "2.16"
    ::sm/params schema:get-branch-diff
+   ::climit/id [[:get-branch-diff/global]]
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id branch-id direction]}]
   (check-branching-enabled!)
@@ -787,7 +814,8 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:merge-file-branch
-   ::climit/id [[:merge-file-branch/global]]}
+   ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
+                [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
    {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn keep-branch]}]
   (check-branching-enabled!)
@@ -1010,7 +1038,8 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:update-branch-from-main
-   ::climit/id [[:update-branch-from-main/global]]}
+   ::climit/id [[:update-branch-from-main/by-profile ::rpc/profile-id]
+                [:update-branch-from-main/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
    {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions]}]
   (check-branching-enabled!)
@@ -1226,7 +1255,8 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:materialize-file-branch
-   ::climit/id [[:materialize-file-branch/global]]}
+   ::climit/id [[:materialize-file-branch/by-profile ::rpc/profile-id]
+                [:materialize-file-branch/global]]}
   [cfg {:keys [::rpc/profile-id file-id]}]
   (check-branching-enabled!)
   (files/check-edition-permissions! cfg profile-id file-id)
