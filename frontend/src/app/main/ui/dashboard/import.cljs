@@ -390,25 +390,55 @@
 
 (mf/defc library-resolution*
   {::mf/private true}
-  [{:keys [unresolved-file selection on-select]}]
-  (let [candidates (:pending unresolved-file)
-        disconnected* (mf/use-state #{})
-        disconnected  (deref disconnected*)
+  [{:keys [unresolved-file selection on-select on-disconnect]}]
+  (let [file-id (:id unresolved-file)
+        candidates (:pending unresolved-file)
+        file-selection (get selection file-id)
+
+        on-select-file
+        (mf/use-fn
+         (mf/deps file-id on-select)
+         (partial on-select file-id))
+
+        on-disconnect-file
+        (mf/use-fn
+         (mf/deps file-id on-disconnect)
+         (partial on-disconnect file-id))
+
         on-change-disconnected
         (mf/use-fn
+         (mf/deps file-selection candidates on-select-file on-disconnect-file)
          (fn [id]
-           (swap! disconnected*
-                  (fn [s]
-                    (if (contains? s id) (disj s id) (conj s id))))))]
+           (if (contains? file-selection id)
+             (on-disconnect-file id)
+             (let [{:keys [candidates]} (d/seek #(= id (:id %)) candidates)]
+               (when-let [first-c (first candidates)]
+                 (on-select-file id (str (:id first-c))))))))]
 
-    ;; Pre-select first candidate for each library
-    (mf/with-effect [candidates]
+    ;; Pre-select a candidate for each of this file's pending libraries not
+    ;; yet resolved for this file: reuse another file's choice for the same
+    ;; source library when one already exists (so files sharing a library
+    ;; default to the same target), otherwise fall back to the first
+    ;; candidate. Each file keeps its own entry in `selection`, so this is
+    ;; only ever a starting point - it never overwrites another file's pick.
+    (mf/with-effect [candidates file-id]
       (doseq [{:keys [id candidates]} candidates]
-        (when-not (contains? selection id)
-          (when-let [first-c (first candidates)]
-            (on-select id (str (:id first-c)))))))
+        (when-not (contains? file-selection id)
+          (let [other-choice (some #(get % id) (vals selection))
+                default-id (or other-choice (some-> candidates first :id str))]
+            (when default-id
+              (on-select-file id default-id))))))
 
     [:div {:class (stl/css :library-resolution)}
+     [:div {:class (stl/css :library-resolution-file-header)}
+      [:> icon* {:icon-id i/document
+                 :class (stl/css :library-resolution-file-icon)
+                 :size "s"}]
+      [:> text* {:class (stl/css :library-resolution-file-name)
+                 :as "span"
+                 :typography t/body-medium}
+       (:name unresolved-file)]]
+
      [:> text* {:class (stl/css :library-resolution-message)
                 :as "p"
                 :typography t/body-large}
@@ -435,8 +465,8 @@
                                 {:id (str (:id c))
                                  :label (str (:name c) " (" (:project-name c) ")")})
                               candidates)
-               selected (get selection id)
-               is-conected (not (contains? disconnected id))]
+               selected (get file-selection id)
+               is-conected (contains? file-selection id)]
            [:tr {:class (stl/css :library-resolution-item)
                  :key (dm/str id)}
             [:td {:class (stl/css :library-resolution-item-name)}
@@ -453,7 +483,7 @@
                             :class (stl/css :library-resolution-select)
                             :default-selected (or (some-> selected str) "")
                             :has-portal true
-                            :on-change (partial on-select id)}]
+                            :on-change (partial on-select-file id)}]
 
                [:> text* {:class (stl/css :library-resolution-no-selection)
                           :as "span"
@@ -465,8 +495,9 @@
 (mf/defc library-resolution-summary-file*
   {::mf/private true}
   [{:keys [resolution-file selection]}]
-  (let [done    (:done resolution-file)
-        pending (:pending resolution-file)]
+  (let [done           (:done resolution-file)
+        pending        (:pending resolution-file)
+        file-selection (get selection (:id resolution-file))]
     [:div {:class (stl/css :summary-file)}
      [:div {:class (stl/css :summary-file-header)}
       [:> icon* {:icon-id i/document
@@ -508,7 +539,7 @@
           [:span {:class (stl/css :summary-item-name-header)}
            "New"]]
          (for [{:keys [id name] :as cand} pending]
-           (let [selected-id (get selection id)
+           (let [selected-id (get file-selection id)
                  selected-c  (when selected-id
                                (d/seek #(= (str (:id %)) (str selected-id)) (:candidates cand)))]
              [:li {:class (stl/css :summary-list-item)
@@ -647,15 +678,16 @@
 
 (mf/defc import-library-resolution-stage*
   {::mf/private true}
-  [{:keys [current-unresolved-file selection on-select
-           visited all-visited?
+  [{:keys [current-unresolved-file selection on-select on-disconnect
+           visited last-file?
            on-wizard-prev on-wizard-next]}]
   [:*
    [:div {:class (stl/css :modal-content)}
     [:> library-resolution*
      {:unresolved-file current-unresolved-file
       :selection selection
-      :on-select on-select}]]
+      :on-select on-select
+      :on-disconnect on-disconnect}]]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
@@ -667,9 +699,9 @@
      [:> button* {:class (stl/css :accept-btn)
                   :variant "primary"
                   :on-click on-wizard-next}
-      (if all-visited?
-        (tr "labels.next")
-        (tr "dashboard.import.review-links"))]]]])
+      (if last-file?
+        (tr "dashboard.import.review-links")
+        (tr "dashboard.import.next-file"))]]]])
 
 (mf/defc import-library-summary-stage*
   {::mf/private true}
@@ -717,7 +749,9 @@
         resolution* (mf/use-state nil)
         resolution  (not-empty (deref resolution*))
 
-        ;; User selection for multi-match candidates: {old-lib-id candidate-id}
+        ;; User selection for multi-match candidates, scoped per file so two
+        ;; files referencing the same source library can each resolve it to
+        ;; a different target: {file-id {old-lib-id candidate-id}}
         selection*  (mf/use-state {})
         selection   (deref selection*)
 
@@ -738,15 +772,20 @@
                        []
                        resolution)))
 
-        all-visited?
-        (mf/with-memo [visited unresolved-files]
-          (when (seq unresolved-files)
-            (every? #(contains? visited (:id %)) unresolved-files)))
-
         ;; Current file shown in the wizard step: first unresolved file not yet visited.
         current-unresolved-file
         (mf/with-memo [unresolved-files visited]
           (d/seek #(not (contains? visited (:id %))) unresolved-files))
+
+        ;; Whether the file currently shown is the last one still needing
+        ;; resolution: true once every other unresolved file has already
+        ;; been visited, so moving past this one reaches the summary.
+        last-unresolved-file?
+        (mf/with-memo [unresolved-files visited current-unresolved-file]
+          (when (some? current-unresolved-file)
+            (every? #(or (= (:id %) (:id current-unresolved-file))
+                         (contains? visited (:id %)))
+                    unresolved-files)))
 
         continue-entries
         (mf/use-fn
@@ -830,7 +869,7 @@
                      (->> (rx/from (:pending resolution-file))
                           (rx/merge-map
                            (fn [{:keys [id]}]
-                             (when-let [selected-lib (get slc id)]
+                             (when-let [selected-lib (get-in slc [file-id id])]
                                (link-files-to-library! [file-id] selected-lib)))))))
                   (rx/subs! (constantly nil)
                             (constantly nil)
@@ -848,12 +887,12 @@
 
         on-wizard-prev
         (mf/use-fn
-         (mf/deps current-unresolved-file)
+         (mf/deps visited)
          (fn []
-           ;; Remove the current file from visited; it becomes current again after re-render,
-           ;; because it's no longer in visited.
-           (let [file-id (:id current-unresolved-file)]
-             (swap! visited* disj file-id))))
+           ;; Remove the last-visited file from visited; it becomes current
+           ;; again after re-render, because it's no longer in visited.
+           (let [last-id (last visited)]
+             (swap! visited* disj last-id))))
 
         on-summary-back
         (mf/use-fn
@@ -897,9 +936,13 @@
 
         manage-on-select
         (mf/use-fn
-         (mf/deps selection)
-         (fn [old-lib-id candidate-id]
-           (swap! selection* assoc old-lib-id candidate-id)))]
+         (fn [file-id old-lib-id candidate-id]
+           (swap! selection* assoc-in [file-id old-lib-id] candidate-id)))
+
+        manage-on-disconnect
+        (mf/use-fn
+         (fn [file-id old-lib-id]
+           (swap! selection* update file-id (fnil dissoc {}) old-lib-id)))]
 
     (mf/with-effect [visited unresolved-files]
       (when (and (seq unresolved-files)
@@ -968,8 +1011,9 @@
          {:current-unresolved-file current-unresolved-file
           :selection selection
           :on-select manage-on-select
+          :on-disconnect manage-on-disconnect
           :visited visited
-          :all-visited? all-visited?
+          :last-file? last-unresolved-file?
           :on-wizard-prev on-wizard-prev
           :on-wizard-next on-wizard-next}]
 
