@@ -35,6 +35,7 @@
    [app.graph.overlay.queries :as queries]
    [app.graph.overlay.sync :as sync]
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :as t]
    [datascript.core :as d]))
 
@@ -582,7 +583,7 @@
    :del-obj     {:coverage :covered
                  :why "the shape and its subtree, and Penpot's one change per selected shape is idempotent here"}
    :mov-objects {:coverage :covered
-                 :why "the parent edge and the child list, the container renumber and the re-resolution of the moved subtrees"}
+                 :why "the parent edge and the child list, the container renumber and the re-resolution of the moved subtrees, for the moves `app.common.files.changes/valid-move?` accepts; a change the gate refuses moves none of its shapes, which is the document's own answer and rewrites no datom here"}
    :reorder-children {:coverage :covered
                       :why "the sibling ordinals, from the parent's own list sorted as `process-children-reordering` sorts it: a partial order over the children, the unnamed ones first, and a parent inside a component copy left alone unless the change allows altering copies"}
    :add-page    {:coverage :covered
@@ -1126,6 +1127,174 @@
               (str label ": the copy's child order moved the wrong way"))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; the move gate
+;;
+;; `process-change :mov-objects` refuses the whole change when any shape it
+;; names may not move, and a shape may not land in its own subtree, in a
+;; component copy, or in its main component. The mirror asks the document's
+;; own predicate for that answer, so a move the document leaves alone is a
+;; move the fold leaves alone, and a change the document moves nothing for
+;; rewrites no datom here.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private with-a-copy-on-the-page
+  "The fixture's changes up to the component record's rename: the main
+  instance's subtree stands on the page, and `copy-root-id` carries a
+  `:shape-ref`, so a move into it is a move into a component copy."
+  (vec (take-while #(not= :mod-component (:type %)) changes)))
+
+(def ^:private before-circ-leaves
+  "The fixture's changes up to the `:del-obj` of circ-id: `subchild-id` is
+  still the frame's grandchild, which is what makes a move of the frame
+  under it a move under its own descendant."
+  (vec (take-while #(not= :del-obj (:type %)) changes)))
+
+(defn- parent-shape-id
+  "The shape id of the parent the index gives `sid` inside `container-id`:
+  the answer a consumer reads out of the fold without the document."
+  [db container-id sid]
+  (let [ceid (queries/container-eid db container-id)]
+    (:shape/id (:shape/parent (d/entity db (queries/shape-eid db ceid sid))))))
+
+(defn- fold-and-rebuild
+  "The fixture after `change-list` on both paths: the changed document, the
+  folded index, the rebuilt index, and the fold's report. `round-trip`
+  compares the second and third in normal form; a test that names an entity
+  needs the databases themselves."
+  [change-list]
+  (let [data0  (base-data)
+        data1  (cp/process-changes data0 change-list false)
+        result (sync/apply-changes (overlay/build data0) change-list)]
+    {:document data1
+     :folded   (:db result)
+     :rebuilt  (overlay/build data1)
+     :applied  (:applied result)
+     :skipped  (:skipped result)}))
+
+(t/deftest a-move-the-gate-refuses-leaves-the-parent-edges-alone
+  ;; The measurement `pp:graph:the-move-mirror-ignores-the-validity-gate`
+  ;; records, on this fixture: the destination is a component copy, so the
+  ;; document refuses to move the main instance's child into it, and the fold
+  ;; used to follow the move anyway, leaving the fold with a parent edge the
+  ;; document never had.
+  (let [change (conj with-a-copy-on-the-page
+                     {:type :mov-objects :page-id page-id
+                      :parent-id copy-root-id :shapes [comp-child-id]})
+        {:keys [document folded rebuilt applied skipped]} (fold-and-rebuild change)]
+    (t/is (empty? skipped)
+          (str "a refused move is not a skip: " (pr-str skipped)))
+    (t/is (= :mov-objects (peek applied))
+          "the change is applied, because the index still equals a rebuild")
+    (t/is (= comp-root-id
+             (get-in document [:pages-index page-id :objects comp-child-id :parent-id]))
+          "the document kept the main instance's child where it was")
+    (t/is (= [comp-root-id comp-root-id]
+             [(parent-shape-id folded page-id comp-child-id)
+              (parent-shape-id rebuilt page-id comp-child-id)])
+          "and both indexes kept the parent the document kept")
+    (t/is (= (normal-form folded) (normal-form rebuilt))
+          "the parent edge was the whole difference this case had")))
+
+(t/deftest a-move-into-a-copy-follows-allow-altering-copies
+  ;; `allow-altering-copies` is the document's own lift of the copy
+  ;; restriction, which a component swap carries, and the mirror passes it
+  ;; through rather than deciding for itself: the same move into a copy is
+  ;; refused without the flag and follows with it, on both paths.
+  (let [change  (fn [flags]
+                  (conj with-a-copy-on-the-page
+                        (merge {:type :mov-objects :page-id page-id
+                                :parent-id copy-root-id :shapes [rect-id]}
+                               flags)))
+        refused (fold-and-rebuild (change {}))
+        allowed (fold-and-rebuild (change {:allow-altering-copies true}))]
+    (t/is (= [frame-id frame-id]
+             [(parent-shape-id (:folded refused) page-id rect-id)
+              (parent-shape-id (:rebuilt refused) page-id rect-id)])
+          "without the flag the copy still refuses the move")
+    (t/is (= (normal-form (:folded refused)) (normal-form (:rebuilt refused))))
+    (t/is (= [copy-root-id copy-root-id]
+             [(parent-shape-id (:folded allowed) page-id rect-id)
+              (parent-shape-id (:rebuilt allowed) page-id rect-id)])
+          "and with it both indexes follow the move the document makes")
+    (t/is (= (normal-form (:folded allowed)) (normal-form (:rebuilt allowed))))))
+
+(t/deftest one-invalid-shape-moves-none-of-the-shapes-with-it
+  ;; The half a per-shape mirror cannot see: the gate is all-or-nothing for
+  ;; the change, so the frame that may not land under its own descendant
+  ;; keeps the text beside it where it was. The control is the same change
+  ;; with the frame left out, which moves the text on both paths — the
+  ;; invalid shape's presence is the only difference between the two.
+  (let [change  (fn [shape-ids]
+                  (conj before-circ-leaves
+                        {:type :mov-objects :page-id page-id
+                         :parent-id subchild-id :shapes shape-ids}))
+        refused (fold-and-rebuild (change [frame-id text-id]))
+        control (fold-and-rebuild (change [text-id]))]
+    (t/is (empty? (:skipped refused))
+          (str "a refused move is not a skip: " (pr-str (:skipped refused))))
+    (t/is (= [uuid/zero uuid/zero]
+             [(parent-shape-id (:folded refused) page-id frame-id)
+              (parent-shape-id (:rebuilt refused) page-id frame-id)])
+          "neither index moved the frame the gate refuses")
+    (t/is (= [uuid/zero uuid/zero]
+             [(parent-shape-id (:folded refused) page-id text-id)
+              (parent-shape-id (:rebuilt refused) page-id text-id)])
+          "and the text stayed with it, as the document left it")
+    (t/is (= (normal-form (:folded refused)) (normal-form (:rebuilt refused))))
+    (t/is (empty? (:skipped control))
+          (str "the control is a valid move: " (pr-str (:skipped control))))
+    (t/is (= [subchild-id subchild-id]
+             [(parent-shape-id (:folded control) page-id text-id)
+              (parent-shape-id (:rebuilt control) page-id text-id)])
+          "while the same change without the invalid shape moves the text")
+    (t/is (= (normal-form (:folded control)) (normal-form (:rebuilt control))))))
+
+(t/deftest a-move-under-its-own-descendant-returns-and-folds-to-the-rebuild
+  ;; The second measurement: the mirror followed this move, closed a cycle in
+  ;; its parent edges, and walked `subtree-eids` for ever — eight seconds in,
+  ;; the stack still bore it. The gate refuses the move, so there is no cycle
+  ;; to enter and the change lands as an applied change.
+  (let [change (conj before-circ-leaves
+                     {:type :mov-objects :page-id page-id
+                      :parent-id subchild-id :shapes [frame-id]})
+        {:keys [document folded rebuilt applied skipped]} (fold-and-rebuild change)]
+    (t/is (empty? skipped)
+          (str "a refused move is not a skip: " (pr-str skipped)))
+    (t/is (= :mov-objects (peek applied))
+          "the change is applied, because the index still equals a rebuild")
+    (t/is (= uuid/zero
+             (get-in document [:pages-index page-id :objects frame-id :parent-id]))
+          "the document refuses to nest the frame under its own descendant")
+    (t/is (= [uuid/zero uuid/zero]
+             [(parent-shape-id folded page-id frame-id)
+              (parent-shape-id rebuilt page-id frame-id)])
+          "and neither index followed it")
+    (t/is (= (normal-form folded) (normal-form rebuilt)))))
+
+(t/deftest the-subtree-walk-returns-on-a-cyclic-index
+  ;; The gate is the first half of the repair and this is the second: an
+  ;; index that already holds a cycle must not make the walk run for ever,
+  ;; because `subtree-eids` runs over every moved subtree and every deleted
+  ;; one. `app.common.files.helpers/get-children-ids`, which walks the same
+  ;; closure in the document, carries its own `processed` set for the same
+  ;; reason. The deref is the assertion: a walk that does not return fails
+  ;; here rather than hanging the run.
+  (let [db     (-> (overlay/build (base-data))
+                   (sync/apply-changes (subvec changes 0 4))
+                   :db)
+        ceid   (queries/container-eid db page-id)
+        circ   (queries/shape-eid db ceid circ-id)
+        sub    (queries/shape-eid db ceid subchild-id)
+        ;; circ under its own child: a cycle of two, which no accepted change
+        ;; produces and a rebuilt index can still hold
+        db     (d/db-with db [[:db/add circ :shape/parent sub]])
+        walked (deref (future (#'sync/subtree-eids db circ)) 5000 ::timeout)]
+    (t/is (not= ::timeout walked)
+          "the walk must return on a cyclic index")
+    (t/is (= [circ sub] walked)
+          "and name each shape of the cycle once")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; the staleness gate
 ;;
 ;; Three pieces: a pure verdict over one batch, a session that records
@@ -1284,6 +1453,18 @@
         "a reorder stays a named gap on the Ladybug mirror")
   (t/is (contains? (types-with change-coverage :covered) :reorder-children)
         "and it is covered here, which is what the ordinal bought"))
+
+(t/deftest the-mov-objects-row-names-the-gate-it-covers
+  ;; The row is the table's claim about which moves the mirror covers, and
+  ;; the mirror covers exactly the moves the document's validity gate
+  ;; accepts. A row that names the decision it rests on and states the
+  ;; answer for a change the gate refuses is one a reader can hold the
+  ;; applier to, and the claim goes stale loudly where the row goes stale.
+  (let [why (:why (change-coverage :mov-objects))]
+    (t/is (str/includes? why "valid-move?")
+          "the row names the decision the mirror asks")
+    (t/is (str/includes? why "refuses")
+          "and states what a change the gate refuses moves")))
 
 (t/deftest the-classification-table-names-every-operation
   (let [dispatched (disj (set (keys (methods cp/process-operation))) :default)
