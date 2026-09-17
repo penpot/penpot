@@ -319,6 +319,36 @@
                         (create-layout type))]
             (rx/of (with-meta event (meta it)))))))))
 
+(defn change-grid-direction
+  "Set grid direction and reflow single-span auto items in one undo step."
+  [ids dir]
+  (ptk/reify ::change-grid-direction
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwsh/update-shapes
+                ids
+                (fn [shape]
+                  (let [from-dir (d/nilv (:layout-grid-dir shape) :row)]
+                    (cond
+                      (not= :grid (:layout shape))
+                      shape
+
+                      (not (contains? #{:row :column} dir))
+                      shape
+
+                      (= from-dir dir)
+                      (assoc shape :layout-grid-dir dir)
+
+                      :else
+                      (ctl/reflow-grid-auto-items-for-direction shape from-dir dir))))
+                ;; Auto cells are already reflowed, so skip generic reassignment
+                ;; and child reordering.
+                {:skip-grid-reassignment? true})
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
+
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))
   ([ids changes options]
