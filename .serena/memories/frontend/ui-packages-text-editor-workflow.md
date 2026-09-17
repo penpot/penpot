@@ -9,6 +9,8 @@
 - `frontend/text-editor` builds `@penpot/text-editor` from `src/editor/TextEditor.js`. It is a Vite JS package, not CLJS, and has its own Vitest/browser-test setup.
 - The text editor consumes render-wasm artifacts copied from `frontend/resources/public/js` into `frontend/text-editor/src/wasm`. Use `pnpm run wasm:update` after rebuilding `render-wasm` if tests or local dev use stale WASM files.
 - Other packages under `frontend/packages/` such as `tokenscript`, `draft-js`, and `mousetrap` are workspace dependencies used by the frontend app; do not assume their runtime behavior lives in CLJS namespaces.
+- `frontend/packages/draft-js` (Draft.js wrapper) validates selections before every `Modifier.applyEntity` call and returns the input state unchanged on stale/invalid/collapsed selections: blurring the text editor rebuilds `EditorState` with fresh block keys while a delayed `on-change` still carries old keys, which otherwise crashes Draft.js (`getCharacterList` of undefined) and kills the workspace.
+- `frontend/packages/draft-js` has its own `vite.config.js` pinning `include: ["index.test.js"]`: without it, `vitest run` from that dir is hijacked by the frontend-root `vite.config.js` storybook project and reports "No test files found". Run via `pnpm --filter @penpot/draft-js test`; it also runs inside `frontend/scripts/test` (CI `Unit Tests` step), right after `pnpm install` and before the wasm build.
 
 ## Commands
 

@@ -381,6 +381,12 @@ importers:
       esbuild:
         specifier: ^0.28.1
         version: 0.28.2
+      jsdom:
+        specifier: ^30.0.1
+        version: 30.0.1(canvas@3.2.3)
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.11(@types/node@26.4.0)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(jsdom@30.0.1(canvas@3.2.3))(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(sass-embedded@1.103.1)(sass@1.103.1))
 
   packages/mousetrap: {}
 
