@@ -6,7 +6,37 @@ Frontend validation: CLJS + React/Rumext + RxJS/Potok; SCSS modules; shared CLJC
 
 READ `mem:testing` FIRST — it defines the execution discipline (no piping, tee to file, preferred commands) that applies to all CLJS/JS test runs.
 
-Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access. Mock through `frontend-tests.helpers.mock`: prefer `mock/with-mocks` (installs with `set!`, so it survives async boundaries) over `with-redefs`. The `:esm` test build dispatches calls to multi-arity vars as `cljs$core$IFn$_invoke$arity$N`, so stub multi-arity vars with `mock/stub` (arities 0-6); for variadic call sites with more than 6 args use a plain variadic `fn` instead. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses). Async tests wrap the body in `t/async` and thread its `done` into `mock/with-mocks` as the outer callback; `done'` must be called exactly once (calling it twice only prints a warning; not calling it stalls the run and leaks the mocks).
+Frontend unit tests live under `frontend/test/frontend_tests/` and use `cljs.test`. They should be deterministic, avoid DOM/UI integration where possible, and mock side effects such as RPC, storage, timers, or network access.
+
+### Async-first stance
+
+Frontend testing is async-first: everything essentially asynchronous is modeled with a test reproducing the asynchrony, even when the test could be written "synchronously". Sync-passing tests prove nothing about async behavior and rot as soon as an async boundary appears downstream. Consequences: mock through `frontend-tests.helpers.mock`, never `with-redefs`, except unit tests of purely synchronous functions; transport doubles deliver asynchronously (`observe-on :async`) while the test keeps scenario timing (explicit pushes); assertions always follow quiescence (`wait-for` on presence, bare `settle` tick for absence-only blocks), never a trigger.
+
+### Primitives
+
+- `mock/with-mocks` (callback style, legacy compat): installs with `set!` so mocks survive async boundaries; bodies run deferred past the current tick via `asap`, so only done-chained (`t/async`) contexts are allowed; `done'` restores and completes exactly once (twice only warns; never calling it stalls the run and leaks the mocks). Prefer `mock/with-mocks*` for new tests.
+- `mock/with-mocks*` (direction): body forms wrapped in a generated `^:async` fn, evaluates to a promise — `await` it, `await` nested scopes too, no `done` in test code. Rejections and non-promise returns report as `:error` via `run-mocked`.
+- `mock/stub` wraps fns for arities 0-6 (the `:esm` test build dispatches multi-arity vars as `cljs$core$IFn$_invoke$arity$N`); variadic call sites beyond 6 args need a plain variadic `fn`. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses).
+- Helpers in `frontend-tests.helpers.async`: `->promise` (single-value observable → promise; beicon has no `to-promise`), `await-response` (subscribe→push→await, atomic), `settle`, `wait-for` (immediate check + bounded poll, fails instead of hanging), `observe` (stream → termination promise; asserts provided, timeout rejects).
+- Fixtures return promises (`with-watchdog`, `with-persistence`); `await` them from `^:async` tests. Pre-existing sync call-sites still to migrate (e.g. `main_errors`, `fonts`).
+- Valid `^:async` placements: `mem:clojure/idioms`.
+
+### Observing event streams
+
+To assert over emitted event sequences, observe termination: subscribe through `observe` (async delivery forced even for sync sources), `await` its promise, then assert the collected values. Never branch on nil (`when-let` skipping observation lets setup bugs pass as "empty"): producers answer refusals with empty streams, never nil, so every path subscribes uniformly. Observed termination is exact quiescence — no manual `settle` after it. Errors reject unless `:on-error` handles them.
+
+### Runner and library facts (verified: CLJS 1.12.145, beicon2 `df7058a`)
+
+- `cljs.test` keeps its env in a `set!` var: assertions inside deferred ticks count. `run-block`: double `done` only warns; missing `done` stalls.
+- `t/async` discards the body promise — completion signals ONLY via `done`. `t/deftest ^:async` adds auto async-context + auto `done`, but awaiting stays the author's job; without it the test passes empty.
+- `take 1` is per-subscription on a hot subject: subscribe-before-push or hang. `end!`/`.error` with pending takes only forwards valueless completion.
+
+### Traps that bit
+
+- Subscription order decides delivery order: never resolve settlement from a pre-subscribed branch racing the pipeline.
+- Auto-answering mocks lose deadline expressiveness (can't time answers), need teardown timer-cancellation, and post-teardown deliveries hit real implementations — explicit pushes + async delivery + `wait-for` won on every axis.
+- Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
+- A body that awaits must be `(^:async fn …)` even if the rest is sync; sync sequences are atomic vs the event loop.
 
 From `frontend/`:
 - Full unit test run (always builds, suppressed output): `pnpm run test:quiet`.
