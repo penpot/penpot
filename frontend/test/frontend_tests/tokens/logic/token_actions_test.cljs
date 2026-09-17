@@ -15,6 +15,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
+   [app.util.storage :as storage]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
    [frontend-tests.helpers.pages :as thp]
@@ -1261,3 +1262,122 @@
                (t/is (pos? (thw/call-count :set-shape-text-content)))
                (t/is (pos? (thw/call-count :get-text-dimensions))))))
          debounce-text-stop)))))
+
+;; Coverage for issue #9819 (token tree collapsed after import).
+;;
+;; The fold state of the token type sections lives in
+;; `[:workspace-tokens :unfolded-token-types]` and is persisted in the user
+;; storage. The sections restore that state from storage on mount and when the
+;; selected set changes, so importing a library has to unfold the imported
+;; token types on both places, otherwise the tree shows up collapsed.
+
+(defn- unfolded-token-types
+  [state]
+  (get-in state [:workspace-tokens :unfolded-token-types :types]))
+
+(defn- reset-unfolded-token-types-storage! []
+  (swap! storage/user dissoc :app.main.ui.workspace.tokens/unfolded-token-types))
+
+(defn- setup-imported-lib []
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :imported-set-a)
+                                         :name "Imported A"))
+      (ctob/add-token (cthi/id :imported-set-a)
+                      (ctob/make-token {:name "borderRadius.sm"
+                                        :value "12"
+                                        :type :border-radius}))
+      (ctob/add-token (cthi/id :imported-set-a)
+                      (ctob/make-token {:name "color.primary"
+                                        :value "#ff0000"
+                                        :type :color}))
+      (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :imported-set-b)
+                                         :name "Imported B"))
+      (ctob/add-token (cthi/id :imported-set-b)
+                      (ctob/make-token {:name "spacing.md"
+                                        :value "16"
+                                        :type :spacing}))))
+
+(t/deftest test-import-tokens-lib-unfolds-token-types
+  (t/testing "importing a tokens library unfolds the token types of the shown set"
+    (t/async
+      done
+      (reset-unfolded-token-types-storage!)
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            lib    (setup-imported-lib)
+            events [(dwtl/import-tokens-lib lib)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (t/is (= #{:border-radius :color} (unfolded-token-types new-state)))
+           (t/is (= (cthi/id :imported-set-a)
+                    (get-in new-state [:workspace-tokens :unfolded-token-types :set-id])))
+           (t/is (= (:id file)
+                    (get-in new-state [:workspace-tokens :unfolded-token-types :file-id])))))))))
+
+(t/deftest test-import-tokens-lib-persists-unfolded-token-types
+  (t/testing "the unfolded token types survive the storage restore done on section mount"
+    (t/async
+      done
+      (reset-unfolded-token-types-storage!)
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            lib    (setup-imported-lib)
+            ;; Mirrors what the UI does after an import: the tokens panel selects
+            ;; the first set and every token section restores its fold state from
+            ;; storage on mount.
+            events [(dwtl/import-tokens-lib lib)
+                    (dwtl/set-selected-token-set-id (cthi/id :imported-set-a))
+                    (dwtl/restore-unfolded-token-types)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (t/is (= #{:border-radius :color} (unfolded-token-types new-state)))))))))
+
+(t/deftest test-import-tokens-lib-unfolds-every-imported-set
+  (t/testing "switching to another imported set also shows it unfolded"
+    (t/async
+      done
+      (reset-unfolded-token-types-storage!)
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            lib    (setup-imported-lib)
+            events [(dwtl/import-tokens-lib lib)
+                    (dwtl/set-selected-token-set-id (cthi/id :imported-set-b))]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (t/is (= #{:spacing} (unfolded-token-types new-state)))))))))
+
+(t/deftest test-import-tokens-lib-keeps-previously-unfolded-types
+  (t/testing "importing does not fold token types the user had already unfolded"
+    (t/async
+      done
+      (reset-unfolded-token-types-storage!)
+      (let [file   (setup-file-with-tokens)
+            store  (ths/setup-store file)
+            lib    (-> (get-in file [:data :tokens-lib])
+                       (ctob/add-token (cthi/id :set-a)
+                                       (ctob/make-token {:name "color.primary"
+                                                         :value "#ff0000"
+                                                         :type :color})))
+            events [(dwtl/set-selected-token-set-id (cthi/id :set-a))
+                    (dwtl/open-token-type :opacity)
+                    (dwtl/import-tokens-lib lib)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (t/is (= #{:border-radius :color :opacity} (unfolded-token-types new-state)))))))))
+
+(t/deftest test-import-empty-tokens-lib
+  (t/testing "importing a library without sets does not fail nor unfold anything"
+    (t/async
+      done
+      (reset-unfolded-token-types-storage!)
+      (let [file   (setup-file-with-empty-lib)
+            store  (ths/setup-store file)
+            events [(dwtl/import-tokens-lib (ctob/make-tokens-lib))]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (t/is (empty? (unfolded-token-types new-state)))))))))
