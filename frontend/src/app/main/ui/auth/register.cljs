@@ -125,7 +125,7 @@
          (mf/deps on-success-callback)
          (fn [params]
            (if (fn? on-success-callback)
-             (on-success-callback (:email params))
+             (on-success-callback params)
              (cond
                (some? (:invitation-token params))
                (let [token (:invitation-token params)]
