@@ -152,6 +152,20 @@
         (and (= (count content) 1)
              (= (first content) zero-width-space)))))
 
+(defn composing-event?
+  "True when a keydown event is part of an in-flight IME composition.
+
+  Read from the browser event itself so it stays correct regardless of
+  render timing or the relative ordering of composition events: on macOS
+  the keydown that confirms a composition (e.g. Enter in Japanese IME)
+  is dispatched while the composition is still active, so it must not
+  be interpreted as a comment-editor command. keyCode 229 covers the
+  cases where isComposing is not yet set (see #10477, #11757)."
+  [^js event]
+  (let [native (.-nativeEvent event)]
+    (or (.-isComposing native)
+        (= 229 (.-keyCode event)))))
+
 ;; Component that renders the component content
 (mf/defc comment-content*
   {::mf/private true}
@@ -356,59 +370,60 @@
         (mf/use-fn
          (mf/deps on-esc on-ctrl-enter handle-select handle-input)
          (fn [event]
-           (handle-select event)
-           (when-let [node (mf/ref-val local-ref)]
-             (when-let [[span-node offset] (current-text-node node)]
-               (cond
-                 (and @cur-mention (kbd/enter? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-selected-mention}))
+           (when-not (composing-event? event)
+             (handle-select event)
+             (when-let [node (mf/ref-val local-ref)]
+               (when-let [[span-node offset] (current-text-node node)]
+                 (cond
+                   (and @cur-mention (kbd/enter? event))
+                   (do (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (rx/push! mentions-s {:type :insert-selected-mention}))
 
-                 (and @cur-mention (kbd/down-arrow? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-next-mention}))
+                   (and @cur-mention (kbd/down-arrow? event))
+                   (do (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (rx/push! mentions-s {:type :insert-next-mention}))
 
-                 (and @cur-mention (kbd/up-arrow? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-prev-mention}))
+                   (and @cur-mention (kbd/up-arrow? event))
+                   (do (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (rx/push! mentions-s {:type :insert-prev-mention}))
 
-                 (and @cur-mention (kbd/esc? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :hide-mentions}))
+                   (and @cur-mention (kbd/esc? event))
+                   (do (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (rx/push! mentions-s {:type :hide-mentions}))
 
-                 (and (kbd/esc? event) (fn? on-esc))
-                 (on-esc event)
+                   (and (kbd/esc? event) (fn? on-esc))
+                   (on-esc event)
 
-                 (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                 (on-ctrl-enter event)
+                   (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+                   (on-ctrl-enter event)
 
-                 (kbd/enter? event)
-                 (let [sel (wapi/get-selection)
-                       range (.getRangeAt sel 0)]
-                   (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (let [[span-node offset] (current-text-node node)]
-                     (.deleteContents range)
-                     (handle-input)
-
-                     (when span-node
-                       (let [txt (.-textContent span-node)]
-                         (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
-                         (wapi/set-cursor! span-node (inc offset))
-                         (handle-input)))))
-
-                 (kbd/backspace? event)
-                 (let [prev-node (get-prev-node node span-node)]
-                   (when (and (some? prev-node)
-                              (= "mention" (dom/get-data prev-node "type"))
-                              (= offset 1))
+                   (kbd/enter? event)
+                   (let [sel (wapi/get-selection)
+                         range (.getRangeAt sel 0)]
                      (dom/prevent-default event)
                      (dom/stop-propagation event)
-                     (.remove prev-node))))))))]
+                     (let [[span-node offset] (current-text-node node)]
+                       (.deleteContents range)
+                       (handle-input)
+
+                       (when span-node
+                         (let [txt (.-textContent span-node)]
+                           (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
+                           (wapi/set-cursor! span-node (inc offset))
+                           (handle-input)))))
+
+                   (kbd/backspace? event)
+                   (let [prev-node (get-prev-node node span-node)]
+                     (when (and (some? prev-node)
+                                (= "mention" (dom/get-data prev-node "type"))
+                                (= offset 1))
+                       (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (.remove prev-node)))))))))]
 
     (mf/with-layout-effect [autofocus]
       (when ^boolean autofocus
