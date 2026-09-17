@@ -16,8 +16,8 @@ function requireValid(condition, message) {
 
 export function validateResult(result) {
   requireValid(
-    record(result) && result.schemaVersion === 1,
-    "expected schemaVersion 1",
+    record(result) && result.schemaVersion === 2,
+    "expected schemaVersion 2",
   );
   requireValid(record(result.metadata), "metadata is required");
   for (const field of ["environment", "configuration"])
@@ -135,6 +135,20 @@ export class CompatibilityError extends Error {
   }
 }
 
+// Tags the expected per-edge feature difference of a feature-matrix comparison
+// without suppressing it: the `metadata.build.features` mismatch stays listed
+// but carries the toggling feature. Mutates the comparison's mismatch entries
+// in place; no I/O.
+export function tagExpectedFeatureDiff(comparison, toggledFeature) {
+  for (const entry of comparison.mismatches) {
+    if (entry.path === "metadata.build.features") {
+      entry.expected = true;
+      entry.toggledFeature = toggledFeature;
+    }
+  }
+  return comparison;
+}
+
 export function compareRuns(
   baseline,
   candidate,
@@ -145,7 +159,14 @@ export function compareRuns(
   const mismatches = [];
   // Compare renderer revisions, but never silently mix debug/profiling builds
   // with ordinary release measurements.
-  for (const field of ["mode", "features", "target"]) {
+  for (const field of [
+    "mode",
+    "features",
+    "target",
+    "defaultFeatures",
+    "env",
+    "ambientEnv",
+  ]) {
     differences(
       baseline.metadata.build?.[field],
       candidate.metadata.build?.[field],

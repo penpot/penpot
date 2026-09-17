@@ -1,14 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { compareRuns, formatComparison } from "../compare.js";
+import { tagExpectedFeatureDiff } from "../compare.js";
 
 function run(value = 10) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     status: "complete",
     metadata: {
       git: { sha: "before", dirty: false },
-      build: { mode: "release", features: [] },
+      build: {
+        mode: "release",
+        featurePolicy: "manifest-defaults",
+        features: [],
+        defaultFeatures: ["default"],
+        target: "frontend",
+        env: { BUILD_MODE: "release" },
+        ambientEnv: { CARGO_HOME: "/home/penpot/.cargo" },
+      },
       environment: { chromium: "123", headless: true },
       configuration: { viewport: { width: 1920, height: 1080 }, dpr: 2 },
     },
@@ -167,7 +176,8 @@ test("offline comparison rejects malformed results without diagnostic bypass", (
   for (const invalid of [
     null,
     {},
-    { schemaVersion: 2 },
+    { schemaVersion: 1 },
+    { schemaVersion: 3 },
     missingEnvironment,
     duplicateCase,
     invalidMetric,
@@ -189,4 +199,42 @@ test("text comparisons display changes, intervals and incompatibilities", () => 
   assert.match(report, /MISMATCH metadata.configuration.dpr: 2 -> 1/);
   assert.match(report, /change 2\.000 \(20\.000%\)/);
   assert.match(report, /change interval: \[2\.000, 2\.000\]/);
+});
+
+for (const [name, change] of [
+  ["default features", (r) => (r.metadata.build.defaultFeatures = [])],
+  ["build env", (r) => (r.metadata.build.env.BUILD_MODE = "debug")],
+  ["ambient env", (r) => (r.metadata.build.ambientEnv.CARGO_HOME = "/other")],
+]) {
+  test(`comparison refuses changed ${name} unless diagnostic override is explicit`, () => {
+    const candidate = run();
+    change(candidate);
+    assert.throws(() => compareRuns(run(), candidate), {
+      name: "CompatibilityError",
+    });
+    const result = compareRuns(run(), candidate, { diagnostic: true });
+    assert.equal(result.compatible, false);
+    assert.ok(result.mismatches.length > 0);
+  });
+}
+
+test("ab edge tags the expected feature mismatch without suppressing it", () => {
+  const candidate = run();
+  candidate.metadata.build.features = ["branch-b"];
+  candidate.metadata.build.featurePolicy = "explicit";
+  assert.throws(() => compareRuns(run(), candidate), {
+    name: "CompatibilityError",
+  });
+  const compared = compareRuns(run(), candidate, { diagnostic: true });
+  assert.equal(compared.compatible, false);
+  tagExpectedFeatureDiff(compared, "branch-b");
+  const tagged = compared.mismatches.filter((entry) => entry.expected);
+  assert.equal(tagged.length, 1);
+  assert.deepEqual(tagged[0], {
+    path: "metadata.build.features",
+    baseline: [],
+    candidate: ["branch-b"],
+    expected: true,
+    toggledFeature: "branch-b",
+  });
 });

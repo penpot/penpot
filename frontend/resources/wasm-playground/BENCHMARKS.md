@@ -116,8 +116,51 @@ these commands separately from scored runs.
 
 The runner uses the manifest's default Cargo features and records their local
 feature expansion. It rejects diagnostic defaults and disables the optional
-function-name profiling switch for scored builds. Feature selection and A/B
-orchestration are separate follow-up work.
+function-name profiling switch for scored builds.
+
+## Feature A/B comparisons
+
+`run --features a,b` builds and runs one configuration with explicit Cargo
+features and records it. `ab --features a,b` builds and runs every on/off
+configuration of the requested features (2^N for N features, default cap 3,
+`--max-features` 1..6), then compares the Boolean-lattice edges: pairs that
+differ in exactly one feature. Build order follows a binary-reflected Gray
+code so consecutive builds differ by one feature bit; this only minimizes
+rebuild wall time. Build durations are provenance
+(`metadata.build.durationMs`), never metrics, but non-adjacent edges are
+measured further apart in wall time, so repeated whole runs confirm findings
+that matter.
+
+```sh
+pnpm run benchmark:renderer run --features branch-b --filter rects/default/pan --output /tmp/renderer-one.json
+pnpm run benchmark:renderer ab --features branch-b --filter rects/default/pan --output /tmp/renderer-ab-branch-b
+pnpm run benchmark:renderer ab --features branch-b --dry-run
+```
+
+`ab` requires empty manifest defaults and aborts when a requested feature
+overlaps the enabled defaults or names a `stats*`/`profile*` diagnostic;
+`run --features` records defaults and enforces only the overlap abort.
+`--dry-run` prints the plan and builds nothing. Configurations beyond 8, or an
+empty `--filter`, require `--confirm`. Each configuration launches its own
+browser; the printed plan states this cost. `--output` for `ab` is a directory
+root that must not exist yet; `configs/<slug>.json`,
+`comparisons/<from>__<to>.json`, and `matrix.json` land beneath it.
+
+Run JSON is `schemaVersion` 2: `metadata.build.features` is the explicit
+sorted set (the A/B identity axis), `defaultFeatures` the resolved manifest
+defaults, plus the runner-controlled `env` map and the allowlisted
+`ambientEnv` (`RUSTFLAGS`, `RUSTC_WRAPPER`, `CARGO_TARGET_DIR`, `CARGO_HOME`,
+`CC`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, `PENPOT_WASM_FUNCTION_NAMES`,
+`CARGO_PROFILE_*`, `EMSDK*`). Comparison of the six build fields is always
+diagnostic; the expected `features` mismatch on every edge is tagged, not
+suppressed. An edge is marked `controlled: true` when the intended toggle is
+the only mismatch: the comparison measures exactly what the matrix was built
+for, and the diagnostic banner reads as single-run evidence, not as a
+verdict. Edges with other mismatches (environment, seeds, manifest defaults
+shifting mid-matrix) keep the strong diagnostic-only reading and print a
+terminal warning. `branch-a` has no observable effect because the scenes never
+call `set_modifiers`. Exit 0 means every edge has a comparison, never a
+performance verdict.
 
 ## Current validation limits
 
