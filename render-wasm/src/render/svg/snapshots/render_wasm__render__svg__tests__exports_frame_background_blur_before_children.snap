@@ -1,0 +1,9 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120" viewBox="0 0 200 120"><foreignObject x="-12" y="-12" width="224" height="144"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(3.9641016px);-webkit-backdrop-filter:blur(3.9641016px);clip-path:path(evenodd,'M12 12L212 12L212 132L12 132Z');height:100%;width:100%"></div></foreignObject>
+	<rect fill="white" fill-opacity="0.39215687" width="200" height="120"/>
+	<rect fill="blue" x="20" y="20" width="60" height="60"/>
+</svg>

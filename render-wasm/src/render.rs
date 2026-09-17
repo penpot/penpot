@@ -680,12 +680,9 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
-    /// Builds the background-blur clip region for a shape whose strokes
-    /// extend beyond the fill geometry: the fill path expanded (via union)
-    /// with a solid stroke coverage of the maximum outward stroke reach.
-    /// Dash/dot stroke styles are treated as solid, so dash gaps also get
-    /// a blurred backdrop.
-    fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
+    /// Fill ∪ stroke-outset silhouette for background blur (GPU, vector, SVG).
+    /// Dash/dot strokes are treated as solid so gaps still get a blurred backdrop.
+    pub(crate) fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
         let base = match &shape.shape_type {
             Type::Rect(data) if data.corners.is_some() => {
                 let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
