@@ -180,7 +180,7 @@
                          :file-id file-id
                          :session-id session-id
                          :profile-id profile-id}]
-            (mbus/pub! msgbus
+           (mbus/pub! msgbus
                        :topic file-id
                        :message message)))
         (recur)))
@@ -226,12 +226,13 @@
 
 (defmethod handle-message :pointer-update
   [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id] :as message}]
-  (when (::file-subscription @state)
-    (let [message (-> message
-                      (assoc :subs-id file-id)
-                      (assoc :profile-id profile-id)
-                      (assoc :session-id session-id))]
-      (mbus/pub! msgbus :topic file-id :message message))))
+  (when-let [subs (::file-subscription @state)]
+    (when (= file-id (:file-id subs))
+      (let [message (-> message
+                        (assoc :subs-id file-id)
+                        (assoc :profile-id profile-id)
+                        (assoc :session-id session-id))]
+        (mbus/pub! msgbus :topic file-id :message message)))))
 
 (defmethod handle-message :default
   [_ {:keys [::ws/id]} message]
