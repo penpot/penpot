@@ -105,7 +105,10 @@
 (defonce transition-tiles-handler* (atom nil))
 (defonce snapshot-tiles-handler* (atom nil))
 
-(def ^:private snapshot-capture-debounce-ms 250)
+(def ^:private snapshot-capture-debounce-ms 1000)
+;; Guards against stacking readbacks: one capture may still be in flight when
+;; the next `tiles-complete` arrives.
+(defonce ^:private snapshot-capture-in-flight? (atom false))
 
 
 (defn initialized?
@@ -213,47 +216,6 @@
                      (fn [_]
                        (f))
                      #js {:once true}))
-
-(defn capture-canvas-snapshot
-  "Captures the viewport canvas into `wasm/canvas-snapshot` (an `ImageBitmap`)
-   and closes the replaced snapshot unless the transition overlay is still
-   showing it (a replaced snapshot can never become displayed again, so closing
-   it is safe). Returns a promise resolving to the bitmap (or nil)."
-  []
-  (let [^js prev wasm/canvas-snapshot]
-    (-> (webgl/capture-canvas-snapshot)
-        (p/then (fn [^js bitmap]
-                  (when (and (some? prev)
-                             (some? bitmap)
-                             (not (identical? prev bitmap))
-                             (not (identical? prev @transition-image*)))
-                    (.close prev))
-                  bitmap)))))
-
-(defonce ^:private schedule-canvas-snapshot-capture!
-  (fns/debounce
-   (fn []
-     (when (and (initialized?)
-                (some? wasm/canvas))
-       (-> (capture-canvas-snapshot)
-           (p/catch (fn [_] nil)))))
-   snapshot-capture-debounce-ms))
-
-(defn- start-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
-    (reset! snapshot-tiles-handler* handler)
-    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
-
-(defn- stop-canvas-snapshot-listener!
-  []
-  (when-let [prev @snapshot-tiles-handler*]
-    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
-  (reset! snapshot-tiles-handler* nil)
-  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
-    (cancel)))
 
 (defn text-editor-wasm?
   []
@@ -622,6 +584,75 @@
    frames of an in-progress progressive render."
   []
   @pending-render)
+
+(defn capture-canvas-snapshot
+  "Captures the viewport canvas into `wasm/canvas-snapshot` (an `ImageBitmap`)
+   and closes the replaced snapshot unless the transition overlay is still
+   showing it (a replaced snapshot can never become displayed again, so closing
+   it is safe). Returns a promise resolving to the bitmap (or nil)."
+  []
+  (let [^js prev wasm/canvas-snapshot]
+    (-> (webgl/capture-canvas-snapshot)
+        (p/then (fn [^js bitmap]
+                  (when (and (some? prev)
+                             (some? bitmap)
+                             (not (identical? prev bitmap))
+                             (not (identical? prev @transition-image*)))
+                    (.close prev))
+                  bitmap)))))
+
+(defn- canvas-snapshot-capture-idle?
+  "The capture is a full GPU readback of the canvas. On Firefox (out-of-process
+  WebGL) `createImageBitmap` blocks the main thread on a synchronous
+  `Msg_ReadPixels` until the whole queued GL command backlog has drained, so it
+  must never run while more frames are still coming."
+  []
+  (and (initialized?)
+       (some? wasm/canvas)
+       (not @snapshot-capture-in-flight?)
+       (not @view-interaction-active?)
+       (not @shapes-loading?)
+       (not @page-transition?)
+       (not (render-pending?))))
+
+(declare schedule-canvas-snapshot-capture!)
+
+(defn- capture-canvas-snapshot-when-idle!
+  []
+  ;; Retry instead of waiting for another `tiles-complete`: WASM notifies once
+  ;; per render cycle (`ViewportReady` sets `viewport_presented`, so the
+  ;; interest-ring `Full` stays silent), and that notification is what armed us.
+  (if-not (canvas-snapshot-capture-idle?)
+    (schedule-canvas-snapshot-capture!)
+    (timers/schedule-on-idle
+     (fn []
+       (if-not (canvas-snapshot-capture-idle?)
+         (schedule-canvas-snapshot-capture!)
+         (do
+           (reset! snapshot-capture-in-flight? true)
+           (-> (capture-canvas-snapshot)
+               (p/catch (fn [_] nil))
+               (p/finally (fn [_ _] (reset! snapshot-capture-in-flight? false))))))))))
+
+(defonce ^:private schedule-canvas-snapshot-capture!
+  (fns/debounce capture-canvas-snapshot-when-idle! snapshot-capture-debounce-ms))
+
+(defn- start-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (let [handler (fn [_] (schedule-canvas-snapshot-capture!))]
+    (reset! snapshot-tiles-handler* handler)
+    (.addEventListener ^js ug/document "penpot:wasm:tiles-complete" handler)))
+
+(defn- stop-canvas-snapshot-listener!
+  []
+  (when-let [prev @snapshot-tiles-handler*]
+    (.removeEventListener ^js ug/document "penpot:wasm:tiles-complete" prev))
+  (reset! snapshot-tiles-handler* nil)
+  (reset! snapshot-capture-in-flight? false)
+  (when-let [cancel (unchecked-get schedule-canvas-snapshot-capture! "cancel")]
+    (cancel)))
 
 (defn- stop-progressive-render!
   "Cancel the pending tile-pass rAF and invalidate any follow-ups it may schedule."
