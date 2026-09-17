@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="116.856415" height="96.856415" viewBox="0 0 116.856415 96.856415"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="116.856415" height="96.856415" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feBlend mode="normal" in="SourceGraphic" in2="bg" result="shape"/><feGaussianBlur in="shape" stdDeviation="2.809401"/></filter></defs><foreignObject x="-7.5717964" y="-7.5717964" width="132" height="112"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(5.118802px);-webkit-backdrop-filter:blur(5.118802px);clip-path:path(evenodd,'M16 16L116 16L116 96L16 96Z');height:100%;width:100%"></div></foreignObject><g filter="url(#fx0)">
+	<rect fill="#0080FF" fill-opacity="0.70588237" transform="translate(8.4282 8.4282)" width="100" height="80"/>
+</g></svg>
