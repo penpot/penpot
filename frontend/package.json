@@ -14,6 +14,10 @@
     "url": "https://github.com/penpot/penpot"
   },
   "scripts": {
+    "benchmark:renderer": "node scripts/renderer-benchmarks.js",
+    "test:renderer-benchmarks": "node --test scripts/renderer-benchmarks/tests/*.test.js",
+    "verify:renderer-benchmarks": "node scripts/renderer-benchmarks/verify.js",
+    "verify:renderer-benchmark-failures": "node scripts/renderer-benchmarks/verify-failures.js",
     "build:app:assets": "node ./scripts/build-app-assets.js",
     "build:fonts-preview": "node ./scripts/build-fonts-preview.js",
     "build:storybook": "(cd packages/ui && pnpm run build) && pnpm run build:storybook:assets && pnpm run build:storybook:cljs && storybook build",

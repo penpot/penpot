@@ -4,6 +4,7 @@
 #
 # With no target, builds both. Set BUILD_MODE=release (or NODE_ENV=production)
 # for an optimized build. See `_build_env` for what each target changes.
+# Set PENPOT_WASM_PREPARED=1 to skip dependency setup in a prepared environment.
 
 _SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 _RENDER_TARGET=${1:-}
@@ -37,8 +38,12 @@ acquire_build_lock
 
 set -x
 
-setup
-build
-copy_target_artifacts
+if [ "${PENPOT_WASM_PREPARED:-0}" != "1" ]; then
+    setup;
+else
+    command -v cargo >/dev/null || { echo "Prepare the Rust toolchain first" >&2; exit 1; };
+    command -v pnpm >/dev/null || { echo "Prepare pnpm and renderer dependencies first" >&2; exit 1; };
+    test -d node_modules/esbuild || { echo "Run pnpm install in render-wasm before benchmarking" >&2; exit 1; };
+fi
 
 popd > /dev/null
