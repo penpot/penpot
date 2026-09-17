@@ -1799,9 +1799,7 @@ msgstr "The registration is currently disabled."
 #: src/app/main/errors.cljs:216
 msgid "errors.save-failed"
 msgstr ""
-"Your latest changes are not confirmed as saved. Saving may not resume "
-"automatically. Do not close or reload this tab: you may lose changes. "
-"Contact support for help."
+"Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
 
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"

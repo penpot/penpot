@@ -1763,6 +1763,11 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
 
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"El autoguardado se ha detenido debido a un error. Contacta soporte para informar del error y recarga para continuar desde los últimos cambios guardados."
+
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"
 msgstr "El SVG no es válido o está mal formado"
