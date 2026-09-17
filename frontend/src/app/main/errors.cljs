@@ -16,6 +16,7 @@
    [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.worker]
@@ -136,13 +137,10 @@
 
 (def environment-error-types
   "Error types produced by the environment rather than by an application
-  defect."
-  #{:network
-    :offline
-    :bad-gateway
-    :service-unavailable
-    :nitrate-unavailable
-    :nitrate-not-configured})
+  defect: the shared transient transport set (`repo/retryable-types`) plus
+  the nitrate-specific failures."
+  (into rp/retryable-types #{:nitrate-unavailable
+                             :nitrate-not-configured}))
 
 (defn environment-error?
   [cause]
@@ -232,7 +230,9 @@
 ;;
 ;; The fingerprint cache is bounded: when it is full, the fingerprint
 ;; inserted first is evicted (FIFO order), so memory cannot grow without
-;; limit.
+;; limit. Eviction drops the evicted fingerprint's pending counter with
+;; it, so its next occurrence emits as a fresh report (`:occurrences`
+;; 1): a bounded precision trade-off, not an accounting bug.
 
 (def report-window-ms
   "Minimum time between two reports with the same fingerprint."
@@ -281,9 +281,16 @@
                    (str/prune hint 120))]
     (if (environment-error? cause)
       base
-      (let [;; A JS stack string starts with "Error: <message>"; the first
-            ;; actual frame is the second line.
-            frame (or (some-> (.-stack cause) (str/lines) (second)) "")]
+      (let [;; A JS stack string starts with "Error: <message>". The first
+            ;; actual frame is the first subsequent line shaped like a
+            ;; frame: skipping the message line and matching on `(` tolerates
+            ;; wrapper-prepended stacks instead of trusting the position.
+            frame (or (some->> (.-stack cause)
+                               (str/lines)
+                               (drop 1)
+                               (filter #(str/includes? % "("))
+                               (first))
+                      "")]
         (str base "|" (str/prune frame 120))))))
 
 (defn- evict-oldest
@@ -340,6 +347,17 @@
   [fingerprint now]
   (swap! report-governor reserve-report* fingerprint now))
 
+(defn- reserve!
+  "Common reservation step shared by `submit-report` and the `flash`
+  pipeline: fingerprint the cause and ask the governor. Returns the
+  occurrence count when this report must be emitted, nil when the
+  governor suppresses it."
+  [event-name cause]
+  (let [state (reserve-report! (error-fingerprint event-name cause)
+                               (inst-ms (ct/now)))]
+    (when (::emit state)
+      {:occurrences (::occurrences state)})))
+
 (defn- emit-report!
   "Emit the audit event for a report that is already reserved by the
   governor."
@@ -357,17 +375,22 @@
 
   `cause` must be the exception the report describes: a report without a
   cause is ignored (and does not consume a governor reservation), so every
-  report shares the same fingerprint format."
+  report shares the same fingerprint format.
+
+  `report` is either the report string or a zero-arg function building
+  it: the function runs only when the governor grants emission, so
+  suppressed occurrences never pay the report-building cost."
   [& {:keys [event-name report hint cause]
       :or {event-name "unhandled-exception"}}]
   (when (and (ex/exception? cause)
              (not (str/empty? hint))
-             (string? report)
+             (or (string? report) (fn? report))
              (string? event-name))
-    (let [state (reserve-report! (error-fingerprint event-name cause)
-                                 (inst-ms (ct/now)))]
-      (when (::emit state)
-        (emit-report! event-name report hint (::occurrences state))))))
+    (when-let [{:keys [occurrences]} (reserve! event-name cause)]
+      (emit-report! event-name
+                    (if (fn? report) (report) report)
+                    hint
+                    occurrences))))
 
 (defn- download-report!
   [report event]
@@ -376,6 +399,27 @@
         uri  (wapi/create-uri blob)]
     (dom/trigger-download-uri "report" "text/plain" uri)
     (ts/schedule-on-idle #(wapi/revoke-uri uri))))
+
+(defn- emit-flash-report!
+  "Reserves, generates and emits the flash report. Returns the generated
+  report string, or nil when nothing is emitted (non-exception cause,
+  `:silent` type, empty hint or denied governor reservation)."
+  [type cause]
+  (when (ex/exception? cause)
+    (when-let [event-name (case type
+                            :handled "handled-exception"
+                            :unhandled "unhandled-exception"
+                            :silent nil)]
+      (let [format      (if (environment-error? cause) :compact :full)
+            report-hint (ex/get-hint cause)]
+        (when (and (string? report-hint) (not (str/empty? report-hint)))
+          (when-let [{:keys [occurrences]} (reserve! event-name cause)]
+            (let [generated (generate-report cause {:format format})]
+              (emit-report! event-name
+                            generated
+                            report-hint
+                            occurrences)
+              generated)))))))
 
 (defn flash
   "Show error notification banner and emit error report.
@@ -389,7 +433,19 @@
   The report is reserved before being generated, so repeated errors that
   fall inside the governor window do not pay the report-building cost.
 
-  The notification is scheduled asynchronously (via tm/schedule) to
+  The whole body (report pipeline first, toast after) runs inside a single
+  `ts/schedule` callback: nothing report- or toast-related executes
+  synchronously on the error handler's stack. A failure while reporting or
+  notifying is logged to the console and never propagates; the toast is
+  still attempted.
+
+  Returns a promise resolving with the generated report (or nil when
+  nothing is emitted) once the scheduled callback completes. The promise
+  is total: it never rejects. Production callers ignore it
+  (fire-and-forget); it exists so tests can await completion instead of
+  reasoning about timer order.
+
+  The notification is scheduled asynchronously (via `ts/schedule`) to
   avoid pushing a new event into the potok store while the store's own
   error-handling pipeline is still on the call stack.  Emitting
   synchronously from inside an error handler creates a re-entrant
@@ -397,33 +453,26 @@
   (RangeError: Maximum call stack size exceeded)."
   [& {:keys [type hint cause timeout report-link?]
       :or {type :handled timeout 5000}}]
-  (let [report (when (ex/exception? cause)
-                 (when-let [event-name (case type
-                                         :handled "handled-exception"
-                                         :unhandled "unhandled-exception"
-                                         :silent nil)]
-                   (let [format      (if (environment-error? cause) :compact :full)
-                         report-hint (ex/get-hint cause)]
-                     (when (and (string? report-hint) (not (str/empty? report-hint)))
-                       (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
-                         (when (::emit state)
-                           (let [generated (generate-report cause {:format format})]
-                             (emit-report! event-name
-                                           generated
-                                           report-hint
-                                           (::occurrences state))
-                             generated)))))))]
-
-    (ts/schedule
-     #(st/emit!
-       (ntf/show
-        (cond-> {:content (or ^boolean hint (tr "errors.generic"))
-                 :type :toast
-                 :level :error
-                 :timeout timeout}
-          (and report-link? report)
-          (assoc :links [{:label (tr "labels.download" "report.txt")
-                          :callback (partial download-report! report)}])))))))
+  (js/Promise.
+   (fn [resolve _reject]
+     (ts/schedule
+      (fn []
+        (let [report (try (emit-flash-report! type cause)
+                          (catch :default err
+                            (.error js/console "error on emitting report" err)
+                            nil))]
+          (try (st/emit!
+                (ntf/show
+                 (cond-> {:content (or ^boolean hint (tr "errors.generic"))
+                          :type :toast
+                          :level :error
+                          :timeout timeout}
+                   (and report-link? report)
+                   (assoc :links [{:label (tr "labels.download" "report.txt")
+                                   :callback (partial download-report! report)}]))))
+               (catch :default err
+                 (.error js/console "error on emitting toast" err)))
+          (resolve report)))))))
 
 (defn- handle-connectivity-error
   "Report a failure caused by the user's connectivity. These are audit-only

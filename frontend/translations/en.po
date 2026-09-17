@@ -1915,6 +1915,10 @@ msgid "errors.save-failed"
 msgstr ""
 "Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
 
+#: src/app/main/data/persistence.cljs:308
+msgid "errors.save-retrying"
+msgstr "Connection lost. Retrying to save your changes."
+
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG is invalid or malformed"
@@ -7563,6 +7567,10 @@ msgstr "Reset"
 #: src/app/main/ui/workspace/left_header.cljs:124
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
+
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Retrying to save"
 
 #: src/app/main/ui/workspace/left_header.cljs:123
 msgid "workspace.header.saved"
