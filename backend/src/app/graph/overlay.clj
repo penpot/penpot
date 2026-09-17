@@ -82,8 +82,13 @@
   rather than as one union, because the sync path receives `:set` ops one
   attribute at a time and must be able to rebuild each contribution
   independently. The `uses-color` rule in `app.graph.overlay.queries`
-  reunites them. Folded token attributes (`:token/fill`, ...) are plain
-  string values and need no declaration."
+  reunites them. Each source also keeps the raw id it resolved from, as a
+  value rather than a ref: the id joins nothing until
+  `build-asset-maps` finds the asset, and an asset the library does not
+  hold yet leaves the id stored and the reference absent, which is the
+  state `app.graph.overlay.sync/apply-add-asset` repairs. Folded token
+  attributes (`:token/fill`, ...) are plain string values and need no
+  declaration."
   {;; document
    :document/id        {:db/unique :db.unique/identity}
    ;; containers: pages, and components that carry their own :objects
@@ -91,6 +96,11 @@
    :container/document {:db/valueType :db.type/ref}
    ;; shapes: identity is the (container, shape) pair
    :shape/id           {:db/index true}
+   ;; a plain value attribute datascript needs no declaration for, declared
+   ;; so that the test suite's attribute-vocabulary comparison has one set
+   ;; to compare the writers against (every other attribute a shape carries
+   ;; is declared here or is part of the folded token vocabulary)
+   :shape/type         {}
    :shape/container    {:db/valueType :db.type/ref}
    :shape/parent       {:db/valueType :db.type/ref}
    :shape/name         {:db/index true}
@@ -100,6 +110,11 @@
    :shape/swap-slot    {:db/index true}
    ;; the builder-resolved reference edge: ctf/find-ref-shape's answer
    :shape/refers-to    {:db/valueType :db.type/ref}
+   ;; the sibling ordinal: each shape's position in its parent's `:shapes`
+   ;; vector, which is the document's own child order. An authored
+   ;; attribute a consumer reads, unlike the intervals below, which are
+   ;; derived from the walk and answer containment
+   :shape/order        {:db/index true}
    ;; global Euler-tour containment intervals
    :shape/enter        {:db/index true}
    :shape/exit         {:db/index true}
@@ -112,6 +127,17 @@
                         :db/cardinality :db.cardinality/many}
    :shape/uses-typography {:db/valueType :db.type/ref
                            :db/cardinality :db.cardinality/many}
+   ;; the raw ids those four resolved from, one attribute per source,
+   ;; indexed because `app.graph.overlay.sync/apply-add-asset` reads the
+   ;; shapes waiting on an id
+   :shape/fill-color-ref-id   {:db/index true
+                               :db/cardinality :db.cardinality/many}
+   :shape/stroke-color-ref-id {:db/index true
+                               :db/cardinality :db.cardinality/many}
+   :shape/text-color-ref-id   {:db/index true
+                               :db/cardinality :db.cardinality/many}
+   :shape/typography-ref-id   {:db/index true
+                               :db/cardinality :db.cardinality/many}
    ;; components (the record, distinct from any container it may carry)
    :component/id       {:db/unique :db.unique/identity}
    :component/document {:db/valueType :db.type/ref}
@@ -247,6 +273,27 @@
           [walked counter])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; sibling order
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn sibling-order
+  "The ordinal of each shape among its siblings, for one container's
+  `:objects`: the index the shape holds in its parent's `:shapes` vector.
+  That vector is the document's own child order, and the ordinal is the
+  index's copy of it, so a consumer holding an overlay and no document can
+  still say that a shape is its parent's third child rather than its
+  fourth.
+
+  A shape no vector names has no ordinal, which is the container's root
+  frame: nothing lists the root frame among children. Returns
+  {shape-id index}."
+  [objects]
+  (into {}
+        (mapcat (fn [[_ shape]]
+                  (map-indexed (fn [i id] [id i]) (:shapes shape))))
+        objects))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; entity construction
 ;;
 ;; `build-ctx` carries the resolution state of one build: `:colors` and
@@ -254,23 +301,35 @@
 ;; (string tempids at build time, resolved eids on the sync path);
 ;; `:resolve-ref` answers a shape's `:shape-ref` with the reference of
 ;; the shape `ctf/find-ref-shape` names, or nil; `:numbering` maps a
-;; shape id to its Euler interval within the current container.
+;; shape id to its Euler interval within the current container, and
+;; `:order` maps it to its position in its parent's `:shapes` vector.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn shape-asset-attrs
-  "The asset-edge attributes of one shape, resolved through the ctx."
+  "The asset-edge attributes of one shape: for each source, the raw ids the
+  document names and the reference the ctx resolved from them.
+
+  The raw id is written whether or not the ctx resolves it. A shape that
+  names an asset the library does not hold keeps the id and carries no
+  reference, which is what `app.graph.overlay.sync/apply-add-asset` reads
+  when the asset finally arrives; a reference is written only for an id
+  the ctx resolves."
   [shape {:keys [colors typographies]}]
-  (let [ref-vals (fn [m ids] (into [] (keep m) ids))
-        fills    (ref-vals colors (fill-color-ref-ids (:fills shape)))
-        strokes  (ref-vals colors (stroke-color-ref-ids (:strokes shape)))
-        content  (when (= :text (:type shape)) (:content shape))
-        text     (ref-vals colors (content-color-ref-ids content))
-        typs     (ref-vals typographies (content-typography-ref-ids content))]
+  (let [ref-vals   (fn [m ids] (into [] (keep m) ids))
+        fill-ids   (fill-color-ref-ids (:fills shape))
+        stroke-ids (stroke-color-ref-ids (:strokes shape))
+        content    (when (= :text (:type shape)) (:content shape))
+        text-ids   (content-color-ref-ids content)
+        typ-ids    (content-typography-ref-ids content)]
     (cond-> {}
-      (seq fills)   (assoc :shape/fill-color fills)
-      (seq strokes) (assoc :shape/stroke-color strokes)
-      (seq text)    (assoc :shape/text-color text)
-      (seq typs)    (assoc :shape/uses-typography typs))))
+      (seq fill-ids)   (assoc :shape/fill-color-ref-id fill-ids)
+      (seq stroke-ids) (assoc :shape/stroke-color-ref-id stroke-ids)
+      (seq text-ids)   (assoc :shape/text-color-ref-id text-ids)
+      (seq typ-ids)    (assoc :shape/typography-ref-id typ-ids)
+      (seq (ref-vals colors fill-ids))      (assoc :shape/fill-color (ref-vals colors fill-ids))
+      (seq (ref-vals colors stroke-ids))    (assoc :shape/stroke-color (ref-vals colors stroke-ids))
+      (seq (ref-vals colors text-ids))      (assoc :shape/text-color (ref-vals colors text-ids))
+      (seq (ref-vals typographies typ-ids)) (assoc :shape/uses-typography (ref-vals typographies typ-ids)))))
 
 (defn shape-token-attrs
   "The folded applied-token attributes of one shape: one datom per applied
@@ -306,8 +365,9 @@
   self-referential, which covers the page root frame (its `:parent-id` is
   itself) and the root copy of a component container (its parent lives on
   a page)."
-  [container-ref container-id objects shape {:keys [resolve-ref numbering] :as ctx}]
+  [container-ref container-id objects shape {:keys [resolve-ref numbering order] :as ctx}]
   (let [[enter exit] (get numbering (:id shape))
+        position     (get order (:id shape))
         ref          (when resolve-ref (resolve-ref shape))]
     (merge (cond-> {:db/id           (shape-tempid container-id (:id shape))
                     :shape/id        (:id shape)
@@ -315,8 +375,9 @@
                     :shape/parent    (if (resolvable-parent? objects shape)
                                        (shape-tempid container-id (:parent-id shape))
                                        container-ref)}
-             (some? enter) (assoc :shape/enter enter :shape/exit exit)
-             (some? ref)   (assoc :shape/refers-to ref))
+             (some? enter)    (assoc :shape/enter enter :shape/exit exit)
+             (some? position) (assoc :shape/order position)
+             (some? ref)      (assoc :shape/refers-to ref))
            (shape-attrs shape)
            (shape-asset-attrs shape ctx))))
 
@@ -450,6 +511,7 @@
                             [{} counter])
                           ctx (assoc assets
                                      :numbering numbering
+                                     :order (sibling-order objects)
                                      :resolve-ref
                                      (ref-resolver data doc-id
                                                    (ctn/make-container component :component)))]
@@ -462,6 +524,7 @@
                             (euler-numbering (:objects page) counter)
                             ctx (assoc assets
                                        :numbering numbering
+                                       :order (sibling-order (:objects page))
                                        :resolve-ref
                                        (ref-resolver data doc-id
                                                      (ctn/make-container page :page)))]
