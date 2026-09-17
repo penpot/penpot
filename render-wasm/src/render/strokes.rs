@@ -409,6 +409,8 @@ pub(super) fn handle_stroke_caps(
     if let [first_point, .., last_point] = points.as_slice() {
         let mut paint_stroke = paint.clone();
 
+        paint_stroke.set_path_effect(None);
+
         if let Some(filter) = blur {
             paint_stroke.set_image_filter(filter.clone());
         }
