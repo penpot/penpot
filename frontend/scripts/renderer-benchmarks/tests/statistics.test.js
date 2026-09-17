@@ -100,3 +100,30 @@ test("text summaries display the same observations and support limits as JSON", 
   assert.match(report, /Requires at least 10 valid attempts/);
   assert.match(report, /2000 resamples/);
 });
+
+test("reports expose missing attempts and explain support limits once", () => {
+  const summary = summarizeRun({
+    cases: [
+      {
+        id: "rects/load",
+        status: "failed",
+        unattempted: 9,
+        attempts: [
+          {
+            warmup: false,
+            status: "failed",
+            metrics: { render: 3, upload: 2 },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(summary.cases[0].unattempted, 9);
+  const report = formatSummary(summary);
+  assert.match(report, /9 unattempted/);
+  assert.match(report, /1 failed/);
+  assert.equal(
+    report.split("Requires at least 10 valid attempts").length - 1,
+    1,
+  );
+});

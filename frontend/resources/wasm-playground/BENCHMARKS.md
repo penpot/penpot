@@ -98,12 +98,36 @@ state, not diffs or artifact hashes.
 ```sh
 pnpm run verify:renderer-benchmarks
 pnpm run verify:renderer-benchmarks --screenshots /tmp/renderer-diagnostics
+pnpm run verify:renderer-benchmark-failures
+pnpm run verify:renderer-benchmark-cli
+pnpm run verify:renderer-playground --filter rects
 ```
 
 This unscored smoke uses the already-built benchmark artifact and Playwright
 request routing; it starts no server. It checks every workload and interaction
 through `Full`. Optional screenshots support independent manual fixture checks.
 They never enter scored runs, and smoke durations are not benchmark evidence.
+
+The failure checks inject context loss, cancellation, stalled work, and crashes.
+The CLI checks use the existing server and prepared build path, saving each
+failure's JSON and log under a printed temporary directory. The playground check
+loads the actual legacy pages and exercises pointer drag and wheel zoom. Run
+these commands separately from scored runs.
+
+The runner uses the manifest's default Cargo features and records their local
+feature expansion. It rejects diagnostic defaults and disables the optional
+function-name profiling switch for scored builds. Feature selection and A/B
+orchestration are separate follow-up work.
+
+## Current validation limits
+
+The September 17 software-rendered pilot took 25 minutes 43 seconds excluding
+the build at 3 warm-ups and 10 measured attempts. Eighteen cases completed all
+attempts; all three shadow cases failed. A later one-attempt, zero-warm-up run
+took 2 minutes 36 seconds; shadow pan and zoom still lost their WebGL contexts.
+These runs used dirty source trees and are workflow evidence, not a comparison
+of renderer changes. Shadow visual validation and default sampling remain open.
+Keep the full workloads and provisional defaults until these limits are resolved.
 
 The implementation roadmap, pilot evidence, and remaining calibration work live
 in Serena memory `render-wasm/performance/core` and its numbered tickets. The

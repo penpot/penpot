@@ -166,6 +166,7 @@ export function summarizeRun(result, options = {}) {
       return {
         id: benchmarkCase.id,
         status: benchmarkCase.status,
+        unattempted: benchmarkCase.unattempted ?? 0,
         attempts: {
           measured: measured.length,
           warmup: benchmarkCase.attempts.length - measured.length,
@@ -253,15 +254,19 @@ export function formatSummary(summary) {
   const lines = [
     `Statistics: ${summary.method.name} v${summary.method.version}; ${summary.method.resamples} resamples, seed ${summary.method.seed}.`,
     ...summary.warnings,
+    `Median interval: Requires at least ${summary.method.minimumIntervalSamples} valid attempts; p95 requires ${summary.method.minimumP95Samples}, p99 requires ${summary.method.minimumP99Samples}. Unsupported values are n/a.`,
   ];
   for (const benchmarkCase of summary.cases) {
-    lines.push(`${benchmarkCase.id} (${benchmarkCase.status})`);
+    const counts = benchmarkCase.attempts;
+    lines.push(
+      `${benchmarkCase.id} (${benchmarkCase.status}): ${counts.warmup} warm-up, ${counts.ok} valid, ${counts.invalid} invalid, ${counts.failed} failed, ${benchmarkCase.unattempted} unattempted`,
+    );
     for (const [name, metric] of Object.entries(benchmarkCase.metrics)) {
       lines.push(
         `  ${name}: median ${display(metric.median)}, mean ${display(metric.mean)}, range ${display(metric.min)}–${display(metric.max)}, SD ${display(metric.standardDeviation)}, MAD ${display(metric.mad)}; ${metric.n} valid, ${metric.invalid} invalid`,
       );
       lines.push(
-        `    median interval: ${metric.medianInterval ? `[${display(metric.medianInterval.low)}, ${display(metric.medianInterval.high)}]` : metric.suppressed.medianInterval}; p95: ${metric.p95 === null ? metric.suppressed.p95 : display(metric.p95)}; p99: ${metric.p99 === null ? metric.suppressed.p99 : display(metric.p99)}`,
+        `    median interval: ${metric.medianInterval ? `[${display(metric.medianInterval.low)}, ${display(metric.medianInterval.high)}]` : "n/a"}; p95: ${display(metric.p95)}; p99: ${display(metric.p99)}`,
       );
     }
   }

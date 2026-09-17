@@ -5,6 +5,7 @@ import { compareRuns, formatComparison } from "../compare.js";
 function run(value = 10) {
   return {
     schemaVersion: 1,
+    status: "complete",
     metadata: {
       git: { sha: "before", dirty: false },
       build: { mode: "release", features: [] },
@@ -144,6 +145,16 @@ test("failed attempts never enter comparison observations", () => {
   assert.equal(metric.candidate.n, 9);
   assert.equal(metric.candidate.invalid, 1);
   assert.equal(metric.absoluteInterval, null);
+});
+
+test("comparisons warn when a run failed even if available metrics are compatible", () => {
+  const candidate = run(12);
+  candidate.status = "failed";
+  candidate.cases[0].status = "failed";
+  const result = compareRuns(run(), candidate);
+  assert.equal(result.compatible, true);
+  assert.equal(result.runs.candidate.status, "failed");
+  assert.match(formatComparison(result), /candidate run is failed/i);
 });
 
 test("offline comparison rejects malformed results without diagnostic bypass", () => {

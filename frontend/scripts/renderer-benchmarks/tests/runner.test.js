@@ -6,7 +6,20 @@ import {
   main,
   recordAttempt,
   finishCases,
+  defaultFeatures,
 } from "../../renderer-benchmarks.js";
+
+test("build provenance expands the renderer's declared default features", () => {
+  assert.deepEqual(defaultFeatures({ default: [] }), ["default"]);
+  assert.deepEqual(
+    defaultFeatures({ default: ["fast"], fast: ["shared"], shared: ["fast"] }),
+    ["default", "fast", "shared"],
+  );
+  assert.throws(
+    () => defaultFeatures({ default: ["profile"], profile: [] }),
+    /diagnostic/,
+  );
+});
 import {
   collectCases,
   deriveSeed,

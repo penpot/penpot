@@ -210,13 +210,34 @@ export function compareRuns(
   }
   if (mismatches.length && !diagnostic)
     throw new CompatibilityError(mismatches);
+  const runs = Object.fromEntries(
+    [
+      ["baseline", baseline],
+      ["candidate", candidate],
+    ].map(([name, run]) => [
+      name,
+      {
+        runId: run.runId ?? null,
+        status: run.status ?? "unknown",
+        timestamp: run.timestamp ?? null,
+        git: run.metadata.git ?? null,
+      },
+    ]),
+  );
   return {
     schemaVersion: 1,
+    runs,
     compatible: mismatches.length === 0,
     diagnostic,
     mismatches,
     method: statisticalMethod(options),
     warnings: [
+      ...Object.entries(runs)
+        .filter(([, run]) => run.status !== "complete")
+        .map(
+          ([name, run]) =>
+            `The ${name} run is ${run.status}; this comparison covers only available valid observations.`,
+        ),
       ...(mismatches.length
         ? [
             "DIAGNOSTIC ONLY: these runs are incompatible; differences cannot establish a performance change.",

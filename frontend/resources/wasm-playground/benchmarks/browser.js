@@ -1,7 +1,7 @@
 import { scenarios } from "../scenes/index.js";
 import { drain, interact, restore } from "./protocol.js";
 import { WEBGL_OPTIONS, validateMetrics } from "./contract.js";
-import { summarizeRun } from "./statistics.js";
+import { summarizeRun, formatSummary } from "./statistics.js";
 
 let session;
 const canvas = document.querySelector("canvas");
@@ -233,16 +233,13 @@ globalThis.rendererBenchmark = {
   showResult(result) {
     globalThis.rendererBenchmarkResult = result;
     const report = document.querySelector("pre");
-    report.textContent = JSON.stringify(
-      {
-        scope: result.scope,
-        metadata: result.metadata,
-        warnings: result.warnings,
-        summary: result.summary ?? summarizeRun(result),
-      },
-      null,
-      2,
-    );
+    report.textContent = [
+      result.scope,
+      ...(result.warnings ?? []),
+      formatSummary(result.summary ?? summarizeRun(result)),
+      "Run settings:",
+      JSON.stringify(result.metadata, null, 2),
+    ].join("\n\n");
     report.hidden = false;
   },
 };
