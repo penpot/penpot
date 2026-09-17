@@ -120,7 +120,7 @@
   [:> menu*
    {:is-open is-open
     :on-open-change on-open-change
-    :placement "bottom end"
+    :placement "right top"
     :trigger trigger}
    [:> project-menu-items* {:project project
                             :on-edit on-edit
