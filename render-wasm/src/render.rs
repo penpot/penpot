@@ -3486,7 +3486,7 @@ impl RenderState {
         };
 
         let recursive = element.is_recursive();
-        let use_direct_container_shadow = element.uses_direct_container_drop_shadow(tree, scale);
+        let use_direct_container_shadow = element.uses_direct_container_drop_shadow(tree);
         let mut rendered_any = false;
         for shadow in element.drop_shadows_visible() {
             if !shadow.is_perceptible_at_scale_for(scale, recursive) {
@@ -3518,7 +3518,7 @@ impl RenderState {
                     None,
                     target_surface,
                 )?;
-                if !element.container_fill_covers_shadow_descendants(tree, scale) {
+                if !element.container_fill_covers_shadow_descendants(tree) {
                     self.render_drop_shadow_child_silhouettes(
                         element,
                         tree,
