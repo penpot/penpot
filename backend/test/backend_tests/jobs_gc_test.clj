@@ -109,6 +109,24 @@
     (th/run-task! :jobs-gc {})
     (t/is (nil? (th/db-get :job {:id expired-id} :id :status)))))
 
+(t/deftest gc-rollback-leaves-candidate-rows-untouched
+  (let [expired-id (uuid/next)]
+    (th/db-insert! :job {:id           expired-id
+                         :name         "test-job"
+                         :queue        "test:default"
+                         :props        (db/json {})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "completed"
+                         :expires-at   (ct/in-past {:minutes 5})
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+    (t/testing "in-process rollback hatch still works via run-task!"
+      (th/run-task! :jobs-gc {:rollback? true})
+      (t/is (some? (th/db-get :job {:id expired-id} :id :status))))))
+
 (t/deftest gc-retention-deletes-old-internal-terminal-rows
   (let [profile (th/create-profile* 1 {})
         ;; old internal terminal row -> deleted

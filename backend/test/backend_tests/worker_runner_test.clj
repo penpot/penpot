@@ -342,3 +342,18 @@
         (t/is (ct/inst? (:deleted-at params'))))
       (t/testing "invoke! returns the handler result"
         (t/is (= (first @received) result))))))
+
+(t/deftest runner-skips-malformed-payloads
+  (let [conn (rds/connect {::rds/client (get th/*system* :app.redis/client)
+                           ::mtx/metrics (get th/*system* :app.metrics/metrics)})]
+    (try
+      (rds/rpush conn (queue-key) ["not-json"
+                                   (json/encode ["not-a-uuid" "not-an-inst"])])
+      (finally
+        (rds/close conn))))
+  (t/testing "non-JSON payload is skipped, handler never invoked"
+    (run-one! (mk-cfg {}))
+    (t/is (empty? @received)))
+  (t/testing "JSON payload with wrong shape is skipped too"
+    (run-one! (mk-cfg {}))
+    (t/is (empty? @received))))

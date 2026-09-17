@@ -191,3 +191,19 @@
       (wdisp/run-batch! cfg)
       (t/is (= "scheduled" (:status (get-row id))))
       (t/is (= 1 (count (drain-queue! "test")))))))
+
+(t/deftest dispatcher-push-failure-rolls-back-without-throwing
+  (let [cfg  (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
+        id   (mk-job! {})
+        orig @#'rds/rpush]
+    (alter-var-root #'rds/rpush
+                    (constantly (fn [& _] (throw (ex-info "redis down" {})))))
+    (try
+      ;; run-batch! catches the failure (sleep path) instead of throwing;
+      ;; a throw would error this test by itself
+      (wdisp/run-batch! cfg)
+      (t/testing "failed push rolls back the batch"
+        (t/is (= "new" (:status (get-row id))))
+        (t/is (empty? (drain-queue! "test"))))
+      (finally
+        (alter-var-root #'rds/rpush (constantly orig))))))

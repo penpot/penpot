@@ -109,8 +109,9 @@
 (def schema:tenant
   "Tenant identifier: letters and digits only. It is interpolated into
   LIKE patterns (job queues), Redis keys and rate-limit buckets, so
-  LIKE wildcards (`%`, `_`) and separators (`:`) are not allowed."
-  [:re #"^[A-Za-z0-9]+$"])
+  LIKE wildcards (`%`, `_`) and separators (`:`) are not allowed.
+  Hyphens are allowed (LIKE-safe) so DNS-style tenants keep working."
+  [:re #"^[A-Za-z0-9-]+$"])
 
 (def schema:config
   (do #_sm/optional-keys

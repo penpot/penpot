@@ -189,7 +189,11 @@
         now          (ct/now)
         scheduled-at (-> (ct/plus now delay)
                          (ct/truncate :millisecond))
-        props        (db/json params)
+        ;; The :rollback? testing escape hatch must never persist on a
+        ;; durable row (the runner would roll everything back yet mark
+        ;; the job completed); it stays available in-process via
+        ;; invoke!/run-task!. Validation above is untouched.
+        props        (db/json (dissoc params :rollback?))
         id           (uuid/next)
         tenant       (cf/get :tenant)
         job-name     (d/name name)

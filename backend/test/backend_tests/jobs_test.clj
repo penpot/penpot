@@ -250,6 +250,14 @@
     (t/testing "handler receives cfg with job-id context for heartbeats"
       (t/is (= params (echo-handler (assoc cfg ::jobs/job-id job-id) params))))))
 
+(t/deftest submit-strips-rollback-testing-flag-from-props
+  (let [cfg    (make-cfg (get-job-defs))
+        params (assoc (make-params) :rollback? true)
+        job-id (jobs/submit! cfg {::jobs/name   :echo
+                                  ::jobs/params params})]
+    (t/testing "durable rows never carry the in-process escape hatch"
+      (t/is (nil? (:rollback? (:props (jobs/get-job cfg job-id))))))))
+
 (t/deftest heartbeat-respects-throttle
   (let [cfg   (make-cfg (get-job-defs))
         job-id (jobs/submit! cfg {::jobs/name   :echo
@@ -428,17 +436,24 @@
 (t/deftest invoke-falls-back-to-global-registry
   "Verify that invoke! uses the global registry fallback when ::defs is not
   on the cfg, consistent with submit!."
-  ;; Populate the global registry
-  (let [defs (get-job-defs)]
-    (ig/init-key ::jobs/defs defs)
-    ;; Create a cfg WITHOUT ::jobs/defs to test the fallback
-    (let [cfg {::db/pool th/*pool*}
-          ;; Use the echo job-def which we know exists in the global registry
-          result (jobs/invoke! (assoc cfg ::jobs/name :echo
-                                      ::jobs/params (make-params)))]
-      ;; Should not throw; should find the job-def via the global registry
-      ;; The result will be the params map (echo-handler returns params)
-      (t/is (some? result)))))
+  ;; Rebind the private registry atom instead of overwriting global state:
+  ;; it auto-restores on exit, so no later test can observe it. Note
+  ;; get-job-defs itself populates the global via ig/init (established
+  ;; pattern, also used by the sibling tests); the snapshot below is
+  ;; taken after that, so it pins exactly this test's rebinding.
+  (let [defs   (get-job-defs)
+        before @@#'jobs/defs-registry]
+    (with-redefs [jobs/defs-registry (atom defs)]
+      ;; cfg WITHOUT ::jobs/defs to exercise the fallback; the echo
+      ;; job-def is known to exist in the rebound registry
+      (let [cfg    {::db/pool th/*pool*}
+            result (jobs/invoke! (assoc cfg ::jobs/name :echo
+                                        ::jobs/params (make-params)))]
+        ;; Should not throw; should find the job-def via the fallback.
+        ;; The result is the params map (echo-handler returns params).
+        (t/is (some? result))))
+    (t/testing "global registry untouched"
+      (t/is (= before @@#'jobs/defs-registry)))))
 
 (t/deftest heartbeat-and-progress-noop-when-job-id-nil
   "When *job-id* is nil (in-process invoke! without a job row),

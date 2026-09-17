@@ -41,7 +41,7 @@
 
 (t/deftest tenant-allows-only-alphanumeric
   (t/testing "default and plain alphanumeric tenants validate"
-    (doseq [tenant ["default" "acme42"]]
+    (doseq [tenant ["default" "acme42" "my-company"]]
       (t/is (cf/validate-config (assoc cf/config :tenant tenant)))))
   (t/testing "LIKE wildcards and separators are rejected"
     (doseq [tenant ["my_tenant" "a%b" "a:b" "a b" ""]]
