@@ -222,12 +222,26 @@
     (ex/print-throwable cause :prefix "Network Error"))
   (flash :cause (::instance error) :type :handled))
 
+(def ^:private delegated-persistence-types
+  "Save failure causes routed to their own error handler: retaining the
+  changes cannot resolve them."
+  #{:authentication :not-found})
+
+(defn- delegated-persistence-failure?
+  [{:keys [type cause-type code]}]
+  (or (contains? delegated-persistence-types type)
+      (contains? delegated-persistence-types cause-type)
+      ;; The retained changes no longer apply to the restored version.
+      (= :vern-conflict code)))
+
 (defn flash-persistence
   [cause]
-  (let [{:keys [type cause-type]} (ex-data cause)]
-    ;; Authentication has its own UI. `flash :silent` only skips reporting;
-    ;; it still shows a toast, so do not call it for these failures.
-    (when-not (or (= :authentication type) (= :authentication cause-type))
+  (let [data (ex-data cause)]
+    (if (delegated-persistence-failure? data)
+      ;; The persistence state wraps the failure and records the original
+      ;; type under :cause-type; dispatch on it to reach the cause's handler.
+      (on-error (-> (exception->error-data cause)
+                    (assoc :type (or (:cause-type data) (:type data)))))
       (flash :cause cause
              :type :handled
              :timeout nil

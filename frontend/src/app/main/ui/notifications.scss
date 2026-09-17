@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-// Stacks the message and its links vertically inside the notification pill,
-// whose own layout would otherwise place them side by side.
+// Stacks the message and its links as a single item of the notification
+// pill's flex row.
 .toast-body {
   display: flex;
   flex-direction: column;
