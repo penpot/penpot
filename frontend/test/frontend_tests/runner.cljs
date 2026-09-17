@@ -12,6 +12,7 @@
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-retry-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
@@ -31,6 +32,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-versions-test]
+   [frontend-tests.errors-governor-test]
    [frontend-tests.errors-test]
    [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
@@ -130,6 +132,7 @@
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
@@ -150,6 +153,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-versions-test
+   'frontend-tests.errors-governor-test
    'frontend-tests.errors-test
    'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
