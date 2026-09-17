@@ -167,3 +167,27 @@
 (t/deftest dispatcher-batch-without-pending-jobs-signals-wait
   (let [cfg (mk-cfg)]
     (t/is (= ::wdisp/wait (wdisp/run-batch! cfg)))))
+
+(t/deftest dispatcher-failed-mark-leaves-no-orphan-payload
+  ;; Mark runs before push: when the mark fails, the push never runs, so
+  ;; a rolled-back batch must leave neither a marked row nor a payload.
+  (let [cfg   (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
+        id    (mk-job! {})
+        orig  @#'wdisp/mark-as-scheduled
+        calls (atom 0)]
+    (alter-var-root #'wdisp/mark-as-scheduled
+                    (constantly (fn [& args]
+                                  (when (= 1 (swap! calls inc))
+                                    (throw (ex-info "boom" {})))
+                                  (apply orig args))))
+    (try
+      (wdisp/run-batch! cfg)
+      (t/testing "failed mark rolls back with no payload pushed"
+        (t/is (= "new" (:status (get-row id))))
+        (t/is (empty? (drain-queue! "test"))))
+      (finally
+        (alter-var-root #'wdisp/mark-as-scheduled (constantly orig))))
+    (t/testing "next batch delivers exactly once"
+      (wdisp/run-batch! cfg)
+      (t/is (= "scheduled" (:status (get-row id))))
+      (t/is (= 1 (count (drain-queue! "test")))))))

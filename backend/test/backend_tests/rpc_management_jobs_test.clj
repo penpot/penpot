@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-jobs-test
   (:require
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -175,6 +176,20 @@
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
       (t/is (nil? (:result row))))))
+
+(t/deftest complete-job-with-unserializable-result-logs-job-name
+  (let [cfg      {::db/pool th/*pool*}
+        job-id   (mk-job! {:name "media-process"})
+        _        (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+        captured (atom nil)]
+    (with-redefs [l/emit-log (fn [props _cause _ctx _logger _level _sync?]
+                               (reset! captured (into {} @props)))]
+      (jobs/complete! cfg job-id (Object.)))
+    (let [row (get-row job-id)]
+      (t/is (= "completed" (:status row)))
+      (t/is (nil? (:result row)))
+      (t/testing "the serialization warning carries the job name"
+        (t/is (= "media-process" (:job-name @captured)))))))
 
 (t/deftest complete-and-fail-clean-throttle-state
   (let [cfg     {::db/pool th/*pool*}

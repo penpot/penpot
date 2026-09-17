@@ -155,9 +155,12 @@
 (def check-options!
   (sm/check-fn schema:options))
 
-(defn- validate-params!
+(defn validate-params!
   "Validate the params with the precompiled validator of the job-def; on
-  failure raises with the malli explanation."
+  failure raises with the malli explanation. Shared by `submit!` (raw
+  params) and the runner (decoded params). `invoke!` deliberately stays
+  lenient: it is the in-process escape hatch used by tests (legacy task
+  params via `run-task!`) and the REPL."
   [job-def params]
   (when-not ^boolean ((::validator job-def) params)
     (sm/check (::schema job-def) params))
@@ -449,9 +452,10 @@
   ([cfg job-id]
    (complete! cfg job-id nil))
   ([cfg job-id result]
-   (let [n (-> (db/exec-one! (db/get-connectable cfg)
+   (let [job-name (when (some? result) (:name (get-job cfg job-id)))
+         n (-> (db/exec-one! (db/get-connectable cfg)
                              [sql:complete-job (ct/now) (ct/now)
-                              (when (some? result) (encode-result nil result)) job-id])
+                              (when (some? result) (encode-result job-name result)) job-id])
                (db/get-update-count))]
      (cleanup-throttle! job-id)
      n)))

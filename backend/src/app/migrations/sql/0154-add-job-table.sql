@@ -41,8 +41,10 @@ CREATE TABLE job (
     expires_at   timestamptz
 );
 
+-- Claim index: matches the dispatcher sweep ORDER BY priority DESC,
+-- scheduled_at LIMIT n.
 CREATE INDEX job__dispatcher__idx
-    ON job (status, scheduled_at)
+    ON job (status, priority DESC, scheduled_at)
     WHERE status IN ('new', 'retry');
 
 CREATE INDEX job__orphan__idx
@@ -66,3 +68,22 @@ CREATE INDEX job__name_label__idx
 CREATE INDEX job__resource__idx
     ON job (resource_id)
     WHERE resource_id IS NOT NULL;
+
+-- Sweep-path indexes (squashed here instead of a follow-up migration):
+-- the dispatcher reschedule of lost `scheduled` rows, the jobs-GC
+-- expiration scan and the jobs-GC retention scan. With a large `job`
+-- table those degrade into sequential scans, so each gets its own
+-- partial index here.
+
+CREATE INDEX job__scheduled__idx
+    ON job (status, scheduled_at)
+    WHERE status = 'scheduled';
+
+CREATE INDEX job__expires__idx
+    ON job (expires_at)
+    WHERE expires_at IS NOT NULL;
+
+CREATE INDEX job__retention__idx
+    ON job (modified_at)
+    WHERE status IN ('completed', 'failed', 'cancelled')
+      AND profile_id IS NULL;

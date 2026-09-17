@@ -89,7 +89,11 @@
   [{:keys [name status scheduled-at props max-retries]
     :or   {name        "echo-runner"
            status      "new"
-           props       {}
+           ;; Valid echo params by default: direct inserts bypass the
+           ;; submit! contract, and the runner validates decoded params.
+           props       {:object     :snapshot
+                        :deleted-at (ct/now)
+                        :id         (uuid/next)}
            max-retries 3}}]
   (let [id (uuid/next)]
     (th/db-insert! :job {:id           id
@@ -201,6 +205,28 @@
         (t/is (= 1 (:retry-num row)))
         (t/is (= {:code "failed" :ex-type "retry" :message "transient failure"} (:error row)))))))
 
+(t/deftest runner-retry-with-millis-delay-schedules-backoff
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job! {:scheduled-at scheduled-at})
+        defs         {:echo-runner
+                      (assoc (echo-job-def)
+                             ::jobs/handler
+                             (fn [_params]
+                               (throw (ex-info "transient failure"
+                                               {:type ::wrk/retry
+                                                ;; plain Long literal, not a Duration
+                                                :delay 5000}))))}]
+    (push-payload! job-id scheduled-at)
+    (run-one! (mk-cfg {:defs defs}))
+    (let [row (get-row job-id)]
+      (t/testing "Long millis delay is honored (int? covers Long)"
+        (t/is (= "retry" (:status row)))
+        (t/is (= 1 (:retry-num row)))
+        (t/testing "scheduled_at is ~5s in the future"
+          (let [delta (- (inst-ms (:scheduled-at row)) (inst-ms (ct/now)))]
+            (t/is (> delta 4000))
+            (t/is (< delta 6000))))))))
+
 (t/deftest runner-unhandled-exception-fails-when-no-retries-left
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
         job-id       (mk-job! {:scheduled-at scheduled-at :max-retries 0})
@@ -283,6 +309,22 @@
         (t/is (= 0 (:retry-num row)))
         (t/is (nil? (:completed-at row)))
         (t/is (= "not-found" (:ex-type (:error row))))))))
+
+(t/deftest runner-schema-violation-fails-fast-without-retry
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job! {:scheduled-at scheduled-at
+                               :max-retries 3
+                               :props {:object :snapshot
+                                       :deleted-at (ct/now)
+                                       :id "not-a-uuid"}})]
+    (push-payload! job-id scheduled-at)
+    (run-one! (mk-cfg {}))
+    (let [row (get-row job-id)]
+      (t/testing "permanent schema violation fails fast"
+        (t/is (= "failed" (:status row)))
+        (t/is (= 0 (:retry-num row)))
+        (t/is (nil? (:completed-at row)))
+        (t/is (= "assertion" (:ex-type (:error row))))))))
 
 (t/deftest invoke-executes-handlers-in-process-with-decoded-params
   (let [raw-params {:object "snapshot"

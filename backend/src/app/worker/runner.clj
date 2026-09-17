@@ -101,7 +101,20 @@
              :status (:status job))
 
       (let [job-def   (jobs/get-job-def defs (:name job))
-            params    (jobs/decode-params job-def (:props job))
+            params    (try
+                        (->> (:props job)
+                             (jobs/decode-params job-def)
+                             (jobs/validate-params! job-def))
+                        (catch Throwable cause
+                          ;; Decode/validation of stored props is pure: any
+                          ;; failure here is permanent (e.g. schema tightened
+                          ;; after submit), never transient. Tag it so the
+                          ;; generic catch below fails fast instead of
+                          ;; burning max-retries.
+                          (throw (ex-info "job params failed validation"
+                                          {:type :assertion
+                                           :code :data-validation}
+                                          cause))))
             handler   (::jobs/handler job-def)
             tpoint    (ct/tpoint)
             labels    (into-array String [(:name job)])
@@ -144,11 +157,13 @@
             (l/err :hint "unhandled exception on job"
                    ::l/context (assoc (cf/logging-context) :params job)
                    :cause cause)
-            ;; Unknown job names never heal by retrying (no rolling
-            ;; deploy will register them on this backend), so they fail
-            ;; fast without burning max-retries or churning modified_at.
+            ;; Unknown job names and invalid params never heal by retrying
+            ;; (no rolling deploy will register them on this backend), so
+            ;; they fail fast without burning max-retries or churning
+            ;; modified_at.
             (if (or (>= (:retry-num job) (:max-retries job))
-                    (= :no-job-definition (:code edata)))
+                    (contains? #{:no-job-definition :data-validation}
+                               (:code edata)))
               {:status "failed" :error cause}
               {:status "retry" :error cause})))))
     (finally

@@ -106,6 +106,12 @@
    :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
    :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
+(def schema:tenant
+  "Tenant identifier: letters and digits only. It is interpolated into
+  LIKE patterns (job queues), Redis keys and rate-limit buckets, so
+  LIKE wildcards (`%`, `_`) and separators (`:`) are not allowed."
+  [:re #"^[A-Za-z0-9]+$"])
+
 (def schema:config
   (do #_sm/optional-keys
    [:map {:title "config"}
@@ -113,7 +119,7 @@
     [:admins {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
 
-    [:tenant {:optional false} :string]
+    [:tenant {:optional false} schema:tenant]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 

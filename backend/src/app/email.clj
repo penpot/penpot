@@ -306,6 +306,10 @@
   reuses the caller's existing `::db/conn` (from cfg) instead of
   acquiring a fresh one from the pool."
   [cfg {:keys [::reuse-conn ::factory] :as params}]
+  (when (and reuse-conn (nil? (::db/conn cfg)))
+    (ex/raise :type :validation
+              :code :missing-connection
+              :hint "reuse-conn requires the caller cfg to carry ::db/conn (call inside a transaction)"))
   (let [email (if factory
                 (factory params)
                 (-> params

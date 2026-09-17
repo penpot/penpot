@@ -39,6 +39,14 @@
     (t/is (thrown? AssertionError
                    (cf/join-uri "https://example.com/penpot" "/assets/by-id/123")))))
 
+(t/deftest tenant-allows-only-alphanumeric
+  (t/testing "default and plain alphanumeric tenants validate"
+    (doseq [tenant ["default" "acme42"]]
+      (t/is (cf/validate-config (assoc cf/config :tenant tenant)))))
+  (t/testing "LIKE wildcards and separators are rejected"
+    (doseq [tenant ["my_tenant" "a%b" "a:b" "a b" ""]]
+      (t/is (not (cf/validate-config (assoc cf/config :tenant tenant)))))))
+
 (t/deftest worker-parallelism-keys
   (t/testing "schema decodes all runner parallelism keys (env strings to int)"
     (let [decoded (cf/decode-config {:worker-default-parallelism "4"

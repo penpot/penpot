@@ -115,11 +115,14 @@ RETURNING job.id, job.queue")
 
 (defn- push-jobs
   [{:keys [::rds/conn] :as cfg} [queue jobs]]
+  ;; Mark first, push last: a crash between mark and push leaves a
+  ;; `scheduled` row that reschedule-lost-jobs re-queues, while the
+  ;; reverse order leaves a duplicate payload nothing deduplicates.
+  (mark-as-scheduled cfg jobs)
   (let [items (mapv encode-payload jobs)
         key   (str/ffmt "penpot.worker.queue:%" queue)]
 
     (rds/rpush conn key items)
-    (mark-as-scheduled cfg jobs)
 
     (doseq [{:keys [id queue]} jobs]
       (l/trc :hist "schedule"
