@@ -1198,11 +1198,16 @@
                  (seq unsupported)
                  (audited {:status :unsupported :kinds (vec unsupported)} tpoint :update-from-main)
 
-                 (empty? changes)
+                 (and (empty? changes) (not branch-diverged?))
                  (let [ts (ct/now)]
                    ;; the branch is in sync with main: the repositioned
                    ;; base already represents the branch, so the op log
-                   ;; is emptied (old ops were built against the old base)
+                   ;; is emptied (old ops were built against the old base).
+                   ;; The log is a branch's only durable record, so it may
+                   ;; be emptied only when what it encodes already sits in
+                   ;; the base. A diverged branch holds its own work in
+                   ;; that log, so it falls through to the squash below,
+                   ;; which re-derives the net against the new base.
                    (db/delete! conn :file-branch-change {:branch-id branch-id})
                    (reposition-base! ts (:revn branch-file))
                    (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-main))
