@@ -7,6 +7,9 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
    before focused memories.
 - Edits/stale refs/duplication cleanup: `mem:memory-maintenance`.
 - Cross-cutting testing principles, TDD workflow, and anti-patterns: `mem:testing`.
+- Verified Clojure language behaviors that contradict common assumptions
+  (e.g. `int?` covers `Long`; `integer?` is the general predicate):
+  `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
 
 # Development workflow
 
