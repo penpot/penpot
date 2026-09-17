@@ -96,3 +96,28 @@ test("clip effects use valid enum values and actual booleans", () => {
     }
   }
 });
+
+test("shadow workload retains intended effects with complete valid FFI calls", () => {
+  const scenario = scenarios.find(({ id }) => id === "shadows");
+  const params = scenario.cases[0].params;
+  assert.equal(params.count, 1000);
+  assert.equal(params.shadows.length, 3);
+  assert.deepEqual(
+    params.shadows.map((shadow) => shadow[5]),
+    [0, 0, 1],
+  );
+  const scene = scenario.createScene(params, 42);
+  assert.equal(scene.shapes.length, 1000);
+  for (const shape of scene.shapes) {
+    assert.deepEqual(shape.shadows, params.shadows);
+    for (const shadow of shape.shadows) {
+      assert.equal(shadow.length, 7);
+      assert.ok(Number.isInteger(shadow[0]));
+      for (const value of shadow.slice(1, 5)) {
+        assert.ok(Number.isFinite(value));
+      }
+      assert.ok([0, 1].includes(shadow[5]));
+      assert.equal(shadow[6], false);
+    }
+  }
+});
