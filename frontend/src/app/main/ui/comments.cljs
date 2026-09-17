@@ -1081,7 +1081,8 @@
         on-key-down
         (mf/use-fn
          (fn [event]
-           (when (kbd/esc? event)
+           (when (and (kbd/esc? event)
+                      (not (composing-event? event)))
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (st/emit! (dcm/close-thread)))))
