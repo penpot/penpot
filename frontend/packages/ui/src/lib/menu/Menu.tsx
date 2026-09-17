@@ -102,37 +102,23 @@ interface NavigationLevel {
 // drilldown inside one popover has no bearing on the other).
 //
 // A drilled-in level replaces the root's content in the same popover, which
-// otherwise lets it shrink to fit a shorter/narrower list than the level the
-// user started from — jarring mid-navigation. menuRef/style let the caller
-// pin the popover to at least the root's own rendered size for as long as
-// any level is drilled in.
+// otherwise lets react-aria re-run its own flip/collision positioning
+// against the new (possibly shorter/narrower) content — jumping the popover
+// to a different edge mid-navigation, even though it never moved from the
+// caller's point of view. isDrilledIn lets the caller disable react-aria's
+// live repositioning for as long as any level is drilled in, so the edge it
+// already resolved for the root stays pinned and only the opposite edge
+// grows or shrinks with each level's actual content.
 function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
   const [stack, setStack] = useState<NavigationLevel[]>([]);
   const nextLevelKey = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
-  const rootSize = useRef<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
-    if (!isOpen) {
-      setStack([]);
-      rootSize.current = null;
-    }
+    if (!isOpen) setStack([]);
   }, [isOpen]);
 
   const drillIn = useCallback((label: ReactNode, content: ReactNode) => {
-    // Captured once, from the root level, the first time it's left — every
-    // level drilled into after that is measured against the same baseline,
-    // not whichever level was current just before it.
-    if (!rootSize.current && menuRef.current) {
-      // scrollWidth/scrollHeight (the laid-out content size) rather than
-      // getBoundingClientRect (the rendered, possibly-clipped box): the
-      // popover's own max-block-size is recalculated by react-aria against
-      // the trigger's position and can transiently be smaller right around
-      // an interaction, which would otherwise bake an artificially small
-      // baseline into every level drilled in after this one.
-      const el = menuRef.current;
-      rootSize.current = { width: el.scrollWidth, height: el.scrollHeight };
-    }
     nextLevelKey.current += 1;
     const key = `level-${nextLevelKey.current}`;
     setStack((prev) => [...prev, { key, label, content }]);
@@ -180,15 +166,7 @@ function useMenuNavigation(children: ReactNode, isOpen: boolean | undefined) {
     </MenuNavigationContext.Provider>
   );
 
-  const style =
-    current && rootSize.current
-      ? {
-          minInlineSize: `${rootSize.current.width}px`,
-          minBlockSize: `${rootSize.current.height}px`,
-        }
-      : undefined;
-
-  return { content, menuRef, style };
+  return { content, menuRef, isDrilledIn: !!current };
 }
 
 // Menu/ContextMenu deliberately don't use react-aria-components' own
@@ -297,7 +275,7 @@ export function Menu({
   const {
     content: navigationContent,
     menuRef,
-    style: navigationStyle,
+    isDrilledIn,
   } = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
@@ -347,6 +325,11 @@ export function Menu({
         offset={4}
         className={styles.popover}
         shouldSkipAnimation={shouldSkipAnimation}
+        // Once a drilldown level is showing, freeze the popover's resolved
+        // edge instead of letting react-aria re-run its flip/collision
+        // logic against that level's own (possibly shorter/narrower)
+        // content — see the comment on useMenuNavigation above.
+        shouldUpdatePosition={!isDrilledIn}
         // A menu is a lightweight, dismissable overlay, not a true modal —
         // Popover treats itself as modal by default, which marks the rest
         // of the app inert (unfocusable and unclickable) while it's open.
@@ -368,7 +351,7 @@ export function Menu({
           ref={menuRef}
           aria-labelledby={triggerId}
           className={`${styles.menu} ${isDense ? styles.menuDense : ""} ${className ?? ""}`}
-          style={{ ...navigationStyle, maxInlineSize: cssLength(maxWidth) }}
+          style={{ maxInlineSize: cssLength(maxWidth) }}
           onAction={onAction}
           onClose={() => handleOpenChange(false)}
           autoFocus="first"
@@ -602,7 +585,7 @@ export function ContextMenu({
   const {
     content: navigationContent,
     menuRef,
-    style: navigationStyle,
+    isDrilledIn,
   } = useMenuNavigation(children, isOpen);
 
   useEffect(() => {
@@ -671,6 +654,8 @@ export function ContextMenu({
         offset={0}
         className={styles.popover}
         shouldSkipAnimation={shouldSkipAnimation}
+        // See the comment on Menu's own Popover above.
+        shouldUpdatePosition={!isDrilledIn}
         // See the isNonModal comment on Menu's own Popover.
         isNonModal
       >
@@ -678,7 +663,7 @@ export function ContextMenu({
           ref={menuRef}
           aria-label={ariaLabel}
           className={`${styles.menu} ${isDense ? styles.menuDense : ""} ${className ?? ""}`}
-          style={{ ...navigationStyle, maxInlineSize: cssLength(maxWidth) }}
+          style={{ maxInlineSize: cssLength(maxWidth) }}
           onAction={onAction}
           onClose={() => handleOpenChange(false)}
           autoFocus="first"

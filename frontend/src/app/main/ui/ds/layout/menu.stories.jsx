@@ -364,11 +364,15 @@ export const TestMaxWidthCapsPopoverWidth = {
   },
 };
 
-export const TestDrilldownNeverShrinksBelowRoot = {
+export const TestDrilldownFreezesRootEdgeAndSizesToContent = {
   args: {
-    // Deliberately wider and taller at the root than the level drilled into,
-    // so a regression (sizing the popover off whichever level is current,
-    // rather than pinning it to the root) would show up as a shrink.
+    placement: "top start",
+    // Deliberately taller at the root than the level drilled into, so a
+    // regression (re-running react-aria's own flip/collision positioning
+    // against the drilled-in level's own shorter content, rather than
+    // freezing the edge already resolved for the root) would show up either
+    // as the popover jumping to the opposite edge, or as it staying put but
+    // padded out to the root's own height instead of sizing to its content.
     children: (
       <>
         <MenuItem id="rename">Rename this file completely</MenuItem>
@@ -381,39 +385,53 @@ export const TestDrilldownNeverShrinksBelowRoot = {
       </>
     ),
   },
+  decorators: [
+    // Plenty of room above the trigger, none below — forces "top start" to
+    // actually resolve with the popover's bottom edge pinned near the
+    // trigger, instead of react-aria flipping it back to "bottom" for lack
+    // of room above, which would defeat the point of this test.
+    (Story) => (
+      <div style={{ position: "relative", height: "100vh" }}>
+        <div style={{ position: "absolute", bottom: 8, left: 8 }}>
+          <Story />
+        </div>
+      </div>
+    ),
+  ],
   play: async ({ canvasElement, step }) => {
     const trigger = getTrigger(canvasElement);
-    let rootSize;
+    let rootBottom, rootHeight;
 
-    await step("Measure the root level's content size", async () => {
+    await step("Opening resolves the popover above the trigger", async () => {
       await userEvent.click(trigger);
       const menu = await screen.findByRole("menu");
-      // scrollWidth/scrollHeight, not getBoundingClientRect: the popover's
-      // own max-block-size is recomputed by react-aria against the trigger's
-      // position and can be transiently smaller right after opening, which
-      // would make this assert against the wrong (clipped) baseline.
-      rootSize = { width: menu.scrollWidth, height: menu.scrollHeight };
+      const popover = menu.closest("[data-placement]");
+
+      await waitFor(() => expect(popover.dataset.placement).toBe("top"));
+      ({ bottom: rootBottom, height: rootHeight } =
+        popover.getBoundingClientRect());
     });
 
-    await step("Drilling in sets a min-size pinned to the root", async () => {
-      await userEvent.click(screen.getByRole("menuitem", { name: "Move to" }));
-      const menu = await screen.findByRole("menu");
-      await screen.findByRole("menuitem", { name: "A" });
+    await step(
+      "Drilling into a shorter level keeps the same bottom edge and shrinks to fit",
+      async () => {
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "Move to" }),
+        );
+        const menu = await screen.findByRole("menu");
+        await screen.findByRole("menuitem", { name: "A" });
+        const popover = menu.closest("[data-placement]");
 
-      // Checked against the min-inline-size/min-block-size this sets, not
-      // the rendered box: that box is still subject to the same transient
-      // max-block-size react-aria computes for the popover, independent of
-      // whether the fix under test applied the right floor underneath it.
-      await waitFor(() => {
-        expect(parseFloat(menu.style.minInlineSize)).toBeCloseTo(
-          rootSize.width,
-          0,
-        );
-        expect(parseFloat(menu.style.minBlockSize)).toBeCloseTo(
-          rootSize.height,
-          0,
-        );
-      });
-    });
+        await waitFor(() => {
+          const rect = popover.getBoundingClientRect();
+          // Within a couple of px, not exact: sub-pixel layout rounding
+          // between the two measurements, not a regression — an actual
+          // regression (react-aria re-flipping back to "bottom") would move
+          // this by the popover's full height, hundreds of px.
+          expect(Math.abs(rect.bottom - rootBottom)).toBeLessThan(2);
+          expect(rect.height).toBeLessThan(rootHeight);
+        });
+      },
+    );
   },
 };
