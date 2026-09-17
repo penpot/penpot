@@ -613,15 +613,6 @@
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}
 
-   [::binfile ::wrk/runner]
-   {::wrk/parallelism (cf/get :worker-binfile-parallelism 1)
-    ::wrk/queue       :binfile
-    ::wrk/tenant      (cf/get :tenant)
-    ::rds/client      (ig/ref ::rds/client)
-    ::jobs/defs       (ig/ref ::jobs/defs)
-    ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::db/pool         (ig/ref ::db/pool)}
-
    [::cron ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
     ::wrk/queue       :cron

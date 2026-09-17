@@ -219,12 +219,11 @@
                          (db/exec-one! conn [sql:insert-new-job id job-name props queue
                                              label priority max-retries
                                              now now scheduled-at])))]
-    ;; Without a caller connection both statements share one
-    ;; transaction so a failed INSERT cannot orphan a committed
-    ;; DELETE; with one they join the caller transaction as before.
-    (if (and (map? cfg) (contains? cfg ::db/conn))
-      (insert! (::db/conn cfg))
-      (db/tx-run! cfg (fn [{:keys [::db/conn]}] (insert! conn))))
+    ;; Both statements always run inside db/tx-run!: joined to the
+    ;; caller's transaction when the cfg provides a connection,
+    ;; wrapped in their own otherwise (a failed INSERT can never
+    ;; orphan a committed DELETE, even on an autocommit caller conn).
+    (db/tx-run! cfg (fn [{:keys [::db/conn]}] (insert! conn)))
     id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -475,9 +474,12 @@
     (cleanup-throttle! job-id)
     n))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REQUEST (ephemeral request/response, no row, no dispatcher)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; NOTE (2026-09-17): this path intentionally has no producer yet; it
+;; is kept for an upcoming phase. Do not re-raise as dead code until
+;; that phase wires a consumer.
 
 (def ^:private request-command-timeout-margin (ct/duration {:seconds 30}))
 (def ^:private reply-expire-seconds 60)

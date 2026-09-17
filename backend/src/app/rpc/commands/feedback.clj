@@ -32,6 +32,7 @@
 (sv/defmethod ::send-user-feedback
   {::climit/id [[:send-user-feedback/by-profile ::rpc/profile-id]
                 [:send-user-feedback/global]]
+   ::db/transaction true
    ::doc/added "1.18"
    ::sm/params schema:send-user-feedback}
   [cfg {:keys [::rpc/profile-id] :as params}]

@@ -6,6 +6,7 @@
 
 (ns backend-tests.jobs-gc-test
   (:require
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -109,23 +110,13 @@
     (th/run-task! :jobs-gc {})
     (t/is (nil? (th/db-get :job {:id expired-id} :id :status)))))
 
-(t/deftest gc-rollback-leaves-candidate-rows-untouched
-  (let [expired-id (uuid/next)]
-    (th/db-insert! :job {:id           expired-id
-                         :name         "test-job"
-                         :queue        "test:default"
-                         :props        (db/json {})
-                         :priority     100
-                         :max-retries  3
-                         :retry-num    0
-                         :status       "completed"
-                         :expires-at   (ct/in-past {:minutes 5})
-                         :scheduled-at (ct/now)
-                         :created-at   (ct/now)
-                         :modified-at  (ct/now)})
-    (t/testing "in-process rollback hatch still works via run-task!"
-      (th/run-task! :jobs-gc {:rollback? true})
-      (t/is (some? (th/db-get :job {:id expired-id} :id :status))))))
+(t/deftest gc-params-accept-string-min-age
+  (t/testing "duration strings validate like durations and millis"
+    (t/is ((sm/validator gc/schema:jobs-gc-params) {:min-age "1h"}))
+    (t/is ((sm/validator gc/schema:jobs-gc-params) {:min-age 3600000}))
+    (t/is ((sm/validator gc/schema:jobs-gc-params) {:min-age (ct/duration {:hours 1})})))
+  (t/testing "string min-age runs like a duration"
+    (t/is (map? (th/run-task! :jobs-gc {:min-age "1h"})))))
 
 (t/deftest gc-retention-deletes-old-internal-terminal-rows
   (let [profile (th/create-profile* 1 {})

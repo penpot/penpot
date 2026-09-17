@@ -225,6 +225,33 @@
       (finally
         (alter-var-root #'db/exec-one! (constantly orig))))))
 
+(t/deftest submit-dedupe-atomic-on-autocommit-conn
+  (let [cfg    (make-cfg (get-job-defs))
+        params (make-params)
+        opts   {::jobs/name   :echo
+                ::jobs/params params
+                ::jobs/dedupe true
+                ::jobs/label  "atomic-autocommit-label"}
+        kept   (jobs/submit! cfg opts)
+        calls  (atom 0)
+        orig   @#'db/exec-one!]
+    ;; a raw connection outside any transaction: DELETE+INSERT must
+    ;; still share one transaction opened on it
+    (with-open [conn (db/open th/*pool*)]
+      (alter-var-root #'db/exec-one!
+                      (constantly (fn [& args]
+                                    (when (= 2 (swap! calls inc))
+                                      (throw (ex-info "boom" {})))
+                                    (apply orig args))))
+      (try
+        (t/is (thrown? Exception
+                       (jobs/submit! (assoc cfg ::db/conn conn) opts)))
+        (t/testing "the original row survives, no duplicate left behind"
+          (t/is (some? (jobs/get-job cfg kept)))
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-autocommit-label"])))))
+        (finally
+          (alter-var-root #'db/exec-one! (constantly orig)))))))
+
 (t/deftest submit-accepts-bare-connectable-cfg
   ;; callers like file-snapshots pass a raw connection/pool instead of a
   ;; cfg map (regression: contains? on a connection object throws)

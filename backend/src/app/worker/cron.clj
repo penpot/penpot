@@ -168,29 +168,33 @@
   (if (db/read-only? pool)
     (l/wrn :hint "service not started (db is read-only)")
     (let [running (atom #{})
-          entries (->> entries
-                       (filter some?)
-                       ;; If id is not defined, use the task as id.
-                       (map (fn [{:keys [id task] :as item}]
-                              (if (some? id)
-                                (assoc item :id (d/name id))
-                                (assoc item :id (d/name task)))))
-                       (map (fn [item]
-                              (update item :task d/name)))
-                       (doall
+          ;; doall sits outside the threading: it forces the lazy
+          ;; validation above (unknown job names fail fast here).
+          ;; NOTE: it must not go inside ->> — the threaded value
+          ;; would land as doall's count arg and explode.
+          entries (doall
+                   (->> entries
+                        (filter some?)
+                        ;; If id is not defined, use the task as id.
+                        (map (fn [{:keys [id task] :as item}]
+                               (if (some? id)
+                                 (assoc item :id (d/name id))
+                                 (assoc item :id (d/name task)))))
+                        (map (fn [item]
+                               (update item :task d/name)))
                         (map (fn [item]
                                ;; fail fast when the entry references
                                ;; an unknown job name
                                (jobs/get-job-def defs (:task item))
-                               item)
-                             entries)))]
+                               item))))]
 
       (l/inf :hint "started" :tasks (count entries))
 
-      (db/tx-run! cfg synchronize-cron-entries!)
+      (let [cfg (assoc cfg ::entries entries ::running running)]
+        (db/tx-run! cfg synchronize-cron-entries!)
 
-      (->> (filter some? entries)
-           (run! (partial schedule-cron-task cfg)))
+        (->> (filter some? entries)
+             (run! (partial schedule-cron-task cfg))))
 
       (reify
         clojure.lang.IDeref

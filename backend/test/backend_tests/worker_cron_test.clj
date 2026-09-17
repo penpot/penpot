@@ -15,7 +15,8 @@
    [app.worker.cron :as cron]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [integrant.core :as ig]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -55,6 +56,23 @@
     :task :jobs-gc
     :cron "0 0 * * *"
     :props {:min-age 3600000}}])
+
+(t/deftest cron-component-init-registers-and-schedules-entries
+  (let [defs    (get th/*system* :app.jobs/defs)
+        entries [{:id   :test-cron-init
+                  :task :session-gc
+                  :cron (ucron/cron "0 0 0 * * ?")}]
+        inst    (ig/init-key :app.worker/cron
+                             {:app.worker/entries entries
+                              ::jobs/defs         defs
+                              ::db/pool           th/*pool*})]
+    (try
+      (t/testing "init schedules futures"
+        (t/is (pos? (count @inst))))
+      (t/testing "scheduled_task row was upserted"
+        (t/is (some? (th/db-get :scheduled-task {:id "test-cron-init"}))))
+      (finally
+        (ig/halt-key! :app.worker/cron inst)))))
 
 (t/deftest cron-submits-job-with-empty-params-when-entry-has-no-props
   (let [cfg     (make-cfg)

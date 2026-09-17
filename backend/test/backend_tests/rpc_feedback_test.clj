@@ -7,8 +7,16 @@
 (ns backend-tests.rpc-feedback-test
   (:require
    [app.common.schema :as sm]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.email :as eml]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.feedback :as feedback]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]))
+
+(t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
 
 (t/deftest send-user-feedback-schema-validation
   (let [schema feedback/schema:send-user-feedback]
@@ -37,3 +45,20 @@
                     :content "Test content"
                     :error-report (apply str (repeat 1048577 "x"))}]
         (t/is (not (sm/valid? schema params)))))))
+
+(t/deftest send-user-feedback-reaches-send-with-connection
+  (with-redefs [cf/flags  (conj cf/flags :user-feedback)
+                cf/config (assoc cf/config :user-feedback-destination "fb@example.com")]
+    (let [profile  (th/create-profile* 1 {})
+          captured (atom nil)]
+      (with-redefs [eml/send! (fn [cfg params]
+                                (reset! captured {:cfg cfg :params params})
+                                nil)]
+        (let [{:keys [error]} (th/command! {::th/type       :send-user-feedback
+                                            ::rpc/profile-id (:id profile)
+                                            :subject        "s"
+                                            :content        "c"})]
+          (t/is (nil? error))))
+      (t/testing "send! is reached with a caller connection"
+        (t/is (some? (:cfg @captured)))
+        (t/is (some? (::db/conn (:cfg @captured))))))))

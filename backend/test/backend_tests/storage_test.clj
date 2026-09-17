@@ -13,6 +13,7 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as gcd]
    [app.storage.impl :as impl]
    [app.storage.s3 :as-alias sto.s3]
    [backend-tests.helpers :as th]
@@ -451,6 +452,32 @@
     ;; the deleted gc removes it on the next run
     (let [res (th/run-task! :storage-gc-deleted {})]
       (t/is (= 1 (:deleted res))))))
+
+(t/deftest storage-gc-deleted-commits-each-chunk-separately
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        ;; more than one chunk (chunk-size is 25); distinct contents so
+        ;; the storage layer does not deduplicate them into one row
+        ids     (doall (for [i (range 26)]
+                         (:id (sto/put-object! storage
+                                               {::sto/content (sto/content (str "content" i))
+                                                :content-type "text/plain"}))))]
+    (t/is (= 26 (count ids)))
+    (th/db-exec! ["update storage_object set deleted_at = ?" (ct/now)])
+
+    (let [orig  @#'gcd/process-chunk
+          calls (atom 0)]
+      (alter-var-root #'gcd/process-chunk
+                      (constantly (fn [& args]
+                                    (when (= 2 (swap! calls inc))
+                                      (throw (ex-info "boom" {})))
+                                    (apply orig args))))
+      (try
+        (t/is (thrown? Exception (th/run-task! :storage-gc-deleted {})))
+        (t/testing "first chunk committed before the fault"
+          (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM storage_object WHERE deleted_at IS NOT NULL"])))))
+        (finally
+          (alter-var-root #'gcd/process-chunk (constantly orig)))))))
 
 (t/deftest objects-gc-task-skip-delay
   (let [storage (-> (:app.storage/storage th/*system*)

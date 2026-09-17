@@ -107,10 +107,11 @@
    :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
 (def schema:tenant
-  "Tenant identifier: letters and digits only. It is interpolated into
-  LIKE patterns (job queues), Redis keys and rate-limit buckets, so
-  LIKE wildcards (`%`, `_`) and separators (`:`) are not allowed.
-  Hyphens are allowed (LIKE-safe) so DNS-style tenants keep working."
+  "Tenant identifier: hostname-label-style (letters, digits and
+  hyphens). It is interpolated into LIKE patterns (job queues), Redis
+  keys and rate-limit buckets, so anything else (`%`, `_`, `.`, `:`,
+  whitespace) is rejected at startup. Tenants using those characters
+  must be renamed before upgrading."
   [:re #"^[A-Za-z0-9-]+$"])
 
 (def schema:config
@@ -194,7 +195,6 @@
     [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
-    [:worker-binfile-parallelism {:optional true} ::sm/int]
     [:worker-cron-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]

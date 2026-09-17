@@ -92,10 +92,12 @@
 (declare execute-jobs-gc!)
 
 (def schema:jobs-gc-params
-  "min-age: duration object or integer millis in-process; integer millis
-  over the job pipeline (a duration object does not survive JSON encoding)."
+  "min-age: duration object, integer millis or duration string
+  in-process; integer millis or duration string over the job pipeline
+  (a duration object does not survive JSON encoding). The handler
+  always normalizes with ct/duration."
   [:map
-   [:min-age {:optional true} [:or :int ::ct/duration]]])
+   [:min-age {:optional true} [:or :int :string ::ct/duration]]])
 
 (defmethod ig/init-key ::jobs-gc-job-def
   [_ cfg]
@@ -112,15 +114,10 @@
 
   Deletes run in bounded batches of 1000 rows, each batch in its own
   transaction, with a heartbeat between batches so long sweeps neither
-  spike the WAL nor outrun the job lease.
-
-  The `:rollback?` param (default false) forces every batch transaction
-  to rollback instead of commit. Used for testing transactional code
-  without side effects."
+  spike the WAL nor outrun the job lease."
   [cfg params]
   (let [min-age (ct/duration (or (:min-age params)
                                  (cf/get-jobs-retention)))
-        cfg     (assoc cfg ::db/rollback (:rollback? params))
         [deleted-expired touched-expired]
         (delete-jobs! cfg sql:delete-expired-jobs)
 
