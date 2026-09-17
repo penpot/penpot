@@ -19,9 +19,11 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.worker]
+   [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -170,6 +172,14 @@
                 :href (rt/get-current-href)
                 :report report}))))
 
+(defn- download-report!
+  [report event]
+  (dom/prevent-default event)
+  (let [blob (wapi/create-blob report "text/plain")
+        uri  (wapi/create-uri blob)]
+    (dom/trigger-download-uri "report" "text/plain" uri)
+    (ts/schedule-on-idle #(wapi/revoke-uri uri))))
+
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
@@ -180,23 +190,28 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout] :or {type :handled timeout 5000}}]
-  (when (ex/exception? cause)
-    (when-let [event-name (case type
-                            :handled "handled-exception"
-                            :unhandled "unhandled-exception"
-                            :silent nil)]
-      (let [report (generate-report cause)]
+  [& {:keys [type hint cause timeout report-link?]
+      :or {type :handled timeout 5000}}]
+  (let [report (when (ex/exception? cause) (generate-report cause))]
+    (when report
+      (when-let [event-name (case type
+                              :handled "handled-exception"
+                              :unhandled "unhandled-exception"
+                              :silent nil)]
         (submit-report :event-name event-name
                        :report report
-                       :hint (ex/get-hint cause)))))
+                       :hint (ex/get-hint cause))))
 
-  (ts/schedule
-   #(st/emit!
-     (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
-                :type :toast
-                :level :error
-                :timeout timeout}))))
+    (ts/schedule
+     #(st/emit!
+       (ntf/show
+        (cond-> {:content (or ^boolean hint (tr "errors.generic"))
+                 :type :toast
+                 :level :error
+                 :timeout timeout}
+          (and report-link? report)
+          (assoc :links [{:label (tr "labels.download" "report.txt")
+                          :callback (partial download-report! report)}])))))))
 
 (defmethod ptk/handle-error :network
   [error]
@@ -213,7 +228,11 @@
     ;; Authentication has its own UI. `flash :silent` only skips reporting;
     ;; it still shows a toast, so do not call it for these failures.
     (when-not (or (= :authentication type) (= :authentication cause-type))
-      (flash :cause cause :type :handled :timeout nil :hint (tr "errors.save-failed")))))
+      (flash :cause cause
+             :type :handled
+             :timeout nil
+             :report-link? true
+             :hint (tr "errors.save-failed")))))
 
 (defmethod ptk/handle-error :persistence
   [error]

@@ -22,7 +22,10 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n]
    [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
@@ -415,6 +418,46 @@
         (let [state (ptk/update (first @events) {})]
           (t/is (= timeout (get-in state [:notification :timeout])))
           (t/is (= :visible (get-in state [:notification :status]))))))))
+
+(t/deftest persistence-notifications-include-an-error-report-download
+  (let [scheduled      (atom [])
+        idle-callbacks (atom [])
+        events         (atom [])
+        downloads      (atom [])
+        revoked        (atom [])
+        report         "generated error report"
+        cause          (ex-info "Save failed" {:type :validation})]
+    (with-redefs [dom/prevent-default         (fn [_])
+                  dom/trigger-download-uri    (fn [& params]
+                                                (swap! downloads conj params))
+                  errors/generate-report      (fn [_] report)
+                  errors/submit-report        (fn [& _])
+                  ;; `tr` is called with one and with two arguments, and its
+                  ;; two-argument arity is variadic: the stub has to expose both
+                  ;; shapes for the compiled static calls to resolve.
+                  i18n/tr                     (fn ([key] (str key ":"))
+                                                ([key & args]
+                                                 (str key ":" (first args))))
+                  st/emit!                    (mock/stub (fn [& emitted]
+                                                           (swap! events into emitted)))
+                  tm/schedule                 (mock/stub (fn [callback]
+                                                           (swap! scheduled conj callback)))
+                  tm/schedule-on-idle         (mock/stub (fn [callback]
+                                                           (swap! idle-callbacks conj callback)))
+                  wapi/create-blob            (mock/stub (fn [content media-type]
+                                                           {:content content :media-type media-type}))
+                  wapi/create-uri             (fn [_] "blob:report")
+                  wapi/revoke-uri             (fn [uri]
+                                                (swap! revoked conj uri))]
+      (errors/flash-persistence cause)
+      (doseq [callback @scheduled] (callback))
+      (let [state    (ptk/update (first @events) {})
+            download (get-in state [:notification :links 0])]
+        (t/is (= "labels.download:report.txt" (:label download)))
+        ((:callback download) nil)
+        (t/is (= [["report" "text/plain" "blob:report"]] @downloads))
+        (doseq [callback @idle-callbacks] (callback))
+        (t/is (= ["blob:report"] @revoked))))))
 
 (t/deftest persistence-waiters-do-not-report-an-already-handled-failure
   (let [reports  (atom [])
