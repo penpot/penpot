@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:19+0000\n"
+"PO-Revision-Date: 2026-09-17 21:51+0000\n"
 "Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -1806,8 +1806,8 @@ msgstr "Token har en cirkulär referens"
 #: src/app/main/data/workspace/tokens/errors.cljs:116, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:245
 msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
-"Radhöjden beror på teckenstorleken. Lägg till en teckenstorlek för att få "
-"det uträknade värdet."
+"Radavstånd beror på Teckenstorlek. Lägg till en Teckenstorlek för att få det "
+"uträknade värdet."
 
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
 msgid "errors.tokens.empty-field"
@@ -9458,7 +9458,7 @@ msgstr "Lägg till bokstavsavstånd eller {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:145
 msgid "workspace.tokens.line-height-value-enter"
-msgstr "Ange radhöjd — multiplikator, px, % eller {alias}"
+msgstr "Radavstånd (multiplikator, px, %) eller {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:242
 msgid "workspace.tokens.margins"
