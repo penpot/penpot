@@ -98,13 +98,23 @@
   (mapv :e (d/datoms db :avet :shape/parent eid)))
 
 (defn- subtree-eids
-  "The shape entity plus every descendant, via the reverse parent index."
+  "The shape entity plus every descendant, via the reverse parent index.
+
+  `seen` is what makes the walk return on a cyclic index: the children
+  closure is the same thing `app.common.files.helpers/get-children-ids`
+  walks with its own `processed` set, and an index that carries a cycle
+  (a change that escaped `app.common.files.changes/valid-move?`, or a
+  rebuild of a document that already had one) would otherwise accumulate
+  every revisit and never reach the end of the loop."
   [db root-eid]
   (loop [acc      []
+         seen     #{root-eid}
          frontier [root-eid]]
     (if-let [eid (peek frontier)]
-      (recur (conj acc eid)
-             (into (pop frontier) (child-eids db eid)))
+      (let [children (remove seen (child-eids db eid))]
+        (recur (conj acc eid)
+               (into seen children)
+               (into (pop frontier) children)))
       acc)))
 
 (defn- container-shape-eids
@@ -510,6 +520,38 @@
                                      (subtree-eids db eid)))]
         (ok (with-order db' (children-in-order db' peid)))))))
 
+(defn- container-objects
+  "The destination container's objects map, reconstructed from the index
+  for `app.common.files.changes/valid-move?`: shape id → `:parent-id`,
+  `:shapes`, `:component-id` and `:shape-ref`, which are the keys the move
+  decision reads and the only ones it reads.
+
+  The predicate takes the objects-shaped view rather than an index, so
+  this is the view: the index is not a second way to answer which moves
+  are legal (`pp:graph:database-is-the-boundary`). Parent and child ids
+  are shape ids, as they are in the document, so a shape the index parents
+  on its container — the page root frame, the root copy of a component
+  container — arrives with no parent, and the walk up stops where the
+  document's stops.
+
+  Built for the whole container, the order `renumber-container-tx` beside
+  it already reads: the decision walks the moved shape's subtree and the
+  destination's chain, and neither stops where it started. The child lists
+  are unsorted, because the walk reads membership and never a position."
+  [db ceid]
+  (let [eids     (container-shape-eids db ceid)
+        children (group-by (fn [e] (:db/id (:shape/parent (d/entity db e)))) eids)]
+    (into {}
+          (map (fn [eid]
+                 (let [ent (d/entity db eid)]
+                   [(:shape/id ent)
+                    {:parent-id    (:shape/id (:shape/parent ent))
+                     :shapes       (into [] (map #(:shape/id (d/entity db %)))
+                                        (get children eid))
+                     :component-id (:shape/component-id ent)
+                     :shape-ref    (:shape/shape-ref ent)}])))
+          eids)))
+
 (defn- apply-mov-objects
   "Reparenting, and the order that comes with it: `:mov-objects` carries
   shape ids, a parent id, and either an `:index` or an `:after-shape`
@@ -517,36 +559,52 @@
   in the destination's child list where `insert-at-index` puts them and
   the parents they left close their gaps. The index is read against the
   destination's list as it stands, moved shapes included, because that is
-  the list the document splits."
-  [db {:keys [parent-id shapes index after-shape] :as change}]
+  the list the document splits.
+
+  The move itself is the document's decision and not a second one:
+  `process-change :mov-objects` asks `valid-move?` for every shape the
+  change names and moves none of them unless every answer is yes, so one
+  invalid shape in a batch of ten leaves all ten where they were. The
+  mirror asks that same predicate, in the same order, of the container as
+  the index holds it at this point in the change list, and where the
+  document leaves its objects untouched the index rewrites no datom. That
+  is an applied change rather than a skip, because the fold still equals a
+  rebuild of the changed document (`pp:graph:stale-index-gate`)."
+  [db {:keys [parent-id shapes index after-shape allow-altering-copies syncing] :as change}]
   (let [ceid (queries/container-eid db (change-container-id change))
         peid (when ceid (queries/shape-eid db ceid parent-id))]
     (if-not peid
       (skip db :missing-parent)
-      (let [moved    (into []
-                           (keep (fn [sid] (queries/shape-eid db ceid sid)))
-                           shapes)
-            siblings (children-in-order db peid)
-            index    (or (some->> after-shape
-                                  (queries/shape-eid db ceid)
-                                  (ctd/index-of siblings)
-                                  inc)
-                         index)
-            order    (if (some? index)
-                       (ctd/insert-at-index siblings index moved)
-                       (cfh/append-at-the-end siblings moved))
-            left     (into []
-                           (comp (keep #(:db/id (:shape/parent (d/entity db %))))
-                                 (remove #{peid})
-                                 (distinct))
-                           moved)
-            tx    (mapv (fn [eid] [:db/add eid :shape/parent peid]) moved)
-            db'   (cond-> db (seq tx) (d/db-with tx))
-            db'   (with-order db' order)
-            db'   (reduce (fn [db* pe] (with-order db* (children-in-order db* pe)))
-                          db' left)
-            db'   (with-renumber db' ceid)]
-        (ok (with-reresolved db' (into [] (mapcat #(subtree-eids db' %)) moved)))))))
+      (let [objects (container-objects db ceid)
+            flags   {:allow-altering-copies allow-altering-copies
+                     :syncing syncing}]
+        (if-not (and (seq shapes)
+                     (every? #(cp/valid-move? objects % parent-id flags) shapes))
+          (ok db)
+          (let [moved    (into []
+                               (keep (fn [sid] (queries/shape-eid db ceid sid)))
+                               shapes)
+                siblings (children-in-order db peid)
+                index    (or (some->> after-shape
+                                      (queries/shape-eid db ceid)
+                                      (ctd/index-of siblings)
+                                      inc)
+                             index)
+                order    (if (some? index)
+                           (ctd/insert-at-index siblings index moved)
+                           (cfh/append-at-the-end siblings moved))
+                left     (into []
+                               (comp (keep #(:db/id (:shape/parent (d/entity db %))))
+                                     (remove #{peid})
+                                     (distinct))
+                               moved)
+                tx    (mapv (fn [eid] [:db/add eid :shape/parent peid]) moved)
+                db'   (cond-> db (seq tx) (d/db-with tx))
+                db'   (with-order db' order)
+                db'   (reduce (fn [db* pe] (with-order db* (children-in-order db* pe)))
+                              db' left)
+                db'   (with-renumber db' ceid)]
+            (ok (with-reresolved db' (into [] (mapcat #(subtree-eids db' %)) moved)))))))))
 
 (defn- apply-reorder-children
   "Mirror of `process-change :reorder-children` ->

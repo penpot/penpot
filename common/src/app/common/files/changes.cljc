@@ -747,37 +747,50 @@
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
+(defn- calculate-invalid-targets
+  "The shapes `shape-id` may not be moved into: itself and its whole
+  subtree, read off the objects map's own child lists."
+  [objects shape-id]
+  (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
+    (->> (get-in objects [shape-id :shapes])
+         (reduce reduce-fn #{shape-id}))))
+
+(defn valid-move?
+  "Whether `shape-id` may be moved under `parent-id`, decided off
+  `objects`: avoid placing a shape as a direct or indirect child of
+  itself, or inside its main component if it's in a copy, or inside a
+  copy, or from a copy. A component swap (`allow-altering-copies`) and the
+  deprecated `syncing` path allow changing the structure of a copy.
+
+  `objects` is the view the answer takes rather than a container, because
+  the decision walks the moved shape's subtree down `:shapes` and the
+  destination's chain up `:parent-id`, reading `:component-id` and
+  `:shape-ref` off every shape it meets: a caller holding those four facts
+  per shape can ask this without a document. It is public because
+  `app.graph.overlay.sync` is that caller, and the incremental overlay
+  refuses a move the document refuses by asking this predicate rather than
+  by answering the same question a second time."
+  [objects shape-id parent-id {:keys [allow-altering-copies syncing]}]
+  (let [invalid-targets (calculate-invalid-targets objects shape-id)
+        shape (get objects shape-id)]
+    (and shape
+         (not (invalid-targets parent-id))
+         (not (cfh/components-nesting-loop? objects shape-id parent-id))
+         (or allow-altering-copies
+             syncing
+             (and
+              ;; We don't want to change the structure of component copies
+              (not (ctk/in-component-copy? (get objects (:parent-id shape))))
+              ;; We need to check the origin and target frames
+              (not (ctk/in-component-copy? (get objects parent-id))))))))
+
 (defmethod process-change :mov-objects
   ;; FIXME: ignore-touched is no longer used, so we can consider it deprecated
   [data {:keys [parent-id shapes index page-id component-id #_ignore-touched after-shape allow-altering-copies syncing]}]
-  (letfn [(calculate-invalid-targets [objects shape-id]
-            (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
-              (->> (get-in objects [shape-id :shapes])
-                   (reduce reduce-fn #{shape-id}))))
-
-          ;; Avoid placing a shape as a direct or indirect child of itself, or
-          ;; inside its main component if it's in a copy, or inside a copy, or
-          ;; from a copy
-          (is-valid-move? [objects shape-id]
-            (let [invalid-targets (calculate-invalid-targets objects shape-id)
-                  shape (get objects shape-id)]
-              (and shape
-                   (not (invalid-targets parent-id))
-                   (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or
-                    ;; In some cases (like a component
-                    ;; swap) it's allowed to change the
-                    ;; structure of a copy
-                    allow-altering-copies
-
-                    ;; DEPRECATED, remove once v2.12 released
-                    syncing
-
-                    (and
-                     ;; We don't want to change the structure of component copies
-                     (not (ctk/in-component-copy? (get objects (:parent-id shape))))
-                     ;; We need to check the origin and target frames
-                     (not (ctk/in-component-copy? (get objects parent-id))))))))
+  (letfn [(is-valid-move? [objects shape-id]
+            (valid-move? objects shape-id parent-id
+                         {:allow-altering-copies allow-altering-copies
+                          :syncing syncing}))
 
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]
