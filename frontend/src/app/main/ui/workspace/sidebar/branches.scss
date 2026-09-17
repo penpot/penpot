@@ -1332,6 +1332,15 @@
   border: deprecated.$s-2 solid var(--panel-border-color);
   background-color: var(--color-background-primary);
 
+  // The floating colour and typography palette bar hangs from the same bottom
+  // edge of the canvas, and it draws over the banner's controls. The banner
+  // publishes the room it takes from that edge, measured from its own box, as
+  // `--branch-banner-clearance` on the app root
+  // (`branches.cljs::publish-banner-clearance!`), and the palette bar lifts
+  // itself by that value (`workspace/palette.scss`). One measured value, so
+  // the bar follows the banner's collapsed and expanded states and the two
+  // cannot drift apart.
+
   // the kebab dropdown opens upwards, past the banner box: it must not
   // be clipped (the collapsed state hides its content via block-size +
   // visibility) and it must beat the viewport controls, which are

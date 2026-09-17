@@ -27,6 +27,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.empty-state :refer [empty-state*]]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.workspace.sidebar.pull-requests :as prui :refer [pr-state-badge*]]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -588,9 +589,11 @@
           [:div {:class (stl/css :info-row)}
            [:dt {:class (stl/css :info-key)} (tr "workspace.branches.info.changes")]
            [:dd {:class (stl/css :info-val :info-counts)}
-            [:span {:class (stl/css :count-ahead)}
+            [:span {:class (stl/css :count-ahead)
+                    :title (tr "workspace.branches.counts.ahead")}
              [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead branch 0))]
-            [:span {:class (stl/css :count-behind)}
+            [:span {:class (stl/css :count-behind)
+                    :title (tr "workspace.branches.counts.behind")}
              [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind branch 0))]
             (when (pos? (:conflicts branch 0))
               [:span {:class (stl/css :item-badge :badge-conflict)}
@@ -759,7 +762,23 @@
                                   :message (tr "workspace.branches.delete.message" (:name entry))
                                   :accept-label (tr "labels.delete")
                                   :accept-style :danger
-                                  :on-accept (fn [_] (st/emit! (dwb/delete-branch (:id entry))))}))))]
+                                  :on-accept (fn [_] (st/emit! (dwb/delete-branch (:id entry))))}))))
+
+        ;; the exit door: the branch stops being a branch but keeps its
+        ;; content, and the confirmation says so, because the branch row and
+        ;; the link to main do not come back
+        on-materialize
+        (mf/use-fn
+         (mf/deps entry)
+         (fn [event]
+           (dom/stop-propagation event)
+           (on-set-menu false)
+           (st/emit! (modal/show {:type :confirm
+                                  :title (tr "workspace.branches.materialize.title")
+                                  :message (tr "workspace.branches.materialize.message" (:name entry))
+                                  :accept-label (tr "workspace.branches.materialize.accept")
+                                  :accept-style :danger
+                                  :on-accept (fn [_] (st/emit! (dwb/materialize-branch (:branch-file-id entry))))}))))]
 
     [:li {:class (stl/css-case :branch-entry true
                                :is-archived archived?
@@ -801,10 +820,12 @@
      [:div {:class (stl/css :branch-entry-aside)}
       (when (and (not archived?) (not main?))
         [:div {:class (stl/css :branch-entry-counts)}
-         [:span {:class (stl/css :count-ahead)}
+         [:span {:class (stl/css :count-ahead)
+                 :title (tr "workspace.branches.counts.ahead")}
           [:> i/icon* {:icon-id i/arrow-up :size "s"}]
           (dm/str ahead)]
-         [:span {:class (stl/css :count-behind)}
+         [:span {:class (stl/css :count-behind)
+                 :title (tr "workspace.branches.counts.behind")}
           [:> i/icon* {:icon-id i/arrow-down :size "s"}]
           (dm/str behind)]])
 
@@ -854,6 +875,11 @@
         (tr (if archived?
               "workspace.branches.menu.restore"
               "workspace.branches.menu.archive"))]
+       ;; only an open branch can leave the branch engine: once merged or
+       ;; archived there is nothing left to turn into an ordinary file
+       (when-not archived?
+         [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-materialize}
+          (tr "workspace.branches.materialize.action")])
        [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-delete}
         (tr "labels.delete")]]]]))
 
@@ -1489,6 +1515,25 @@
     (map? res)      (get res attr)
     :else           nil))
 
+(defn- document-sides
+  "Re-key one conflict from a `:main->branch` payload's role names to the two
+  documents the resolution modal names, where `:main` holds the branch and
+  `:branch` holds main (`branch-merge.cljc::compute-merge*` feeds the branch
+  as `theirs` and main as `ours` in that direction, and
+  `branch-merge.cljc::three-way-entities` writes `:main` for `theirs`). The
+  base side, the id, the reason and the label read the same in both
+  directions, as do the resolution keywords the commands take, so only the
+  two sides and the values inside `:changed-attrs` move."
+  [conflict]
+  (let [swap (fn [sides] {:main (:branch sides) :branch (:main sides)})]
+    (cond-> (assoc conflict
+                   :main (:branch conflict)
+                   :branch (:main conflict))
+      (map? (:changed-attrs conflict))
+      (assoc :changed-attrs (into {}
+                                  (map (fn [[attr sides]] [attr (swap sides)]))
+                                  (:changed-attrs conflict))))))
+
 (mf/defc conflict-preview-row*
   "The BASE · MAIN · BRANCH · RESULT preview strip on top of the detail
   panel. RESULT updates live as per-property choices change."
@@ -1557,6 +1602,19 @@
         ;; left the dialog showing 0 of 0 with an Apply that could never
         ;; enable (vcs:tp-update-conflict-frame). Prefer what the command said.
         conflicts   (if (seq conflicts) conflicts (:conflicts diff))
+
+        ;; In update mode the payload's two sides arrive role-keyed rather than
+        ;; document-keyed: `branch-merge.cljc::compute-merge*` runs the
+        ;; `:main->branch` direction with the branch as `theirs` and main as
+        ;; `ours`, and `branch-merge.cljc::three-way-entities` names those
+        ;; `:main` and `:branch`. Every heading, chip and button below names
+        ;; the two documents, so an update hands the branch where the modal
+        ;; says main. Re-key the payload once, here: the mode-dependent
+        ;; mapping lives in this one binding. Resolutions stay in document
+        ;; terms, which is what both commands expect of them.
+        conflicts   (if (= mode :update)
+                      (mapv document-sides conflicts)
+                      conflicts)
         resolutions (or resolutions {})
         total       (count conflicts)
         resolved    (count (filterv #(bm/conflict-resolved? % (get resolutions (:id %))) conflicts))
@@ -1586,8 +1644,13 @@
                                               (dwb/merge-branch branch {:resolutions resolutions
                                                                         :keep-branch keep?}))))]
 
-    (mf/with-effect [(:id branch)]
-      (st/emit! (dwb/fetch-branch-diff (:id branch))))
+    ;; the fetched diff backs both the fallback conflict set and the side
+    ;; subtitles, so it must be computed in the direction this modal resolves:
+    ;; an update shows main's incoming changes, and the key-space of its
+    ;; payload has to match the one the normalization above assumes
+    (mf/with-effect [(:id branch) mode]
+      (st/emit! (dwb/fetch-branch-diff (:id branch)
+                                       (if (= mode :update) :main->branch :branch->main))))
 
     [:div {:class (stl/css :compare-overlay)}
      [:div {:class (stl/css :compare-container)}
@@ -1719,6 +1782,23 @@
 
 ;; --- Branch context banner (shown while editing a branch)
 
+(defn- publish-banner-clearance!
+  "Publish the room the branch banner takes from the bottom edge of the
+  canvas as `--branch-banner-clearance` on the app root, which the floating
+  colour/typography palette bar reads to lift itself clear (`palette.scss`):
+  the banner and the bar hang from the same edge and the bar draws over the
+  banner's controls. The room is measured from the banner's live box rather
+  than written down, so it follows the banner in both the collapsed and the
+  expanded state, where one fixed offset would be wrong in one of the two."
+  []
+  (when-let [root (dom/get-root)]
+    (when-let [node (dom/get-element "branch-banner")]
+      (let [room (- (:bottom (dom/get-bounding-rect root))
+                    (:top (dom/get-bounding-rect node)))]
+        (dom/set-css-property! root
+                               "--branch-banner-clearance"
+                               (dm/str (max 0 room) "px"))))))
+
 (mf/defc branch-context-banner*
   [{:keys [file-id]}]
   (let [ctx         (mf/deref branch-context)
@@ -1772,7 +1852,14 @@
         on-open-review
         (mf/use-fn
          (mf/deps open-pr)
-         #(st/emit! (dwpr/open-pull-request open-pr)))]
+         #(st/emit! (dwpr/open-pull-request open-pr)))
+
+        ;; publishes the room the banner takes from the bottom of the canvas
+        ;; whenever its box changes size, which is what keeps the floating
+        ;; colour/typography palette bar clear of it in both the collapsed and
+        ;; the expanded state (see `publish-banner-clearance!`)
+        banner-ref (r/use-resize-observer
+                    (mf/use-fn (fn [_ _] (publish-banner-clearance!))))]
 
     (mf/with-effect [file-id]
       (when (contains? cf/flags :branching)
@@ -1795,8 +1882,22 @@
                                    (st/emit! (dwb/fetch-branch-context)))))]
         (fn [] (events/unlistenByKey key))))
 
+    ;; it is cleared when there is no banner to clear, so a file that is not a
+    ;; branch leaves the palette bar on its plain bottom anchor
+    (mf/with-effect [ctx]
+      (if (some? ctx)
+        (publish-banner-clearance!)
+        (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
+
+    ;; the same goes when the banner goes away with the component, so nothing
+    ;; is left behind for the palette bar to clear later
+    (mf/with-effect []
+      (fn [] (dom/unset-css-property! (dom/get-root) "--branch-banner-clearance")))
+
     (when ctx
-      [:div {:class (stl/css-case :branch-banner true
+      [:div {:id "branch-banner"
+             :ref banner-ref
+             :class (stl/css-case :branch-banner true
                                   :branch-banner-merged merged?
                                   :is-collapsed collapsed?)}
        [:button {:class (stl/css :branch-banner-handle)
@@ -1828,9 +1929,11 @@
           (let [conflicts (or (:conflicts ctx) 0)]
             [:div {:class (stl/css :branch-banner-actions)}
              [:span {:class (stl/css :branch-banner-counts)}
-              [:span {:class (stl/css :count-ahead)}
+              [:span {:class (stl/css :count-ahead)
+                      :title (tr "workspace.branches.counts.ahead")}
                [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead ctx))]
-              [:span {:class (stl/css :count-behind)}
+              [:span {:class (stl/css :count-behind)
+                      :title (tr "workspace.branches.counts.behind")}
                [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind ctx))]]
 
              (when (pos? conflicts)

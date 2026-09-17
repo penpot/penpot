@@ -214,6 +214,26 @@
                                      (fetch-branches))))
            (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
 
+(defn materialize-branch
+  "Turn a branch into an ordinary file: `file-id` is the branch's FILE, and
+  the command persists the branch's derived state as the file's own data
+  payload, drops the op log and clears the branch marker, so every later
+  read and write takes the ordinary route. The content stays; what goes is
+  the branch itself, so the file can no longer be compared with main or
+  merged into it. The branch row is soft-deleted, so refreshing the panel
+  drops the row and refreshing the context drops the banner when the file
+  that left the branch is the open one."
+  [file-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  (ptk/reify ::materialize-branch
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :materialize-file-branch {:file-id file-id})
+           (rx/mapcat (fn [_] (rx/of (ntf/success (tr "workspace.branches.materialize.success"))
+                                     (fetch-branches)
+                                     (fetch-branch-context))))
+           (rx/catch (fn [cause] (rx/of (refusal-notification cause (tr "workspace.branches.lifecycle.error")))))))))
+
 (defn create-branch
   "Create a branch from a file. With no `file-id`, branches the currently
   open file (force-persisting first so the merge base captures the latest

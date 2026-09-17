@@ -13,7 +13,11 @@
   position: absolute;
   width: 100vw;
   left: 0;
-  bottom: 0;
+  // The branch banner hangs from this same bottom edge and publishes the room
+  // it takes from it (`branches.cljs::publish-banner-clearance!`), so the bar
+  // sits above the banner instead of over its controls. With no banner the
+  // property is unset and the bar keeps its plain bottom anchor.
+  bottom: var(--branch-banner-clearance, 0px);
   padding-bottom: deprecated.$s-4;
 
   /** Aligns AI Chat button **/

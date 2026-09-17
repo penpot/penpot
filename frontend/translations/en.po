@@ -6682,6 +6682,20 @@ msgstr "Use this"
 msgid "workspace.branches.conflicts.whole-hint"
 msgstr "This element was added or removed on one side. Choose which version to keep."
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:593, src/app/main/ui/workspace/sidebar/branches.cljs:824, src/app/main/ui/workspace/sidebar/branches.cljs:1933
+msgid "workspace.branches.counts.ahead"
+msgstr ""
+"Changes this branch has and main does not. Counts entity-level changes "
+"(shapes, pages, components, colours, typographies, media, and tokens), not "
+"saves."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:596, src/app/main/ui/workspace/sidebar/branches.cljs:828, src/app/main/ui/workspace/sidebar/branches.cljs:1936
+msgid "workspace.branches.counts.behind"
+msgstr ""
+"Changes main has and this branch does not. Counts entity-level changes "
+"(shapes, pages, components, colours, typographies, media, and tokens), not "
+"saves."
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:299
 msgid "workspace.branches.create.derive-from"
 msgstr "Derive from"
@@ -6952,6 +6966,28 @@ msgstr "main has new changes — you can update this branch"
 #: src/app/main/ui/workspace/sidebar/branches.cljs:659
 msgid "workspace.branches.main-subtitle"
 msgstr "Default branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:779
+msgid "workspace.branches.materialize.accept"
+msgstr "Turn it into a file"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:882
+msgid "workspace.branches.materialize.action"
+msgstr "Turn into an ordinary file"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:778
+msgid "workspace.branches.materialize.message"
+msgstr ""
+"Branch \"%s\" keeps its content. The file stops being a branch, so it can no "
+"longer be compared with main or merged into main."
+
+#: src/app/main/data/workspace/branches.cljs:232
+msgid "workspace.branches.materialize.success"
+msgstr "The branch is now an ordinary file"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:777
+msgid "workspace.branches.materialize.title"
+msgstr "Turn this branch into an ordinary file"
 
 #: src/app/main/ui/workspace/main_menu.cljs:736
 msgid "workspace.branches.menu"
