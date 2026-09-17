@@ -7,6 +7,8 @@
 (ns backend-tests.rpc-plugins-test
   (:require
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [backend-tests.helpers :as th]
@@ -144,6 +146,140 @@
       (t/is (contains? (set (:ids plugins)) plugin-id-2))
       (t/is (= "Test Plugin" (get-in plugins [:data plugin-id-1 :name])))
       (t/is (= "Second Plugin" (get-in plugins [:data plugin-id-2 :name]))))))
+
+(t/deftest add-profile-plugin-rejects-oversized-code
+  ;; The merged props must not exceed :profile-props-max-size
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 200 "x")))
+        data    {::th/type :add-profile-plugin
+                 ::rpc/profile-id (:id profile)
+                 :plugin plugin}]
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [out (th/command! data)]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :props-too-large))))))
+
+(t/deftest add-profile-plugin-rejects-oversized-code-path
+  ;; :code holds a manifest path, not content: overlong values are
+  ;; rejected by the entry schema before the props size check runs
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 501 "x")))
+        data    {::th/type :add-profile-plugin
+                 ::rpc/profile-id (:id profile)
+                 :plugin plugin}
+        out     (th/command! data)]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest remove-profile-plugin-allowed-on-oversized-profile
+  ;; Removal shrinks props, so it passes even under a tight limit
+  (let [profile (th/create-profile* 1)
+        plugin  (assoc valid-plugin :code (apply str (repeat 200 "x")))]
+    ;; Seed an oversized registry while the limit is high
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100000})]
+      (let [out (th/command! {::th/type :add-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin plugin})]
+        (t/is (nil? (:error out)))))
+    ;; Removal under a tighter limit still passes: the seeded registry
+    ;; is oversized against it, but the remaining props fit
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 300})]
+      (let [out (th/command! {::th/type :remove-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin-id (uuid/uuid plugin-id-1)})]
+        (t/is (nil? (:error out)))))))
+
+(t/deftest add-profile-plugin-rejects-51st-plugin
+  ;; The registry holds at most 50 plugins; the 51st (new id) must fail
+  (let [profile (th/create-profile* 1)]
+    ;; Seed 50 plugins
+    (doseq [i (range 50)]
+      (let [plugin (assoc valid-plugin
+                          :plugin-id (str (uuid/next))
+                          :name (str "Plugin " i))
+            out    (th/command! {::th/type :add-profile-plugin
+                                 ::rpc/profile-id (:id profile)
+                                 :plugin plugin})]
+        (t/is (nil? (:error out)) (str "seed plugin " i " should install"))))
+    ;; The 51st must fail with a specific error
+    (let [extra (assoc valid-plugin
+                       :plugin-id (str (uuid/next))
+                       :name "One Too Many")
+          out   (th/command! {::th/type :add-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin extra})]
+      (t/is (th/ex-info? (:error out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :too-many-plugins)))
+    ;; And nothing extra was persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= 50 (count (get-in props [:props :plugins :ids])))))))
+
+(t/deftest add-profile-plugin-updates-existing-at-limit
+  ;; Re-adding an existing id at the limit is an update, not a new entry
+  (let [profile (th/create-profile* 1)
+        ids     (mapv (fn [_] (str (uuid/next))) (range 50))]
+    (doseq [[i pid] (map-indexed vector ids)]
+      (th/command! {::th/type :add-profile-plugin
+                    ::rpc/profile-id (:id profile)
+                    :plugin (assoc valid-plugin :plugin-id pid :name (str "Plugin " i))}))
+    (let [out (th/command! {::th/type :add-profile-plugin
+                            ::rpc/profile-id (:id profile)
+                            :plugin (assoc valid-plugin :plugin-id (first ids) :name "Renamed")})]
+      (t/is (nil? (:error out)))
+      (let [saved (th/db-get :profile {:id (:id profile)})
+            props (profile/decode-row saved)]
+        (t/is (= 50 (count (get-in props [:props :plugins :ids]))))
+        (t/is (= "Renamed" (get-in props [:props :plugins :data (first ids) :name])))))))
+
+(t/deftest add-profile-plugin-full-registry-reports-too-many-before-size
+  ;; A full registry plus oversized content reports the count guard,
+  ;; which runs before the size check
+  (let [profile (th/create-profile* 1)]
+    ;; Seed 50 plugins under a generous limit
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 1000000})]
+      (doseq [i (range 50)]
+        (let [plugin (assoc valid-plugin
+                            :plugin-id (str (uuid/next))
+                            :name (str "Plugin " i))
+              out    (th/command! {::th/type :add-profile-plugin
+                                   ::rpc/profile-id (:id profile)
+                                   :plugin plugin})]
+          (t/is (nil? (:error out)) (str "seed plugin " i " should install")))))
+    ;; Tight limit + 51st small plugin: count wins over size
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [extra (assoc valid-plugin
+                         :plugin-id (str (uuid/next))
+                         :name "One Too Many")
+            out   (th/command! {::th/type :add-profile-plugin
+                                ::rpc/profile-id (:id profile)
+                                :plugin extra})]
+        (t/is (th/ex-info? (:error out)))
+        (t/is (th/ex-of-type? (:error out) :validation))
+        (t/is (th/ex-of-code? (:error out) :too-many-plugins))))
+    ;; And nothing extra was persisted
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (= 50 (count (get-in props [:props :plugins :ids])))))))
+
+(t/deftest remove-profile-plugin-noop-on-oversized-profile-without-plugins
+  ;; Removing an absent id changes nothing: no write, no size failure,
+  ;; and no :plugins key is manufactured
+  (let [profile (th/create-profile* 1)
+        big     {:onboarding-questions {:big-blob (apply str (repeat 200 "x"))}}]
+    (th/db-update! :profile {:props (db/tjson big)} {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 100})]
+      (let [out (th/command! {::th/type :remove-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin-id (uuid/next)})]
+        (t/is (nil? (:error out)))))
+    (let [saved (th/db-get :profile {:id (:id profile)})
+          props (profile/decode-row saved)]
+      (t/is (nil? (get-in props [:props :plugins])))
+      (t/is (= big (get props :props))))))
 
 (t/deftest update-profile-props-rejects-plugins
   (let [profile (th/create-profile* 1)
