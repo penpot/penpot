@@ -152,7 +152,7 @@
         (and (= (count content) 1)
              (= (first content) zero-width-space)))))
 
-(defn composing-event?
+(defn- composing-event?
   "True when a keydown event is part of an in-flight IME composition.
 
   Read from the browser event itself so it stays correct regardless of
@@ -165,6 +165,59 @@
   (let [native (.-nativeEvent event)]
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
+
+(defn resolve-comment-key-action
+  "Resolve a keydown event to the comment-editor action it should trigger.
+
+  Pure decision seam for the comment-input* and floating-thread keydown
+  handlers, so keyboard behavior is testable without a DOM harness.
+  Returns one of:
+  - :ime-owned — the keydown belongs to an active IME composition and
+    must not trigger any Penpot command; the browser/IME owns it.
+  - :insert-selected-mention / :insert-next-mention /
+    :insert-prev-mention / :hide-mentions — mention-panel commands.
+  - :on-esc / :on-ctrl-enter — delegated callbacks.
+  - :newline — the custom comment line-break path.
+  - :backspace-mention-check — the mention-aware backspace path.
+  - :close-thread — the floating-thread Escape path.
+  - :none — no comment action for this keydown.
+
+  `opts` carries the handler context: :mention-open?, :has-on-esc?,
+  :has-on-ctrl-enter? and :thread? (true for the floating-thread
+  parent handler, which only handles Escape-to-close)."
+  [^js event {:keys [mention-open? has-on-esc? has-on-ctrl-enter? thread?]}]
+  (if (composing-event? event)
+    :ime-owned
+    (cond
+      (and mention-open? (kbd/enter? event))
+      :insert-selected-mention
+
+      (and mention-open? (kbd/down-arrow? event))
+      :insert-next-mention
+
+      (and mention-open? (kbd/up-arrow? event))
+      :insert-prev-mention
+
+      (and mention-open? (kbd/esc? event))
+      :hide-mentions
+
+      (and (not thread?) (kbd/esc? event) has-on-esc?)
+      :on-esc
+
+      (and (not thread?) (kbd/mod? event) (kbd/enter? event) has-on-ctrl-enter?)
+      :on-ctrl-enter
+
+      (and (not thread?) (kbd/enter? event))
+      :newline
+
+      (and (not thread?) (kbd/backspace? event))
+      :backspace-mention-check
+
+      (and thread? (kbd/esc? event))
+      :close-thread
+
+      :else
+      :none)))
 
 ;; Component that renders the component content
 (mf/defc comment-content*
@@ -370,60 +423,67 @@
         (mf/use-fn
          (mf/deps on-esc on-ctrl-enter handle-select handle-input)
          (fn [event]
-           (when-not (composing-event? event)
-             (handle-select event)
-             (when-let [node (mf/ref-val local-ref)]
-               (when-let [[span-node offset] (current-text-node node)]
-                 (cond
-                   (and @cur-mention (kbd/enter? event))
-                   (do (dom/prevent-default event)
-                       (dom/stop-propagation event)
-                       (rx/push! mentions-s {:type :insert-selected-mention}))
+           (let [action (resolve-comment-key-action
+                         event
+                         {:mention-open? (some? @cur-mention)
+                          :has-on-esc? (fn? on-esc)
+                          :has-on-ctrl-enter? (fn? on-ctrl-enter)})]
+             (when-not (= :ime-owned action)
+               (handle-select event)
+               (when-let [node (mf/ref-val local-ref)]
+                 (when-let [[span-node offset] (current-text-node node)]
+                   (case action
+                     :insert-selected-mention
+                     (do (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (rx/push! mentions-s {:type :insert-selected-mention}))
 
-                   (and @cur-mention (kbd/down-arrow? event))
-                   (do (dom/prevent-default event)
-                       (dom/stop-propagation event)
-                       (rx/push! mentions-s {:type :insert-next-mention}))
+                     :insert-next-mention
+                     (do (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (rx/push! mentions-s {:type :insert-next-mention}))
 
-                   (and @cur-mention (kbd/up-arrow? event))
-                   (do (dom/prevent-default event)
-                       (dom/stop-propagation event)
-                       (rx/push! mentions-s {:type :insert-prev-mention}))
+                     :insert-prev-mention
+                     (do (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (rx/push! mentions-s {:type :insert-prev-mention}))
 
-                   (and @cur-mention (kbd/esc? event))
-                   (do (dom/prevent-default event)
-                       (dom/stop-propagation event)
-                       (rx/push! mentions-s {:type :hide-mentions}))
+                     :hide-mentions
+                     (do (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (rx/push! mentions-s {:type :hide-mentions}))
 
-                   (and (kbd/esc? event) (fn? on-esc))
-                   (on-esc event)
+                     :on-esc
+                     (on-esc event)
 
-                   (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                   (on-ctrl-enter event)
+                     :on-ctrl-enter
+                     (on-ctrl-enter event)
 
-                   (kbd/enter? event)
-                   (let [sel (wapi/get-selection)
-                         range (.getRangeAt sel 0)]
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (let [[span-node offset] (current-text-node node)]
-                       (.deleteContents range)
-                       (handle-input)
-
-                       (when span-node
-                         (let [txt (.-textContent span-node)]
-                           (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
-                           (wapi/set-cursor! span-node (inc offset))
-                           (handle-input)))))
-
-                   (kbd/backspace? event)
-                   (let [prev-node (get-prev-node node span-node)]
-                     (when (and (some? prev-node)
-                                (= "mention" (dom/get-data prev-node "type"))
-                                (= offset 1))
+                     :newline
+                     (let [sel (wapi/get-selection)
+                           range (.getRangeAt sel 0)]
                        (dom/prevent-default event)
                        (dom/stop-propagation event)
-                       (.remove prev-node)))))))))]
+                       (let [[span-node offset] (current-text-node node)]
+                         (.deleteContents range)
+                         (handle-input)
+
+                         (when span-node
+                           (let [txt (.-textContent span-node)]
+                             (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
+                             (wapi/set-cursor! span-node (inc offset))
+                             (handle-input)))))
+
+                     :backspace-mention-check
+                     (let [prev-node (get-prev-node node span-node)]
+                       (when (and (some? prev-node)
+                                  (= "mention" (dom/get-data prev-node "type"))
+                                  (= offset 1))
+                         (dom/prevent-default event)
+                         (dom/stop-propagation event)
+                         (.remove prev-node)))
+
+                     nil)))))))]
 
     (mf/with-layout-effect [autofocus]
       (when ^boolean autofocus
@@ -1037,8 +1097,6 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
-
-
 (mf/defc comment-floating-thread*
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom origin position-modifier viewport]}]
@@ -1081,8 +1139,8 @@
         on-key-down
         (mf/use-fn
          (fn [event]
-           (when (and (kbd/esc? event)
-                      (not (composing-event? event)))
+           (when (= :close-thread
+                    (resolve-comment-key-action event {:thread? true}))
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (st/emit! (dcm/close-thread)))))
