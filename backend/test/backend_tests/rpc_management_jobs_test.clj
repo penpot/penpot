@@ -141,7 +141,7 @@
         out    (mgmt! :complete-job {:job-id job-id
                                      :result {:value 42}})]
     (t/is (nil? (:error out)))
-    (t/is (= {} (:result out)))
+    (t/is (= {:action :run} (:result out)))
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
       (t/is (= {:value 42} (:result row)))
@@ -239,3 +239,32 @@
 (t/deftest fail-job-validates-params
   (let [job-id (mk-job! {})]
     (t/is (= :validation (th/ex-type (:error (mgmt! :fail-job {:job-id job-id})))))))
+
+(t/deftest terminal-writers-report-skip-on-terminal-rows
+  (let [done-id (mk-job! {:status "completed"})]
+    (t/testing "complete on a terminal row reports skip"
+      (let [out (mgmt! :complete-job {:job-id done-id :result {:x 1}})]
+        (t/is (nil? (:error out)))
+        (t/is (= {:action :skip} (:result out)))))
+    (t/testing "fail on a terminal row reports skip"
+      (let [out (mgmt! :fail-job {:job-id done-id
+                                  :error  {:type :internal
+                                           :code "processing-error"
+                                           :hint "bad image"}})]
+        (t/is (nil? (:error out)))
+        (t/is (= {:action :skip} (:result out)))))
+    (t/testing "progress on a terminal row reports skip"
+      (let [out (mgmt! :report-job-progress {:job-id  done-id
+                                             :progress {:total 10 :current 4}})]
+        (t/is (nil? (:error out)))
+        (t/is (= {:action :skip} (:result out))))))
+  (let [cfg    {::db/pool th/*pool*}
+        job-id (mk-job! {})
+        _      (jobs/claim! cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
+    (t/testing "live paths report run"
+      (t/is (= {:action :run}
+               (:result (mgmt! :report-job-progress {:job-id  job-id
+                                                     :progress {:total 10 :current 4}}))))
+      (t/is (= {:action :run}
+               (:result (mgmt! :complete-job {:job-id job-id
+                                              :result {:x 1}})))))))

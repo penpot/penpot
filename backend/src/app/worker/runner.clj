@@ -144,7 +144,7 @@
             (int? (:delay edata))
             (assoc :delay-ms (:delay edata))
 
-            (= ::noop (:strategy edata))
+            (= ::wrk/noop (:strategy edata))
             (assoc :inc-by 0))
           (do
             (l/err :hint "unhandled exception on job"
@@ -206,7 +206,7 @@
             (let [job    (-> result meta ::job)
                   nretry (+ (:retry-num job) inc-by)
                   now    (ct/now)
-                  delay  (->> (iterate #(* 2 %) delay-ms) (take nretry) (last))]
+                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))]
               (db/exec-one! (db/get-connectable cfg)
                             [sql:retry-job
                              now

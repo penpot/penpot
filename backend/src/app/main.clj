@@ -23,7 +23,6 @@
    [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
    [app.http.session :as session]
-   [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
    [app.jobs :as-alias jobs]
    [app.jobs.gc :as-alias jobs.gc]

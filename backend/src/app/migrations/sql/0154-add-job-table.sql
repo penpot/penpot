@@ -41,10 +41,12 @@ CREATE TABLE job (
     expires_at   timestamptz
 );
 
--- Claim index: matches the dispatcher sweep ORDER BY priority DESC,
--- scheduled_at LIMIT n.
+-- Claim index: leading columns serve the dispatcher sweep ORDER BY
+-- priority DESC, scheduled_at LIMIT n. Status stays in the partial
+-- predicate: an OR over two statuses cannot feed the ordering, so
+-- leading with it would force a sort on every batch.
 CREATE INDEX job__dispatcher__idx
-    ON job (status, priority DESC, scheduled_at)
+    ON job (priority DESC, scheduled_at)
     WHERE status IN ('new', 'retry');
 
 CREATE INDEX job__orphan__idx

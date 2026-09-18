@@ -193,7 +193,13 @@
         ;; durable row (the runner would roll everything back yet mark
         ;; the job completed); it stays available in-process via
         ;; invoke!/run-task!. Validation above is untouched.
-        props        (db/json (dissoc params :rollback?))
+        ;; Duration values are normalized to millis: a Duration object
+        ;; does not survive JSON encoding (schemas still accept it for
+        ;; in-process callers).
+        props        (db/json (-> (dissoc params :rollback?)
+                                  (update-vals #(if (ct/duration? %)
+                                                  (.toMillis ^java.time.Duration %)
+                                                  %))))
         id           (uuid/next)
         tenant       (cf/get :tenant)
         job-name     (d/name name)
@@ -394,9 +400,9 @@
        (db/tx-run! (or (::db/pool cfg) cfg)
                    (fn [{:keys [::db/conn]}]
                      (let [now (ct/now)]
-                       (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
-                                           (db/create-array conn "text" ["new" "scheduled" "running" "retry"])]))))
-       nil))))
+                       (-> (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
+                                               (db/create-array conn "text" ["new" "scheduled" "running" "retry"])])
+                           (db/get-update-count)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MANAGEMENT API SUPPORT (external workers)

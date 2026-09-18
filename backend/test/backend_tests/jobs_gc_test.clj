@@ -10,11 +10,13 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.jobs.gc :as gc]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [integrant.core :as ig]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial
@@ -117,6 +119,15 @@
     (t/is ((sm/validator gc/schema:jobs-gc-params) {:min-age (ct/duration {:hours 1})})))
   (t/testing "string min-age runs like a duration"
     (t/is (map? (th/run-task! :jobs-gc {:min-age "1h"})))))
+
+(t/deftest submit-normalizes-durations-to-millis
+  (let [defs   {:jobs-gc (ig/init-key ::gc/jobs-gc-job-def {})}
+        cfg    {::jobs/defs defs
+                ::db/pool   th/*pool*}
+        job-id (jobs/submit! cfg {::jobs/name   :jobs-gc
+                                  ::jobs/params {:min-age (ct/duration {:hours 1})}})]
+    (t/testing "a Duration object does not reach JSON encoding"
+      (t/is (= 3600000 (:min-age (:props (jobs/get-job cfg job-id))))))))
 
 (t/deftest gc-retention-deletes-old-internal-terminal-rows
   (let [profile (th/create-profile* 1 {})

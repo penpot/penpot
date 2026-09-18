@@ -128,7 +128,6 @@
                            :app.worker/dispatcher
                            [:app.main/default :app.worker/runner]
                            [:app.main/webhook :app.worker/runner]
-                           [:app.main/binfile :app.worker/runner]
                            [:app.main/cron :app.worker/runner]))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]

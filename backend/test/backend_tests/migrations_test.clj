@@ -11,6 +11,7 @@
    [app.util.migrations :as mg]
    [backend-tests.helpers :as th]
    [clojure.spec.alpha :as s]
+   [clojure.string :as str]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -56,6 +57,16 @@
   (t/is (contains? (table-indexes "job") "job__dispatcher__idx"))
   (t/is (contains? (table-indexes "job") "job__orphan__idx"))
   (t/is (contains? (table-indexes "job") "job__profile__idx")))
+
+(t/deftest job-dispatcher-index-serves-ordering
+  (let [indexdef (:indexdef (th/db-exec-one! ["SELECT indexdef FROM pg_indexes
+                                              WHERE schemaname = 'public'
+                                                AND tablename = 'job'
+                                                AND indexname = 'job__dispatcher__idx'"]))]
+    (t/testing "leading columns carry the sweep ORDER BY, status only in the predicate"
+      (t/is (str/includes? indexdef "(priority DESC, scheduled_at)"))
+      (t/is (str/includes? indexdef "WHERE"))
+      (t/is (not (str/includes? indexdef "(status, scheduled_at)"))))))
 
 (t/deftest job-table-has-sweep-path-indexes
   (t/testing "dispatcher reschedule of lost scheduled rows"

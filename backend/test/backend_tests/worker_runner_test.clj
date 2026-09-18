@@ -227,6 +227,28 @@
             (t/is (> delta 4000))
             (t/is (< delta 6000))))))))
 
+(t/deftest runner-noop-retry-at-zero-schedules-base-delay
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job! {:scheduled-at scheduled-at})
+        defs         {:echo-runner
+                      (assoc (echo-job-def)
+                             ::jobs/handler
+                             (fn [_params]
+                               (throw (ex-info "noop"
+                                               {:type ::wrk/retry
+                                                :strategy ::wrk/noop
+                                                :delay 5000}))))}]
+    (push-payload! job-id scheduled-at)
+    (run-one! (mk-cfg {:defs defs}))
+    (let [row (get-row job-id)]
+      (t/testing "noop retry schedules instead of NPEing on take 0"
+        (t/is (= "retry" (:status row)))
+        (t/is (= 0 (:retry-num row)))
+        (t/testing "scheduled_at is ~5s in the future"
+          (let [delta (- (inst-ms (:scheduled-at row)) (inst-ms (ct/now)))]
+            (t/is (> delta 4000))
+            (t/is (< delta 6000))))))))
+
 (t/deftest runner-unhandled-exception-fails-when-no-retries-left
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
         job-id       (mk-job! {:scheduled-at scheduled-at :max-retries 0})

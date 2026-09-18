@@ -64,7 +64,7 @@
      FROM (SELECT t.id
              FROM job AS t
             WHERE status = 'scheduled'
-              AND (?::timestamptz - t.scheduled_at) > '5 min'::interval) AS subquery
+              AND t.scheduled_at < ?::timestamptz - '5 min'::interval) AS subquery
     WHERE job.id=subquery.id
 RETURNING job.id, job.queue")
 

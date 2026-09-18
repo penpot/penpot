@@ -64,7 +64,8 @@
                [:stage {:optional true} ::sm/text]]]])
 
 (def ^:private schema:report-job-progress-result
-  [:map {:title "report-job-progress-result"}])
+  [:map {:title "report-job-progress-result"}
+   [:action [:enum :run :skip]]])
 
 (sv/defmethod ::report-job-progress
   {::doc/added "2.19"
@@ -72,8 +73,11 @@
    ::sm/result schema:report-job-progress-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id progress]}]
-  (jobs/progress! cfg job-id progress {::jobs/force? true})
-  {})
+  ;; A lost race (row already terminal) reports :skip so the worker
+  ;; stops retrying a report that can never land, mirroring claim-job.
+  (if (pos? (jobs/progress! cfg job-id progress {::jobs/force? true}))
+    {:action :run}
+    {:action :skip}))
 
 ;; ---- RPC METHOD: COMPLETE-JOB
 
@@ -86,7 +90,8 @@
    [:result [:maybe :any]]])
 
 (def ^:private schema:complete-job-result
-  [:map {:title "complete-job-result"}])
+  [:map {:title "complete-job-result"}
+   [:action [:enum :run :skip]]])
 
 (sv/defmethod ::complete-job
   {::doc/added "2.19"
@@ -94,8 +99,9 @@
    ::sm/result schema:complete-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id result]}]
-  (jobs/complete! cfg job-id result)
-  {})
+  (if (pos? (jobs/complete! cfg job-id result))
+    {:action :run}
+    {:action :skip}))
 
 ;; ---- RPC METHOD: FAIL-JOB
 
@@ -110,7 +116,8 @@
             [:hint ::sm/text]]]])
 
 (def ^:private schema:fail-job-result
-  [:map {:title "fail-job-result"}])
+  [:map {:title "fail-job-result"}
+   [:action [:enum :run :skip]]])
 
 (sv/defmethod ::fail-job
   {::doc/added "2.19"
@@ -118,5 +125,6 @@
    ::sm/result schema:fail-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id error]}]
-  (jobs/fail! cfg job-id error)
-  {})
+  (if (pos? (jobs/fail! cfg job-id error))
+    {:action :run}
+    {:action :skip}))
