@@ -166,6 +166,33 @@
         (t/is (th/ex-info? err))
         (t/is (th/ex-of-type? err :not-found))))))
 
+(t/deftest create-file-id-version
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id prof)
+        v3-id   "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        v4-id   "550e8400-e29b-41d4-a716-446655440000"]
+
+    ;; reserved version (v3) must be rejected at the RPC boundary
+    (let [data {::th/type :create-file
+                ::rpc/profile-id (:id prof)
+                :project-id proj-id
+                :id v3-id
+                :name "file with v3 id"}
+          out  (th/command! data)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; v4 id is accepted
+    (let [data {::th/type :create-file
+                ::rpc/profile-id (:id prof)
+                :project-id proj-id
+                :id v4-id
+                :name "file with v4 id"}
+          out  (th/command! data)]
+      (t/is (th/success? out))
+      (t/is (= v4-id (str (:id (:result out))))))))
+
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
