@@ -190,7 +190,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr translation?
-            skip-grid-reassignment? skip-component-sync?]
+            skip-grid-reassignment? skip-component-sync? extra-context]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -224,7 +224,8 @@
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
                                                 :translation? translation?
-                                                :skip-grid-reassignment? skip-grid-reassignment?})
+                                                :skip-grid-reassignment? skip-grid-reassignment?
+                                                :extra-context extra-context})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
                    (pcb/set-translation? translation?)

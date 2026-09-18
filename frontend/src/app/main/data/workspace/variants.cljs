@@ -764,7 +764,7 @@
                                             (remove #(= (:id %) component-id))
                                             (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
                                             (reverse))
-                nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                nearest-comp           (apply min-key #(ctv/properties-distance target-props (:variant-properties %)) valid-comps)
                 shape-parents          (cfh/get-parents-with-self current-page-objects (:parent-id shape))
                 nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
                 comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))

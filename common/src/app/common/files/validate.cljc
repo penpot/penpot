@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
-   [app.common.files.variant :as cfv]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
@@ -569,7 +568,17 @@
         objects     (:objects page)
         file-data   (:data file)
         first-child (get objects (first shapes))
-        prop-names  (cfv/extract-properties-names first-child file-data)]
+
+        extract-properties-names
+        (fn [shape]
+          ;; Get the names of the properties of the shape's component
+          (->> shape
+               (#(ctkl/get-component file-data (:component-id %) true))
+               :variant-properties
+               (map :name)))
+
+        prop-names  (extract-properties-names first-child)]
+
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))
@@ -583,7 +592,7 @@
                                   (str/ffmt "Main instance in variant % should have the variant-id of the container but has %" (:id child) (:variant-id child))
                                   child file page
                                   :variant-id shape-id))
-                  (when (not= prop-names (cfv/extract-properties-names child file-data))
+                  (when (not= prop-names (extract-properties-names child))
                     (report-error :invalid-variant-properties
                                   (str/ffmt "Variant % has invalid properties %" (:id child) (vec prop-names))
                                   child file page
