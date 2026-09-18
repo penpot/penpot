@@ -79,6 +79,7 @@
     (t/is (nil? (:error out)))
     (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
+      (t/is (uuid? (:id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
       (t/is (= "image/jpeg" (:mtype result)))
@@ -91,38 +92,6 @@
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
-
-
-(t/deftest media-object-upload-generates-id
-  (let [prof   (th/create-profile* 1)
-        proj   (th/create-project* 1 {:profile-id (:id prof)
-                                      :team-id (:default-team-id prof)})
-        file   (th/create-file* 1 {:profile-id (:id prof)
-                                   :project-id (:default-project-id prof)
-                                   :is-shared false})
-        mfile  {:filename "sample.jpg"
-                :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                :mtype "image/jpeg"
-                :size 312043}
-
-        params {::th/type :upload-file-media-object
-                ::rpc/profile-id (:id prof)
-                :file-id (:id file)
-                :is-local true
-                :name "testfile"
-                :content mfile}]
-
-    ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (uuid? (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))))
 
 
 (t/deftest media-object-from-url-command
@@ -181,6 +150,7 @@
     (t/is (nil? (:error out)))
     (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
+      (t/is (uuid? (:id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
       (t/is (= "image/jpeg" (:mtype result)))
@@ -193,38 +163,6 @@
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
-
-
-(t/deftest media-object-upload-command-generates-id
-  (let [prof   (th/create-profile* 1)
-        proj   (th/create-project* 1 {:profile-id (:id prof)
-                                      :team-id (:default-team-id prof)})
-        file   (th/create-file* 1 {:profile-id (:id prof)
-                                   :project-id (:default-project-id prof)
-                                   :is-shared false})
-        mfile  {:filename "sample.jpg"
-                :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                :mtype "image/jpeg"
-                :size 312043}
-
-        params {::th/type :upload-file-media-object
-                ::rpc/profile-id (:id prof)
-                :file-id (:id file)
-                :is-local true
-                :name "testfile"
-                :content mfile}]
-
-    ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (uuid? (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))))
 
 
 (t/deftest media-object-upload-command-when-file-is-deleted
