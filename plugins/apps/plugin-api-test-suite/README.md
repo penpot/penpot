@@ -69,6 +69,27 @@ E2E_LOGIN_EMAIL=… E2E_LOGIN_PASSWORD=… \
 - `PRINT_UNCOVERED=1` dumps the uncovered targets per interface; `PRINT_STATIC=1`
   dumps the statically-covered ones (see [Coverage](#how-coverage-works-and-how-to-write-tests-that-move-it)).
 
+### Errors the app reports on its own
+
+An API call can leave the plugin happy and still break Penpot: an exception
+raised inside an event handler is caught by the store, which reports it and
+carries on, so nothing is thrown back across the sandbox. The CI runner watches
+the page console for the prefixes Penpot's error handler prints (`Internal
+Error`, `Unexpected Error`, `Assertion Error`, `Uncaught Exception`, `Uncaught
+Rejection`) and for uncaught page errors, and fails the test that was running.
+
+Two consequences when writing a test for such a case:
+
+- Await the API (`await ctx.penpot.waitForLayoutUpdate()`) after the operation,
+  so the message reaches the console before the test ends and is attributed to
+  it rather than to the next one.
+- This runs in the CI runner only. The plugin UI cannot read the page console,
+  so the same test shows green there — check it with `test:ci` or
+  `test:ci:mocked`.
+
+`Plugin Error` and `Network Error` are not watched: tests provoke both on
+purpose.
+
 CI entry points reuse the exact same test files (`src/ci/headless.ts` discovers
 them the same way the plugin does).
 

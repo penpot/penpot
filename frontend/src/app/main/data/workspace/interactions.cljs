@@ -210,7 +210,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [interactions (ctsi/update-interaction (:interactions shape) index update-fn)
-             interaction (nth interactions index)]
+             interaction (get interactions index)]
          (rx/of
           (dwsh/update-shapes
            [(:id shape)]
