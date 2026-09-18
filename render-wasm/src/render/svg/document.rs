@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, Paint};
 
-use crate::shapes::{radius_to_sigma, Shadow, Shape, Type};
+use crate::error::Result;
+use crate::shapes::{radius_to_sigma, Fill, Shadow, Shape, Type};
 use crate::state::ShapesPoolRef;
 
 use crate::render::vector::draw_shape_geometry;
@@ -36,6 +37,10 @@ pub(crate) struct SvgLayerCanvas {
     /// container silhouette (GPU `pre_translate` before rotation). The SVG
     /// filter itself uses a zero offset so rotated shadows stay correct.
     pub(super) silhouette_offset: (f32, f32),
+    /// Stack of group fills inherited by empty-fill children (GPU `nested_fills`).
+    /// Frames push an empty vec to break inheritance. SVG-imported groups often
+    /// carry a default black fill that paths without own fills must paint.
+    pub(super) nested_fills: Vec<Vec<Fill>>,
 }
 
 impl SvgLayerCanvas {
@@ -53,7 +58,28 @@ impl SvgLayerCanvas {
             suppress_filters: false,
             silhouette_spread: 0.0,
             silhouette_offset: (0.0, 0.0),
+            nested_fills: Vec::new(),
         }
+    }
+
+    /// Fills to paint for a leaf: own fills, else inherited group fills (unless
+    /// `fill="none"` broke the SVG inheritance chain). Mirrors GPU nested_fills.
+    /// Returns an owned vec so callers can still mutably borrow `self` afterward.
+    pub(super) fn effective_fills_owned(&self, element: &Shape) -> Vec<Fill> {
+        if !element.fills.is_empty() {
+            return element.fills.clone();
+        }
+        if matches!(element.shape_type, Type::Group(_) | Type::Frame(_)) {
+            return Vec::new();
+        }
+        if element
+            .svg_attrs
+            .as_ref()
+            .is_some_and(|attrs| attrs.fill_none)
+        {
+            return Vec::new();
+        }
+        self.nested_fills.last().cloned().unwrap_or_default()
     }
 
     /// CTM for silhouette geometry: original centered transform, then local
@@ -108,6 +134,24 @@ impl SvgLayerCanvas {
         self.frag_no += 1;
         self.out
             .push_str(&sanitize_skia_svg_fragment(&remap_ids(inner, &prefix)));
+    }
+
+    /// Runs `f` while diverting body markup into a temporary buffer.
+    ///
+    /// Pending Skia fragments are flushed before/after. Defs (filters, clips,
+    /// nested masks) still append to `self.defs`. Used to build `<mask>` bodies
+    /// from a full mask subtree render.
+    pub(super) fn capture_body<F>(&mut self, f: F) -> Result<String>
+    where
+        F: FnOnce(&mut Self) -> Result<()>,
+    {
+        self.flush();
+        let saved = std::mem::take(&mut self.out);
+        let result = f(self);
+        self.flush();
+        let captured = std::mem::replace(&mut self.out, saved);
+        result?;
+        Ok(captured)
     }
 
     pub(super) fn open_group(&mut self, attrs: &str) {
