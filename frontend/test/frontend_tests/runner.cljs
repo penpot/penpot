@@ -86,6 +86,7 @@
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
+   [frontend-tests.ui.comment-input-ime-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
@@ -199,6 +200,7 @@
    'frontend-tests.ui.check-updates-test
    'frontend-tests.ui.colorpicker-token-set-order-test
    'frontend-tests.ui.comments-clustering-test
+   'frontend-tests.ui.comment-input-ime-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.gradient-handlers-test

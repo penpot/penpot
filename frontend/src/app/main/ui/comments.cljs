@@ -152,6 +152,101 @@
         (and (= (count content) 1)
              (= (first content) zero-width-space)))))
 
+(defn- composing-event?
+  "True when a keydown event is part of an in-flight IME composition.
+
+  Read from the browser event itself so it stays correct regardless of
+  render timing or the relative ordering of composition events: on macOS
+  the keydown that confirms a composition (e.g. Enter in Japanese IME)
+  is dispatched while the composition is still active, so it must not
+  be interpreted as a comment-editor command. keyCode 229 covers the
+  cases where isComposing is not yet set (see #10477, #11757)."
+  [^js event]
+  (let [native (.-nativeEvent event)]
+    (or (.-isComposing native)
+        (= 229 (.-keyCode event)))))
+
+(defn handle-comment-input-key-down
+  "Keydown body for comment-input* (see #11757).
+
+  Extracted from the component so keyboard behavior is testable without
+  mounting Rumext/DOM: tests call this fn directly with stubbed
+  dependencies and assert which side effects fire.
+
+  Ordering mirrors the component handler exactly: while the keydown
+  belongs to an active IME composition nothing runs (the browser/IME
+  owns the event); otherwise handle-select runs first and may update
+  the open mention, and only then is the branch read via get-mention.
+
+  Deps map:
+  - :get-mention (0-arg fn) — current open mention or nil.
+  - :push-mention! (fn) — receives mention-panel command maps.
+  - :on-esc / :on-ctrl-enter — delegated callbacks (may be nil).
+  - :do-select (fn) — selection/caret sync, receives the event.
+  - :get-node (0-arg fn) — contenteditable node or nil.
+  - :get-span (fn) — receives node, returns [span-node offset] or nil.
+  - :do-newline (fn) — custom line-break path, receives a map with
+    :event :node :span-node :offset :do-input.
+  - :do-backspace (fn) — mention-aware backspace path, receives a map
+    with :event :node :span-node :offset.
+  - :do-input (fn) — input resync, passed through to :do-newline."
+  [^js event {:keys [get-mention push-mention! on-esc on-ctrl-enter
+                     do-select get-node get-span do-newline do-backspace
+                     do-input]}]
+  (when-not (composing-event? event)
+    (do-select event)
+    (when-let [node (get-node)]
+      (when-let [[span-node offset] (get-span node)]
+        (cond
+          (and (get-mention) (kbd/enter? event))
+          (do (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (push-mention! {:type :insert-selected-mention}))
+
+          (and (get-mention) (kbd/down-arrow? event))
+          (do (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (push-mention! {:type :insert-next-mention}))
+
+          (and (get-mention) (kbd/up-arrow? event))
+          (do (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (push-mention! {:type :insert-prev-mention}))
+
+          (and (get-mention) (kbd/esc? event))
+          (do (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (push-mention! {:type :hide-mentions}))
+
+          (and (kbd/esc? event) (fn? on-esc))
+          (on-esc event)
+
+          (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+          (on-ctrl-enter event)
+
+          (kbd/enter? event)
+          (do-newline {:event event :node node :span-node span-node
+                       :offset offset :do-input do-input})
+
+          (kbd/backspace? event)
+          (do-backspace {:event event :node node :span-node span-node
+                         :offset offset})
+
+          :else
+          nil)))))
+
+(defn handle-thread-key-down
+  "Keydown body for the floating-thread parent (see #11757).
+
+  Same extraction rationale as handle-comment-input-key-down. While the
+  keydown belongs to an active IME composition nothing runs; plain
+  Escape delegates to :close!. The event defaults are stopped inside
+  :close! by the component wiring."
+  [^js event {:keys [close!]}]
+  (when (and (kbd/esc? event)
+             (not (composing-event? event)))
+    (close! event)))
+
 ;; Component that renders the component content
 (mf/defc comment-content*
   {::mf/private true}
@@ -356,59 +451,37 @@
         (mf/use-fn
          (mf/deps on-esc on-ctrl-enter handle-select handle-input)
          (fn [event]
-           (handle-select event)
-           (when-let [node (mf/ref-val local-ref)]
-             (when-let [[span-node offset] (current-text-node node)]
-               (cond
-                 (and @cur-mention (kbd/enter? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-selected-mention}))
-
-                 (and @cur-mention (kbd/down-arrow? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-next-mention}))
-
-                 (and @cur-mention (kbd/up-arrow? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :insert-prev-mention}))
-
-                 (and @cur-mention (kbd/esc? event))
-                 (do (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (rx/push! mentions-s {:type :hide-mentions}))
-
-                 (and (kbd/esc? event) (fn? on-esc))
-                 (on-esc event)
-
-                 (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                 (on-ctrl-enter event)
-
-                 (kbd/enter? event)
-                 (let [sel (wapi/get-selection)
-                       range (.getRangeAt sel 0)]
-                   (dom/prevent-default event)
-                   (dom/stop-propagation event)
-                   (let [[span-node offset] (current-text-node node)]
-                     (.deleteContents range)
-                     (handle-input)
-
-                     (when span-node
-                       (let [txt (.-textContent span-node)]
-                         (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
-                         (wapi/set-cursor! span-node (inc offset))
-                         (handle-input)))))
-
-                 (kbd/backspace? event)
-                 (let [prev-node (get-prev-node node span-node)]
-                   (when (and (some? prev-node)
-                              (= "mention" (dom/get-data prev-node "type"))
-                              (= offset 1))
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event)
-                     (.remove prev-node))))))))]
+           (handle-comment-input-key-down
+            event
+            {:get-mention #(@cur-mention)
+             :push-mention! #(rx/push! mentions-s %)
+             :on-esc on-esc
+             :on-ctrl-enter on-ctrl-enter
+             :do-select handle-select
+             :get-node #(mf/ref-val local-ref)
+             :get-span current-text-node
+             :do-input handle-input
+             :do-newline (fn [{:keys [event node do-input]}]
+                           (let [sel (wapi/get-selection)
+                                 range (.getRangeAt sel 0)]
+                             (dom/prevent-default event)
+                             (dom/stop-propagation event)
+                             (let [[span-node offset] (current-text-node node)]
+                               (.deleteContents range)
+                               (do-input)
+                               (when span-node
+                                 (let [txt (.-textContent span-node)]
+                                   (dom/set-html! span-node (dm/str (dom/escape-html (subs txt 0 offset)) "\n" zero-width-space (dom/escape-html (subs txt offset))))
+                                   (wapi/set-cursor! span-node (inc offset))
+                                   (do-input))))))
+             :do-backspace (fn [{:keys [event node span-node offset]}]
+                             (let [prev-node (get-prev-node node span-node)]
+                               (when (and (some? prev-node)
+                                          (= "mention" (dom/get-data prev-node "type"))
+                                          (= offset 1))
+                                 (dom/prevent-default event)
+                                 (dom/stop-propagation event)
+                                 (.remove prev-node))))})))]
 
     (mf/with-layout-effect [autofocus]
       (when ^boolean autofocus
@@ -1022,8 +1095,6 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
-
-
 (mf/defc comment-floating-thread*
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom origin position-modifier viewport]}]
@@ -1066,10 +1137,12 @@
         on-key-down
         (mf/use-fn
          (fn [event]
-           (when (kbd/esc? event)
-             (dom/prevent-default event)
-             (dom/stop-propagation event)
-             (st/emit! (dcm/close-thread)))))
+           (handle-thread-key-down
+            event
+            {:close! (fn [event]
+                       (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (st/emit! (dcm/close-thread)))})))
 
         on-cancel
         (mf/use-fn #(st/emit! (dcm/close-thread)))]
