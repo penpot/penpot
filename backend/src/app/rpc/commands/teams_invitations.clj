@@ -538,7 +538,6 @@
   [:map {:title "create-team-with-invitations"}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
    [:emails [::sm/set ::sm/email]]
    [:role types.team/schema:role]])
 

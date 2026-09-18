@@ -48,7 +48,6 @@
 
 (def ^:private schema:upload-file-media-object
   [:map {:title "upload-file-media-object"}
-   [:id {:optional true} ::sm/uuid]
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
@@ -172,10 +171,10 @@
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}
-   {:keys [id file-id is-local name content from-url? from-chunks?]}]
+   {:keys [file-id is-local name content from-url? from-chunks?]}]
 
   (let [tpoint (ct/tpoint)
-        id     (or id (uuid/next))
+        id     (uuid/next)
         origin (cond
                  from-url?
                  "url"
@@ -225,7 +224,6 @@
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:url ::sm/uri]
-   [:id {:optional true} ::sm/uuid]
    [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::create-file-media-object-from-url
@@ -555,8 +553,7 @@
    [:file-id    ::sm/uuid]
    [:is-local   ::sm/boolean]
    [:name       [:string {:max 250}]]
-   [:mtype      :string]
-   [:id         {:optional true} ::sm/uuid]])
+   [:mtype      :string]])
 
 (sv/defmethod ::assemble-file-media-object
   {::doc/added "2.17"
@@ -564,7 +561,7 @@
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg}
-   {:keys [::rpc/profile-id session-id file-id is-local name mtype id] :as params}]
+   {:keys [::rpc/profile-id session-id file-id is-local name mtype] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
 
   (db/tx-run! cfg
@@ -576,7 +573,6 @@
                                   (media.v/validate-media-type!)
                                   (media.v/validate-media-size!))
                       mobj    (create-file-media-object cfg (assoc params
-                                                                   :id id
                                                                    :from-chunks? true
                                                                    :content content))]
 
