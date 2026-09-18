@@ -45,7 +45,9 @@
 
 (defmethod process-token :change-email
   [{:keys [::db/conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (let [email (profile/clean-email email)]
+  (let [account (profile/get-profile conn profile-id ::sql/for-update true)
+        email   (profile/clean-email email)]
+    (profile/check-local-credentials! account)
     (when (profile/get-profile-by-email conn email)
       (ex/raise :type :validation
                 :code :email-already-exists))
