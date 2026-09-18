@@ -32,6 +32,13 @@ const repoRoot = resolve(here, '../../../../');
 const frontendDir = resolve(repoRoot, 'frontend');
 const e2eDataDir = resolve(frontendDir, 'playwright/data');
 
+// Console prefixes Penpot's error handler prints for failures the app did not
+// expect (`frontend/src/app/main/errors.cljs`). The store swallows these, so
+// the console is the only place a test can observe them. "Plugin Error" and
+// "Network Error" are left out: tests provoke both on purpose.
+const APP_ERROR_RE =
+  /^(Internal Error|Unexpected Error|Assertion Error|Uncaught Exception|Uncaught Rejection):/;
+
 const MOCKED = !!process.env['MOCK_BACKEND'];
 const MOCK_BASE_URL = 'http://localhost:3000';
 const apiUrl = MOCKED
@@ -392,13 +399,36 @@ async function main() {
   let fatal: string | null = null;
 
   console.log('\nRunning tests:');
+  // Errors the app reported since the previous test result.
+  let appErrors: string[] = [];
+  const takeAppErrors = (): string => {
+    const detail = appErrors.join('; ');
+    appErrors = [];
+    return detail;
+  };
+
   const done = new Promise<void>((resolvePromise) => {
+    page.on('pageerror', (err) => {
+      appErrors.push(`Uncaught ${err.message}`);
+    });
     page.on('console', (msg) => {
       const text = msg.text();
+      if (APP_ERROR_RE.test(text)) {
+        appErrors.push(text.split('\n')[0]!.trim());
+      }
       if (text.startsWith('__TEST_RESULT__ ')) {
         const result: TestResult = JSON.parse(
           text.slice('__TEST_RESULT__ '.length),
         );
+        // Errors buffered so far belong to the test this result closes.
+        const reported = takeAppErrors();
+        if (reported) {
+          result.error =
+            result.status === 'fail' && result.error
+              ? `${result.error} — Penpot also reported: ${reported}`
+              : `Penpot reported an error during the test: ${reported}`;
+          result.status = 'fail';
+        }
         results.push(result);
         // Print each result as it streams in so the run shows live progress
         // instead of staying silent until it finishes.

@@ -105,7 +105,8 @@
        :get #(-> % u/proxy->interaction :event-type format/format-key)
        :set
        (fn [_ value]
-         (let [value (parser/parse-keyword value)]
+         (let [value (parser/parse-keyword value)
+               index (locate-index)]
            (cond
              (not (contains? ctsi/event-types value))
              (u/not-valid plugin-id :trigger value)
@@ -113,11 +114,14 @@
              (not (r/check-permission plugin-id "content:write"))
              (u/not-valid plugin-id :trigger "Plugin doesn't have 'content:write' permission")
 
+             (nil? index)
+             (u/not-valid plugin-id :trigger "The interaction is not part of the shape anymore")
+
              :else
              (do
                (st/emit! (dwi/update-interaction
                           (u/locate-shape file-id page-id shape-id)
-                          (locate-index)
+                          index
                           #(assoc % :event-type value)
                           {:page-id page-id}))
                (swap! current assoc :event-type value)))))}
@@ -127,21 +131,25 @@
        :get #(-> % u/proxy->interaction :delay)
        :set
        (fn [_ value]
-         (cond
-           (or (not (sm/valid-safe-int? value)) (neg? value))
-           (u/not-valid plugin-id :delay value)
+         (let [index (locate-index)]
+           (cond
+             (or (not (sm/valid-safe-int? value)) (neg? value))
+             (u/not-valid plugin-id :delay value)
 
-           (not (r/check-permission plugin-id "content:write"))
-           (u/not-valid plugin-id :delay "Plugin doesn't have 'content:write' permission")
+             (not (r/check-permission plugin-id "content:write"))
+             (u/not-valid plugin-id :delay "Plugin doesn't have 'content:write' permission")
 
-           :else
-           (do
-             (st/emit! (dwi/update-interaction
-                        (u/locate-shape file-id page-id shape-id)
-                        (locate-index)
-                        #(assoc % :delay value)
-                        {:page-id page-id}))
-             (swap! current assoc :delay value))))}
+             (nil? index)
+             (u/not-valid plugin-id :delay "The interaction is not part of the shape anymore")
+
+             :else
+             (do
+               (st/emit! (dwi/update-interaction
+                          (u/locate-shape file-id page-id shape-id)
+                          index
+                          #(assoc % :delay value)
+                          {:page-id page-id}))
+               (swap! current assoc :delay value)))))}
 
       :action
       {:this true
@@ -149,10 +157,16 @@
        :set
        (fn [self value]
          (let [params (parser/parse-action value)
+               index  (locate-index)
                interaction
                (-> (u/proxy->interaction self)
                    (d/patch-object params))]
            (cond
+             ;; Precedes the schema check, which sees only the partial map that
+             ;; patching a missing interaction produces.
+             (nil? index)
+             (u/not-valid plugin-id :action "The interaction is not part of the shape anymore")
+
              (not (sm/validate ctsi/schema:interaction interaction))
              (u/not-valid plugin-id :action interaction)
 
@@ -163,7 +177,7 @@
              (do
                (st/emit! (dwi/update-interaction
                           (u/locate-shape file-id page-id shape-id)
-                          (locate-index)
+                          index
                           #(d/patch-object % params)
                           {:page-id page-id}))
                (reset! current interaction)))))}
