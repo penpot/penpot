@@ -148,29 +148,6 @@
         per-side-disabled?
         (not wasm-render?)
 
-        on-stroke-per-side-toggle
-        (fn [index]
-          (let [stroke  (get-in values [:strokes index])
-                active? (:stroke-per-side stroke)
-                width   (:stroke-width stroke)
-                width   (if (number? width) width 1)]
-            (st/emit! (udw/trigger-bounding-box-cloaking ids))
-            (if active?
-              (st/emit! (dc/change-stroke-attrs ids {:stroke-per-side false} index))
-              ;; Entering per-side mode seeds any missing side from the
-              ;; uniform width, so previous per-side edits are preserved.
-              ;; The top value doubles as the global :stroke-width.
-              (let [top (d/nilv (:stroke-width-top stroke) width)]
-                (st/emit! (dc/change-stroke-attrs
-                           ids
-                           {:stroke-per-side true
-                            :stroke-width top
-                            :stroke-width-top top
-                            :stroke-width-right (d/nilv (:stroke-width-right stroke) width)
-                            :stroke-width-bottom (d/nilv (:stroke-width-bottom stroke) width)
-                            :stroke-width-left (d/nilv (:stroke-width-left stroke) width)}
-                           index))))))
-
         on-stroke-width-side-change
         (fn [index attr value]
           (when (number? value)
@@ -288,7 +265,6 @@
                               :on-stroke-width-change on-stroke-width-change
                               :per-side-available per-side-available?
                               :per-side-disabled per-side-disabled?
-                              :on-stroke-per-side-toggle on-stroke-per-side-toggle
                               :on-stroke-width-side-change on-stroke-width-side-change
                               :on-stroke-dash-change on-stroke-dash-change
                               :on-stroke-gap-change on-stroke-gap-change

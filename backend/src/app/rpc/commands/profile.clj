@@ -75,7 +75,8 @@
    [:workspace-visited {:optional true} ::sm/boolean]
    [:custom-shortcuts {:optional true}
     [:map-of {:gen/max 10} :keyword [:map-of :keyword :string]]]
-   [:nudge {:optional true} schema:nudge]])
+   [:nudge {:optional true} schema:nudge]
+   [:stroke-per-side {:optional true} ::sm/boolean]])
 
 (def schema:props-writeable
   "Props schema for user-writable fields (excludes system-managed keys)."

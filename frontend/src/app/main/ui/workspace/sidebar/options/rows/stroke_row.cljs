@@ -10,9 +10,11 @@
    [app.common.data :as d]
    [app.common.types.color :as ctc]
    [app.common.types.token :as ctt]
+   [app.main.data.profile :as du]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
@@ -39,7 +41,6 @@
            on-stroke-width-change
            per-side-available
            per-side-disabled
-           on-stroke-per-side-toggle
            on-stroke-width-side-change
            on-stroke-dash-change
            on-stroke-gap-change
@@ -104,12 +105,10 @@
 
         stroke-width (:stroke-width stroke)
 
+        per-side-enabled (mf/deref refs/stroke-per-side)
         per-side? (and per-side-available
                        (not per-side-disabled)
-                       (true? (:stroke-per-side stroke)))
-
-        per-side-expanded* (mf/use-state false)
-        per-side-expanded? (deref per-side-expanded*)
+                       (true? per-side-enabled))
 
         all-sides-equal?
         (mf/with-memo [stroke]
@@ -120,7 +119,7 @@
                 left   (d/nilv (:stroke-width-left stroke) width)]
             (= top right bottom left)))
 
-        show-multiple-placeholder? (or per-side-expanded? (not all-sides-equal?))
+        show-multiple-placeholder? (or per-side? (not all-sides-equal?))
 
         applied-token-width
         (mf/with-memo [applied-tokens]
@@ -148,14 +147,9 @@
 
         on-per-side-toggle
         (mf/use-fn
-         (mf/deps per-side? on-stroke-per-side-toggle index)
+         (mf/deps per-side?)
          (fn []
-           (if per-side?
-             (swap! per-side-expanded* not)
-             (do
-               (when on-stroke-per-side-toggle
-                 (on-stroke-per-side-toggle index))
-               (reset! per-side-expanded* true)))))
+           (st/emit! (du/update-profile-props {:stroke-per-side (not per-side?)}))))
 
         on-width-top-change
         (mf/use-fn
@@ -432,7 +426,7 @@
                        :on-change on-style-change}])
         (when per-side-available
           [:> icon-button* {:variant "ghost"
-                            :aria-pressed per-side-expanded?
+                            :aria-pressed per-side?
                             :aria-label per-side-toggle-label
                             :disabled per-side-disabled
                             :on-click on-per-side-toggle
@@ -472,14 +466,14 @@
                        :on-change on-style-change}]])
         (when per-side-available
           [:> icon-button* {:variant "ghost"
-                            :aria-pressed per-side-expanded?
+                            :aria-pressed per-side?
                             :aria-label per-side-toggle-label
                             :disabled per-side-disabled
                             :on-click on-per-side-toggle
                             :icon i/stroke-extended
                             :data-testid "stroke.per-side-toggle"}])])
 
-     (when per-side-expanded?
+     (when per-side?
        [:div {:class (stl/css :stroke-sides-options)
               :data-testid "stroke.per-side-options"}
         [:> numeric-input-wrapper* {:on-change on-width-top-change
