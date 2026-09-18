@@ -59,26 +59,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
 
       - name: Extract some useful variables
         id: vars
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           GH_REF="${{ inputs.gh_ref || github.ref_name }}"
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
-
-          BUNDLE_VERSION=$(aws s3api head-object \
-            --bucket ${{ secrets.S3_BUCKET }} \
-            --key "penpot-$GH_REF.zip" \
-            --query 'Metadata."bundle-version"' \
-            --output text)
-          echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
+          echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       # The image set is a single block, so a single set-level check is
       # enough: `promote` drops a marker object in S3 only after every
@@ -96,8 +87,8 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             mkdir -p "$BUNDLE_CACHE"
             find "$BUNDLE_CACHE" -type f -mtime +1 -delete || true
-            ZIP="$BUNDLE_CACHE/penpot-${{ steps.vars.outputs.bundle_version }}.zip"
-            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
+            ZIP="$BUNDLE_CACHE/penpot-sha-${{ steps.vars.outputs.sha }}.zip"
+            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-sha-${{ steps.vars.outputs.sha }}.zip" "$ZIP.$$.tmp"
             mv "$ZIP.$$.tmp" "$ZIP"
             {
               echo "### 🔁 Image set build forced"
@@ -125,9 +116,9 @@ jobs:
             # prune stale bundles while at it.
             mkdir -p "$BUNDLE_CACHE"
             find "$BUNDLE_CACHE" -type f -mtime +1 -delete || true
-            ZIP="$BUNDLE_CACHE/penpot-${{ steps.vars.outputs.bundle_version }}.zip"
+            ZIP="$BUNDLE_CACHE/penpot-sha-${{ steps.vars.outputs.sha }}.zip"
             if [ ! -f "$ZIP" ]; then
-              aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
+              aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-sha-${{ steps.vars.outputs.sha }}.zip" "$ZIP.$$.tmp"
               mv "$ZIP.$$.tmp" "$ZIP"
             fi
           fi
@@ -197,11 +188,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          ZIP="$BUNDLE_CACHE/penpot-${{ needs.prepare.outputs.bundle_version }}.zip"
+          ZIP="$BUNDLE_CACHE/penpot-sha-${{ needs.prepare.outputs.sha }}.zip"
           if [ ! -f "$ZIP" ]; then
             echo "Bundle not found in host cache; falling back to S3."
             mkdir -p "$BUNDLE_CACHE"
-            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-${{ needs.prepare.outputs.gh_ref }}.zip" "$ZIP.$$.tmp"
+            aws s3 cp "s3://${{ secrets.S3_BUCKET }}/penpot-sha-${{ needs.prepare.outputs.sha }}.zip" "$ZIP.$$.tmp"
             mv "$ZIP.$$.tmp" "$ZIP"
           fi
           # Extract only the bundle this job needs.
@@ -242,10 +233,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
 
-  # ── 3. Move the branch tags of ALL images together ─────────────────────
-  # Runs only when every build succeeded (default `needs` semantics); if
-  # the set was already complete, `build` is skipped and so is this job —
-  # the S3 marker guarantees the branch tags were already moved.
+  # ── 3a. Move the branch tags of ALL images together (fresh build) ──────
   promote:
     name: Promote image set
     runs-on: penpot-standar-runner
@@ -299,12 +287,59 @@ jobs:
             echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`sha-${{ needs.prepare.outputs.sha }}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
+  # ── 3b. Skip path: make sure THIS ref's tags point to the existing
+  # images (another ref may have built and promoted the same commit
+  # first — the sha marker says the images exist, not that this ref's
+  # tags were ever created).
+  retag:
+    name: Ensure branch tags (already-built commit)
+    runs-on: penpot-standar-runner
+    timeout-minutes: 10
+    needs: prepare
+    if: needs.prepare.outputs.exists == 'true'
+
+    steps:
+      - name: Set common environment variables
+        run: |
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Point branch tags to the existing build key
+        run: |
+          set -e
+          for image in $ALL_IMAGES; do
+            docker buildx imagetools create \
+              -t "${{ secrets.DOCKER_REGISTRY }}/$image:${{ needs.prepare.outputs.gh_ref }}" \
+              "${{ secrets.DOCKER_REGISTRY }}/$image:sha-${{ needs.prepare.outputs.sha }}"
+          done
+
+      - name: Write step summary
+        run: |
+          {
+            echo "### ✅ Image set already built (branch tags ensured)"
+            echo ""
+            echo "- Version: \`${{ needs.prepare.outputs.bundle_version }}\` (\`git describe --tags --always\`)"
+            echo "- Commit: [\`${{ needs.prepare.outputs.sha }}\`](https://github.com/${{ github.repository }}/commit/${{ needs.prepare.outputs.sha }}) — ${{ needs.prepare.outputs.commit_title }}"
+            echo "- Checked at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "All \`:${{ needs.prepare.outputs.gh_ref }}\` tags now point to \`sha-${{ needs.prepare.outputs.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   # ── 4. Single failure notification for the whole workflow ─────────────
   notify:
     name: Notify failure
     runs-on: penpot-standar-runner
     timeout-minutes: 5
-    needs: [prepare, build, promote]
+    needs: [prepare, build, promote, retag]
     if: failure()
 
     steps:
