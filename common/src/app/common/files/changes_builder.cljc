@@ -1208,6 +1208,7 @@
 
 (defn get-page-id
   [changes]
+  (assert-page-id! changes)
   (::page-id (meta changes)))
 
 (defn set-text-content
