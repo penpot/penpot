@@ -56,6 +56,12 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
+;; The flex-child attrs propagated between main and copy children. The
+;; interactions are kept on swap, but they are not a layout property
+;; and must not be overwritten when the layout is synced.
+(def ^:private flex-child-attrs
+  (disj ctk/swap-keep-attrs :interactions))
+
 (defn enabled-shape?
   [id container]
   (or (empty? log-shape-ids)
@@ -2402,7 +2408,7 @@
              (fn [child-copy]
                (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
                  (-> child-copy
-                     (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
+                     (propagate-attrs child-main flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
@@ -2432,7 +2438,7 @@
              (fn [child-main]
                (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
                  (-> child-main
-                     (propagate-attrs child-copy ctk/swap-keep-attrs omit-touched?))))
+                     (propagate-attrs child-copy flex-child-attrs omit-touched?))))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
 
