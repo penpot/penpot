@@ -1,6 +1,6 @@
 use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 
-use super::blurs::radius_to_sigma;
+use super::blurs::{radius_to_sigma, sigma_to_radius};
 use super::Color;
 use crate::render::filters::compose_filters;
 
@@ -149,6 +149,22 @@ impl Shadow {
         self.offset.0 *= value;
         self.offset.1 *= value;
     }
+
+    /// Scales this shadow into device units, for a filter built on a canvas
+    /// that carries no transform of its own.
+    ///
+    /// Not the same as [`Self::scale_content`]. `radius_to_sigma` is affine
+    /// (`k·r + 0.5`), so scaling the radius applies its constant term once at
+    /// device scale, while a filter built in document space has that term
+    /// scaled by the canvas matrix along with everything else. The radius is
+    /// pre-compensated here so both land on the same sigma — otherwise the
+    /// same shadow blurs differently depending on which path drew it, by
+    /// `0.5 · (scale - 1)` sigma.
+    pub fn scale_to_device(&mut self, scale: f32) {
+        let device_sigma = radius_to_sigma(self.blur) * scale;
+        self.scale_content(scale);
+        self.blur = sigma_to_radius(device_sigma);
+    }
 }
 
 #[cfg(test)]
@@ -182,6 +198,45 @@ mod tests {
         assert!(!s.is_perceptible_at_scale_for(0.13, true));
         // blur 32 @ 0.13 ≈ 4.16px → keep recursive
         assert!(shadow(32.0, 0.0, 0.0, 0.0).is_perceptible_at_scale_for(0.13, true));
+    }
+
+    /// A filter built on an untransformed canvas must reach the same sigma a
+    /// document-space filter does once the canvas matrix scales it, or the same
+    /// shadow blurs differently depending on which path drew it.
+    #[test]
+    fn scale_to_device_matches_a_document_space_sigma() {
+        for scale in [0.5_f32, 1.0, 2.0, 4.0, 8.0] {
+            let original = shadow(10.0, 6.0, 3.0, -2.0);
+            let mut device = original;
+            device.scale_to_device(scale);
+
+            assert!(
+                (radius_to_sigma(device.blur) - radius_to_sigma(original.blur) * scale).abs()
+                    < 0.001,
+                "sigma disagreement at scale {scale}"
+            );
+
+            // Spread and offset are linear, so they scale straight through.
+            assert!((device.spread - original.spread * scale).abs() < 0.001);
+            assert!((device.offset.0 - original.offset.0 * scale).abs() < 0.001);
+            assert!((device.offset.1 - original.offset.1 * scale).abs() < 0.001);
+        }
+    }
+
+    /// Scaling the radius instead would apply the affine constant once at
+    /// device scale, blurring narrower by `0.5 · (scale - 1)` sigma.
+    #[test]
+    fn scale_to_device_differs_from_scale_content_above_unit_scale() {
+        let mut device = shadow(10.0, 0.0, 0.0, 0.0);
+        device.scale_to_device(4.0);
+        let mut naive = shadow(10.0, 0.0, 0.0, 0.0);
+        naive.scale_content(4.0);
+
+        let gap = radius_to_sigma(device.blur) - radius_to_sigma(naive.blur);
+        assert!(
+            (gap - 0.5 * 3.0).abs() < 0.001,
+            "expected 1.5 sigma, got {gap}"
+        );
     }
 
     #[test]
