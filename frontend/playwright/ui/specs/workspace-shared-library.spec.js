@@ -143,6 +143,10 @@ test("BUG 14214 - Updates tab refreshes after syncing a freshly linked library",
   // Open the library modal
   await workspace.clickAssets();
   await workspace.openLibrariesModal();
+
+  // Switch to the Libraries tab
+  await workspace.librariesModal.getByRole("tab", { name: "Libraries" }).click();
+
   await workspace.librariesModal
     .getByRole("button", { name: "Connect library" })
     .click();

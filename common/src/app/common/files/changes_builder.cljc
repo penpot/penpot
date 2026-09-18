@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cfc]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -22,6 +23,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.datafy :refer [datafy]]))
 
@@ -987,7 +989,7 @@
   [changes tokens-lib]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-tokens-lib (get library-data :tokens-lib)]
+        prev-tokens-lib (cfo/get-tokens-lib library-data)]
     (-> changes
         (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
         (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
@@ -996,7 +998,7 @@
 (defn set-token [changes set-id token-id token]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token (some-> (get library-data :tokens-lib)
+        prev-token (some-> (cfo/get-tokens-lib library-data)
                            (ctob/get-token set-id token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token
@@ -1013,7 +1015,7 @@
   [changes id token-set]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
+        prev-token-set (some-> (cfo/get-tokens-lib library-data)
                                (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
@@ -1028,7 +1030,7 @@
   [changes id new-name]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
-        prev-token-set (some-> (get library-data :tokens-lib)
+        prev-token-set (some-> (cfo/get-tokens-lib library-data)
                                (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
@@ -1042,7 +1044,7 @@
 (defn set-token-theme [changes id theme]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-theme (some-> (get library-data :tokens-lib)
+        prev-theme (some-> (cfo/get-tokens-lib library-data)
                            (ctob/get-theme id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-theme
@@ -1053,17 +1055,21 @@
                                     :attrs (datafy prev-theme)})
         (apply-changes-local))))
 
-(defn set-active-token-themes
-  [changes active-theme-paths]
-  (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
-        prev-active-theme-paths (d/nilv (some-> (get library-data :tokens-lib)
-                                                (ctob/get-active-theme-paths))
-                                        #{})]
-    (-> changes
-        (update :redo-changes conj {:type :set-active-token-themes :theme-paths active-theme-paths})
-        (update :undo-changes conj {:type :set-active-token-themes :theme-paths prev-active-theme-paths})
-        (apply-changes-local))))
+(defn set-tokens-status
+  ([changes tokens-status]
+   (assert-library! changes)
+   (assert (or (ctos/tokens-status? tokens-status)
+               (nil? tokens-status)))
+   (let [theme-ids (if tokens-status (ctos/get-active-theme-ids tokens-status) #{})
+         set-ids (if tokens-status (ctos/get-active-set-ids tokens-status) #{})
+         library-data (::library-data (meta changes))
+         prev-tokens-status (cfo/get-tokens-status library-data)
+         prev-theme-ids (if prev-tokens-status (ctos/get-active-theme-ids prev-tokens-status) #{})
+         prev-set-ids (if prev-tokens-status (ctos/get-active-set-ids prev-tokens-status) #{})]
+     (-> changes
+         (update :redo-changes conj {:type :set-tokens-status :theme-ids theme-ids :set-ids set-ids})
+         (update :undo-changes conj {:type :set-tokens-status :theme-ids prev-theme-ids :set-ids prev-set-ids})
+         (apply-changes-local)))))
 
 (defn rename-token-set-group
   [changes set-group-path set-group-fname]
@@ -1115,6 +1121,21 @@
 
         (update :undo-changes conj {:type :set-base-font-size
                                     :base-font-size previous-font-size})
+        (apply-changes-local))))
+
+(defn set-tokens-source
+  [changes library-id]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        file-id      (:id library-data)
+        prev-val     (cfo/get-tokens-source library-data)]
+    (-> changes
+        (update :redo-changes conj {:type :set-tokens-source
+                                    :file-id file-id
+                                    :library-id library-id})
+        (update :undo-changes conj {:type :set-tokens-source
+                                    :file-id file-id
+                                    :library-id prev-val})
         (apply-changes-local))))
 
 ;; Misc changes
