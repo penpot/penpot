@@ -46,6 +46,7 @@
    [frontend-tests.main.refs-test]
    [frontend-tests.plugins.comments-test]
    [frontend-tests.plugins.context-shapes-test]
+   [frontend-tests.plugins.events-test]
    [frontend-tests.plugins.file-test]
    [frontend-tests.plugins.flex-test]
    [frontend-tests.plugins.format-test]
@@ -150,6 +151,7 @@
    'frontend-tests.logic.wasm-modifiers-nil-id-test
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
+   'frontend-tests.plugins.events-test
    'frontend-tests.plugins.file-test
    'frontend-tests.plugins.flex-test
    'frontend-tests.plugins.format-test
