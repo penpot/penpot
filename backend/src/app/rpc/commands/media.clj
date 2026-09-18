@@ -55,6 +55,7 @@
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::sm/params schema:upload-file-media-object
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
@@ -228,6 +229,7 @@
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
@@ -557,6 +559,7 @@
 
 (sv/defmethod ::assemble-file-media-object
   {::doc/added "2.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::sm/params schema:assemble-file-media-object
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}

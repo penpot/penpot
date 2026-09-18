@@ -80,6 +80,7 @@
 
 (sv/defmethod ::create-file
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::doc/module :files
    ::webhooks/event? true
    ::sm/params schema:create-file

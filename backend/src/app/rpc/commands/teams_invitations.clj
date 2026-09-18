@@ -543,6 +543,7 @@
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::doc/module :teams
    ::sm/params schema:create-team-with-invitations
    ::db/transaction true}

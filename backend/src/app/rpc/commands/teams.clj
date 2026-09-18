@@ -528,6 +528,7 @@
 
 (sv/defmethod ::create-team
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::sm/params schema:create-team}
   [cfg {:keys [::rpc/profile-id organization-id] :as params}]
 

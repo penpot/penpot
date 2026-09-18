@@ -202,6 +202,7 @@
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::webhooks/event? true
    ::sm/params schema:create-project}
   [cfg {:keys [::rpc/profile-id team-id] :as params}]
