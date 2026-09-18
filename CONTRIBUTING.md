@@ -39,6 +39,12 @@ Center](https://help.penpot.app/).
   for public bugs and [Taiga](https://tree.taiga.io/project/penpot/) for
   internal project management. Changelog entries reference both.
 
+## AI-Assisted Contributions
+
+We support the responsible use of AI tools in the development process. However, all contributions to Penpot - including issues, pull requests, and any other submissions - must meet a reasonable standard of quality, accuracy, and human oversight.
+
+If AI-assisted content is used, it must be carefully reviewed and verified by a human before submission. Contributions that don't meet these standards may be rejected or closed without detailed review or a reply.
+
 ## Reporting Bugs
 
 Report bugs via [GitHub Issues](https://github.com/penpot/penpot/issues).
