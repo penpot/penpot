@@ -238,6 +238,79 @@
       :else                                       :aligned)
     :independent))
 
+(defn- subpath-bounds
+  "Returns the move-to index and the last drawing segment index of the
+  subpath that contains `index`."
+  [plain index]
+  (when-let [start (->> (range index -1 -1)
+                        (filter #(= :move-to (:command (get plain %))))
+                        (first))]
+    [start (->> (range (inc start) (count plain))
+                (take-while #(not= :move-to (:command (get plain %))))
+                (remove #(= :close-path (:command (get plain %))))
+                (last))]))
+
+(defn- line-beside-node
+  "Returns the index of the line on the other side of a node from its live
+  handler, looking across the seam of a closed subpath, or nil."
+  [plain node-index [_ prefix] node]
+  (let [line?    #(= :line-to (:command (get plain %)))
+        near-idx (if (= prefix :c2) (inc node-index) node-index)]
+    (if (line? near-idx)
+      near-idx
+      (let [[start end] (subpath-bounds plain node-index)
+            seam-idx    (when (some? end)
+                          (if (= prefix :c2) (inc start) end))]
+        (when (and (some? seam-idx)
+                   (= node (path.helpers/segment->point (get plain start)))
+                   (= node (path.helpers/segment->point (get plain end)))
+                   (line? seam-idx))
+          seam-idx)))))
+
+(defn- curve-line
+  "Turns the line at `line-idx` into a curve whose handler at `node` is
+  `target`. The handler at the other end stays on its node."
+  [plain line-idx node target]
+  (let [segment (get plain line-idx)
+        end     (path.helpers/segment->point segment)]
+    (if (= node end)
+      (let [start (path.helpers/segment->point (get plain (dec line-idx)))]
+        (update plain line-idx path.helpers/update-curve-to start target))
+      (update plain line-idx path.helpers/update-curve-to target end))))
+
+(defn add-missing-handler
+  "Gives a node with a single handler a mirrored opposite handler.
+
+  A handler collapsed onto the node is moved out, and a line on the other
+  side of the node becomes a curve. Other nodes are returned unchanged."
+  [content node-index]
+  (let [collapsed?    (fn [[idx prefix]]
+                        (= (path/get-handler-point content idx prefix)
+                           (path/handler->node content idx prefix)))
+        handler-ids   (node-handler-ids content node-index)
+        [live & more] (remove collapsed? handler-ids)]
+    (if (or (nil? live) (some? more))
+      content
+      (let [[idx prefix]       live
+            node               (path/handler->node content idx prefix)
+            handler            (path/get-handler-point content idx prefix)
+            target             (opposite-handler-target node handler node :mirror)
+            plain              (vec content)
+            [op-idx op-prefix] (first (filter collapsed? handler-ids))
+            line-idx           (when (nil? op-idx)
+                                 (line-beside-node plain node-index live node))]
+        (cond
+          (some? op-idx)
+          (let [[cx cy] (path.helpers/prefix->coords op-prefix)]
+            (path/content (update-in plain [op-idx :params] assoc
+                                     cx (:x target) cy (:y target))))
+
+          (some? line-idx)
+          (path/content (curve-line plain line-idx node target))
+
+          :else
+          content)))))
+
 (defn remap-handler-types
   "Remaps handler types by node position after structural changes."
   [handler-types old-content new-content]

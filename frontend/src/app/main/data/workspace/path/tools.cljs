@@ -93,7 +93,9 @@
     {}))
 
 (defn set-handler-type
-  "Sets and stores the handler behavior of selected nodes."
+  "Sets and stores the handler behavior of selected nodes.
+
+  Mirror and aligned give a node with a single handler its opposite back."
   [type]
   (ptk/reify ::set-handler-type
     ptk/UpdateEvent
@@ -104,7 +106,10 @@
             edited    (dm/get-in state [:workspace-local :edit-path id :edited-handler])
             nodes     (helpers/handler-target-nodes content selection)]
         (if (and (some? content) (seq nodes))
-          (let [modifiers   (reduce (fn [acc node-index]
+          (let [content     (if (contains? #{:mirror :aligned} type)
+                              (reduce helpers/add-missing-handler content nodes)
+                              content)
+                modifiers   (reduce (fn [acc node-index]
                                       (let [reference (helpers/handler-type-reference
                                                        content selection edited node-index)]
                                         (d/deep-merge acc (apply-handler-type-modifiers content reference type))))
@@ -225,14 +230,17 @@
           state)))))
 
 (defn remove-handler
-  "Collapses one handler onto its node."
+  "Collapses one handler onto its node, which becomes independent."
   [index prefix]
   (ptk/reify ::remove-handler
     ptk/UpdateEvent
     (update [_ state]
-      (let [content (st/get-path state :content)]
+      (let [id      (st/get-path-id state)
+            content (st/get-path state :content)]
         (if (some? content)
-          (update-path-content state (path/collapse-handler content index prefix))
+          (-> (update-path-content state (path/collapse-handler content index prefix))
+              (update-in [:workspace-local :edit-path id :handler-types]
+                         dissoc (helpers/handler-node-index index prefix)))
           state)))))
 
 (defn merge-nodes []
