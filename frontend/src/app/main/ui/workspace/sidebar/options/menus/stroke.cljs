@@ -143,7 +143,11 @@
 
         per-side-available?
         (and (contains? cf/flags :stroke-per-side)
-             (or (= type :rect) (= type :frame)))
+             (or (= type :rect)
+                 (= type :frame)
+                 (and (= type :multiple)
+                      (not= strokes :multiple)
+                      (not= (:stroke-width values) :multiple))))
 
         per-side-disabled?
         (not wasm-render?)
