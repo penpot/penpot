@@ -35,10 +35,7 @@
                     (clvp/generate-update-property-name v-id 0 "NewName1")
                     (clvp/generate-update-property-name v-id 1 "NewName2"))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -50,8 +47,6 @@
     (t/is (= (-> comp02' :variant-properties first :name) "NewName1"))
     (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))))
 
-
-
 (t/deftest test-add-new-property-without-values
   (let [;; ==== Setup
         file    (-> (thf/sample-file :file1)
@@ -62,7 +57,6 @@
         comp01  (thc/get-component file :c01)
         comp02  (thc/get-component file :c02)
 
-
         ;; ==== Action
         changes (-> (pcb/empty-changes nil)
                     (pcb/with-page-id (:id page))
@@ -70,10 +64,7 @@
                     (pcb/with-objects (:objects page))
                     (clvp/generate-add-new-property v-id))
 
-
         file'   (thf/apply-changes file changes)
-
-
 
         ;; ==== Get
         comp01' (thc/get-component file' :c01)
@@ -85,8 +76,6 @@
     (t/is (= (count (:variant-properties comp02)) 1))
     (t/is (= (count (:variant-properties comp02')) 2))
     (t/is (= (-> comp01' :variant-properties last :value) ""))))
-
-
 
 (t/deftest test-add-new-property-with-values
   (let [;; ==== Setup

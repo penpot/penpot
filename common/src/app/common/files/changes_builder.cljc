@@ -1189,14 +1189,17 @@
 
 (defn get-library-data
   [changes]
+  (assert-library! changes)
   (::library-data (meta changes)))
 
 (defn get-objects
   [changes]
+  (assert-objects! changes)
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
 
 (defn get-page
   [changes]
+  (assert-page! changes)
   (::page (meta changes)))
 
 (defn get-page-id

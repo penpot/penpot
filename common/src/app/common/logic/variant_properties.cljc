@@ -15,11 +15,12 @@
    [cuerdas.core :as str]))
 
 (defn generate-update-property-name
+  "Update the name of a variant property at position `pos` for all components in the variant.
+   The new name is generated from `new-name`, ensuring it is unique among the other property names."
   [changes variant-id pos new-name]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
-
         props              (-> related-components last :variant-properties)
         prop-names         (mapv :name props)
         prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
@@ -32,7 +33,6 @@
                {:apply-changes-local-library? true}))
             changes
             related-components)))
-
 
 (defn generate-remove-property
   [changes variant-id pos]
@@ -54,7 +54,6 @@
               related-components)
       changes)))
 
-
 (defn generate-update-property-value
   [changes component-id pos value]
   (let [data      (pcb/get-library-data changes)
@@ -68,7 +67,6 @@
                               {:apply-changes-local-library? true})
         (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
 
-
 (defn generate-set-variant-error
   [changes component-id value]
   (let [data      (pcb/get-library-data changes)
@@ -78,7 +76,6 @@
         (pcb/update-shapes [main-id] (if (nil? value)
                                        #(dissoc % :variant-error)
                                        #(assoc % :variant-error value))))))
-
 
 (defn generate-reorder-variant-poperties
   [changes variant-id from-pos to-space-between-pos]
@@ -98,7 +95,6 @@
                                        #(assoc % :variant-name name)))))
             changes
             related-components)))
-
 
 (defn generate-add-new-property
   [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
@@ -161,7 +157,6 @@
   [changes shapes]
   (reduce generate-make-shape-no-variant changes shapes))
 
-
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
   (let [component (ctcl/get-component data (:component-id shape) true)
@@ -183,7 +178,6 @@
   (let [;; Remove container name from shape name if present
         shape-name (ctv/remove-prefix (:name shape) container-name)]
     (ctv/path-to-properties shape-name base-properties min-props)))
-
 
 (defn generate-make-shapes-variant
   [changes shapes variant-container]
