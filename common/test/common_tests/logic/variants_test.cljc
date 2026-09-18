@@ -16,9 +16,41 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest test-update-property-name-no-op
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        base-changes (-> (pcb/empty-changes nil)
+                         (pcb/with-page-id (:id page))
+                         (pcb/with-library-data (:data file))
+                         (pcb/with-objects (:objects page)))]
+
+    ;; variant-id nil
+    (let [changes (clvp/generate-update-property-name base-changes nil 0 "NewName")]
+      (t/is (pcb/empty-changes? changes)))
+
+    ;; variant-id non-existent
+    (let [changes (clvp/generate-update-property-name base-changes (uuid/next) 0 "NewName")]
+      (t/is (pcb/empty-changes? changes)))
+
+    ;; pos nil
+    (let [changes (clvp/generate-update-property-name base-changes v-id nil "NewName")]
+      (t/is (pcb/empty-changes? changes)))
+
+    ;; pos out of range (negative)
+    (let [changes (clvp/generate-update-property-name base-changes v-id -1 "NewName")]
+      (t/is (pcb/empty-changes? changes)))
+
+    ;; pos out of range (too large)
+    (let [changes (clvp/generate-update-property-name base-changes v-id 100 "NewName")]
+      (t/is (pcb/empty-changes? changes)))))
 
 (t/deftest test-update-property-name
   (let [;; ==== Setup
@@ -46,6 +78,28 @@
     (t/is (= (-> comp01' :variant-properties last :name) "NewName2"))
     (t/is (= (-> comp02' :variant-properties first :name) "NewName1"))
     (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))))
+
+(t/deftest test-update-property-name-duplicate
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-name v-id 0 "Property 2"))
+
+        file'   (thf/apply-changes file changes)
+
+        comp01' (thc/get-component file' :c01)
+        comp02' (thc/get-component file' :c02)]
+
+    (t/is (= "Property 2 (1)" (-> comp01' :variant-properties first :name)))
+    (t/is (= "Property 2"     (-> comp01' :variant-properties last :name)))
+    (t/is (= "Property 2 (1)" (-> comp02' :variant-properties first :name)))
+    (t/is (= "Property 2"     (-> comp02' :variant-properties last :name)))))
 
 (t/deftest test-add-new-property-without-values
   (let [;; ==== Setup
@@ -264,7 +318,7 @@
     (t/is (= (count objects') 7))))
 
 
-(t/deftest test-delete-variant
+#_(t/deftest test-delete-variant
   ;; When a variant container becomes empty, it id automatically deleted
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)

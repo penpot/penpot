@@ -18,21 +18,28 @@
   "Update the name of a variant property at position `pos` for all components in the variant.
    The new name is generated from `new-name`, ensuring it is unique among the other property names."
   [changes variant-id pos new-name]
-  (let [data               (pcb/get-library-data changes)
-        objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)
-        props              (-> related-components last :variant-properties)
-        prop-names         (mapv :name props)
-        prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
-        new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
-    (reduce (fn [changes component]
-              (pcb/update-component
-               changes (:id component)
-               (fn [component]
-                 (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
-               {:apply-changes-local-library? true}))
+  (if (or (nil? variant-id) (nil? pos))
+    changes
+    (let [data               (pcb/get-library-data changes)
+          objects            (pcb/get-objects changes)
+          related-components (cfv/find-variant-components data objects variant-id)]
+      (if (empty? related-components)
+        changes
+        (let [props      (-> related-components last :variant-properties)
+              num-props  (count props)]
+          (if (or (< pos 0) (>= pos num-props))
             changes
-            related-components)))
+            (let [prop-names (mapv :name props)
+                  prop-names (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
+                  new-name   (ctv/update-number-in-repeated-item prop-names new-name)]
+              (reduce (fn [changes component]
+                        (pcb/update-component
+                         changes (:id component)
+                         (fn [component]
+                           (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
+                         {:apply-changes-local-library? true}))
+                      changes
+                      related-components))))))))
 
 (defn generate-remove-property
   [changes variant-id pos]

@@ -54,6 +54,10 @@
     :undo-changes '()
     :origin origin}))
 
+(defn empty-changes?
+  [changes]
+  (empty? (:redo-changes changes)))
+
 (defn set-save-undo?
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
