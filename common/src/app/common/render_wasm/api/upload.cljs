@@ -248,12 +248,14 @@
         cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
         dash      (or (:stroke-dash stroke) -1)
         gap       (or (:stroke-gap stroke) -1)
-        per-side? (boolean (:stroke-per-side stroke))
+
         top       (or (:stroke-width-top stroke) width)
         right     (or (:stroke-width-right stroke) width)
         bottom    (or (:stroke-width-bottom stroke) width)
         left      (or (:stroke-width-left stroke) width)
-        has-sides? (and per-side? (not= top right bottom left))]
+
+        has-sides? (not= top right bottom left)]
+
     (buf/write-f32 dview offset width)
     (buf/write-u8 dview (+ offset 4) style)
     (buf/write-u8 dview (+ offset 5) align)
