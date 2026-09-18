@@ -294,6 +294,18 @@
 (def heartbeats (atom {}))
 (def progresses (atom {}))
 
+(defn- assert-connectable!
+  "Heartbeat/progress writes always go through the connection pool, so
+  the cfg must carry ::db/pool (or be a pool/connection itself).
+  Fails fast with a clear error instead of the opaque deep failure
+  inside app.db."
+  [cfg]
+  (let [connectable (if (map? cfg) (::db/pool cfg) cfg)]
+    (when-not (db/connectable? connectable)
+      (ex/raise :type :validation
+                :code :missing-pool
+                :hint "heartbeat!/progress! require ::db/pool on the cfg (or a pool/connection directly)"))))
+
 (def ^:dynamic *job-id*
   "Job id of the job being executed on the current thread. The runner
   binds it around handler invocations; handlers call `heartbeat!`/`progress!`
@@ -370,6 +382,7 @@
        (heartbeat! cfg job-id))))
   ([cfg job-id]
    (when (uuid? job-id)
+     (assert-connectable! cfg)
      (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
        (db/exec-one! (or (::db/pool cfg) cfg)
                      [sql:touch-heartbeat (ct/now) job-id])
@@ -396,6 +409,7 @@
   ([cfg job-id progress] (progress! cfg job-id progress nil))
   ([cfg job-id progress {:keys [::force?]}]
    (when (uuid? job-id)
+     (assert-connectable! cfg)
      (when (or force? (should-write? progresses job-id (ct/now) progress-interval))
        (db/tx-run! (or (::db/pool cfg) cfg)
                    (fn [{:keys [::db/conn]}]

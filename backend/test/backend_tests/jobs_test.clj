@@ -401,6 +401,16 @@
       (t/is (zero? (jobs/cancel! cfg job-id)))
       (t/is (= "running" (:status (jobs/get-job cfg job-id)))))))
 
+(t/deftest cancel-affects-scheduled-and-retry-jobs
+  (let [cfg (make-cfg (get-job-defs))]
+    (doseq [status ["scheduled" "retry"]]
+      (t/testing (str status " job can be cancelled")
+        (let [job-id (jobs/submit! cfg {::jobs/name   :echo
+                                        ::jobs/params (make-params)})]
+          (th/db-update! :job {:status status} {:id job-id})
+          (t/is (= 1 (jobs/cancel! cfg job-id)))
+          (t/is (= "cancelled" (:status (jobs/get-job cfg job-id)))))))))
+
 (t/deftest get-user-status-maps-internal-statuses
   (t/are [status expected] (= expected (jobs/get-user-status status))
     "new"       "pending"

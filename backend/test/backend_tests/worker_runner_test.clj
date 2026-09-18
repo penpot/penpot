@@ -365,6 +365,21 @@
       (t/testing "invoke! returns the handler result"
         (t/is (= (first @received) result))))))
 
+(t/deftest runner-executes-tasks-gc-with-string-min-age
+  (let [defs         (get th/*system* :app.jobs/defs)
+        cfg          (mk-cfg {:defs defs})
+        submit-cfg   {::jobs/defs defs
+                      ::db/pool   th/*pool*}
+        job-id       (jobs/submit! submit-cfg {::jobs/name   :tasks-gc
+                                               ::jobs/queue  :test
+                                               ::jobs/params {:min-age "1h"}})
+        scheduled-at (:scheduled-at (th/db-get :job {:id job-id}))]
+    (push-payload! job-id scheduled-at)
+    (run-one! cfg)
+    (let [row (get-row job-id)]
+      (t/testing "string min-age survives JSON decode, validation and execution"
+        (t/is (= "completed" (:status row)))))))
+
 (t/deftest runner-skips-malformed-payloads
   (let [conn (rds/connect {::rds/client (get th/*system* :app.redis/client)
                            ::mtx/metrics (get th/*system* :app.metrics/metrics)})]

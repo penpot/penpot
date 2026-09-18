@@ -67,9 +67,12 @@
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
 (defn process-event-impl!
-  [cfg props]
-
-  (let [items (lookup-webhooks cfg props)
+  [cfg {:keys [event-blob]}]
+  ;; The blob carries the original typed event; decode it once for the
+  ;; lookups below and forward it untouched so deliveries keep the
+  ;; exact instant/UUID/set types of the legacy worker.
+  (let [props (t/decode-str event-blob)
+        items (lookup-webhooks cfg props)
         event {:profile-id (:profile-id props)
                :name "webhook"
                :type "trigger"
@@ -87,22 +90,15 @@
                                         {::jobs/name :run-webhook
                                          ::jobs/queue :webhooks
                                          ::jobs/max-retries 3
-                                         ::jobs/params {:event (t/encode-str props)
+                                         ::jobs/params {:event event-blob
                                                         :config (select-keys item [:id :uri :mtype])}})))))))
 
 
 (def schema:process-webhook-event-params
-  "Schema declares the uuid fields the handler consumes so the JSON
-  decoder restores their types after the transit→JSON round-trip."
-  [:map
-   [:id {:optional true} ::sm/uuid]
-   [:profile-id {:optional true} ::sm/uuid]
-   [:name {:optional true} ::sm/text]
-   [:props {:optional true}
-    [:map
-     [:team-id {:optional true} ::sm/uuid]
-     [:project-id {:optional true} ::sm/uuid]
-     [:file-id {:optional true} ::sm/uuid]]]])
+  "The audited event travels as an opaque transit blob: transit
+  preserves the instant/UUID/set types that plain JSON props cannot
+  carry, so no per-key type declarations are needed."
+  [:map [:event-blob :string]])
 
 (defmethod ig/init-key ::process-webhook-event-job-def
   [_ cfg]
@@ -203,11 +199,11 @@
    [:mtype ::sm/text]])
 
 (def schema:run-webhook-params
-  "The event travels nested in transit inside the JSON job props: plain
-  JSON cannot carry UUID (or instant/set) types, so process-webhook-event
-  transit-encodes it at submit and the handler transit-decodes it before
-  delivery. This keeps the wire payload identical to the legacy worker
-  for every mtype, whatever shape the event has."
+  "The event travels as the original transit blob inside the JSON job
+  props: process-webhook-event receives the transit-encoded audited
+  event and forwards it untouched, and the handler transit-decodes it
+  before delivery. This keeps the wire payload identical to the legacy
+  worker for every mtype, whatever shape the event has."
   [:map
    [:event :string]
    [:config schema:run-webhook-config]])

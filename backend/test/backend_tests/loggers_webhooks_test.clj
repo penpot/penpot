@@ -6,6 +6,7 @@
 
 (ns backend-tests.loggers-webhooks-test
   (:require
+   [app.common.time :as ct]
    [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -23,9 +24,11 @@
   (with-mocks [submit-mock {:target 'app.jobs/submit! :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           res  (th/run-task! :process-webhook-event
-                             {:type "command"
-                              :name "create-project"
-                              :props {:team-id (:default-team-id prof)}})]
+                             {:event-blob
+                              (transit/encode-str
+                               {:type "command"
+                                :name "create-project"
+                                :props {:team-id (:default-team-id prof)}})})]
 
       (t/is (= 0 (:call-count @submit-mock)))
       (t/is (nil? res)))))
@@ -35,9 +38,11 @@
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           res  (th/run-task! :process-webhook-event
-                             {:type "command"
-                              :name "create-project"
-                              :props {:team-id (:default-team-id prof)}})]
+                             {:event-blob
+                              (transit/encode-str
+                               {:type "command"
+                                :name "create-project"
+                                :props {:team-id (:default-team-id prof)}})})]
 
       (t/is (= 1 (:call-count @submit-mock)))
       (t/is (nil? res)))))
@@ -47,9 +52,11 @@
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})]
       (th/run-task! :process-webhook-event
-                    {:type "command"
-                     :name "create-project"
-                     :props {:team-id (:default-team-id prof)}})
+                    {:event-blob
+                     (transit/encode-str
+                      {:type "command"
+                       :name "create-project"
+                       :props {:team-id (:default-team-id prof)}})})
       (t/is (= 1 (:call-count @submit-mock)))
       (let [options (second (:call-args @submit-mock))
             config  (get-in options [::jobs/params :config])]
@@ -126,7 +133,9 @@
 
 (t/deftest webhook-json-round-trip-preserves-uuid-types
   "Integration test: drives process-webhook-event through the real pipeline
-  (submit → decode → handler) to verify uuid types survive the JSON round-trip."
+  (submit → decode → handler) to verify uuid types survive: the JSON hop
+  carries only the opaque transit blob, and the handler decodes the typed
+  event from it."
   (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
@@ -135,7 +144,8 @@
                 :props {:team-id (:default-team-id prof)}}]
 
       ;; Submit the job through the real pipeline (this creates a job row)
-      (th/run-task! :process-webhook-event evt)
+      (th/run-task! :process-webhook-event
+                    {:event-blob (transit/encode-str evt)})
 
       ;; Now run the pending jobs (simulates dispatcher + runner)
       ;; This will decode the params from JSON and invoke the handler
@@ -152,25 +162,32 @@
         (t/is (nil? (:error-code whk')))))))
 
 (t/deftest webhook-transit-round-trip-preserves-uuid-types
-  "The run-webhook event travels nested in transit inside the JSON job
-  props, so transit deliveries keep UUID types (no wire change vs the
-  legacy worker)."
+  "The run-webhook event travels as the original transit blob inside the
+  JSON job props, so transit deliveries keep instant/UUID types (no wire
+  change vs the legacy worker), whatever shape the event has."
   (with-mocks [http-mock {:target 'app.http.client/req :return {:status 200}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)
                                     :mtype "application/transit+json"})
           evt  {:type "command"
                 :name "create-project"
-                :props {:team-id (:default-team-id prof)}}]
+                :created-at (ct/now)
+                :tracked-at (ct/now)
+                :props {:team-id (:default-team-id prof)
+                        :comment-id (uuid/next)}}]
 
       ;; through the real pipeline: process submits run-webhook, the
       ;; runner decodes it from JSON and delivers it
-      (th/run-task! :process-webhook-event evt)
+      (th/run-task! :process-webhook-event
+                    {:event-blob (transit/encode-str evt)})
       (th/run-pending-jobs!)
 
       (t/is (= 1 (:call-count @http-mock)))
       (let [req   (second (:call-args @http-mock))
             event (transit/decode-str (:body req))]
         (t/is (= "application/transit+json" (get-in req [:headers "content-type"])))
-        (t/is (uuid? (get-in event [:props :team-id])))))))
+        (t/is (uuid? (get-in event [:props :team-id])))
+        (t/is (uuid? (get-in event [:props :comment-id])))
+        (t/is (inst? (:created-at event)))
+        (t/is (inst? (:tracked-at event)))))))
 

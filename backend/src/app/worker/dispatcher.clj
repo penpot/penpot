@@ -55,7 +55,7 @@
      SKIP LOCKED")
 
 (def ^:private sql:mark-job-scheduled
-  "UPDATE job SET status = 'scheduled'
+  "UPDATE job SET status = 'scheduled', modified_at = ?
     WHERE id = ANY(?)")
 
 (def ^:private sql:reschedule-lost
@@ -110,6 +110,7 @@ RETURNING job.id, job.queue")
   [{:keys [::db/conn]} items]
   (let [ids (map :id items)
         sql [sql:mark-job-scheduled
+             (ct/now)
              (db/create-array conn "uuid" ids)]]
     (db/exec-one! conn sql)))
 

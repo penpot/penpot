@@ -13,6 +13,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -283,12 +284,17 @@
                      ::jobs/delay (or batch-timeout 0)
                      ::jobs/dedupe dedupe?
                      ::jobs/label label
-                     ::jobs/params (-> event
-                                       (d/without-qualified)
-                                       (dissoc :source)
-                                       (dissoc :context)
-                                       (dissoc :ip-addr)
-                                       (dissoc :type))})))
+                     ;; The event travels as an opaque transit blob:
+                     ;; transit preserves the instant/UUID/set types
+                     ;; that plain JSON props cannot carry.
+                     ::jobs/params {:event-blob
+                                    (t/encode-str
+                                     (-> event
+                                         (d/without-qualified)
+                                         (dissoc :source)
+                                         (dissoc :context)
+                                         (dissoc :ip-addr)
+                                         (dissoc :type)))}})))
   event)
 
 (defn submit*
