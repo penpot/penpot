@@ -277,6 +277,10 @@
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
 
+(def per-side-stroke-width-keys
+  "Per-side stroke width attribute keys."
+  #{:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left})
+
 (def ^:private schema:dimensions
   (-> (reduce mu/union [schema:sizing
                         schema:spacing
@@ -438,13 +442,13 @@
      #{:fill}
 
      (and (= :strokes shape-attr) (nil? changed-sub-attr))
-      (set/union stroke-width-keys #{:stroke-color})
+     (set/union stroke-width-keys #{:stroke-color})
 
      (= :strokes shape-attr)
      (let [sub-attrs (set changed-sub-attr)]
        (cond
          (sub-attrs :stroke-color) #{:stroke-color}
-          (sub-attrs :stroke-width) stroke-width-keys
+         (sub-attrs :stroke-width) stroke-width-keys
          :else
          (let [per-side (set/intersection sub-attrs stroke-width-keys)]
            (when (seq per-side) per-side))))

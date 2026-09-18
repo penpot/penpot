@@ -655,9 +655,9 @@
    {ctt/border-radius-keys  update-shape-radius-for-corners
     ctt/color-keys          update-fill-stroke
     ctt/stroke-width-keys   update-stroke-width-side
-   ctt/sizing-keys         apply-dimensions-token
-   ctt/opacity-keys        update-opacity
-   ctt/rotation-keys       update-rotation
+    ctt/sizing-keys         apply-dimensions-token
+    ctt/opacity-keys        update-opacity
+    ctt/rotation-keys       update-rotation
 
    ;; Typography
    ctt/font-family-keys     update-font-family
@@ -1043,7 +1043,6 @@
    {:title "Stroke Width"
     :attributes ctt/stroke-width-keys
     :on-update-shape update-stroke-width
-    :on-update-shape-side update-stroke-width-side
     :modal {:key :tokens/stroke-width
             :fields [{:label "Stroke Width"
                       :key :stroke-width}]}}

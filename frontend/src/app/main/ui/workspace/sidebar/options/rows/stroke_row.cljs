@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.common.types.token :as ctt]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
@@ -198,8 +199,7 @@
                               :stroke-width-left v}
                              index)))
                 ids
-                #{:stroke-width-top :stroke-width-right
-                  :stroke-width-bottom :stroke-width-left})
+                ctt/per-side-stroke-width-keys)
                (st/emit! (dc/change-stroke-attrs
                           ids
                           {:stroke-width value
@@ -211,9 +211,8 @@
              (soc/emit-value-or-token
               value
               #(on-stroke-width-change index %)
-               ids
-               #{:stroke-width-top :stroke-width-right
-                 :stroke-width-bottom :stroke-width-left}))))
+              ids
+              ctt/per-side-stroke-width-keys))))
 
         ;; The SVG renderer defaults dash and gap to `stroke-width + 10` when
         ;; unset. Showing that value as placeholder makes the override obvious.
@@ -303,8 +302,7 @@
         (mf/use-fn
          (mf/deps on-detach-token)
          (fn [token]
-           (on-detach-token token #{:stroke-width-top :stroke-width-right
-                                    :stroke-width-bottom :stroke-width-left})))
+           (on-detach-token token ctt/per-side-stroke-width-keys)))
 
         on-detach-token-width-top
         (mf/use-fn
