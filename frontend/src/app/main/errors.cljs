@@ -377,6 +377,29 @@
     (dom/trigger-download-uri "report" "text/plain" uri)
     (ts/schedule-on-idle #(wapi/revoke-uri uri))))
 
+(defn- emit-flash-report!
+  "Reserves, generates and emits the flash report. Returns the generated
+  report string, or nil when nothing is emitted (non-exception cause,
+  `:silent` type, empty hint or denied governor reservation)."
+  [type cause]
+  (when (ex/exception? cause)
+    (when-let [event-name (case type
+                            :handled "handled-exception"
+                            :unhandled "unhandled-exception"
+                            :silent nil)]
+      (let [format      (if (environment-error? cause) :compact :full)
+            report-hint (ex/get-hint cause)]
+        (when (and (string? report-hint) (not (str/empty? report-hint)))
+          (let [state (reserve-report! (error-fingerprint event-name cause)
+                                       (inst-ms (ct/now)))]
+            (when (::emit state)
+              (let [generated (generate-report cause {:format format})]
+                (emit-report! event-name
+                              generated
+                              report-hint
+                              (::occurrences state))
+                generated))))))))
+
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
@@ -389,6 +412,18 @@
   The report is reserved before being generated, so repeated errors that
   fall inside the governor window do not pay the report-building cost.
 
+  The whole body (report pipeline first, toast after) runs inside a single
+  `ts/schedule` callback: nothing report- or toast-related executes
+  synchronously on the error handler's stack. A failure while reporting or
+  notifying is logged to the console and never propagates; the toast is
+  still attempted.
+
+  Returns a promise resolving with the generated report (or nil when
+  nothing is emitted) once the scheduled callback completes. The promise
+  is total: it never rejects. Production callers ignore it
+  (fire-and-forget); it exists so tests can await completion instead of
+  reasoning about timer order.
+
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
   error-handling pipeline is still on the call stack.  Emitting
@@ -397,33 +432,26 @@
   (RangeError: Maximum call stack size exceeded)."
   [& {:keys [type hint cause timeout report-link?]
       :or {type :handled timeout 5000}}]
-  (let [report (when (ex/exception? cause)
-                 (when-let [event-name (case type
-                                         :handled "handled-exception"
-                                         :unhandled "unhandled-exception"
-                                         :silent nil)]
-                   (let [format      (if (environment-error? cause) :compact :full)
-                         report-hint (ex/get-hint cause)]
-                     (when (and (string? report-hint) (not (str/empty? report-hint)))
-                       (let [state (reserve-report! (error-fingerprint event-name cause) (inst-ms (ct/now)))]
-                         (when (::emit state)
-                           (let [generated (generate-report cause {:format format})]
-                             (emit-report! event-name
-                                           generated
-                                           report-hint
-                                           (::occurrences state))
-                             generated)))))))]
-
-    (ts/schedule
-     #(st/emit!
-       (ntf/show
-        (cond-> {:content (or ^boolean hint (tr "errors.generic"))
-                 :type :toast
-                 :level :error
-                 :timeout timeout}
-          (and report-link? report)
-          (assoc :links [{:label (tr "labels.download" "report.txt")
-                          :callback (partial download-report! report)}])))))))
+  (js/Promise.
+   (fn [resolve _reject]
+     (ts/schedule
+      (fn []
+        (let [report (try (emit-flash-report! type cause)
+                          (catch :default err
+                            (.error js/console "error on emitting report" err)
+                            nil))]
+          (try (st/emit!
+                (ntf/show
+                 (cond-> {:content (or ^boolean hint (tr "errors.generic"))
+                          :type :toast
+                          :level :error
+                          :timeout timeout}
+                   (and report-link? report)
+                   (assoc :links [{:label (tr "labels.download" "report.txt")
+                                   :callback (partial download-report! report)}]))))
+               (catch :default err
+                 (.error js/console "error on emitting toast" err)))
+          (resolve report)))))))
 
 (defn- handle-connectivity-error
   "Report a failure caused by the user's connectivity. These are audit-only

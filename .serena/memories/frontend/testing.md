@@ -16,9 +16,9 @@ Frontend testing is async-first: everything essentially asynchronous is modeled 
 
 - `mock/with-mocks` (callback style, legacy compat): installs with `set!` so mocks survive async boundaries; bodies run deferred past the current tick via `asap`, so only done-chained (`t/async`) contexts are allowed; `done'` restores and completes exactly once (twice only warns; never calling it stalls the run and leaks the mocks). Prefer `mock/with-mocks*` for new tests.
 - `mock/with-mocks*` (direction): body forms wrapped in a generated `^:async` fn, evaluates to a promise — `await` it, `await` nested scopes too, no `done` in test code. Rejections and non-promise returns report as `:error` via `run-mocked`.
-- `mock/stub` wraps fns for arities 0-6 (the `:esm` test build dispatches multi-arity vars as `cljs$core$IFn$_invoke$arity$N`); variadic call sites beyond 6 args need a plain variadic `fn`. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses).
+- `mock/stub` wraps fns for arities 0-6 (the `:esm` test build dispatches multi-arity vars as `cljs$core$IFn$_invoke$arity$N`); when the mocked var is variadic-defined (or called with more than 6 args), the call compiles to variadic dispatch, so use a plain variadic `fn` — the stub does not forward variadic. A mock must not call the mocked var again (self-delegation inside a multi-arity function recurses).
 - Helpers in `frontend-tests.helpers.async`: `->promise` (single-value observable → promise; beicon has no `to-promise`), `await-response` (subscribe→push→await, atomic), `settle`, `wait-for` (immediate check + bounded poll, fails instead of hanging), `observe` (stream → termination promise; asserts provided, timeout rejects).
-- Fixtures return promises (`with-watchdog`, `with-persistence`); `await` them from `^:async` tests. Pre-existing sync call-sites still to migrate (e.g. `main_errors`, `fonts`).
+- Fixtures return promises (`with-watchdog`, `with-persistence`); `await` them from `^:async` tests. `main_errors` and `fonts` are fully migrated (no legacy `with-mocks` left).
 - Valid `^:async` placements: `mem:clojure/idioms`.
 
 ### Observing event streams
@@ -33,6 +33,8 @@ To assert over emitted event sequences, observe termination: subscribe through `
 
 ### Traps that bit
 
+- `^:async` tests require map-style fixtures (`(t/use-fixtures :each {:before f})`): function-style fixtures abort the whole run ("Async tests require fixtures to be specified as maps").
+- `st/emit!` doubles collect heterogeneous events: audit `DataEvent`s deref, toast reify-objects do not — discriminate with `ptk/type` (total, never throws), never blind `deref`.
 - Subscription order decides delivery order: never resolve settlement from a pre-subscribed branch racing the pipeline.
 - Auto-answering mocks lose deadline expressiveness (can't time answers), need teardown timer-cancellation, and post-teardown deliveries hit real implementations — explicit pushes + async delivery + `wait-for` won on every axis.
 - Teardown belongs to the terminal continuation, never to `finally`-around-triggers (it would dispose in-flight flows).
