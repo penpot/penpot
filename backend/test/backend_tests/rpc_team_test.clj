@@ -1116,62 +1116,6 @@
           out  (th/command! data)]
       (t/is (th/success? out)))))
 
-(t/deftest create-team-id-version
-  (let [profile (th/create-profile* 1 {:is-active true})
-        v3-id   "6fa459ea-ee8a-3ca4-894e-db77e160355e"
-        v4-id   "550e8400-e29b-41d4-a716-446655440000"
-        v7-id   "0191062e-3f50-7a5e-9f5a-1a2b3c4d5e6f"]
-
-    ;; reserved version (v3) must be rejected at the RPC boundary
-    (let [data {::th/type :create-team
-                ::rpc/profile-id (:id profile)
-                :name "team with v3 id"
-                :id v3-id}
-          out  (th/command! data)]
-      (t/is (not (th/success? out)))
-      (t/is (th/ex-of-type? (:error out) :validation))
-      (t/is (th/ex-of-code? (:error out) :params-validation)))
-
-    ;; v4, v7 and v8 ids are accepted
-    (doseq [id [v4-id v7-id (str (uuid/next))]]
-      (let [data {::th/type :create-team
-                  ::rpc/profile-id (:id profile)
-                  :name (str "team with id " id)
-                  :id id}
-            out  (th/command! data)]
-        (t/is (th/success? out))
-        (t/is (= id (str (:id (:result out)))))))))
-
-(t/deftest create-team-with-invitations-id-version
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
-    (let [profile (th/create-profile* 1 {:is-active true})
-          v3-id   "6fa459ea-ee8a-3ca4-894e-db77e160355e"
-          v4-id   "550e8400-e29b-41d4-a716-446655440000"]
-
-      ;; reserved version (v3) must be rejected before any invitation is sent
-      (let [data {::th/type :create-team-with-invitations
-                  ::rpc/profile-id (:id profile)
-                  :name "team with v3 id"
-                  :id v3-id
-                  :emails #{"invitee@example.com"}
-                  :role :editor}
-            out  (th/command! data)]
-        (t/is (not (th/success? out)))
-        (t/is (th/ex-of-type? (:error out) :validation))
-        (t/is (th/ex-of-code? (:error out) :params-validation))
-        (t/is (= 0 (:call-count @mock))))
-
-      ;; v4 id is accepted
-      (let [data {::th/type :create-team-with-invitations
-                  ::rpc/profile-id (:id profile)
-                  :name "team with v4 id"
-                  :id v4-id
-                  :emails #{"invitee@example.com"}
-                  :role :editor}
-            out  (th/command! data)]
-        (t/is (th/success? out))
-        (t/is (= v4-id (str (:id (:result out)))))))))
-
 (t/deftest create-team-invitations-email-cooldown
   (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
@@ -1482,3 +1426,27 @@
       (t/is (not (th/success? out)))
       (t/is (th/ex-of-type? (:error out) :not-found))
       (t/is (th/ex-of-code? (:error out) :member-does-not-exist)))))
+
+(t/deftest create-team-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest create-team-with-invitations-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team-with-invitations
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :emails ["invitee@example.com"]
+                              :role :editor
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

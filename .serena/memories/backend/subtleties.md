@@ -7,6 +7,7 @@
 - RPC auth defaults to enabled. Public endpoints must set `::auth false` metadata explicitly.
 - The wrapper stack does auth before params validation, then auditing/rate/concurrency/metrics/retry/condition handling, with DB transaction handling inside that stack. `::db/transaction` metadata controls transaction wrapping.
 - Params with `::sm/params` are decoded/conformed through the JSON transformer and successful IObj results get `:encode/json` metadata. Legacy spec conforming only applies when no Malli params schema exists. Client params are stripped of qualified keys (`d/without-qualified`) before merging with the server auth context, so request bodies cannot override `::profile-id`, `::auth-type`, or `::token-perms`.
+- Params schemas are open by default, so undeclared client keys reach the handler unless the map is `:closed true`. Creation commands (`create-file`, `create-project`, `create-team`, `create-team-with-invitations`, `upload-file-media-object`, `create-file-media-object-from-url`, `assemble-file-media-object`) use closed schemas: a client-provided `:id` fails with `:params-validation`. Their internal creation functions still accept an optional explicit `:id` for imports, duplicates and deterministic test fixtures.
 - Nil RPC bodies become HTTP 204 unless explicit status metadata is present. Stream bodies default to `application/octet-stream` when no content type is set.
 
 ## DB helpers

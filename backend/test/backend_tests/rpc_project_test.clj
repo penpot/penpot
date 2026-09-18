@@ -21,20 +21,19 @@
 (t/deftest projects-simple-crud
   (let [profile    (th/create-profile* 1)
         team       (th/create-team* 1 {:profile-id (:id profile)})
-        project-id (uuid/next)]
+        data       {::th/type :create-project
+                    ::rpc/profile-id (:id profile)
+                    :team-id (:id team)
+                    :name "test project"}
+        out        (th/command! data)
+        _          (t/is (nil? (:error out)))
+        project-id (:id (:result out))]
 
     ;; create project
-    (let [data {::th/type :create-project
-                ::rpc/profile-id (:id profile)
-                :id project-id
-                :team-id (:id team)
-                :name "test project"}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (= (:name data) (:name result)))))
+    ;; (th/print-result! out)
+    (t/is (uuid? project-id))
+    (let [result (:result out)]
+      (t/is (= (:name data) (:name result))))
 
     ;; query the list of projects of a team
     (let [data {::th/type :get-projects
@@ -122,33 +121,6 @@
     ;; (th/print-result! out)
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
-
-(t/deftest create-project-id-version
-  (let [profile (th/create-profile* 1)
-        team    (th/create-team* 1 {:profile-id (:id profile)})
-        v3-id   "6fa459ea-ee8a-3ca4-894e-db77e160355e"
-        v4-id   "550e8400-e29b-41d4-a716-446655440000"]
-
-    ;; reserved version (v3) must be rejected at the RPC boundary
-    (let [data {::th/type :create-project
-                ::rpc/profile-id (:id profile)
-                :team-id (:id team)
-                :id v3-id
-                :name "project with v3 id"}
-          out  (th/command! data)]
-      (t/is (not (th/success? out)))
-      (t/is (th/ex-of-type? (:error out) :validation))
-      (t/is (th/ex-of-code? (:error out) :params-validation)))
-
-    ;; v4 id is accepted
-    (let [data {::th/type :create-project
-                ::rpc/profile-id (:id profile)
-                :team-id (:id team)
-                :id v4-id
-                :name "project with v4 id"}
-          out  (th/command! data)]
-      (t/is (th/success? out))
-      (t/is (= v4-id (str (:id (:result out))))))))
 
 (t/deftest permissions-checks-rename-project
   (let [profile1 (th/create-profile* 1)
@@ -289,3 +261,16 @@
         err   (:error out)]
     (t/is (th/ex-info? err))
     (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest create-project-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-project
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:id team)
+                              :name "project with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

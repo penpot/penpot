@@ -16,6 +16,7 @@
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
    [frontend-tests.data.store-test]
+   [frontend-tests.data.svg-upload-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
    [frontend-tests.data.workspace-colors-test]
@@ -134,6 +135,7 @@
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
+   'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
