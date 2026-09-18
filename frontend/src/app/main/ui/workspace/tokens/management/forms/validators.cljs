@@ -46,7 +46,8 @@
           (fn [resolved-tokens]
             (let [resolved-token (cond-> (get resolved-tokens (:name token))
                                    (contains? cf/flags :tokenscript)
-                                   (update :resolved-value ts/tokenscript-symbols->penpot-unit))]
+                                   (update :resolved-value
+                                           (partial ts/resolved-value->penpot-unit (:type token))))]
               (cond
                 (:resolved-value resolved-token)
                 (rx/of resolved-token)

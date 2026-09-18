@@ -410,6 +410,27 @@
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
 
+(t/deftest font-family-token-resolved-value-keeps-multi-word-families
+  ;; An unquoted family whose name has several words resolves to a list of word
+  ;; symbols, so the family name is the string form of each entry.
+  (let [token (ctob/make-token
+               {:name "font.body"
+                :type :font-family
+                :value ["Hanken Grotesk" "IBM Plex Mono"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (array? result))
+    (t/is (= ["Hanken Grotesk" "IBM Plex Mono"] (vec result)))))
+
+(t/deftest typography-token-resolved-value-keeps-multi-word-families
+  (let [token (ctob/make-token
+               {:name "type.body"
+                :type :typography
+                :value {:font-family ["Hanken Grotesk" "Arial"]
+                        :font-size "16px"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (= ["Hanken Grotesk" "Arial"] (vec (aget entry "fontFamilies"))))))
+
 (t/deftest token-theme-add-set-accepts-token-set-id
   (let [plugin-id "plugin-id"
         file-id   (uuid/next)

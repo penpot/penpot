@@ -78,6 +78,17 @@
 
 (declare tokenscript-symbols->penpot-unit)
 
+(defn font-family-symbols->penpot-unit
+  "Converts a resolved font-family value into a vector of family names.
+  A family whose name has several words (`Hanken Grotesk`) is a list of word
+  symbols, so each family name is the string form of the whole entry."
+  [^js v]
+  (when (some? v)
+    (let [entries (.-value v)]
+      (if (instance? js/Array entries)
+        (mapv str entries)
+        [(str v)]))))
+
 (defn structured-token->penpot-map
   "Converts structured token (record or array) to penpot map format.
   Structured tokens are non-primitive token types like `typography` or `box-shadow`."
@@ -85,9 +96,13 @@
   (if (instance? js/Array (.-value token-symbol))
     (mapv tokenscript-symbols->penpot-unit (.-value token-symbol))
     (let [entries (es6-iterator-seq (.entries (.-value token-symbol)))]
-      (into {} (map (fn [[k v :as V]]
-                      [(keyword k) (tokenscript-symbols->penpot-unit v)])
-                    entries)))))
+      (into {} (map (fn [[k v]]
+                      (let [k (keyword k)]
+                        ;; The font-family member of a composite is a family list
+                        [k (if (= :font-family k)
+                             (font-family-symbols->penpot-unit v)
+                             (tokenscript-symbols->penpot-unit v))])))
+            entries))))
 
 (defn tokenscript-symbols->penpot-unit [^js v]
   (cond
@@ -98,6 +113,15 @@
     (rem-number-with-unit? v) (rem->px v)
     (percent-number-with-unit? v) (/ (.-value v) 100)
     :else (.-value v)))
+
+(defn resolved-value->penpot-unit
+  "Converts the resolved value of a token of the given `type`.
+  Font families need the type: a list of symbols is a list of families at the
+  top level and the words of a single family name inside an entry."
+  [type ^js v]
+  (if (= :font-family type)
+    (font-family-symbols->penpot-unit v)
+    (tokenscript-symbols->penpot-unit v)))
 
 ;; Processors ------------------------------------------------------------------
 ;; The processor resolves tokens
