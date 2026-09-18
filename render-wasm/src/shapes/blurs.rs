@@ -12,6 +12,19 @@ pub fn radius_to_sigma(radius: f32) -> f32 {
     }
 }
 
+/// Inverse of [`radius_to_sigma`].
+///
+/// Sigmas below the constant term have no radius that produces them, so they
+/// collapse to zero — a sub-pixel blur, which Skia would round away anyway.
+#[inline]
+pub fn sigma_to_radius(sigma: f32) -> f32 {
+    if sigma > 0.5 {
+        (sigma - 0.5) / BLUR_SIGMA_SCALE
+    } else {
+        0.0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlurType {
     LayerBlur,
@@ -43,5 +56,24 @@ impl Blur {
     #[inline]
     pub fn sigma(&self) -> f32 {
         radius_to_sigma(self.value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sigma_to_radius_round_trips() {
+        for radius in [0.0_f32, 1.0, 4.0, 20.0, 200.0] {
+            let sigma = radius_to_sigma(radius);
+            assert!((sigma_to_radius(sigma) - radius).abs() < 0.001);
+        }
+    }
+
+    #[test]
+    fn sub_pixel_sigma_has_no_radius() {
+        assert_eq!(sigma_to_radius(0.0), 0.0);
+        assert_eq!(sigma_to_radius(0.5), 0.0);
     }
 }

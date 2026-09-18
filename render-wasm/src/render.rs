@@ -81,6 +81,16 @@ pub struct NodeRenderState {
     flattened: bool,
 }
 
+/// The parts of a drop-shadow silhouette walk that stay the same at every
+/// level. Only the clip stack changes as the walk descends.
+#[derive(Clone, Copy)]
+struct SilhouettePass<'a> {
+    tree: ShapesPoolRef<'a>,
+    scale: f32,
+    extra_layer_blur: Option<Blur>,
+    target_surface: SurfaceId,
+}
+
 /// Get simplified children of a container, flattening nested flattened containers
 fn get_simplified_children<'a>(tree: ShapesPoolRef<'a>, shape: &'a Shape) -> Vec<Uuid> {
     let mut result = Vec::new();
@@ -137,8 +147,25 @@ impl NodeRenderState {
         offset: Option<(f32, f32)>,
         clip_inset: Option<f32>,
     ) -> Option<ClipStack> {
-        if self.id.is_nil() || !element.clip() {
+        if self.id.is_nil() {
             return self.clip_bounds.clone();
+        }
+
+        Self::append_child_clip(element, self.clip_bounds.clone(), offset, clip_inset)
+    }
+
+    /// Appends `element`'s own clip to `clip_bounds`, for walks that carry a
+    /// bare [`ClipStack`] instead of a [`NodeRenderState`] (the drop-shadow
+    /// silhouette recursion). Returns the stack untouched when `element` does
+    /// not clip its content.
+    fn append_child_clip(
+        element: &Shape,
+        clip_bounds: Option<ClipStack>,
+        offset: Option<(f32, f32)>,
+        clip_inset: Option<f32>,
+    ) -> Option<ClipStack> {
+        if !element.clip() {
+            return clip_bounds;
         }
 
         let mut bounds = element.selrect();
@@ -163,7 +190,7 @@ impl NodeRenderState {
             bounds.inset((clip_inset, clip_inset));
         }
 
-        Self::append_clip(self.clip_bounds.clone(), (bounds, corners, transform))
+        Self::append_clip(clip_bounds, (bounds, corners, transform))
     }
 
     /// Calculates the clip bounds for shadow rendering of a given shape.
@@ -2819,6 +2846,13 @@ impl RenderState {
         crate::get_gpu_state().context.flush(None);
     }
 
+    /// Gating for the masked-group layer filter: its shadows follow the
+    /// container drop-shadow rules, its blur follows fast mode.
+    #[inline]
+    pub(crate) fn masked_group_layer_skips(&self) -> (bool, bool) {
+        (self.should_skip_drop_shadows(), self.options.is_fast_mode())
+    }
+
     /// Skip all drop/inner shadows in fast mode, or when even a large design-space
     /// shadow would be subpixel. Otherwise filter per shadow via
     /// [`Shadow::is_perceptible_at_scale_for`] (stricter for recursive shapes).
@@ -2885,18 +2919,30 @@ impl RenderState {
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
             let fills = &element.fills;
-            let shadows = &element.shadows;
             self.nested_fills.push(fills.to_vec());
-            self.nested_shadows.push(shadows.to_vec());
+
+            // A masked group's own shadows are applied to the masked result by
+            // the layer filter below, so descendants must not inherit them.
+            if group.masked {
+                self.nested_shadows.push(Vec::new());
+            } else {
+                self.nested_shadows.push(element.shadows.to_vec());
+            }
 
             if group.masked {
-                // A masked group's blur is applied as a single layer blur over
-                // the whole masked result.
-                let mask_group_blur = element.masked_group_layer_blur().is_some();
-                if mask_group_blur {
-                    self.surfaces.canvas(target_surface).save();
+                // A masked group's blur and shadows are applied as a single
+                // image filter over the whole masked result.
+                let scale = self.get_scale();
+                let (skip_shadows, skip_blur) = self.masked_group_layer_skips();
+                let filter = element.masked_group_layer_filter(scale, skip_shadows, skip_blur);
+
+                // Unconditional: `render_shape_exit` runs on a later walker pass
+                // and restores this from the shape type alone. Gating it on the
+                // filter would let fast mode or zoom change in between and leave
+                // the save stack (and its clip) unbalanced.
+                self.surfaces.canvas(target_surface).save();
+                if filter.is_some() {
                     if let Some(clips) = clip_bounds {
-                        let scale = self.get_scale();
                         let antialias = !self.options.is_fast_mode()
                             && element
                                 .should_use_antialias(scale, self.options.antialias_threshold);
@@ -2905,16 +2951,8 @@ impl RenderState {
                 }
 
                 let mut paint = skia::Paint::default();
-                if !self.options.is_fast_mode() {
-                    if let Some(blur) = element.masked_group_layer_blur() {
-                        let scale = self.get_scale();
-                        let sigma = radius_to_sigma(blur.value * scale);
-                        if let Some(filter) =
-                            skia::image_filters::blur((sigma, sigma), None, None, None)
-                        {
-                            paint.set_image_filter(filter);
-                        }
-                    }
+                if let Some(filter) = filter {
+                    paint.set_image_filter(filter);
                 }
 
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -3072,7 +3110,10 @@ impl RenderState {
             self.surfaces.canvas(target_surface).restore();
         }
 
-        if visited_mask && element.masked_group_layer_blur().is_some() {
+        // Pairs with the unconditional `save()` `render_shape_enter` does for a
+        // masked group. Keyed on the shape alone so it cannot disagree with the
+        // enter side, which runs on an earlier walker pass.
+        if visited_mask && element.is_masked_group() {
             self.surfaces.canvas(target_surface).restore();
         }
 
@@ -3176,6 +3217,7 @@ impl RenderState {
             if !matches!(shadow_shape.shape_type, Type::Text(_)) {
                 self.render_drop_black_shadow(
                     shadow_shape,
+                    tree,
                     &shadow_shape.extrect(tree, scale),
                     shadow,
                     nested_clip_bounds,
@@ -3222,6 +3264,166 @@ impl RenderState {
         Ok(())
     }
 
+    /// Renders the masked silhouette of a masked group into the current
+    /// drop-shadow layer.
+    ///
+    /// The mask is applied to the flat silhouettes *before* the offset, blur and
+    /// spread: blurring each child first and then cutting the result against an
+    /// unshifted mask would trim the shadow along the wrong edge.
+    fn render_masked_group_black_shadow(
+        &mut self,
+        shape: &Shape,
+        shape_bounds: &Rect,
+        shadow: &Shadow,
+        clip_bounds: Option<ClipStack>,
+        pass: SilhouettePass,
+    ) -> Result<()> {
+        let mut black_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
+        black_shadow.to_mut().color = skia::Color::BLACK;
+        let Some(drop_filter) = black_shadow.get_drop_shadow_filter() else {
+            return Ok(());
+        };
+
+        // Early cull, mirroring `render_drop_black_shadow`.
+        let bounds = drop_filter.compute_fast_bounds(*shape_bounds);
+        if !bounds.intersects(self.render_area_with_margins)
+            && pass.target_surface != SurfaceId::Export
+        {
+            return Ok(());
+        }
+
+        // Size the layer to the silhouette plus everything the shadow reaches.
+        // Left unbounded, Skia falls back to the clip — the tile-sized
+        // `DropShadows` surface — and a wide blur gets cut at the tile edge.
+        // The union keeps the source geometry inside the layer as well.
+        let mut layer_bounds = bounds;
+        layer_bounds.join(*shape_bounds);
+
+        let mut shadow_paint = skia::Paint::default();
+        shadow_paint.set_image_filter(drop_filter);
+        let shadow_rec = skia::canvas::SaveLayerRec::default()
+            .bounds(&layer_bounds)
+            .paint(&shadow_paint);
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .save_layer(&shadow_rec);
+
+        self.render_masked_group_silhouette(shape, clip_bounds, pass)?;
+
+        self.surfaces.canvas(SurfaceId::DropShadows).restore();
+
+        Ok(())
+    }
+
+    /// Draws the mask-trimmed silhouette of a masked group, flat black, on the
+    /// drop-shadow surface.
+    ///
+    /// The mask is composited here rather than by the caller so the offset,
+    /// blur and spread always land on the trimmed result: blurring the content
+    /// first and then cutting it against an unshifted mask would trim the
+    /// shadow along the wrong edge.
+    fn render_masked_group_silhouette(
+        &mut self,
+        shape: &Shape,
+        clip_bounds: Option<ClipStack>,
+        pass: SilhouettePass,
+    ) -> Result<()> {
+        let Some(mask_shape) = shape.mask_id().and_then(|id| pass.tree.get(id)) else {
+            return Ok(());
+        };
+
+        // `children_ids_iter` already excludes the mask for a masked group.
+        let content_ids: Vec<Uuid> = shape.children_ids_iter(false).copied().collect();
+        if content_ids.is_empty() || mask_shape.hidden {
+            return Ok(());
+        }
+
+        // The masked group's children are clipped by the group itself before
+        // anything below it applies.
+        let children_clip_bounds =
+            NodeRenderState::append_child_clip(shape, clip_bounds, None, None);
+
+        for content_id in content_ids {
+            let Some(content) = pass.tree.get(&content_id) else {
+                continue;
+            };
+            if content.hidden {
+                continue;
+            }
+            self.render_black_silhouette_subtree(content, children_clip_bounds.clone(), pass)?;
+        }
+
+        let mut mask_paint = skia::Paint::default();
+        mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+        let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .save_layer(&mask_rec);
+
+        self.render_black_silhouette_subtree(mask_shape, children_clip_bounds, pass)?;
+
+        self.surfaces.canvas(SurfaceId::DropShadows).restore();
+
+        Ok(())
+    }
+
+    /// Draws `shape` and its descendants as a flat black silhouette on the
+    /// drop-shadow surface: a shadow with no offset, blur or spread turns
+    /// [`Self::render_drop_black_shadow`] into a plain silhouette pass.
+    fn render_black_silhouette_subtree(
+        &mut self,
+        shape: &Shape,
+        clip_bounds: Option<ClipStack>,
+        pass: SilhouettePass,
+    ) -> Result<()> {
+        // Already the trimmed silhouette of its own subtree, and the caller's
+        // layer carries the shadow — no second filter layer for a nested one.
+        if shape.is_masked_group() {
+            return self.render_masked_group_silhouette(shape, clip_bounds, pass);
+        }
+
+        let flat = Shadow::new(
+            skia::Color::BLACK,
+            0.0,
+            0.0,
+            (0.0, 0.0),
+            crate::shapes::ShadowStyle::Drop,
+            false,
+        );
+
+        self.render_drop_black_shadow(
+            shape,
+            pass.tree,
+            &shape.extrect(pass.tree, pass.scale),
+            &flat,
+            clip_bounds.clone(),
+            pass.scale,
+            pass.extra_layer_blur,
+            pass.target_surface,
+        )?;
+
+        if !shape.is_recursive() {
+            return Ok(());
+        }
+
+        // Descendants of a clipping container are invisible outside it, so they
+        // must not widen the silhouette either.
+        let children_clip_bounds =
+            NodeRenderState::append_child_clip(shape, clip_bounds, None, None);
+
+        for child_id in get_simplified_children(pass.tree, shape) {
+            let Some(child) = pass.tree.get(&child_id) else {
+                continue;
+            };
+            if child.hidden {
+                continue;
+            }
+            self.render_black_silhouette_subtree(child, children_clip_bounds.clone(), pass)?;
+        }
+
+        Ok(())
+    }
+
     /// Renders a drop shadow effect for the given shape.
     ///
     /// Creates a black shadow by converting the original shadow color to black,
@@ -3230,6 +3432,7 @@ impl RenderState {
     fn render_drop_black_shadow(
         &mut self,
         shape: &Shape,
+        tree: ShapesPoolRef,
         shape_bounds: &Rect,
         shadow: &Shadow,
         clip_bounds: Option<ClipStack>,
@@ -3237,6 +3440,24 @@ impl RenderState {
         extra_layer_blur: Option<Blur>,
         target_surface: SurfaceId,
     ) -> Result<()> {
+        // A group has no geometry of its own, so a masked group would
+        // contribute nothing here. Draw its masked silhouette instead.
+        if shape.is_masked_group() {
+            let pass = SilhouettePass {
+                tree,
+                scale,
+                extra_layer_blur,
+                target_surface,
+            };
+            return self.render_masked_group_black_shadow(
+                shape,
+                shape_bounds,
+                shadow,
+                clip_bounds,
+                pass,
+            );
+        }
+
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
         transformed_shadow.to_mut().offset = (0.0, 0.0);
         transformed_shadow.to_mut().color = skia::Color::BLACK;
@@ -3479,6 +3700,13 @@ impl RenderState {
             return Ok(false);
         }
 
+        // A masked group's own shadows ride on its layer filter (see
+        // `Shape::masked_group_layer_filter`). Compositing them here would
+        // paint them inside the layer that the mask pass then erases.
+        if element.is_masked_group() {
+            return Ok(false);
+        }
+
         let element_extrect = extrect.get_or_insert_with(|| element.extrect(tree, scale));
         let inherited_layer_blur = match element.shape_type {
             Type::Frame(_) | Type::Group(_) => element.blur,
@@ -3511,6 +3739,7 @@ impl RenderState {
             } else {
                 self.render_drop_black_shadow(
                     element,
+                    tree,
                     element_extrect,
                     shadow,
                     clip_bounds.clone(),
@@ -4601,5 +4830,108 @@ impl RenderState {
 
     pub fn free_gpu_resources(&mut self) {
         get_gpu_state().context.free_gpu_resources();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{Frame, Group, Rect as RectType};
+
+    fn frame(clip: bool) -> Shape {
+        let mut shape = Shape::new(Uuid::new_v4());
+        shape.set_shape_type(Type::Frame(Frame::default()));
+        shape.set_selrect(10.0, 20.0, 110.0, 120.0);
+        shape.clip_content = clip;
+        shape
+    }
+
+    #[test]
+    fn append_child_clip_leaves_the_stack_alone_for_a_non_clipping_shape() {
+        let shape = frame(false);
+        assert!(NodeRenderState::append_child_clip(&shape, None, None, None).is_none());
+
+        let existing: ClipStack = vec![(
+            Rect::from_ltrb(0.0, 0.0, 10.0, 10.0),
+            None,
+            Matrix::new_identity(),
+        )];
+        let stack = NodeRenderState::append_child_clip(&shape, Some(existing), None, None)
+            .expect("the incoming stack is returned as-is");
+        assert_eq!(stack.len(), 1);
+    }
+
+    #[test]
+    fn append_child_clip_adds_the_selrect_of_a_clipping_shape() {
+        let shape = frame(true);
+        let stack = NodeRenderState::append_child_clip(&shape, None, None, None)
+            .expect("a clipping shape starts a stack");
+
+        assert_eq!(stack.len(), 1);
+        assert_eq!(stack[0].0, shape.selrect());
+    }
+
+    #[test]
+    fn append_child_clip_stacks_nested_clips() {
+        let outer = frame(true);
+        let mut inner = frame(true);
+        inner.set_selrect(30.0, 40.0, 60.0, 70.0);
+
+        let stack = NodeRenderState::append_child_clip(&outer, None, None, None);
+        let stack = NodeRenderState::append_child_clip(&inner, stack, None, None)
+            .expect("both clips are kept");
+
+        assert_eq!(stack.len(), 2);
+        assert_eq!(stack[0].0, outer.selrect());
+        assert_eq!(stack[1].0, inner.selrect());
+    }
+
+    /// The silhouette recursion and the main walker must narrow the clip by the
+    /// same rule, or a drop shadow stops matching the shape that casts it.
+    #[test]
+    fn append_child_clip_agrees_with_get_children_clip_bounds() {
+        let mut masked = Shape::new(Uuid::new_v4());
+        masked.set_shape_type(Type::Group(Group { masked: true }));
+        masked.set_selrect(0.0, 0.0, 50.0, 50.0);
+
+        for shape in [frame(true), frame(false), masked] {
+            for clip_inset in [None, Some(2.0)] {
+                let node = NodeRenderState {
+                    id: Uuid::new_v4(),
+                    visited_children: false,
+                    clip_bounds: None,
+                    visited_mask: false,
+                    mask: false,
+                    flattened: false,
+                };
+
+                let walker = node.get_children_clip_bounds(&shape, None, clip_inset);
+                let silhouette = NodeRenderState::append_child_clip(&shape, None, None, clip_inset);
+
+                assert_eq!(
+                    walker.as_ref().map(|s| s.len()),
+                    silhouette.as_ref().map(|s| s.len())
+                );
+                assert_eq!(
+                    walker.map(|s| s[0].0),
+                    silhouette.map(|s| s[0].0),
+                    "clip rect disagreement for {:?} inset {clip_inset:?}",
+                    shape.shape_type
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn append_child_clip_applies_the_inset() {
+        let mut shape = Shape::new(Uuid::new_v4());
+        shape.set_shape_type(Type::Rect(RectType::default()));
+        shape.set_selrect(0.0, 0.0, 100.0, 100.0);
+        shape.clip_content = true;
+
+        let stack = NodeRenderState::append_child_clip(&shape, None, None, Some(2.0))
+            .expect("a clipping shape starts a stack");
+
+        assert_eq!(stack[0].0, Rect::from_ltrb(2.0, 2.0, 98.0, 98.0));
     }
 }
