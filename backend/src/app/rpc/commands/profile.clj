@@ -69,7 +69,6 @@
    [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
-   [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
    [:notifications {:optional true} schema:props-notifications]
@@ -139,7 +138,7 @@
 
     (catch Throwable cause
       (if (= :not-found (-> cause ex-data :type))
-        {:id uuid/zero :fullname "Anonymous User"}
+        (with-nitrate-licence {:id uuid/zero :fullname "Anonymous User"} cfg)
         (throw cause)))))
 
 (defn get-profile

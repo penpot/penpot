@@ -52,6 +52,32 @@ fn draw_surface_src_rect_to_dst(
     to_canvas.restore();
 }
 
+/// Copy a rendered tile into an atlas slot. Packed slots keep a 1px border so
+/// Linear filtering on compose does not sample the neighboring cell.
+fn blit_drawable_into_tile_atlas_slot(
+    current: &mut skia::Surface,
+    atlas_canvas: &skia::Canvas,
+    src: skia::Rect,
+    slot: skia::Rect,
+    slot_size: i32,
+) {
+    let nearest = skia::SamplingOptions::new(skia::FilterMode::Nearest, skia::MipmapMode::None);
+    let content = tiles::tile_atlas_content_rect(slot, slot_size);
+    if content == slot {
+        draw_surface_src_rect_to_dst(current, atlas_canvas, src, slot, nearest);
+        return;
+    }
+
+    let linear = skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None);
+    draw_surface_src_rect_to_dst(current, atlas_canvas, src, content, linear);
+
+    atlas_canvas.save();
+    atlas_canvas.clip_rect(slot, None, false);
+    atlas_canvas.clip_rect(content, Some(skia::ClipOp::Difference), false);
+    draw_surface_src_rect_to_dst(current, atlas_canvas, src, slot, nearest);
+    atlas_canvas.restore();
+}
+
 pub fn get_cache_size(viewbox: &Viewbox, interest: i32) -> skia::ISize {
     // First we retrieve the extended area of the viewport that we could render.
     let TileRect(isx, isy, iex, iey) =
@@ -1287,9 +1313,14 @@ impl Surfaces {
             .tiles
             .add(tile_viewbox, tile, scale, view_doc, &mut tile_doc_rects);
         self.atlas.tile_doc_rects = tile_doc_rects;
-        let dst = tile_ref.rect;
         let mut current = self.current.clone();
-        draw_surface_src_rect_to_dst(&mut current, self.tile_atlas.canvas(), src, dst, sampling);
+        blit_drawable_into_tile_atlas_slot(
+            &mut current,
+            self.tile_atlas.canvas(),
+            src,
+            tile_ref.rect,
+            self.tiles.slot_size(),
+        );
 
         if !skip_cache_surface {
             // Optional legacy Cache surface fill (debug). Pan/zoom preview
@@ -1709,20 +1740,6 @@ impl TileTextureCache {
         tiles::tile_atlas_compose_scale(self.slot_size)
     }
 
-    fn compose_src_rect(&self, rect: Rect) -> Rect {
-        if self.slot_size < TILE_SIZE {
-            let inset = tiles::TILE_ATLAS_SAMPLE_INSET;
-            Rect::new(
-                rect.left + inset,
-                rect.top + inset,
-                rect.right - inset,
-                rect.bottom - inset,
-            )
-        } else {
-            rect
-        }
-    }
-
     pub fn repack(&mut self, texture_width: i32, texture_height: i32, slot_size: i32) {
         let capacity = ((texture_width / slot_size) * (texture_height / slot_size)) as usize;
         self.slot_size = slot_size;
@@ -1844,7 +1861,7 @@ impl TileTextureCache {
                     ),
                 );
 
-                let src = self.compose_src_rect(tile_ref.rect);
+                let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 self.textures[index].set_ltrb(src.left, src.top, src.right, src.bottom);
 
                 index += 1;
@@ -1884,7 +1901,7 @@ impl TileTextureCache {
                     continue;
                 }
 
-                let src = self.compose_src_rect(tile_ref.rect);
+                let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 let scos = doc_rect.width() * s / src.width();
                 let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
                 let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
@@ -1914,7 +1931,7 @@ impl TileTextureCache {
                 continue;
             }
 
-            let src = self.compose_src_rect(tile_ref.rect);
+            let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
             let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
             let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
             let scos = doc_rect.width() * s / src.width();

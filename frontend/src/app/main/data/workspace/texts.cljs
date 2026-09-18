@@ -24,6 +24,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
@@ -43,6 +44,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
    [app.render-wasm.text-editor :as wasm.text-editor]
+   [app.util.clipboard :as clipboard]
    [app.util.text-editor :as ted]
    [app.util.text.content :as tc]
    [app.util.text.content.styles :as styles]
@@ -1478,6 +1480,111 @@
                                          (cond-> (or (some? width) (some? height))
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
+
+(defn v3-sync-editor-content
+  "Event pushing the WASM editor content back into the shape, or nil when there is
+   nothing to sync. Every text edit commits through it, menu or keystroke alike."
+  [& {:keys [finalize?]}]
+  (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
+    (let [text (txt/content->text content)
+          name (when (not= text "")
+                 (txt/generate-shape-name text))]
+      (v2-update-text-shape-content shape-id content
+                                    :update-name? true
+                                    :name name
+                                    :finalize? finalize?))))
+
+(defn- sync-editor-content-stream
+  "Stream of the sync event for `reason`, after asking WASM to repaint."
+  [reason]
+  (let [event (v3-sync-editor-content)]
+    (wasm.api/request-render-preserving-target reason)
+    (if (some? event)
+      (rx/of event)
+      (rx/empty))))
+
+(defn- editor-selected-text
+  "Plain text of the current WASM editor selection, or nil when there is none."
+  []
+  (when (and (wasm.text-editor/text-editor-has-focus?)
+             (wasm.text-editor/text-editor-has-selection?))
+    (let [text (wasm.text-editor/text-editor-export-selection)]
+      (when (seq text) text))))
+
+(defn- write-selection-to-clipboard
+  "Write `text` as plain text and HTML; Windows apps often prefer CF_HTML."
+  [text]
+  (clipboard/to-clipboard-multi {"text/plain" text
+                                 "text/html"  (clipboard/plain-text->html text)}))
+
+(defn- on-clipboard-error
+  [cause]
+  (if-let [message (clipboard/error-message cause)]
+    (rx/of (ntf/show {:content message
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+    (do
+      (js/console.error "Clipboard error:" cause)
+      (rx/empty))))
+
+(defn v3-copy-selection
+  "Copy the text editor selection to the system clipboard."
+  []
+  (ptk/reify ::v3-copy-selection
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [text (editor-selected-text)]
+        (->> (rx/from (write-selection-to-clipboard text))
+             (rx/ignore)
+             (rx/catch on-clipboard-error))
+        (rx/empty)))))
+
+(defn v3-cut-selection
+  "Copy the text editor selection to the system clipboard and remove it."
+  []
+  (ptk/reify ::v3-cut-selection
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [text (editor-selected-text)]
+        (->> (rx/from (write-selection-to-clipboard text))
+             (rx/mapcat (fn [_]
+                          ;; Delete only once the text is safely on the clipboard,
+                          ;; so a refused clipboard cannot lose the selection.
+                          (wasm.text-editor/text-editor-delete-backward)
+                          (sync-editor-content-stream "text-cut")))
+             (rx/catch on-clipboard-error))
+        (rx/empty)))))
+
+(defn v3-paste-text
+  "Insert the system clipboard text at the caret, replacing the selection."
+  []
+  (ptk/reify ::v3-paste-text
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-not (wasm.text-editor/text-editor-has-focus?)
+        (rx/empty)
+        (->> (rx/from (clipboard/read-text))
+             (rx/mapcat (fn [text]
+                          (if (seq text)
+                            (do
+                              ;; Pasted text keeps the surrounding style.
+                              (wasm.text-editor/clear-pending-caret-styles!)
+                              (wasm.text-editor/text-editor-insert-text text)
+                              (sync-editor-content-stream "text-paste"))
+                            (rx/empty))))
+             (rx/catch on-clipboard-error))))))
+
+(defn v3-select-all
+  "Select every character of the text being edited."
+  []
+  (ptk/reify ::v3-select-all
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when (wasm.text-editor/text-editor-has-focus?)
+        (wasm.text-editor/clear-pending-caret-styles!)
+        (wasm.text-editor/text-editor-select-all)
+        (wasm.api/render-text-editor-overlay!)))))
 
 (defn replace-layer-names-in-shapes
   [ids search replacement]

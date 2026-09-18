@@ -16,6 +16,51 @@
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
 
+(def ^:private sql:get-upload-sessions
+  "SELECT us.id
+     FROM upload_session AS us
+    WHERE (us.deleted_at IS NOT NULL
+           AND us.deleted_at <= ?)
+       OR (us.deleted_at IS NULL
+           AND us.created_at <= ?)
+       OR EXISTS (SELECT 1
+                    FROM profile AS p
+                   WHERE p.id = us.profile_id
+                     AND p.deleted_at IS NOT NULL
+                     AND p.deleted_at <= ?)
+    ORDER BY us.created_at ASC
+    LIMIT ?
+      FOR UPDATE OF us
+     SKIP LOCKED")
+
+(def ^:private sql:delete-session-chunks
+  "DELETE FROM upload_session_chunk
+    WHERE session_id = ?
+    RETURNING object_id")
+
+(defn- delete-upload-sessions!
+  "Purges consumed upload sessions (marked by assemble-chunks), stalled
+  sessions (never assembled within max-age) and sessions owned by profiles
+  pending purge. Referenced storage objects are touched so the storage GC
+  reclaims them with its usual delay; chunk mappings are removed before the
+  session row (NO ACTION foreign keys)."
+  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
+  (let [stalled-threshold (ct/minus timestamp {:hours 1})]
+    (->> (db/plan conn [sql:get-upload-sessions timestamp stalled-threshold timestamp chunk-size]
+                  {:fetch-size 5})
+         (reduce (fn [total {:keys [id]}]
+                   (l/trc :obj "upload-session" :id (str id))
+
+                   ;; Remove the chunk mappings, marking as touched all
+                   ;; related storage objects in a single round-trip.
+                   (doseq [{:keys [object-id]} (db/exec! conn [sql:delete-session-chunks id])]
+                     (some->> object-id (sto/touch-object! storage)))
+
+                   (let [affected (-> (db/delete! conn :upload-session {:id id})
+                                      (db/get-update-count))]
+                     (+ total affected)))
+                 0))))
+
 (def ^:private sql:get-profiles
   "SELECT id, photo_id FROM profile
     WHERE deleted_at IS NOT NULL
@@ -292,7 +337,11 @@
                0)))
 
 (def ^:private deletion-proc-vars
-  [#'delete-profiles!
+  ;; NOTE: upload sessions go first: deleting a profile cascades to its
+  ;; sessions, which would hit the upload_session_chunk NO ACTION foreign key
+  ;; while mappings still exist.
+  [#'delete-upload-sessions!
+   #'delete-profiles!
    #'delete-file-media-objects!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!

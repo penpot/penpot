@@ -564,13 +564,17 @@
                   (merge-dragged-on-drop))))))))
 
 (defn bend-segment-modifier
-  "Bends segment `index` so its point at `t` reaches `target`."
-  [index base-curve t target]
+  "Bends segment `index` so its point at `t` reaches `target`.
+
+  `base-deltas` offsets the stored handlers onto `base-curve`."
+  [index base-curve base-deltas t target]
   (ptk/reify ::bend-segment-modifier
     ptk/UpdateEvent
     (update [_ state]
       (let [id        (st/get-path-id state)
-            deltas    (path.helpers/bend-curve-deltas base-curve t target)
+            deltas    (merge-with +
+                                  base-deltas
+                                  (path.helpers/bend-curve-deltas base-curve t target))
             modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers] {})]
         (assoc-in state [:workspace-local :edit-path id :content-modifiers]
                   (assoc modifiers index deltas))))))
@@ -580,17 +584,20 @@
   (ptk/reify ::bend-selected-segment
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper    (mse/drag-stopper stream)
-            content    (st/get-path state :content)
-            entry      (segment-entry content index)
-            base-curve (path.helpers/entry->bezier entry)
+      (let [stopper     (mse/drag-stopper stream)
+            content     (st/get-path state :content)
+            entry       (segment-entry content index)
+            curve       (path.helpers/entry->bezier entry)
+            ;; A straight segment bends from handlers spread along its chord.
+            base-curve  (path.helpers/bend-reference-curve curve)
+            base-deltas (path.helpers/curve-handler-deltas curve base-curve)
             ;; Keep the grabbed curve parameter fixed during the drag.
-            t          (path.helpers/curve-closest-t base-curve start-position 0.001)]
+            t           (path.helpers/curve-closest-t base-curve start-position 0.001)]
         (rx/concat
          (->> ms/mouse-position
               (rx/filter gpt/point?)
               (rx/map streams/to-pixel-snap)
-              (rx/map #(bend-segment-modifier index base-curve t %))
+              (rx/map #(bend-segment-modifier index base-curve base-deltas t %))
               (rx/take-until stopper))
          (rx/of (apply-content-modifiers)))))))
 

@@ -13,6 +13,7 @@ Frontend: CLJS SPA; React/Rumext; Potok; RxJS; okulary refs; SCSS modules; share
 - `app.util.*`: DOM, HTTP, i18n, keyboard, codegen, and general frontend utilities.
 - `frontend/packages/*` and `frontend/text-editor`: JS/TS workspace packages consumed by the app.
 - Nitrate subscription/organization UI and flows live under `app.main.data.nitrate` and `app.main.ui.nitrate*`; backend/API behavior is covered by backend memories, and shared permission rules are in `common/src/app/common/types/nitrate_permissions.cljc`.
+- `app.config` external bridges (`external-feature-flag`, `external-session-id`, `external-context-info`, `external-notify-register-success`, `initialize-external-context-info`) delegate to `globalThis` hooks injected by the SaaS host. Never delete `external-feature-flag`, even with zero call sites: it is the seam for future A/B tests.
 
 
 ## Lint and Format

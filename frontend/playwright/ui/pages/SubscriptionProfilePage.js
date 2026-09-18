@@ -22,7 +22,7 @@ export class SubscriptionProfilePage extends DashboardPage {
   }
 
   async goToSubscriptions() {
-    await this.page.goto(`#/settings/subscriptions`);
+    await this.page.goto(`/?screen=settings-subscription`);
     await expect(this.mainHeading).toBeVisible();
   }
 }

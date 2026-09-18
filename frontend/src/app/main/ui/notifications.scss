@@ -1,0 +1,24 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+// Stacks the message and its links as a single item of the notification
+// pill's flex row.
+.toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.toast-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-s);
+}
+
+.toast-links .toast-link {
+  color: currentcolor;
+  text-decoration: underline;
+}

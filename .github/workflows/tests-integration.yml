@@ -178,7 +178,7 @@ jobs:
           retention-days: 3
 
   merge-reports:
-    if: ${{ always() && !github.event.pull_request.draft && needs.test-integration.result != 'skipped' }}
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.test-integration.result != 'skipped' }}
     name: "Merge Integration Reports"
     runs-on: penpot-extended-runner
     timeout-minutes: 15
@@ -221,16 +221,18 @@ jobs:
 
       - name: Test summary
         if: always()
+        continue-on-error: true
         working-directory: ./frontend
         run: |
           if [ ! -f report.json ]; then
             echo "No report produced (all shards failed early)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          jq -r -f ../.github/scripts/playwright-summary.jq report.json >> "$GITHUB_STEP_SUMMARY"
+          jq -r -f ../.github/scripts/playwright-summary.jq report.json \
+            >> "$GITHUB_STEP_SUMMARY" \
+            || echo "Summary generation failed; see the HTML report artifact." \
+               >> "$GITHUB_STEP_SUMMARY"
 
-      # Kept for 30 days so flakiness rates can be aggregated across runs
-      # without scraping job logs.
       - name: Upload JSON report
         uses: actions/upload-artifact@v7
         if: always()
@@ -239,7 +241,7 @@ jobs:
           path: frontend/report.json
           overwrite: true
           if-no-files-found: ignore
-          retention-days: 30
+          retention-days: 7
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v7

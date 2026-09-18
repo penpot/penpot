@@ -13,13 +13,22 @@
     - on-error re-entrancy guard  – prevents recursive invocations
     - flash schedules async emit  – ntf/show is not emitted synchronously
     - organization SSO recovery   – expired SSO sessions go back to the provider
-    - invalid-sso-config handler  – requires :organization-id to promote to :sso-error"
+    - invalid-sso-config handler  – requires :organization-id to promote to :sso-error
+    - save failure notification   – sticky toast carrying the error report
+    - delegated save failures     – causes handled by the handler for their type"
   (:require
+   [app.common.uuid :as uuid]
+   [app.main.data.persistence :as dps]
+   [app.main.data.workspace :as-alias dw]
    [app.main.errors :as errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n]
    [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
@@ -396,3 +405,169 @@
       (t/is (= :validation (:type assigned)))
       (t/is (nil? (:organization-id assigned)))
       (t/is (= :invalid-sso-config (:code assigned))))))
+
+(t/deftest persistence-notifications-do-not-expire-but-other-flashes-do
+  (doseq [[notify timeout] [[#(errors/flash :hint "Ordinary error") 5000]
+                            [#(errors/flash :hint "Custom error" :timeout 1000) 1000]
+                            [#(errors/flash-persistence nil) nil]]]
+    (let [scheduled (atom [])
+          events    (atom [])]
+      (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                    st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+        (notify)
+        (t/is (empty? @events) "Keep notification delivery asynchronous")
+        (doseq [callback @scheduled] (callback))
+        (t/is (= 1 (count @events)))
+        (let [state (ptk/update (first @events) {})]
+          (t/is (= timeout (get-in state [:notification :timeout])))
+          (t/is (= :visible (get-in state [:notification :status]))))))))
+
+(t/deftest persistence-notifications-include-an-error-report-download
+  (let [scheduled      (atom [])
+        idle-callbacks (atom [])
+        events         (atom [])
+        downloads      (atom [])
+        revoked        (atom [])
+        report         "generated error report"
+        cause          (ex-info "Save failed" {:type :validation})]
+    (with-redefs [dom/prevent-default         (fn [_])
+                  dom/trigger-download-uri    (fn [& params]
+                                                (swap! downloads conj params))
+                  errors/generate-report      (fn [_] report)
+                  errors/submit-report        (fn [& _])
+                  ;; `tr` is called with one and with two arguments, and its
+                  ;; two-argument arity is variadic: the stub exposes both
+                  ;; shapes so the compiled static calls resolve.
+                  i18n/tr                     (fn ([key] (str key ":"))
+                                                ([key & args]
+                                                 (str key ":" (first args))))
+                  st/emit!                    (mock/stub (fn [& emitted]
+                                                           (swap! events into emitted)))
+                  tm/schedule                 (mock/stub (fn [callback]
+                                                           (swap! scheduled conj callback)))
+                  tm/schedule-on-idle         (mock/stub (fn [callback]
+                                                           (swap! idle-callbacks conj callback)))
+                  wapi/create-blob            (mock/stub (fn [content media-type]
+                                                           {:content content :media-type media-type}))
+                  wapi/create-uri             (fn [_] "blob:report")
+                  wapi/revoke-uri             (fn [uri]
+                                                (swap! revoked conj uri))]
+      (errors/flash-persistence cause)
+      (doseq [callback @scheduled] (callback))
+      (let [state    (ptk/update (first @events) {})
+            download (get-in state [:notification :links 0])]
+        (t/is (= "labels.download:report.txt" (:label download)))
+        ((:callback download) nil)
+        (t/is (= [["report" "text/plain" "blob:report"]] @downloads))
+        (doseq [callback @idle-callbacks] (callback))
+        (t/is (= ["blob:report"] @revoked))))))
+
+(t/deftest persistence-waiters-do-not-report-an-already-handled-failure
+  (let [reports  (atom [])
+        rejected (atom [])
+        pstate   (atom {:status :saving})
+        store    (ptk/store {:state {} :on-error errors/on-error})
+        cause    (ex-info "Save failed" {:type :network})]
+    (with-redefs [refs/persistence pstate
+                  errors/submit-report (fn [& params]
+                                         (swap! reports conj (apply hash-map params)))
+                  tm/schedule (mock/stub (fn [_]))]
+      (try
+        (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
+        (reset! pstate (:persistence @store))
+        (dotimes [_ 2]
+          (->> (dps/wait-persisted-or-error)
+               (rx/subs! (fn [_] (t/is false "A failed save must still reject"))
+                         (fn [error]
+                           (swap! rejected conj error)
+                           (errors/on-error error)))))
+        (t/is (= 2 (count @rejected)))
+        (t/is (= 1 (count @reports)))
+        ;; A standalone timeout and a later save failure are new incidents.
+        (errors/on-error (ex-info "Save timed out" {:type :persistence :code :save-timeout}))
+        (t/is (= 2 (count @reports)))
+        (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
+        (t/is (= 3 (count @reports)))
+        (finally
+          (rx/dispose! store))))))
+
+;; ---------------------------------------------------------------------------
+;; Save failures that belong to their own handler
+;;
+;; Some causes are not resolved by retaining the changes: the session has to
+;; be renewed, the file is gone, or a different version was restored.  Each
+;; one is handled by the error handler for its own type.
+;; ---------------------------------------------------------------------------
+
+(t/deftest expired-session-during-save-goes-to-the-authentication-handler
+  (t/testing "a lost session is handled as an authentication error, not notified"
+    (let [assigned  (atom nil)
+          scheduled (atom [])]
+      (with-redefs [rt/get-current-href (constantly workspace-href)
+                    rt/assign-exception (fn [error] error)
+                    st/async-emit!      (fn [& events] (reset! assigned (first events)))
+                    tm/schedule         (mock/stub (fn [callback]
+                                                     (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "Session expired" {:type :authentication}))
+        (t/is (= :authentication (:type @assigned)))
+        (t/is (empty? @scheduled) "An expired session shows no save notification")))))
+
+(t/deftest expired-organization-sso-during-save-renews-the-session
+  (t/async done
+    (t/testing "an SSO-guarded save failure goes back through the identity provider"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!             (mock/stub
+                                (fn [_command _params]
+                                  (rx/of {:authorized false
+                                          :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!            (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/flash-persistence (ex-info "SSO required" (sso-required-error)))
+            (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))
+            (done'))
+          done)))))
+
+(t/deftest a-deleted-file-during-save-shows-the-exception-page
+  (t/testing "a file that no longer exists shows its page, not the save notification"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [rt/assign-exception (fn [error] error)
+                    st/emit!            (mock/stub (fn [& emitted]
+                                                     (swap! events into emitted)))
+                    tm/schedule         (mock/stub (fn [callback]
+                                                     (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "File not found" {:type :not-found}))
+        (doseq [callback @scheduled] (callback))
+        (t/is (= [:not-found] (mapv :type @events)))))))
+
+(t/deftest a-restored-version-during-save-reloads-the-file
+  (t/testing "a version restored elsewhere reloads the file instead of notifying"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
+                    tm/schedule (mock/stub (fn [callback]
+                                             (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "A different version has been restored"
+                                           {:type :validation :code :vern-conflict}))
+        (t/is (= [::dw/reload-current-file] (mapv ptk/type @events)))
+        (t/is (empty? @scheduled) "A restored version shows no save notification")))))
+
+(t/deftest other-validation-failures-during-save-keep-the-notification
+  (t/testing "a validation failure without a recovery of its own is still notified"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [errors/generate-report (fn [_] "generated error report")
+                    errors/submit-report   (fn [& _])
+                    st/emit!               (mock/stub (fn [& emitted]
+                                                        (swap! events into emitted)))
+                    tm/schedule            (mock/stub (fn [callback]
+                                                        (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "Invalid data" {:type :validation
+                                                           :code :invalid-data}))
+        (doseq [callback @scheduled] (callback))
+        (t/is (= 1 (count @events)))
+        (let [state (ptk/update (first @events) {})]
+          (t/is (nil? (get-in state [:notification :timeout])))
+          (t/is (some? (get-in state [:notification :links 0]))))))))

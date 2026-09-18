@@ -283,6 +283,7 @@
         search-scope          (:search-scope state)
         current-match-idx     (:current-match-idx state)
         search-input-ref      (mf/use-ref nil)
+        can-edit?             (:can-edit (deref refs/permissions))
 
         clear-search-text
         (mf/use-fn
@@ -583,11 +584,12 @@
                               :aria-label (tr "workspace.sidebar.layers.filter")
                               :on-click on-toggle-filters-click
                               :icon i/filter}]]
-           [:> icon-button* {:variant "ghost"
-                             :aria-pressed find-replace-mode?
-                             :aria-label (tr "workspace.sidebar.layers.search-and-replace")
-                             :on-click toggle-mode
-                             :icon i/menu}]
+           (when can-edit?
+             [:> icon-button* {:variant "ghost"
+                               :aria-pressed find-replace-mode?
+                               :aria-label (tr "workspace.sidebar.layers.search-and-replace")
+                               :on-click toggle-mode
+                               :icon i/menu}])
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search

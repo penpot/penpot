@@ -79,10 +79,10 @@
   [{:keys [is-open is-local file-id page-id file-name]}]
   (let [router     (mf/deref refs/router)
         team-id    (mf/use-ctx ctx/current-team-id)
-        url        (rt/resolve router :workspace
-                               {:team-id team-id
-                                :file-id file-id
-                                :page-id page-id})
+        url        (rt/resolve-uri router :workspace
+                                   {:team-id team-id
+                                    :file-id file-id
+                                    :page-id page-id})
         toggle-open
         (mf/use-fn
          (mf/deps file-id is-open)
@@ -110,7 +110,7 @@
       (when-not ^boolean is-local
         [:span {:title (tr "workspace.assets.open-library")}
          [:a {:class (stl/css :file-link)
-              :href (str "#" url)
+              :href url
               :target "_blank"
               :on-click on-click}
           deprecated-icon/open-link]])]]))

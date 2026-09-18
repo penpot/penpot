@@ -300,6 +300,18 @@
     [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
     [:ssrf-extra-blocked-cidrs {:optional true} [::sm/set :string]]]))
 
+(defn telemetry-excluded-host?
+  "Returns true when the given host belongs to the official SaaS
+  instances, where telemetry must be fully disabled."
+  [host]
+  (let [host (some-> host (str/lower) (str/trim))]
+    (and (string? host)
+         (not (str/blank? host))
+         (or (= host "penpot.dev")
+             (= host "penpot.app")
+             (str/ends-with? host ".penpot.dev")
+             (str/ends-with? host ".penpot.app")))))
+
 (defn- parse-flags
   [config]
   (let [public-uri  (c/get config :public-uri)
@@ -381,12 +393,37 @@
   (or (c/get config :file-clean-delay)
       (ct/duration {:days 2})))
 
+(defn join-uri
+  "Join path segments onto a base URI, preserving a potential subpath
+  (same semantics as the frontend config). The base is normalized with
+  a trailing slash; segments must not start with `/` (a leading slash
+  would resolve against the host root and drop the subpath)."
+  [base & segments]
+  (assert (not (some #(str/starts-with? % "/") segments))
+          "URI segments must be relative (no leading slash)")
+  (str (apply u/join (u/ensure-path-slash base) segments)))
+
+(defn get-public-uri
+  "Canonical public URI builder: `join-uri` over the configured
+  :public-uri. With no segments, returns the normalized base."
+  [& segments]
+  (apply join-uri (c/get config :public-uri) segments))
+
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+(defn telemetry-excluded?
+  "Returns true when telemetry must be fully disabled because the
+  public-uri host points to an official instance (penpot.dev or
+  penpot.app). When true, no telemetry data is collected or sent,
+  not even the limited newsletter report."
+  []
+  (let [host (some-> (c/get config :public-uri) (u/uri) :host)]
+    (telemetry-excluded-host? host)))
 
 (defn logging-context
   []

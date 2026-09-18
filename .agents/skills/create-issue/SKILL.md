@@ -19,6 +19,9 @@ right flow.
 - **Create from draft body** — Taiga story, user report, discussion; no PR
   yet.
   → memory section **Creating Issues from Draft Body**
+- **Create as sub-issue** — the issue must be grouped under an umbrella/EPIC
+  issue; create it first, then link it to its parent.
+  → memory section **Adding an Issue as a Sub-issue**
 - **Retitle existing issue** — current title is vague, prefixed, or stale.
   → memory section **Retitling an Existing Issue**
 
