@@ -9,29 +9,35 @@
 
   Confirming a Japanese IME composition with Enter duplicated the text
   because the comment-input keydown handler treated every Enter as a
-  Penpot line-break action. Both the comment-input handler and the
-  parent floating-thread handler now resolve keydowns through
-  `resolve-comment-key-action`, which returns :ime-owned while the
-  keydown belongs to an active IME composition (nativeEvent.isComposing
-  or keyCode 229, mirroring the v3 text-editor precedent from #10498).
+  Penpot line-break action. The component handlers delegate to
+  `handle-comment-input-key-down` and `handle-thread-key-down`, which
+  run nothing while the keydown belongs to an active IME composition
+  (nativeEvent.isComposing or keyCode 229, mirroring the v3
+  text-editor precedent from #10498).
 
-  These tests verify the observable keyboard behavior — which Penpot
-  command (if any) a keydown triggers — rather than the predicate
-  alone, so a guard moved to the wrong place or a handler bypassing
-  the resolver fails here."
+  These tests call the actual handler fns with stubbed dependencies
+  and assert which side effects fire — not a resolver return value —
+  so a guard moved to the wrong place, a reordered handle-select, or
+  a handler bypassing the composition check fails here. The mention
+  snapshot ordering matches the component: handle-select runs first
+  (and may update the open mention) before the branch is read."
   (:require
    [app.main.ui.comments :as cmt]
    [cljs.test :as t :include-macros true]))
 
 (defn- keydown-event
-  "Build a synthetic keydown event map shaped like the Rumext keyboard
-  events the comment handlers receive."
-  [{:keys [key composing? key-code ctrl? meta?]
+  "Build a synthetic keydown event shaped like the Rumext keyboard
+  events the comment handlers receive. preventDefault/stopPropagation
+  record into the returned log atom so tests observe real handler
+  side effects on the event itself."
+  [{:keys [key composing? key-code ctrl? meta? log]
     :or {composing? false ctrl? false meta? false}}]
   #js {:key key
        :keyCode key-code
        :ctrlKey ctrl?
        :metaKey meta?
+       :preventDefault (fn [] (when log (swap! log conj :prevent-default)))
+       :stopPropagation (fn [] (when log (swap! log conj :stop-propagation)))
        :nativeEvent #js {:isComposing composing?}})
 
 (defn- enter
@@ -51,118 +57,186 @@
 (def ^:private composing {:composing? true})
 (def ^:private ime229 {:composing? false :key-code 229})
 
-(def ^:private no-ctx
-  {:mention-open? false :has-on-esc? false :has-on-ctrl-enter? false})
+(defn- input-deps
+  "Stub dependency map for handle-comment-input-key-down. Every
+  observable side effect appends to :log: mention-panel commands,
+  delegated callbacks, select/input/newline/backspace paths, and the
+  event defaults. :open-mention is read through :get-mention after
+  :do-select runs, mirroring the component ordering."
+  [{:keys [open-mention log select-updates-mention?]
+    :or {log (atom [])}}]
+  (let [mention (atom open-mention)]
+    {:log log
+     :deps {:get-mention (fn [] @mention)
+            :push-mention! (fn [msg] (swap! log conj [:mention msg]))
+            :on-esc (fn [_] (swap! log conj :on-esc))
+            :on-ctrl-enter (fn [_] (swap! log conj :on-ctrl-enter))
+            :do-select (fn [_]
+                         (swap! log conj :select)
+                         (when select-updates-mention?
+                           (reset! mention select-updates-mention?)))
+            :get-node (fn [] :node)
+            :get-span (fn [_] [:span 3])
+            :do-newline (fn [_] (swap! log conj :newline))
+            :do-backspace (fn [_] (swap! log conj :backspace-check))
+            :do-input (fn [] (swap! log conj :input))}}))
 
-;; --- 1. composing Enter: no Penpot newline ------------------------------
+(defn- run-input!
+  [event stub]
+  (cmt/handle-comment-input-key-down event (:deps stub))
+  @(:log stub))
 
-(t/deftest composing-enter-produces-no-penpot-newline
-  (t/testing "composing Enter (isComposing) resolves to :ime-owned, not :newline"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (enter composing) no-ctx))))
-  (t/testing "handler must not preventDefault/stopPropagation an IME-owned key"
-    ;; The handlers only call dom/prevent-default / dom/stop-propagation
-    ;; inside non-:ime-owned branches, so :ime-owned means the IME keeps
-    ;; full ownership of the event.
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (enter composing) no-ctx)))))
+(defn- run-thread!
+  [event]
+  (let [log (atom [])]
+    (cmt/handle-thread-key-down event {:close! (fn [ev] (swap! log conj [:close ev]))})
+    @log))
+
+;; --- 1. composing Enter: zero Penpot side effects -----------------------
+
+(t/deftest composing-enter-produces-zero-side-effects
+  (t/testing "composing Enter fires nothing: no select, no mention, no newline, no event defaults"
+    (let [log (atom [])
+          events (run-input! (enter (merge composing {:log log}))
+                             (input-deps {:log log}))]
+      (t/is (= [] events))))
+  (t/testing "composing Enter with a mention open still fires nothing"
+    (let [log (atom [])
+          events (run-input! (enter (merge composing {:log log}))
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [] events)))))
 
 ;; --- 2. keyCode 229 fallback --------------------------------------------
 
 (t/deftest keycode-229-enter-bypasses-custom-processing
-  (t/testing "keyCode 229 Enter with isComposing=false still resolves :ime-owned"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (enter ime229) no-ctx))))
-  (t/testing "229 fallback also covers other IME-owned keys"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (escape ime229) no-ctx)))
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (arrow "ArrowDown" ime229) no-ctx)))))
+  (t/testing "keyCode 229 Enter with isComposing=false fires nothing"
+    (let [log (atom [])
+          events (run-input! (enter (merge ime229 {:log log}))
+                             (input-deps {:log log}))]
+      (t/is (= [] events))))
+  (t/testing "229 fallback also covers Escape and arrows"
+    (let [log (atom [])]
+      (t/is (= [] (run-input! (escape (merge ime229 {:log log}))
+                              (input-deps {:log log}))))
+      (t/is (= [] (run-input! (arrow "ArrowDown" (merge ime229 {:log log}))
+                              (input-deps {:log log})))))))
 
 ;; --- 3. plain Enter regression ------------------------------------------
 
 (t/deftest plain-enter-keeps-newline-behavior
-  (t/testing "non-composing Enter still resolves to the newline path"
-    (t/is (= :newline
-             (cmt/resolve-comment-key-action (enter) no-ctx))))
-  (t/testing "non-composing mod+Enter still resolves to on-ctrl-enter"
-    (t/is (= :on-ctrl-enter
-             (cmt/resolve-comment-key-action
-              (enter {:ctrl? true :meta? true})
-              (assoc no-ctx :has-on-ctrl-enter? true))))))
+  (t/testing "non-composing Enter runs select then the newline path"
+    (let [log (atom [])
+          events (run-input! (enter {:log log}) (input-deps {:log log}))]
+      (t/is (= [:select :newline] events))))
+  (t/testing "non-composing mod+Enter still calls on-ctrl-enter"
+    (let [log (atom [])
+          events (run-input! (enter {:log log :ctrl? true :meta? true})
+                             (input-deps {:log log}))]
+      (t/is (= [:select :on-ctrl-enter] events)))))
 
 ;; --- 4. composing Escape in the comment input ---------------------------
 
 (t/deftest composing-escape-calls-no-input-command
-  (t/testing "composing Escape never resolves to on-esc"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action
-              (escape composing)
-              (assoc no-ctx :has-on-esc? true)))))
-  (t/testing "composing Escape never resolves to hide-mentions, even with a mention open"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action
-              (escape composing)
-              (assoc no-ctx :mention-open? true)))))
-  (t/testing "plain Escape still resolves to on-esc"
-    (t/is (= :on-esc
-             (cmt/resolve-comment-key-action
-              (escape)
-              (assoc no-ctx :has-on-esc? true))))))
+  (t/testing "composing Escape fires nothing, even with on-esc wired"
+    (let [log (atom [])
+          events (run-input! (escape (merge composing {:log log}))
+                             (input-deps {:log log}))]
+      (t/is (= [] events))))
+  (t/testing "composing Escape with a mention open emits no hide-mentions"
+    (let [log (atom [])
+          events (run-input! (escape (merge composing {:log log}))
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [] events))))
+  (t/testing "plain Escape still calls on-esc"
+    (let [log (atom [])
+          events (run-input! (escape {:log log}) (input-deps {:log log}))]
+      (t/is (= [:select :on-esc] events)))))
 
 ;; --- 5. composing Escape in the floating thread -------------------------
 
 (t/deftest floating-thread-escape-ownership
-  (t/testing "composing Escape never resolves to close-thread"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (escape composing) {:thread? true})))
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action (escape ime229) {:thread? true}))))
-  (t/testing "plain Escape still resolves to close-thread"
-    (t/is (= :close-thread
-             (cmt/resolve-comment-key-action (escape) {:thread? true}))))
-  (t/testing "non-Escape keys in the thread resolve to :none"
-    (t/is (= :none
-             (cmt/resolve-comment-key-action (enter) {:thread? true})))))
+  (t/testing "composing Escape never closes the thread"
+    (t/is (= [] (run-thread! (escape composing))))
+    (t/is (= [] (run-thread! (escape ime229)))))
+  (t/testing "plain Escape still closes the thread"
+    (let [events (run-thread! (escape {}))]
+      (t/is (= 1 (count events)))
+      (t/is (= :close (ffirst events)))))
+  (t/testing "non-Escape keys in the thread do nothing"
+    (t/is (= [] (run-thread! (enter {}))))))
 
 ;; --- 6. mention candidate keyboard ownership ----------------------------
 
 (t/deftest composing-mention-keys-trigger-no-mention-command
-  (let [mention-ctx (assoc no-ctx :mention-open? true)]
-    (t/testing "composing Enter does not select a mention"
-      (t/is (= :ime-owned
-               (cmt/resolve-comment-key-action (enter composing) mention-ctx))))
-    (t/testing "composing ArrowDown does not navigate mentions"
-      (t/is (= :ime-owned
-               (cmt/resolve-comment-key-action
-                (arrow "ArrowDown" composing) mention-ctx))))
-    (t/testing "composing ArrowUp does not navigate mentions"
-      (t/is (= :ime-owned
-               (cmt/resolve-comment-key-action
-                (arrow "ArrowUp" composing) mention-ctx))))
-    (t/testing "composing Escape does not dismiss mentions"
-      (t/is (= :ime-owned
-               (cmt/resolve-comment-key-action (escape composing) mention-ctx)))))
-  (let [mention-ctx (assoc no-ctx :mention-open? true)]
-    (t/testing "non-composing mention keys keep existing behavior"
-      (t/is (= :insert-selected-mention
-               (cmt/resolve-comment-key-action (enter) mention-ctx)))
-      (t/is (= :insert-next-mention
-               (cmt/resolve-comment-key-action (arrow "ArrowDown" {}) mention-ctx)))
-      (t/is (= :insert-prev-mention
-               (cmt/resolve-comment-key-action (arrow "ArrowUp" {}) mention-ctx)))
-      (t/is (= :hide-mentions
-               (cmt/resolve-comment-key-action (escape) mention-ctx))))))
+  (t/testing "composing mention keys fire nothing"
+    (let [log (atom [])
+          stub (input-deps {:log log :open-mention "@bob"})]
+      (t/is (= [] (run-input! (enter (merge composing {:log log})) stub)))
+      (t/is (= [] (run-input! (arrow "ArrowDown" (merge composing {:log log})) stub)))
+      (t/is (= [] (run-input! (arrow "ArrowUp" (merge composing {:log log})) stub)))
+      (t/is (= [] (run-input! (escape (merge composing {:log log})) stub)))))
+  (t/testing "non-composing mention keys keep existing behavior"
+    (let [log (atom [])
+          events (run-input! (enter {:log log})
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [:select
+                :prevent-default
+                :stop-propagation
+                [:mention {:type :insert-selected-mention}]]
+               events)))
+    (let [log (atom [])
+          events (run-input! (arrow "ArrowDown" {:log log})
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [:select
+                :prevent-default
+                :stop-propagation
+                [:mention {:type :insert-next-mention}]]
+               events)))
+    (let [log (atom [])
+          events (run-input! (arrow "ArrowUp" {:log log})
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [:select
+                :prevent-default
+                :stop-propagation
+                [:mention {:type :insert-prev-mention}]]
+               events)))
+    (let [log (atom [])
+          events (run-input! (escape {:log log})
+                             (input-deps {:log log :open-mention "@bob"}))]
+      (t/is (= [:select
+                :prevent-default
+                :stop-propagation
+                [:mention {:type :hide-mentions}]]
+               events)))))
+
+;; --- ordering: select runs before the mention branch is read -----------
+
+(t/deftest select-runs-before-mention-branch
+  (t/testing "a mention opened by handle-select is visible to the branch"
+    ;; Component ordering: do-select may set the open mention, and the
+    ;; branch reads it afterwards. A snapshot taken before select
+    ;; would miss it and wrongly fall through to the newline path.
+    (let [log (atom [])
+          events (run-input! (enter {:log log})
+                             (input-deps {:log log
+                                          :select-updates-mention? "@new"}))]
+      (t/is (= [:select
+                :prevent-default
+                :stop-propagation
+                [:mention {:type :insert-selected-mention}]]
+               events)))))
 
 ;; --- backspace path preserved -------------------------------------------
 
 (t/deftest plain-backspace-keeps-mention-check
-  (t/testing "non-composing Backspace still resolves to the mention check path"
-    (t/is (= :backspace-mention-check
-             (cmt/resolve-comment-key-action
-              (keydown-event {:key "Backspace" :key-code 8}) no-ctx))))
-  (t/testing "composing Backspace resolves to :ime-owned"
-    (t/is (= :ime-owned
-             (cmt/resolve-comment-key-action
-              (keydown-event {:key "Backspace" :key-code 8 :composing? true})
-              no-ctx)))))
+  (t/testing "non-composing Backspace still runs the mention check path"
+    (let [log (atom [])
+          events (run-input! (keydown-event {:key "Backspace" :key-code 8 :log log})
+                             (input-deps {:log log}))]
+      (t/is (= [:select :backspace-check] events))))
+  (t/testing "composing Backspace fires nothing"
+    (let [log (atom [])
+          events (run-input! (keydown-event {:key "Backspace" :key-code 8
+                                             :composing? true :log log})
+                             (input-deps {:log log}))]
+      (t/is (= [] events)))))
