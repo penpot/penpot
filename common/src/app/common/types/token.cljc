@@ -122,9 +122,13 @@
 
 (def composite-dtcg-token-type->token-type
   "Same as above, in the opposite direction."
-  (assoc dtcg-token-type->token-type
-         "lineHeights" :line-height
-         "lineHeight"  :line-height))
+  (let [mapping (assoc dtcg-token-type->token-type
+                       "lineHeights" :line-height
+                       "lineHeight"  :line-height)]
+    (into mapping
+          (map (fn [[key value]]
+                 [(keyword (str/kebab key)) value]))
+          mapping)))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))

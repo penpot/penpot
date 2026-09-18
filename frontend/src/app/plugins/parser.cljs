@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.json :as json]
    [app.common.types.path :as path]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -506,7 +507,7 @@
 
          :open-url
          {:action-type action-type
-          :url (obj/get action "url")}
+          :url (ctsi/normalize-url (obj/get action "url"))}
 
          nil)))))
 

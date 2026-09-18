@@ -868,6 +868,14 @@
 (register! ::safe-number [::number {:gen/gen (sg/small-double)
                                     :max max-safe-int
                                     :min min-safe-int}])
+(register! ::non-negative-safe-number
+           [:and {:gen/gen (sg/small-double :min 0)}
+            ::safe-number
+            [:fn #(not (neg? %))]])
+(register! ::positive-safe-number
+           [:and {:gen/gen (sg/small-double :min 0.01)}
+            ::safe-number
+            [:fn pos?]])
 
 (defn parse-boolean
   [v]
@@ -1092,6 +1100,12 @@
 
 (def valid-safe-number?
   (lazy-validator ::safe-number))
+
+(def valid-non-negative-safe-number?
+  (lazy-validator ::non-negative-safe-number))
+
+(def valid-positive-safe-number?
+  (lazy-validator ::positive-safe-number))
 
 (def valid-safe-int?
   (lazy-validator ::safe-int))
