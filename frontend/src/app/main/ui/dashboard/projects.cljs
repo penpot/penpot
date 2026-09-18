@@ -41,15 +41,14 @@
 (mf/defc header*
   {::mf/wrap [mf/memo]
    ::mf/private true}
-  [{:keys [can-edit layout on-change]}]
-  (let [on-click
-        (mf/use-fn
-         #(st/emit! (dd/create-project)))]
-
+  [{:keys [can-edit layout on-change ^boolean default-team?]}]
+  (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
     [:header {:class (stl/css :dashboard-header)
               :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
-      [:h1 (tr "dashboard.projects-title")]]
+      [:h1 (if default-team?
+             (tr "dashboard.personal-projects")
+             (tr "dashboard.projects-title"))]]
      [:div {:class (stl/css :dashboard-header-actions)}
       [:> layout-toggle* {:layout layout
                           :on-change on-change}]
@@ -376,7 +375,8 @@
       [:*
        [:> header* {:can-edit can-edit
                     :layout layout
-                    :on-change on-layout-change}]
+                    :on-change on-layout-change
+                    :default-team? default-team?}]
        [:div {:class (stl/css :projects-container)}
         [:*
          (when (and show-team-hero?

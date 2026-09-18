@@ -222,10 +222,10 @@
     (t/is (not (u/uri? dnt/go-to-subscription-url)))))
 
 (t/deftest organization-teams-filters-by-organization-id
-  (let [teams [{:id "t1" :organization {:id "org-a"}}
-               {:id "t2" :organization {:id "org-b"}}
-               {:id "t3" :is-default true}
-               {:id "t4" :organization {:id "org-a"}}]]
+  (let [teams {"t1" {:id "t1" :organization {:id "org-a"}}
+               "t2" {:id "t2" :organization {:id "org-b"}}
+               "t3" {:id "t3" :is-default true}
+               "t4" {:id "t4" :organization {:id "org-a"}}}]
     (t/is (= ["t1" "t4"] (map :id (dnt/organization-teams teams "org-a"))))
     (t/is (= [] (dnt/organization-teams teams "org-c")))))
 
@@ -244,6 +244,47 @@
                      {:id "pair" :members [{:id "m1"} {:id "m2"}]}
                      {:id "empty" :members []}]]
     (t/is (= ["pair"] (map :id (dnt/transferable-teams owned-teams))))))
+
+(t/deftest leave-organization-fn-builds-delete-and-leave-lists
+  (let [captured (atom nil)
+        emitted  (atom [])
+        owned-teams [{:id "solo" :members [{:id "m1"}]}
+                     {:id "pair" :members [{:id "m1"} {:id "m2"}]}]
+        not-owned-teams [{:id "member-1" :name "extra"}]
+        leave-fn (dnt/leave-organization-fn {:organization {:id "org-1" :name "Acme"}
+                                             :default-team-id "default"
+                                             :owned-teams owned-teams
+                                             :not-owned-teams not-owned-teams
+                                             :on-error :on-error-fn})]
+    (with-redefs [dnt/leave-organization (fn [params] (reset! captured params) ::leave-event)
+                  st/emit! (fn
+                             ([event] (swap! emitted conj event))
+                             ([event & events] (swap! emitted into (cons event events))))]
+
+      (t/testing "with no teams offered for transfer"
+        (leave-fn {:teams-to-transfer nil
+                   :member-added-at "2026-07-17T00:00:00Z"
+                   :organization-member-count-before 3})
+
+        (t/is (= [::leave-event] @emitted))
+        (t/is (= {:id "org-1"
+                  :name "Acme"
+                  :default-team-id "default"
+                  :teams-to-delete ["solo"]
+                  :teams-to-leave [{:id "member-1"}]
+                  :member-added-at "2026-07-17T00:00:00Z"
+                  :organization-member-count-before 3
+                  :on-error :on-error-fn}
+                 @captured)))
+
+      (t/testing "folds transferred teams into teams-to-leave, ahead of the rest"
+        (leave-fn {:teams-to-transfer [{:id "pair" :reassign-to "new-owner"}]
+                   :member-added-at "2026-07-17T00:00:00Z"
+                   :organization-member-count-before 3})
+
+        (t/is (= [{:id "pair" :reassign-to "new-owner"}
+                  {:id "member-1"}]
+                 (:teams-to-leave @captured)))))))
 
 (t/deftest team-leave-on-error-matrix
   (t/testing "known error code shows a translated notification"
