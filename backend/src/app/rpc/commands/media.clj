@@ -48,7 +48,7 @@
 
 (def ^:private schema:upload-file-media-object
   [:map {:title "upload-file-media-object"}
-   [:id {:optional true} ::sm/uuid]
+   [:id {:optional true} ::sm/user-provided-uuid]
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
@@ -225,7 +225,7 @@
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:url ::sm/uri]
-   [:id {:optional true} ::sm/uuid]
+   [:id {:optional true} ::sm/user-provided-uuid]
    [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::create-file-media-object-from-url
@@ -489,7 +489,7 @@
    [:is-local   ::sm/boolean]
    [:name       [:string {:max 250}]]
    [:mtype      :string]
-   [:id         {:optional true} ::sm/uuid]])
+   [:id         {:optional true} ::sm/user-provided-uuid]])
 
 (sv/defmethod ::assemble-file-media-object
   {::doc/added "2.17"
