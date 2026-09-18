@@ -6,6 +6,7 @@
 
 (ns frontend-tests.ui.organization-team-switch-test
   (:require
+   [app.common.uri :as u]
    [app.main.data.nitrate :as dnt]
    [app.main.ui.dashboard.organization-team-switch :as dts]
    [cljs.test :as t :include-macros true]))
@@ -74,7 +75,8 @@
                "t2" {:id "t2" :name "Analytics" :organization {:id "org-a"}}
                "t3" {:id "t3" :name "Personal projects" :is-default true}
                "t4" {:id "t4" :name "Other org's team" :organization {:id "org-b"}}
-               "t5" {:id "t5" :name "org-b default" :is-default true :organization {:id "org-b"}}}]
+               "t5" {:id "t5" :name "org-b default" :is-default true :organization {:id "org-b"}}
+               "t6" {:id "t6" :name "org-d default" :is-default true :organization {:id "org-d"}}}]
     (t/testing "matching organization id: only that organization's teams, sorted"
       (t/is (= ["Analytics" "Design"]
                (map :name (dts/teams-for-organization teams "org-a")))))
@@ -83,12 +85,26 @@
       (t/is (= ["t3"]
                (map :id (dts/teams-for-organization teams personal-bucket-id)))))
 
-    (t/testing "organization with only its own default team"
-      (t/is (= ["org-b default"]
+    (t/testing "organization with a non-default and a default team: default sorts last"
+      (t/is (= ["Other org's team" "org-b default"]
                (map :name (dts/teams-for-organization teams "org-b")))))
+
+    (t/testing "organization with only its own default team"
+      (t/is (= ["org-d default"]
+               (map :name (dts/teams-for-organization teams "org-d")))))
 
     (t/testing "no matching teams: empty result"
       (t/is (= [] (dts/teams-for-organization teams "org-c"))))))
+
+(t/deftest team-href-puts-the-route-in-the-query-string-not-the-fragment
+  (let [router #{:dashboard-recent}
+        team {:id "team-1"}
+        href (dts/team-href router team)
+        parsed (u/uri href)
+        query (u/query-string->map (:query parsed))]
+    (t/is (nil? (:fragment parsed)))
+    (t/is (= "dashboard-recent" (:screen query)))
+    (t/is (= "team-1" (:team-id query)))))
 
 (t/deftest selecting-the-current-team-is-a-no-op
   (t/is (nil? (dts/team-select-target "team-1" {:id "team-1"})))

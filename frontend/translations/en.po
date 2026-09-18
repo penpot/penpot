@@ -10807,3 +10807,6 @@ msgstr "Click to close the path"
 
 msgid "labels.team-management"
 msgstr "Team management"
+
+msgid "dashboard.no-organizations-yet"
+msgstr "You don't belong to any organization yet"

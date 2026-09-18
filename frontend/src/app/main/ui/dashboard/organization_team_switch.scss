@@ -85,9 +85,6 @@
 }
 
 .current-selection-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
   min-width: 0;
 }
 
@@ -114,6 +111,7 @@
 
   max-width: 100%;
   color: var(--color-foreground-secondary);
+  text-align: left;
 }
 
 .tick-icon,
@@ -388,33 +386,6 @@
   stroke: var(--sidebar-action-icon-color);
 }
 
-.organization-context-menu {
-  position: fixed;
-  z-index: var(--z-index-dropdown);
-  min-width: $sz-160;
-  padding: var(--sp-xs);
-  background-color: var(--menu-background-color);
-  border: $b-2 solid var(--panel-border-color);
-  border-radius: $br-8;
-  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
-}
-
-.context-menu-item {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  height: $sz-32;
-  padding: 0 var(--sp-m);
-  border-radius: $br-8;
-  cursor: pointer;
-  color: var(--menu-foreground-color-hover);
-
-  &:hover {
-    background-color: var(--menu-background-color-hover);
-  }
-}
-
 .options-dropdown {
   box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
   position: absolute;
@@ -431,29 +402,4 @@
   height: fit-content;
   max-height: $sz-480;
   overflow-y: auto;
-}
-
-.options-item {
-  @include t.use-typography("body-small");
-
-  display: flex;
-  align-items: center;
-  height: $sz-40;
-  padding: 0 var(--sp-m);
-  border-radius: $br-8;
-  cursor: pointer;
-  color: var(--menu-foreground-color-hover);
-
-  &:hover {
-    background-color: var(--menu-background-color-hover);
-  }
-}
-
-.options-item.warning {
-  color: var(--color-negative);
-}
-
-.options-separator {
-  border-block-start: $b-1 solid var(--color-background-quaternary);
-  margin-block: var(--sp-xxs);
 }
