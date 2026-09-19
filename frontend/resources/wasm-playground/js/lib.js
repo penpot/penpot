@@ -104,19 +104,35 @@ export function createRendererAdapter(module, scheduler = globalThis) {
       scheduler.clearTimeout(timer);
       timer = scheduler.setTimeout(finish, 100);
     };
+    // Mirrors schedule-zoom! in app.main.ui.workspace.viewport.actions:
+    // accumulate wheel zoom and flush at most one _set_view + _render_from_cache
+    // per animation frame. When the playground migrates to ClojureScript, call
+    // that function directly instead of duplicating this scheduling.
+    const zoom = { factor: 1, pt: null, frame: undefined };
+    const flushZoom = () => {
+      zoom.frame = undefined;
+      if (disposed) return;
+      stopRender();
+      const factor = zoom.factor;
+      const [px, py] = zoom.pt;
+      zoom.factor = 1;
+      zoom.pt = null;
+      const nextScale = Math.max(0.01, Math.min(100, view.scale * factor));
+      view.x += px / nextScale - px / view.scale;
+      view.y += py / nextScale - py / view.scale;
+      view.scale = nextScale;
+      update();
+    };
     listen(
       "wheel",
       (event) => {
         event.preventDefault();
         begin();
-        const nextScale = Math.max(
-          0.01,
-          Math.min(100, view.scale * (event.deltaY < 0 ? 1.1 : 0.9)),
-        );
-        view.x += event.offsetX / nextScale - event.offsetX / view.scale;
-        view.y += event.offsetY / nextScale - event.offsetY / view.scale;
-        view.scale = nextScale;
-        update();
+        zoom.factor *= event.deltaY < 0 ? 1.1 : 0.9;
+        zoom.pt = [event.offsetX, event.offsetY];
+        if (zoom.frame === undefined) {
+          zoom.frame = scheduler.requestAnimationFrame(flushZoom);
+        }
       },
       { passive: false },
     );
@@ -143,6 +159,8 @@ export function createRendererAdapter(module, scheduler = globalThis) {
     detach = () => {
       for (const remove of listeners) remove();
       scheduler.clearTimeout(timer);
+      if (zoom.frame !== undefined) scheduler.cancelAnimationFrame(zoom.frame);
+      zoom.frame = undefined;
       panning = false;
       active = false;
     };
