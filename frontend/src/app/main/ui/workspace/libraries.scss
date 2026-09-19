@@ -192,6 +192,10 @@
   min-width: $sz-24;
 }
 
+.typography-sample {
+  white-space: nowrap;
+}
+
 .name-block {
   color: var(--library-content-foreground-color);
   width: px2rem(168);

@@ -352,7 +352,8 @@ $thumbnail-default-height: px2rem(168);
 
 .library-name-block {
   color: var(--color-foreground-secondary);
-  inline-size: calc(100% - var(--sp-xxl) - var(--sp-s));
+  flex: 1;
+  min-inline-size: 0;
   text-align: left;
 }
 
@@ -421,6 +422,7 @@ $thumbnail-default-height: px2rem(168);
 .library-typography-sample {
   block-size: px2rem(20);
   margin-inline-end: var(--sp-xs);
+  flex-shrink: 0;
   min-inline-size: px2rem(20);
   white-space: nowrap;
 }
