@@ -166,12 +166,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='5b222fce0b7076a10ac7ae3b1009a6c2caf4f35bc4e81de72010af6750c5e146'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_aarch64.tar.gz'; \
+         ESUM='9fa5bf865783c43840101fcdc3a5222b60daf4fe11f26806247bf807c08aba38'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='4b7c114917aebd0fc6284fc7111245d7747a4d9603bd12d86b384b1abc9d575d'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_x64.tar.gz'; \
+         ESUM='ccbc15c4edbedfdcc03c2d29a2aa2c6daf9e6ffb4cda7dd5ece0fcbb37350267'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
