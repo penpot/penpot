@@ -9,6 +9,7 @@
   (:require
    [app.common.logging :as log]
    [app.main.data.modal :as modal]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-dialog*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
@@ -68,8 +69,17 @@
 
         success-register
         (fn [data]
-          (reset! register-token (:token data))
-          (set-current-section :register-validate))]
+          (cond
+            (:invitation-token data)
+            (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+            (:is-active data)
+            (st/emit! (modal/hide))
+
+            :else
+            (do
+              (reset! user-email (:email data))
+              (set-current-section :email-sent))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
