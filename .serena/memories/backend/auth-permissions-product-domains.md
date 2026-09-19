@@ -23,7 +23,7 @@
 - Team/project commands mix DB changes, email, message bus notifications, media/storage cleanup, feature flags, quotas, and audit metadata. Keep mutations transactional when the existing command does so.
 - Invitation flows validate muted/bounced emails before sending and use tokenized invitation state. Accepting an invitation is tied to the invited member identity, not just possession of a token.
 - Logical deletion is used for many product objects; prefer existing logical-deletion helpers over hard deletes unless the command already performs permanent cleanup.
-- Bounced/spam-complaint emails can mute/block a profile for login/registration and email sending. Devenv MailCatcher is the normal local path for registration/email-flow testing.
+- Bounced/spam-complaint emails can mute/block a profile for login/registration and email sending. Devenv Mailpit is the normal local path for registration/email-flow testing.
 
 ## Comments, webhooks, and audit
 

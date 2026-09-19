@@ -8,6 +8,8 @@ volumes:
     name: ${PENPOT_POSTGRES_DATA_VOLUME}
   rustfs_data:
     name: ${PENPOT_RUSTFS_DATA_VOLUME}
+  mailpit_data:
+    name: ${PENPOT_MAILPIT_DATA_VOLUME}
   valkey_data:
     name: penpotdev_valkey_data
 
@@ -68,12 +70,24 @@ services:
           - valkey
 
   mailer:
-    image: sj26/mailcatcher:latest
+    image: axllent/mailpit:v1.31.1
     restart: always
+    volumes:
+      - "mailpit_data:/data"
+    environment:
+      - MP_DATABASE=/data/mailpit.db
+      - MP_MAX_MESSAGES=5000
+      - MP_DISABLE_VERSION_CHECK=true
     expose:
       - '1025'
     ports:
-      - "1080:1080"
+      - "127.0.0.1:1080:8025"
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8025/readyz"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
     networks:
       default:
