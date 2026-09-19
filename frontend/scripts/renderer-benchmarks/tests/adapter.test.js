@@ -47,6 +47,7 @@ function fixture() {
     },
     _init() {},
     _set_render_options() {},
+    _resize_viewbox() {},
     _set_browser() {},
     _set_view_start() {
       calls.start++;
@@ -72,6 +73,41 @@ function fixture() {
   adapter.assignCanvas(canvas);
   adapter.setupInteraction(canvas);
   return { adapter, state, calls, canvas, frames, timers, module };
+}
+
+for (const dpr of [1, 1.25, 2]) {
+  test(`adapter initializes the full drawing buffer at DPR ${dpr}`, () => {
+    const size = { width: 0, height: 0 };
+    let rendererDpr = 1;
+    const module = {
+      GL: {
+        registerContext: () => 1,
+        makeContextCurrent() {},
+      },
+      _init(width, height) {
+        Object.assign(size, { width, height });
+      },
+      _set_render_options(_flags, value) {
+        rendererDpr = value;
+      },
+      _resize_viewbox(width, height) {
+        // The renderer applies DPR when resizing, not when setting options.
+        Object.assign(size, {
+          width: width * rendererDpr,
+          height: height * rendererDpr,
+        });
+      },
+    };
+    const canvas = {
+      width: 1920 * dpr,
+      height: 1080 * dpr,
+      getContext: () => ({ getExtension() {} }),
+    };
+
+    createRendererAdapter(module).assignCanvas(canvas, dpr);
+
+    assert.deepEqual(size, { width: canvas.width, height: canvas.height });
+  });
 }
 
 test("wheel zoom flushes once per animation frame", () => {

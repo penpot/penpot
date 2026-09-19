@@ -37,13 +37,14 @@ export function createRendererAdapter(module, scheduler = globalThis) {
     handle = module.GL.registerContext(context, { majorVersion: 2 });
     module.GL.makeContextCurrent(handle);
     context.getExtension("WEBGL_debug_renderer_info");
-    module._init(
-      Math.round(canvas.width / dpr),
-      Math.round(canvas.height / dpr),
-    );
+    const width = Math.round(canvas.width / dpr);
+    const height = Math.round(canvas.height / dpr);
+    module._init(width, height);
     module._set_render_options(0, dpr);
     // RawBrowser::Chrome = 1; use the same default browser as the benchmark.
     module._set_browser?.(1);
+    // Setting DPR does not resize the renderer's surfaces or framebuffer.
+    module._resize_viewbox(width, height);
   }
 
   function renderFull(flags = 4) {
