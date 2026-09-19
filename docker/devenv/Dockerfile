@@ -66,7 +66,7 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.20.0 \
+ENV NODE_VERSION=v24.21.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -100,7 +100,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.25
+ENV OPENCODE_VERSION=1.18.31
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -242,16 +242,16 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.07.24 \
-    BABASHKA_VERSION=1.13.219 \
+ENV CLJKONDO_VERSION=2026.08.04 \
+    BABASHKA_VERSION=1.13.223 \
     CLJFMT_VERSION=0.16.5 \
-    PIXI_VERSION=0.75.0 \
-    GITHUB_CLI_VERSION=2.97.0 \
-    UV_VERSION=0.12.1 \
+    PIXI_VERSION=0.81.0 \
+    GITHUB_CLI_VERSION=2.101.0 \
+    UV_VERSION=0.12.17 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.6.1
+    SERENA_VERSION=1.7.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -560,4 +560,3 @@ COPY files/init.sh             /home/init.sh
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]
-
