@@ -203,11 +203,17 @@ into separate compose projects per runtime instance:
 If you had the devenv running on the previous single-project (`penpotdev`)
 layout, leftover containers and the auto-generated `penpotdev_default`
 network must be removed before bringing the new ws0 instance up. The named
-data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_rustfs_data`,
+data volumes (`penpotdev_postgres_data_pg18`, `penpotdev_rustfs_data`,
 `penpotdev_mailpit_data`, `penpotdev_user_data`, `penpotdev_valkey_data`) are
 pinned by explicit `name:` entries in the new compose files. The legacy
-`penpotdev_minio_data` volume remains untouched but is not mounted by RustFS;
-existing MinIO objects are not migrated automatically.
+`penpotdev_postgres_data_pg16` and `penpotdev_minio_data` volumes remain
+untouched. PostgreSQL 16 data and MinIO objects are not migrated automatically.
+
+PostgreSQL 18 stores its versioned data directory under
+`/var/lib/postgresql/18/docker`, so the devenv mounts its volume at
+`/var/lib/postgresql`. To retain data from PostgreSQL 16, export and restore it
+with `pg_dump` and `pg_restore`; do not mount the PostgreSQL 16 volume directly
+in the PostgreSQL 18 container.
 
 One-time cleanup, then bring up ws0:
 
