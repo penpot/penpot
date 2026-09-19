@@ -67,6 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.21.0 \
+    PNPM_VERSION=12.5.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -75,10 +76,14 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='60f0b186348a4f740e41269c79351b4d957c28af57b010a336fc7458e4e33134'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='746979ad910f6eba9187c47080e1edfb73129ce2b8d39cc44cb1f6bc72cd571e'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -89,10 +94,14 @@ RUN set -eux; \
     mkdir -p /opt/node; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
+    PNPM_URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    curl -LfsSo /tmp/pnpm.tar.gz "${PNPM_URL}"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/pnpm.tar.gz -C /opt/node/bin pnpm; \
+    chmod 755 /opt/node/bin/pnpm; \
     chown -R root /opt/node; \
     find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
-    corepack enable; \
-    rm -rf /tmp/nodejs.tar.gz;
+    rm -f /tmp/nodejs.tar.gz /tmp/pnpm.tar.gz;
 
 ################################################################################
 ## OPENCODE SETUP
