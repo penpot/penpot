@@ -75,12 +75,12 @@
   [:map {:title "create-file"}
    [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
-   [:id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::create-file
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::doc/module :files
    ::webhooks/event? true
    ::sm/params schema:create-file
@@ -105,7 +105,11 @@
 
         params   (-> params
                      (assoc :profile-id profile-id)
-                     (assoc :features features))]
+                     (assoc :features features)
+                     ;; NOTE: the RPC layer does not strip unknown params,
+                     ;; so an attacker-supplied :id would reach make-file,
+                     ;; which honors it for internal callers. Drop it here.
+                     (dissoc :id))]
 
     (quotes/check! cfg {::quotes/id ::quotes/files-per-project
                         ::quotes/team-id team-id

@@ -1426,3 +1426,27 @@
       (t/is (not (th/success? out)))
       (t/is (th/ex-of-type? (:error out) :not-found))
       (t/is (th/ex-of-code? (:error out) :member-does-not-exist)))))
+
+(t/deftest create-team-ignores-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :id sent-id})]
+    (t/is (th/success? out))
+    (t/is (uuid? (:id (:result out))))
+    (t/is (not= sent-id (:id (:result out))))))
+
+(t/deftest create-team-with-invitations-ignores-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team-with-invitations
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :emails ["invitee@example.com"]
+                              :role :editor
+                              :id sent-id})]
+    (t/is (th/success? out))
+    (t/is (uuid? (:id (:result out))))
+    (t/is (not= sent-id (:id (:result out))))))

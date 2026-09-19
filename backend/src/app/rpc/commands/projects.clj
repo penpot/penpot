@@ -198,11 +198,11 @@
 (def ^:private schema:create-project
   [:map {:title "create-project"}
    [:team-id ::sm/uuid]
-   [:name [:string {:max 250 :min 1}]]
-   [:id {:optional true} ::sm/uuid]])
+   [:name [:string {:max 250 :min 1}]]])
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::webhooks/event? true
    ::sm/params schema:create-project}
   [cfg {:keys [::rpc/profile-id team-id] :as params}]
@@ -212,7 +212,12 @@
                       ::quotes/profile-id profile-id
                       ::quotes/team-id team-id})
 
-  (let [params (assoc params :profile-id profile-id)]
+  ;; NOTE: the RPC layer does not strip unknown params, so an
+  ;; attacker-supplied :id would reach teams/create-project, which
+  ;; honors it for internal callers. Drop it here.
+  (let [params (-> params
+                   (assoc :profile-id profile-id)
+                   (dissoc :id))]
     (db/tx-run! cfg create-project params)))
 
 ;; --- MUTATION: Toggle Project Pin

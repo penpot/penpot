@@ -523,12 +523,12 @@
   [:map {:title "create-team"}
    [:name types.team/schema:team-name]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
    [:organization-id {:optional true} ::sm/uuid]
    [:is-default {:optional true} :boolean]])
 
 (sv/defmethod ::create-team
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::sm/params schema:create-team}
   [cfg {:keys [::rpc/profile-id organization-id] :as params}]
 
@@ -651,8 +651,8 @@
     (assoc team :default-project-id (:id project))))
 
 (defn- create-team*
-  [conn {:keys [id name is-default features] :as params}]
-  (let [id         (or id (uuid/next))
+  [conn {:keys [name is-default features]}]
+  (let [id         (uuid/next)
         is-default (if (boolean? is-default) is-default false)
         features   (db/create-array conn "text" features)
         name       (d/normalize-string name)
@@ -690,6 +690,9 @@
 
 (defn create-project
   [conn {:keys [id team-id name is-default created-at modified-at]}]
+  ;; NOTE: the explicit id is kept for internal callers that duplicate or
+  ;; import projects with a remapped id (see management.clj); the RPC
+  ;; commands no longer accept a client-provided id.
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
         name       (d/normalize-string name)

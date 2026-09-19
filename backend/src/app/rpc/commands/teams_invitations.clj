@@ -538,12 +538,12 @@
   [:map {:title "create-team-with-invitations"}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
    [:emails [::sm/set ::sm/email]]
    [:role types.team/schema:role]])
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "Remove optional :id param, the server always generates the identifier"]]
    ::doc/module :teams
    ::sm/params schema:create-team-with-invitations
    ::db/transaction true}

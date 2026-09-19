@@ -21,20 +21,19 @@
 (t/deftest projects-simple-crud
   (let [profile    (th/create-profile* 1)
         team       (th/create-team* 1 {:profile-id (:id profile)})
-        project-id (uuid/next)]
+        data       {::th/type :create-project
+                    ::rpc/profile-id (:id profile)
+                    :team-id (:id team)
+                    :name "test project"}
+        out        (th/command! data)
+        _          (t/is (nil? (:error out)))
+        project-id (:id (:result out))]
 
     ;; create project
-    (let [data {::th/type :create-project
-                ::rpc/profile-id (:id profile)
-                :id project-id
-                :team-id (:id team)
-                :name "test project"}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (= (:name data) (:name result)))))
+    ;; (th/print-result! out)
+    (t/is (uuid? project-id))
+    (let [result (:result out)]
+      (t/is (= (:name data) (:name result))))
 
     ;; query the list of projects of a team
     (let [data {::th/type :get-projects
@@ -262,3 +261,16 @@
         err   (:error out)]
     (t/is (th/ex-info? err))
     (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest create-project-ignores-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-project
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:id team)
+                              :name "project with client id"
+                              :id sent-id})]
+    (t/is (th/success? out))
+    (t/is (uuid? (:id (:result out))))
+    (t/is (not= sent-id (:id (:result out))))))
