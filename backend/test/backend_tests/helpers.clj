@@ -401,8 +401,9 @@
   (protocol [_] protocol))
 
 (defn make-dummy-request
-  "Constructs a DummyRequest from an options map. Every key is
-  optional; missing values fall back to sensible defaults. New
+  "Constructs a DummyRequest from options. Called with keyword
+  arguments, a single options map, or no arguments; every key is
+  optional and missing values fall back to sensible defaults. New
   fields added to DummyRequest won't break existing call sites
   as long as this constructor keeps its `:or` defaults in sync.
 
