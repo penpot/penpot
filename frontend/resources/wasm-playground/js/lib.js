@@ -243,9 +243,14 @@ export async function mountScenario(
   const dispose = () => {
     globalThis.removeEventListener("pagehide", dispose);
     adapter.dispose();
+    if (globalThis.playgroundAdapter === renderer) {
+      delete globalThis.playgroundAdapter;
+    }
   };
   globalThis.addEventListener("pagehide", dispose, { once: true });
-  return { ...adapter, dispose };
+  const renderer = { ...adapter, dispose };
+  globalThis.playgroundAdapter = renderer;
+  return renderer;
 }
 
 // Compatibility for the older, explicitly noncanonical comparison.html page.
