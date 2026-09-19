@@ -247,6 +247,7 @@ ENV CLJKONDO_VERSION=2026.08.04 \
     CLJFMT_VERSION=0.16.5 \
     PIXI_VERSION=0.81.0 \
     GITHUB_CLI_VERSION=2.101.0 \
+    AWS_CLI_VERSION=2.36.49 \
     UV_VERSION=0.12.17 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
@@ -356,24 +357,30 @@ RUN set -ex; \
     tar -xv --strip-components=1 -f /tmp/gh.tar.gz; \
     rm -rf /tmp/gh.tar.gz;
 
-# Install minio client
+# Install AWS CLI
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://dl.min.io/client/mc/release/linux-arm64/mc"; \
+         BINARY_ARCH="aarch64"; \
+         BINARY_SHA256="2dec26fdaff2f5e34961ea98f456297104f73d8409fc3599c8f2909c6e27a07e"; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://dl.min.io/client/mc/release/linux-amd64/mc"; \
+         BINARY_ARCH="x86_64"; \
+         BINARY_SHA256="6b51b62d232217350e72d8f2493f47d3461239d011d1d5eef960dfcd8cb07069"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    wget -O /tmp/mc ${BINARY_URL}; \
-    mv /tmp/mc /opt/utils/bin/; \
-    chmod +x /opt/utils/bin/mc;
+    BINARY_URL="https://awscli.amazonaws.com/awscli-exe-linux-${BINARY_ARCH}-${AWS_CLI_VERSION}.zip"; \
+    curl -LfsSo /tmp/awscliv2.zip ${BINARY_URL}; \
+    echo "${BINARY_SHA256} */tmp/awscliv2.zip" | sha256sum -c -; \
+    cd /tmp; \
+    unzip -q awscliv2.zip; \
+    ./aws/install --install-dir /opt/utils/aws-cli --bin-dir /opt/utils/bin; \
+    rm -rf /tmp/aws /tmp/awscliv2.zip;
 
 # Install uv
 RUN set -ex; \
