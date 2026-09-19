@@ -130,6 +130,37 @@ RUN set -ex; \
     chmod +x /tmp/opencode/opencode; \
     rm -f /tmp/opencode.tar.gz;
 
+################################################################################
+## OPENCODE2 SETUP (V2, side-by-side with V1 `opencode`)
+################################################################################
+
+FROM base AS setup-opencode2
+
+ENV OPENCODE2_VERSION=2.0.10
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
+         ESUM='cf5416676240455dc5a98500237af296cb1a00efbd2cca302ad22c92ea080ebc'; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
+         ESUM='ca3c84d78c91005960ef9f3f7d60c7dfb4b2db58b97b0700e4e394a03bd8f42f'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/opencode2.tgz "${BINARY_URL}"; \
+    echo "${ESUM} */tmp/opencode2.tgz" | sha256sum -c -; \
+    mkdir -p /tmp/opencode2; \
+    tar -xzf /tmp/opencode2.tgz -C /tmp/opencode2 --strip-components=2 package/bin; \
+    mv /tmp/opencode2/opencode /tmp/opencode2/opencode2; \
+    chmod +x /tmp/opencode2/opencode2; \
+    rm -f /tmp/opencode2.tgz;
+
 
 ################################################################################
 ## CADDYSERVER SETUP
@@ -556,6 +587,7 @@ COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
+COPY --from=setup-opencode2 /tmp/opencode2/opencode2 /opt/utils/bin/opencode2
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
