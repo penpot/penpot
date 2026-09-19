@@ -1,0 +1,10 @@
+---
+source: src/render/svg/tests.rs
+assertion_line: 454
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="171.24356" height="156.60254" viewBox="0 0 171.24356 156.60254">
+	<path fill="#FFD400" transform="matrix(0.866025 0.5 -0.5 0.866025 50 0)" d="M0 0L140 0L140 100L-9.5367432e-07 100L0 0Z"/>
+	<path fill="#1040FF" transform="matrix(0.866025 0.5 -0.5 0.866025 50 0)" d="M140 0L0 0L0 100L140 100L140 0ZM11.999999 88L12 12L128 12L128 88L11.999999 88Z" fill-rule="evenodd"/>
+</svg>

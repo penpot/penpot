@@ -163,6 +163,7 @@
         (-> state
             (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)
             (assoc-in [:workspace-local :edit-path id :moving-handler] moving-handler)
+            (assoc-in [:workspace-local :edit-path id :edited-handler] primary)
             (cond-> (some? new-prev-handler)
               (assoc-in [:workspace-local :edit-path id :prev-handler] new-prev-handler)))))))
 
@@ -286,7 +287,10 @@
                          content-modifiers))]
 
         (-> state
-            (assoc-in [:workspace-local :edit-path id :content-modifiers] content-modifiers))))))
+            (assoc-in [:workspace-local :edit-path id :content-modifiers] content-modifiers)
+            (cond-> (= 1 (count handler-ids))
+              (assoc-in [:workspace-local :edit-path id :edited-handler]
+                        (first handler-ids))))))))
 
 (defn- move-node-indices
   [state node-indices from-point to-point]
@@ -466,6 +470,7 @@
               (rx/map #(move-selected-path-point start-position %))
               (rx/take-until stopper))
          (rx/of (apply-content-modifiers)
+                (tools/merge-coincident-nodes)
                 (merge-dragged-on-drop)))))))
 
 (declare drag-selected-segments)
@@ -555,16 +560,21 @@
                 (rx/map #(move-selected-path-segment start-position %))
                 (rx/take-until stopper))
            (rx/of (apply-content-modifiers)
+                  (tools/merge-coincident-nodes)
                   (merge-dragged-on-drop))))))))
 
 (defn bend-segment-modifier
-  "Bends segment `index` so its point at `t` reaches `target`."
-  [index base-curve t target]
+  "Bends segment `index` so its point at `t` reaches `target`.
+
+  `base-deltas` offsets the stored handlers onto `base-curve`."
+  [index base-curve base-deltas t target]
   (ptk/reify ::bend-segment-modifier
     ptk/UpdateEvent
     (update [_ state]
       (let [id        (st/get-path-id state)
-            deltas    (path.helpers/bend-curve-deltas base-curve t target)
+            deltas    (merge-with +
+                                  base-deltas
+                                  (path.helpers/bend-curve-deltas base-curve t target))
             modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers] {})]
         (assoc-in state [:workspace-local :edit-path id :content-modifiers]
                   (assoc modifiers index deltas))))))
@@ -574,17 +584,20 @@
   (ptk/reify ::bend-selected-segment
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper    (mse/drag-stopper stream)
-            content    (st/get-path state :content)
-            entry      (segment-entry content index)
-            base-curve (path.helpers/entry->bezier entry)
+      (let [stopper     (mse/drag-stopper stream)
+            content     (st/get-path state :content)
+            entry       (segment-entry content index)
+            curve       (path.helpers/entry->bezier entry)
+            ;; A straight segment bends from handlers spread along its chord.
+            base-curve  (path.helpers/bend-reference-curve curve)
+            base-deltas (path.helpers/curve-handler-deltas curve base-curve)
             ;; Keep the grabbed curve parameter fixed during the drag.
-            t          (path.helpers/curve-closest-t base-curve start-position 0.001)]
+            t           (path.helpers/curve-closest-t base-curve start-position 0.001)]
         (rx/concat
          (->> ms/mouse-position
               (rx/filter gpt/point?)
               (rx/map streams/to-pixel-snap)
-              (rx/map #(bend-segment-modifier index base-curve t %))
+              (rx/map #(bend-segment-modifier index base-curve base-deltas t %))
               (rx/take-until stopper))
          (rx/of (apply-content-modifiers)))))))
 
@@ -753,6 +766,7 @@
                 (rx/of (move-selected direction shift?)))
 
                (rx/of (apply-content-modifiers)
+                      (tools/merge-coincident-nodes)
                       (finish-move-selected))))
             (rx/empty)))))))
 
@@ -946,7 +960,7 @@
        (ptk/data-event :layout/update {:ids [id]})))))
 
 (defn- split-segments
-  [_id {:keys [from-p to-p t]}]
+  [id {:keys [from-p to-p t]}]
   (ptk/reify ::split-segments
     ptk/UpdateEvent
     (update [_ state]
@@ -955,7 +969,9 @@
             (st/set-content (-> content
                                 (path/split-segments #{from-p to-p} t)
                                 (path/content)))
-            (update-in (st/get-path-location state) path/update-geometry))))))
+            (update-in (st/get-path-location state) path/update-geometry)
+            ;; The inserted command shifts the indices a handler id refers to.
+            (update-in [:workspace-local :edit-path id] dissoc :edited-handler))))))
 
 (defn create-node-at-position
   [params]

@@ -3,15 +3,16 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, ParagraphBuilderGroup,
-        ParagraphLayout, Stroke, StrokeKind, TextContent,
+        add_text_with_tabs, calculate_text_layout_data, set_paint_fill, vertical_align_offset,
+        Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind,
+        TextContent, TextDecorationSegment,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
 use skia_safe::{
     self as skia,
     canvas::SaveLayerRec,
-    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration, TextStyle},
+    textlayout::{ParagraphBuilder, StyleMetrics, TextDecoration},
     Canvas, ImageFilter, Paint,
 };
 
@@ -318,6 +319,90 @@ pub fn render_overlay_emoji(
     )
 }
 
+/// Paint fill glyphs from `TextContent.layout` when the cache is valid.
+///
+/// Avoids rebuilding ParagraphBuilders and re-running Skia layout on every
+/// paint. Only safe for the plain fill pass (no stroke/shadow-specific builders).
+/// Returns `true` when painting was done from cache.
+pub fn try_paint_from_layout_cache(
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
+    shape: &Shape,
+    surface_id: Option<SurfaceId>,
+    layout_cache_rotation_only: bool,
+) -> Result<bool> {
+    let text_content = shape.get_text_content();
+    let cache_usable = if layout_cache_rotation_only {
+        text_content.layout_cache_versions_match()
+    } else {
+        text_content.has_usable_paint_layout(shape)
+    };
+    if !cache_usable {
+        return Ok(false);
+    }
+
+    if let Some(render_state) = render_state {
+        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
+        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
+        paint_from_cached_layout(canvas, shape, text_content);
+        return Ok(true);
+    }
+
+    if let Some(canvas) = canvas {
+        paint_from_cached_layout(canvas, shape, text_content);
+        return Ok(true);
+    }
+
+    Ok(false)
+}
+
+fn paint_from_cached_layout(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
+    let selrect = shape.selrect();
+    // Absolute image/gradient shaders were baked at `layout_paint_origin`. Paint
+    // glyphs in that space and translate the canvas so both track selrect moves
+    // without rebuilding Skia paragraphs.
+    let anchor = text_content.cached_layout_paint_anchor(&selrect);
+    let offset = text_content.cached_layout_paint_offset(&selrect);
+    let needs_translate = offset.x.abs() > f32::EPSILON || offset.y.abs() > f32::EPSILON;
+    if needs_translate {
+        canvas.save();
+        canvas.translate((offset.x, offset.y));
+    }
+
+    let x = anchor.x;
+    let base_y = anchor.y;
+    let paragraphs = &text_content.layout.paragraphs;
+    let draw_decorations = text_content.has_text_decorations();
+
+    let total_text_height: f32 = paragraphs
+        .iter()
+        .filter_map(|group| group.first())
+        .map(|p| p.height())
+        .sum();
+    let vertical_offset =
+        vertical_align_offset(selrect.height(), total_text_height, shape.vertical_align());
+
+    let mut y_accum = base_y + vertical_offset;
+    for (index, group) in paragraphs.iter().enumerate() {
+        let Some(paragraph) = group.first() else {
+            continue;
+        };
+        paragraph.paint(canvas, (x, y_accum));
+        if draw_decorations {
+            if let Some(text_paragraph) = text_content.paragraphs().get(index) {
+                for deco in decoration_segments(paragraph, text_paragraph, x, y_accum) {
+                    draw_decoration_segment(canvas, &deco);
+                }
+            }
+        }
+        y_accum += paragraph.height();
+    }
+
+    if needs_translate {
+        canvas.restore();
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_text_on_canvas(
     canvas: &Canvas,
@@ -331,6 +416,8 @@ fn render_text_on_canvas(
 ) {
     let layer_bounds = shape.layer_bounds();
 
+    // Layer stack is managed here (blur / shadow / inset). `draw_text` is
+    // self-contained and only opens a layer when stroke-group opacity needs it.
     if let Some(blur_filter) = blur {
         let mut blur_paint = Paint::default();
         blur_paint.set_image_filter(blur_filter.clone());
@@ -391,17 +478,15 @@ fn render_text_on_canvas(
     if blur.is_some() {
         canvas.restore();
     }
-
-    canvas.restore();
 }
 
-/// Paints text fill for vector SVG export. Skips `save_layer` wrappers that
-/// `SkSVGDevice` would drop.
-pub fn paint_text_fill(canvas: &Canvas, shape: &Shape) {
-    let text_content = shape.get_text_content();
-    let text_content = text_content.new_bounds(shape.selrect());
-    let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
-    paint_text_with_emoji_overlay(canvas, shape, &mut paragraph_builders, false);
+/// Paints pre-built paragraph groups (SVG export path for selective fill layers).
+pub fn paint_text_paragraphs(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+) {
+    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, false);
 }
 
 /// Lays out and paints paragraph builders without any layer management.
@@ -449,14 +534,7 @@ fn paint_text_with_emoji_overlay(
         }
 
         for deco in &para.decorations {
-            draw_text_decorations(
-                canvas,
-                &deco.text_style,
-                Some(deco.y),
-                deco.thickness,
-                deco.left,
-                deco.width,
-            );
+            draw_decoration_segment(canvas, deco);
         }
     }
 }
@@ -676,17 +754,9 @@ fn paint_emoji_opaque(
         .paint(canvas, (emoji_para.x, emoji_para.y));
 
     for deco in &deco_para.decorations {
-        draw_text_decorations(
-            canvas,
-            &deco.text_style,
-            Some(deco.y),
-            deco.thickness,
-            deco.left,
-            deco.width,
-        );
-        let r = decoration_rect(deco.y, deco.thickness, deco.left, deco.width);
+        draw_decoration_segment(canvas, deco);
         for (kind, paint) in stroke_decos {
-            draw_decoration_stroke(canvas, *kind, paint, r);
+            draw_decoration_stroke(canvas, *kind, paint, deco.rect());
         }
     }
     canvas.restore();
@@ -757,20 +827,22 @@ fn draw_text(
     layer_opacity: Option<f32>,
     overlay_emoji: bool,
 ) {
-    let layer_bounds = shape.layer_bounds();
-
+    // Multi-style spans are already encoded in each ParagraphBuilder's
+    // TextStyles; paragraph.paint handles them without an isolation layer.
+    // Only open a save_layer when stroke-group opacity must composite as one.
     if let Some(opacity) = layer_opacity {
+        let layer_bounds = shape.layer_bounds();
         let mut opacity_paint = Paint::default();
         opacity_paint.set_alpha_f(opacity);
         let layer_rec = SaveLayerRec::default()
             .bounds(&layer_bounds)
             .paint(&opacity_paint);
         canvas.save_layer(&layer_rec);
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
+        canvas.restore();
     } else {
-        canvas.save_layer(&SaveLayerRec::default().bounds(&layer_bounds));
+        paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
     }
-
-    paint_text_with_emoji_overlay(canvas, shape, paragraph_builder_groups, overlay_emoji);
 }
 
 /// Renders a text stroke masked to the glyph shape.
@@ -997,40 +1069,128 @@ pub fn render_outer_stroke(
     )
 }
 
-fn decoration_rect(y: f32, thickness: f32, text_left: f32, text_width: f32) -> skia_safe::Rect {
-    skia_safe::Rect::new(
-        text_left,
-        y - thickness / 2.0,
-        text_left + text_width,
-        y + thickness / 2.0,
-    )
+fn draw_decoration_segment(canvas: &Canvas, deco: &TextDecorationSegment) {
+    let mut decoration_paint = deco.text_style.foreground();
+    decoration_paint.set_anti_alias(true);
+    canvas.draw_rect(deco.rect(), &decoration_paint);
 }
 
-fn draw_text_decorations(
-    canvas: &Canvas,
-    text_style: &TextStyle,
-    y: Option<f32>,
-    thickness: f32,
-    text_left: f32,
-    text_width: f32,
-) {
-    if let Some(y) = y {
-        let r = decoration_rect(y, thickness, text_left, text_width);
-        let mut decoration_paint = text_style.foreground();
-        decoration_paint.set_anti_alias(true);
-        canvas.draw_rect(r, &decoration_paint);
+/// One decorated span clipped to a line: UTF-16 range, decoration and the
+/// Skia style run it falls in (paint + font metrics).
+type LineDecoration<'a> = (usize, usize, TextDecoration, &'a StyleMetrics<'a>);
+
+/// UTF-16 ranges of the spans that ask for a decoration we draw.
+fn decorated_span_ranges(text_paragraph: &TextParagraph) -> Vec<(usize, usize, TextDecoration)> {
+    let mut ranges = Vec::new();
+    let mut offset = 0;
+    for span in text_paragraph.children() {
+        let len = span.apply_text_transform().encode_utf16().count();
+        match span.text_decoration {
+            Some(kind)
+                if kind == TextDecoration::UNDERLINE || kind == TextDecoration::LINE_THROUGH =>
+            {
+                ranges.push((offset, offset + len, kind))
+            }
+            _ => {}
+        }
+        offset += len;
     }
+    ranges
 }
 
-pub fn calculate_decoration_metrics(
-    style_metrics: &Vec<(usize, &StyleMetrics)>,
+/// Style run covering `offset`; runs are keyed by their start index.
+fn style_metric_at<'a>(
+    style_metrics: &[(usize, &'a StyleMetrics<'a>)],
+    offset: usize,
+) -> Option<&'a StyleMetrics<'a>> {
+    style_metrics
+        .iter()
+        .rev()
+        .find(|(start, _)| *start <= offset)
+        .map(|(_, metrics)| *metrics)
+}
+
+/// Decoration bars for one laid out paragraph, in shape coordinates.
+///
+/// Segmented by the model's spans, so which spans get a bar never depends on
+/// how Skia grouped the line into style runs; the runs only supply the paint
+/// and font metrics covering each segment.
+pub fn decoration_segments(
+    skia_paragraph: &skia::textlayout::Paragraph,
+    text_paragraph: &TextParagraph,
+    x: f32,
+    y_accum: f32,
+) -> Vec<TextDecorationSegment> {
+    let decorated = decorated_span_ranges(text_paragraph);
+    if decorated.is_empty() {
+        return Vec::new();
+    }
+
+    let mut segments = Vec::new();
+    for line in &skia_paragraph.get_line_metrics() {
+        let style_metrics: Vec<_> = line
+            .get_style_metrics(line.start_index..line.end_index)
+            .into_iter()
+            .collect();
+        let line_baseline = y_accum + line.baseline as f32;
+
+        let line_decorations: Vec<LineDecoration<'_>> = decorated
+            .iter()
+            .filter_map(|&(start, end, kind)| {
+                let seg_start = start.max(line.start_index);
+                let seg_end = end.min(line.end_index);
+                if seg_start >= seg_end {
+                    return None;
+                }
+                let metrics = style_metric_at(&style_metrics, seg_start)?;
+                Some((seg_start, seg_end, kind, metrics))
+            })
+            .collect();
+
+        let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
+            calculate_decoration_metrics(&line_decorations, line_baseline);
+
+        for (seg_start, seg_end, kind, metrics) in line_decorations {
+            let rects = skia_paragraph.get_rects_for_range(
+                seg_start..seg_end,
+                skia::textlayout::RectHeightStyle::Tight,
+                skia::textlayout::RectWidthStyle::Tight,
+            );
+            let (width, x_offset) = match rects.first() {
+                Some(first) => {
+                    let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                    (total_width, first.rect.left - line.left as f32)
+                }
+                None => (0.0, 0.0),
+            };
+            let (y, thickness) = if kind == TextDecoration::LINE_THROUGH {
+                (strike_y, max_strike_thickness)
+            } else {
+                (underline_y, max_underline_thickness)
+            };
+            segments.push(TextDecorationSegment {
+                kind,
+                text_style: (*metrics.text_style).clone(),
+                y: y.unwrap_or(line_baseline),
+                thickness,
+                left: x + line.left as f32 + x_offset,
+                width,
+            });
+        }
+    }
+
+    segments
+}
+
+fn calculate_decoration_metrics(
+    line_decorations: &[LineDecoration<'_>],
     line_baseline: f32,
 ) -> (f32, Option<f32>, f32, Option<f32>) {
     let mut max_underline_thickness: f32 = 0.0;
     let mut underline_y = None;
     let mut max_strike_thickness: f32 = 0.0;
     let mut strike_y = None;
-    for (_style_start, style_metric) in style_metrics.iter() {
+    for (_seg_start, _seg_end, kind, style_metric) in line_decorations.iter() {
         let font_metrics = style_metric.font_metrics;
         let font_size = font_metrics
             .cap_height
@@ -1046,7 +1206,7 @@ pub fn calculate_decoration_metrics(
         let thickness = (font_metrics.underline_thickness().unwrap_or(1.0) * thickness_factor)
             .max(min_thickness);
 
-        if style_metric.text_style.decoration().ty == TextDecoration::UNDERLINE {
+        if *kind == TextDecoration::UNDERLINE {
             // Same gap from baseline to underline as in Chromium
             // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
             let gap_scaling = raw_font_size * 1.0 / 9.0;
@@ -1055,7 +1215,7 @@ pub fn calculate_decoration_metrics(
             max_underline_thickness = max_underline_thickness.max(thickness);
             underline_y = Some(y);
         }
-        if style_metric.text_style.decoration().ty == TextDecoration::LINE_THROUGH {
+        if *kind == TextDecoration::LINE_THROUGH {
             let y = line_baseline
                 + font_metrics
                     .strikeout_position()
@@ -1072,28 +1232,91 @@ pub fn calculate_decoration_metrics(
     )
 }
 
-// How to use it?
-// Type::Text(text_content) => {
-//     self.surfaces
-//         .apply_mut(&[SurfaceId::Fills, SurfaceId::Strokes], |s| {
-//             s.canvas().concat(&matrix);
-//         });
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{FontFamily, FontStyle, TextAlign, TextDirection, TextSpan, TextTransform};
+    use crate::uuid::Uuid;
 
-//     let text_content = text_content.new_bounds(shape.selrect());
-//     let paths = text_content.get_paths(antialias);
+    fn span(
+        text: &str,
+        decoration: Option<TextDecoration>,
+        transform: Option<TextTransform>,
+    ) -> TextSpan {
+        TextSpan::new(
+            text.to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            decoration,
+            transform,
+            TextDirection::LTR,
+            400,
+            Uuid::nil(),
+            vec![],
+        )
+    }
 
-//     shadows::render_text_shadows(self, &shape, &paths, antialias);
-//     text::render(self, &paths, None, None);
+    fn paragraph(spans: Vec<TextSpan>) -> TextParagraph {
+        TextParagraph::new(
+            TextAlign::Left,
+            TextDirection::LTR,
+            None,
+            None,
+            1.2,
+            0.0,
+            spans,
+        )
+    }
 
-//     for stroke in shape.visible_strokes().rev() {
-//         shadows::render_text_path_stroke_shadows(
-//             self, &shape, &paths, stroke, antialias,
-//         );
-//         strokes::render_text_paths(self, &shape, stroke, &paths, None, None, antialias);
-//         shadows::render_text_path_stroke_inner_shadows(
-//             self, &shape, &paths, stroke, antialias,
-//         );
-//     }
+    #[test]
+    fn decorated_ranges_follow_spans_not_paint_runs() {
+        let para = paragraph(vec![
+            span("plain ", None, None),
+            span("under", Some(TextDecoration::UNDERLINE), None),
+            span(" plain ", None, None),
+            span("struck", Some(TextDecoration::LINE_THROUGH), None),
+        ]);
 
-//     shadows::render_text_inner_shadows(self, &shape, &paths, antialias);
-// }
+        assert_eq!(
+            decorated_span_ranges(&para),
+            vec![
+                (6, 11, TextDecoration::UNDERLINE),
+                (18, 24, TextDecoration::LINE_THROUGH),
+            ]
+        );
+    }
+
+    #[test]
+    fn decorated_ranges_are_utf16_offsets_of_the_transformed_text() {
+        let para = paragraph(vec![
+            span("🎉", None, None),
+            span(
+                "straße",
+                Some(TextDecoration::UNDERLINE),
+                Some(TextTransform::Uppercase),
+            ),
+            span("x", Some(TextDecoration::UNDERLINE), None),
+        ]);
+
+        // The emoji takes two UTF-16 units and `ß` uppercases to `SS`.
+        assert_eq!(
+            decorated_span_ranges(&para),
+            vec![
+                (2, 9, TextDecoration::UNDERLINE),
+                (9, 10, TextDecoration::UNDERLINE),
+            ]
+        );
+    }
+
+    #[test]
+    fn undecorated_paragraphs_have_no_ranges() {
+        let para = paragraph(vec![
+            span("plain", None, None),
+            span("none", Some(TextDecoration::NO_DECORATION), None),
+        ]);
+
+        assert!(decorated_span_ranges(&para).is_empty());
+    }
+}

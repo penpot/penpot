@@ -27,6 +27,20 @@
     schema:string
     schema:string]])
 
+(def valid-permissions
+  "Set of valid plugin permissions that can be granted to plugins."
+  #{"content:read" "content:write"
+    "library:read" "library:write"
+    "comment:read" "comment:write"
+    "clipboard:read" "clipboard:write"
+    "user:read"
+    "allow:downloads"
+    "allow:localstorage"})
+
+(def schema:permissions
+  "Schema for plugin permissions - a set of valid permission strings."
+  [:set {:gen/max 11} (into [:enum] (sort valid-permissions))])
+
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
@@ -36,7 +50,7 @@
    [:host :string]
    [:code :string]
    [:icon {:optional true} :string]
-   [:permissions [:set :string]]])
+   [:permissions schema:permissions]])
 
 (def schema:plugin-registry
   [:map

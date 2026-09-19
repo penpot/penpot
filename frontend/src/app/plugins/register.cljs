@@ -112,13 +112,6 @@
       manifest
       (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
 
-(defn save-to-store
-  []
-  ;; TODO: need this for the transition to the new schema. We can remove eventually
-  (let [registry (update @registry :data d/update-vals d/without-nils)]
-    (->> (rp/cmd! :update-profile-props {:props {:plugins registry}})
-         (rx/subs! identity))))
-
 (defn load-from-store
   []
   (reset! registry (get-in @st/state [:profile :props :plugins] {})))
@@ -126,6 +119,8 @@
 (defn init
   []
   (load-from-store))
+
+(declare remove-plugin!)
 
 (defn install-plugin!
   [plugin]
@@ -136,17 +131,27 @@
     (swap! registry #(-> %
                          (update :ids update-ids)
                          (update :data assoc (:plugin-id plugin) plugin)))
-    (save-to-store)))
+    (->> (rp/cmd! :add-profile-plugin {:plugin plugin})
+         (rx/subs! identity
+                   (fn [err]
+                     (remove-plugin! plugin)
+                     (.error js/console "Failed to install plugin:" err))))))
 
 (defn remove-plugin!
   [{:keys [plugin-id]}]
-  (letfn [(update-ids [ids]
-            (->> ids
-                 (remove #(= % plugin-id))))]
-    (swap! registry #(-> %
-                         (update :ids update-ids)
-                         (update :data dissoc plugin-id)))
-    (save-to-store)))
+  (let [plugin (get-plugin plugin-id)]
+    (letfn [(update-ids [ids]
+              (->> ids
+                   (remove #(= % plugin-id))))]
+      (swap! registry #(-> %
+                           (update :ids update-ids)
+                           (update :data dissoc plugin-id)))
+      (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
+           (rx/subs! identity
+                     (fn [err]
+                       (when plugin
+                         (install-plugin! plugin))
+                       (.error js/console "Failed to remove plugin:" err)))))))
 
 (defn check-permission
   [plugin-id permission]

@@ -132,10 +132,6 @@ impl FontStore {
         &self.fallback_fonts
     }
 
-    pub fn get_emoji_font(&self, _size: f32) -> Option<Font> {
-        None
-    }
-
     pub fn set_source_url(&mut self, alias: &str, url: String) {
         if !url.is_empty() {
             self.source_urls.insert(alias.to_string(), url);

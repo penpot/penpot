@@ -74,6 +74,12 @@
     translation?
     (assoc :translation? true)))
 
+(defn set-skip-component-sync?
+  [changes skip-component-sync?]
+  (cond-> changes
+    skip-component-sync?
+    (assoc :skip-component-sync? true)))
+
 (defn with-page
   [changes page]
   (vary-meta changes assoc

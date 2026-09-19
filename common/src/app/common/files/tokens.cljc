@@ -166,7 +166,6 @@
                      (not (ctob/token-name-path-exists? token-name tokens-tree)))
                    new-tokens))))]])
 (defn find-refs [value]
-  (prn value)
   (cond
     (string? value)
     (cto/find-token-value-references value)

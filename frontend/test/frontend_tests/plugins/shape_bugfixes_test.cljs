@@ -11,10 +11,15 @@
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.public-utils :as public-utils]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
@@ -204,3 +209,202 @@
 (t/deftest group-empty-input-returns-nil
   (let [context (api/create-context plugin-id)]
     (t/is (nil? (.group context #js [])))))
+
+;; ---------------------------------------------------------------------------
+;; Permission checks (T9-F-04)
+;; ---------------------------------------------------------------------------
+
+(t/deftest commit-fills-text-shape-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/proxy->shape (constantly {:id shape-id :type :text})
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (set! (.-fills proxy) #js [#js {:fillColor "#ff0000" :fillOpacity 1}])
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :fills "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest interaction-trigger-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!    mock/noop]
+      (let [inter (shape/interaction-proxy plugin-id file-id page-id shape-id 0)]
+        (set! (.-trigger inter) "click")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :trigger "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest interaction-delay-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!    mock/noop]
+      (let [inter (shape/interaction-proxy plugin-id file-id page-id shape-id 0)]
+        (set! (.-delay inter) 100)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :delay "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest interaction-action-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/proxy->interaction (constantly {:event-type :click :delay 0 :action-type :open-url :url "https://example.com"})
+                  u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!    mock/noop]
+      (let [inter (shape/interaction-proxy plugin-id file-id page-id shape-id 0)]
+        (set! (.-action inter) #js {:type "open-url" :url "https://example.com"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :action "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest interaction-remove-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!    mock/noop]
+      (let [inter (shape/interaction-proxy plugin-id file-id page-id shape-id 0)]
+        (.remove inter)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :remove "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest add-interaction-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-shape (constantly {:id shape-id})
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (.addInteraction proxy "click" #js {:type "open-url" :url "https://example.com"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addInteraction "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest remove-interaction-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!    mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)
+            inter (shape/interaction-proxy plugin-id file-id page-id shape-id 0)]
+        (.removeInteraction proxy inter)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :removeInteraction "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest detach-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/page-active? (constantly true)
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (.detach proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :detach "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest export-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (.export proxy #js {:type "png" :scale 1})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :export "Plugin doesn't have 'content:read' permission"]
+                 (first @errors)))))))
+
+(t/deftest apply-token-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        set-id    (uuid/next)
+        token-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token (constantly {:id token-id :name "test" :type :color})
+                  shape/token-proxy? (constantly true)
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)
+            token #js {"$set-id" (str set-id) "$id" (str token-id)}]
+        (.applyToken proxy token #js [])
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :applyToken "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest switch-variant-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-shape (constantly {:id shape-id :component-id shape-id})
+                  u/locate-library-component (constantly {:id (uuid/next)})
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (.switchVariant proxy 0 "value")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :switchVariant "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))
+
+(t/deftest combine-as-variants-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        shape-id  (uuid/next)
+        other-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-shape (fn [_file _page id] {:id id :component-id id})
+                  u/locate-library-component (constantly {:id (uuid/next)})
+                  ctk/is-variant? (constantly false)
+                  u/not-valid    (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!       mock/noop]
+      (let [proxy (shape/shape-proxy plugin-id file-id page-id shape-id)]
+        (.combineAsVariants proxy #js [(str other-id)])
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :combineAsVariants "Plugin doesn't have 'content:write' permission"]
+                 (first @errors)))))))

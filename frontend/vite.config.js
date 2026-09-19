@@ -7,12 +7,8 @@ import { playwright } from '@vitest/browser-playwright'
 
 // https://vitejs.dev/config/
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-const dirname =
-  typeof __dirname !== "undefined"
-    ? __dirname
-    : path.dirname(fileURLToPath(import.meta.url));
+const dirname = import.meta.dirname;
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
@@ -45,15 +41,14 @@ export default defineConfig({
               {browser: "chromium"},
             ],
           },
-          setupFiles: [".storybook/vitest.setup.ts"],
         },
       },
     ],
   },
   resolve: {
     alias: {
-      "@target": resolve(__dirname, "./target/storybook"),
-      "@public": resolve(__dirname, "./resources/public/js/"),
+      "@target": resolve(dirname, "./target/storybook"),
+      "@public": resolve(dirname, "./resources/public/js/"),
     },
   },
 });

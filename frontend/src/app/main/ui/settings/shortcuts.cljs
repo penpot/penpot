@@ -93,10 +93,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private known-shortcut-keys
-  "Known shortcut keys per context, derived from the default shortcuts maps."
-  {:workspace (set (keys wsc/shortcuts))
-   :dashboard (set (keys dsc/shortcuts))
-   :viewer    (set (keys vsc/shortcuts))})
+  "Known shortcut keys per context, derived from the default shortcuts maps.
+   Shortcuts marked :customizable false are excluded."
+  (letfn [(collect-keys [shortcuts]
+            (reduce-kv (fn [s k v]
+                         (if (false? (:customizable v))
+                           s
+                           (conj s k)))
+                       #{}
+                       shortcuts))]
+    {:workspace (into (collect-keys psc/shortcuts) (collect-keys wsc/shortcuts))
+     :dashboard (collect-keys dsc/shortcuts)
+     :viewer    (collect-keys vsc/shortcuts)}))
 
 (def ^:private schema:imported-shortcuts
   "Malli schema for an imported custom-shortcuts payload.
@@ -373,7 +381,8 @@
         (mf/with-memo []
           (fn [_ shortcut search-term]
             (or (str/blank? search-term)
-                (matches-search (:translation shortcut) search-term))))
+                (matches-search (:translation shortcut) search-term)
+                (matches-search (ss/shortcut->command-string shortcut) search-term))))
 
         filter-personalized
         (mf/use-fn
@@ -385,8 +394,10 @@
                  customized? (and (contains? group-map shortcut-key)
                                   (not (str/blank? (get group-map shortcut-key))))]
              (and customized?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         filter-disabled
         (mf/use-fn
@@ -398,8 +409,10 @@
                  in-group? (contains? group-map shortcut-key)
                  blank? (str/blank? (get group-map shortcut-key))]
              (and in-group? blank?
+                  (not (false? (:customizable shortcut)))
                   (or (str/blank? search-term)
-                      (matches-search (:translation shortcut) search-term))))))
+                      (matches-search (:translation shortcut) search-term)
+                      (matches-search (ss/shortcut->command-string shortcut) search-term))))))
 
         on-import-file
         (mf/use-fn
@@ -414,11 +427,16 @@
 
         on-export
         (mf/use-fn
-         (mf/deps shortcuts-json has-custom-shortcuts)
+         (mf/deps shortcuts-json has-custom-shortcuts (:fullname profile))
          (fn []
            (when has-custom-shortcuts
-             (->> (wapi/create-blob shortcuts-json "application/json")
-                  (dom/trigger-download "penpot-shortcuts.json")))))
+             (let [fullname (-> (or (:fullname profile) "user")
+                                (str/replace #"[^a-zA-Z0-9\-_ ]" "")
+                                (str/replace #"\s+" "_"))
+                   date     (.slice (.toISOString (js/Date.)) 0 10)
+                   filename (str "penpot-shortcuts-" fullname "-" date ".json")]
+               (->> (wapi/create-blob shortcuts-json "application/json")
+                    (dom/trigger-download filename))))))
 
         on-file-selected
         (mf/use-fn

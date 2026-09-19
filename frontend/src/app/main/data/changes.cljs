@@ -160,7 +160,7 @@
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source ignore-wasm?
-           selected-before translation?]}]
+           selected-before translation? skip-component-sync?]}]
 
   (assert (cpc/check-changes redo-changes)
           "expect valid vector of changes for redo-changes")
@@ -188,7 +188,8 @@
                    :stack-undo? stack-undo?
                    :ignore-wasm? ignore-wasm?
                    :selected-before selected-before
-                   :translation? translation?}]
+                   :translation? translation?
+                   :skip-component-sync? skip-component-sync?}]
 
     (ptk/reify ::commit
       cljs.core/IDeref
@@ -227,7 +228,7 @@
                  undo-group, they will be undone or redone in a single step
    "
   [{:keys [redo-changes undo-changes save-undo? undo-group tags stack-undo? file-id
-           translation?]
+           translation? skip-component-sync?]
     :or {save-undo? true
          stack-undo? false
          undo-group (uuid/next)
@@ -244,8 +245,10 @@
             features    (get state :features)
             permissions (get state :permissions)]
 
-        ;; Prevent commit changes by a viewer team member (it really should never happen)
-        (when (:can-edit permissions)
+        ;; Historical previews must not create edits to the live file. Check
+        ;; this when creating commits so previously queued edits can still save.
+        (when (and (:can-edit permissions)
+                   (not (dm/get-in state [:workspace-global :preview-id])))
           (log/trace :hint "commit-changes" :redo-changes redo-changes)
           (let [selected (dm/get-in state [:workspace-local :selected])]
             (rx/of (-> params
@@ -261,4 +264,5 @@
                        (assoc :redo-changes rchg)
                        (assoc :selected-before selected)
                        (assoc :translation? translation?)
+                       (assoc :skip-component-sync? skip-component-sync?)
                        (commit)))))))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.wasm.render
   "Headless render pipeline: renders exports with the render-wasm Skia pipeline,
@@ -19,8 +19,7 @@
   because that namespace still exists as the proxy. Reviewable as a rename:
   `git show <base>:exporter/src/app/renderer/wasm.cljs | diff -u - <this file>`.
 
-  Handles png/jpeg/webp (Skia encodes all three) and pdf; `:svg` stays on the
-  browser path."
+  Handles png/jpeg/webp (Skia encodes all three), pdf and svg."
   (:require
    ["node:fs" :as fs]
    ["undici" :as http]
@@ -67,6 +66,15 @@
   "Absolute URI for `path` on the internal (backend) endpoint."
   [path]
   (-> (cf/get-internal-uri)
+      (u/ensure-path-slash)
+      (u/join path)
+      (str)))
+
+(defn- public-uri
+  "Absolute URI for `path` on the public endpoint. Whoever opens an exported SVG
+  resolves its `@font-face` sources, so those cannot use the internal endpoint."
+  [path]
+  (-> (cf/get :public-uri)
       (u/ensure-path-slash)
       (u/join path)
       (str)))
@@ -221,23 +229,32 @@
   [ttf-file]
   (cached-ttf-bytes ttf-file #(fetch-ttf-bytes (internal-uri (str "fonts/" ttf-file)))))
 
+(defn- family-uuid
+  [id]
+  (uuid/from-unsigned-parts (aget id 0) (aget id 1) (aget id 2) (aget id 3)))
+
+(defn- find-variant
+  "Custom variant for a family: uuid+weight+style first, degrading to
+  uuid+weight then uuid."
+  [variants font-uuid weight style]
+  (let [style-str (if (zero? style) "normal" "italic")]
+    (or (d/seek (fn [v] (and (= (:font-id v) font-uuid)
+                             (= (:font-weight v) weight)
+                             (= (name (:font-style v)) style-str)))
+                variants)
+        (d/seek (fn [v] (and (= (:font-id v) font-uuid)
+                             (= (:font-weight v) weight)))
+                variants)
+        (d/seek (fn [v] (= (:font-id v) font-uuid)) variants))))
+
 (defn- make-resolve-font
   "Builds a `resolve-font` fn (family map -> promise of TTF bytes). Custom
-  variants first, matching uuid+weight+style then degrading to uuid+weight then
-  uuid; the bundled fonts for `uuid/zero`, which is what `font-id->uuid` maps
-  every builtin family to; google catalog otherwise."
+  variants first; the bundled fonts for `uuid/zero`, which is what
+  `font-id->uuid` maps every builtin family to; google catalog otherwise."
   [variants params]
   (fn [{:keys [id weight style]}]
-    (let [font-uuid (uuid/from-unsigned-parts (aget id 0) (aget id 1) (aget id 2) (aget id 3))
-          style-str (if (zero? style) "normal" "italic")
-          variant   (or (d/seek (fn [v] (and (= (:font-id v) font-uuid)
-                                             (= (:font-weight v) weight)
-                                             (= (name (:font-style v)) style-str)))
-                                variants)
-                        (d/seek (fn [v] (and (= (:font-id v) font-uuid)
-                                             (= (:font-weight v) weight)))
-                                variants)
-                        (d/seek (fn [v] (= (:font-id v) font-uuid)) variants))]
+    (let [font-uuid (family-uuid id)
+          variant   (find-variant variants font-uuid weight style)]
       (cond
         (:ttf-file-id variant)
         (fetch-asset-bytes (:ttf-file-id variant) params)
@@ -249,6 +266,25 @@
         (if-let [gurl (cfnt/resolve-ttf-url font-uuid weight style)]
           (fetch-gfont-bytes gurl)
           (p/resolved nil))))))
+
+(defn- make-font-url
+  "Builds a `font-url` fn (family map -> public URL of its TTF), the same
+  sources `make-resolve-font` downloads from but addressed publicly. The SVG
+  export emits one `@font-face` per family from these."
+  [variants]
+  (fn [{:keys [id weight style]}]
+    (let [font-uuid (family-uuid id)
+          variant   (find-variant variants font-uuid weight style)]
+      (cond
+        (:ttf-file-id variant)
+        (public-uri (str "assets/by-id/" (:ttf-file-id variant)))
+
+        (= uuid/zero font-uuid)
+        (public-uri (str "fonts/" (cfnt/resolve-ttf-file weight style)))
+
+        :else
+        (some-> (cfnt/resolve-ttf-url font-uuid weight style)
+                (cfnt/gstatic->proxy-url (public-uri "internal/gfonts/font")))))))
 
 ;; --- fallback fonts (emoji + per-script noto fonts)
 ;;
@@ -333,13 +369,18 @@
   "Fetches and stores every image the scene references (shape, stroke and
   text-span fills, enumerated by `app.common.types.shape.images`). Unlike fonts,
   the image store is not reset per request, so already-held images are skipped
-  and repeated exports of a file reuse them."
+  and repeated exports of a file reuse them.
+
+  Always registers a public media URL for each id so SVG export can emit linked
+  `<image href>` even when the encoded bytes were already cached."
   [scene params]
   (let [all-ids (images/scene-image-ids scene)
         new-ids (remove wasm/image-cached? all-ids)]
     (l/dbg :hint "wasm render: provisioning images"
            :total (count all-ids)
            :cached (- (count all-ids) (count new-ids)))
+    (doseq [image-id all-ids]
+      (wasm/store-image-url! image-id (public-uri (str "assets/by-file-media-id/" image-id))))
     (->> new-ids
          (map (fn [image-id]
                 (->> (fetch-file-media-bytes image-id params)
@@ -376,13 +417,19 @@
 
 (defn- render-object-bytes
   [type id scale]
-  (if (= :pdf type)
-    (let [bytes (wasm/render-shape-pdf id scale)]
-      (l/dbg :hint "PDF generated via Skia (render-wasm headless)"
-             :object-id (str id)
-             :backend "skia-wasm"
-             :bytes (.-length bytes))
-      bytes)
+  (case type
+    :pdf (let [bytes (wasm/render-shape-pdf id scale)]
+           (l/dbg :hint "PDF generated via Skia (render-wasm headless)"
+                  :object-id (str id)
+                  :backend "skia-wasm"
+                  :bytes (.-length bytes))
+           bytes)
+    :svg (let [bytes (wasm/render-shape-svg id scale)]
+           (l/dbg :hint "SVG generated via Skia (render-wasm headless)"
+                  :object-id (str id)
+                  :backend "skia-wasm"
+                  :bytes (.-length bytes))
+           bytes)
     (wasm/render-shape-raster id scale type)))
 
 (defn- render*
@@ -406,11 +453,14 @@
                               (provision-fallback-fonts! scene)])
                       (p/mcat
                        (fn [[variants _]]
-                         (let [resolve-font (make-resolve-font (or variants []) params)]
+                         (let [variants     (or variants [])
+                               resolve-font (make-resolve-font variants params)
+                               font-url     (make-font-url variants)]
                            ;; Before rendering, so the relayout below sees real
                            ;; font metrics. Deduped across objects: shapes
                            ;; sharing one family download its TTF once.
-                           (wasm/provision-fonts! (map :id objects) resolve-font))))
+                           (wasm/provision-fonts! (map :id objects) resolve-font
+                                                  :font-url font-url))))
                       (p/mcat
                        (fn [_]
                          (relayout-text! scene)

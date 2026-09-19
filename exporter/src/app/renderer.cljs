@@ -41,8 +41,8 @@
 
 (defn headless?
   "Whether `params` renders with render-wasm rather than a browser."
-  [{:keys [type is-wasm]}]
-  (and is-wasm (contains? cf/flags :wasm-export) (not= :svg type)))
+  [{:keys [is-wasm]}]
+  (and is-wasm (contains? cf/flags :wasm-export)))
 
 (defn render
   [{:keys [type is-wasm] :as params} on-object]

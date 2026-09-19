@@ -19,9 +19,11 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.worker]
+   [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -170,8 +172,17 @@
                 :href (rt/get-current-href)
                 :report report}))))
 
+(defn- download-report!
+  [report event]
+  (dom/prevent-default event)
+  (let [blob (wapi/create-blob report "text/plain")
+        uri  (wapi/create-uri blob)]
+    (dom/trigger-download-uri "report" "text/plain" uri)
+    (ts/schedule-on-idle #(wapi/revoke-uri uri))))
+
 (defn flash
   "Show error notification banner and emit error report.
+  A nil timeout keeps the notification visible until dismissed or replaced.
 
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
@@ -179,23 +190,28 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause] :or {type :handled}}]
-  (when (ex/exception? cause)
-    (when-let [event-name (case type
-                            :handled "handled-exception"
-                            :unhandled "unhandled-exception"
-                            :silent nil)]
-      (let [report (generate-report cause)]
+  [& {:keys [type hint cause timeout report-link?]
+      :or {type :handled timeout 5000}}]
+  (let [report (when (ex/exception? cause) (generate-report cause))]
+    (when report
+      (when-let [event-name (case type
+                              :handled "handled-exception"
+                              :unhandled "unhandled-exception"
+                              :silent nil)]
         (submit-report :event-name event-name
                        :report report
-                       :hint (ex/get-hint cause)))))
+                       :hint (ex/get-hint cause))))
 
-  (ts/schedule
-   #(st/emit!
-     (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
-                :type :toast
-                :level :error
-                :timeout 5000}))))
+    (ts/schedule
+     #(st/emit!
+       (ntf/show
+        (cond-> {:content (or ^boolean hint (tr "errors.generic"))
+                 :type :toast
+                 :level :error
+                 :timeout timeout}
+          (and report-link? report)
+          (assoc :links [{:label (tr "labels.download" "report.txt")
+                          :callback (partial download-report! report)}])))))))
 
 (defmethod ptk/handle-error :network
   [error]
@@ -205,6 +221,39 @@
   (when-let [cause (::instance error)]
     (ex/print-throwable cause :prefix "Network Error"))
   (flash :cause (::instance error) :type :handled))
+
+(def ^:private delegated-persistence-types
+  "Save failure causes routed to their own error handler: retaining the
+  changes cannot resolve them."
+  #{:authentication :not-found})
+
+(defn- delegated-persistence-failure?
+  [{:keys [type cause-type code]}]
+  (or (contains? delegated-persistence-types type)
+      (contains? delegated-persistence-types cause-type)
+      ;; The retained changes no longer apply to the restored version.
+      (= :vern-conflict code)))
+
+(defn flash-persistence
+  [cause]
+  (let [data (ex-data cause)]
+    (if (delegated-persistence-failure? data)
+      ;; The persistence state wraps the failure and records the original
+      ;; type under :cause-type; dispatch on it to reach the cause's handler.
+      (on-error (-> (exception->error-data cause)
+                    (assoc :type (or (:cause-type data) (:type data)))))
+      (flash :cause cause
+             :type :handled
+             :timeout nil
+             :report-link? true
+             :hint (tr "errors.save-failed")))))
+
+(defmethod ptk/handle-error :persistence
+  [error]
+  ;; The persistence failure event reports the original cause. Waiters still
+  ;; reject, but must not report that same incident again.
+  (when-not (::handled? error)
+    (flash-persistence (::instance error))))
 
 (defmethod ptk/handle-error :internal
   [error]
@@ -450,6 +499,7 @@
 (defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-not-configured [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

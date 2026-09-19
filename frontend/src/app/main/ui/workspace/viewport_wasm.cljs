@@ -648,7 +648,7 @@
             (wasm.api/set-shape-hidden false)
             (wasm.api/request-render "stop-path-edition")))))
 
-    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
 
      (cond
        (some? preview-id)

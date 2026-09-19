@@ -49,7 +49,8 @@
         (mf/use-fn
          (fn []
            (st/emit! (ev/event {::ev/name "open-current-subscription"
-                                ::ev/origin "dashboard:plan-confirmation-modal"}))))
+                                ::ev/origin "dashboard:plan-confirmation-modal"}))
+           (modal/hide!)))
 
         on-close
         (mf/use-fn

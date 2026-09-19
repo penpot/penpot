@@ -1,0 +1,13 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="280" height="160" viewBox="0 0 280 160"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="280" height="160" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.9843137 0 0 0 0 0.9529412 0 0 0 0 0 0 0 0 1 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter><filter id="fx1" filterUnits="userSpaceOnUse" x="0" y="0" width="280" height="160" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="10" dy="10" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.21960784 0 0 0 0 0 0 0 0 0 0.93333334 0 0 0 1 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/><feBlend mode="normal" in="SourceGraphic" in2="drop0" result="shape"/></filter></defs><g filter="url(#fx0)">
+	<rect fill="#EF5350" transform="translate(20 20)" x="40" y="30" width="80" height="40"/>
+	<path transform="translate(20 20)" d="M260 0L0 0L0 140L260 140L260 0ZM5 5L5 135L255 135L255 5L5 5Z" fill-rule="evenodd"/>
+</g><g filter="url(#fx1)">
+	<rect fill="#EF5350" x="40" y="30" width="80" height="40"/>
+</g>
+	<path d="M260 0L0 0L0 140L260 140L260 0ZM5 5L5 135L255 135L255 5L5 5Z" fill-rule="evenodd"/>
+</svg>

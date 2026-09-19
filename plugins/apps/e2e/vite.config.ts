@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  root: __dirname,
+  root: import.meta.dirname,
   test: {
     testTimeout: 20000,
     watch: false,

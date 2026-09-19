@@ -12,7 +12,7 @@ import { defineConfig, type UserConfig } from 'vite';
  */
 export function iifeConfig(name: string, entry: string): UserConfig {
   return defineConfig({
-    root: __dirname,
+    root: import.meta.dirname,
     resolve: {
       tsconfigPaths: true,
     },

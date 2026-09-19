@@ -9,7 +9,7 @@ test("User goes to an empty dashboard", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.page).toHaveURL(/dashboard/);
+  await expect(dashboardPage.page).toHaveURL(/screen=dashboard/);
 
   await expect(dashboardPage.mainHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();

@@ -79,6 +79,7 @@
 
         on-error
         (mf/use-fn
+         (mf/deps form)
          (fn [cause]
            (reset! submitted? false)
            (let [{:keys [type code] :as edata} (ex-data cause)]
@@ -98,8 +99,12 @@
                [:restriction :email-has-complaints]
                (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
+               ;; Reported on the email input itself, the way the recovery and
+               ;; password forms report server side errors, so the field that
+               ;; needs fixing is the one marked as invalid
                [:validation :email-already-exists]
-               (st/emit! (ntf/error (tr "errors.email-already-exists")))
+               (swap! form assoc-in [:extra-errors :email]
+                      {:message (tr "errors.email-already-exists")})
 
                [:validation :email-as-password]
                (st/emit! (ntf/error (tr "errors.email-as-password")))
@@ -114,6 +119,7 @@
                                 (str "<ul>" items "</ul>"))]
                  (st/emit! (ntf/show {:content (tr "errors.weak-password")
                                       :detail detail
+                                      :is-html true
                                       :type :toast
                                       :level :error})))
 
@@ -154,14 +160,7 @@
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 cdata
-                 (cond-> (:clean-data @form)
-                   create-welcome-file?
-                   (assoc :create-welcome-file true))]
-
+           (let [cdata (:clean-data @form)]
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/subs! on-register-profile on-error #(reset! submitted? false))))))]
 
@@ -320,13 +319,7 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 params
-                 (cond-> (:clean-data @form)
-                   create-welcome-file? (assoc :create-welcome-file true))]
-
+           (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]

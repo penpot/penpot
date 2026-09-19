@@ -1,0 +1,9 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="140" height="100" viewBox="0 0 140 100">
+	<rect fill="#FFD400" width="140" height="100"/>
+	<path fill="#1040FF" d="M0 0L140 0L140 100L0 100L0 0ZM40 4L128 4L128 76L40 76L40 4Z" fill-rule="evenodd"/>
+</svg>

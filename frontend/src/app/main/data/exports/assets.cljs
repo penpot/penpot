@@ -252,7 +252,6 @@
                 ;; there is nothing left to stop.
                 (rx/catch (fn [_] settle)))))))))
 
-;; TODO: Remove once we support WASM SVG export
 (def ^:private wasm-export-types #{:jpeg :webp :png :pdf :svg})
 
 (defn- wasm-export-enabled?

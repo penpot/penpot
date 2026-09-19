@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
 import { BaseWebSocketPage } from "./BaseWebSocketPage";
 import { Transit } from "../../helpers/Transit";
 
@@ -218,13 +219,39 @@ export class WorkspacePage extends BaseWebSocketPage {
     pageId = this.pageId ?? WorkspacePage.anyPageId,
     pageName = "Page 1",
   } = {}) {
-    await this.page.goto(
-      `/#/workspace?team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
-    );
+    // Helpers often call setup (and this) several times per test with the
+    // same file. Re-navigating would reload the document and wipe the
+    // in-memory file state (e.g. tokens created by previous steps), so
+    // only navigate when the target file actually changes. Extra query
+    // params the app adds itself (e.g. layout=tokens) are ignored, and
+    // navigating away and back still reloads as before.
+    const currentParams = new URL(this.page.url()).searchParams;
+    const sameFile =
+      currentParams.get("screen") === "workspace" &&
+      currentParams.get("team-id") === WorkspacePage.anyTeamId &&
+      currentParams.get("file-id") === fileId &&
+      currentParams.get("page-id") === pageId;
+    if (!sameFile) {
+      // Drop mocks from any previous document: page.goto reloads the app,
+      // so entries registered by the old document would otherwise resolve
+      // waitForNotificationsWebSocket immediately with a stale mock that
+      // no longer exists in the new document.
+      MockWebSocketHelper.clear();
+      await this.page.goto(
+        `/?screen=workspace&team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
+      );
+    }
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
-    await this.#waitForWebSocketReadiness(pageName);
+    if (!sameFile) {
+      await this.#waitForWebSocketReadiness(pageName);
+    } else {
+      // Already on the target file (e.g. Tokens tab open, where the
+      // sitemap page name is not rendered): just ensure the canvas is
+      // present instead of waiting for the page name.
+      await expect(this.viewport).toBeVisible({ timeout: 30000 });
+    }
   }
 
   async #waitForWebSocketReadiness(pageName) {
@@ -256,11 +283,13 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-font-variants?team-id=*": "workspace/get-font-variants-empty.json",
       "get-file-fragment?file-id=*": "workspace/get-file-fragment-blank.json",
       "get-file-libraries?file-id=*": "workspace/get-file-libraries-empty.json",
+      // Any shape mutation schedules a persistence flush. An unmocked
+      // update-file answers 404, which the persistence task rethrows as an
+      // unhandled error and the workspace is replaced by the Internal Error
+      // page. Tests that need a specific response mock this again afterwards;
+      // the last matching route wins.
+      "update-file?id=*": "workspace/update-file-empty.json",
     });
-
-    if (this.textEditor) {
-      await this.mockRPC("update-file?id=*", "text-editor/update-file.json");
-    }
 
     // by default we mock the blank file.
     await this.mockGetFile("workspace/get-file-blank.json");
@@ -599,6 +628,12 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page
       .getByRole("button", { name: "Comments (C)" })
       .click(clickOptions);
+  }
+
+  async toggleCommentsVisibilityFromMenu(clickOptions = {}) {
+    await this.page.getByRole("button", { name: "Main menu" }).click();
+    await this.page.getByText("view").last().click();
+    await this.page.locator("#file-menu-comments").click(clickOptions);
   }
 }
 

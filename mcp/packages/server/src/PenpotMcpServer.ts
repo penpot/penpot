@@ -50,6 +50,13 @@ class ToolInfo {
     ) {}
 }
 
+/**
+ * Indicates whether developer tools may be registered for the current server mode.
+ */
+export function shouldRegisterDeveloperTools(isDevEnv: boolean, isMultiUserMode: boolean): boolean {
+    return isDevEnv && !isMultiUserMode;
+}
+
 export class PenpotMcpServer {
     /**
      * Timeout, in minutes, for idle sessions (Streamable HTTP and SSE) before they are automatically closed and removed.
@@ -259,7 +266,7 @@ export class PenpotMcpServer {
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));
         }
-        if (this.isDevEnv()) {
+        if (shouldRegisterDeveloperTools(this.isDevEnv(), this.isMultiUserMode())) {
             const nreplClient = new NreplClient();
             toolInstances.push(new CljsReplTool(this, nreplClient));
             toolInstances.push(new ImportPenpotFileTool(this, nreplClient));

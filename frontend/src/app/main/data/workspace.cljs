@@ -244,7 +244,8 @@
                    {:redo-changes changes :undo-changes []
                     :save-undo? false
                     :origin it
-                    :tags #{:position-data}}))
+                    :tags #{:position-data}
+                    :skip-component-sync? true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -402,7 +403,8 @@
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
           (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)))
+          (update :workspace-global dissoc :default-font)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -511,7 +513,7 @@
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
 
                (let [local-commits-s
                      (->> stream
@@ -565,7 +567,8 @@
                              (dch/commit-changes
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
-                               :tags #{:position-data}})))))
+                               :tags #{:position-data}
+                               :skip-component-sync? true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
@@ -601,12 +604,11 @@
            :workspace-editor-state
            :workspace-wasm-editor-styles
            :workspace-media-objects
-           :workspace-persistence
            :workspace-presence
            :workspace-tokens
            :workspace-undo
            :workspace-versions)
-          (update :workspace-global dissoc :read-only? :default-font)
+          (update :workspace-global dissoc :read-only? :preview-id :default-font)
           (assoc-in [:workspace-global :options-mode] :design)
           (update :files d/update-vals #(dissoc % :data))))
 
@@ -1319,6 +1321,16 @@
       (rx/of (show-context-menu
               (-> params (assoc :kind :guide
                                 :guide guide)))))))
+
+(defn show-text-context-menu
+  "Context menu for the text being edited. Unlike the shape menu it leaves the
+   shape selection alone; `has-selection?` is captured at right-click time."
+  [{:keys [position] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-text-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu (assoc params :kind :text))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu

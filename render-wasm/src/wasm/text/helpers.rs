@@ -29,14 +29,14 @@ pub fn clamp_cursor(
     paragraphs: &[Paragraph],
 ) -> TextPositionWithAffinity {
     if paragraphs.is_empty() {
-        return TextPositionWithAffinity::new_without_affinity(0, 0);
+        return TextPositionWithAffinity::new_downstream_affinity(0, 0);
     }
 
     let para_idx = position.paragraph.min(paragraphs.len() - 1);
     let para_len = paragraph_char_count(&paragraphs[para_idx]);
     let char_offset = position.offset.min(para_len);
 
-    TextPositionWithAffinity::new_without_affinity(para_idx, char_offset)
+    TextPositionWithAffinity::new_downstream_affinity(para_idx, char_offset)
 }
 
 /// Move cursor left by one character.
@@ -47,7 +47,7 @@ pub fn move_cursor_backward(
 ) -> TextPositionWithAffinity {
     if !word_boundary {
         if cursor.offset > 0 {
-            return TextPositionWithAffinity::new_without_affinity(
+            return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
                 cursor.offset - 1,
             );
@@ -55,7 +55,7 @@ pub fn move_cursor_backward(
         if cursor.paragraph > 0 {
             let prev_para = cursor.paragraph - 1;
             let char_count = paragraph_char_count(&paragraphs[prev_para]);
-            return TextPositionWithAffinity::new_without_affinity(prev_para, char_count);
+            return TextPositionWithAffinity::new_downstream_affinity(prev_para, char_count);
         }
         return *cursor;
     }
@@ -111,7 +111,7 @@ pub fn move_cursor_backward(
         }
     }
 
-    TextPositionWithAffinity::new_without_affinity(para_idx, offset)
+    TextPositionWithAffinity::new_downstream_affinity(para_idx, offset)
 }
 
 /// Move cursor right by one character.
@@ -124,13 +124,13 @@ pub fn move_cursor_forward(
         let para = &paragraphs[cursor.paragraph];
         let char_count = paragraph_char_count(para);
         if cursor.offset < char_count {
-            return TextPositionWithAffinity::new_without_affinity(
+            return TextPositionWithAffinity::new_downstream_affinity(
                 cursor.paragraph,
                 cursor.offset + 1,
             );
         }
         if cursor.paragraph < paragraphs.len() - 1 {
-            return TextPositionWithAffinity::new_without_affinity(cursor.paragraph + 1, 0);
+            return TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph + 1, 0);
         }
         return *cursor;
     }
@@ -185,7 +185,7 @@ pub fn move_cursor_forward(
         }
     }
 
-    TextPositionWithAffinity::new_without_affinity(para_idx, offset)
+    TextPositionWithAffinity::new_downstream_affinity(para_idx, offset)
 }
 
 /// Move cursor up by one line.
@@ -203,9 +203,9 @@ pub fn move_cursor_up(
         let prev_para = cursor.paragraph - 1;
         let char_count = paragraph_char_count(&paragraphs[prev_para]);
         let new_offset = cursor.offset.min(char_count);
-        TextPositionWithAffinity::new_without_affinity(prev_para, new_offset)
+        TextPositionWithAffinity::new_downstream_affinity(prev_para, new_offset)
     } else {
-        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, 0)
+        TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, 0)
     }
 }
 
@@ -224,10 +224,10 @@ pub fn move_cursor_down(
         let next_para = cursor.paragraph + 1;
         let char_count = paragraph_char_count(&paragraphs[next_para]);
         let new_offset = cursor.offset.min(char_count);
-        TextPositionWithAffinity::new_without_affinity(next_para, new_offset)
+        TextPositionWithAffinity::new_downstream_affinity(next_para, new_offset)
     } else {
         let char_count = paragraph_char_count(&paragraphs[cursor.paragraph]);
-        TextPositionWithAffinity::new_without_affinity(cursor.paragraph, char_count)
+        TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, char_count)
     }
 }
 
@@ -237,7 +237,7 @@ pub fn move_cursor_line_start(
     _paragraphs: &[Paragraph],
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-start using line metrics
-    TextPositionWithAffinity::new_without_affinity(cursor.paragraph, 0)
+    TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, 0)
 }
 
 /// Move cursor to end of current line.
@@ -247,7 +247,7 @@ pub fn move_cursor_line_end(
 ) -> TextPositionWithAffinity {
     // TODO: Implement proper line-end using line metrics
     let char_count = paragraph_char_count(&paragraphs[cursor.paragraph]);
-    TextPositionWithAffinity::new_without_affinity(cursor.paragraph, char_count)
+    TextPositionWithAffinity::new_downstream_affinity(cursor.paragraph, char_count)
 }
 
 pub fn is_word_char(c: char) -> bool {
@@ -299,7 +299,7 @@ pub fn replace_text_with_newlines(
 
     if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, lines[0]) {
         current_cursor =
-            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph, new_offset);
+            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
     } else {
         return None;
     }
@@ -309,9 +309,9 @@ pub fn replace_text_with_newlines(
             break;
         }
         current_cursor =
-            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph + 1, 0);
+            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph + 1, 0);
         if let Some(new_offset) = replace_text_at_cursor(text_content, &current_cursor, line) {
-            current_cursor = TextPositionWithAffinity::new_without_affinity(
+            current_cursor = TextPositionWithAffinity::new_downstream_affinity(
                 current_cursor.paragraph,
                 new_offset,
             );
@@ -338,7 +338,7 @@ pub fn insert_text_with_newlines(
 
     if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, lines[0]) {
         current_cursor =
-            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph, new_offset);
+            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph, new_offset);
     } else {
         return None;
     }
@@ -348,9 +348,9 @@ pub fn insert_text_with_newlines(
             break;
         }
         current_cursor =
-            TextPositionWithAffinity::new_without_affinity(current_cursor.paragraph + 1, 0);
+            TextPositionWithAffinity::new_downstream_affinity(current_cursor.paragraph + 1, 0);
         if let Some(new_offset) = insert_text_at_cursor(text_content, &current_cursor, line) {
-            current_cursor = TextPositionWithAffinity::new_without_affinity(
+            current_cursor = TextPositionWithAffinity::new_downstream_affinity(
                 current_cursor.paragraph,
                 new_offset,
             );
@@ -584,7 +584,7 @@ pub fn delete_char_before(
         let para = &mut paragraphs[cursor.paragraph];
         let delete_pos = cursor.offset - 1;
         delete_range_in_paragraph(para, delete_pos, cursor.offset);
-        Some(TextPositionWithAffinity::new_without_affinity(
+        Some(TextPositionWithAffinity::new_downstream_affinity(
             cursor.paragraph,
             delete_pos,
         ))
@@ -603,7 +603,7 @@ pub fn delete_char_before(
 
         paragraphs.remove(cursor.paragraph);
 
-        Some(TextPositionWithAffinity::new_without_affinity(
+        Some(TextPositionWithAffinity::new_downstream_affinity(
             prev_para_idx,
             prev_para_len,
         ))
@@ -675,13 +675,13 @@ pub fn delete_word_before(
     }
 
     let selection = TextSelection {
-        anchor: TextPositionWithAffinity::new_without_affinity(start_paragraph, start_offset),
-        focus: TextPositionWithAffinity::new_without_affinity(end_paragraph, end_offset),
+        anchor: TextPositionWithAffinity::new_downstream_affinity(start_paragraph, start_offset),
+        focus: TextPositionWithAffinity::new_downstream_affinity(end_paragraph, end_offset),
     };
 
     delete_selection_range(text_content, &selection);
 
-    Some(TextPositionWithAffinity::new_without_affinity(
+    Some(TextPositionWithAffinity::new_downstream_affinity(
         start_paragraph,
         start_offset,
     ))
@@ -748,8 +748,8 @@ pub fn delete_word_after(text_content: &mut TextContent, cursor: &TextPositionWi
     }
 
     let selection = TextSelection {
-        anchor: TextPositionWithAffinity::new_without_affinity(start_paragraph, start_offset),
-        focus: TextPositionWithAffinity::new_without_affinity(end_paragraph, end_offset),
+        anchor: TextPositionWithAffinity::new_downstream_affinity(start_paragraph, start_offset),
+        focus: TextPositionWithAffinity::new_downstream_affinity(end_paragraph, end_offset),
     };
 
     delete_selection_range(text_content, &selection);
@@ -912,8 +912,8 @@ mod tests {
 
     fn selection(start: (usize, usize), end: (usize, usize)) -> TextSelection {
         TextSelection {
-            anchor: TextPositionWithAffinity::new_without_affinity(start.0, start.1),
-            focus: TextPositionWithAffinity::new_without_affinity(end.0, end.1),
+            anchor: TextPositionWithAffinity::new_downstream_affinity(start.0, start.1),
+            focus: TextPositionWithAffinity::new_downstream_affinity(end.0, end.1),
         }
     }
 

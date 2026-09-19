@@ -235,9 +235,8 @@
                        :organization-name (:name organization)
                        :member-email (:email-to invitation)
                        :member-id (:id member)
-                       :role role}
-                organization
-                (assoc :user-who-send-invitation (str profile-id))
+                       :role role
+                       :user-who-send-invitation (str profile-id)}
 
                 (not organization)
                 (assoc :team-belongs-to-organization (boolean team-organization-id)

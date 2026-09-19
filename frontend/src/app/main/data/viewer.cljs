@@ -44,8 +44,7 @@
    :selected #{}
    :collapsed #{}
    :hover nil
-   :share-id ""
-   :file-comments-users []})
+   :share-id ""})
 
 (declare fetch-comment-threads)
 (declare fetch-bundle)
@@ -77,7 +76,8 @@
                     (if (nil? lstate)
                       default-local-state
                       lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)))
+          (assoc-in [:viewer-local :share-id] share-id)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -326,11 +326,12 @@
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [{:keys [type] :as err}]
-            (if (or (= :authentication type)
-                    (= :not-found type))
-              (rx/empty)
-              (rx/throw err)))]
+          (on-error [cause]
+            (let [{:keys [type]} (ex-data cause)]
+              (if (or (= :authentication type)
+                      (= :not-found type))
+                (rx/empty)
+                (rx/throw cause))))]
 
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent

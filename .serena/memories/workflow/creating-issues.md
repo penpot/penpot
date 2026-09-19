@@ -112,11 +112,13 @@ Output: `https://github.com/penpot/penpot/issues/<NUMBER>`
 | Task | `IT_kwDOAcyBPM4AX5NY` |
 | Question | `IT_kwDOAcyBPM4B_IQj` |
 | Docs | `IT_kwDOAcyBPM4B_IQz` |
+| EPIC | `IT_kwDOAcyBPM4CEMzF` |
 
 **Map:**
 - Bug report (steps to reproduce, expected vs. actual) → Bug
 - Enhancement / new feature → Enhancement
 - Feature/epic → Feature
+- Umbrella/EPIC tracking issue that groups sub-issues → EPIC
 - Docs → Docs
 - None of the above → Task
 
@@ -156,6 +158,47 @@ query { repository(owner: "penpot", name: "penpot") {
 ```bash
 rm -f /tmp/issue-body.md
 ```
+
+## Adding an Issue as a Sub-issue
+
+Sub-issues group work under an umbrella/EPIC issue. `gh issue create` cannot
+link a sub-issue at creation time: create the issue first (normal flow above),
+then link it.
+
+**1. Create the sub-issue** as usual and note its number (`NNNN`).
+
+**2. Get the issue's database id** (the REST `id`, not the `number`):
+
+```bash
+SUB_ID=$(gh api repos/penpot/penpot/issues/NNNN --jq .id)
+```
+
+**3. Link it to the parent** (`PARENT` = umbrella/EPIC issue number):
+
+```bash
+gh api --method POST repos/penpot/penpot/issues/PARENT/sub_issues \
+  -F sub_issue_id=$SUB_ID
+```
+
+Use `-F` (typed field), never `-f`: with `-f` the value is sent as a string
+and the API rejects it with `422 ... /sub_issue_id ... is not of type integer`.
+
+**4. Verify both directions:**
+
+```bash
+gh api repos/penpot/penpot/issues/NNNN/parent --jq '{number, title}'
+gh api repos/penpot/penpot/issues/PARENT/sub_issues --jq '.[] | {number, title}'
+```
+
+Notes:
+
+- The `POST` response is the parent issue and includes `sub_issues_summary`
+  with `total`, `completed` and `percent_completed`, useful to track EPIC
+  progress.
+- A sub-issue has a single parent.
+- Issue Type is independent of the parent relationship: choose it with the
+  normal mapping above (an EPIC child that fixes broken behavior is a Bug,
+  not a Task).
 
 ## Creating Issues from PRs
 
@@ -351,5 +394,5 @@ gh issue view <NUMBER> --repo penpot/penpot --json title
 ## See Also
 
 - End-to-end orchestration entry point: the `create-issue` skill at
-  `.opencode/skills/create-issue/SKILL.md`. The skill is a thin entry
+  `.agents/skills/create-issue/SKILL.md`. The skill is a thin entry
   point; this memory is the canonical home for all issue-creation rules.

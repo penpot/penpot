@@ -308,7 +308,9 @@
                      (assoc :name "accept-organization-invitation")
                      (assoc :props
                             (-> props
-                                (assoc :organization-id organization-id-on-add)
+                                (assoc :organization-id organization-id-on-add
+                                       :user-id (:id profile)
+                                       :user-who-send-invitation (:created-by invitation))
                                 (audit/clean-props))))))
 
               (cond-> (assoc claims :state :created)
@@ -325,6 +327,8 @@
                             (assoc :organization-id organization-id-on-add
                                    :organization-member-add-source organization-add-source
                                    :belongs-to-team-on-add (boolean team-id)
+                                   :user-id (:id profile)
+                                   :user-who-send-invitation (:created-by invitation)
                                    :organization-member-count-before
                                    organization-member-count-before)
                             (audit/clean-props))}))))))

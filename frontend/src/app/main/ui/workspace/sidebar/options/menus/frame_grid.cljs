@@ -12,16 +12,18 @@
    [app.main.data.workspace.grid :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.editable-select :refer [editable-select]]
-   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -32,6 +34,49 @@
   [{:value nil :label (tr "workspace.options.grid.auto")}
    :separator
    18 12 10 8 6 4 3 2])
+
+(mf/defc default-options-toggle*
+  "Toggle button that opens the reset/save-as-default menu for a grid's
+   params. Shared by the square, column and row grid-type layouts, each of
+   which places it at a different point in their own layout."
+  [{:keys [show disabled on-toggle]}]
+  [:button {:class (stl/css-case :show-more-options true
+                                 :selected show)
+            :on-click on-toggle
+            :disabled disabled}
+   [:> icon* {:icon-id i/menu
+              :size "m"
+              :aria-hidden true
+              :class (stl/css :show-options-icon)}]])
+
+(mf/defc default-options-dropdown*
+  "Dropdown menu with the reset/save-as-default options for a grid's params.
+   Shared by the square, column and row grid-type layouts, each of which
+   places it at a different point in their own layout (its `:class` controls
+   the panel's positioning, which differs per layout)."
+  [{:keys [class show on-close on-use-default on-set-as-default]}]
+  (let [handle-key-down
+        (fn [action]
+          (fn [event]
+            (when (or (kbd/enter? event) (kbd/space? event))
+              (dom/prevent-default event)
+              (action))))]
+    [:& dropdown {:show show
+                  :on-close on-close}
+     [:ul {:class class
+           :role "menu"}
+      [:li {:class (stl/css :option-btn)
+            :role "menuitem"
+            :tab-index 0
+            :on-click on-use-default
+            :on-key-down (handle-key-down on-use-default)}
+       (tr "workspace.options.grid.params.use-default")]
+      [:li {:class (stl/css :option-btn)
+            :role "menuitem"
+            :tab-index 0
+            :on-click on-set-as-default
+            :on-key-down (handle-key-down on-set-as-default)}
+       (tr "workspace.options.grid.params.set-default")]]]))
 
 (mf/defc grid-options*
   {::mf/wrap [mf/memo]}
@@ -151,7 +196,10 @@
        [:button {:class (stl/css-case :show-options true
                                       :selected open?)
                  :on-click toggle-advanced-options}
-        deprecated-icon/menu]
+        [:> icon* {:icon-id i/menu
+                   :size "m"
+                   :aria-hidden true
+                   :class (stl/css :show-options-icon)}]]
        [:div {:class (stl/css :type-select-wrapper)}
         [:& select
          {:class (stl/css :grid-type-select)
@@ -163,11 +211,10 @@
        (if (= type :square)
          [:div {:class (stl/css :grid-size)
                 :title (tr "workspace.options.size")}
-          [:> deprecated-input/numeric-input* {:min 0.01
-                                               :value (or (:size params) "")
-                                               :no-validate true
-                                               :class (stl/css :numeric-input)
-                                               :on-change (handle-change :params :size)}]]
+          [:> numeric-input* {:min 0.01
+                              :value (or (:size params) "")
+                              :inner-class (stl/css :numeric-input)
+                              :on-change (handle-change :params :size)}]]
 
          [:div {:class (stl/css :editable-select-wrapper)}
           [:& editable-select {:value (:size params)
@@ -204,22 +251,14 @@
                             :origin :guides
                             :on-change handle-change-color
                             :on-detach handle-detach-color}]
-            [:button {:class (stl/css-case :show-more-options true
-                                           :selected show-more-options?)
-                      :on-click toggle-more-options}
-             deprecated-icon/menu]]
-           (when show-more-options?
-             [:div {:class (stl/css :second-row)}
-              [:button {:class (stl/css-case :btn-options true
-                                             :disabled is-default)
-                        :disabled is-default
-                        :on-click handle-use-default}
-               [:span (tr "workspace.options.grid.params.use-default")]]
-              [:button {:class (stl/css-case :btn-options true
-                                             :disabled is-default)
-                        :disabled is-default
-                        :on-click handle-set-as-default}
-               [:span (tr "workspace.options.grid.params.set-default")]]])])
+            [:> default-options-toggle* {:show show-more-options?
+                                         :disabled is-default
+                                         :on-toggle toggle-more-options}]]
+           [:> default-options-dropdown* {:class (stl/css :second-row)
+                                          :show show-more-options?
+                                          :on-close close-more-options
+                                          :on-use-default handle-use-default
+                                          :on-set-as-default handle-set-as-default}]])
 
         (when (or (= :column type) (= :row type))
           [:div {:class (stl/css :column-row)}
@@ -252,49 +291,39 @@
                    :title (if (= :row type)
                             (tr "workspace.options.grid.params.height")
                             (tr "workspace.options.grid.params.width"))}
-             [:span {:class (stl/css :icon-text)}
-              (if (= :row type)
-                "H"
-                "W")]
-             [:> deprecated-input/numeric-input* {:placeholder "Auto"
-                                                  :on-change handle-change-item-length
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:item-length params) "")}]]
+             [:> numeric-input* {:placeholder "Auto"
+                                 :on-change handle-change-item-length
+                                 :nillable true
+                                 :icon (if (= :row type) i/character-h i/character-w)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:item-length params) "")}]]
 
             [:div {:class (stl/css :gutter)
                    :title (tr "workspace.options.grid.params.gutter")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :row))}
-              deprecated-icon/gap-horizontal]
-             [:> deprecated-input/numeric-input* {:placeholder "0"
-                                                  :on-change (handle-change :params :gutter)
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:gutter params) 0)}]]
+             [:> numeric-input* {:placeholder "0"
+                                 :on-change (handle-change :params :gutter)
+                                 :nillable true
+                                 :icon (if (= type :row) i/gap-vertical i/gap-horizontal)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:gutter params) 0)}]]
 
             [:div {:class (stl/css :margin)
                    :title (tr "workspace.options.grid.params.margin")}
-             [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :column))}
-              deprecated-icon/grid-margin]
-             [:> deprecated-input/numeric-input* {:placeholder "0"
-                                                  :on-change (handle-change :params :margin)
-                                                  :is-nillable true
-                                                  :class (stl/css :numeric-input)
-                                                  :value (or (:margin params) 0)}]]
+             [:> numeric-input* {:placeholder "0"
+                                 :on-change (handle-change :params :margin)
+                                 :nillable true
+                                 :icon (if (= type :column) i/margin-left-right i/margin-top-bottom)
+                                 :inner-class (stl/css :numeric-input)
+                                 :value (or (:margin params) 0)}]]
 
-            [:button {:class (stl/css-case :show-more-options true
-                                           :selected show-more-options?)
-                      :on-click toggle-more-options
-                      :disabled is-default}
-             deprecated-icon/menu]
-            (when show-more-options?
-              [:div {:class (stl/css :more-options)}
-               [:button {:class (stl/css :option-btn)
-                         :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
-               [:button {:class (stl/css :option-btn)
-                         :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])])]))
+            [:> default-options-toggle* {:show show-more-options?
+                                         :disabled is-default
+                                         :on-toggle toggle-more-options}]
+            [:> default-options-dropdown* {:class (stl/css :more-options)
+                                           :show show-more-options?
+                                           :on-close close-more-options
+                                           :on-use-default handle-use-default
+                                           :on-set-as-default handle-set-as-default}]]])])]))
 
 (defn- check-frame-grid-props
   [old-props new-props]
