@@ -24,7 +24,8 @@
     {{/isDebug}}
 
     {{#isDebug}}
-    <link rel="icon" href="images/favicon-local.png?version={{& version_tag }}" />
+    <link rel="icon" href="images/favicon-local.svg?version={{& version_tag }}" type="image/svg+xml" />
+    <link rel="icon" href="images/favicon-local.png?version={{& version_tag }}" type="image/png" />
     {{/isDebug}}
     {{^isDebug}}
     <link rel="icon" href="images/favicon.svg?version={{& version_tag }}" type="image/svg+xml" />
