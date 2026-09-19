@@ -28,6 +28,10 @@ services:
       - RUSTFS_CONSOLE_ADDRESS=:9001
       - RUSTFS_CONSOLE_ENABLE=true
 
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:9000/health"]
       interval: 1s

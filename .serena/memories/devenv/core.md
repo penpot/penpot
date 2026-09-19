@@ -43,7 +43,7 @@ Container-internal ports fixed; host side offset `10000·N`.
 | 14181 | 24181 | … | 14281 | Serena MCP |
 | 14182 | 24182 | … | 24282 | Serena dashboard |
 
-Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes: Mailpit UI 1080, ldap 10389/10636 (singletons, not offset). Mailpit stores its SQLite database in `penpotdev_mailpit_data`.
+Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes RustFS S3 API 9000, RustFS console 9001, and Mailpit UI 1080 on loopback; ldap 10389/10636 remains a singleton without offsets. Mailpit stores its SQLite database in `penpotdev_mailpit_data`.
 
 ## Tmux + MCP routing
 
