@@ -18,8 +18,6 @@ export NODE_ENV=production;
 
 rm -rf node_modules;
 
-corepack enable;
-corepack install;
 pnpm install;
 
 rm -rf target/dist;
@@ -42,7 +40,6 @@ popd;
 pushd ../plugins
 rm -rf node_modules;
 rm -rf dist/apps/;
-corepack install;
 pnpm -r install;
 pnpm run build:plugins;
 popd

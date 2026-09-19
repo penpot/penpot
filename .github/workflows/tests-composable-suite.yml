@@ -56,8 +56,6 @@ jobs:
       - name: Install deps
         working-directory: ./plugins
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
 
       - name: Install Playwright Chromium

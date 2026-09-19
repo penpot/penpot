@@ -68,7 +68,7 @@ Once the servers are running, continue with step 2.
 
 #### Running the Source Version from the Repository
 
-The tools `corepack` and `npx` should be available in your terminal.
+The tools `pnpm` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
