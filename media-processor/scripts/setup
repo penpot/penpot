@@ -1,6 +1,4 @@
 #!/bin/bash
 set -e
 cd "$(dirname "$0")/.."
-corepack enable
-corepack install
 pnpm install

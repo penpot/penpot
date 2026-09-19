@@ -209,9 +209,7 @@ function ensure-devenv-network {
 
 # Compose-project plumbing for the parallel-workspaces layout.
 #
-# - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
-#   under project `penpotdev-infra`.
-# - Shared infrastructure (postgres, minio, mailer, ldap, valkey, minio-setup)
+# - Shared infrastructure (postgres, RustFS, mailer, LDAP, Valkey)
 #   runs under project `penpotdev-infra`.
 # - Each runtime instance (ws0, ws1, ...) runs only its own main container
 #   under project `penpotdev-wsN`. All workspaces uniformly overlay their
@@ -296,16 +294,11 @@ function devenv-main-running {
     [[ -n "$container" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]]
 }
 
-# Bring shared infra up and block until minio-setup has provisioned the
-# shared MinIO user/policy. Idempotent: a second call when everything is
-# already up returns immediately.
+# Bring shared infra up and block until services with healthchecks are healthy.
+# Removing orphaned containers retires old infra services without deleting
+# their named volumes.
 function ensure-infra-up {
-    infra-compose up -d
-    local setup_container
-    setup_container=$(infra-compose ps -aq minio-setup 2>/dev/null)
-    if [[ -n "$setup_container" ]]; then
-        docker wait "$setup_container" >/dev/null 2>&1 || true
-    fi
+    infra-compose up -d --wait --wait-timeout 60 --remove-orphans
 }
 
 # Refuse to sync workspaces if the live repo is in a fragile Git state.

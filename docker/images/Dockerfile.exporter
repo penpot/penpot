@@ -91,9 +91,35 @@ COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 
-# DHI Node image installs Node at the system level (symlinked into
-# /usr/bin), so `./setup`'s internal `corepack enable` needs root to write
-# there. Ownership is fixed right after.
+# pnpm ships as a system binary (same tarball + SHA pin as
+# docker/devenv/Dockerfile); the generated ./setup expects it on PATH.
+# Corepack is gone from Node 25+, so nothing here may use it.
+ARG PNPM_VERSION=12.5.0
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='60f0b186348a4f740e41269c79351b4d957c28af57b010a336fc7458e4e33134'; \
+         ;; \
+       amd64|x86_64) \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='746979ad910f6eba9187c47080e1edfb73129ce2b8d39cc44cb1f6bc72cd571e'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/pnpm.tar.gz "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/pnpm.tar.gz -C /usr/local/bin pnpm; \
+    chmod 755 /usr/local/bin/pnpm; \
+    rm -f /tmp/pnpm.tar.gz; \
+    pnpm --version;
+
+# `./setup` only needs pnpm on PATH (installed above as root).
+# Ownership is fixed right after.
 RUN ./setup && chown -R penpot:penpot /opt/penpot/exporter
 
 USER penpot:penpot
