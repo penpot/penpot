@@ -55,7 +55,7 @@ module. You can read it from `mem:<MODULE>/core`
 
 - `docker/` contains devenv related code, not needed unless specifically instructed.
    When working on devenv startup, compose layout, instance config (`defaults.env`),
-   tmux session lifecycle, MinIO provisioning, or anything in `manage.sh`'s
+   tmux session lifecycle, RustFS provisioning, or anything in `manage.sh`'s
    `*-devenv` commands, read `mem:devenv/core`.
 - `experiments/` contains standalone experimental HTML/JS/scripts; treat it as non-core unless the user explicitly asks about it.
 - `sample_media/` contains sample image/icon media and config used as fixtures/demo material; do not infer app behavior from it.

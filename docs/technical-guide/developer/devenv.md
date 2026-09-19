@@ -62,7 +62,7 @@ See the dedicated section [Agentic Dev Environment](../agentic-devenv/) for deta
 ### Parallel workspaces
 
 The devenv runs as separate compose projects:
-  * shared infra (`penpotdev-infra`: Postgres, MinIO, mailer, LDAP)
+  * shared infra (`penpotdev-infra`: Postgres, RustFS, Valkey, mailer, LDAP)
   * `penpotdev-wsN` project per runtime instance.
      - `ws0` (a.k.a. `main`) is the current state of your repo;
      - `ws1` and up are clones that you maintain explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
@@ -162,7 +162,7 @@ the container's data volume regardless of this flag.
 
 ### Shared state and workers
 
-All instances share one Penpot database and one MinIO bucket; users, teams,
+All instances share one Penpot database and one RustFS bucket; users, teams,
 files, and MCP tokens are visible from every instance. Per-instance Valkey
 keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
 file-summary cache, rate-limit counters) isolated.
@@ -170,7 +170,7 @@ file-summary cache, rate-limit counters) isolated.
 Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
 disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
 `task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
-runs them against the shared DB and MinIO. Workers are fire-and-forget:
+runs them against the shared DB and RustFS. Workers are fire-and-forget:
 `wrk/submit!` inserts a row and returns; RPC handlers never wait on
 completion. The "ws0 only" policy avoids multi-instance worker races (cron
 dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
@@ -184,7 +184,8 @@ Shared infrastructure shuts down only when no instances remain running.
 The devenv compose configuration has been split into two files and reorganized
 into separate compose projects per runtime instance:
 
-- `docker/devenv/docker-compose.infra.yml` (Postgres, MinIO, mailer, LDAP)
+- `docker/devenv/docker-compose.infra.yml` (Postgres, RustFS, Valkey, mailer,
+  LDAP)
   runs under the compose project `penpotdev-infra`.
 - `docker/devenv/docker-compose.main.yml` (one main container + its Valkey)
   runs once per runtime instance under `penpotdev-ws0`, `penpotdev-ws1`, ….
@@ -196,10 +197,11 @@ into separate compose projects per runtime instance:
 If you had the devenv running on the previous single-project (`penpotdev`)
 layout, leftover containers and the auto-generated `penpotdev_default`
 network must be removed before bringing the new ws0 instance up. The named
-data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_minio_data`,
+data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_rustfs_data`,
 `penpotdev_user_data`, `penpotdev_valkey_data`) are pinned by explicit
-`name:` entries in the new compose files and are preserved through the
-transition — your Postgres DB, MinIO objects, and home cache survive.
+`name:` entries in the new compose files. The legacy `penpotdev_minio_data`
+volume remains untouched but is not mounted by RustFS; existing MinIO objects
+are not migrated automatically.
 
 One-time cleanup, then bring up ws0:
 
