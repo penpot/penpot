@@ -396,6 +396,16 @@ An example of your cursor configuration can be:
 }
 ```
 
+## Object storage
+
+The devenv uses RustFS for S3-compatible object storage. Its API is available
+at [http://localhost:9000](http://localhost:9000), and its management console
+is available at [http://localhost:9001](http://localhost:9001). Log in to the
+console with `penpot-devenv` as both the access key and secret key.
+
+Both ports bind only to the host loopback interface and are not exposed to the
+local network.
+
 ## Email
 
 To test email sending, the devenv includes
