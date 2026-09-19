@@ -115,18 +115,21 @@
                          :pending (stl/css :status-notification :pending-status)
                          :saving (stl/css :status-notification :saving-status)
                          :saved (stl/css :status-notification :saved-status)
+                         :retrying (stl/css :status-notification :retrying-status)
                          :error (stl/css :status-notification :error-status)
                          (stl/css :status-notification))
                 :title (case persistence-status
                          :pending (tr "workspace.header.saving")
                          :saving (tr "workspace.header.saving")
                          :saved (tr "workspace.header.saved")
+                         :retrying (tr "workspace.header.retrying")
                          :error (tr "workspace.header.save-error")
                          nil)}
           (case persistence-status
             :pending deprecated-icon/status-alert
             :saving deprecated-icon/status-alert
             :saved deprecated-icon/status-tick
+            :retrying deprecated-icon/status-alert
             :error deprecated-icon/status-wrong
             nil)]
          [:div {:class (stl/css :file-name-label)} file-name]])]

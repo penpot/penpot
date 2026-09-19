@@ -1646,6 +1646,10 @@ msgstr ""
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
+#: src/app/main/errors.cljs:429
+msgid "errors.connection-error"
+msgstr "Cannot reach the server. Check your connection and try again."
+
 #: src/app/main/errors.cljs:520
 msgid "errors.deprecated"
 msgstr ""
@@ -1882,6 +1886,10 @@ msgstr "The registration is currently disabled."
 msgid "errors.save-failed"
 msgstr ""
 "Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
+
+#: src/app/main/data/persistence.cljs:308
+msgid "errors.save-retrying"
+msgstr "Connection lost. Retrying to save your changes."
 
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
@@ -7527,6 +7535,10 @@ msgstr "Reset"
 #: src/app/main/ui/workspace/left_header.cljs:124
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
+
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Retrying to save"
 
 #: src/app/main/ui/workspace/left_header.cljs:123
 msgid "workspace.header.saved"
