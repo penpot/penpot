@@ -204,10 +204,10 @@ If you had the devenv running on the previous single-project (`penpotdev`)
 layout, leftover containers and the auto-generated `penpotdev_default`
 network must be removed before bringing the new ws0 instance up. The named
 data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_rustfs_data`,
-`penpotdev_user_data`, `penpotdev_valkey_data`) are pinned by explicit
-`name:` entries in the new compose files. The legacy `penpotdev_minio_data`
-volume remains untouched but is not mounted by RustFS; existing MinIO objects
-are not migrated automatically.
+`penpotdev_mailpit_data`, `penpotdev_user_data`, `penpotdev_valkey_data`) are
+pinned by explicit `name:` entries in the new compose files. The legacy
+`penpotdev_minio_data` volume remains untouched but is not mounted by RustFS;
+existing MinIO objects are not migrated automatically.
 
 One-time cleanup, then bring up ws0:
 
@@ -392,12 +392,16 @@ An example of your cursor configuration can be:
 
 ## Email
 
-To test email sending, the devenv includes [MailCatcher](https://mailcatcher.me/),
-a SMTP server that is used for develop. It does not send any mail outbounds.
-Instead, it stores them in memory and allows to browse them via a web interface
-similar to a webmail client. Simply navigate to:
+To test email sending, the devenv includes
+[Mailpit](https://mailpit.axllent.org/), an SMTP server for development. It does
+not send mail externally. Instead, it stores messages in a persistent Docker
+volume and provides a webmail-like interface. Simply navigate to:
 
 [http://localhost:1080](http://localhost:1080)
+
+The inbox persists when the container is recreated. `drop-devenv` preserves
+the `penpotdev_mailpit_data` volume, together with the other devenv data
+volumes.
 
 ## Create user
 
