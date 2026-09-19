@@ -4,7 +4,7 @@ networks:
     external: true
 
 volumes:
-  postgres_data_pg16:
+  postgres_data_pg18:
     name: ${PENPOT_POSTGRES_DATA_VOLUME}
   rustfs_data:
     name: ${PENPOT_RUSTFS_DATA_VOLUME}
@@ -40,7 +40,7 @@ services:
           - rustfs
 
   postgres:
-    image: postgres:16.8
+    image: postgres:18.6
     command: postgres -c config_file=/etc/postgresql.conf
     restart: always
     stop_signal: SIGINT
@@ -52,7 +52,12 @@ services:
     volumes:
       - ./files/postgresql.conf:/etc/postgresql.conf:z
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql:z
-      - postgres_data_pg16:/var/lib/postgresql/data
+      - postgres_data_pg18:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
     networks:
       default:
         aliases:

@@ -510,7 +510,7 @@ RUN set -ex; \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
-    apt-get -qqy install postgresql-client-16; \
+    apt-get -qqy install postgresql-client-18; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 

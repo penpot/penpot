@@ -19,9 +19,9 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 ## Invariants
 
 - `infra-compose` / `instance-compose` wrap `docker compose` with `env -i`, then re-inject what compose needs. Stripping is required because `defaults.env` is sourced into manage.sh's shell at startup (stale values would leak); the ws1+ overrides are deliberately re-injected as shell env vars precisely because Compose gives shell precedence over `--env-file`, so they override the `defaults.env` baseline.
-- Volume names pinned via `name:` (PENPOT_*_VOLUME), decoupled from the compose project name. ws1+ inject distinct per-instance volume names; ws0 keeps the historical `penpotdev_*` physical names so project renames never require data migration.
+- Volume names pinned via `name:` (PENPOT_*_VOLUME), decoupled from the compose project name. Replacement services use new volumes and leave old volumes untouched. PostgreSQL 18 mounts `penpotdev_postgres_data_pg18` at `/var/lib/postgresql`; the old PG16 volume is not migrated automatically.
 - Network aliases (`- main`, `- redis`) are not declared in main.yml. Compose's auto-service-alias still registers `redis` on the shared network, so DNS for `redis` is non-deterministic with multiple instances. Backend uses `PENPOT_REDIS_URI=redis://penpot-devenv-wsN-valkey/0` (container_name) instead.
-- No cross-project `depends_on`. `manage.sh ensure-infra-up` uses Compose `--wait` and RustFS's `/health` check before starting an instance.
+- No cross-project `depends_on`. `manage.sh ensure-infra-up` uses Compose `--wait`; PostgreSQL, RustFS, and Mailpit expose healthchecks. PostgreSQL checks TCP so its temporary init server cannot report ready.
 - `JAVA_OPTS` in `manage.sh` is shadowed inside the container by `_env`. The `-e JAVA_OPTS=...` flag only matters for processes that don't source `_env`.
 
 ## Worker policy
