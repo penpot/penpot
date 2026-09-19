@@ -131,7 +131,7 @@
               (t/is (= (:code data) :system-snapshots-cant-be-deleted)))))
 
         ;; this will run pending task triggered by deleting user snapshot
-        (th/run-pending-tasks!)
+        (th/run-pending-jobs!)
 
         (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:days 8}))]
           (let [res (th/run-task! :objects-gc {})]

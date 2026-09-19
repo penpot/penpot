@@ -46,6 +46,13 @@
   "Bucket name for chunked-upload chunks."
   "upload-session")
 
+(def job-resource-bucket
+  "Bucket for storage objects referenced by job.resource_id (the
+  unified jobs substrate): transient artifacts owned by their job row,
+  reclaimed by storage-gc-touched (via the jobs GC touch) once no job
+  row references them anymore."
+  "job-resource")
+
 (def valid-buckets
   #{"file-media-object"
     "team-font-variant"
@@ -55,6 +62,7 @@
     "organization"
     tempfile-bucket
     upload-session-bucket
+    job-resource-bucket
     "file-data"
     "file-data-fragment"
     "file-change"})

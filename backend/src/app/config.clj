@@ -72,6 +72,10 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :jobs-lease (ct/duration {:minutes 30})
+   :jobs-retention (ct/duration {:days 7})
+   :jobs-request-timeout (ct/duration {:minutes 2})
+
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
@@ -102,6 +106,14 @@
    :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
    :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
 
+(def schema:tenant
+  "Tenant identifier: hostname-label-style (letters, digits and
+  hyphens). It is interpolated into LIKE patterns (job queues), Redis
+  keys and rate-limit buckets, so anything else (`%`, `_`, `.`, `:`,
+  whitespace) is rejected at startup. Tenants using those characters
+  must be renamed before upgrading."
+  [:re #"^[A-Za-z0-9-]+$"])
+
 (def schema:config
   (do #_sm/optional-keys
    [:map {:title "config"}
@@ -109,7 +121,7 @@
     [:admins {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
 
-    [:tenant {:optional false} :string]
+    [:tenant {:optional false} schema:tenant]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
@@ -163,6 +175,9 @@
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
+    [:jobs-lease {:optional true} ::ct/duration]
+    [:jobs-retention {:optional true} ::ct/duration]
+    [:jobs-request-timeout {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -180,6 +195,7 @@
     [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
+    [:worker-cron-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]
@@ -408,6 +424,30 @@
   :public-uri. With no segments, returns the normalized base."
   [& segments]
   (apply join-uri (c/get config :public-uri) segments))
+
+(defn get-jobs-lease
+  "Max time a job can run without touching modified_at (heartbeat or
+  progress) before the dispatcher marks it as orphan."
+  []
+  (or (c/get config :jobs-lease)
+      (ct/duration {:minutes 30})))
+
+(defn get-jobs-request-timeout
+  "Default timeout for the ephemeral request! calls (waiting for the
+  reply-key blpop); can be overridden per call. Any override is applied
+  by raising the pooled connection command timeout for the duration of
+  the call, which the pool restores on return."
+  []
+  (or (c/get config :jobs-request-timeout)
+      (ct/duration {:minutes 2})))
+
+(defn get-jobs-retention
+  "How long terminal (completed/failed/cancelled) internal job rows are
+  kept before the jobs GC deletes them; parity with the legacy tasks-gc
+  deletion delay."
+  []
+  (or (c/get config :jobs-retention)
+      (ct/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."
