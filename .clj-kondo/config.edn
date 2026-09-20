@@ -36,7 +36,7 @@
    "^(?:backend|frontend|exporter|common)/deps.edn"
    "^(?:backend|frontend|exporter|common)/scripts/"
    "^(?:backend|frontend|exporter|common)/dev/"
-   "^(?:backend|frontend|exporter|common)/test/(?!benches/)"]
+   "^(?:backend|frontend|exporter|common)/test/(?!benches/|frontend_tests/benches/)"]
 
   :linter-name true}
 
