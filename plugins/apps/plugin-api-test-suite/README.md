@@ -83,6 +83,9 @@ pnpm --filter plugin-api-test-suite run test:ci:mocked
 ```
 
 (equivalently `MOCK_BACKEND=1 … run test:ci`). No login or backend is needed.
+This is the per-PR CI gate: the `Run Plugin API Test Suite (mocked)` job in
+`.github/workflows/tests-e2e.yml` restores the frontend bundle that the shared
+workflow builds once per commit (never build it in the job).
 This validates the frontend Plugin API binding + in-memory store only, so it
 can't faithfully reproduce results that depend on real backend behaviour
 (validation, persistence, generated ids, …). Tests that need the real backend

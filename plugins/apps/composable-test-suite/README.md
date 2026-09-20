@@ -182,9 +182,10 @@ backend's only role is persistence, which the mock answers with a canned
 response.
 
 Prerequisites: the frontend bundle must exist at `frontend/resources/public`
-(the devenv watch build suffices; CI builds it via `frontend/scripts/build`),
-and the Playwright browser must be installed
+(the devenv watch build suffices), and the Playwright browser must be installed
 (`pnpm --filter composable-test-suite exec playwright install chromium`).
+In CI the shared E2E workflow (`.github/workflows/tests-e2e.yml`) builds that
+bundle once per commit and this job restores it; do not add a build step.
 
 Options via environment variables:
 
