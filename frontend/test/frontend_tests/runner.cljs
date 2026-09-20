@@ -176,6 +176,7 @@
 
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
+   'frontend-tests.benches.fixture-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
