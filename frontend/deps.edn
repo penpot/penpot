@@ -62,4 +62,8 @@
               "-Dpenpot.wasm.profile-marks=true"
               "-XX:+UnlockExperimentalVMOptions"
               "-XX:CompileCommand=blackhole,criterium.blackhole.Blackhole::consume"]}
+
+  :renderer-bench
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]
+   :jvm-opts ["-Dpenpot.wasm.profile-marks=false"]}
   }}
