@@ -11,6 +11,8 @@ test.beforeEach(async ({ page }) => {
 
 const interactionBlocksChildFileId = "cc000000-0000-0000-0000-000000000001";
 const interactionBlocksChildPageId = "cc000000-0000-0000-0000-000000000002";
+const interactionBlocksChildScreenTwoFrameId =
+  "cc000000-0002-0000-0000-000000000001";
 // Screen2 starts at (500, 0). HoverQuickToolArrowRight is at
 // (780, 190)-(840, 230) in page coordinates, so its center is (310, 210)
 // in Screen2's viewBox. The WASM hotspot expands this rect by 1px to
@@ -44,10 +46,16 @@ async function getViewerLayerBounds(page) {
   });
 }
 
-async function hasViewerCanvasPixels(page) {
-  return page.evaluate(() => {
+async function hasViewerCanvasPixels(page, expectedFrameId) {
+  return page.evaluate((frameId) => {
     const canvas = document.querySelector("#viewer-section canvas");
-    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+    // draw-bitmap! assigns this id only after the current frame is blitted.
+    if (
+      !canvas ||
+      canvas.id !== `screenshot-${frameId}` ||
+      canvas.width === 0 ||
+      canvas.height === 0
+    ) {
       return false;
     }
 
@@ -78,10 +86,10 @@ async function hasViewerCanvasPixels(page) {
     }
 
     return false;
-  });
+  }, expectedFrameId);
 }
 
-async function waitForViewerRender(page) {
+async function waitForViewerRender(page, expectedFrameId) {
   await expect
     .poll(
       async () => {
@@ -92,7 +100,7 @@ async function waitForViewerRender(page) {
             bounds.canvas.height > 0 &&
             bounds.svg.width > 0 &&
             bounds.svg.height > 0 &&
-            (await hasViewerCanvasPixels(page))
+            (await hasViewerCanvasPixels(page, expectedFrameId))
           );
         } catch {
           return false;
@@ -126,7 +134,10 @@ async function goToScreenTwo(viewer) {
 
   await viewer.page.getByRole("button", { name: "Next" }).click();
   await expect(viewer.page).toHaveURL(/index=1/);
-  await waitForViewerRender(viewer.page);
+  await waitForViewerRender(
+    viewer.page,
+    interactionBlocksChildScreenTwoFrameId,
+  );
 }
 
 async function decreaseZoom(page, count) {
@@ -203,13 +214,13 @@ test("WASM hotspots follow the visible element after zooming out", async ({
 
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/index=1/);
-  await waitForViewerRender(page);
+  await waitForViewerRender(page, interactionBlocksChildScreenTwoFrameId);
 
   await decreaseZoom(page, 2);
   await expect
     .poll(async () => (await getViewerLayerBounds(page)).canvas.width)
     .toBeLessThan(atOne.canvas.width);
-  await waitForViewerRender(page);
+  await waitForViewerRender(page, interactionBlocksChildScreenTwoFrameId);
 
   const zoomedOut = await getViewerLayerBounds(page);
   await page.mouse.click(
@@ -219,7 +230,7 @@ test("WASM hotspots follow the visible element after zooming out", async ({
 
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/index=1/);
-  await waitForViewerRender(page);
+  await waitForViewerRender(page, interactionBlocksChildScreenTwoFrameId);
 
   const oldVisiblePoint = designPointToCanvas(atOne, interactiveDesignPoint);
   await page.mouse.click(oldVisiblePoint.x, oldVisiblePoint.y);
