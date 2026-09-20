@@ -175,4 +175,42 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-runner
+  {:target :node-script
+   :output-to "target/renderer-benchmarks/runner.cjs"
+   :output-dir "target/renderer-benchmarks/runner/"
+   :main benches.render-wasm.runner/-main
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
+  :bench-render-wasm-browser
+  {:target :esm
+   :output-dir "target/renderer-benchmarks/browser/"
+   :js-options {:js-provider :import}
+
+   :modules
+   {:browser
+    {:exports {default benches.render-wasm.browser/bridge}}}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
      :anon-fn-naming-policy :off}}}}}
