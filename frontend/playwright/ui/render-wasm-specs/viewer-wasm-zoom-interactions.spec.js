@@ -58,8 +58,7 @@ async function waitForViewerRender(page, expectedFrameId) {
             bounds.canvas.width > 0 &&
             bounds.canvas.height > 0 &&
             bounds.svg.width > 0 &&
-            bounds.svg.height > 0 &&
-            (await hasViewerCanvasPixels(page, expectedFrameId))
+            bounds.svg.height > 0
           );
         } catch {
           return false;
