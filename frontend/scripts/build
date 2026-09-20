@@ -26,6 +26,7 @@ rm -rf target/dist;
 rm -rf resources/public;
 
 mkdir -p resources/public;
+mkdir -p resources/public/css;
 mkdir -p target/dist;
 
 # Build render wasm binary
@@ -45,6 +46,10 @@ rm -rf dist/apps/;
 corepack install;
 pnpm -r install;
 pnpm run build:plugins;
+popd
+
+pushd ./packages/ui
+pnpm run build
 popd
 
 pnpm run build:app:main $EXTRA_PARAMS;
