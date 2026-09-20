@@ -11,9 +11,11 @@ test.beforeEach(async ({ page }) => {
 
 const interactionBlocksChildFileId = "cc000000-0000-0000-0000-000000000001";
 const interactionBlocksChildPageId = "cc000000-0000-0000-0000-000000000002";
-// HoverQuickToolArrowRight is at (780, 190) in the page and its parent frame
-// starts at (550, 50), so this is its center in the prepared frame viewBox.
-const interactiveDesignPoint = { x: 260, y: 160 };
+// Screen2 starts at (500, 0). HoverQuickToolArrowRight is at
+// (780, 190)-(840, 230) in page coordinates, so its center is (310, 210)
+// in Screen2's viewBox. The WASM hotspot expands this rect by 1px to
+// [279, 341] x [189, 231].
+const interactiveDesignPoint = { x: 310, y: 210 };
 
 async function getViewerLayerBounds(page) {
   return page.evaluate(() => {
@@ -42,6 +44,43 @@ async function getViewerLayerBounds(page) {
   });
 }
 
+async function hasViewerCanvasPixels(page) {
+  return page.evaluate(() => {
+    const canvas = document.querySelector("#viewer-section canvas");
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+      return false;
+    }
+
+    try {
+      const context = canvas.getContext("2d");
+      if (!context) {
+        return false;
+      }
+
+      const pixels = context.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      ).data;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (
+          pixels[index] ||
+          pixels[index + 1] ||
+          pixels[index + 2] ||
+          pixels[index + 3]
+        ) {
+          return true;
+        }
+      }
+    } catch {
+      return false;
+    }
+
+    return false;
+  });
+}
+
 async function waitForViewerRender(page) {
   await expect
     .poll(
@@ -52,7 +91,8 @@ async function waitForViewerRender(page) {
             bounds.canvas.width > 0 &&
             bounds.canvas.height > 0 &&
             bounds.svg.width > 0 &&
-            bounds.svg.height > 0
+            bounds.svg.height > 0 &&
+            (await hasViewerCanvasPixels(page))
           );
         } catch {
           return false;
