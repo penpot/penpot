@@ -82,7 +82,7 @@ export function readOptions(argv) {
     .map((token) => token.trim())
     .filter(Boolean);
   for (const token of featureList) {
-    if (!/^[a-z0-9-]+$/.test(token))
+    if (!/^[a-z0-9-_]+$/.test(token))
       throw new Error(`Invalid --features token: ${token}`);
   }
   const features = [...new Set(featureList)].sort();
