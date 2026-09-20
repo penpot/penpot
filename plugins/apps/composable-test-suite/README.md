@@ -172,7 +172,9 @@ pnpm --filter composable-test-suite run test:ci
 
 This builds the in-sandbox entry (`src/ci/headless.ts`) as a single
 self-executing bundle and hands it to the driver (`ci/run-ci.ts`), which
-serves the prebuilt frontend bundle via the frontend e2e static server,
+serves the prebuilt frontend bundle with a zero-dependency static server
+built into the driver (`ci/static-server.ts`, same bundle on the same port —
+no `frontend/` install needed),
 intercepts every backend RPC with Playwright fixtures (no backend, no login),
 opens the mocked workspace file, injects the bundle directly into the plugin
 sandbox, and streams each test's result from the page console — failing the

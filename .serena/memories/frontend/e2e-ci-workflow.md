@@ -19,8 +19,13 @@ built plugins.
   the key before the job ends. A re-run of the same SHA reuses the cache.
 - Consumer jobs (`needs: build-bundle`) restore the same key with
   `fail-on-cache-miss: true` and NEVER run `frontend/scripts/build`.
-- The bundle is `frontend/resources/public`; both the e2e static server and the
-  plugin test drivers serve it from there.
+- The bundle is `frontend/resources/public`. The integration specs serve it
+  with `frontend/scripts/e2e-server.js`; each mocked plugin driver serves it
+  with its own zero-dependency `ci/static-server.ts` (duplicated in both
+  suites — keep the copies in sync).
+- Mocked plugin jobs install only `plugins/` deps, so their drivers must not
+  import anything from `frontend/node_modules` at runtime (e.g. no
+  `frontend/scripts/e2e-server.js`, which needs `express`).
 - Cache key comes from `git rev-parse HEAD` (the checked-out ref), not
   `github.sha`, because `workflow_dispatch` can target a different ref.
 - Job `name:` values are the GitHub check contexts. Keep them stable: branch

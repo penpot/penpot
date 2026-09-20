@@ -75,7 +75,9 @@ them the same way the plugin does).
 ### Mocked-backend mode
 
 The same runner can run without a live instance — it serves the prebuilt
-frontend via the frontend e2e static server and intercepts every backend RPC
+frontend with a zero-dependency static server built into the driver
+(`ci/static-server.ts`, same bundle on the same port 3000 — no `frontend/`
+install needed) and intercepts every backend RPC
 with Playwright `page.route`, reusing the frontend e2e mock fixtures:
 
 ```
