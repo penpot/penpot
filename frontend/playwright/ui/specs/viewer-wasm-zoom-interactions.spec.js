@@ -11,6 +11,9 @@ test.beforeEach(async ({ page }) => {
 
 const interactionBlocksChildFileId = "cc000000-0000-0000-0000-000000000001";
 const interactionBlocksChildPageId = "cc000000-0000-0000-0000-000000000002";
+// HoverQuickToolArrowRight is at (780, 190) in the page and its parent frame
+// starts at (550, 50), so this is its center in the prepared frame viewBox.
+const interactiveDesignPoint = { x: 260, y: 160 };
 
 async function getViewerLayerBounds(page) {
   return page.evaluate(() => {
@@ -39,6 +42,42 @@ async function getViewerLayerBounds(page) {
   });
 }
 
+async function waitForViewerRender(page) {
+  await expect
+    .poll(
+      async () => {
+        try {
+          const bounds = await getViewerLayerBounds(page);
+          return (
+            bounds.canvas.width > 0 &&
+            bounds.canvas.height > 0 &&
+            bounds.svg.width > 0 &&
+            bounds.svg.height > 0
+          );
+        } catch {
+          return false;
+        }
+      },
+      { timeout: 30000 },
+    )
+    .toBe(true);
+}
+
+function designPointToCanvas(bounds, point) {
+  const [viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight] = bounds.viewBox
+    .split(/[ ,]+/)
+    .map(Number);
+
+  return {
+    x:
+      bounds.canvas.left +
+      ((point.x - viewBoxX) / viewBoxWidth) * bounds.canvas.width,
+    y:
+      bounds.canvas.top +
+      ((point.y - viewBoxY) / viewBoxHeight) * bounds.canvas.height,
+  };
+}
+
 async function goToScreenTwo(viewer) {
   await viewer.goToViewer({
     fileId: interactionBlocksChildFileId,
@@ -47,6 +86,7 @@ async function goToScreenTwo(viewer) {
 
   await viewer.page.getByRole("button", { name: "Next" }).click();
   await expect(viewer.page).toHaveURL(/index=1/);
+  await waitForViewerRender(viewer.page);
 }
 
 async function decreaseZoom(page, count) {
@@ -66,7 +106,7 @@ test("WASM viewer layers keep the same CSS bounds while zooming", async ({
   await goToScreenTwo(viewer);
 
   const hotspot = page
-    .locator("#viewer-section svg[class*='not-fixed'] g[cursor='pointer']")
+    .locator("#viewer-section svg g[style*='cursor: pointer']")
     .first();
   await expect(hotspot).toBeVisible();
 
@@ -111,48 +151,37 @@ test("WASM hotspots follow the visible element after zooming out", async ({
   await goToScreenTwo(viewer);
 
   const hotspot = page
-    .locator("#viewer-section svg[class*='not-fixed'] g[cursor='pointer']")
+    .locator("#viewer-section svg g[style*='cursor: pointer']")
     .first();
   await expect(hotspot).toBeVisible();
 
-  const initialBox = await hotspot.boundingBox();
-  if (!initialBox) {
-    throw new Error("Interactive hotspot is not measurable");
-  }
-
-  await hotspot.click();
+  const atOne = await getViewerLayerBounds(page);
+  await page.mouse.click(
+    ...Object.values(designPointToCanvas(atOne, interactiveDesignPoint)),
+  );
   await expect(page).toHaveURL(/index=0/);
 
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/index=1/);
+  await waitForViewerRender(page);
 
   await decreaseZoom(page, 2);
   await expect
-    .poll(async () => (await hotspot.boundingBox())?.width ?? 0)
-    .toBeLessThan(initialBox.width);
+    .poll(async () => (await getViewerLayerBounds(page)).canvas.width)
+    .toBeLessThan(atOne.canvas.width);
+  await waitForViewerRender(page);
 
-  const zoomedOutBox = await hotspot.boundingBox();
-  if (!zoomedOutBox) {
-    throw new Error("Zoomed-out interactive hotspot is not measurable");
-  }
-
-  const oldCenter = {
-    x: initialBox.x + initialBox.width / 2,
-    y: initialBox.y + initialBox.height / 2,
-  };
-  const oldCenterIsVisible =
-    oldCenter.x >= zoomedOutBox.x &&
-    oldCenter.x <= zoomedOutBox.x + zoomedOutBox.width &&
-    oldCenter.y >= zoomedOutBox.y &&
-    oldCenter.y <= zoomedOutBox.y + zoomedOutBox.height;
-  expect(oldCenterIsVisible).toBe(false);
-
-  await hotspot.click();
+  const zoomedOut = await getViewerLayerBounds(page);
+  await page.mouse.click(
+    ...Object.values(designPointToCanvas(zoomedOut, interactiveDesignPoint)),
+  );
   await expect(page).toHaveURL(/index=0/);
 
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/index=1/);
+  await waitForViewerRender(page);
 
-  await page.mouse.click(oldCenter.x, oldCenter.y);
+  const oldVisiblePoint = designPointToCanvas(atOne, interactiveDesignPoint);
+  await page.mouse.click(oldVisiblePoint.x, oldVisiblePoint.y);
   await expect(page).toHaveURL(/index=1/);
 });
