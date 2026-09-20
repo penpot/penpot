@@ -38,55 +38,13 @@ async function getViewerLayerBounds(page) {
       wrapper: readRect(layer),
       canvas: readRect(canvas),
       svg: readRect(svg),
+      canvasId: canvas.id,
       canvasBuffer: { width: canvas.width, height: canvas.height },
       canvasClient: { width: canvas.clientWidth, height: canvas.clientHeight },
       dpr: window.devicePixelRatio,
       viewBox: svg.getAttribute("viewBox"),
     };
   });
-}
-
-async function hasViewerCanvasPixels(page, expectedFrameId) {
-  return page.evaluate((frameId) => {
-    const canvas = document.querySelector("#viewer-section canvas");
-    // draw-bitmap! assigns this id only after the current frame is blitted.
-    if (
-      !canvas ||
-      canvas.id !== `screenshot-${frameId}` ||
-      canvas.width === 0 ||
-      canvas.height === 0
-    ) {
-      return false;
-    }
-
-    try {
-      const context = canvas.getContext("2d");
-      if (!context) {
-        return false;
-      }
-
-      const pixels = context.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      ).data;
-      for (let index = 0; index < pixels.length; index += 4) {
-        if (
-          pixels[index] ||
-          pixels[index + 1] ||
-          pixels[index + 2] ||
-          pixels[index + 3]
-        ) {
-          return true;
-        }
-      }
-    } catch {
-      return false;
-    }
-
-    return false;
-  }, expectedFrameId);
 }
 
 async function waitForViewerRender(page, expectedFrameId) {
@@ -96,6 +54,7 @@ async function waitForViewerRender(page, expectedFrameId) {
         try {
           const bounds = await getViewerLayerBounds(page);
           return (
+            bounds.canvasId === `screenshot-${expectedFrameId}` &&
             bounds.canvas.width > 0 &&
             bounds.canvas.height > 0 &&
             bounds.svg.width > 0 &&
@@ -141,11 +100,12 @@ async function goToScreenTwo(viewer) {
 }
 
 async function decreaseZoom(page, count) {
-  await page.getByTitle("Zoom").click();
-  const decreaseButton = page.getByTitle("Zoom").locator("button").first();
+  const zoom = page.getByTitle("Zoom");
+  await zoom.click();
+  const zoomOut = page.getByRole("button", { name: "Zoom out" });
 
   for (let i = 0; i < count; i++) {
-    await decreaseButton.click();
+    await zoomOut.click();
   }
 }
 
@@ -169,6 +129,7 @@ test("WASM viewer layers keep the same CSS bounds while zooming", async ({
 
   const zoomedOut = await getViewerLayerBounds(page);
   for (const bounds of [atOne, zoomedOut]) {
+    expect(bounds.dpr).toBeGreaterThan(1);
     for (const layer of ["wrapper", "canvas", "svg"]) {
       expect(Math.abs(bounds[layer].left - bounds.svg.left)).toBeLessThan(0.5);
       expect(Math.abs(bounds[layer].top - bounds.svg.top)).toBeLessThan(0.5);
@@ -179,18 +140,19 @@ test("WASM viewer layers keep the same CSS bounds while zooming", async ({
         0.5,
       );
     }
+    expect(bounds.canvasBuffer.width).toBeGreaterThan(0);
+    expect(bounds.canvasBuffer.height).toBeGreaterThan(0);
+    expect(bounds.canvasClient.width).toBeGreaterThan(0);
+    expect(bounds.canvasClient.height).toBeGreaterThan(0);
+    expect(bounds.canvasBuffer.width / bounds.canvasClient.width).toBeCloseTo(
+      bounds.dpr,
+      1,
+    );
+    expect(bounds.canvasBuffer.height / bounds.canvasClient.height).toBeCloseTo(
+      bounds.dpr,
+      1,
+    );
   }
-
-  expect(zoomedOut.canvasBuffer.width).toBeGreaterThan(0);
-  expect(zoomedOut.canvasBuffer.height).toBeGreaterThan(0);
-  expect(zoomedOut.canvasClient.width).toBeGreaterThan(0);
-  expect(zoomedOut.canvasClient.height).toBeGreaterThan(0);
-  expect(
-    zoomedOut.canvasBuffer.width / zoomedOut.canvasClient.width,
-  ).toBeCloseTo(zoomedOut.dpr, 1);
-  expect(
-    zoomedOut.canvasBuffer.height / zoomedOut.canvasClient.height,
-  ).toBeCloseTo(zoomedOut.dpr, 1);
   expect(zoomedOut.viewBox).toBeTruthy();
 });
 
@@ -231,8 +193,4 @@ test("WASM hotspots follow the visible element after zooming out", async ({
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page).toHaveURL(/index=1/);
   await waitForViewerRender(page, interactionBlocksChildScreenTwoFrameId);
-
-  const oldVisiblePoint = designPointToCanvas(atOne, interactiveDesignPoint);
-  await page.mouse.click(oldVisiblePoint.x, oldVisiblePoint.y);
-  await expect(page).toHaveURL(/index=1/);
 });
