@@ -9,7 +9,7 @@
 
   A fixture scope owns one seeded generator, one object map, and one label
   map. Shape constructors add themselves to the current parent: `rect`, and
-  the `frame`/`group` container scopes. The scope returns a validated
+  the `frame`/`group`/`bool` container scopes. The scope returns a validated
   snapshot in the ticket02 contract `{:objects ... :refs ...}`.
 
   Construction is synchronous by design: the scope and the current parent
@@ -27,13 +27,16 @@
   Coordinates stay page-absolute: nesting supplies ownership and order, not
   translation. Frames keep authored bounds; groups derive bounds from their
   children inside out; a masked group takes the geometry of its first child.
+  Booleans derive content and geometry from their children with the canonical
+  path engine and inherit style from the head child unless attrs supply it.
 
-  Masked groups, frame/group scopes are this ticket; booleans ticket19;
-  paths ticket07/08."
+  Masked groups and the frame/group/bool scopes live here; paths ticket07/08."
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
+   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -55,12 +58,12 @@
   [seed]
   (let [state (atom (bit-or seed 0))]
     (fn []
-      (let [s (swap! state (fn [s] (bit-or (+ s 0x6d2b79f5) 0)))
-            v (js/Math.imul (bit-xor s (unsigned-bit-shift-right s 15))
-                            (bit-or s 1))
-            v (bit-xor v (+ v (js/Math.imul (bit-xor v (unsigned-bit-shift-right v 7))
-                                            (bit-or v 61))))
-            v (bit-xor v (unsigned-bit-shift-right v 14))]
+      (let [s    (swap! state (fn [s] (bit-or (+ s 0x6d2b79f5) 0)))
+            v    (js/Math.imul (bit-xor s (unsigned-bit-shift-right s 15))
+                               (bit-or s 1))
+            v    (bit-xor v (+ v (js/Math.imul (bit-xor v (unsigned-bit-shift-right v 7))
+                                               (bit-or v 61))))
+            v    (bit-xor v (unsigned-bit-shift-right v 14))]
         (/ (unsigned-bit-shift-right v 0) 4294967296)))))
 
 (defn rng-float
@@ -256,10 +259,32 @@
     id))
 
 (def ^:private frame-bounds-keys
+  "Frames do not derive their bounds from children."
   [:x :y :width :height])
 
 (def ^:private group-geometry-keys
+  "Group geometry derives from its children."
   [:x :y :width :height :selrect :points])
+
+(def ^:private bool-geometry-keys
+  "Bool geometry, content and placement derive from its children."
+  [:x :y :width :height :selrect :points :content])
+
+(def ^:private bool-transform-keys
+  "Construction does not accept transforms: `path/update-geometry` would
+  pivot them on the empty pre-finalization selrect."
+  [:transform :transform-inverse :rotation :flip-x :flip-y])
+
+(defn- reject-attrs!
+  "Throws when `attrs` carries any of `attr-keys`. Shared by containers
+  whose geometry or content derives from their children."
+  [attrs id error-type message attr-keys]
+  (doseq [key attr-keys]
+    (when (some? (get attrs key))
+      (throw (ex-info message
+                      {:type error-type
+                       :id id
+                       :key key})))))
 
 (defn- setup-frame
   [id attrs]
@@ -289,13 +314,69 @@
     (throw (ex-info "group attrs must be a map; the label form takes the attrs map next"
                     {:type ::invalid-attrs
                      :id id})))
-  (doseq [key group-geometry-keys]
-    (when (some? (get attrs key))
-      (throw (ex-info "group derives its geometry from children"
-                      {:type ::group-geometry
-                       :id id
-                       :key key}))))
+  (reject-attrs! attrs id ::group-geometry
+                 "group derives its geometry from children"
+                 group-geometry-keys)
   (cts/setup-shape (assoc attrs :id id :type :group)))
+
+(defn- setup-bool
+  [id attrs]
+  (when-not (map? attrs)
+    (throw (ex-info "bool attrs must be a map; the label form takes the attrs map next"
+                    {:type ::invalid-attrs
+                     :id id})))
+  (reject-attrs! attrs id ::bool-geometry
+                 "bool derives its geometry and content from children"
+                 bool-geometry-keys)
+  (reject-attrs! attrs id ::bool-transform
+                 "bool construction does not accept transforms"
+                 bool-transform-keys)
+  (when-not (contains? cts/bool-types (:bool-type attrs))
+    (throw (ex-info "bool requires :bool-type :union :difference :intersection or :exclude"
+                    {:type ::bool-type
+                     :id id
+                     :bool-type (:bool-type attrs)
+                     :supported cts/bool-types})))
+  (cts/setup-shape (assoc attrs :id id :type :bool)))
+
+(defn- bool-head
+  "Canonical style head: the first child is the base for `:difference`, the
+  last child otherwise."
+  [bool-shape children]
+  (if (= :difference (:bool-type bool-shape))
+    (first children)
+    (last children)))
+
+(defn- finalize-bool!
+  [state id]
+  (let [scope    @state
+        bool     (get-in scope [:objects id])
+        children (mapv (:objects scope) (:shapes bool))]
+    (when (empty? children)
+      (throw (ex-info "bool requires at least one child"
+                      {:type ::empty-bool
+                       :id id})))
+    (when-let [frame (first (filter cfh/frame-shape? children))]
+      (throw (ex-info "bool children cannot be frames"
+                      {:type ::frame-in-bool
+                       :id id
+                       :child (:id frame)})))
+    (let [inherited (d/without-nils
+                     (select-keys (bool-head bool children)
+                                  path/bool-style-properties))
+          supplied  (d/without-nils
+                     (select-keys (get-in scope [:container-attrs id])
+                                  path/bool-style-properties))
+          bool      (-> bool (merge inherited) (merge supplied))
+
+          ;; `path/update-bool-shape` dispatches to `path/wasm:calc-bool-content`,
+          ;; the renderer override, so fixture content would depend on renderer
+          ;; initialization and A/B configuration. Compose the pure helpers:
+          ;; fixture generation is untimed and must not vary with the renderer
+          ;; being compared.
+          content   (path/calc-bool-content bool (:objects scope))
+          bool      (path/update-geometry bool content)]
+      (swap! state assoc-in [:objects id] bool))))
 
 (defn- finalize-group!
   [state id]
@@ -313,24 +394,30 @@
 
 (def ^:private container-specs
   "Per-container behavior: how to build it, which parent scope it opens,
-  and how to finalize it after the body. Ticket19 extends the table with
-  booleans."
+  and how to finalize it after the body. `:keep-attrs?` records the raw
+  attrs in the scope so the finalizer can let supplied styles win over
+  inherited ones."
   {:frame {:setup setup-frame
            :parent (fn [id _parent] {:id id :frame-id id})
            :finalize (fn [_state _id] nil)}
    :group {:setup setup-group
            :parent (fn [id parent] {:id id :frame-id (:frame-id parent)})
-           :finalize finalize-group!}})
+           :finalize finalize-group!}
+   :bool {:setup setup-bool
+          :parent (fn [id parent] {:id id :frame-id (:frame-id parent)})
+          :finalize finalize-bool!
+          :keep-attrs? true}})
 
 (defn with-container
-  "Creates a frame or group, runs `thunk` with the new parent in scope,
-  finalizes groups, and returns the container uuid.
+  "Creates a frame, group or bool, runs `thunk` with the new parent in
+  scope, finalizes the containers that derive state from children, and
+  returns the container uuid.
 
   Any exception from the body or the finalizer marks the container
   unfinished and propagates; `finish!` then rejects the instance even if the
   caller catches the exception."
   [type attrs label thunk]
-  (let [{:keys [setup parent finalize]}
+  (let [{:keys [setup parent finalize keep-attrs?]}
         (or (get container-specs type)
             (throw (ex-info "unsupported container type"
                             {:type ::invalid-container
@@ -338,6 +425,8 @@
         state (ensure-state *state*)
         id    (rng-uuid (:rng @state))
         shape (setup id attrs)]
+    (when keep-attrs?
+      (swap! state assoc-in [:container-attrs id] attrs))
     (add-object! state label shape)
     (binding [*parent* (parent id *parent*)]
       (try
