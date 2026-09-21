@@ -5,6 +5,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
+   [frontend-tests.benches.boolean-fixture-test]
    [frontend-tests.benches.builder-test]
    [frontend-tests.benches.containers-test]
    [frontend-tests.benches.fixture-test]
@@ -150,6 +151,7 @@
 
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
+   'frontend-tests.benches.boolean-fixture-test
    'frontend-tests.benches.builder-test
    'frontend-tests.benches.containers-test
    'frontend-tests.benches.fixture-test
