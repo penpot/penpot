@@ -16,6 +16,7 @@ it does not move caches or download missing crates.
 pnpm run benchmark:renderer run --output /tmp/baseline.json
 pnpm run benchmark:renderer run --filter texts --seed 42 --output /tmp/texts.json
 pnpm run benchmark:renderer run --headed --filter rects/default/zoom
+pnpm run benchmark:renderer run --no-build --filter rects/default/pan
 pnpm run benchmark:renderer compare /tmp/baseline.json /tmp/candidate.json
 pnpm run benchmark:renderer compare /tmp/baseline.json /tmp/candidate.json --diagnostic
 pnpm run test:renderer-benchmarks
@@ -26,7 +27,12 @@ Each run builds the ordinary optimized frontend renderer once using
 skipped, package-manager network fallback is disabled, and the emitted module is
 named `render-wasm-benchmark`. Playground assets are refreshed before launch. A
 per-run marker checks that the server points at this checkout. Concurrent builds
-or benchmark commands against the same checkout are unsupported.
+or benchmark commands against the same checkout are unsupported. `run --no-build`
+skips the build, the Cargo manifest read, and the Emscripten/esbuild preflight
+checks, then measures the existing `render-wasm-benchmark.js`/`.wasm` pair; it
+still refreshes playground assets and checks the marker. It rejects `--features`
+and never applies to `ab`, and records `metadata.build.built: false` with a
+warning that the artifact was not rebuilt from this revision.
 
 The default server URL is `http://localhost:3000`; override it with `--base-url`.
 Default JSON output goes to a unique file under the system temporary directory.
@@ -146,9 +152,11 @@ browser; the printed plan states this cost. `--output` for `ab` is a directory
 root that must not exist yet; `configs/<slug>.json`,
 `comparisons/<from>__<to>.json`, and `matrix.json` land beneath it.
 
-Run JSON is `schemaVersion` 2: `metadata.build.features` is the explicit
-sorted set (the A/B identity axis), `defaultFeatures` the resolved manifest
-defaults, plus the runner-controlled `env` map and the allowlisted
+Run JSON is `schemaVersion` 2: `metadata.build.built` is `false` when the run
+reused an existing artifact, and the build-derived fields below are absent, so
+comparing it with a built run fails compatibility. `metadata.build.features` is
+the explicit sorted set (the A/B identity axis), `defaultFeatures` the resolved
+manifest defaults, plus the runner-controlled `env` map and the allowlisted
 `ambientEnv` (`RUSTFLAGS`, `RUSTC_WRAPPER`, `CARGO_TARGET_DIR`, `CARGO_HOME`,
 `CC`, `CFLAGS`, `CXXFLAGS`, `LDFLAGS`, `PENPOT_WASM_FUNCTION_NAMES`,
 `CARGO_PROFILE_*`, `EMSDK*`). Comparison of the six build fields is always

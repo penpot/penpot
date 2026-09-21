@@ -59,6 +59,7 @@ export function readOptions(argv) {
       "max-features": { type: "string", default: "3" },
       confirm: { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
+      "no-build": { type: "boolean", default: false },
     },
   });
   const command = positionals[0] ?? "run";
@@ -89,6 +90,10 @@ export function readOptions(argv) {
   const maxFeatures = number("max-features", 1, 6);
   if (command !== "ab" && values["dry-run"])
     throw new Error("--dry-run is only valid for ab");
+  if (values["no-build"] && command !== "run")
+    throw new Error("--no-build is only valid for run");
+  if (values["no-build"] && features.length)
+    throw new Error("--no-build skips the build, so --features cannot apply");
   if (command === "ab" && !values.help) {
     if (features.some((name) => /^(stats|profile)(-|$)/.test(name)))
       throw new Error(
@@ -127,6 +132,7 @@ export function readOptions(argv) {
     maxFeatures,
     confirm: values.confirm,
     dryRun: values["dry-run"],
+    noBuild: values["no-build"],
   };
 }
 
@@ -305,14 +311,25 @@ export function recordAmbientEnv(env = process.env) {
 }
 
 async function preflight(options) {
-  await requireFile(
-    "/opt/emsdk/emsdk_env.sh",
-    "Run inside the prepared Penpot development container (Emscripten is missing).",
-  );
-  await requireFile(
-    path.join(root, "render-wasm/node_modules/esbuild/package.json"),
-    "Prepare renderer dependencies with pnpm install in render-wasm first.",
-  );
+  if (options.noBuild) {
+    for (const artifact of [
+      "render-wasm-benchmark.js",
+      "render-wasm-benchmark.wasm",
+    ])
+      await requireFile(
+        path.join(frontend, "resources/public/js", artifact),
+        "No existing renderer benchmark build; run once without --no-build first.",
+      );
+  } else {
+    await requireFile(
+      "/opt/emsdk/emsdk_env.sh",
+      "Run inside the prepared Penpot development container (Emscripten is missing).",
+    );
+    await requireFile(
+      path.join(root, "render-wasm/node_modules/esbuild/package.json"),
+      "Prepare renderer dependencies with pnpm install in render-wasm first.",
+    );
+  }
   const { chromium } = await import("playwright");
   await requireFile(
     chromium.executablePath(),
@@ -389,6 +406,7 @@ export async function run(options) {
       },
       build: {
         mode: "release",
+        built: !options.noBuild,
         featurePolicy: "manifest-defaults",
         features: [],
         target: "frontend",
@@ -474,34 +492,41 @@ export async function run(options) {
       ),
     );
     result.metadata.environment.playwright = packageJson.version;
-    const requested = [...(options.features ?? [])].sort();
-    const resolved = validateFeatureSelection(
-      readRendererManifest(),
-      requested,
-      options.command,
-    );
-    result.metadata.build.features = requested;
-    result.metadata.build.defaultFeatures = resolved;
-    if (requested.length) result.metadata.build.featurePolicy = "explicit";
-    result.metadata.build.env = { ...BUILD_ENV };
-    result.metadata.build.ambientEnv = recordAmbientEnv();
-    // Disallow package-manager network fallback in a prepared run.
-    const buildStart = performance.now();
-    await execute(
-      "./build",
-      [
-        "frontend",
-        "--offline",
-        "--locked",
-        ...(requested.length ? ["--features", requested.join(",")] : []),
-      ],
-      {
-        cwd: path.join(root, "render-wasm"),
-        signal: abort.signal,
-        env: { ...process.env, ...BUILD_ENV, VERSION: runId },
-      },
-    );
-    result.metadata.build.durationMs = performance.now() - buildStart;
+    if (options.noBuild) {
+      const warning =
+        "Build skipped (--no-build): the measured artifact was not rebuilt from this revision.";
+      result.warnings.push(warning);
+      console.warn(warning);
+    } else {
+      const requested = [...(options.features ?? [])].sort();
+      const resolved = validateFeatureSelection(
+        readRendererManifest(),
+        requested,
+        options.command,
+      );
+      result.metadata.build.features = requested;
+      result.metadata.build.defaultFeatures = resolved;
+      if (requested.length) result.metadata.build.featurePolicy = "explicit";
+      result.metadata.build.env = { ...BUILD_ENV };
+      result.metadata.build.ambientEnv = recordAmbientEnv();
+      // Disallow package-manager network fallback in a prepared run.
+      const buildStart = performance.now();
+      await execute(
+        "./build",
+        [
+          "frontend",
+          "--offline",
+          "--locked",
+          ...(requested.length ? ["--features", requested.join(",")] : []),
+        ],
+        {
+          cwd: path.join(root, "render-wasm"),
+          signal: abort.signal,
+          env: { ...process.env, ...BUILD_ENV, VERSION: runId },
+        },
+      );
+      result.metadata.build.durationMs = performance.now() - buildStart;
+    }
     const { copyWasmPlayground } = await import("./_helpers.js");
     const previousCwd = process.cwd();
     try {
@@ -902,7 +927,7 @@ export async function main(argv = process.argv.slice(2)) {
   const options = readOptions(argv);
   if (options.help) {
     console.log(
-      "Renderer benchmarks\n  node scripts/renderer-benchmarks.js run [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--features a,b] [--output FILE]\n  node scripts/renderer-benchmarks.js ab --features a,b [--max-features N] [--confirm] [--dry-run] [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--output DIR]\n  node scripts/renderer-benchmarks.js compare BASELINE CANDIDATE [--diagnostic] [--output FILE]\nRun requires a prepared development container and an existing static server on port 3000. Defaults: 3 warmups, 10 measured attempts, 30s timeout; provisional pending calibration.\n" +
+      "Renderer benchmarks\n  node scripts/renderer-benchmarks.js run [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--features a,b] [--output FILE] [--no-build]\n  node scripts/renderer-benchmarks.js ab --features a,b [--max-features N] [--confirm] [--dry-run] [--filter ID] [--seed N] [--warmups N] [--repetitions N] [--timeout-ms N] [--headed] [--base-url URL] [--output DIR]\n  node scripts/renderer-benchmarks.js compare BASELINE CANDIDATE [--diagnostic] [--output FILE]\nRun requires a prepared development container and an existing static server on port 3000. --no-build reuses the existing renderer artifact instead of building and cannot be combined with --features or ab. Defaults: 3 warmups, 10 measured attempts, 30s timeout; provisional pending calibration.\n" +
         LIMITS,
     );
     return 0;
