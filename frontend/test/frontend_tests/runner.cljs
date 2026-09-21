@@ -6,6 +6,7 @@
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
    [frontend-tests.benches.builder-test]
+   [frontend-tests.benches.containers-test]
    [frontend-tests.benches.fixture-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
@@ -150,6 +151,7 @@
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
    'frontend-tests.benches.builder-test
+   'frontend-tests.benches.containers-test
    'frontend-tests.benches.fixture-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
