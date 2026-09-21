@@ -8,6 +8,8 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
+   [app.main.router :as rt]
+   [beicon.v2.core :as rx]
    [cljs.test :as t]
    [potok.v2.core :as ptk]))
 
@@ -67,3 +69,56 @@
           result (ptk/update dv/zoom-to-fill state)]
       (t/is (= (get-in result [:viewer-local :zoom-type]) :fill))
       (t/is (number? (get-in result [:viewer-local :zoom]))))))
+
+(defn- watch-events
+  "Collect the events an event's watch emits synchronously."
+  [event state]
+  (let [out (atom [])]
+    (some-> (ptk/watch event state nil)
+            (rx/subscribe #(swap! out conj %)))
+    @out))
+
+(defn- zoom-state
+  "Build a viewer state with the given `:zoom` query param and zoom type."
+  [zoom-param zoom-type]
+  {:route {:params {:query (cond-> {:page-id (str page-id) :index "0"}
+                             (some? zoom-param)
+                             (assoc :zoom zoom-param))}}
+   :viewer-local (cond-> {}
+                   (some? zoom-type)
+                   (assoc :zoom-type zoom-type))})
+
+(t/deftest update-zoom-querystring-does-not-navigate-when-url-already-matches
+  (t/testing "zoom type already described by the query string"
+    (t/is (empty? (watch-events dv/update-zoom-querystring
+                                (zoom-state "fit" :fit)))))
+
+  (t/testing "no zoom type and no zoom query param"
+    (t/is (empty? (watch-events dv/update-zoom-querystring
+                                (zoom-state nil nil))))))
+
+(t/deftest update-zoom-querystring-navigates-when-zoom-changes
+  (t/testing "zoom type differs from the query string"
+    (let [events (watch-events dv/update-zoom-querystring
+                               (zoom-state "fit" :fill))
+          {:keys [id params options]} (some-> (first events) deref)]
+      (t/is (= 1 (count events)))
+      (t/is (= :viewer id))
+      (t/is (= :fill (:zoom params)))
+      (t/is (true? (::rt/replace options)))))
+
+  (t/testing "zoom query param absent, other params preserved"
+    (let [events (watch-events dv/update-zoom-querystring
+                               (zoom-state nil :fit))
+          {:keys [params]} (some-> (first events) deref)]
+      (t/is (= 1 (count events)))
+      (t/is (= :fit (:zoom params)))
+      (t/is (= (str page-id) (:page-id params)))
+      (t/is (= "0" (:index params)))))
+
+  (t/testing "zoom type cleared drops the query param"
+    (let [events (watch-events dv/update-zoom-querystring
+                               (zoom-state "fit" nil))
+          {:keys [params]} (some-> (first events) deref)]
+      (t/is (= 1 (count events)))
+      (t/is (not (contains? params :zoom))))))
