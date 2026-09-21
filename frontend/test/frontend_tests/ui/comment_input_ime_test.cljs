@@ -12,8 +12,7 @@
   Penpot line-break action. The component handlers delegate to
   `handle-comment-input-key-down` and `handle-thread-key-down`, which
   run nothing while the keydown belongs to an active IME composition
-  (nativeEvent.isComposing or keyCode 229, mirroring the v3
-  text-editor precedent from #10498).
+  (nativeEvent.isComposing or keyCode 229 as a fallback).
 
   These tests call the actual handler fns with stubbed dependencies
   and assert which side effects fire — not a resolver return value —

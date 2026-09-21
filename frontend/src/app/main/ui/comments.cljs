@@ -159,8 +159,9 @@
   render timing or the relative ordering of composition events: on macOS
   the keydown that confirms a composition (e.g. Enter in Japanese IME)
   is dispatched while the composition is still active, so it must not
-  be interpreted as a comment-editor command. keyCode 229 covers the
-  cases where isComposing is not yet set (see #10477, #11757)."
+  be interpreted as a comment-editor command. keyCode 229 is kept as a
+  fallback for keyboard events reported as IME composition events even
+  when isComposing is unavailable or false."
   [^js event]
   (let [native (.-nativeEvent event)]
     (or (.-isComposing native)
