@@ -11,6 +11,7 @@
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
    [frontend-tests.data.exports-assets-test]
+   [frontend-tests.data.exports-selection-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
@@ -131,6 +132,7 @@
    'frontend-tests.data.repo-test
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
+   'frontend-tests.data.exports-selection-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
    'frontend-tests.data.workspace-colors-test
