@@ -14,6 +14,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
@@ -312,7 +313,7 @@
           store     (ths/setup-store file)
           events    [;; Pre-select the text shape so add-typography can find it
                      (fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -339,7 +340,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -366,7 +367,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
