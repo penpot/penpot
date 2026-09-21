@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-21 09:55+0000\n"
-"Last-Translator: Surfoo <surfooo@gmail.com>\n"
+"PO-Revision-Date: 2026-09-22 10:37+0000\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -611,7 +611,7 @@ msgstr "Information sur la configuration de l'exportation dans Penpot."
 
 #: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.no-elements"
-msgstr "Aucun élément avec des paramètres d'exportation."
+msgstr "Aucun élément ne comporte de paramètres d'exportation."
 
 #: src/app/main/ui/exports/assets.cljs:189
 msgid "dashboard.export-shapes.title"
@@ -4276,8 +4276,8 @@ msgstr "Quitter l'organisation %s ?"
 #: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
-msgstr[0] "Déplacer"
-msgstr[1] "Déplacer"
+msgstr[0] "Déplacement"
+msgstr[1] "Déplacements"
 
 #: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.move-shared-confirm.message"
@@ -7656,8 +7656,8 @@ msgstr "Dissocier toutes les typographies"
 #: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:132
 msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
-msgstr[0] "1 typographie"
-msgstr[1] "%s typographies"
+msgstr[0] "1 typographie"
+msgstr[1] "%s typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.unlink-library-btn"
