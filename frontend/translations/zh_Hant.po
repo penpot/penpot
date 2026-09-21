@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-21 09:55+0000\n"
+"PO-Revision-Date: 2026-09-21 10:10+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
@@ -6634,9 +6634,8 @@ msgid "auth.verification-sent-email"
 msgstr "我們已將驗證郵件寄送至："
 
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:37
-#, fuzzy
 msgid "color-token.empty-state"
-msgstr "沒有可用的色彩權杖。請檢查啟用中的集合/主題或新增新的權杖。"
+msgstr "沒有可用的色彩 token。請檢查啟用中的集合/主題或新增新的 token。"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:208
 msgid "dashboard-restore-file-confirmation.title"
@@ -6803,3 +6802,35 @@ msgstr "前往管理員控制台"
 #: src/app/main/ui/auth/verify_token.cljs:61
 msgid "auth.notifications.organization-invitation-accepted"
 msgstr "你現在是 %s 的一員"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:209
+msgid "dashboard-restore-file-confirmation.description"
+msgstr "將復原 %s。"
+
+#, unused
+msgid "dashboard.change-organization-modal.description"
+msgstr "團隊成員仍可存取原有的專案與檔案。團隊將改用新組織的設定。"
+
+#, unused
+msgid "dashboard.change-organization-modal.text"
+msgstr "團隊成員仍可存取原有的專案與檔案。團隊將改用新組織的設定。"
+
+#: src/app/main/data/nitrate.cljs:520, src/app/main/ui/dashboard/team_form.cljs:159
+msgid "dashboard.change-organization-modal.title"
+msgstr "更改團隊所屬的組織"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr "新版本包含效能改進、新功能與問題修正，讓你的 Penpot 保持在最新狀態。"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "此 Penpot 無法接觸到 Penpot 版本發布服務。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:222
+msgid "dashboard.delete-file-forever-confirmation.description"
+msgstr "你確定要永久刪除 %s 嗎？這個動作不可復原。"
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "最後更新 %s"
