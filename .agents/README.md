@@ -36,22 +36,36 @@ client lives inside the sandboxed devenv docker.
 
 The content lives at the paths the ecosystem agreed on: `AGENTS.md` at the
 repository root and the skills in this folder, `.agents/skills/`. Codex,
-opencode, Cursor, Zed, Amp, omp and pi read both without any setup. Claude
-Code reads `CLAUDE.md` and `.claude/skills`, neither of which is committed,
-so create them once per clone:
+opencode, Cursor, Zed, Amp, omp and pi read both without any setup.
+
+Claude Code reads `AGENTS.md` from 2.1.277, through the built-in
+`agents-md` plugin, but only in a project that has no instruction file of
+its own. A `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` anywhere
+from the repository root down to your working directory hands the whole
+project back to `CLAUDE.md`, and this file's guidance stops arriving. Keep
+none of them here. Personal steering goes in `AGENTS.local.md`, or in
+`.claude/rules/*.md` and `~/.claude/CLAUDE.md`, which the plugin does not
+count and which therefore leave the project guidance in place.
+
+Skills are untouched by that plugin and still load from `.claude/skills`
+alone, which is not committed, so link it once per clone:
 
 ```bash
-ln -s AGENTS.md CLAUDE.md
 mkdir -p .claude && ln -s ../.agents/skills .claude/skills
 # or, with Node:
 npx skills add ./.agents/skills --agent claude-code
 ```
 
-Both paths are gitignored, so your own `CLAUDE.md` or your own skills keep
-working and no checkout overwrites them. Inside the devenv, `ws0` sees the
-links from the live checkout, and `ws1` and above are seeded on their first
-sync. Personal steering that should not be shared goes in `AGENTS.local.md`
-and `.agents/local/skills/<name>/`, which are gitignored too.
+Below 2.1.277, and on Bedrock, Vertex and Foundry where the fallback has
+not arrived, add `ln -s AGENTS.md CLAUDE.md` and drop it once your client
+has the feature. The auto-update channel decides when that is: `latest`,
+the default, has it; `stable` runs about a week behind; Homebrew and the
+Linux packages update by hand. Personal skills go in
+`.agents/local/skills/<name>/`.
+
+Every one of those paths is gitignored, so your own files keep working and
+no checkout overwrites them. Inside the devenv, `ws0` sees the links from
+the live checkout, and `ws1` and above are seeded on their first sync.
 
 Unlike the agentic devenv, running the client inside the devenv
 docker gives it full access to the live environment: every

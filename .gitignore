@@ -98,6 +98,7 @@ opencode.json
 *.iml
 /.claude
 /CLAUDE.md
+/CLAUDE.local.md
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json

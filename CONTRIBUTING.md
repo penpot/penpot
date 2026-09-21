@@ -40,13 +40,20 @@ Center](https://help.penpot.app/).
   internal project management. Changelog entries reference both.
 - **AI coding agents**: guidance lives in `AGENTS.md` and the skills in
   `.agents/skills/`, which Codex, opencode, Cursor, Zed, Amp, omp and pi read
-  without setup. Claude Code reads `CLAUDE.md` and `.claude/skills`, neither
-  of which is committed, so create them once per clone with
-  `ln -s AGENTS.md CLAUDE.md` and
+  without setup. Claude Code reads `AGENTS.md` from 2.1.277, but only in a
+  project that has no instruction file of its own, so keep no `CLAUDE.md`,
+  `.claude/CLAUDE.md` or `CLAUDE.local.md` in your checkout: any one of them
+  hides this repository's guidance from your session. Skills still load from
+  `.claude/skills` alone, so link it once per clone with
   `mkdir -p .claude && ln -s ../.agents/skills .claude/skills`, or with
-  `npx skills add ./.agents/skills --agent claude-code`. Both paths are
-  gitignored, as are `AGENTS.local.md` and `.agents/local/`, which is where
-  personal instructions and personal skills belong.
+  `npx skills add ./.agents/skills --agent claude-code`. Below 2.1.277, and
+  on Bedrock, Vertex and Foundry where the fallback has not arrived, add
+  `ln -s AGENTS.md CLAUDE.md` and remove it once your client has the
+  feature. Personal instructions belong in `AGENTS.local.md`, personal
+  skills in `.agents/local/skills/`, and personal Claude steering in
+  `.claude/rules/*.md`, which Claude loads beside the project instructions
+  without switching the fallback off. Every one of these paths is
+  gitignored.
 
 ## Reporting Bugs
 

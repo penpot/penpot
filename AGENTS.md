@@ -17,6 +17,10 @@
 - **Shared skills live in `.agents/skills/`, a developer's own in
   `.agents/local/skills/`.** Edit either only at that path, never through
   `.claude/skills`, which may be a link into the shared one.
+- **Never create a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md`
+  here**, committed or local. Claude Code reads this file directly in a
+  project that has none, and any of those three switches that off for the
+  whole project. Personal steering belongs in `AGENTS.local.md`.
 - **Read `AGENTS.local.md` after this file whenever it exists.** It carries
   the developer's steering for this project and overrides this file on prose style and
   workflow, but not on project policy, where instructions here prevail.
