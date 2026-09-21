@@ -84,7 +84,7 @@ test.describe("typography asset applied", () => {
   // gfont-agdasima, a built-in Google font that resolves with no extra
   // mocking), and is not multi-selected or token-applied.
   const FILE = {
-    id: "1062e0a0-8fe0-80ae-8007-e70b4993f5ef",
+    id: "c7ce0794-0992-8105-8004-38f280443849",
     pageId: "1062e0a0-8fe0-80ae-8007-e70b4993f5f0",
   };
 

@@ -46,13 +46,20 @@
   position: relative;
 
   &:hover,
-  &:focus,
-  &:focus-within {
+  &:has(:focus-visible) {
     --actions-opacity: 1;
   }
 }
 
 .pinned-project {
+  --actions-opacity: 1;
+}
+
+// Set while either the "..." menu or the title's right-click menu is open —
+// its popover can portal outside .dashboard-project-row, so :hover/:focus-
+// within alone stop applying the moment the pointer leaves the row, even
+// though the menu itself is still open.
+.is-force-display {
   --actions-opacity: 1;
 }
 
@@ -118,23 +125,7 @@
   display: flex;
   opacity: var(--actions-opacity);
   margin-inline-start: var(--sp-xxxl);
-}
-
-.add-file-btn,
-.options-btn {
-  @extend %button-tertiary;
-
-  block-size: $sz-32;
-  inline-size: $sz-32;
-  margin: 0 var(--sp-s);
-  padding: var(--sp-s);
-}
-
-.add-icon,
-.menu-icon {
-  @extend %button-icon;
-
-  stroke: var(--icon-foreground);
+  gap: var(--sp-l);
 }
 
 .grid-container {
@@ -166,13 +157,6 @@
   &:hover {
     --show-more-color: var(--button-secondary-foreground-color-active);
   }
-}
-
-.show-more-icon {
-  block-size: $sz-16;
-  inline-size: $sz-16;
-  fill: none;
-  stroke: var(--show-more-color);
 }
 
 // Team hero
@@ -226,25 +210,9 @@
 }
 
 .close {
-  --close-icon-foreground-color: var(--icon-foreground);
-
   position: absolute;
   top: var(--sp-xl);
-  inset-inline-end: var(--sp-xxl);
-  inline-size: var(--sp-xxl);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-
-  &:hover {
-    --close-icon-foreground-color: var(--button-icon-foreground-color-selected);
-  }
-}
-
-.close-icon {
-  @extend %button-icon;
-
-  stroke: var(--close-icon-foreground-color);
+  right: var(--sp-xl);
 }
 
 .img-wrapper {

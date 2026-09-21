@@ -293,8 +293,7 @@
          [:input {:type "text"
                   :auto-focus true
                   :class (stl/css :file-name-input)
-                  ;;TODO: Add translation for aria-label
-                  :aria-label "File name"
+                  :aria-label (tr "dashboard.import.file-name-label")
                   :default-value (:name entry)
                   :on-key-press on-edit-key-press
                   :on-blur on-edit-blur}]]
@@ -390,16 +389,17 @@
 
 (mf/defc library-resolution*
   {::mf/private true}
-  [{:keys [unresolved-file selection on-select]}]
+  [{:keys [unresolved-file selection on-select on-disconnect]}]
   (let [candidates (:pending unresolved-file)
-        disconnected* (mf/use-state #{})
-        disconnected  (deref disconnected*)
         on-change-disconnected
         (mf/use-fn
+         (mf/deps selection candidates on-select on-disconnect)
          (fn [id]
-           (swap! disconnected*
-                  (fn [s]
-                    (if (contains? s id) (disj s id) (conj s id))))))]
+           (if (contains? selection id)
+             (on-disconnect id)
+             (let [{:keys [candidates]} (d/seek #(= id (:id %)) candidates)]
+               (when-let [first-c (first candidates)]
+                 (on-select id (str (:id first-c))))))))]
 
     ;; Pre-select first candidate for each library
     (mf/with-effect [candidates]
@@ -412,7 +412,7 @@
      [:> text* {:class (stl/css :library-resolution-message)
                 :as "p"
                 :typography t/body-large}
-      "Some libraries couldn't be linked automatically. Select the correct library for each:"]
+      (tr "dashboard.import.resolve-libraries")]
 
 
      [:table {:class (stl/css :library-resolution-table)}
@@ -422,13 +422,13 @@
          [:> icon* {:icon-id i/library
                     :class (stl/css :library-resolution-icon)
                     :size "s"}]
-         "original library"]
+         (tr "dashboard.import.resolve-libraries.original-library")]
         [:th {:class (stl/css :library-resolution-arrow)}]
         [:th {:class (stl/css :library-resolution-connection)}
          [:> icon* {:icon-id i/library
                     :class (stl/css :library-resolution-icon)
                     :size "s"}]
-         "connect to"]]]
+         (tr "dashboard.import.resolve-libraries.connect-to")]]]
       [:tbody {:class (stl/css :library-resolution-body)}
        (for [{:keys [id name candidates]} candidates]
          (let [options  (mapv (fn [c]
@@ -436,7 +436,7 @@
                                  :label (str (:name c) " (" (:project-name c) ")")})
                               candidates)
                selected (get selection id)
-               is-conected (not (contains? disconnected id))]
+               is-conected (contains? selection id)]
            [:tr {:class (stl/css :library-resolution-item)
                  :key (dm/str id)}
             [:td {:class (stl/css :library-resolution-item-name)}
@@ -477,54 +477,53 @@
                  :typography t/body-medium}
        (:name resolution-file)]]
 
-     (when (seq done)
-       [:div {:class (stl/css :summary-section)}
-        [:ul {:class (stl/css :summary-list)}
-         (for [{:keys [name]} done]
-           [:li {:class (stl/css :summary-list-item)
-                 :key (dm/str name)}
-            [:span {:class (stl/css :summary-item-name)} name]
-            [:span {:class (stl/css :summary-linked-badge)}
-             [:> icon* {:icon-id i/status-tick
-                        :class (stl/css :summary-badge-icon)
-                        :size "s"}]
-             (tr "dashboard.import.summary.linked")]])]])
+     [:div {:class (stl/css :summary-body)}
+      (when (seq done)
+        [:div {:class (stl/css :summary-section)}
+         [:ul {:class (stl/css :summary-list)}
+          (for [{:keys [name]} done]
+            [:li {:class (stl/css :summary-list-item)
+                  :key (dm/str name)}
+             [:span {:class (stl/css :summary-item-name)} name]
+             [:span {:class (stl/css :summary-linked-badge)}
+              (tr "dashboard.import.summary.linked")]])]])
 
-     (when (seq pending)
-       [:div {:class (stl/css :summary-section)}
-        [:div {:class (stl/css :summary-section-header)}
-         ;; TODO: Add translation for this string
+      (when (seq pending)
+        [:div {:class (stl/css :summary-section)}
+         [:div {:class (stl/css :summary-section-header)}
+          [:> text* {:as "span"
+                     :class (stl/css :summary-section-title)
+                     :typography t/headline-small}
+           (tr "dashboard.import.summary.manually-linked")]]
+         [:ul {:class (stl/css :summary-list)}
+          [:li {:class (stl/css :summary-list-item)
+                :key "summary-list-header"}
+           [:span {:class (stl/css :summary-item-name-header)}
+            (tr "dashboard.import.summary.original")]
 
-         [:> text* {:as "span"
-                    :class (stl/css :summary-section-title)
-                    :typography t/headline-small}
-          "linked manually"]]
-        [:ul {:class (stl/css :summary-list)}
-         [:li {:class (stl/css :summary-list-item)
-               :key "summary-list-header"}
-          [:span {:class (stl/css :summary-item-name-header)}
-           "Original"]
+           [:span {:class (stl/css :summary-item-name-header)}
+            (tr "dashboard.import.summary.new")]]
+          (for [{:keys [id name] :as cand} pending]
+            (let [selected-id (get selection id)
+                  selected-c  (when selected-id
+                                (d/seek #(= (str (:id %)) (str selected-id)) (:candidates cand)))]
+              [:li {:class (stl/css :summary-list-item)
+                    :key (dm/str id)}
+               [:span {:class (stl/css-case :summary-item-name true
+                                            :summary-item-base true)} name]
 
-          [:span {:class (stl/css :summary-item-name-header)}
-           "New"]]
-         (for [{:keys [id name] :as cand} pending]
-           (let [selected-id (get selection id)
-                 selected-c  (when selected-id
-                               (d/seek #(= (str (:id %)) (str selected-id)) (:candidates cand)))]
-             [:li {:class (stl/css :summary-list-item)
-                   :key (dm/str id)}
-              [:span {:class (stl/css :summary-item-name)} name]
-              [:> icon* {:icon-id i/row
-                         :size "m"
-                         :class (stl/css :summary-linked-arrow)}]
-              (if selected-c
-                [:span {:class (stl/css :summary-linked-info)}
-                 [:span {:class (stl/css :summary-linked-name)}
-                  (:name selected-c)]
-                 [:span {:class (stl/css :summary-linked-project)}
-                  (:project-name selected-c)]]
-                [:span {:class (stl/css :summary-no-selection)}
-                 (tr "dashboard.import.summary.no-selection")])]))]])]))
+               (if selected-c
+                 [:span {:class (stl/css :summary-linked-info)}
+                  [:> icon* {:icon-id i/row
+                             :size "m"
+                             :class (stl/css :summary-linked-arrow)}]
+                  [:span {:class (stl/css :summary-linked-name)}
+                   (dm/str (:name selected-c) " (" (:project-name selected-c) ")")]]
+                 [:span {:class (stl/css :summary-no-selection)}
+                  [:> icon* {:icon-id i/row
+                             :size "m"
+                             :class (stl/css :summary-linked-arrow)}]
+                  (tr "dashboard.import.summary.no-selection")])]))]])]]))
 
 (mf/defc library-resolution-summary*
   {::mf/private true}
@@ -647,15 +646,16 @@
 
 (mf/defc import-library-resolution-stage*
   {::mf/private true}
-  [{:keys [current-unresolved-file selection on-select
+  [{:keys [current-unresolved-file selection on-select on-disconnect
            visited all-visited?
-           on-wizard-prev on-wizard-next]}]
+           on-wizard-prev on-wizard-next on-wizard-skip]}]
   [:*
    [:div {:class (stl/css :modal-content)}
     [:> library-resolution*
      {:unresolved-file current-unresolved-file
       :selection selection
-      :on-select on-select}]]
+      :on-select on-select
+      :on-disconnect on-disconnect}]]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
@@ -664,12 +664,18 @@
                     :variant "secondary"
                     :on-click on-wizard-prev}
         (tr "labels.previous")])
-     [:> button* {:class (stl/css :accept-btn)
-                  :variant "primary"
-                  :on-click on-wizard-next}
-      (if all-visited?
-        (tr "labels.next")
-        (tr "dashboard.import.review-links"))]]]])
+     [:div {:class (stl/css :action-buttons-end)}
+      [:> button* {:class (stl/css :secondary-btn)
+                   :variant "secondary"
+                   :on-click on-wizard-skip}
+       (tr "labels.skip")]
+
+      [:> button* {:class (stl/css :accept-btn)
+                   :variant "primary"
+                   :on-click on-wizard-next}
+       (if all-visited?
+         (tr "labels.next")
+         (tr "dashboard.import.connect-selected-libraries"))]]]]])
 
 (mf/defc import-library-summary-stage*
   {::mf/private true}
@@ -688,10 +694,11 @@
                     :variant "secondary"
                     :on-click on-summary-back}
         (tr "labels.back")])
-     [:> button* {:class (stl/css :accept-btn)
-                  :variant "primary"
-                  :on-click on-confirm-library-links}
-      (tr "dashboard.import.confirm-library-links")]]]])
+     [:div {:class (stl/css :action-buttons-end)}
+      [:> button* {:class (stl/css :accept-btn)
+                   :variant "primary"
+                   :on-click on-confirm-library-links}
+       (tr "dashboard.import.confirm-library-links")]]]]])
 
 (mf/defc import-dialog
   {::mf/register modal/components
@@ -855,6 +862,15 @@
            (let [file-id (:id current-unresolved-file)]
              (swap! visited* disj file-id))))
 
+        on-wizard-skip
+        (mf/use-fn
+         (mf/deps current-unresolved-file)
+         (fn []
+           (let [file-id (:id current-unresolved-file)
+                 pending-ids (mapv :id (:pending current-unresolved-file))]
+             (swap! selection* #(apply dissoc % pending-ids))
+             (swap! visited* conj file-id))))
+
         on-summary-back
         (mf/use-fn
          (mf/deps visited)
@@ -899,7 +915,12 @@
         (mf/use-fn
          (mf/deps selection)
          (fn [old-lib-id candidate-id]
-           (swap! selection* assoc old-lib-id candidate-id)))]
+           (swap! selection* assoc old-lib-id candidate-id)))
+
+        manage-on-disconnect
+        (mf/use-fn
+         (fn [old-lib-id]
+           (swap! selection* dissoc old-lib-id)))]
 
     (mf/with-effect [visited unresolved-files]
       (when (and (seq unresolved-files)
@@ -968,10 +989,12 @@
          {:current-unresolved-file current-unresolved-file
           :selection selection
           :on-select manage-on-select
+          :on-disconnect manage-on-disconnect
           :visited visited
           :all-visited? all-visited?
           :on-wizard-prev on-wizard-prev
-          :on-wizard-next on-wizard-next}]
+          :on-wizard-next on-wizard-next
+          :on-wizard-skip on-wizard-skip}]
 
         :library-summary
         [:> import-library-summary-stage*
