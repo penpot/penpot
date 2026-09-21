@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
-"Last-Translator: william chen <william.fromtw@gmail.com>\n"
-"Language-Team: Chinese (Traditional Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
+"PO-Revision-Date: 2026-09-21 09:55+0000\n"
+"Last-Translator: Andy Li <andyli2456@gmail.com>\n"
+"Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -480,9 +480,9 @@ msgstr ""
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"你只能上傳你擁有的或獲許可在Penpot "
-"中使用的字型。如需瞭解更多，請參閱[Penpot的服務條款]（https://penpot.app/terms."
-"html）的內容權利部分。您可能還想閱讀有關 [字體許可]（https://www.typography.com/faq） 的資訊。"
+"你只能上傳你有權在 Penpot 中使用的字型。如需瞭解更多，請參閱 [Penpot的服務條"
+"款]（https://penpot.app/terms.html）的內容權利部分。您可能還想閱讀有關 [字型"
+"許可]（https://www.typography.com/faq） 的資訊。"
 
 #: src/app/main/ui/dashboard/fonts.cljs:231
 msgid "dashboard.fonts.upload-all"
@@ -6624,3 +6624,182 @@ msgstr "自動儲存的版本將保留 %s 天。"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "點擊以關閉路徑"
+
+#: src/app/main/ui/auth/recovery_request.cljs:111, src/app/main/ui/auth/register.cljs:255
+msgid "auth.check-email"
+msgstr "檢查你的信箱！"
+
+#: src/app/main/ui/auth/register.cljs:256
+msgid "auth.verification-sent-email"
+msgstr "我們已將驗證郵件寄送至："
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:37
+#, fuzzy
+msgid "color-token.empty-state"
+msgstr "沒有可用的色彩權杖。請檢查啟用中的集合/主題或新增新的權杖。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:208
+msgid "dashboard-restore-file-confirmation.title"
+msgstr "復原檔案"
+
+#, unused
+msgid "dashboard.change-organization-modal.accept"
+msgstr "移動團隊"
+
+#, unused
+msgid "dashboard.change-organization-modal.choose"
+msgstr "移動到："
+
+#, unused
+msgid "dashboard.change-organization-modal.select"
+msgstr "選擇一個組織"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "有新版本的 PENPOT 可用"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "有什麼新東西 - 重點"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "已安裝的版本"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "最新版本"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "再試一次"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "檢查你的網路或實例設定後再試一次。"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "無法檢查更新"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "你已在執行最新的穩定版本："
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT 已更新至最新版"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "檢視完整更新紀錄"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "檢視更新紀錄"
+
+#: src/app/main/ui/dashboard/deleted.cljs:322
+msgid "dashboard.clear-trash-button"
+msgstr "清空垃圾桶"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:400
+msgid "dashboard.create-new-organization"
+msgstr "建立新組織"
+
+#: src/app/main/ui/dashboard/deleted.cljs:268
+msgid "dashboard.delete-all-forever-confirmation.description"
+msgstr "你確定要永久刪除垃圾桶內的專案與檔案嗎？這個動作無法復原。"
+
+#: src/app/main/data/dashboard.cljs:814
+msgid "dashboard.delete-files-success-notification"
+msgstr "%s 檔案已被成功刪除。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:54, src/app/main/ui/dashboard/deleted.cljs:56, src/app/main/ui/dashboard/deleted.cljs:267, src/app/main/ui/dashboard/deleted.cljs:269, src/app/main/ui/dashboard/file_menu.cljs:221, src/app/main/ui/dashboard/file_menu.cljs:223
+msgid "dashboard.delete-forever-confirmation.title"
+msgstr "永久刪除"
+
+#: src/app/main/ui/dashboard/deleted.cljs:90
+msgid "dashboard.delete-project-button"
+msgstr "刪除專案"
+
+#: src/app/main/ui/dashboard/deleted.cljs:55
+msgid "dashboard.delete-project-forever-confirmation.description"
+msgstr "確定要永久刪除 %s 專案嗎？專案與其包含的檔案將被永久刪除。這個動作無法復原。"
+
+#: src/app/main/data/dashboard.cljs:813, src/app/main/data/dashboard.cljs:847
+msgid "dashboard.delete-success-notification"
+msgstr "%s 已被成功刪除。"
+
+#: src/app/main/ui/dashboard/deleted.cljs:337
+msgid "dashboard.deleted.empty-state-description"
+msgstr "垃圾桶是空的。刪除的檔案與專案將會在這裡出現。"
+
+#: src/app/main/ui/dashboard/grid.cljs:248
+msgid "dashboard.deleted.will-be-deleted-at"
+msgstr "將會刪除 %s"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:42, src/app/main/ui/dashboard/placeholder.cljs:133
+msgid "dashboard.empty-project.create"
+msgstr "建立新檔案"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48, src/app/main/ui/dashboard/placeholder.cljs:50
+msgid "dashboard.empty-project.import"
+msgstr "匯入檔案"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:52
+msgid "dashboard.empty-project.import-penpot"
+msgstr "匯入 .penpot 檔案"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:44
+msgid "dashboard.empty-project.start"
+msgstr "開始打造驚艷的東西"
+
+#, unused
+msgid "dashboard.errors.error-on-delete-file"
+msgstr "刪除 %s 檔案時發生錯誤。"
+
+#: src/app/main/data/dashboard.cljs:817
+msgid "dashboard.errors.error-on-delete-files"
+msgstr "刪除檔案時發生錯誤。"
+
+#: src/app/main/data/dashboard.cljs:850
+msgid "dashboard.errors.error-on-delete-project"
+msgstr "刪除 %s 專案時發生錯誤。"
+
+#: src/app/main/data/dashboard.cljs:945, src/app/main/ui/dashboard/file_menu.cljs:202
+msgid "dashboard.errors.error-on-restore-file"
+msgstr "恢復檔案 %s 時發生錯誤。"
+
+#: src/app/main/data/dashboard.cljs:946
+msgid "dashboard.errors.error-on-restore-files"
+msgstr "恢復檔案時發生錯誤。"
+
+#: src/app/main/data/dashboard.cljs:978
+msgid "dashboard.errors.error-on-restoring-project"
+msgstr "恢復 %s 專案與其檔案時發生錯誤。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:267
+msgid "dashboard.file-menu.delete-files-permanently-option"
+msgid_plural "dashboard.file-menu.delete-files-permanently-option"
+msgstr[0] "刪除檔案"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.file-menu.restore-files-option"
+msgid_plural "dashboard.file-menu.restore-files-option"
+msgstr[0] "恢復檔案"
+
+#: src/app/main/ui/dashboard/layout_toggle.cljs:32
+msgid "dashboard.files-layout.grid"
+msgstr "方格檢視"
+
+#: src/app/main/ui/dashboard/layout_toggle.cljs:28
+msgid "dashboard.files-layout.list"
+msgstr "列表檢視"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:405
+msgid "dashboard.go-to-admin-console"
+msgstr "前往管理員控制台"
+
+#: src/app/main/ui/auth/verify_token.cljs:61
+msgid "auth.notifications.organization-invitation-accepted"
+msgstr "你現在是 %s 的一員"
