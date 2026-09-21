@@ -29,6 +29,7 @@
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
@@ -418,18 +419,17 @@
                           :on-edit on-edit
                           :origin origin
                           :can-restore can-restore
+                          :is-list list?
                           :trigger
                           (mf/html
-                           [:div {:class (stl/css :project-thumbnail-icon :menu)
-                                  :tab-index "0"
-                                  :role "button"
-                                  :aria-label (tr "dashboard.options")
-                                  :ref menu-ref
-                                  :id (dm/str file-id "-action-menu")
-                                  :on-click on-menu-click
-                                  :on-key-down on-menu-key-down}
-                            [:> icon* {:icon-id i/menu
-                                       :class (stl/css :menu-icon)}]])}]])]
+                           [:> icon-button* {:icon i/menu
+                                             :variant "ghost"
+                                             :aria-label (tr "dashboard.options")
+                                             :on-click on-menu-click
+                                             :on-key-down on-menu-key-down
+                                             :tab-index "0"
+                                             :ref menu-ref
+                                             :id (dm/str file-id "-action-menu")}])}]])]
 
     (if ^boolean list?
       [:li {:class (stl/css-case :grid-item true

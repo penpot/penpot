@@ -116,12 +116,11 @@
          (tr "labels.delete")]])]))
 
 (mf/defc project-menu*
-  [{:keys [project is-open on-open-change on-edit on-import-click trigger]}]
-  [:> menu*
-   {:is-open is-open
-    :on-open-change on-open-change
-    :placement "right top"
-    :trigger trigger}
+  [{:keys [project is-open on-open-change on-edit on-import-click trigger placement]}]
+  [:> menu* {:is-open is-open
+             :on-open-change on-open-change
+             :placement placement
+             :trigger trigger}
    [:> project-menu-items* {:project project
                             :on-edit on-edit
                             :on-import-click on-import-click}]])

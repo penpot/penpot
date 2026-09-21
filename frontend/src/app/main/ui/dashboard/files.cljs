@@ -18,19 +18,17 @@
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
-   [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private menu-icon
-  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
   {::mf/private true}
@@ -108,21 +106,26 @@
                           :on-change on-change}]
 
       (when ^boolean can-edit
-        [:a {:class (stl/css :btn-secondary :btn-small :new-file)
-             :tab-index "0"
-             :on-click on-create-click
-             :data-testid "new-file"
-             :on-key-down (fn [event]
-                            (when (kbd/enter? event)
-                              (on-create-click event)))}
+        [:> button* {:variant "secondary"
+                     :class (stl/css :new-file)
+                     :on-click on-create-click
+                     :on-key-down (fn [event]
+                                    (when (kbd/enter? event)
+                                      (on-create-click event)))
+                     :tab-index "0"
+                     :data-testid "new-file"}
          (tr "dashboard.new-file")])
 
       (when-not (:is-default project)
-        [:> pin-button*
-         {:tab-index 0
-          :is-pinned (:is-pinned project)
-          :on-click toggle-pin
-          :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
+        [:> icon-button* {:icon i/pin
+                          :variant "ghost"
+                          :aria-label (tr "dashboard.pin-unpin")
+                          :aria-pressed (:is-pinned project)
+                          :tab-index 0
+                          :on-click toggle-pin
+                          :on-key-down (fn [event]
+                                         (when (kbd/enter? event)
+                                           (toggle-pin event)))}])
 
       (when ^boolean can-edit
         [:*
@@ -132,16 +135,18 @@
            :on-open-change #(reset! menu-open* %)
            :on-edit on-edit
            :on-import-click on-import-click
+           :placement "bottom end"
            :trigger
            (mf/html
-            [:div {:class (stl/css :icon)
-                   :tab-index "0"
-                   :on-click on-menu-click
-                   :title (tr "dashboard.options")
-                   :on-key-down (fn [event]
-                                  (when (kbd/enter? event)
-                                    (on-menu-click event)))}
-             menu-icon])}]
+            [:> icon-button* {:icon i/menu
+                              :variant "ghost"
+                              :aria-label (tr "dashboard.options")
+                              :aria-pressed (deref menu-open*)
+                              :on-click on-menu-click
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (on-menu-click event)))}])}]
+
          ;; Kept mounted for as long as this header is, regardless of the
          ;; menu's own open state: the popover really unmounts its content on
          ;; close (unlike the old context-menu-a11y, which just hid it), and

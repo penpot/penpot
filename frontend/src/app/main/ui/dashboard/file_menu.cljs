@@ -335,11 +335,11 @@
            (tr "labels.delete")]])])))
 
 (mf/defc file-menu*
-  [{:keys [files on-edit is-open on-open-change trigger navigate origin can-edit can-restore]}]
+  [{:keys [files on-edit is-open on-open-change trigger navigate origin can-edit can-restore is-list]}]
   [:> menu*
    {:is-open is-open
     :on-open-change on-open-change
-    :placement "right top"
+    :placement (if is-list "bottom end" "bottom start")
     :trigger trigger}
    [:> file-menu-items* {:files files
                          :on-edit on-edit

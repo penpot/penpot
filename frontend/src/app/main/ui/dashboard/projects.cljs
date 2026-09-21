@@ -22,13 +22,14 @@
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
-   [app.main.ui.dashboard.pin-button :refer [pin-button*]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu* project-menu-items*]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu*
+                                               project-menu-items*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -37,23 +38,14 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private show-more-icon
-  (deprecated-icon/icon-xref :arrow (stl/css :show-more-icon)))
-
-(def ^:private close-icon
-  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
-
-(def ^:private add-icon
-  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
-
-(def ^:private menu-icon
-  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
-
 (mf/defc header*
   {::mf/wrap [mf/memo]
    ::mf/private true}
   [{:keys [can-edit layout on-change]}]
-  (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
+  (let [on-click
+        (mf/use-fn
+         #(st/emit! (dd/create-project)))]
+
     [:header {:class (stl/css :dashboard-header)
               :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
@@ -62,15 +54,17 @@
       [:> layout-toggle* {:layout layout
                           :on-change on-change}]
       (when can-edit
-        [:button {:class (stl/css :btn-secondary :btn-small)
-                  :on-click on-click
-                  :data-testid "new-project-button"}
+        [:> button* {:variant "secondary"
+                     :on-click on-click
+                     :data-testid "new-project-button"}
          (tr "dashboard.new-project")])]]))
 
 (mf/defc team-hero*
   {::mf/wrap [mf/memo]}
   [{:keys [team on-close]}]
-  (let [on-nav-members-click (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
+  (let [on-nav-members-click
+        (mf/use-fn
+         #(st/emit! (dcm/go-to-dashboard-members)))
 
         on-invite
         (mf/use-fn
@@ -98,10 +92,11 @@
       [:> button* {:variant "primary"
                    :on-click on-invite}
        (tr "onboarding.choice.team-up.invite-members")]]
-     [:button {:class (stl/css :close)
-               :on-click on-close'
-               :aria-label (tr "labels.close")}
-      close-icon]]))
+     [:> icon-button* {:icon i/close
+                       :class (stl/css :close)
+                       :variant "ghost"
+                       :aria-label (tr "labels.close")
+                       :on-click on-close'}]]))
 
 (mf/defc project-item*
   {::mf/private true}
@@ -148,7 +143,8 @@
            (swap! menu-open* not)))
 
         on-edit-open
-        (mf/use-fn #(swap! local assoc :edition true))
+        (mf/use-fn
+         #(swap! local assoc :edition true))
 
         on-edit
         (mf/use-fn
@@ -185,7 +181,8 @@
         (mf/use-ref nil)
 
         on-import-click
-        (mf/use-fn #(dom/click (mf/ref-val file-input)))
+        (mf/use-fn
+         #(dom/click (mf/ref-val file-input)))
 
         on-finish-import
         (mf/use-fn
@@ -197,14 +194,14 @@
                      (dd/clear-selected-files))))
 
         handle-create-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-create-click)
          (fn [event]
            (when (kbd/enter? event)
              (on-create-click event))))
 
         handle-menu-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-menu-click)
          (fn [event]
            (when (kbd/enter? event)
@@ -250,19 +247,19 @@
                                     :is-force-display (or (deref menu-open*)
                                                           (deref context-menu-open*)))}
          (when-not (:is-default project)
-           [:> pin-button* {:class (stl/css :pin-button)
-                            :is-pinned (:is-pinned project)
-                            :on-click toggle-pin
-                            :tab-index 0}])
+           [:> icon-button* {:icon i/pin
+                             :variant "ghost"
+                             :aria-label (tr "dashboard.pin-unpin")
+                             :aria-pressed (:is-pinned project)
+                             :on-click toggle-pin
+                             :tab-index 0}])
 
          (when ^boolean can-edit
-           [:button {:class (stl/css :add-file-btn)
-                     :on-click on-create-click
-                     :title (tr "dashboard.new-file")
-                     :aria-label (tr "dashboard.new-file")
-                     :data-testid "project-new-file"
-                     :on-key-down handle-create-click}
-            add-icon])
+           [:> icon-button* {:icon i/add
+                             :variant "ghost"
+                             :aria-label (tr "dashboard.new-file")
+                             :on-click on-create-click
+                             :on-key-down handle-create-click}])
 
          (when ^boolean can-edit
            [:> project-menu* {:project project
@@ -270,15 +267,16 @@
                               :on-open-change #(reset! menu-open* %)
                               :on-edit on-edit-open
                               :on-import-click on-import-click
+                              :placement "bottom start"
                               :trigger
                               (mf/html
-                               [:button {:class (stl/css :options-btn)
-                                         :on-click on-menu-click
-                                         :title (tr "dashboard.options")
-                                         :aria-label (tr "dashboard.options")
-                                         :data-testid "project-options"
-                                         :on-key-down handle-menu-click}
-                                menu-icon])}])]]
+                               [:> icon-button* {:icon i/menu
+                                                 :variant "ghost"
+                                                 :aria-label (tr "dashboard.options")
+                                                 :aria-pressed (deref menu-open*)
+                                                 :data-testid "project-options"
+                                                 :on-click on-menu-click
+                                                 :on-key-down handle-menu-click}])}])]]
 
        (when (and (> limit 0)
                   (> file-count limit))
@@ -288,8 +286,8 @@
                    :on-key-down (fn [event]
                                   (when (kbd/enter? event)
                                     (on-nav)))}
-          [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
-          show-more-icon])]]
+          (tr "dashboard.show-all-files")
+          [:> icon* {:icon-id i/arrow-right}]])]]
 
      ;; Kept mounted for as long as this row is, shared by both menu
      ;; instances above: the popover each renders inside really unmounts its
