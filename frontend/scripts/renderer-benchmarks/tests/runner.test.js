@@ -137,6 +137,18 @@ test("CLI parses feature selection for run and ab", () => {
   }
 });
 
+test("--no-build skips the renderer build only for run", () => {
+  assert.equal(readOptions(["run"]).noBuild, false);
+  assert.equal(readOptions(["run", "--no-build"]).noBuild, true);
+  for (const args of [
+    ["ab", "--features", "branch-b", "--no-build"],
+    ["compare", "a.json", "b.json", "--no-build"],
+    ["run", "--no-build", "--features", "branch-b"],
+  ]) {
+    assert.throws(() => readOptions(args), /--no-build/);
+  }
+});
+
 test("feature selection validates against the renderer manifest", () => {
   const definitions = { default: [], "branch-a": [], "branch-b": [] };
   assert.deepEqual(validateFeatureSelection(definitions, ["branch-b"], "ab"), [
