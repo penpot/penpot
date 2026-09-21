@@ -82,6 +82,11 @@ test("User sets a library as tokens source and then they can use the tokens in i
   );
 
   await workspacePage.mockRPC(
+    /get\-file\-fragment\?/,
+    "workspace/get-file-fragment-tokens.json",
+  );
+
+  await workspacePage.mockRPC(
     "get-team-shared-files?team-id=*",
     "workspace/get-team-shared-libraries-non-empty.json",
   );
@@ -102,12 +107,11 @@ test("User sets a library as tokens source and then they can use the tokens in i
 
   // Check that we can apply a token from the library to a shape
 
-  await workspacePage.sidebar.getByRole("tab", { name: "Tokens" }).click();
-  await page.waitForTimeout(500);
-
-  // Select the first shape in the file
-  await page.keyboard.press("v");
-  await workspacePage.clickAt(200, 150);
+  await workspacePage.sidebar.getByRole("tab", { name: "Layers" }).click();
+  await workspacePage.layers
+    .getByTestId("layer-row")
+    .filter({ hasText: "Rectangle" })
+    .click();
 
   // Apply a color token from the library as the shape fill
   await workspacePage.sidebar.getByRole("tab", { name: "Tokens" }).click();
