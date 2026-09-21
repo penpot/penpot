@@ -19,7 +19,10 @@
       (frame {:x 0 :y 0 :width 100 :height 100}
         (rect))
       (group :tiles {}
-        (rect [:tile 3] {})))
+        (rect [:tile 3] {}))
+      (bool :diff {:bool-type :difference}
+        (rect {:x 0 :y 0 :width 100 :height 100})
+        (rect {:x 50 :y 50 :width 100 :height 100})))
 
   `params` is a map with `:seed` (required), optional `:root` attributes for
   the canonical root frame, and optional `:defaults` with one attribute
@@ -111,6 +114,31 @@
        (fn [] ~@(rest body)))
     `(benches.render-wasm.scenes.builder/with-container
        :group
+       ~label-or-attrs
+       nil
+       (fn [] ~@body))))
+
+(defmacro bool
+  "Adds a boolean shape to the current scope, runs `body` with the bool as
+  parent, and returns the bool uuid.
+
+  Forms: `(bool attrs & body)` and `(bool label attrs & body)`. `label` is a
+  literal keyword or vector stored in the instance `:refs`. `attrs` must
+  carry `:bool-type` (`:union`, `:difference`, `:intersection` or
+  `:exclude`). Content and geometry derive from the children after they
+  finalize, so geometry, content and transform attrs are rejected. Fills,
+  strokes, shadows and blurs are inherited from the head child (first for
+  `:difference`, last otherwise) unless attrs supply them. A bool needs at
+  least one child and cannot contain frames."
+  [label-or-attrs & body]
+  (if (or (keyword? label-or-attrs) (vector? label-or-attrs))
+    `(benches.render-wasm.scenes.builder/with-container
+       :bool
+       ~(first body)
+       ~label-or-attrs
+       (fn [] ~@(rest body)))
+    `(benches.render-wasm.scenes.builder/with-container
+       :bool
        ~label-or-attrs
        nil
        (fn [] ~@body))))
