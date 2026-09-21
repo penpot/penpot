@@ -41,10 +41,10 @@
   [params]
   (let [params (merge default-params params)]
     (sb/fixture {:seed (:seed params)
-                      :root {:x 0
-                             :y 0
-                             :width (:width params)
-                             :height (:height params)}
-                      :defaults {:rect (rect-defaults params)}}
-                     (doseq [_ (range (:count params))]
-                       (sb/rect)))))
+                 :root {:x 0
+                        :y 0
+                        :width (:width params)
+                        :height (:height params)}
+                 :defaults {:rect (rect-defaults params)}}
+                (doseq [_ (range (:count params))]
+                  (sb/rect)))))
