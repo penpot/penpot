@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-17 21:51+0000\n"
+"PO-Revision-Date: 2026-09-21 09:55+0000\n"
 "Last-Translator: Surfoo <surfooo@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -2482,7 +2482,6 @@ msgid "inspect.tabs.styles.active-themes"
 msgstr "Thèmes actifs"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:75
-#, fuzzy
 msgid "inspect.tabs.styles.copy-shorthand"
 msgstr "Copier la notation CSS abrégée dans le presse-papiers"
 
@@ -9981,7 +9980,6 @@ msgid "workspace.tokens.num-active-sets"
 msgstr "%s collections actives"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valeur initiale : %s"
 
@@ -10186,7 +10184,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Liste des thèmes"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Description"
 
