@@ -29,7 +29,7 @@
    [app.main.ui.dashboard.check-updates :as dcu]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu-items*]]
    [app.main.ui.dashboard.subscription :refer [dashboard-cta*
                                                get-subscription-type
                                                menu-team-icon*
@@ -41,6 +41,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
+   [app.main.ui.ds.layout.menu :refer [context-menu*]]
    [app.main.ui.hooks :as hooks :refer [use-focus-timer-ref]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.nitrate.nitrate-form]
@@ -113,9 +114,7 @@
         edit-id          (:project-for-edit dstate)
 
         local*           (mf/use-state
-                          #(do {:menu-open false
-                                :menu-pos nil
-                                :edition? (= (:id item) edit-id)
+                          #(do {:edition? (= (:id item) edit-id)
                                 :dragging? false}))
 
         local            (deref local*)
@@ -138,18 +137,6 @@
              (schedule-focus-by-id! focus-timer-ref (str project-id))
              (st/emit! (dcm/go-to-dashboard-files :project-id project-id)))))
 
-
-        on-menu-click
-        (mf/use-fn
-         (fn [event]
-           (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
-             (swap! local* assoc
-                    :menu-open true
-                    :menu-pos position))))
-
-        on-menu-close
-        (mf/use-fn #(swap! local* assoc :menu-open false))
 
         on-edit-open
         (mf/use-fn #(swap! local* assoc :edition? true))
@@ -203,30 +190,26 @@
                    mdata {:on-success on-drop-success}]
                (st/emit! (dd/move-files (with-meta data mdata)))))))]
 
-    [:*
-     [:li {:tab-index "0"
-           :class (stl/css-case :project-element true
-                                :sidebar-nav-item true
-                                :current is-selected
-                                :dragging (:dragging? local))
-           :on-click on-click
-           :on-key-down on-key-down
-           :on-double-click on-edit-open
-           :on-context-menu on-menu-click
-           :on-drag-enter on-drag-enter
-           :on-drag-over on-drag-over
-           :on-drag-leave on-drag-leave
-           :on-drop on-drop}
-      (if (:edition? local)
-        [:& inline-edition {:content (:name item)
-                            :on-end on-edit}]
-        [:span {:class (stl/css :element-title)} (:name item)])]
-     [:> project-menu* {:project item
-                        :show (:menu-open local)
-                        :left (:x (:menu-pos local))
-                        :top (:y (:menu-pos local))
-                        :on-edit on-edit-open
-                        :on-close on-menu-close}]]))
+    [:> context-menu* {:aria-label (tr "dashboard.options")
+                       :trigger
+                       (mf/html
+                        [:li {:tab-index "0"
+                              :class (stl/css-case :project-element true
+                                                   :sidebar-nav-item true
+                                                   :current is-selected
+                                                   :dragging (:dragging? local))
+                              :on-click on-click
+                              :on-key-down on-key-down
+                              :on-double-click on-edit-open
+                              :on-drag-enter on-drag-enter
+                              :on-drag-over on-drag-over
+                              :on-drag-leave on-drag-leave
+                              :on-drop on-drop}
+                         (if (:edition? local)
+                           [:& inline-edition {:content (:name item)
+                                               :on-end on-edit}]
+                           [:span {:class (stl/css :element-title)} (:name item)])])}
+     [:> project-menu-items* {:project item :on-edit on-edit-open}]]))
 
 (mf/defc sidebar-search*
   {::mf/private true}
