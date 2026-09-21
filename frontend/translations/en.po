@@ -454,7 +454,7 @@ msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:400
 msgid "dashboard.create-new-organization"
-msgstr "Create org"
+msgstr "Create new organization"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.create-new-team"
@@ -1136,10 +1136,6 @@ msgstr "Cannot parse the plugin manifest"
 #: src/app/main/ui/dashboard.cljs:189
 msgid "dashboard.plugins.try-plugin"
 msgstr "Try plugin: "
-
-#: src/app/main/ui/dashboard/sidebar.cljs:890
-msgid "dashboard.plus-create-new-organization"
-msgstr "+ Create org"
 
 #: src/app/main/data/dashboard.cljs:758
 msgid "dashboard.progress-notification.deleting-files"
@@ -10834,3 +10830,9 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "labels.team-management"
+msgstr "Team management"
+
+msgid "dashboard.no-organizations-yet"
+msgstr "You don't belong to any organization yet"

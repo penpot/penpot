@@ -140,6 +140,7 @@
 (def ^:icon-id eye-off "eye-off")
 (def ^:icon-id feedback "feedback")
 (def ^:icon-id fill-content "fill-content")
+(def ^:icon-id files "files")
 (def ^:icon-id filter "filter")
 (def ^:icon-id fixed-width "fixed-width")
 (def ^:icon-id fit-content "fit-content")

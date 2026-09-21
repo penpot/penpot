@@ -461,7 +461,7 @@ msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:400
 msgid "dashboard.create-new-organization"
-msgstr "Crear org"
+msgstr "Crear nueva organización"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.create-new-team"
@@ -1136,10 +1136,6 @@ msgstr "No se puede analizar el manifiest de la extensión"
 #: src/app/main/ui/dashboard.cljs:189
 msgid "dashboard.plugins.try-plugin"
 msgstr "Prueba la extensión: "
-
-#: src/app/main/ui/dashboard/sidebar.cljs:890
-msgid "dashboard.plus-create-new-organization"
-msgstr "+ Crear org"
 
 #: src/app/main/data/dashboard.cljs:758
 msgid "dashboard.progress-notification.deleting-files"
@@ -10474,3 +10470,9 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.team-management"
+msgstr "Gestión de equipos"
+
+msgid "dashboard.no-organizations-yet"
+msgstr "Todavía no perteneces a ninguna organización"

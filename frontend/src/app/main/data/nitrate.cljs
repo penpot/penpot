@@ -73,19 +73,24 @@
     (cond-> (u/join public-uri "admin-console/" path)
       (seq query-params) (assoc :query (u/map->query-string query-params))))))
 
-(defn go-to-nitrate-ac
+(defn build-admin-console-href
   ([]
-   (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))
+   (build-admin-console-url ""))
   ([{:keys [organization-id organization-slug]}]
    (if (and organization-id organization-slug)
      (let [path (dm/str "organization/"
                         (u/percent-encode organization-slug)
                         "/"
                         (u/percent-encode (str organization-id))
-                        "/people/")
-           href (build-admin-console-url path)]
-       (st/emit! (rt/nav-raw :href href)))
-     (st/emit! (rt/nav-raw :href (build-admin-console-url ""))))))
+                        "/people/")]
+       (build-admin-console-url path))
+     (build-admin-console-url ""))))
+
+(defn go-to-nitrate-ac
+  ([]
+   (st/emit! (rt/nav-raw :href (build-admin-console-href))))
+  ([options]
+   (st/emit! (rt/nav-raw :href (build-admin-console-href options)))))
 
 (defn go-to-nitrate-ac-create-organization
   [event-origin]
@@ -164,6 +169,58 @@
        (contains? #{"active" "past_due" "trialing"}
                   (dm/get-in profile [:subscription :status]))))
 
+(defn organization-teams
+  "Teams belonging to `organization-id`, out of the full team map."
+  [teams organization-id]
+  (->> teams
+       vals
+       (filter #(= (dm/get-in % [:organization :id]) organization-id))))
+
+(defn organization-leave-info
+  "Splits the teams of an organization into what is needed to leave it:
+  the organization's own default team id, the teams owned by the
+  current user (whose membership decides whether they get deleted or
+  offered for transfer), and the teams the user does not own (which
+  are simply left)."
+  [org-teams]
+  (let [non-default-teams (remove :is-default org-teams)]
+    {:default-team-id (->> org-teams (filter :is-default) first :id)
+     :owned-teams (filter #(dm/get-in % [:permissions :is-owner]) non-default-teams)
+     :not-owned-teams (remove #(dm/get-in % [:permissions :is-owner]) non-default-teams)}))
+
+(defn transferable-teams
+  "Owned teams with more than one member: the ones the user can offer
+  to transfer to another owner instead of leaving/deleting them."
+  [owned-teams]
+  (filter #(> (count (:members %)) 1) owned-teams))
+
+(def ^:private team-leave-error-messages
+  {:only-owner-can-delete-team "errors.team-leave.only-owner-can-delete"
+   :no-enough-members-for-leave "errors.team-leave.insufficient-members"
+   :member-does-not-exist "errors.team-leave.member-does-not-exists"
+   :owner-cant-leave-team "errors.team-leave.owner-cant-leave"})
+
+(defn team-leave-on-error
+  [error]
+  (let [code (-> error ex-data :code)]
+    (if-let [tr-key (get team-leave-error-messages code)]
+      (rx/of (ntf/error (tr tr-key)))
+      (rx/throw error))))
+
+(def ^:private organization-leave-error-messages
+  (merge team-leave-error-messages
+         {:not-valid-teams "errors.organization-leave.no-valid-teams"
+          :organization-owner-cannot-leave "errors.organization-leave.organization-owner-cannot-leave"}))
+
+(defn org-leave-on-error
+  [error]
+  (let [code (-> error ex-data :code)]
+    (if-let [tr-key (get organization-leave-error-messages code)]
+      (rx/of (dt/fetch-teams)
+             (modal/hide)
+             (ntf/error (tr tr-key)))
+      (rx/throw error))))
+
 (defn leave-organization
   [{:keys [id
            name
@@ -209,6 +266,31 @@
                              :type :toast
                              :level :success}))))
               (rx/catch on-error)))))))
+
+(defn leave-organization-fn
+  "Builds the accept callback used by `show-leave-organization-modal`: it
+  folds any teams the user chose to transfer into `:teams-to-leave`,
+  computes `:teams-to-delete` from the owned teams left with a single
+  member, then emits `leave-organization`."
+  [{:keys [organization default-team-id owned-teams not-owned-teams on-error]}]
+  (fn [{:keys [teams-to-transfer member-added-at organization-member-count-before]}]
+    (let [teams-to-leave
+          (cond->> not-owned-teams
+            :always (map #(select-keys % [:id]))
+            (seq teams-to-transfer) (concat teams-to-transfer))
+
+          teams-to-delete
+          (->> owned-teams
+               (filter #(= (count (:members %)) 1))
+               (map :id))]
+      (st/emit! (leave-organization {:id (:id organization)
+                                     :name (:name organization)
+                                     :default-team-id default-team-id
+                                     :teams-to-delete teams-to-delete
+                                     :teams-to-leave teams-to-leave
+                                     :member-added-at member-added-at
+                                     :organization-member-count-before organization-member-count-before
+                                     :on-error on-error})))))
 
 (defn show-leave-organization-modal
   [{:keys [organization profile default-team-id leave-fn teams-to-transfer on-error]}]
