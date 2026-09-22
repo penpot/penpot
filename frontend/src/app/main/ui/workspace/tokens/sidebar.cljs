@@ -182,6 +182,11 @@
 
     (sc/use-restore-scroll scroll-store :tokens set-id tokens-ref)
 
+    [:> (mf/provider ctx/can-edit-tokens?) {:value can-edit-tokens?}
+     [:div {:class (stl/css :sidebar-wrapper)}
+      [:> token-management-section*
+       {:resize-height size-pages-opened
+        :current-file-data current-file-data}]
       [:article {:class (stl/css :tokens-section-wrapper)
                  :data-testid "tokens-sidebar"
                  :data-scroll-container true
