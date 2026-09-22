@@ -138,6 +138,66 @@
       (t/is (uuid? (:thumbnail-id result))))))
 
 
+(t/deftest upload-file-media-object-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        v4-id  "550e8400-e29b-41d4-a716-446655440000"]
+
+    ;; reserved version (v3) must be rejected at the RPC boundary
+    (let [params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile
+                  :id v3-id}
+          out    (th/command! params)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; v4 id is accepted
+    (let [params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile
+                  :id v4-id}
+          out    (th/command! params)]
+      (t/is (th/success? out))
+      (t/is (= v4-id (str (:id (:result out))))))))
+
+(t/deftest create-file-media-object-from-url-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"]
+
+    ;; reserved version (v3) must be rejected before any download happens
+    (let [params {::th/type :create-file-media-object-from-url
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :url "https://example.com/sample.jpg"
+                  :id v3-id}
+          out    (th/command! params)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
 (t/deftest media-object-from-url-command
   (let [prof   (th/create-profile* 1)
         proj   (th/create-project* 1 {:profile-id (:id prof)
@@ -1262,3 +1322,48 @@
       (t/is (th/ex-info? error))
       (t/is (= :not-found (:type error-data)))
       (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest assemble-file-media-object-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        v4-id  "550e8400-e29b-41d4-a716-446655440000"
+        mtype  "image/jpeg"]
+
+    ;; reserved version (v3) must be rejected without touching any session
+    (let [out (th/command! {::th/type :assemble-file-media-object
+                            ::rpc/profile-id (:id prof)
+                            :session-id (uuid/next)
+                            :file-id (:id file)
+                            :is-local true
+                            :name "assembled-image"
+                            :mtype mtype
+                            :id v3-id})]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; v4 id is accepted through the full chunked flow
+    (let [source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+          chunks      (split-file-into-chunks source-path 312043)
+          session-id  (create-session! prof 1)
+          mfile       (make-chunk-mfile (first chunks) mtype)
+          _           (th/command! {::th/type :upload-chunk
+                                    ::rpc/profile-id (:id prof)
+                                    :session-id session-id
+                                    :index 0
+                                    :content mfile})
+          out         (th/command! {::th/type :assemble-file-media-object
+                                    ::rpc/profile-id (:id prof)
+                                    :session-id session-id
+                                    :file-id (:id file)
+                                    :is-local true
+                                    :name "assembled-image"
+                                    :mtype mtype
+                                    :id v4-id})]
+      (t/is (th/success? out))
+      (t/is (= v4-id (str (:id (:result out))))))))

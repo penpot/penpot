@@ -75,7 +75,7 @@
   [:map {:title "create-file"}
    [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
-   [:id {:optional true} ::sm/uuid]
+   [:id {:optional true} ::sm/user-provided-uuid]
    [:is-shared {:optional true} ::sm/boolean]
    [:features {:optional true} ::cfeat/features]])
 

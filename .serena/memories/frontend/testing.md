@@ -31,6 +31,10 @@ Integration tests fake backend behavior by intercepting network/websocket traffi
 
 Locator priority should follow user-facing semantics: `getByRole`, `getByLabel`, `getByPlaceholder`, `getByText`, then semantic alternatives such as alt/title, with `getByTestId` as the last resort. Name tests from the user's perspective and prefer positive, single-purpose assertions.
 
+## CI (E2E)
+
+`.github/workflows/tests-e2e.yml` runs the integration specs, the composable component suite, and the mocked Plugin API suite from one workflow that builds the frontend bundle once per SHA. Before adding a job that needs the bundle, read `mem:frontend/e2e-ci-workflow` (build-once contract, cache key, stable check names).
+
 ## Live browser verification
 
 Because CLJC compiles to both JVM and CLJS, JVM/common tests can miss frontend-only state caused by browser runtime, WASM modifier math, or real pointer events. Use `mem:frontend/cljs-repl` to inspect live app state and `mem:frontend/playwright-gestures` when real input is needed.

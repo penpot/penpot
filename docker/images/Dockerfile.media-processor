@@ -4,6 +4,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     NODE_VERSION=v24.20.0 \
+    PNPM_VERSION=12.5.1 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
@@ -56,9 +57,13 @@ RUN set -eux; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
          ;; \
        amd64|x86_64) \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -71,7 +76,13 @@ RUN set -eux; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /opt/node; \
     rm -rf /tmp/nodejs.tar.gz; \
-    corepack enable; \
+    PNPM_URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    curl -LfsSo /tmp/pnpm.tar.gz "${PNPM_URL}"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/pnpm.tar.gz -C /opt/node/bin pnpm; \
+    chmod 755 /opt/node/bin/pnpm; \
+    rm -f /tmp/pnpm.tar.gz; \
+    pnpm --version; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 

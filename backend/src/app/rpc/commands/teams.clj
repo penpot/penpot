@@ -523,7 +523,7 @@
   [:map {:title "create-team"}
    [:name types.team/schema:team-name]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
+   [:id {:optional true} ::sm/user-provided-uuid]
    [:organization-id {:optional true} ::sm/uuid]
    [:is-default {:optional true} :boolean]])
 

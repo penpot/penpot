@@ -199,7 +199,7 @@
   [:map {:title "create-project"}
    [:team-id ::sm/uuid]
    [:name [:string {:max 250 :min 1}]]
-   [:id {:optional true} ::sm/uuid]])
+   [:id {:optional true} ::sm/user-provided-uuid]])
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"

@@ -44,8 +44,6 @@ jobs:
         working-directory: ./plugins
         shell: bash
         run: |
-          corepack enable;
-          corepack install;
           pnpm install -r;
 
       - name: Run Lint
