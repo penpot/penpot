@@ -7579,6 +7579,10 @@ msgid "workspace.libraries.file-library"
 msgstr "Biblioteca del archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.empty.no-assets"
+msgstr "Aún no hay recursos"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.tokens-source"
 msgstr "Fuente de tokens"
 
