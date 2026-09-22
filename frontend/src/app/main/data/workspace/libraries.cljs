@@ -1106,7 +1106,7 @@
          (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
          (when (and (features/active-feature? state "render-wasm/v1")
                     (seq new-text-ids))
-           (dwwt/resize-wasm-text-all new-text-ids))
+           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true}))
          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))

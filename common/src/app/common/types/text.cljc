@@ -257,8 +257,12 @@
     (= a b)
     #{}
 
-    ;; If types are different, the structure is different
-    (not= (type a) (type b))
+    ;; If one is a map and the other isn't, the structure is different.
+    ;; Compare by category (map?), not by `type`: a map's underlying
+    ;; PersistentArrayMap/PersistentHashMap representation depends on its
+    ;; key count, not on the shape of the content tree, so two maps that
+    ;; only differ in size can otherwise report a false structure diff.
+    (not= (map? a) (map? b))
     #{:text-content-structure}
 
     ;; If they are maps, check the keys
