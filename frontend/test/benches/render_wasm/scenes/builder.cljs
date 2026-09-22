@@ -231,9 +231,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- normalize-label-and-attrs
-  "Resolves the one-argument `rect` form at runtime: a map is attrs, any
-  other value is a label. Rejects label types outside keywords and
-  vectors."
+  "Resolves the one-argument `rect`/`circle` forms at runtime: a map is attrs,
+  any other value is a label. Rejects label types outside keywords and vectors."
   [label attrs]
   (cond
     (and (map? label) (empty? attrs)) [nil label]
@@ -244,8 +243,8 @@
                            :label label}))))
 
 (defn rect!
-  "Adds one rectangle to the scope and returns its uuid. Explicit runtime
-  primitive behind the `rect` macro."
+  "Adds one rectangle to the scope and returns its uuid.
+  Runtime primitive behind the `rect` macro."
   [state defaults label attrs]
   (let [state         (ensure-state state)
         [label attrs] (normalize-label-and-attrs label attrs)
@@ -255,6 +254,21 @@
         shape         (cts/setup-shape (merge attrs
                                               {:id id
                                                :type :rect}))]
+    (add-object! state label shape)
+    id))
+
+(defn circle!
+  "Adds one circle to the scope and returns its uuid.
+  Runtime primitive behind the `circle` macro."
+  [state defaults label attrs]
+  (let [state         (ensure-state state)
+        [label attrs] (normalize-label-and-attrs label attrs)
+        rng           (:rng @state)
+        attrs         (resolve-attrs rng (:circle defaults) attrs)
+        id            (rng-uuid rng)
+        shape         (cts/setup-shape (merge attrs
+                                              {:id id
+                                               :type :circle}))]
     (add-object! state label shape)
     id))
 
