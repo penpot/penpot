@@ -9,14 +9,14 @@
    [app.http :as http]
    [app.metrics :as mtx]
    [backend-tests.helpers :as th]
-   [clojure.test :as t])
+   [clojure.test :as t]
+   [promesa.exec :as px])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
    io.prometheus.client.Gauge
    io.undertow.server.ConnectorStatistics
    java.util.concurrent.ScheduledThreadPoolExecutor
-   java.util.concurrent.ThreadFactory
    org.xnio.management.XnioWorkerMXBean))
 
 (t/use-fixtures :once th/state-init)
@@ -248,7 +248,33 @@
         sampler (http/create-metrics-sampler nil metrics)]
     (try
       (t/is (some? sampler))
-      (t/is (not (.isShutdown ^ScheduledThreadPoolExecutor sampler)))
+      (t/is (px/executor? sampler))
+      (t/is (not (px/shutdown? sampler)))
       (finally
-        (.shutdownNow ^ScheduledThreadPoolExecutor sampler)
-        (t/is (.isShutdown ^ScheduledThreadPoolExecutor sampler))))))
+        (px/shutdown-now sampler)
+        (t/is (px/shutdown? sampler))))))
+
+(t/deftest create-metrics-sampler-reschedules-after-error
+  ;; the docstring promise: an unexpected error on a single sample must
+  ;; not cancel the following runs. The first sample runs immediately
+  ;; and throws; the next one must still be scheduled afterwards.
+  (let [calls (atom 0)]
+    (with-redefs [http/sample-http-metrics! (fn [_ _ _]
+                                              (swap! calls inc)
+                                              (throw (ex-info "boom" {})))]
+      (let [sampler (http/create-metrics-sampler nil (fake-metrics))
+            queue   (.getQueue ^ScheduledThreadPoolExecutor sampler)]
+        (try
+          (t/is (loop [i 0]
+                  (cond (pos? @calls) true
+                        (> i 200) false
+                        :else (do (Thread/sleep 10) (recur (inc i)))))
+                "the first sample must run immediately")
+
+          (t/is (loop [i 0]
+                  (cond (= 1 (.size queue)) true
+                        (> i 200) false
+                        :else (do (Thread/sleep 10) (recur (inc i)))))
+                "the next sample must be scheduled after the error")
+          (finally
+            (px/shutdown-now sampler)))))))

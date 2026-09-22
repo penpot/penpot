@@ -28,6 +28,7 @@
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
    [integrant.core :as ig]
+   [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
@@ -36,8 +37,6 @@
   (:import
    io.undertow.server.ConnectorStatistics
    io.undertow.Undertow
-   java.util.concurrent.ScheduledThreadPoolExecutor
-   java.util.concurrent.TimeUnit
    org.xnio.management.XnioWorkerMXBean))
 
 (declare router-handler)
@@ -123,21 +122,21 @@
   and an unexpected error on a single sample does NOT cancel the
   subsequent runs."
   [^Undertow server metrics]
-  (let [state (atom {:last-requests 0 :last-errors 0})
-        scheduler (ScheduledThreadPoolExecutor.
-                   1
-                   (reify java.util.concurrent.ThreadFactory
-                     (newThread [_ task]
-                       (doto (Thread. ^Runnable task
-                                      "penpot-http-server-metrics-sampler")
-                         (.setDaemon true)))))]
+  (let [state     (atom {:last-requests 0 :last-errors 0})
+        scheduler (px/scheduled-executor
+                   :parallelism 1
+                   :factory (px/thread-factory :prefix "penpot/http-metrics/"
+                                               :daemon true))
+        sample    (fn sample []
+                    (try
+                      (sample-http-metrics! metrics state server)
+                      (finally
+                        ;; reschedule even if a single sample fails, so
+                        ;; an unexpected error does not cancel the
+                        ;; following runs.
+                        (px/schedule scheduler metrics-sample-interval-ms sample))))]
 
-    (.scheduleAtFixedRate scheduler
-                          (fn [] (sample-http-metrics! metrics state server))
-                          0
-                          metrics-sample-interval-ms
-                          TimeUnit/MILLISECONDS)
-
+    (px/schedule scheduler 0 sample)
     scheduler))
 
 (defmethod ig/expand-key ::server
@@ -205,7 +204,7 @@
   [_ {:keys [::metrics-sampler ::server ::port] :as cfg}]
   (l/info :msg "stopping http server" :port port)
   (when (some? metrics-sampler)
-    (.shutdownNow ^ScheduledThreadPoolExecutor metrics-sampler))
+    (px/shutdown-now metrics-sampler))
   (yt/stop! server))
 
 (defn- not-found-handler
