@@ -31,15 +31,25 @@
             changes
             (let [prop-names (mapv :name props)
                   prop-names (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
-                  new-name   (ctv/update-number-in-repeated-item prop-names new-name)]
-              (reduce (fn [changes component]
-                        (pcb/update-component
-                         changes (:id component)
-                         (fn [component]
-                           (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
-                         {:apply-changes-local-library? true}))
-                      changes
-                      related-components))))))))
+                  new-name   (ctv/update-number-in-repeated-item prop-names new-name)
+
+                  changes    (reduce (fn [changes component]
+                                       (pcb/update-component
+                                        changes (:id component)
+                                        (fn [component]
+                                          (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
+                                        {:apply-changes-local-library? true}))
+                                     changes
+                                     related-components)
+                  
+                  ids-to-validate (map :main-instance-id related-components)
+
+                  changes (pcb/validate-shapes changes
+                                               (pcb/get-page-id changes)
+                                               ids-to-validate
+                                               (str "generate-update-property-name: " variant-id
+                                                    " pos: " pos " new-name: " new-name))]
+              changes)))))))
 
 (defn generate-remove-property
   "Remove the variant property at position `pos` for all components in the variant and their
@@ -52,17 +62,25 @@
           related-components (cfv/find-variant-components data objects variant-id)
           props              (-> related-components first :variant-properties)]
       (if (and (seq props) (<= 0 pos) (< pos (count props)))
-        (reduce (fn [changes component]
-                  (let [props   (:variant-properties component)
-                        props   (d/remove-at-index props pos)
-                        main-id (:main-instance-id component)
-                        name    (ctv/properties-to-name props)]
-                    (-> changes
-                        (pcb/update-component (:id component) #(assoc % :variant-properties props)
-                                              {:apply-changes-local-library? true})
-                        (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
-                changes
-                related-components)
+        (let [changes (reduce (fn [changes component]
+                                (let [props   (:variant-properties component)
+                                      props   (d/remove-at-index props pos)
+                                      main-id (:main-instance-id component)
+                                      name    (ctv/properties-to-name props)]
+                                  (-> changes
+                                      (pcb/update-component (:id component) #(assoc % :variant-properties props)
+                                                            {:apply-changes-local-library? true})
+                                      (pcb/update-shapes [main-id] #(assoc % :variant-name name)))))
+                              changes
+                              related-components)
+
+              ids-to-validate (map :main-instance-id related-components)
+
+              changes (pcb/validate-shapes changes
+                                           (pcb/get-page-id changes)
+                                           ids-to-validate
+                                           (str "generate-remove-property: " variant-id " pos: " pos))]
+          changes)
         changes))))
 
 (defn generate-update-property-value

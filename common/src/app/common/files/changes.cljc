@@ -1105,7 +1105,7 @@
 #?(:cljs
    (defmethod process-change :validate-shapes
      [data {:keys [page-id shape-ids context]} libraries]
-     (if libraries
+     (when libraries
        (println "Validating shapes: \n"
                 "  page-id:" (str page-id) "\n"
                 "  shape-ids:" (str shape-ids) "\n"
@@ -1124,8 +1124,7 @@
            (ex/raise :type :validation
                      :code :referential-integrity
                      :hint (str "error on validating shapes: " context)
-                     :details errors))
-         data))
+                     :details errors))))
      data))
 
 ;; === Operations
