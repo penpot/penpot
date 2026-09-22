@@ -27,6 +27,7 @@
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
     "check-fmt:js": "prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js -c text-editor/**/*.js",
     "check-fmt:scss": "prettier -c resources/styles -c src/**/*.scss",
+    "check-translations": "node ./scripts/check-translations.js -l ca",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:js": "prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js -c text-editor/**/*.js -w",
     "fmt:scss": "prettier -c resources/styles -c src/**/*.scss -w",

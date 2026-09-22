@@ -169,9 +169,9 @@ msgstr "Creeu un compte"
 #, unused
 msgid "auth.register-tagline"
 msgstr ""
-"Amb un compte gratuït del Penpot, podeu crear equips il·limitats "
-"icol·laborar amb altres dissenyadors i desenvolupadors en tants projectes "
-"comvulgueu. "
+"Amb un compte gratuït del Penpot, podeu crear equips il·limitats i "
+"col·laborar amb altres dissenyadors i desenvolupadors en tants projectes "
+"com vulgueu. "
 
 #: src/app/main/ui/auth/register.cljs:223
 msgid "auth.register-title"
@@ -186,8 +186,8 @@ msgstr "La solució de codi obert per a dissenyar i prototipar."
 #, markdown
 msgid "auth.terms-and-privacy-agreement"
 msgstr ""
-"Estic d'acord amb les [condicions del servei](%s) i la [política "
-"deprivadesa](%s)."
+"Estic d'acord amb les [condicions del servei](%s) i la [política de "
+"privadesa](%s)."
 
 #: src/app/main/ui/auth/register.cljs:269, src/app/main/ui/dashboard/sidebar.cljs:1319, src/app/main/ui/workspace/main_menu.cljs:210
 msgid "auth.terms-of-service"
@@ -196,8 +196,8 @@ msgstr "Condicions del servei"
 #, unused
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"En crear un compte nou, accepteu les nostres condicions del servei i "
-"lapolítica de privadesa."
+"En crear un compte nou, accepteu les nostres condicions del servei i la "
+"política de privadesa."
 
 #: src/app/main/ui/auth/register.cljs:238
 #, unused
@@ -220,8 +220,8 @@ msgstr "...disseny de marca, il·lustracions, peces de màrqueting, etc."
 #: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:37
 msgid "color-token.empty-state"
 msgstr ""
-"No hi ha tokens de color disponibles. Comproveu els sets/temes actius "
-"ocreeu tokens de color nous."
+"No hi ha tokens de color disponibles. Comproveu els sets/temes actius o "
+"creeu tokens de color nous."
 
 #: src/app/main/ui/comments.cljs:549
 msgid "comments.mentions.not-found"
@@ -380,8 +380,8 @@ msgstr "Mou a:"
 #, unused
 msgid "dashboard.change-organization-modal.description"
 msgstr ""
-"Els projectes i els fitxers continuaran disponibles per als membres "
-"del'equip. L'equip adoptarà la configuració de la nova organització."
+"Els projectes i els fitxers continuaran disponibles per als membres de "
+"l'equip. L'equip adoptarà la configuració de la nova organització."
 
 #, unused
 msgid "dashboard.change-organization-modal.select"
@@ -390,8 +390,8 @@ msgstr "Selecciona una organització"
 #, unused
 msgid "dashboard.change-organization-modal.text"
 msgstr ""
-"Els projectes i els fitxers continuaran disponibles per als membres "
-"del'equip. L'equip adoptarà la configuració de la nova organització."
+"Els projectes i els fitxers continuaran disponibles per als membres de "
+"l'equip. L'equip adoptarà la configuració de la nova organització."
 
 #: src/app/main/data/nitrate.cljs:520, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
@@ -400,8 +400,8 @@ msgstr "Canvia l'organització de l'equip"
 #: src/app/main/ui/dashboard/check_updates.cljs:334
 msgid "dashboard.check-updates.available-message"
 msgstr ""
-"Les versions més noves inclouen millores de rendiment, funcions noves "
-"icorreccions que mantenen la vostra instal·lació al dia."
+"Les versions més noves inclouen millores de rendiment, funcions noves i "
+"correccions que mantenen la vostra instal·lació al dia."
 
 #: src/app/main/ui/dashboard/check_updates.cljs:309
 msgid "dashboard.check-updates.available-title"
@@ -430,8 +430,8 @@ msgstr "Comproveu la xarxa o la configuració de la instància i torneu-ho a pro
 #: src/app/main/ui/dashboard/check_updates.cljs:226
 msgid "dashboard.check-updates.unable-message"
 msgstr ""
-"Aquesta instal·lació no ha pogut contactar amb el servei de versions "
-"delPenpot."
+"Aquesta instal·lació no ha pogut contactar amb el servei de versions del "
+"Penpot."
 
 #: src/app/main/ui/dashboard/check_updates.cljs:215
 msgid "dashboard.check-updates.unable-title"
@@ -480,14 +480,14 @@ msgstr "El meu Penpot"
 #: src/app/main/ui/dashboard/deleted.cljs:268
 msgid "dashboard.delete-all-forever-confirmation.description"
 msgstr ""
-"Esteu segur que voleu suprimir definitivament tots els projectes i "
-"fitxerseliminats? Aquesta acció és irreversible."
+"Esteu segur que voleu suprimir definitivament tots els projectes i fitxers "
+"eliminats? Aquesta acció és irreversible."
 
 #: src/app/main/ui/dashboard/file_menu.cljs:222
 msgid "dashboard.delete-file-forever-confirmation.description"
 msgstr ""
-"Esteu segur que voleu suprimir definitivament %s? Aquesta acció "
-"ésirreversible."
+"Esteu segur que voleu suprimir definitivament %s? Aquesta acció és "
+"irreversible."
 
 #: src/app/main/data/dashboard.cljs:814
 msgid "dashboard.delete-files-success-notification"
@@ -504,9 +504,9 @@ msgstr "Elimina el projecte"
 #: src/app/main/ui/dashboard/deleted.cljs:55
 msgid "dashboard.delete-project-forever-confirmation.description"
 msgstr ""
-"Esteu segur que voleu suprimir definitivament el projecte %s? El "
-"suprimireudefinitivament amb tots els fitxers que conté. Aquesta acció "
-"ésirreversible."
+"Esteu segur que voleu suprimir definitivament el projecte %s? El suprimireu "
+"definitivament amb tots els fitxers que conté. Aquesta acció és "
+"irreversible."
 
 #: src/app/main/data/dashboard.cljs:813, src/app/main/data/dashboard.cljs:847
 msgid "dashboard.delete-success-notification"
@@ -519,8 +519,8 @@ msgstr "Elimina l'equip"
 #: src/app/main/ui/dashboard/deleted.cljs:337
 msgid "dashboard.deleted.empty-state-description"
 msgstr ""
-"La vostra paperera és buida. Els fitxers i projectes eliminats "
-"apareixeranaquí."
+"La vostra paperera és buida. Els fitxers i projectes eliminats apareixeran "
+"aquí."
 
 #: src/app/main/ui/dashboard/grid.cljs:248
 msgid "dashboard.deleted.will-be-deleted-at"
@@ -563,17 +563,17 @@ msgstr "Encara no hi ha fitxers."
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Les biblioteques afegides al projecte apareixeran aquí. Proveu de "
-"compartirels vostres fitxers o afegiu-ne des de [Biblioteques "
-"iplantilles](https://penpot.app/libraries-templates)."
+"Les biblioteques afegides al projecte apareixeran aquí. Proveu de compartir "
+"els vostres fitxers o afegiu-ne des de [Biblioteques i "
+"plantilles](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs
 #, markdown, unused
 msgid "dashboard.empty-placeholder-libraries-subtitle"
 msgstr ""
-"Les biblioteques afegides al projecte apareixeran aquí. Proveu de "
-"compartirels vostres fitxers o afegiu-ne des de [Biblioteques "
-"iplantilles](https://penpot.app/libraries-templates)."
+"Les biblioteques afegides al projecte apareixeran aquí. Proveu de compartir "
+"els vostres fitxers o afegiu-ne des de [Biblioteques i "
+"plantilles](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs:113
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
@@ -721,8 +721,8 @@ msgstr "Encara no hi ha tipografies personalitzades."
 #: src/app/main/ui/dashboard/fonts.cljs:499
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Quan un membre del projecte pengi una tipografia personalitzada, "
-"apareixeràaquí."
+"Quan un membre del projecte pengi una tipografia personalitzada, apareixerà "
+"aquí."
 
 #: src/app/main/ui/dashboard/fonts.cljs:223
 msgid "dashboard.fonts.fonts-added"
@@ -759,11 +759,11 @@ msgstr "Puja-ho tot"
 msgid "dashboard.fonts.warning-text"
 msgstr ""
 "Hem detectat un possible problema amb les vostres tipografies relacionat "
-"ambles mètriques verticals en diferents sistemes operatius. Per "
-"comprovar-ho,podeu utilitzar serveis de mètriques verticals de tipografies "
+"amb les mètriques verticals en diferents sistemes operatius. Per "
+"comprovar-ho, podeu utilitzar serveis de mètriques verticals de tipografies "
 "com[aquest](https://vertical-metrics.netlify.app/). A més, recomanem "
-"utilitzarel [Transfonter](https://transfonter.org/) per generar tipografies "
-"web icorregir errors. "
+"utilitzar el [Transfonter](https://transfonter.org/) per generar "
+"tipografies web i corregir errors. "
 
 #: src/app/main/ui/dashboard/sidebar.cljs:405
 msgid "dashboard.go-to-admin-console"
@@ -783,7 +783,9 @@ msgstr "Vaja! No s'ha pogut importar aquest fitxer"
 
 #, unused
 msgid "dashboard.import.analyze-error.components-v2"
-msgstr "Fitxer amb els components v2 activats, però aquest equip encara no elsadmet."
+msgstr ""
+"Fitxer amb els components v2 activats, però aquest equip encara no els "
+"admet."
 
 #: src/app/main/ui/dashboard/import.cljs:566
 msgid "dashboard.import.auto-linked-libraries"
@@ -835,7 +837,9 @@ msgstr "S'ha produït un error en processar aquest fitxer."
 
 #: src/app/main/ui/dashboard/import.cljs:562
 msgid "dashboard.import.import-message"
-msgstr "S'han importat %s fitxers correctament."
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "S'ha importat 1 fitxer correctament."
+msgstr[1] "S'han importat %s fitxers correctament."
 
 #: src/app/main/ui/dashboard/import.cljs:556
 msgid "dashboard.import.import-warning"
@@ -876,8 +880,8 @@ msgstr "S'està pujant el fitxer: %s"
 #, unused
 msgid "dashboard.import.resolve-libraries"
 msgstr ""
-"Algunes biblioteques no s'han pogut vincular automàticament. Seleccioneu "
-"labiblioteca correcta per a cadascuna:"
+"Algunes biblioteques no s'han pogut vincular automàticament. Seleccioneu la "
+"biblioteca correcta per a cadascuna:"
 
 #: src/app/main/ui/dashboard/import.cljs:534
 msgid "dashboard.import.resolve-libraries-summary"
@@ -923,7 +927,7 @@ msgstr "Reenvia les invitacions"
 msgid "dashboard.invitations.no-permission"
 msgstr ""
 "No teniu permís per convidar persones a unir-se a aquest equip ni per "
-"editaro suprimir invitacions."
+"editar o suprimir invitacions."
 
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
@@ -952,8 +956,8 @@ msgstr "Biblioteques i plantilles"
 #: src/app/main/ui/dashboard/templates.cljs:263
 msgid "dashboard.libraries-and-templates.description"
 msgstr ""
-"Aquí teniu algunes biblioteques i plantilles que podeu afegir al "
-"vostreprojecte"
+"Aquí teniu algunes biblioteques i plantilles que podeu afegir al vostre "
+"projecte"
 
 #: src/app/main/ui/dashboard/templates.cljs:167
 msgid "dashboard.libraries-and-templates.explore"
@@ -1020,23 +1024,22 @@ msgstr "No teniu permís per afegir equips a cap de les vostres organitzacions."
 #: src/app/main/ui/dashboard/team_form.cljs:152
 msgid "dashboard.no-permission-create-team.message"
 msgstr ""
-"No teniu permís per crear equips dins de l'organització %s. Si "
-"necessiteumés informació, contacteu amb la persona propietària de "
-"l'organització."
+"No teniu permís per crear equips dins de l'organització %s. Si necessiteu "
+"més informació, contacteu amb la persona propietària de l'organització."
 
 #: src/app/main/ui/dashboard/team_form.cljs:154
 msgid "dashboard.no-permission-delete-team.message"
 msgstr ""
 "No teniu permís per suprimir equips que formen part de l'organització %s. "
-"Sinecessiteu més informació, contacteu amb la persona propietària "
-"del'organització."
+"Si necessiteu més informació, contacteu amb la persona propietària de "
+"l'organització."
 
 #: src/app/main/ui/dashboard/team_form.cljs:160
 msgid "dashboard.no-permission-move-team.message"
 msgstr ""
-"No teniu permís per moure equips que formen part de l'organització %s. "
-"Sinecessiteu més informació, contacteu amb la persona propietària "
-"del'organització."
+"No teniu permís per moure equips que formen part de l'organització %s. Si "
+"necessiteu més informació, contacteu amb la persona propietària de "
+"l'organització."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1177
 msgid "dashboard.no-projects-placeholder"
@@ -1174,8 +1177,8 @@ msgstr "Ja no formeu part de l'equip “%s“."
 #: src/app/main/ui/dashboard/deleted.cljs:280
 msgid "dashboard.restore-all-confirmation.description"
 msgstr ""
-"Esteu a punt de restaurar tots els vostres projectes i fitxers. Això "
-"pottrigar una estona."
+"Esteu a punt de restaurar tots els vostres projectes i fitxers. Això pot "
+"trigar una estona."
 
 #: src/app/main/ui/dashboard/deleted.cljs:279
 msgid "dashboard.restore-all-confirmation.title"
@@ -1236,9 +1239,9 @@ msgstr "Trieu una organització:"
 #: src/app/main/ui/dashboard/team.cljs:1035
 msgid "dashboard.select-organization-modal.external-invitations-warning"
 msgstr ""
-"\"%s\" només permet que els membres de l'organització s'uneixin als "
-"seusequips. Les invitacions pendents a persones de fora de l'organització "
-"esrevocaran."
+"\"%s\" només permet que els membres de l'organització s'uneixin als seus "
+"equips. Les invitacions pendents a persones de fora de l'organització es "
+"revocaran."
 
 #: src/app/main/ui/dashboard/team.cljs:1031
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
@@ -1247,14 +1250,14 @@ msgstr "Les invitacions pendents a usuaris externs se cancel·laran."
 #, unused
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
-"Aquí trobareu les organitzacions de les quals formeu part on teniu "
-"permísper moure l'equip."
+"Aquí trobareu les organitzacions de les quals formeu part on teniu permís "
+"per moure l'equip."
 
 #, unused
 msgid "dashboard.select-organization-modal.permission-info-add"
 msgstr ""
-"Aquí trobareu les organitzacions de les quals formeu part on teniu "
-"permísper crear o afegir equips."
+"Aquí trobareu les organitzacions de les quals formeu part on teniu permís "
+"per crear o afegir equips."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1354,7 +1357,9 @@ msgstr "Historial de versions"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:99
 msgid "dashboard.success-delete-file"
-msgstr "S'ha eliminat el fitxer"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "S'ha eliminat el fitxer"
+msgstr[1] "S'han eliminat els fitxers"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:63
 msgid "dashboard.success-delete-project"
@@ -1362,7 +1367,9 @@ msgstr "S'ha eliminat el projecte"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:94
 msgid "dashboard.success-duplicate-file"
-msgstr "S'ha duplicat el fitxer"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "S'ha duplicat el fitxer"
+msgstr[1] "S'han duplicat els fitxers"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:35
 msgid "dashboard.success-duplicate-project"
@@ -1455,8 +1462,8 @@ msgstr "Després d'això, se suprimiran definitivament."
 #: src/app/main/ui/dashboard/deleted.cljs:312
 msgid "dashboard.trash-info-text-part4"
 msgstr ""
-"Si canvieu d'opinió, podeu restaurar-los o suprimir-los definitivament "
-"desdel menú de cada fitxer."
+"Si canvieu d'opinió, podeu restaurar-los o suprimir-los definitivament des "
+"del menú de cada fitxer."
 
 #: src/app/main/ui/dashboard/search.cljs:66
 msgid "dashboard.type-something"
@@ -1493,7 +1500,7 @@ msgid "dashboard.webgl-switch.description"
 msgstr ""
 "El renderatge WebGL pot millorar el rendiment, però és en fase beta i "
 "potser menys estable. Poden aparèixer diferències visuals entre el llenç, "
-"lesexportacions (SVG/PDF) i el mode de vista."
+"les exportacions (SVG/PDF) i el mode de vista."
 
 #: src/app/main/ui/settings/options.cljs:113
 msgid "dashboard.webgl-switch.disabled"
@@ -1542,9 +1549,9 @@ msgstr "S'ha creat el webhook correctament."
 #: src/app/main/ui/dashboard/team.cljs:1418
 msgid "dashboard.webhooks.description"
 msgstr ""
-"Els webhooks són una manera senzilla de permetre que altres llocs web "
-"iaplicacions rebin avisos quan passen determinats esdeveniments al "
-"Penpot.Enviarem una petició POST a cadascuna de les URL que indiqueu."
+"Els webhooks són una manera senzilla de permetre que altres llocs web i "
+"aplicacions rebin avisos quan passen determinats esdeveniments al Penpot. "
+"Enviarem una petició POST a cadascuna de les URL que indiqueu."
 
 #: src/app/main/ui/dashboard/team.cljs:1545
 msgid "dashboard.webhooks.empty.add-one"
@@ -1650,7 +1657,7 @@ msgstr "No es pot afegir la biblioteca: això crearia una dependència circular"
 msgid "errors.clipboard-api-unavailable"
 msgstr ""
 "L'API del porta-retalls no està disponible. Serviu el Penpot amb HTTPS per "
-"ahabilitar l'accés al porta-retalls"
+"a habilitar l'accés al porta-retalls"
 
 #: src/app/main/data/workspace/clipboard.cljs:514
 msgid "errors.clipboard-not-implemented"
@@ -1659,8 +1666,8 @@ msgstr "El vostre navegador no pot fer aquesta operació"
 #: src/app/util/clipboard.cljs:245
 msgid "errors.clipboard-permission-denied"
 msgstr ""
-"Accés al porta-retalls denegat. Permeteu l'accés al porta-retalls al "
-"vostrenavegador per a enganxar contingut"
+"Accés al porta-retalls denegat. Permeteu l'accés al porta-retalls al vostre "
+"navegador per a enganxar contingut"
 
 #: src/app/main/errors.cljs:451
 msgid "errors.comment-error"
@@ -1669,8 +1676,8 @@ msgstr "S'ha produït un error amb el comentari"
 #: src/app/main/errors.cljs:520
 msgid "errors.deprecated"
 msgstr ""
-"Ho sentim! Aquest és un fitxer antic que utilitza un tipus d'element "
-"delPenpot obsolet i no el podeu obrir."
+"Ho sentim! Aquest és un fitxer antic que utilitza un tipus d'element del "
+"Penpot obsolet i no el podeu obrir."
 
 #: src/app/main/errors.cljs:523
 msgid "errors.deprecated.contact.after"
@@ -1719,8 +1726,8 @@ msgstr "El correu «%s» s'ha marcat com a brossa o rebot permanent."
 #: src/app/main/errors.cljs:497
 msgid "errors.feature-mismatch"
 msgstr ""
-"Sembla que esteu obrint un fitxer que té la funcionalitat «%s» "
-"habilitada,però la versió actual del Penpot no l'admet o la té inhabilitada."
+"Sembla que esteu obrint un fitxer que té la funcionalitat «%s» habilitada, "
+"però la versió actual del Penpot no l'admet o la té inhabilitada."
 
 #: src/app/main/errors.cljs:501, src/app/main/errors.cljs:515
 msgid "errors.feature-not-supported"
@@ -1747,14 +1754,14 @@ msgstr "El nom ha de contenir algun caràcter que no sigui un espai."
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Sembla que hi ha una discrepància entre les funcionalitats habilitades i "
-"lesdel fitxer que intenteu obrir. Cal aplicar les migracions de «%s» abans "
-"depoder obrir el fitxer."
+"les del fitxer que intenteu obrir. Cal aplicar les migracions de «%s» abans "
+"de poder obrir el fitxer."
 
 #: src/app/main/ui/dashboard/fonts.cljs:341
 msgid "errors.font-family-invalid-chars"
 msgstr ""
-"El nom de la família tipogràfica només pot contenir lletres, "
-"números,espais, guions, guions baixos i punts."
+"El nom de la família tipogràfica només pot contenir lletres, números, "
+"espais, guions, guions baixos i punts."
 
 #: src/app/main/data/auth.cljs:358, src/app/main/errors.cljs:196, src/app/main/ui/auth/login.cljs:110, src/app/main/ui/auth/register.cljs:129, src/app/main/ui/auth/register.cljs:322, src/app/main/ui/auth/verify_token.cljs:138, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1125, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
@@ -1798,15 +1805,15 @@ msgstr "Text no vàlid"
 #: src/app/main/ui/static.cljs:88
 msgid "errors.invite-email-mismatch"
 msgstr ""
-"Aquesta invitació és per a un altre correu electrònic. Tanqueu la sessió "
-"iinicieu-la amb el compte convidat, o demaneu al propietari de l'equip "
-"unainvitació nova."
+"Aquesta invitació és per a un altre correu electrònic. Tanqueu la sessió i "
+"inicieu-la amb el compte convidat, o demaneu al propietari de l'equip una "
+"invitació nova."
 
 #: src/app/main/ui/static.cljs:92
 msgid "errors.invite-expired"
 msgstr ""
-"Aquesta invitació ha caducat. Demaneu al propietari de l'equip que "
-"usn'enviï una de nova."
+"Aquesta invitació ha caducat. Demaneu al propietari de l'equip que us "
+"n'enviï una de nova."
 
 #: src/app/main/ui/static.cljs:95
 msgid "errors.invite-invalid"
@@ -1831,8 +1838,8 @@ msgstr "Heu arribat a la quota de «%s». Contacteu amb l'assistència."
 #: src/app/main/ui/dashboard/team.cljs:230, src/app/main/ui/dashboard/team.cljs:1113, src/app/main/ui/onboarding/team_choice.cljs:113
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr ""
-"S'ha arribat al nombre màxim (%s) de correus electrònics que es "
-"podenconvidar en una sola sol·licitud"
+"S'ha arribat al nombre màxim (%s) de correus electrònics que es poden "
+"convidar en una sola sol·licitud"
 
 #: src/app/main/data/workspace/media.cljs:228
 msgid "errors.media-too-large"
@@ -1870,7 +1877,7 @@ msgstr "Només la persona creadora de la versió la pot desbloquejar"
 msgid "errors.organization-leave.no-valid-teams"
 msgstr ""
 "S'ha produït un problema en abandonar l'organització. Torneu-ho a provar, "
-"sius plau."
+"si us plau."
 
 #, unused
 msgid "errors.organization-leave.organization-owner-cannot-leave"
@@ -1911,10 +1918,10 @@ msgstr "El registre està desactivat."
 #: src/app/main/errors.cljs:216
 msgid "errors.save-failed"
 msgstr ""
-"Els vostres últims canvis no s'han confirmat com a desats. Pot ser que "
-"eldesament no es reprengui automàticament. No tanqueu ni recarregueu "
-"aquestapestanya: podríeu perdre canvis. Contacteu amb l'assistència per a "
-"obtenirajuda."
+"Els vostres últims canvis no s'han confirmat com a desats. Pot ser que el "
+"desament no es reprengui automàticament. No tanqueu ni recarregueu aquesta "
+"pestanya: podríeu perdre canvis. Contacteu amb l'assistència per a obtenir "
+"ajuda."
 
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
@@ -1961,8 +1968,8 @@ msgstr "No es pot duplicar un conjunt desconegut"
 #: src/app/main/data/workspace/tokens/library_edit.cljs:452
 msgid "errors.token-set-exists-on-drop"
 msgstr ""
-"No es pot completar l'arrossegament: ja existeix un conjunt amb el "
-"mateixnom en aquest camí."
+"No es pot completar l'arrossegament: ja existeix un conjunt amb el mateix "
+"nom en aquest camí."
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:237, src/app/main/data/workspace/tokens/library_edit.cljs:256
 msgid "errors.token-theme-already-exists"
@@ -1981,7 +1988,7 @@ msgstr "El token té una referència circular"
 msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr ""
 "L'interlineat depèn de la mida de la lletra. Afegiu una mida de lletra per "
-"aobtenir el valor resolt."
+"a obtenir el valor resolt."
 
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:350, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:436
 msgid "errors.tokens.empty-field"
@@ -2006,15 +2013,14 @@ msgstr "Valor de color no vàlid: %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:108
 msgid "errors.tokens.invalid-font-family-token-value"
 msgstr ""
-"Valor de token no vàlid: només podeu fer referència a un token de "
-"tipusfont-family"
+"Valor de token no vàlid: només podeu fer referència a un token de tipus "
+"font-family"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:104
 msgid "errors.tokens.invalid-font-weight-token-value"
 msgstr ""
-"Valor de pes de lletra no vàlid: utilitzeu valors numèrics (100-950) o "
-"nomsestàndard (thin, light, regular, bold, etc.) seguits opcionalment "
-"de«Italic»"
+"Valor de pes de lletra no vàlid: utilitzeu valors numèrics (100-950) o noms "
+"estàndard (thin, light, regular, bold, etc.) seguits opcionalment de«Italic»"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:24
 msgid "errors.tokens.invalid-json"
@@ -2028,8 +2034,8 @@ msgstr "Error d'importació: nom de token no vàlid a l'JSON."
 msgid "errors.tokens.invalid-json-token-name-detail"
 msgstr ""
 "\"%s\" no és un nom de token vàlid.\n"
-"Els noms de token només poden contenir lletres i dígits separats "
-"percaràcters . i no poden començar amb el signe $."
+"Els noms de token només poden contenir lletres i dígits separats per "
+"caràcters . i no poden començar amb el signe $."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:120
 msgid "errors.tokens.invalid-shadow-type-token-value"
@@ -2038,8 +2044,8 @@ msgstr "Tipus d'ombra no vàlid: només s'accepten «innerShadow» o «dropShado
 #: src/app/main/data/workspace/tokens/errors.cljs:96
 msgid "errors.tokens.invalid-text-case-token-value"
 msgstr ""
-"Valor de token no vàlid: només s'accepten none, Uppercase, Lowercase "
-"oCapitalize"
+"Valor de token no vàlid: només s'accepten none, Uppercase, Lowercase o "
+"Capitalize"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:100
 msgid "errors.tokens.invalid-text-decoration-token-value"
@@ -2064,8 +2070,8 @@ msgstr "Referències de token que falten: "
 #: src/app/main/data/workspace/tokens/errors.cljs:68, src/app/main/ui/workspace/tokens/management/forms/controls/utils.cljs:126
 msgid "errors.tokens.name-collision"
 msgstr ""
-"El nom de grup de %s entra en conflicte amb un token del mateix nom en "
-"unaltre conjunt actiu."
+"El nom de grup de %s entra en conflicte amb un token del mateix nom en un "
+"altre conjunt actiu."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:20
 msgid "errors.tokens.no-token-files-found"
@@ -2233,8 +2239,8 @@ msgstr "Altres maneres de contactar amb nosaltres"
 #: src/app/main/ui/settings/feedback.cljs:127
 msgid "feedback.penpot.link"
 msgstr ""
-"Si el comentari està relacionat amb un fitxer o un projecte, afegiu "
-"aquíl'enllaç del Penpot:"
+"Si el comentari està relacionat amb un fitxer o un projecte, afegiu aquí "
+"l'enllaç del Penpot:"
 
 #: src/app/main/ui/settings/feedback.cljs:106
 msgid "feedback.subject"
@@ -2326,8 +2332,8 @@ msgstr "Tracta els recursos com a objectes bàsics"
 #: src/app/main/ui/exports/files.cljs:158
 msgid "files-export-modal.options.include-libraries.message"
 msgstr ""
-"Els fitxers amb biblioteques vinculades s'inclouran a l'exportació "
-"imantindran els vincles. "
+"Els fitxers amb biblioteques vinculades s'inclouran a l'exportació i "
+"mantindran els vincles. "
 
 #: src/app/main/ui/exports/files.cljs:157
 msgid "files-export-modal.options.include-libraries.title"
@@ -2344,8 +2350,8 @@ msgstr "Vincula les biblioteques coincidents en importar"
 #: src/app/main/ui/exports/files.cljs:161
 msgid "files-export-modal.options.merge-libraries.message"
 msgstr ""
-"El vostre fitxer s'exportarà amb els recursos de biblioteca fusionats a "
-"labiblioteca local."
+"El vostre fitxer s'exportarà amb els recursos de biblioteca fusionats a la "
+"biblioteca local."
 
 #: src/app/main/ui/exports/files.cljs:160
 msgid "files-export-modal.options.merge-libraries.title"
@@ -2606,7 +2612,7 @@ msgstr "Seleccioneu l'espai de color"
 msgid "inspect.empty.help"
 msgstr ""
 "Si voleu saber més sobre la inspecció del disseny, visiteu el centre "
-"d'ajudadel Penpot"
+"d'ajuda del Penpot"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:239
 msgid "inspect.empty.more"
@@ -2615,8 +2621,8 @@ msgstr "Més informació"
 #: src/app/main/ui/inspect/right_sidebar.cljs:233
 msgid "inspect.empty.select"
 msgstr ""
-"Seleccioneu una forma, un tauler o un grup per a inspeccionar-ne "
-"lespropietats i el codi"
+"Seleccioneu una forma, un tauler o un grup per a inspeccionar-ne les "
+"propietats i el codi"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.layer-info"
@@ -2739,8 +2745,8 @@ msgstr "Tokens d'accés personals"
 msgid "integrations.access-tokens.personal.description"
 msgstr ""
 "Els tokens d'accés personals funcionen com una alternativa al nostre "
-"sistemad'autenticació amb usuari i contrasenya i es poden utilitzar per a "
-"permetreque una aplicació accedeixi a l'API interna del Penpot"
+"sistema d'autenticació amb usuari i contrasenya i es poden utilitzar per a "
+"permetre que una aplicació accedeixi a l'API interna del Penpot"
 
 #: src/app/main/ui/settings/integrations.cljs:68
 msgid "integrations.copy-to-clipboard"
@@ -2814,8 +2820,8 @@ msgstr "Afegiu aquesta configuració al vostre client MCP (p. ex. ~/​​​​
 #: src/app/main/ui/settings/integrations.cljs:193
 msgid "integrations.info.mcp-server"
 msgstr ""
-"El servidor MCP del Penpot permet que els clients MCP "
-"interactuïndirectament amb els fitxers de disseny del Penpot."
+"El servidor MCP del Penpot permet que els clients MCP interactuïn "
+"directament amb els fitxers de disseny del Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:119
 msgid "integrations.mcp-key.will-expire"
@@ -2828,8 +2834,8 @@ msgstr "La clau MCP no té data de caducitat"
 #: src/app/main/ui/settings/integrations.cljs:498
 msgid "integrations.mcp-server.description"
 msgstr ""
-"El servidor MCP del Penpot permet que els clients MCP "
-"interactuïndirectament amb els fitxers de disseny del Penpot."
+"El servidor MCP del Penpot permet que els clients MCP interactuïn "
+"directament amb els fitxers de disseny del Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:415
 #, unused
@@ -2843,8 +2849,8 @@ msgstr "Com configurar els clients MCP"
 #: src/app/main/ui/settings/integrations.cljs:568
 msgid "integrations.mcp-server.mcp-keys.info"
 msgstr ""
-"Aquesta és l'URL del servidor que haureu de configurar al vostre client "
-"MCPper a connectar-lo al servidor MCP del Penpot."
+"Aquesta és l'URL del servidor que haureu de configurar al vostre client MCP "
+"per a connectar-lo al servidor MCP del Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:548
 msgid "integrations.mcp-server.mcp-keys.regenerate"
@@ -2873,14 +2879,14 @@ msgstr "Activat"
 #: src/app/main/ui/settings/integrations.cljs:514
 msgid "integrations.mcp-server.status.expired.0"
 msgstr ""
-"La clau MCP utilitzada per a connectar-vos al servidor MCP ha caducat. "
-"Pertant, no es pot establir la connexió."
+"La clau MCP utilitzada per a connectar-vos al servidor MCP ha caducat. Per "
+"tant, no es pot establir la connexió."
 
 #: src/app/main/ui/settings/integrations.cljs:519
 msgid "integrations.mcp-server.status.expired.1"
 msgstr ""
 "Regenereu la clau MCP i actualitzeu la configuració del vostre client amb "
-"laclau nova."
+"la clau nova."
 
 #: src/app/main/ui/settings/integrations.cljs:489
 msgid "integrations.mcp-server.title"
@@ -2929,8 +2935,8 @@ msgstr "S'ha copiat el token"
 #: src/app/main/ui/settings/integrations.cljs:337
 msgid "integrations.regenerate-mcp-key.info"
 msgstr ""
-"Si regenereu la clau MCP, l'actual es revocarà immediatament. "
-"Qualsevolaplicació que l'utilitzi deixarà de funcionar."
+"Si regenereu la clau MCP, l'actual es revocarà immediatament. Qualsevol "
+"aplicació que l'utilitzi deixarà de funcionar."
 
 #: src/app/main/ui/settings/integrations.cljs:336
 msgid "integrations.regenerate-mcp-key.title"
@@ -2948,7 +2954,7 @@ msgstr "Integracions"
 msgid "integrations.token.info.non-recuperable"
 msgstr ""
 "Aquest token únic no es pot recuperar. Si el perdeu, n'haureu de crear un "
-"denou."
+"de nou."
 
 #: src/app/main/ui/settings/integrations.cljs:120
 msgid "integrations.token.will-expire"
@@ -3374,8 +3380,8 @@ msgstr "Alguna cosa ha fallat."
 #: src/app/main/ui/static.cljs:415
 msgid "labels.internal-error.desc-message-second"
 msgstr ""
-"Podeu tornar a provar l'operació o contacteu amb l'assistència per "
-"informarde l'error."
+"Podeu tornar a provar l'operació o contacteu amb l'assistència per informar "
+"de l'error."
 
 #: src/app/main/ui/static.cljs:411
 msgid "labels.internal-error.main-message"
@@ -3457,8 +3463,8 @@ msgstr "Següent"
 #: src/app/main/ui/static.cljs:353
 msgid "labels.nitrate-not-configured.desc-message"
 msgstr ""
-"Aquesta instància necessita un pas de configuració que arriba amb la "
-"versiómés recent."
+"Aquesta instància necessita un pas de configuració que arriba amb la versió "
+"més recent."
 
 #: src/app/main/ui/static.cljs:356
 msgid "labels.nitrate-not-configured.learn-more"
@@ -3475,8 +3481,8 @@ msgstr "guia tècnica"
 #: src/app/main/ui/static.cljs:341
 msgid "labels.nitrate-unavailable.main-message"
 msgstr ""
-"El Penpot no està disponible temporalment per un problema del "
-"sistema.Torneu-ho a provar d'aquí a una estona."
+"El Penpot no està disponible temporalment per un problema del sistema. "
+"Torneu-ho a provar d'aquí a una estona."
 
 #: src/app/main/ui/dashboard/comments.cljs:120, src/app/main/ui/workspace/comments.cljs:164
 msgid "labels.no-comments-available"
@@ -3776,9 +3782,9 @@ msgstr "Recursos"
 #: src/app/main/ui/static.cljs:545
 msgid "labels.sso-error.desc-message"
 msgstr ""
-"L'inici de sessió amb el proveïdor d'identitat de la vostra organització "
-"nos'ha completat. Pot ser que el proveïdor no estigui disponible o que "
-"elvostre compte encara no figuri al seu directori."
+"L'inici de sessió amb el proveïdor d'identitat de la vostra organització no "
+"s'ha completat. Pot ser que el proveïdor no estigui disponible o que el "
+"vostre compte encara no figuri al seu directori."
 
 #: src/app/main/ui/static.cljs:546
 msgid "labels.sso-error.retry"
@@ -3929,8 +3935,8 @@ msgstr "YouTube"
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"
 msgstr ""
-"Manteniu els vostres dissenys coherents i fàcils d'actualitzar en tots "
-"elsprojectes."
+"Manteniu els vostres dissenys coherents i fàcils d'actualitzar en tots els "
+"projectes."
 
 #: src/app/main/ui/ds/product/loader.cljs:20
 msgid "loader.tips.01.title"
@@ -3947,8 +3953,8 @@ msgstr "Col·laboració en temps real"
 #: src/app/main/ui/ds/product/loader.cljs:25
 msgid "loader.tips.03.message"
 msgstr ""
-"Dissenyeu amb flexibilitat amb controls de disposició familiars, com els "
-"deCSS."
+"Dissenyeu amb flexibilitat amb controls de disposició familiars, com els de "
+"CSS."
 
 #: src/app/main/ui/ds/product/loader.cljs:24
 msgid "loader.tips.03.title"
@@ -3989,8 +3995,8 @@ msgstr "Formats estàndard del web"
 #: src/app/main/ui/ds/product/loader.cljs:35
 msgid "loader.tips.08.message"
 msgstr ""
-"Accelereu el vostre flux de treball amb dreceres pràctiques com Shift + "
-"Aper a l'Auto Layout."
+"Accelereu el vostre flux de treball amb dreceres pràctiques com Shift + A "
+"per a l'Auto Layout."
 
 #: src/app/main/ui/ds/product/loader.cljs:34
 msgid "loader.tips.08.title"
@@ -4007,8 +4013,8 @@ msgstr "Mode clar i fosc"
 #: src/app/main/ui/ds/product/loader.cljs:39
 msgid "loader.tips.10.message"
 msgstr ""
-"Amplieu el Penpot amb plugins creats per la comunitat per a "
-"obtenirfuncionalitats addicionals."
+"Amplieu el Penpot amb plugins creats per la comunitat per a obtenir "
+"funcionalitats addicionals."
 
 #: src/app/main/ui/ds/product/loader.cljs:38
 msgid "loader.tips.10.title"
@@ -4056,8 +4062,8 @@ msgstr "Sòlid"
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
 "La vostra biblioteca està buida. Un cop afegida com a biblioteca "
-"compartida,els recursos que creeu estaran disponibles per a utilitzar-los a "
-"la restadels vostres fitxers. Segur que voleu publicar-la?"
+"compartida, els recursos que creeu estaran disponibles per a utilitzar-los "
+"a la resta dels vostres fitxers. Segur que voleu publicar-la?"
 
 #: src/app/main/data/common.cljs:122
 msgid "modals.add-shared-confirm.accept"
@@ -4077,8 +4083,8 @@ msgstr "Afegeix \"%s\" com a biblioteca compartida"
 #: src/app/main/data/nitrate.cljs:249
 msgid "modals.before-leave-organization.message"
 msgstr ""
-"Sou l'únic membre d'alguns dels equips. Aquests equips se "
-"suprimiranjuntament amb els seus projectes i fitxers."
+"Sou l'únic membre d'alguns dels equips. Aquests equips se suprimiran "
+"juntament amb els seus projectes i fitxers."
 
 #: src/app/main/data/nitrate.cljs:248, src/app/main/ui/dashboard/change_owner.cljs:151
 msgid "modals.before-leave-organization.title"
@@ -4147,9 +4153,9 @@ msgstr "Si suprimiu el compte, perdreu tots els vostres projectes i arxius actua
 #, unused
 msgid "modals.delete-account.info.with-organizations"
 msgstr ""
-"Aquesta acció és irreversible. El vostre compte, la subscripció i "
-"lesorganitzacions se suprimiran immediatament. També perdreu l'accés "
-"alsvostres projectes i fitxers actuals."
+"Aquesta acció és irreversible. El vostre compte, la subscripció i les "
+"organitzacions se suprimiran immediatament. També perdreu l'accés als "
+"vostres projectes i fitxers actuals."
 
 #: src/app/main/ui/settings/delete_account.cljs:83
 msgid "modals.delete-account.owned-organizations.list-title"
@@ -4335,11 +4341,11 @@ msgstr "Elimina el membre de l'equip"
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
-"Els recursos que ja s'hagin utilitzat en aquest fitxer hi romandran "
-"(capdisseny no es farà malbé)."
+"Els recursos que ja s'hagin utilitzat en aquest fitxer hi romandran (cap "
+"disseny no es farà malbé)."
 msgstr[1] ""
-"Els recursos que ja s'hagin utilitzat en aquests fitxers hi romandran "
-"(capdisseny no es farà malbé)."
+"Els recursos que ja s'hagin utilitzat en aquests fitxers hi romandran (cap "
+"disseny no es farà malbé)."
 
 #: src/app/main/ui/dashboard/team.cljs:1477
 msgid "modals.delete-webhook.accept"
@@ -4364,8 +4370,8 @@ msgstr "Edita el webhook"
 #: src/app/main/ui/workspace/tokens/import_from_library.cljs:75
 msgid "modals.import-library-tokens.description"
 msgstr ""
-"La biblioteca té tokens i temes que probablement utilitzen els "
-"seuscomponents."
+"La biblioteca té tokens i temes que probablement utilitzen els seus "
+"components."
 
 #: src/app/main/ui/workspace/tokens/import_from_library.cljs:92
 msgid "modals.import-library-tokens.import"
@@ -4390,8 +4396,8 @@ msgstr "Alguns membres ja són a l'equip. Convidarem la resta."
 #: src/app/main/data/team.cljs:649
 msgid "modals.invite-restricted-members.all-blocked"
 msgstr ""
-"Només es pot convidar membres existents de l'organització. Com que "
-"cappersona de la vostra llista n'és membre, no s'ha enviat cap invitació."
+"Només es pot convidar membres existents de l'organització. Com que cap "
+"persona de la vostra llista n'és membre, no s'ha enviat cap invitació."
 
 #: src/app/main/data/team.cljs:648
 msgid "modals.invite-restricted-members.all-blocked-title"
@@ -4400,9 +4406,9 @@ msgstr "No s'ha enviat cap invitació"
 #: src/app/main/data/team.cljs:192
 msgid "modals.invite-restricted-members.all-organization-members-in-team"
 msgstr ""
-"Només es pot convidar a aquest equip membres de l'organització \"%s\", "
-"itotes aquestes persones ja en són membres. Si necessiteu més "
-"informació,contacteu amb la persona propietària de l'organització."
+"Només es pot convidar a aquest equip membres de l'organització \"%s\", i "
+"totes aquestes persones ja en són membres. Si necessiteu més informació, "
+"contacteu amb la persona propietària de l'organització."
 
 #: src/app/main/ui/dashboard/team.cljs:340
 msgid "modals.invite-restricted-members.blocked-addresses"
@@ -4431,8 +4437,8 @@ msgstr "Algunes persones de la vostra llista no rebran les invitacions."
 #: src/app/main/ui/dashboard/team.cljs:278
 msgid "modals.invite-team-member.text"
 msgstr ""
-"Podeu convidar membres a l'equip perquè puguin accedir a aquest fitxer i "
-"atots els fitxers de l'equip."
+"Podeu convidar membres a l'equip perquè puguin accedir a aquest fitxer i a "
+"tots els fitxers de l'equip."
 
 #: src/app/main/data/team.cljs:195, src/app/main/ui/dashboard/team.cljs:272, src/app/main/ui/dashboard/team_form.cljs:155
 msgid "modals.invite-team-member.title"
@@ -4456,7 +4462,9 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/change_owner.cljs:53
 msgid "modals.leave-and-reassign.hint1"
-msgstr "Sou el propietari de %s."
+msgstr ""
+"Sou el propietari d’aquest equip. Seleccioneu una altra persona integrant "
+"per a promoure-la al rol de propietat."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:76, src/app/main/ui/dashboard/change_owner.cljs:183
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -4486,19 +4494,19 @@ msgstr "S'està abandonant l'equip"
 msgid "modals.leave-organization-and-reassign.hint"
 msgstr ""
 "Sou propietari d'alguns equips de l'organització. Promoveu un altre membre "
-"apropietari."
+"a propietari."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:161
 msgid "modals.leave-organization-and-reassign.hint-delete"
 msgstr ""
-"Sou l'únic membre d'alguns dels equips. Aquests equips se "
-"suprimiranjuntament amb els seus projectes i fitxers."
+"Sou l'únic membre d'alguns dels equips. Aquests equips se suprimiran "
+"juntament amb els seus projectes i fitxers."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:163
 msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr ""
-"A més, sou propietari d'alguns equips de l'organització. Promoveu un "
-"altremembre a propietari."
+"A més, sou propietari d'alguns equips de l'organització. Promoveu un altre "
+"membre a propietari."
 
 #: src/app/main/data/nitrate.cljs:250, src/app/main/data/nitrate.cljs:259
 msgid "modals.leave-organization-confirm.accept"
@@ -4507,8 +4515,8 @@ msgstr "Abandona l'organització"
 #: src/app/main/data/nitrate.cljs:258
 msgid "modals.leave-organization-confirm.message"
 msgstr ""
-"Perdreu permanentment l'accés a tots els equips, projectes i fitxers que "
-"hiha."
+"Perdreu permanentment l'accés a tots els equips, projectes i fitxers que hi "
+"ha."
 
 #: src/app/main/data/nitrate.cljs:257
 msgid "modals.leave-organization-confirm.title"
@@ -4549,8 +4557,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:490
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
-"Actualment sou el propietari de l'equip. Segur que voleu ascendir aquest "
-"usuari a propietari?"
+"Actualment sou el propietari de l'equip. Segur que voleu transferir la "
+"propietat de l'equip a %s?"
 
 #: src/app/main/ui/dashboard/team.cljs:489
 msgid "modals.promote-owner-confirm.title"
@@ -4592,8 +4600,8 @@ msgstr "Elimina de l'organització"
 #: src/app/main/data/nitrate.cljs:304
 msgid "modals.remove-team-organization.info"
 msgstr ""
-"Els projectes i els fitxers continuaran disponibles per als membres "
-"del'equip, però la configuració de l'organització ja no s'aplicarà."
+"Els projectes i els fitxers continuaran disponibles per als membres de "
+"l'equip, però la configuració de l'organització ja no s'aplicarà."
 
 #: src/app/main/data/nitrate.cljs:303
 msgid "modals.remove-team-organization.text"
@@ -4728,9 +4736,9 @@ msgstr "Contacteu amb vendes"
 #: src/app/main/ui/settings/subscription.cljs:894
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
-"Per a canviar a aquest pla, contacteu amb el nostre equip de vendes. "
-"Usajudarem a actualitzar la vostra subscripció i ens assegurarem que tot "
-"quediconfigurat correctament."
+"Per a canviar a aquest pla, contacteu amb el nostre equip de vendes. Us "
+"ajudarem a actualitzar la vostra subscripció i ens assegurarem que tot "
+"quedi configurat correctament."
 
 #: src/app/main/ui/settings/subscription.cljs:880
 msgid "nitrate.contact-sales.downgrade-organization-deleted"
@@ -4739,14 +4747,14 @@ msgstr "La vostra organització s'eliminarà."
 #: src/app/main/ui/settings/subscription.cljs:882
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
-"El vostre emmagatzematge total, l'historial de versions automàtiques i "
-"elperíode de recuperació de fitxers es limitaran."
+"El vostre emmagatzematge total, l'historial de versions automàtiques i el "
+"període de recuperació de fitxers es limitaran."
 
 #: src/app/main/ui/settings/subscription.cljs:881
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
-"Els equips, els projectes i els fitxers deixaran de formar part de "
-"caporganització, però continuaran disponibles."
+"Els equips, els projectes i els fitxers deixaran de formar part de cap "
+"organització, però continuaran disponibles."
 
 #: src/app/main/ui/settings/subscription.cljs:878
 msgid "nitrate.contact-sales.downgrade-title"
@@ -4760,7 +4768,7 @@ msgstr "Voleu canviar al pla %s?"
 msgid "nitrate.form.cancel-anytime"
 msgstr ""
 "El pagament es processarà al final del període de prova. Podeu cancel·lar "
-"enqualsevol moment."
+"en qualsevol moment."
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:120
 msgid "nitrate.form.contact-trial"
@@ -4786,8 +4794,8 @@ msgstr "Introduïu el codi d'activació"
 #: src/app/main/ui/settings/subscription.cljs:832
 msgid "nitrate.form.enterprise-description"
 msgstr ""
-"Ara mateix no se us cobrarà res. El pagament es processarà al final "
-"delperíode de prova. Podeu cancel·lar en qualsevol moment."
+"Ara mateix no se us cobrarà res. El pagament es processarà al final del "
+"període de prova. Podeu cancel·lar en qualsevol moment."
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:83
 msgid "nitrate.form.enterprise-feature-1"
@@ -4796,20 +4804,20 @@ msgstr "Permisos globals i granulars per a equips i projectes"
 #: src/app/main/ui/nitrate/nitrate_form.cljs:85
 msgid "nitrate.form.enterprise-feature-2"
 msgstr ""
-"Control centralitzat sobre qui fa què i on, des d'una "
-"consolad'administració dedicada"
+"Control centralitzat sobre qui fa què i on, des d'una consola "
+"d'administració dedicada"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:87
 msgid "nitrate.form.enterprise-feature-3"
 msgstr ""
 "Llibertat total del codi obert, amb la governança que la vostra "
-"organitzaciónecessita"
+"organització necessita"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:827, src/app/main/ui/settings/subscription.cljs:849
 msgid "nitrate.form.enterprise-intro"
 msgstr ""
-"Tot el que els vostres equips necessiten per a treballar de manera segura "
-"agran escala%s"
+"Tot el que els vostres equips necessiten per a treballar de manera segura a "
+"gran escala%s"
 
 #: src/app/main/ui/nitrate/nitrate_form.cljs:92
 msgid "nitrate.form.enterprise.price"
@@ -4858,8 +4866,8 @@ msgstr "Cancel·leu la subscripció"
 #: src/app/main/ui/settings/subscription.cljs:932
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr ""
-"Per a cancel·lar la vostra subscripció a l'Enterprise, contacteu "
-"ambnosaltres a:"
+"Per a cancel·lar la vostra subscripció a l'Enterprise, contacteu amb "
+"nosaltres a:"
 
 #: src/app/main/ui/settings/subscription.cljs:111
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -4906,14 +4914,14 @@ msgstr "Ja heu sol·licitat accés a aquest fitxer."
 #: src/app/main/ui/static.cljs:274
 msgid "not-found.no-permission.already-requested.or-others.file"
 msgstr ""
-"Ja heu sol·licitat accés a aquest fitxer o a altres fitxers o "
-"projectesd'aquest equip."
+"Ja heu sol·licitat accés a aquest fitxer o a altres fitxers o projectes "
+"d'aquest equip."
 
 #: src/app/main/ui/static.cljs:280
 msgid "not-found.no-permission.already-requested.or-others.project"
 msgstr ""
-"Ja heu sol·licitat accés a aquest projecte o a altres projectes o "
-"fitxersd'aquest equip."
+"Ja heu sol·licitat accés a aquest projecte o a altres projectes o fitxers "
+"d'aquest equip."
 
 #: src/app/main/ui/static.cljs:279
 msgid "not-found.no-permission.already-requested.project"
@@ -4966,8 +4974,8 @@ msgstr "Per a accedir a aquest projecte, podeu demanar-ho al propietari de l'equ
 #: src/app/main/data/common.cljs:91
 msgid "notifications.by-code.maintenance"
 msgstr ""
-"Pausa de manteniment: d'aquí a 5 minuts estarem fora de servei per un "
-"breumanteniment."
+"Pausa de manteniment: d'aquí a 5 minuts estarem fora de servei per un breu "
+"manteniment."
 
 #: src/app/main/data/common.cljs:84
 msgid "notifications.by-code.upgrade-version"
@@ -5015,14 +5023,14 @@ msgstr "S'ha enviat un correu electrònic de verificació a %s. Reviseu el corre
 #, unused
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Heu de saber que hi ha molts recursos disponibles per a ajudar-vos "
-"acomençar amb el Penpot, com la guia d'usuari i el nostre canal de Youtube."
+"Heu de saber que hi ha molts recursos disponibles per a ajudar-vos a "
+"començar amb el Penpot, com la guia d'usuari i el nostre canal de Youtube."
 
 #, unused
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
-"Informació detallada sobre com utilitzar el Penpot. Des del "
-"prototipatgefins a organitzar o compartir dissenys."
+"Informació detallada sobre com utilitzar el Penpot. Des del prototipatge "
+"fins a organitzar o compartir dissenys."
 
 #, unused
 msgid "onboarding-v2.before-start.desc2.title"
@@ -5044,15 +5052,15 @@ msgstr "Abans de començar"
 #, unused
 msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"Subscriviu-vos al butlletí del Penpot per a estar al dia del progrés "
-"delproducte i de les novetats."
+"Subscriviu-vos al butlletí del Penpot per a estar al dia del progrés del "
+"producte i de les novetats."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:88
 #, unused
 msgid "onboarding-v2.newsletter.news"
 msgstr ""
-"Vull rebre notícies sobre el Penpot (articles del blog, tutorials en "
-"vídeo,emissions...)."
+"Vull rebre notícies sobre el Penpot (articles del blog, tutorials en vídeo, "
+"emissions...)."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:96
 #, unused
@@ -5063,28 +5071,27 @@ msgstr "Ens importa la privadesa, aquí podeu llegir la nostra "
 #, unused
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"Només us enviarem correus rellevants. Podeu donar-vos de baixa en "
-"qualsevolmoment mitjançant l'enllaç de baixa de qualsevol dels nostres "
-"butlletins."
+"Només us enviarem correus rellevants. Podeu donar-vos de baixa en qualsevol "
+"moment mitjançant l'enllaç de baixa de qualsevol dels nostres butlletins."
 
 #: src/app/main/ui/auth/register.cljs:35
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
-"Vull rebre actualitzacions del producte (funcionalitats noves, "
-"versions,correccions...)."
+"Vull rebre actualitzacions del producte (funcionalitats noves, versions, "
+"correccions...)."
 
 #, unused
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
-"El Penpot és de codi obert i el fan Kaleidos i la comunitat, on molta "
-"gentja s'ajuda mútuament. Tothom hi pot col·laborar:"
+"El Penpot és de codi obert i el fan Kaleidos i la comunitat, on molta gent "
+"ja s'ajuda mútuament. Tothom hi pot col·laborar:"
 
 #, unused
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
-"Un espai públic per a aprendre, compartir i debatre sobre el Penpot, el "
-"seupresent i el seu futur, amb tota la comunitat i l'equip principal "
-"delPenpot."
+"Un espai públic per a aprendre, compartir i debatre sobre el Penpot, el seu "
+"present i el seu futur, amb tota la comunitat i l'equip principal del "
+"Penpot."
 
 #, unused
 msgid "onboarding-v2.welcome.desc2.title"
@@ -5093,8 +5100,8 @@ msgstr "Participar en la comunitat"
 #, unused
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"On trobareu com col·laborar amb traduccions, peticions de "
-"funcionalitats,contribucions al nucli, caça d'errors…"
+"On trobareu com col·laborar amb traduccions, peticions de funcionalitats, "
+"contribucions al nucli, caça d'errors…"
 
 #, unused
 msgid "onboarding-v2.welcome.desc3.title"
@@ -5153,15 +5160,15 @@ msgstr "Convida membres"
 #: src/app/main/ui/onboarding/team_choice.cljs:226
 msgid "onboarding.choice.team-up.invite-members-desc"
 msgstr ""
-"Desenvolupadors, dissenyadors, gestors... tothom és benvingut. "
-"Podreuconvidar més gent més tard."
+"Desenvolupadors, dissenyadors, gestors... tothom és benvingut. Podreu "
+"convidar més gent més tard."
 
 #: src/app/main/ui/onboarding/team_choice.cljs:187
 #, unused
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Recordeu d'incloure tothom. Desenvolupadors, dissenyadors, gestors... "
-"Ladiversitat suma :)"
+"Recordeu d'incloure tothom. Desenvolupadors, dissenyadors, gestors... La "
+"diversitat suma :)"
 
 #: src/app/main/ui/dashboard/team.cljs:292
 msgid "onboarding.choice.team-up.roles"
@@ -5270,8 +5277,8 @@ msgstr "Què us ha portat avui al Penpot?"
 msgid "onboarding.questions.step1.subtitle"
 msgstr ""
 "Expliqueu-nos una mica qui sou per a ajudar-nos a fer que el Penpot "
-"funcioniper a vosaltres. Les vostres respostes ens ajudaran a "
-"prioritzarfuncionalitats noves i a orientar-vos per a començar."
+"funcioni per a vosaltres. Les vostres respostes ens ajudaran a prioritzar "
+"funcionalitats noves i a orientar-vos per a començar."
 
 #: src/app/main/ui/onboarding/questions.cljs:107
 msgid "onboarding.questions.step1.title"
@@ -5381,8 +5388,8 @@ msgstr "Crea un equip"
 #: src/app/main/ui/onboarding/team_choice.cljs:54
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
-"Un equip us permet col·laborar amb altres usuaris del Penpot treballant "
-"enels mateixos fitxers i projectes."
+"Un equip us permet col·laborar amb altres usuaris del Penpot treballant en "
+"els mateixos fitxers i projectes."
 
 #: src/app/main/ui/onboarding/team_choice.cljs:58
 msgid "onboarding.team-modal.create-team-feature-1"
@@ -5806,8 +5813,8 @@ msgstr "Si la deseu, aquesta drecera tornarà al valor original:"
 #: src/app/main/ui/shortcuts.cljs:574
 msgid "shortcuts.edit-modal.success"
 msgstr ""
-"Aquesta combinació de tecles està disponible i es pot assignar "
-"senseconflictes."
+"Aquesta combinació de tecles està disponible i es pot assignar sense "
+"conflictes."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
 msgid "shortcuts.edit-on-settings"
@@ -6145,8 +6152,8 @@ msgstr "Refés"
 #: src/app/main/ui/settings/shortcuts.cljs:479
 msgid "shortcuts.reload-hint"
 msgstr ""
-"Després d'editar les dreceres, recarregueu les altres pestanyes obertes "
-"delPenpot per aplicar els canvis."
+"Després d'editar les dreceres, recarregueu les altres pestanyes obertes del "
+"Penpot per aplicar els canvis."
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:168
 #, unused
@@ -6279,7 +6286,7 @@ msgstr "Mostra/Amaga l'historial"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
 #, unused
 msgid "shortcuts.toggle-layers"
-msgstr "Commutales capes"
+msgstr "Commuta les capes"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:193
 #, unused
@@ -6379,9 +6386,9 @@ msgstr "Amplia a la selecció"
 #: src/app/main/ui/dashboard/subscription.cljs:207
 msgid "subscription.banner.create-organization-info"
 msgstr ""
-"Creeu una organització i descobriu exactament com funciona "
-"l'Enterprise.Definiu regles, gestioneu els vostres equips i descobriu un "
-"nou nivell decontrol sobre el vostre flux de treball de disseny."
+"Creeu una organització i descobriu exactament com funciona l'Enterprise. "
+"Definiu regles, gestioneu els vostres equips i descobriu un nou nivell de "
+"control sobre el vostre flux de treball de disseny."
 
 #: src/app/main/ui/dashboard/subscription.cljs:205
 msgid "subscription.banner.see-enterprise"
@@ -6438,8 +6445,8 @@ msgstr "Desbloquegeu les funcions Enterprise"
 #: src/app/main/ui/dashboard/subscription.cljs:219
 msgid "subscription.dashboard.banner.unlock-features-description-text"
 msgstr ""
-"Definiu permisos granulars i manteniu el control, sense renunciar a "
-"lallibertat del codi obert que tant agrada al vostre equip."
+"Definiu permisos granulars i manteniu el control, sense renunciar a la "
+"llibertat del codi obert que tant agrada al vostre equip."
 
 #: src/app/main/ui/dashboard/subscription.cljs:224
 msgid "subscription.dashboard.banner.upgrade-nitrate"
@@ -6461,7 +6468,7 @@ msgstr "Milloreu-ho!"
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
 "Obteniu emmagatzematge addicional, recuperació de fitxers i molt més per "
-"alsvostres equips."
+"als vostres equips."
 
 #: src/app/main/ui/dashboard/subscription.cljs:85
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -6476,8 +6483,8 @@ msgstr "Subscriviu-vos"
 #, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
-"Us agrada el període de prova? Desbloquegeu l'accés complet per "
-"asempre.[Subscriviu-vos|target:self](%s)"
+"Us agrada el període de prova? Desbloquegeu l'accés complet per a "
+"sempre.[Subscriviu-vos|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:96
 msgid "subscription.dashboard.power-up.trial.top-title"
@@ -6492,8 +6499,8 @@ msgstr "Pla Unlimited"
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Obteniu emmagatzematge il·limitat, recuperació de fitxers ampliada i "
-"editorsil·limitats per a tots els vostres equips a un preu fix. [Feu una "
-"ullada alpla Enterprise.|target:self](%s)"
+"editors il·limitats per a tots els vostres equips a un preu fix. [Feu una "
+"ullada al pla Enterprise.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -6505,7 +6512,7 @@ msgstr "Feu-hi una ullada"
 msgid "subscription.dashboard.power-up.unlimited.top-description"
 msgstr ""
 "Editors addicionals, emmagatzematge i versions desades automàticament, "
-"còpiade seguretat de fitxers i molt més."
+"còpia de seguretat de fitxers i molt més."
 
 #: src/app/main/ui/dashboard/subscription.cljs:84, src/app/main/ui/dashboard/subscription.cljs:95, src/app/main/ui/dashboard/subscription.cljs:102, src/app/main/ui/dashboard/subscription.cljs:111, src/app/main/ui/dashboard/subscription.cljs:116
 msgid "subscription.dashboard.power-up.your-subscription"
@@ -6514,16 +6521,16 @@ msgstr "La vostra subscripció:"
 #: src/app/main/ui/dashboard/subscription.cljs:349
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
-"Teniu %s editors als vostres equips, mentre que el vostre pla "
-"Professionalen cobreix fins a 8."
+"Teniu %s editors als vostres equips, mentre que el vostre pla Professional "
+"en cobreix fins a 8."
 
 #: src/app/main/ui/dashboard/subscription.cljs:357
 #, markdown
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
-"Canvieu ara a Unlimited o Enterprise per a desbloquejar més "
-"editors,emmagatzematge i recuperació de fitxers. "
-"[Subscriviu-vosara.|target:self](%s)"
+"Canvieu ara a Unlimited o Enterprise per a desbloquejar més editors, "
+"emmagatzematge i recuperació de fitxers. [Subscriviu-vos "
+"ara.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:290
 msgid "subscription.dashboard.team-plan"
@@ -6533,7 +6540,7 @@ msgstr "Pla d'equip"
 msgid "subscription.dashboard.unlimited-dashboard-cta-title"
 msgstr ""
 "El vostre equip continua creixent! El vostre pla Unlimited cobreix fins a "
-"%seditors, però ara en teniu %s."
+"%s editors, però ara en teniu %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:360
 #, markdown
@@ -6545,9 +6552,9 @@ msgstr ""
 #: src/app/main/ui/dashboard/subscription.cljs:337
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
-"Només els editors nous dels vostres equips comptaran per a la "
-"facturaciófutura. Es continuarà aplicant una tarifa plana de 175 $/mes per "
-"a 25 o méseditors."
+"Només els editors nous dels vostres equips comptaran per a la facturació "
+"futura. Es continuarà aplicant una tarifa plana de 175 $/mes per a 25 o més "
+"editors."
 
 #: src/app/main/ui/dashboard/subscription.cljs:333
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
@@ -6565,8 +6572,8 @@ msgstr "El pagament no s'ha completat. Torneu-ho a intentar quan vulgueu."
 #: src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:448
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
-"El pagament no s'ha completat. Torneu-ho a intentar. Si el "
-"problemacontinua, contacteu amb nosaltres: support@penpot.app."
+"El pagament no s'ha completat. Torneu-ho a intentar. Si el problema "
+"continua, contacteu amb nosaltres: support@penpot.app."
 
 #: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:545, src/app/main/ui/settings/subscription.cljs:606
 msgid "subscription.labels"
@@ -6631,20 +6638,20 @@ msgstr "Gestió multiorganització:"
 #: src/app/main/ui/settings/subscription.cljs:618, src/app/main/ui/settings/subscription.cljs:775
 msgid "subscription.settings.enterprise.nitrate.native-sso"
 msgstr ""
-"SAML/SSO natiu i registre complet d'auditoria (Audit Trail) per a "
-"informesde compliment."
+"SAML/SSO natiu i registre complet d'auditoria (Audit Trail) per a informes "
+"de compliment."
 
 #: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
 msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
 msgstr ""
-"Llista blanca granular de complements (plugins), inclòs el nostre "
-"servidorMCP segur i aïllat per a la connectivitat amb IA."
+"Llista blanca granular de complements (plugins), inclòs el nostre servidor "
+"MCP segur i aïllat per a la connectivitat amb IA."
 
 #: src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:773
 msgid "subscription.settings.enterprise.nitrate.support-team"
 msgstr ""
-"Compatibilitat amb jerarquies d'equips complexes i "
-"suborganitzacionsindependents."
+"Compatibilitat amb jerarquies d'equips complexes i suborganitzacions "
+"independents."
 
 #: src/app/main/ui/settings/subscription.cljs:676, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:757
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
@@ -6661,10 +6668,10 @@ msgstr "Afegiu les dades de pagament"
 #: src/app/main/ui/settings/subscription.cljs:336
 msgid "subscription.settings.management-dialog.step-2-description"
 msgstr ""
-"Afegiu ara les vostres dades de pagament perquè la vostra "
-"subscripciócontinuï funcionant sense problemes després del període de prova "
-"i continueudonant suport al nostre projecte de codi obert. De moment no se "
-"us farà capcàrrec."
+"Afegiu ara les vostres dades de pagament perquè la vostra subscripció "
+"continuï funcionant sense problemes després del període de prova i "
+"continueu donant suport al nostre projecte de codi obert. De moment no se "
+"us farà cap càrrec."
 
 #: src/app/main/ui/settings/subscription.cljs:344
 msgid "subscription.settings.management-dialog.step-2-skip-button"
@@ -6684,7 +6691,7 @@ msgstr[1] "Actualment teniu %s persones als vostres equips que poden editar."
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "Atenció: si canvieu a un pla inferior, tindreu menys emmagatzematge i "
-"còpiesde seguretat i un historial de versions més curts."
+"còpies de seguretat i un historial de versions més curts."
 
 #: src/app/main/ui/settings/subscription.cljs:138
 msgid "subscription.settings.management.dialog.editors"
@@ -6692,20 +6699,22 @@ msgstr "Editors"
 
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.management.dialog.editors-explanation"
-msgstr "(Propietaris, administradors i editors. Els lectors no compten com aeditors)"
+msgstr ""
+"(Propietaris, administradors i editors. Els lectors no compten com a "
+"editors)"
 
 #: src/app/main/ui/settings/subscription.cljs:314
 msgid "subscription.settings.management.dialog.input-error"
 msgstr ""
 "No podeu fixar un nombre d'editors inferior al que teniu ara. Canvieu el "
-"rol(d'editor/administrador a lector) de les persones que no editen fitxers "
-"a laconfiguració de l'equip."
+"rol (d'editor/administrador a lector) de les persones que no editen fitxers "
+"a la configuració de l'equip."
 
 #: src/app/main/ui/settings/subscription.cljs:310
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr ""
-"El càrrec es farà després del període de prova. Ara mateix no cal "
-"captargeta de crèdit."
+"El càrrec es farà després del període de prova. Ara mateix no cal cap "
+"targeta de crèdit."
 
 #: src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:307
 #, markdown
@@ -6719,9 +6728,9 @@ msgstr "Apliqueu %s als vostres equips"
 #: src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr ""
-"Consell: podeu augmentar ara el nombre de seients per a avançar-vos a "
-"lesinvitacions. Amb 25 o més editors en tots els equips, gaudireu d'una "
-"tarifaplana de 175 $ al mes."
+"Consell: podeu augmentar ara el nombre de seients per a avançar-vos a les "
+"invitacions. Amb 25 o més editors en tots els equips, gaudireu d'una tarifa "
+"plana de 175 $ al mes."
 
 #: src/app/main/ui/settings/subscription.cljs:709
 msgid "subscription.settings.member-since"
@@ -7020,9 +7029,9 @@ msgstr "Guia de resolució de problemes"
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:62
 msgid "webgl.modals.webgl-unavailable.message"
 msgstr ""
-"WebGL no està disponible al vostre navegador, i és necessari perquè "
-"elPenpot funcioni. Comproveu la configuració del navegador i/o tanqueu "
-"lespestanyes que consumeixin molts gràfics."
+"WebGL no està disponible al vostre navegador, i és necessari perquè el "
+"Penpot funcioni. Comproveu la configuració del navegador i/o tanqueu les "
+"pestanyes que consumeixin molts gràfics."
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
 msgid "webgl.modals.webgl-unavailable.title"
@@ -7031,8 +7040,8 @@ msgstr "Vaja! WebGL no està disponible"
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
 msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
 msgstr ""
-"per a revisar la configuració del navegador, l'acceleració de GPU, "
-"elscontroladors i els problemes habituals del sistema."
+"per a revisar la configuració del navegador, l'acceleració de GPU, els "
+"controladors i els problemes habituals del sistema."
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
 msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
@@ -7315,8 +7324,8 @@ msgstr "Els components no es poden niar dins d'ells mateixos."
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:512
 msgid "workspace.component.switch.loop-error-multi"
 msgstr ""
-"No s'han pogut intercanviar algunes còpies. Els components no es poden "
-"niardins d'ells mateixos."
+"No s'han pogut intercanviar algunes còpies. Els components no es poden niar "
+"dins d'ells mateixos."
 
 #: src/app/main/ui/workspace/context_menu.cljs:980
 msgid "workspace.context-menu.grid-cells.area"
@@ -7950,8 +7959,8 @@ msgstr "Selecció del tipus de difuminat"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:153
 msgid "workspace.options.blur-options.disabled-blur-label"
 msgstr ""
-"El difuminat del fons només funciona amb el renderatge nou. Canvieu "
-"alrenderatge nou al menú de preferències per a utilitzar aquest efecte"
+"El difuminat del fons només funciona amb el renderatge nou. Canvieu al "
+"renderatge nou al menú de preferències per a utilitzar aquest efecte"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:98, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
 msgid "workspace.options.blur-options.layer-blur"
@@ -8037,8 +8046,8 @@ msgstr "Localitza les variants en conflicte"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:579
 msgid "workspace.options.component.variant.duplicated.copy.title"
 msgstr ""
-"Aquest component té variants en conflicte. Assegureu-vos que cada "
-"varianttingui un conjunt únic de propietats i valors."
+"Aquest component té variants en conflicte. Assegureu-vos que cada variant "
+"tingui un conjunt únic de propietats i valors."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1349
 msgid "workspace.options.component.variant.duplicated.group.locate"
@@ -8052,25 +8061,25 @@ msgstr "Algunes variants tenen propietats i valors idèntics"
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr ""
 "Aquestes variants tenen propietats i valors idèntics. Ajusteu els valors "
-"pertal que es puguin recuperar."
+"per tal que es puguin recuperar."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:264
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr ""
-"Aquesta variant té propietats i valors idèntics als d'una altra "
-"variant.Ajusteu els valors per tal que es puguin recuperar."
+"Aquesta variant té propietats i valors idèntics als d'una altra variant. "
+"Ajusteu els valors per tal que es puguin recuperar."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:270
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr ""
-"Algunes d'aquestes variants tenen propietats i valors idèntics. Ajusteu "
-"elsvalors per tal que es puguin recuperar."
+"Algunes d'aquestes variants tenen propietats i valors idèntics. Ajusteu els "
+"valors per tal que es puguin recuperar."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:569
 msgid "workspace.options.component.variant.malformed.copy"
 msgstr ""
-"Aquest component té variants amb noms no vàlids. Assegureu-vos que "
-"cadavariant segueixi l'estructura correcta."
+"Aquest component té variants amb noms no vàlids. Assegureu-vos que cada "
+"variant segueixi l'estructura correcta."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1339
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -8107,14 +8116,14 @@ msgstr "Proveu d'utilitzar l'estructura següent:"
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
 msgid "workspace.options.component.variants-help-modal.intro"
 msgstr ""
-"Per a conservar els canvis en canviar de variant, el Penpot connecta "
-"lescapes que:"
+"Per a conservar els canvis en canviar de variant, el Penpot connecta les "
+"capes que:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
 msgid "workspace.options.component.variants-help-modal.outro"
 msgstr ""
-"Si en canvieu alguna (p. ex., canviant el nom d'una capa o agrupant-la), "
-"laconnexió es trenca, però es restaura si desfeu el canvi."
+"Si en canvieu alguna (p. ex., canviant el nom d'una capa o agrupant-la), la "
+"connexió es trenca, però es restaura si desfeu el canvi."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
 msgid "workspace.options.component.variants-help-modal.rule1"
@@ -8128,7 +8137,7 @@ msgstr "Són del mateix tipus."
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr ""
 "Els rectangles, les el·lipses, els camins i les operacions booleanes "
-"comptencom el mateix tipus."
+"compten com el mateix tipus."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
@@ -8201,7 +8210,9 @@ msgstr "Exporta la selecció"
 
 #: src/app/main/ui/inspect/exports.cljs:218, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:275
 msgid "workspace.options.export-object"
-msgstr "Exporta 1 element"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exporta 1 element"
+msgstr[1] "Exporta %s elements"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:214
 msgid "workspace.options.export.add-export"
@@ -9171,8 +9182,8 @@ msgstr "Traç per costat"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
 msgid "workspace.options.stroke.per-side-disabled"
 msgstr ""
-"La funció de traç per costat només està disponible amb el renderatge "
-"nou.Canvieu el renderatge per a utilitzar-la."
+"La funció de traç per costat només està disponible amb el renderatge nou. "
+"Canvieu el renderatge per a utilitzar-la."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:273, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
 msgid "workspace.options.stroke.remove-stroke"
@@ -9414,8 +9425,8 @@ msgstr "ACTUALITZA AQUESTA EXTENSIÓ"
 #: src/app/main/ui/workspace/plugins.cljs:428
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
-"L'extensió s'ha modificat des de la darrera vegada que l'heu oberta. "
-"Aratambé vol accedir a:"
+"L'extensió s'ha modificat des de la darrera vegada que l'heu oberta. Ara "
+"també vol accedir a:"
 
 #: src/app/main/ui/workspace/plugins.cljs:297
 msgid "workspace.plugins.permissions.allow-download"
@@ -9453,8 +9464,8 @@ msgstr "Llegeix i modifica el contingut dels fitxers als quals teniu accés."
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
 "Tingueu en compte que un tercer ha creat aquesta extensió; assegureu-vos "
-"quehi confieu abans de concedir-hi accés. La vostra privadesa i seguretat "
-"sónimportants per a nosaltres. Si teniu cap dubte, contacteu amb "
+"que hi confieu abans de concedir-hi accés. La vostra privadesa i seguretat "
+"són importants per a nosaltres. Si teniu cap dubte, contacteu amb "
 "l'assistència."
 
 #: src/app/main/ui/workspace/plugins.cljs:277
@@ -9501,7 +9512,7 @@ msgstr "ARA NO"
 msgid "workspace.plugins.try-out.message"
 msgstr ""
 "Voleu fer-hi una ullada? S'obrirà en un esborrany nou de l'equip actual. "
-"(Sino, sempre la trobareu a les extensions instal·lades de qualsevol "
+"(Si no, sempre la trobareu a les extensions instal·lades de qualsevol "
 "fitxer.)"
 
 #: src/app/main/ui/workspace/plugins.cljs:483
@@ -10068,8 +10079,8 @@ msgstr "Mida de la lletra o {alias}"
 #: src/app/main/data/workspace/tokens/application.cljs:328
 msgid "workspace.tokens.font-variant-not-found"
 msgstr ""
-"Error en definir el pes o l'estil de la lletra. Aquest estil no existeix "
-"enla lletra actual"
+"Error en definir el pes o l'estil de la lletra. Aquest estil no existeix en "
+"la lletra actual"
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:60, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:137
 msgid "workspace.tokens.font-weight-value-enter"
@@ -10116,8 +10127,8 @@ msgstr "En diversos fitxers, el nom o el camí del fitxer seran els noms dels se
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:239
 msgid "workspace.tokens.import-single-file"
 msgstr ""
-"En un fitxer JSON únic, les claus de primer nivell han de ser els noms "
-"delssets de tokens."
+"En un fitxer JSON únic, les claus de primer nivell han de ser els noms dels "
+"sets de tokens."
 
 #: src/app/main/ui/workspace/libraries.cljs:374, src/app/main/ui/workspace/tokens/import/modal.cljs:236
 msgid "workspace.tokens.import-tokens"
@@ -10126,7 +10137,9 @@ msgstr "Importa els tokens"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
 #, unused
 msgid "workspace.tokens.import-tooltip"
-msgstr "En importar un fitxer JSON se sobreescriuran els tokens, sets i temesactuals"
+msgstr ""
+"En importar un fitxer JSON se sobreescriuran els tokens, sets i temes "
+"actuals"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:246, src/app/main/ui/workspace/tokens/import_from_library.cljs:81
 msgid "workspace.tokens.import-warning"
@@ -10139,8 +10152,8 @@ msgstr "Inactiu"
 #: src/app/main/ui/workspace/tokens/management.cljs:75
 msgid "workspace.tokens.inactive-set-description"
 msgstr ""
-"Aquest set no està actiu. Canvieu el tema o activeu aquest set per a "
-"veureels canvis a la vista"
+"Aquest set no està actiu. Canvieu el tema o activeu aquest set per a veure "
+"els canvis a la vista"
 
 #: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:245, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:196
 msgid "workspace.tokens.individual-tokens"
@@ -10215,8 +10228,8 @@ msgstr "No s'ha trobat cap referència"
 #, unused
 msgid "workspace.tokens.no-remap-needed"
 msgstr ""
-"Aquest token no s'utilitza actualment al vostre disseny; no cal "
-"remapejarres."
+"Aquest token no s'utilitza actualment al vostre disseny; no cal remapejar "
+"res."
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:485
 msgid "workspace.tokens.no-sets-create"
@@ -10282,8 +10295,8 @@ msgstr "Canviar el nom de `%s` a `%s` i remapejar tots els tokens d'aquest grup?
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:106
 msgid "workspace.tokens.remap-node-warning-effects"
 msgstr ""
-"Això actualitzarà tots els tokens i referències que utilitzen el nom "
-"anticdels tokens."
+"Això actualitzarà tots els tokens i referències que utilitzen el nom antic "
+"dels tokens."
 
 #: src/app/main/ui/workspace/tokens/remapping_modal.cljs:101
 msgid "workspace.tokens.remap-token-references-title"
@@ -10346,8 +10359,8 @@ msgstr "Edita el tema i gestiona els sets"
 #: src/app/main/ui/workspace/tokens/settings/menu.cljs:90
 msgid "workspace.tokens.setting-description"
 msgstr ""
-"Aquí podeu configurar la mida de la lletra de base, que defineix el "
-"valord'1rem:"
+"Aquí podeu configurar la mida de la lletra de base, que defineix el valor "
+"d'1rem:"
 
 #: src/app/main/ui/workspace/tokens/settings/menu.cljs:83
 msgid "workspace.tokens.settings"
@@ -10436,7 +10449,7 @@ msgstr "Activa"
 msgid "workspace.tokens.themes-description"
 msgstr ""
 "Aquí podeu gestionar els temes, activar-los o desactivar-los i "
-"configurar-neels sets actius."
+"configurar-ne els sets actius."
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:48, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:82
 msgid "workspace.tokens.themes-list"
@@ -10474,8 +10487,8 @@ msgstr "El nom ha de tenir com a mínim 1 caràcter"
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
 "no és un nom de token vàlid.\n"
-"Els noms de token només han de contenir lletres i dígits separats "
-"percaràcters . i no han de començar amb el signe $."
+"Els noms de token només han de contenir lletres i dígits separats per "
+"caràcters . i no han de començar amb el signe $."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
 #, unused
@@ -10502,9 +10515,9 @@ msgstr "Eines"
 #, unused
 msgid "workspace.tokens.unknown-token-type-message"
 msgstr ""
-"La importació ha anat bé, però s'han omès alguns tokens perquè "
-"utilitzenvalors de $type no disponibles. Desplegueu els detalls per a veure "
-"quinstokens s'han vist afectats."
+"La importació ha anat bé, però s'han omès alguns tokens perquè utilitzen "
+"valors de $type no disponibles. Desplegueu els detalls per a veure quins "
+"tokens s'han vist afectats."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:52
 #, unused
@@ -10524,7 +10537,7 @@ msgstr "El valor no és vàlid"
 msgid "workspace.tokens.warning-name-change"
 msgstr ""
 "En canviar el nom d'aquest token es trencarà qualsevol referència al seu "
-"nomantic"
+"nom antic"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:70
 msgid "workspace.toolbar.arrow"

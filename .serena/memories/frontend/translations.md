@@ -25,7 +25,11 @@ high-coverage support reference, never the base.
 - `en` keys with empty `msgstr` (or `#, fuzzy` + empty): translate from
   `es`/source context, never leave empty.
 - Entries whose `en` uses `msgid_plural` need `msgstr[0]`/`msgstr[1]`
-  (header: `nplurals=2; plural=n != 1`).
+  (header: `nplurals=2; plural=n != 1`). Keep the `msgid_plural` line:
+  a singular `msgstr` on a plural key silently breaks count selection
+  at runtime (the app build reads 1-elem `msgstr` as singular).
+- `sync` re-adds `#, fuzzy` on EVERY run for entries fuzzy in `en`;
+  re-strip after the last sync, never before it.
 - Preserve verbatim: `%s`/`%d`, `{var}`/`{{...}}`, markdown
   `[text](%s)`, HTML tags, `\n` positions, brand names (Penpot),
   key names (Ctrl/Shift/Alt), technical terms (SVG, CSS, HSV, RGB).
@@ -53,7 +57,26 @@ high-coverage support reference, never the base.
 
 ## QA before commit
 
-- Placeholder parity per entry (singular AND each plural form).
+- Run `node ./scripts/check-translations.js -l <locale>` from
+  `frontend/` (also as `pnpm run check-translations` for `ca`):
+  0 errors required; review warnings by hand. New valid words that
+  trip the gate go to `PARAULES_OK` in the script; `--self-test`
+  covers the detector rules.
+- Placeholder parity per entry (singular AND each plural form,
+  also enforced by the script); verify `%s` against the `tr` call
+  site when `en`/`es`/code disagree (a `%s` the code never passes
+  renders literally; a dropped one swallows the argument).
+- Glued words (AI batches drop spaces at wrap boundaries): tokenize
+  `msgstr` against a Catalan frequency list and review every
+  out-of-vocabulary token splittable as function-word + word
+  (`del'equip`, `lapolítica`, `sinecessiteu`), plus `,/.`/`:` without
+  following space, lowercase+Uppercase joins (`delPenpot`,
+  `oCapitalize`), `%s` glued to a word, and entries whose `ca` word
+  count is far below `en`. Known-valid splits, do NOT touch:
+  `compartides`, `edita`, `emplenament`, `desant`, `niar`, `negreta`,
+  `selector`, `atributs`, `sobreescriuran`, adverbs in `-ment`,
+  futures/participles (`desbloquegeu`, `predeterminat`,
+  `seleccionades`, `descarregueu`).
 - Balanced `[]`/`()` in markdown links; no double spaces; no glued
   words around `·`; trailing spaces match the source.
 - `git diff --stat` must touch only `frontend/translations/<locale>.po`.
