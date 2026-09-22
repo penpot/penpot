@@ -219,7 +219,7 @@
            stroke-cap-start stroke-cap-end stroke-color-gradient
            stroke-image stroke-per-side stroke-width-top
            stroke-width-right stroke-width-bottom stroke-width-left]
-  :as stroke}]
+    :as stroke}]
 
   (when (some? stroke)
     (obj/without-empty
