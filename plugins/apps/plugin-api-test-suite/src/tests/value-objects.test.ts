@@ -120,6 +120,10 @@ describe('Value objects', () => {
       stroke.strokeAlignment = 'inner';
       stroke.strokeCapStart = 'round';
       stroke.strokeCapEnd = 'square';
+      stroke.strokeWidthTop = 2;
+      stroke.strokeWidthRight = 3;
+      stroke.strokeWidthBottom = 4;
+      stroke.strokeWidthLeft = 5;
       expect(stroke.strokeColor).toBe('#112233');
       expect(stroke.strokeOpacity).toBeCloseTo(0.7, 2);
       expect(stroke.strokeStyle).toBe('dotted');
@@ -127,6 +131,10 @@ describe('Value objects', () => {
       expect(stroke.strokeAlignment).toBe('inner');
       expect(stroke.strokeCapStart).toBe('round');
       expect(stroke.strokeCapEnd).toBe('square');
+      expect(stroke.strokeWidthTop).toBe(2);
+      expect(stroke.strokeWidthRight).toBe(3);
+      expect(stroke.strokeWidthBottom).toBe(4);
+      expect(stroke.strokeWidthLeft).toBe(5);
     });
 
     test('stroke reference and gradient members round-trip', (ctx) => {

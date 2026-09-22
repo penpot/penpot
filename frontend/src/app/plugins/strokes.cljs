@@ -41,6 +41,22 @@
       {:get (fn [] (:stroke-width @state))
        :set (fn [v] (swap! state assoc :stroke-width v) (on-change!))}
 
+      :strokeWidthTop
+      {:get (fn [] (:stroke-width-top @state))
+       :set (fn [v] (swap! state assoc :stroke-width-top v) (on-change!))}
+
+      :strokeWidthRight
+      {:get (fn [] (:stroke-width-right @state))
+       :set (fn [v] (swap! state assoc :stroke-width-right v) (on-change!))}
+
+      :strokeWidthBottom
+      {:get (fn [] (:stroke-width-bottom @state))
+       :set (fn [v] (swap! state assoc :stroke-width-bottom v) (on-change!))}
+
+      :strokeWidthLeft
+      {:get (fn [] (:stroke-width-left @state))
+       :set (fn [v] (swap! state assoc :stroke-width-left v) (on-change!))}
+
       :strokeAlignment
       {:get (fn [] (format/format-key (:stroke-alignment @state)))
        :set (fn [v] (swap! state assoc :stroke-alignment (parser/parse-keyword v)) (on-change!))}

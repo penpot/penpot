@@ -472,7 +472,11 @@
       "strokeImage",
       "strokeOpacity",
       "strokeStyle",
-      "strokeWidth"
+      "strokeWidth",
+      "strokeWidthBottom",
+      "strokeWidthLeft",
+      "strokeWidthRight",
+      "strokeWidthTop"
     ],
     "SvgRaw": ["type"],
     "Text": [
@@ -7826,6 +7830,30 @@
         "array": false
       },
       "strokeWidth": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthBottom": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthLeft": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthRight": {
+        "decl": "Stroke",
+        "kind": "getset",
+        "type": null,
+        "array": false
+      },
+      "strokeWidthTop": {
         "decl": "Stroke",
         "kind": "getset",
         "type": null,
