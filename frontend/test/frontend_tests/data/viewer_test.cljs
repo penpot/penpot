@@ -122,3 +122,32 @@
           {:keys [params]} (some-> (first events) deref)]
       (t/is (= 1 (count events)))
       (t/is (not (contains? params :zoom))))))
+
+(t/deftest bundle-fetched-with-zoom-fill-url-does-not-navigate
+  ;; Regression test for the React "maximum update depth exceeded"
+  ;; error (2.18.0-RC5): loading the viewer with a URL that already
+  ;; contains `zoom=fill` re-entered the cycle zoom-to-fill →
+  ;; update-zoom-querystring → nav → navigated → zoom-to-fill…,
+  ;; because update-zoom-querystring navigated unconditionally.
+  ;; At HEAD the guard breaks the cycle, so a bundle fetch must not
+  ;; emit any navigation.
+  (let [state (-> (base-state {:frames [{:selrect {:width 100 :height 100}}]
+                               :index  0})
+                  (assoc-in [:route :query-params :zoom] "fill"))]
+    (let [events (watch-events (dv/bundle-fetched
+                                {:file {:id page-id
+                                        :data {:pages [page-id]
+                                               :pages-index {page-id {:objects {}}}}}
+                                 :project {}
+                                 :team {:features []}
+                                 :share-links []
+                                 :libraries []
+                                 :users []
+                                 :permissions {}
+                                 :thumbnails {}})
+                               state)
+          ;; `update-page-position-data` and `go-to-frame-auto` are part
+          ;; of the normal init sequence; the navigation events are the
+          ;; ones that can restart the zoom cycle.
+          navigations (filter #(= :app.main.router/navigate (ptk/type %)) events)]
+      (t/is (empty? navigations)))))
