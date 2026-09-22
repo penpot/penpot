@@ -8,6 +8,36 @@ COPY $BUNDLE_PATH /opt/penpot/mcp/
 
 WORKDIR /opt/penpot/mcp
 
+# pnpm ships as a system binary (same tarball + SHA pin as
+# docker/devenv/Dockerfile); ./setup expects it on PATH.
+# Corepack is gone from Node 25+, so nothing here may use it.
+ARG PNPM_VERSION=12.5.1
+RUN set -eux; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install curl ca-certificates; \
+    rm -rf /var/lib/apt/lists/*; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
+         ;; \
+       amd64|x86_64) \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/pnpm.tar.gz "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/pnpm.tar.gz -C /usr/local/bin pnpm; \
+    chmod 755 /usr/local/bin/pnpm; \
+    rm -f /tmp/pnpm.tar.gz; \
+    pnpm --version;
+
 RUN ./setup
 
 

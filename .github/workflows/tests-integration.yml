@@ -135,8 +135,6 @@ jobs:
       - name: Install deps
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
           pnpm install --frozen-lockfile;
 
       # No-op once the shared volume is warm; keeps the first run working.
@@ -200,8 +198,6 @@ jobs:
       - name: Install deps
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
           pnpm install --frozen-lockfile;
 
       - name: Download blob reports
