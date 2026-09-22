@@ -267,6 +267,21 @@
   margin-block-end: var(--sp-s);
 }
 
+.library-resolution-file-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.library-resolution-file-icon {
+  color: var(--color-foreground-secondary);
+  flex-shrink: 0;
+}
+
+.library-resolution-file-name {
+  color: var(--color-foreground-primary);
+}
+
 .library-resolution-header {
   @include use-typography("body-small");
 
