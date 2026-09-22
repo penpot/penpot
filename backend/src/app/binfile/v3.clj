@@ -12,9 +12,11 @@
    [app.binfile.common :as bfc]
    [app.binfile.migrations :as bfm]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as-alias fmg]
+   [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.media :as cmedia]
@@ -28,6 +30,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -96,9 +99,11 @@
    [:media-id ::sm/uuid]])
 
 (def ^:private schema:file
-  [:merge
+  (sm/merge
    ctf/schema:file
-   [:map [:options {:optional true} ctf/schema:options]]])
+   [:map
+    [:options {:optional true} ctf/schema:options]
+    [:tokens-source {:optional true} ::sm/uuid]]))
 
 ;; --- HELPERS
 
@@ -131,6 +136,9 @@
 
 (def encode-tokens-lib
   (sm/encoder ctob/schema:tokens-lib sm/json-transformer))
+
+(def encode-tokens-status
+  (sm/encoder ctos/schema:tokens-status sm/json-transformer))
 
 (def encode-plugin-data
   (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
@@ -170,6 +178,9 @@
 (def decode-tokens-lib
   (sm/decoder ctob/schema:tokens-lib sm/json-transformer))
 
+(def decode-tokens-status
+  (sm/decoder ctos/schema:tokens-status sm/json-transformer))
+
 (def decode-plugin-data
   (sm/decoder ctpg/schema:plugin-data sm/json-transformer))
 
@@ -207,6 +218,9 @@
 
 (def validate-tokens-lib
   (sm/check-fn ctob/schema:tokens-lib))
+
+(def validate-tokens-status
+  (sm/check-fn ctos/schema:tokens-status))
 
 (def validate-plugin-data
   (sm/check-fn ctpg/schema:plugin-data))
@@ -272,22 +286,24 @@
 
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
-  (let [file         (get-file cfg file-id)
+  (let [file          (get-file cfg file-id)
 
-        media        (->> (bfc/get-file-media cfg file)
-                          (map (fn [media]
-                                 (dissoc media :file-id))))
+        media         (->> (bfc/get-file-media cfg file)
+                           (map (fn [media]
+                                  (dissoc media :file-id))))
 
-        data         (:data file)
-        typographies (:typographies data)
-        components   (:components data)
-        colors       (:colors data)
-        tokens-lib   (:tokens-lib data)
+        data          (:data file)
+        typographies  (:typographies data)
+        components    (:components data)
+        colors        (:colors data)
+        tokens-lib    (:tokens-lib data)
+        tokens-status (:tokens-status data)
+        tokens-source (:tokens-source data)
 
-        pages        (:pages data)
-        pages-index  (:pages-index data)
+        pages         (:pages data)
+        pages-index   (:pages-index data)
 
-        thumbnails   (bfc/get-file-object-thumbnails cfg file-id)]
+        thumbnails    (bfc/get-file-object-thumbnails cfg file-id)]
 
     (events/tap :progress {:section :file :id file-id :name (:name file)})
 
@@ -298,7 +314,10 @@
 
     (let [file (cond-> (select-keys file bfc/file-attrs)
                  (:options data)
-                 (assoc :options (:options data)))
+                 (assoc :options (:options data))
+
+                 (:tokens-source data)
+                 (assoc :tokens-source (:tokens-source data)))
 
           file (-> file
                    (dissoc :data)
@@ -376,7 +395,23 @@
       (let [path           (str "files/" file-id "/tokens.json")
             encoded-tokens (encode-tokens-lib tokens-lib)]
         (events/tap :progress {:section :tokens-lib :file-id file-id})
-        (write-entry! output path encoded-tokens)))))
+        (write-entry! output path encoded-tokens)))
+
+    (when tokens-status
+      (let [path                  (str "files/" file-id "/tokens-status.json")
+            library               (if (and (some? tokens-source)
+                                           (not= tokens-source (:id data)))
+                                    (get-file cfg tokens-source)
+                                    file)
+
+            effective-tokens-lib  (when library
+                                    (dm/get-in library [:data :tokens-lib]))
+
+            encoded-status        (-> (encode-tokens-status tokens-status)
+                                      (cfo/ids->names effective-tokens-lib))]
+
+        (events/tap :progress {:section :tokens-status :file-id file-id})
+        (write-entry! output path encoded-status)))))
 
 (defn- export-files
   [{:keys [::bfc/ids ::bfc/export-type ::output] :as cfg}]
@@ -612,6 +647,10 @@
           (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens"))
           (update-in index [:tokens seg-2] bfc/conj-vec {:entry entry})
 
+          ;; files/<file-id>/tokens-status.json
+          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens-status"))
+          (update-in index [:tokens-status seg-2] bfc/conj-vec {:entry entry})
+
           ;; files/<file-id>/thumbnails/<tag>/<page-id>/<frame-id>.json
           (and (= seg-n 6) (= seg-1 "files") (= seg-3 "thumbnails"))
           (update-in index [:thumbnails seg-2] bfc/conj-vec
@@ -769,6 +808,15 @@
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
+(defn- read-file-tokens-status
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id tokens-lib]
+  (when-let [{:keys [entry]} (first (get-in entries-index [:tokens-status (str file-id)]))]
+    (events/tap :progress {:section :tokens-status :file-id file-id})
+    (->> (read-entry cfg input entry nil)
+         (cfo/names->ids tokens-lib)
+         (decode-tokens-status)
+         (validate-tokens-status))))
+
 (defn- read-file-shapes
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id page-id]
   (->> (get-in entries-index [:shapes (str file-id) (str page-id)])
@@ -816,18 +864,24 @@
        (not-empty)))
 
 (defn- read-file-data
-  [cfg file-id]
-  (let [colors       (read-file-colors cfg file-id)
-        typographies (read-file-typographies cfg file-id)
-        tokens-lib   (read-file-tokens-lib cfg file-id)
-        components   (read-file-components cfg file-id)
-        plugin-data  (read-file-plugin-data cfg file-id)
-        pages        (read-file-pages cfg file-id)]
+  [cfg file-id tokens-source]
+  (let [colors               (read-file-colors cfg file-id)
+        typographies         (read-file-typographies cfg file-id)
+        tokens-lib           (read-file-tokens-lib cfg file-id)
+        effective-tokens-lib (if (and (some? tokens-source)
+                                      (not= tokens-source file-id))
+                               (read-file-tokens-lib cfg tokens-source)
+                               tokens-lib)
+        tokens-status        (read-file-tokens-status cfg file-id effective-tokens-lib)
+        components           (read-file-components cfg file-id)
+        plugin-data          (read-file-plugin-data cfg file-id)
+        pages                (read-file-pages cfg file-id)]
     {:pages (-> pages keys vec)
      :pages-index (into {} pages)
      :colors colors
      :typographies typographies
      :tokens-lib tokens-lib
+     :tokens-status tokens-status
      :components components
      :plugin-data plugin-data}))
 
@@ -888,11 +942,13 @@
 
     (events/tap :progress {:section :file :file-id file-id})
 
-    (let [data (-> (read-file-data cfg file-id)
+    (let [data (-> (read-file-data cfg file-id (:tokens-source file))
                    (d/without-nils)
                    (assoc :id file-id')
                    (cond-> (:options file)
-                     (assoc :options (:options file))))
+                     (assoc :options (:options file)))
+                   (cond-> (:tokens-source file)
+                     (assoc :tokens-source (bfc/lookup-index (:tokens-source file)))))
 
           file (-> (select-keys file bfc/file-attrs)
                    (assoc :id file-id')
@@ -902,7 +958,8 @@
                    (assoc :metadata (d/without-nils
                                      {:generated-by (get manifest :generated-by)
                                       :referer (or (get manifest :referer) (get manifest :refer))}))
-                   (dissoc :options))
+                   (dissoc :options)
+                   (dissoc :tokens-source))
           file  (bfc/process-file cfg file)
           file  (ctf/check-file file)]
 
