@@ -806,8 +806,8 @@ PENPOT_MCP_URI: http://penpot-mcp:4401
 PENPOT_MCP_URI_WS: http://penpot-mcp:4402
 ```
 
-- `PENPOT_MCP_URI`: The URI of the MCP server, used for the streamable HTTP and SSE
-  endpoints.
+- `PENPOT_MCP_URI`: The URI of the MCP server, used for the Streamable HTTP
+  endpoint.
 - `PENPOT_MCP_URI_WS`: The URI of the MCP server used for the websocket connection.
 
 The defaults match the service name used in the official `docker-compose.yaml`. Change

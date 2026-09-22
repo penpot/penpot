@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
-import {
-    Client,
-    SSEClientTransport,
-    StreamableHTTPClientTransport,
-    type CallToolResult,
-    type ListToolsResult,
-} from "@modelcontextprotocol/client";
+import { type CallToolResult, Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { PenpotMcpServer } from "./PenpotMcpServer";
 
 let server: PenpotMcpServer;
@@ -119,21 +113,6 @@ test("supports older Streamable HTTP clients without allocating a session", asyn
         assert.equal(transport.sessionId, undefined);
         const result = await client.listTools();
         assert.ok(result.tools.some((tool) => tool.name === "execute_code"));
-    } finally {
-        await client.close();
-    }
-});
-
-test("preserves legacy SSE tool calls and their connection token", async (t) => {
-    t.mock.method(server.pluginBridge, "executePluginTask", async () => ({
-        data: server.getSessionContext()?.userToken,
-    }));
-    const client = new Client({ name: "sse-test", version: "1" });
-    try {
-        await client.connect(new SSEClientTransport(new URL(`${baseUrl}/sse?userToken=alice`)));
-        const result = await client.callTool({ name: "execute_code", arguments: { code: "return 1;" } });
-        assert.equal(result.content[0].type, "text");
-        assert.equal(JSON.parse(result.content[0].text as string), "alice");
     } finally {
         await client.close();
     }

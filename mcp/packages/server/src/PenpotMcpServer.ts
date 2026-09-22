@@ -4,7 +4,6 @@ import type { Server as HttpServer } from "node:http";
 import type { Express } from "express";
 import { z } from "zod";
 import { AsyncLocalStorage } from "async_hooks";
-import { SSEServerTransport } from "@modelcontextprotocol/server-legacy/sse";
 import { ExecuteCodeTool } from "./tools/ExecuteCodeTool";
 import { PluginBridge } from "./PluginBridge";
 import { RedisBridge } from "./RedisBridge";
@@ -122,8 +121,6 @@ export class PenpotMcpServer {
      * Carries the user token through each request and its asynchronous tool execution.
      */
     private readonly sessionContext = new AsyncLocalStorage<SessionContext>();
-
-    private readonly sseTransports = new Map<string, { transport: SSEServerTransport; userToken?: string }>();
 
     public readonly host: string;
     public readonly port: number;
@@ -307,41 +304,6 @@ export class PenpotMcpServer {
             );
             await this.sessionContext.run({ userToken }, () => handleMcpRequest(req, res, req.body));
         });
-
-        /**
-         * Legacy SSE connection endpoint.
-         */
-        this.app.get("/sse", async (req: any, res: any) => {
-            const userToken = req.query.userToken as string | undefined;
-
-            await this.sessionContext.run({ userToken }, async () => {
-                const transport = new SSEServerTransport("/messages", res);
-                this.sseTransports.set(transport.sessionId, { transport, userToken });
-
-                const server = this.createMcpServer();
-                res.on("close", () => {
-                    this.sseTransports.delete(transport.sessionId);
-                    void server.close();
-                });
-                await server.connect(transport);
-            });
-        });
-
-        /**
-         * SSE message POST endpoint (using previously established session)
-         */
-        this.app.post("/messages", async (req: any, res: any) => {
-            const sessionId = req.query.sessionId as string;
-            const session = this.sseTransports.get(sessionId);
-
-            if (session) {
-                await this.sessionContext.run({ userToken: session.userToken }, async () => {
-                    await session.transport.handlePostMessage(req, res, req.body);
-                });
-            } else {
-                res.status(400).send("No transport found for sessionId");
-            }
-        });
     }
 
     async start(): Promise<void> {
@@ -360,7 +322,6 @@ export class PenpotMcpServer {
                 this.logger.info(`Remote mode: ${this.isRemoteMode()}`);
                 this.logger.info(`DevEnv mode: ${this.isDevEnv()}`);
                 this.logger.info(`Modern Streamable HTTP endpoint: http://${this.host}:${this.port}/mcp`);
-                this.logger.info(`Legacy SSE endpoint: http://${this.host}:${this.port}/sse`);
                 this.logger.info(`WebSocket server URL: ws://${this.host}:${this.webSocketPort}`);
 
                 // start the REPL server when enabled
@@ -393,8 +354,6 @@ export class PenpotMcpServer {
               })
             : Promise.resolve();
         await this.mcpHandler.close();
-        await Promise.all(Array.from(this.sseTransports.values(), ({ transport }) => transport.close()));
-        this.sseTransports.clear();
         await httpClosed;
         await this.pluginBridge.close();
         await this.redisBridge?.close();
