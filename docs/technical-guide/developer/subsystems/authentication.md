@@ -100,8 +100,8 @@ backend generates a signed JWT token and returns it to the frontend as an
 the <code class="language-text">http_session_v2</code> table with the profile id
 and the session timestamps.
 
-A request is authenticated only when both the token verifies and its session row
-still exists. The token claims carry the session row id (<code
+A request is authenticated only when the token verifies, its session row still
+exists and the session is within the idle timeout. The token claims carry the session row id (<code
 class="language-clojure">:sid</code>), the last activity instant (<code
 class="language-clojure">:iat</code>) and an absolute expiration (<code
 class="language-clojure">:exp</code>). The server enforces two independent
@@ -109,9 +109,8 @@ limits:
 
 * **Idle timeout:** a session that is not renewed within
   <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE</code> (default 7
-  days) stops working once the next daily <code
-  class="language-text">session-gc</code> run deletes it, up to ~24h after the
-  idle window elapses.
+  days) stops working at once. The backend checks the session's last renewal
+  time on every request, so the row does not need to be deleted first.
 * **Absolute maximum:** a session cannot live longer than
   <code class="language-bash">PENPOT_AUTH_TOKEN_COOKIE_MAX_AGE_ABSOLUTE</code>
   (default 30 days) from its creation, no matter how much it is renewed. The
@@ -124,7 +123,7 @@ maximum is not extended. A daily garbage collector
 (<code class="language-text">session-gc</code>) deletes rows that exceed either
 the idle window or the absolute maximum.
 
-Sessions created before 2.18.0 carry no <code
+Sessions created before 2.19.0 carry no <code
 class="language-clojure">:exp</code> in their token; they are still removed by
 the 30-day <code class="language-text">created_at</code> cleanup and acquire <code
 class="language-clojure">:exp</code> on their next renewal.
