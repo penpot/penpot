@@ -53,23 +53,30 @@
 
 (def ^:private metrics-sample-interval-ms 15000)
 
-(defn sample-worker-metrics!
+(defn sample-worker-metrics
   "Publishes the current state of the xnio worker thread pool (the
-  request dispatch queue and its threads) as gauges. Negative samples
-  are discarded: the xnio MXBean may return intermediate negative
-  values (e.g. -1 for the busy thread count) and publishing them as
-  gauge values would create false zeros."
+  request dispatch queue and its threads) as gauges."
   [metrics ^XnioWorkerMXBean mxbean]
-  (when (and (some? metrics) (some? mxbean))
-    (doseq [[id value] [[:http-worker-queue-size (.getWorkerQueueSize mxbean)]
-                        [:http-worker-busy-threads (.getBusyWorkerThreadCount mxbean)]
-                        [:http-worker-pool-size (.getWorkerPoolSize mxbean)]
-                        [:http-worker-max-pool-size (.getMaxWorkerPoolSize mxbean)]]
-            :when (>= value 0)]
-      (mtx/run! metrics :id id :val value)))
-  true)
+  (let [queue-size (.getWorkerQueueSize mxbean)
+        busy-count (.getBusyWorkerThreadCount mxbean)
+        pool-size  (.getWorkerPoolSize mxbean)
+        max-size   (.getMaxWorkerPoolSize mxbean)]
 
-(defn sample-connector-metrics!
+    ;; negative values are missing measurements, not zeros: the xnio
+    ;; MXBean may transiently report -1 on the busy thread count.
+    (when (>= queue-size 0)
+      (mtx/run! metrics :id :http-worker-queue-size :val queue-size))
+
+    (when (>= busy-count 0)
+      (mtx/run! metrics :id :http-worker-busy-threads :val busy-count))
+
+    (when (>= pool-size 0)
+      (mtx/run! metrics :id :http-worker-pool-size :val pool-size))
+
+    (when (>= max-size 0)
+      (mtx/run! metrics :id :http-worker-max-pool-size :val max-size))))
+
+(defn sample-connector-metrics
   "Publishes the current state of the http listener connection
   statistics. Undertow exposes absolute totals, so counters are
   published as deltas of the last seen values (the atom state holds the
@@ -77,40 +84,36 @@
   because the underlying counters were reset) the counter is skipped
   and the reference updated."
   [metrics state ^ConnectorStatistics cs]
-  (when (and (some? metrics) (some? state) (some? cs))
-    (let [{:keys [last-requests last-errors]} (deref state)
-          total-requests (.getRequestCount cs)
-          total-errors   (.getErrorCount cs)
-          delta-requests (max 0 (- total-requests last-requests))
-          delta-errors   (max 0 (- total-errors last-errors))]
+  (let [{:keys [last-requests last-errors]} (deref state)
+        total-requests (.getRequestCount cs)
+        total-errors   (.getErrorCount cs)
+        delta-requests (max 0 (- total-requests last-requests))
+        delta-errors   (max 0 (- total-errors last-errors))]
 
-      (when (pos? delta-requests)
-        (mtx/run! metrics :id :http-connector-requests-total :inc delta-requests))
+    (when (pos? delta-requests)
+      (mtx/run! metrics :id :http-connector-requests-total :inc delta-requests))
 
-      (when (pos? delta-errors)
-        (mtx/run! metrics :id :http-connector-errors-total :inc delta-errors))
+    (when (pos? delta-errors)
+      (mtx/run! metrics :id :http-connector-errors-total :inc delta-errors))
 
-      (mtx/run! metrics
-                :id :http-connector-active-connections
-                :val (.getActiveConnections cs))
+    (mtx/run! metrics
+              :id :http-connector-active-connections
+              :val (.getActiveConnections cs))
 
-      (swap! state merge {:last-requests total-requests
-                          :last-errors total-errors})))
-  true)
+    (swap! state merge {:last-requests total-requests
+                        :last-errors total-errors})))
 
-(defn sample-http-metrics!
+(defn sample-http-metrics
   "Samples the current state of the http server: worker thread pool
   state and listener connection statistics. Called periodically by a
   sampler that starts together with the server."
   [metrics state ^Undertow server]
-
   (try
-    (let [mxbean (.getMXBean (.getWorker server))]
-      (sample-worker-metrics! metrics mxbean)
-      (when-let [cs (some-> (.getListenerInfo server)
-                            (first)
-                            (.getConnectorStatistics))]
-        (sample-connector-metrics! metrics state cs)))
+    (when-let [mxbean (some-> server (.getWorker) (.getMXBean))]
+      (sample-worker-metrics metrics mxbean))
+
+    (when-let [cs (some-> server (.getListenerInfo) (first) (.getConnectorStatistics))]
+      (sample-connector-metrics metrics state cs))
 
     (catch Exception cause
       (l/warn :msg "unexpected error on http metrics sampling"
@@ -129,7 +132,7 @@
                                                :daemon true))
         sample    (fn sample []
                     (try
-                      (sample-http-metrics! metrics state server)
+                      (sample-http-metrics metrics state server)
                       (finally
                         ;; reschedule even if a single sample fails, so
                         ;; an unexpected error does not cancel the

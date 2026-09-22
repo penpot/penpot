@@ -114,21 +114,6 @@
     (getMaxActiveRequests [_] 0)
     (reset [_] nil)))
 
-(defn- sample-worker!
-  [metrics mxbean]
-  (http/sample-worker-metrics! metrics ^XnioWorkerMXBean mxbean))
-
-(defn- sample-connector!
-  [metrics state cs]
-  (http/sample-connector-metrics! metrics state ^ConnectorStatistics cs))
-
-(defn- registry-samples-count
-  [metrics]
-  (-> (mtx/get-registry metrics)
-      (.metricFamilySamples)
-      (enumeration-seq)
-      (vec)))
-
 (defn- collector-instance
   [metrics id]
   (:app.metrics.definition/instance (mtx/get-collector metrics id)))
@@ -144,7 +129,7 @@
   (let [metrics (fake-metrics)
         mxbean  (fake-mxbean {:queue 2 :busy 10 :pool 40 :max 512})]
 
-    (sample-worker! metrics mxbean)
+    (http/sample-worker-metrics metrics mxbean)
 
     (t/is (= 2.0  (gauge-value (collector-instance metrics :http-worker-queue-size))))
     (t/is (= 10.0 (gauge-value (collector-instance metrics :http-worker-busy-threads))))
@@ -157,23 +142,13 @@
   (let [metrics (fake-metrics)
         mxbean  (fake-mxbean {:queue 0 :busy -1 :pool 4 :max 512})]
 
-    (sample-worker! metrics mxbean)
+    (http/sample-worker-metrics metrics mxbean)
 
     (t/is (= 0.0 (gauge-value (collector-instance metrics :http-worker-queue-size))))
     (t/is (= 4.0 (gauge-value (collector-instance metrics :http-worker-pool-size))))
     (t/is (= 512.0 (gauge-value (collector-instance metrics :http-worker-max-pool-size))))
     (t/is (= 0.0
              (gauge-value (collector-instance metrics :http-worker-busy-threads))))))
-
-(t/deftest sample-worker-metrics-on-nil-args-does-nothing
-  (let [metrics (fake-metrics)
-        mxbean  (fake-mxbean {:queue 1 :busy 1 :pool 2 :max 4})]
-
-    (t/is (true? (http/sample-worker-metrics! nil mxbean)))
-    (t/is (true? (http/sample-worker-metrics! metrics nil)))
-
-    ;; nothing was published: every gauge keeps its initial value.
-    (t/is (= 0.0 (gauge-value (collector-instance metrics :http-worker-queue-size))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test: connector metrics
@@ -184,7 +159,7 @@
         state   (make-state)
         cs      (fake-connector-statistics {:requests 10 :errors 2 :active 5})]
 
-    (sample-connector! metrics state cs)
+    (http/sample-connector-metrics metrics state cs)
 
     (t/is (= 5.0 (gauge-value (collector-instance metrics :http-connector-active-connections))))
     (t/is (= 10.0 (counter-value (collector-instance metrics :http-connector-requests-total))))
@@ -194,8 +169,8 @@
   (let [metrics (fake-metrics)
         state   (make-state)]
 
-    (sample-connector! metrics state (fake-connector-statistics {:requests 10 :errors 0 :active 1}))
-    (sample-connector! metrics state (fake-connector-statistics {:requests 25 :errors 0 :active 1}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 10 :errors 0 :active 1}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 25 :errors 0 :active 1}))
 
     (t/is (= 25.0 (counter-value (collector-instance metrics :http-connector-requests-total))))
     (t/is (= 0.0 (counter-value (collector-instance metrics :http-connector-errors-total))))))
@@ -207,22 +182,12 @@
   (let [metrics (fake-metrics)
         state   (make-state)]
 
-    (sample-connector! metrics state (fake-connector-statistics {:requests 20 :errors 5 :active 0}))
-    (sample-connector! metrics state (fake-connector-statistics {:requests 10 :errors 3 :active 0}))
-    (sample-connector! metrics state (fake-connector-statistics {:requests 15 :errors 6 :active 0}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 20 :errors 5 :active 0}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 10 :errors 3 :active 0}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 15 :errors 6 :active 0}))
 
     (t/is (= 25.0 (counter-value (collector-instance metrics :http-connector-requests-total))))
     (t/is (= 8.0 (counter-value (collector-instance metrics :http-connector-errors-total))))))
-
-(t/deftest sample-connector-metrics-on-nil-cs-does-nothing
-  (let [metrics (fake-metrics)
-        state   (make-state)]
-
-    (t/is (true? (http/sample-connector-metrics! metrics state nil)))
-    (t/is (true? (http/sample-connector-metrics! nil state (fake-connector-statistics {}))))
-
-    (t/is (= 0.0
-             (counter-value (collector-instance metrics :http-connector-requests-total))))))
 
 (t/deftest sample-connector-metrics-state-advances-with-reset
   ;; after a reset (total decreased) followed by more requests, the
@@ -231,15 +196,27 @@
   (let [metrics (fake-metrics)
         state   (make-state)]
 
-    (sample-connector! metrics state (fake-connector-statistics {:requests 10 :errors 0 :active 0}))
-    (sample-connector! metrics state (fake-connector-statistics {:requests 5  :errors 0 :active 0})) ; reset to 5
-    (sample-connector! metrics state (fake-connector-statistics {:requests 8  :errors 0 :active 0}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 10 :errors 0 :active 0}))
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 5  :errors 0 :active 0})) ; reset to 5
+    (http/sample-connector-metrics metrics state (fake-connector-statistics {:requests 8  :errors 0 :active 0}))
 
     (t/is (= 13.0 (counter-value (collector-instance metrics :http-connector-requests-total))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test: sampler lifecycle
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest sample-http-metrics-on-nil-server-does-nothing
+  ;; the guards live at the boundary: without a server there is nothing
+  ;; to sample and nothing must be published.
+  (let [metrics (fake-metrics)
+        state   (make-state)]
+
+    (http/sample-http-metrics metrics state nil)
+
+    (t/is (= 0.0 (gauge-value (collector-instance metrics :http-worker-queue-size))))
+    (t/is (= 0.0
+             (counter-value (collector-instance metrics :http-connector-requests-total))))))
 
 (t/deftest create-metrics-sampler-lifecycle
   ;; a smoke test of the lifecycle wiring: the sampler is created with
@@ -259,9 +236,9 @@
   ;; not cancel the following runs. The first sample runs immediately
   ;; and throws; the next one must still be scheduled afterwards.
   (let [calls (atom 0)]
-    (with-redefs [http/sample-http-metrics! (fn [_ _ _]
-                                              (swap! calls inc)
-                                              (throw (ex-info "boom" {})))]
+    (with-redefs [http/sample-http-metrics (fn [_ _ _]
+                                             (swap! calls inc)
+                                             (throw (ex-info "boom" {})))]
       (let [sampler (http/create-metrics-sampler nil (fake-metrics))
             queue   (.getQueue ^ScheduledThreadPoolExecutor sampler)]
         (try
