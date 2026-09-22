@@ -24,9 +24,10 @@
 (defmacro defcase
   "Registers a case for `scene` and returns its id.
 
-  The optional body is the function run by the browser for the case. It sees
-  the injected runtime as `rtx`. Case collection strips the body before
-  handing descriptors to the runner."
+  The optional body threads the injected runtime as `rtx` and becomes the
+  case's browser-side run function. The quoted body source travels with the
+  registration for validation; case collection strips the body and the
+  source before handing descriptors to the runner."
   [id scene opts & body]
   (if (seq body)
     `(benches.render-wasm.scenes.core/register-case!
@@ -34,6 +35,7 @@
              :id ~id
              :scene ~scene
              :ns ~(str *ns*)
-             :run! (fn [~'rtx] ~@body)))
+             :run! (fn [~'rtx] ~@body)
+             :body-source '~body))
     `(benches.render-wasm.scenes.core/register-case!
       (assoc ~opts :id ~id :scene ~scene :ns ~(str *ns*)))))

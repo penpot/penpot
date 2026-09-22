@@ -13,6 +13,14 @@
 
 (defrecord Point [x y])
 
+(def ^:private body-calls
+  (atom []))
+
+(defn- touch!
+  [rtx]
+  (swap! body-calls conj :touched)
+  rtx)
+
 (core/defscene :contracts-scene
   {:version 1
    :description "Synthetic scene for contract tests"
@@ -24,8 +32,7 @@
   {:params {}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh}
-  (throw (ex-info "run body must not execute during collection"
-                  {:type ::boom})))
+  (-> rtx (touch!)))
 
 (defn- failure-data
   [f]
@@ -347,11 +354,51 @@
                                                        :filter "missing"}))))))
 
 (t/deftest defcase-body-is-stored-and-stripped
-  (let [entry (core/registered-case :contracts-scene/case)]
-    (t/is (= "frontend-tests.benches.contracts-test" (:ns entry)))
-    (t/is (fn? (:run! entry)))
-    (t/is (= ::boom (:type (failure-data #((:run! entry) :runtime))))))
+  (reset! body-calls [])
   (let [collected (cases/collect-cases {:master-seed 42 :filter "contracts-scene/"})]
     (t/is (= [:contracts-scene/case] (mapv :id collected)))
     (t/is (not (contains? (first collected) :run!)))
-    (t/is (core/serializable? (first collected)))))
+    (t/is (not (contains? (first collected) :body-source)))
+    (t/is (core/serializable? (first collected))))
+  (t/is (empty? @body-calls))
+  (let [entry (core/registered-case :contracts-scene/case)]
+    (t/is (= "frontend-tests.benches.contracts-test" (:ns entry)))
+    (t/is (fn? (:run! entry)))
+    (t/is (= :runtime ((:run! entry) :runtime)))
+    (t/is (= [:touched] @body-calls))))
+
+(t/deftest check-body-source-accepts-pipelines
+  (doseq [source ['((-> rtx (pan! x)))
+                  '((let [a 1] (-> rtx (pan! a))))
+                  '((do (log! 1) (-> rtx (pan!))))
+                  '((comment "setup") (-> rtx (pan!)))
+                  '((clojure.core/-> rtx (pan!)))]]
+    (t/is (= source (core/check-body-source! :case source)) (pr-str source))))
+
+(t/deftest check-body-source-rejects-other-shapes
+  (doseq [source ['((pan! x))
+                  '((-> other (pan!)))
+                  '((->> rtx (pan!)))
+                  '((if c (-> rtx a) (-> rtx b)))
+                  '()
+                  '((do))
+                  '((let [x 1]))]]
+    (t/is (= ::core/invalid-case
+             (:type (failure-data #(core/check-body-source! :case source))))
+          (pr-str source))))
+
+(t/deftest register-case-rejects-invalid-body-source
+  (try
+    (t/is (= ::core/invalid-case
+             (:type (failure-data
+                     #(core/register-case! {:id :contracts-badbody/case
+                                            :scene :contracts-scene
+                                            :ns "contracts-test"
+                                            :params {}
+                                            :view {:scale 1 :x 0 :y 0}
+                                            :context :fresh
+                                            :run! (fn [rtx] rtx)
+                                            :body-source '((pan! x))})))))
+    (t/is (nil? (core/registered-case :contracts-badbody/case)))
+    (finally
+      (core/unregister-case! :contracts-badbody/case))))

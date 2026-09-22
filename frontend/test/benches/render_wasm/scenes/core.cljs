@@ -24,6 +24,30 @@
    [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Runtime contract
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; rtx is the case execution context. The driver builds one map per attempt,
+;; calls the case body with it, and reads it back at completion:
+;;
+;;   :case    the collected case descriptor (id, scene, params, view,
+;;            context, completion, batch-size, operation)
+;;   :scene   the built scene snapshot {:objects ... :refs ...}
+;;   :module  the WASM module handle, bound by the driver after init
+;;   :slices  recorded render slices; helpers conj here
+;;   :metrics recorded phase timings
+;;   :now     zero-arg clock fn
+;;   :frame   zero-arg promise of the next rAF timestamp
+;;   :sleep   (fn [ms] ...) promise
+;;   :check   zero-arg guard covering cancellation, deadline, context loss
+;;
+;; Ops take rtx first and return it, or a promise of it. Case bodies thread
+;; rtx with `->`; the body's value is the rtx the driver collects. The
+;; driver, the clock/scheduling helpers and the op vocabulary arrive with
+;; tickets 05/06/14; this namespace fixes the binding name, the single
+;; threaded value, and the body shape checked below.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -54,7 +78,8 @@
    [:batch-size {:optional true} [:int {:min 1}]]
    [:operation {:optional true} [:map]]
    [:preparation {:optional true} [:map]]
-   [:run! {:optional true} fn?]])
+   [:run! {:optional true} fn?]
+   [:body-source {:optional true} [:fn seq?]]])
 
 (def schema:collected-case
   [:map {:closed true}
@@ -102,10 +127,47 @@
                    (update :scene-order conj id))))))
   id)
 
+(defn- thread-form?
+  [form]
+  (and (seq? form)
+       (contains? '#{-> clojure.core/->} (first form))
+       (= 'rtx (second form))))
+
+(defn- valid-tail?
+  [form]
+  (cond
+    (thread-form? form)
+    true
+
+    (and (seq? form) (contains? '#{do let} (first form)))
+    (valid-tail? (last form))
+
+    :else
+    false))
+
+(defn check-body-source!
+  "Validates a defcase body source and returns it unchanged. Every value
+  the body can return threads the injected runtime: a `(-> rtx ...)`
+  pipeline, optionally preceded by setup forms or wrapped in `let`/`do`.
+  Anything else throws ::invalid-case. The checker covers shape only;
+  review and fake-runtime unit tests cover sense."
+  [id body-source]
+  (when-not (and (seq body-source) (valid-tail? (last body-source)))
+    (throw (ex-info (str "defcase " id " threads the injected runtime: "
+                         "its value is a (-> rtx ...) pipeline, "
+                         "optionally wrapped in let/do. Got: "
+                         (pr-str body-source))
+                    {:type ::invalid-case
+                     :id id})))
+  body-source)
+
 (defn register-case!
   "Adds `bench-case` to the registry with the same replace/reject semantics
-  as register-scene!."
-  [{:keys [id ns] :as bench-case}]
+  as register-scene!. A declared body source is validated here, at load
+  time, so a malformed pipeline fails before any browser work."
+  [{:keys [id ns body-source] :as bench-case}]
+  (when (some? body-source)
+    (check-body-source! id body-source))
   (let [existing (get-in @registry [:cases id])]
     (when (and (some? existing) (not= ns (:ns existing)))
       (throw (ex-info (str "duplicate case id: " id)
@@ -300,8 +362,8 @@
     false))
 
 (defn project-case
-  "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`)
-  stripped, collection defaults applied."
+  "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`,
+  `:body-source`) stripped, collection defaults applied."
   [bench-case]
   (-> bench-case
       (select-keys [:id :scene :params :view :context :completion :batch-size
