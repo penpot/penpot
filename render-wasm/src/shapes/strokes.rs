@@ -354,47 +354,52 @@ impl Stroke {
             }
         }
 
-        if self.style != StrokeStyle::Solid {
-            let path_effect = match self.style {
-                StrokeStyle::Dotted => {
-                    let width = match self.kind {
-                        StrokeKind::Inner => self.width,
-                        StrokeKind::Center => self.width / 2.0,
-                        StrokeKind::Outer => self.width,
-                    };
-                    let circle_path = {
-                        let mut pb = skia::PathBuilder::new();
-                        pb.add_circle((0.0, 0.0), width, None);
-                        pb.detach()
-                    };
-                    let advance = self.width + 5.0;
-                    skia::PathEffect::path_1d(
-                        &circle_path,
-                        advance,
-                        0.0,
-                        skia::path_1d_path_effect::Style::Translate,
-                    )
-                }
-                StrokeStyle::Dashed => {
-                    let dash = self.dash.unwrap_or(self.width + 10.);
-                    let gap = self.gap.unwrap_or(self.width + 10.);
-                    skia::PathEffect::dash(&[dash, gap], 0.)
-                }
-                StrokeStyle::Mixed => skia::PathEffect::dash(
-                    &[
-                        self.width + 5.,
-                        self.width + 5.,
-                        self.width + 1.,
-                        self.width + 5.,
-                    ],
-                    0.,
-                ),
-                _ => None,
-            };
-            paint.set_path_effect(path_effect);
-        }
+        paint.set_path_effect(self.path_effect());
 
         paint
+    }
+
+    /// Dash/dot `PathEffect` for the stroke style, or `None` for solid.
+    ///
+    /// Dotted sizes its stamp from `kind` (Center dots are half the stroke
+    /// width); dashed/mixed derive their default pattern from the stroke width.
+    pub fn path_effect(&self) -> Option<skia::PathEffect> {
+        match self.style {
+            StrokeStyle::Solid => None,
+            StrokeStyle::Dotted => {
+                let radius = match self.kind {
+                    StrokeKind::Inner => self.width,
+                    StrokeKind::Center => self.width / 2.0,
+                    StrokeKind::Outer => self.width,
+                };
+                let circle_path = {
+                    let mut pb = skia::PathBuilder::new();
+                    pb.add_circle((0.0, 0.0), radius, None);
+                    pb.detach()
+                };
+                let advance = self.width + 5.0;
+                skia::PathEffect::path_1d(
+                    &circle_path,
+                    advance,
+                    0.0,
+                    skia::path_1d_path_effect::Style::Translate,
+                )
+            }
+            StrokeStyle::Dashed => {
+                let dash = self.dash.unwrap_or(self.width + 10.);
+                let gap = self.gap.unwrap_or(self.width + 10.);
+                skia::PathEffect::dash(&[dash, gap], 0.)
+            }
+            StrokeStyle::Mixed => skia::PathEffect::dash(
+                &[
+                    self.width + 5.,
+                    self.width + 5.,
+                    self.width + 1.,
+                    self.width + 5.,
+                ],
+                0.,
+            ),
+        }
     }
 
     pub fn to_stroked_paint(

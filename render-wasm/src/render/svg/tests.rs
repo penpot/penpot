@@ -1368,6 +1368,79 @@ fn exports_rect_with_per_side_solid_inner_stroke() {
 }
 
 #[test]
+fn exports_rect_with_per_side_dashed_inner_stroke() {
+    // Regression for #10841: per-side strokes used to ignore the border style
+    // and always render solid.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Inner,
+        20.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([4.0, 12.0, 24.0, 40.0]); // top, right, bottom, left
+    stroke.dash = Some(8.0);
+    stroke.gap = Some(6.0);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 140.0, 100.0), stroke);
+
+    let svg = render(&pool, id);
+    // The solid band is a single even-odd ring (two subpaths); a dashed stroke
+    // expands into one subpath per dash.
+    assert!(
+        svg.matches('M').count() > 10,
+        "dashed per-side stroke must expand to several dash segments: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_rect_with_per_side_dotted_inner_stroke() {
+    // #10841: dotted must also survive per-side rendering.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dotted_stroke(
+        StrokeKind::Inner,
+        20.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([4.0, 12.0, 24.0, 40.0]); // top, right, bottom, left
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 140.0, 100.0), stroke);
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.matches('M').count() > 10,
+        "dotted per-side stroke must expand to several dot segments: {svg}"
+    );
+    assert!(
+        svg.contains('Q'),
+        "dotted per-side stroke must expand to round dots, not a solid band: {svg}"
+    );
+}
+
+#[test]
+fn exports_rect_with_only_top_side_dashed_stroke() {
+    // Exact #10841 reproduction: add per-side strokes, keep only the top side,
+    // then pick a border style. The zero-width sides must be skipped.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Inner,
+        8.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([8.0, 0.0, 0.0, 0.0]); // top only
+    stroke.dash = Some(8.0);
+    stroke.gap = Some(6.0);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 80.0, 40.0), stroke);
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.matches('M').count() > 3,
+        "a single dashed side must expand to several dash segments: {svg}"
+    );
+}
+
+#[test]
 fn exports_rect_with_solid_center_stroke() {
     let mut pool = ShapesPool::new();
     let id = uid(1);

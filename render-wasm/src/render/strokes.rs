@@ -2,7 +2,7 @@ use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{
     arrow_cap_path, merge_fills, square_cap_path, triangle_cap_path, Corners, Fill, ImageFill,
-    Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs, Type,
+    Path, Shape, Stroke, StrokeCap, StrokeKind, StrokeStyle, SvgAttrs, Type,
 };
 use skia_safe::{self as skia, ImageFilter, RRect};
 
@@ -105,8 +105,11 @@ pub(super) fn draw_stroke_on_rect(
 
 /// Draws a rect/frame stroke whose sides have different widths as the area
 /// between an outer and an inner (rounded) rect, mitered like CSS borders.
-/// The band is filled with the stroke fill; dashed/dotted patterns are not
-/// supported per side and render solid.
+///
+/// Solid strokes fill that band directly. Dashed/dotted/mixed strokes are
+/// expanded into filled geometry (a band cannot carry a `PathEffect`, and
+/// `SkSVGDevice` drops path effects), then clipped to the band so every side
+/// keeps its own thickness.
 #[allow(clippy::too_many_arguments)]
 fn draw_per_side_stroke_on_rect(
     canvas: &skia::Canvas,
@@ -148,6 +151,54 @@ fn draw_per_side_stroke_on_rect(
     fill_paint.set_path_effect(None);
     fill_paint.set_anti_alias(antialias);
 
+    let band = per_side_band_path(corners, outer, inner, has_hole, out_f, in_f, widths);
+
+    // A collapsed band fills the whole outer rect; there is no border ring to
+    // dash, so keep the solid fill.
+    if stroke.style == StrokeStyle::Solid || !has_hole {
+        canvas.draw_path(&band, &fill_paint);
+        return;
+    }
+
+    // Sharp (unrounded) bands are exactly the union of the four side strips,
+    // so the pattern needs no boolean trim. Rounded corners curve the band
+    // beyond the straight strips, so intersect to trim the overflow.
+    let rounded = matches!(corners, Some(radii) if radii.iter().any(|c| c.x > 0.0 || c.y > 0.0));
+
+    let pattern = per_side_pattern_path(stroke, rect, outer, widths, in_f - out_f, antialias).map(
+        |pattern| {
+            if rounded {
+                pattern
+                    .op(&band, skia::PathOp::Intersect)
+                    .unwrap_or(pattern)
+            } else {
+                pattern
+            }
+        },
+    );
+
+    match pattern {
+        Some(pattern) => canvas.draw_path(&pattern, &fill_paint),
+        // Boolean/geometry failure: fall back to the solid band rather than
+        // dropping the stroke entirely.
+        None => canvas.draw_path(&band, &fill_paint),
+    };
+}
+
+/// Even-odd path of the solid per-side band: the outer rect minus the inner
+/// rect, with corner radii grown/shrunk like CSS borders.
+#[allow(clippy::too_many_arguments)]
+fn per_side_band_path(
+    corners: &Option<Corners>,
+    outer: Rect,
+    inner: Rect,
+    has_hole: bool,
+    out_f: f32,
+    in_f: f32,
+    widths: [f32; 4],
+) -> skia::Path {
+    let [top, right, bottom, left] = widths;
+
     let mut pb = skia::PathBuilder::new();
     match corners {
         Some(radii) => {
@@ -187,7 +238,100 @@ fn draw_per_side_stroke_on_rect(
 
     let mut path = pb.detach();
     path.set_fill_type(skia::PathFillType::EvenOdd);
-    canvas.draw_path(&path, &fill_paint);
+    path
+}
+
+/// Filled dash/dot geometry for a per-side stroke.
+///
+/// Strokes each side's centerline with that side's own thickness (so thin and
+/// thick sides get proportional patterns) and unions the four sides, keeping
+/// overlapping corners from doubling the fill alpha. The result spans the same
+/// region as the solid band, minus the gaps between dashes/dots.
+fn per_side_pattern_path(
+    stroke: &Stroke,
+    rect: &Rect,
+    outer: Rect,
+    widths: [f32; 4],
+    inward: f32,
+    antialias: bool,
+) -> Option<skia::Path> {
+    let [top, right, bottom, left] = widths;
+
+    // Centerline of each side band. `inward > 0` shifts towards the shape
+    // center (Inner alignment); `inward < 0` shifts outward (Outer).
+    let cl = rect.left + left * inward / 2.0;
+    let ct = rect.top + top * inward / 2.0;
+    let cr = rect.right - right * inward / 2.0;
+    let cb = rect.bottom - bottom * inward / 2.0;
+
+    let sides = [
+        (Point::new(outer.left, ct), Point::new(outer.right, ct), top),
+        (
+            Point::new(cr, outer.top),
+            Point::new(cr, outer.bottom),
+            right,
+        ),
+        (
+            Point::new(outer.left, cb),
+            Point::new(outer.right, cb),
+            bottom,
+        ),
+        (
+            Point::new(cl, outer.top),
+            Point::new(cl, outer.bottom),
+            left,
+        ),
+    ];
+
+    let mut acc: Option<skia::Path> = None;
+    for (start, end, thickness) in sides {
+        if thickness <= 0.0 {
+            continue;
+        }
+        let Some(outline) = per_side_side_outline(stroke, start, end, thickness, antialias) else {
+            continue;
+        };
+        acc = Some(match acc {
+            Some(path) => path.op(&outline, skia::PathOp::Union).unwrap_or(path),
+            None => outline,
+        });
+    }
+    acc
+}
+
+/// Expands one side's centerline into its filled dash/dot region.
+///
+/// Uses `Center` kind on a synthetic stroke whose width is the side thickness
+/// so the pattern sizes itself from that side (dot radius = thickness / 2,
+/// default dash = thickness + gap). The paint carries no shader: only the
+/// geometry is used, and the caller fills it with the real stroke paint.
+fn per_side_side_outline(
+    stroke: &Stroke,
+    start: Point,
+    end: Point,
+    thickness: f32,
+    antialias: bool,
+) -> Option<skia::Path> {
+    let mut side = stroke.clone();
+    side.kind = StrokeKind::Center;
+    side.width = thickness;
+    side.widths = None;
+
+    let mut paint = skia::Paint::default();
+    paint.set_style(skia::PaintStyle::Stroke);
+    paint.set_stroke_width(thickness);
+    paint.set_anti_alias(antialias);
+    paint.set_stroke_cap(skia::paint::Cap::Butt);
+    paint.set_path_effect(side.path_effect());
+
+    let mut pb = skia::PathBuilder::new();
+    pb.move_to(start);
+    pb.line_to(end);
+    let line = pb.detach();
+
+    let mut outline = skia::Path::default();
+    skia::path_utils::fill_path_with_paint(&line, &paint, &mut outline, None, None)
+        .then_some(outline)
 }
 
 #[allow(clippy::too_many_arguments)]
