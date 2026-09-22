@@ -27,7 +27,9 @@ scripts/psql --host myhost --user myuser --db mydb
 
 ## Native Tool Available (opencode)
 
-A native opencode tool `penpot-psql` is available. The LLM can call it directly
+A native opencode tool `penpot-psql` is available (defined in
+`.opencode/plugins/penpot.js`, which registers it for both opencode V1 via
+`server()` and opencode V2 via `setup()`). The LLM can call it directly
 with:
 - `sql`: SQL command string to execute
 - `test`: Boolean flag to use the `penpot_test` database

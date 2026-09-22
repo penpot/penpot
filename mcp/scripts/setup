@@ -2,6 +2,4 @@
 
 set -e;
 
-corepack enable;
-corepack install;
 pnpm -r install;

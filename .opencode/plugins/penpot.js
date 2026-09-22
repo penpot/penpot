@@ -1,6 +1,112 @@
+// Penpot opencode plugin: custom tools for Penpot development.
+//
+// Dual V1 + V2 implementation from a single file:
+// - OpenCode V1 (>= 1.18.29) calls the default export's `server()` and uses
+//   the returned `tool` map (built with the `tool()` helper from
+//   `@opencode-ai/plugin`).
+// - OpenCode V2 reads the default export's `id` and `setup()` and ignores
+//   `server()`. Tools are registered via `ctx.tool.transform()` with JSON
+//   Schema inputs, and `execute` returns `{ content }`.
+//   See https://opencode.ai/v2/docs/build/plugins/migrate-v1
+//
+// NOTE: the V2 side intentionally does NOT
+// `import { Plugin } from "@opencode/plugin"`. At runtime `Plugin.define` is
+// the identity function, so a plain `{ id, setup }` object is equivalent, and
+// skipping the import keeps this plugin dependency-free
+// (`.opencode/package.json` is gitignored, so a new dependency declared there
+// would not travel with this file).
+
 import { tool } from "@opencode-ai/plugin"
 import path from "path"
 import { spawn } from "child_process"
+
+function runCommand(command, args, options = {}) {
+  const {
+    cwd,
+    env,
+    stdin,
+    closeStdin = false,
+    successMessage = "Command executed successfully",
+  } = options
+
+  return new Promise((resolve) => {
+    let stdout = ""
+    let stderr = ""
+
+    const proc = spawn(command, args, { cwd, env })
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString()
+    })
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString()
+    })
+
+    proc.on("error", (error) => {
+      resolve(`Error: ${error.message}`)
+    })
+
+    proc.on("close", (exitCode) => {
+      const output =
+        exitCode === 0
+          ? stdout.trim() || successMessage
+          : `Error (exit ${exitCode}): ${
+              (stderr || stdout).trim() || "No error output"
+            }`
+      resolve(output)
+    })
+
+    // Close stdin so the child cannot wait on it indefinitely. `psql -c`
+    // never reads stdin, so only the paren-repair pipe mode needs this, but
+    // closing it unconditionally is harmless there.
+    if (stdin !== undefined) {
+      proc.stdin.end(stdin)
+    } else if (closeStdin) {
+      proc.stdin.end()
+    }
+  })
+}
+
+function executePsql(sql, useTestDb, cwd) {
+  const host = process.env.PENPOT_DB_HOST || "postgres"
+  const user = process.env.PENPOT_DB_USER || "penpot"
+  const db = useTestDb
+    ? "penpot_test"
+    : process.env.PENPOT_DB_NAME || "penpot"
+  const password = process.env.PENPOT_DB_PASSWORD || "penpot"
+
+  const psqlArgs = ["-h", host, "-U", user, "-d", db, "-c", sql]
+
+  return runCommand("psql", psqlArgs, {
+    cwd,
+    env: { ...process.env, PGPASSWORD: password },
+    successMessage: "Query executed successfully",
+  })
+}
+
+function executeParenRepair({ files, code }, directory) {
+  const script = path.join(directory, "scripts/paren-repair")
+
+  const fileList = files
+    ? files
+        .split(",")
+        .map((file) => file.trim())
+        .filter(Boolean)
+    : []
+
+  const childArgs =
+    fileList.length > 0 ? [script, ...fileList] : [script]
+
+  return runCommand("bb", childArgs, {
+    cwd: directory,
+    stdin: code,
+    closeStdin: true,
+    successMessage: "No changes needed",
+  })
+}
+
+// --- V1 tool definitions (OpenCode V1 calls `server()` below) ---
 
 const penpotPsqlTool = tool({
   description:
@@ -18,46 +124,7 @@ const penpotPsqlTool = tool({
   },
 
   async execute(args, context) {
-    const host = process.env.PENPOT_DB_HOST || "postgres"
-    const user = process.env.PENPOT_DB_USER || "penpot"
-    const db = args.test
-      ? "penpot_test"
-      : process.env.PENPOT_DB_NAME || "penpot"
-    const password = process.env.PENPOT_DB_PASSWORD || "penpot"
-
-    const psqlArgs = ["-h", host, "-U", user, "-d", db, "-c", args.sql]
-
-    return new Promise((resolve) => {
-      let stdout = ""
-      let stderr = ""
-
-      const proc = spawn("psql", psqlArgs, {
-        cwd: context.worktree,
-        env: { ...process.env, PGPASSWORD: password },
-      })
-
-      proc.stdout.on("data", (data) => {
-        stdout += data.toString()
-      })
-
-      proc.stderr.on("data", (data) => {
-        stderr += data.toString()
-      })
-
-      proc.on("error", (error) => {
-        resolve(`Error: ${error.message}`)
-      })
-
-      proc.on("close", (exitCode) => {
-        const output =
-          exitCode === 0
-            ? stdout.trim() || "Query executed successfully"
-            : `Error (exit ${exitCode}): ${
-                (stderr || stdout).trim() || "No error output"
-              }`
-        resolve(output)
-      })
-    })
+    return executePsql(args.sql, args.test === true, context.worktree)
   },
 })
 
@@ -82,69 +149,11 @@ const parenRepairTool = tool({
   },
 
   async execute(args, context) {
-    const script = path.join(context.worktree, "scripts/paren-repair")
-
-    const files = args.files
-      ? args.files
-          .split(",")
-          .map((file) => file.trim())
-          .filter(Boolean)
-      : []
-
-    const paramInfo =
-      files.length > 0
-        ? `files=[${files.join(", ")}]`
-        : args.code !== undefined
-          ? `code=(${args.code.length} chars)`
-          : "none"
-
-    return new Promise((resolve) => {
-      const childArgs =
-        files.length > 0
-          ? [script, ...files]
-          : [script]
-
-      const proc = spawn("bb", childArgs, {
-        cwd: context.worktree,
-      })
-
-      let stdout = ""
-      let stderr = ""
-
-      proc.stdout.on("data", (data) => {
-        stdout += data.toString()
-      })
-
-      proc.stderr.on("data", (data) => {
-        stderr += data.toString()
-      })
-
-      proc.on("error", (error) => {
-        resolve(`Error: ${error.message}`)
-      })
-
-      proc.on("close", (exitCode) => {
-        const output =
-          exitCode === 0
-            ? stdout.trim() || "No changes needed"
-            : `Error (exit ${exitCode}): ${
-                (stderr || stdout).trim() || "No error output"
-              }`
-
-        resolve(output)
-      })
-
-      // Close stdin in all cases so the process cannot wait indefinitely.
-      if (args.code !== undefined) {
-        proc.stdin.end(args.code)
-      } else {
-        proc.stdin.end()
-      }
-    })
+    return executeParenRepair(args, context.worktree)
   },
 })
 
-export default async function plugin() {
+async function server() {
   return {
     tool: {
       "paren-repair": parenRepairTool,
@@ -153,147 +162,83 @@ export default async function plugin() {
   }
 }
 
+// --- V2 setup (OpenCode V2 calls `setup()` and ignores `server()`) ---
 
+const penpotPsqlInputSchema = {
+  type: "object",
+  properties: {
+    sql: {
+      type: "string",
+      description: "SQL command to execute",
+    },
+    test: {
+      type: "boolean",
+      description: "Use the penpot_test database",
+    },
+  },
+  required: ["sql"],
+  additionalProperties: false,
+}
 
+const parenRepairInputSchema = {
+  type: "object",
+  properties: {
+    // A string is used instead of an array so OpenCode displays it
+    // in the generic tool invocation.
+    files: {
+      type: "string",
+      description:
+        "Comma-separated file paths to fix, for example: frontend/src/app/config.cljs, backend/src/core.clj",
+    },
+    code: {
+      type: "string",
+      description: "Code string to fix via stdin",
+    },
+  },
+  additionalProperties: false,
+}
 
+async function setup(ctx) {
+  // Plugin instance location. This is not the location of every session the
+  // tools may run for, but it is the closest V2 equivalent of the V1
+  // per-execution `context.worktree` (the repo checkout the plugin loaded
+  // from), which is what both tools need as cwd / script base.
+  const directory =
+    ctx.location.directory ?? ctx.location.project?.canonical
 
+  // Keep this callback synchronous: transforms are replayable state edits.
+  // The async work happens later, inside each tool's `execute`.
+  await ctx.tool.transform((editor) => {
+    editor.add({
+      name: "penpot-psql",
+      description:
+        "Execute a SQL command against the Penpot database. Uses the defaults from scripts/psql.",
+      input: penpotPsqlInputSchema,
+      async execute(input) {
+        const content = await executePsql(
+          input.sql,
+          input.test === true,
+          directory,
+        )
+        return { content }
+      },
+    })
 
+    editor.add({
+      name: "paren-repair",
+      description:
+        "Fix mismatched parentheses/braces in Clojure files (.clj, .cljs, .cljc) then reformat with cljfmt.",
+      input: parenRepairInputSchema,
+      async execute(input) {
+        const content = await executeParenRepair(input, directory)
+        return { content }
+      },
+    })
+  })
+}
 
-
-
-
-
-// import { tool } from "@opencode-ai/plugin"
-// import path from "path"
-// import { spawn } from "child_process"
-
-// function formatFiles(files) {
-//   if (files.length === 0) return "stdin"
-
-//   // Keep the visible tool title reasonably short.
-//   if (files.length <= 3) return files.join(", ")
-
-//   return `${files.slice(0, 3).join(", ")} (+${files.length - 3} more)`
-// }
-
-// const parenRepairTool = tool({
-//   description:
-//     "Fix mismatched parentheses/braces in Clojure files, then reformat with cljfmt.",
-
-//   args: {
-//     files: tool.schema
-//       .array(tool.schema.string())
-//       .describe("Array of file paths to fix")
-//       .optional(),
-
-//     code: tool.schema
-//       .string()
-//       .describe("Code string to fix via stdin")
-//       .optional(),
-//   },
-
-//   async execute(args, context) {
-//     const script = path.join(context.worktree, "scripts/paren-repair")
-
-//     const files = (args.files ?? []).map((file) => {
-//       const absolute = path.isAbsolute(file)
-//         ? file
-//         : path.resolve(context.worktree, file)
-
-//       return path.relative(context.worktree, absolute)
-//     })
-
-//     const targetSummary =
-//       files.length > 0
-//         ? formatFiles(files)
-//         : args.code !== undefined
-//           ? `stdin (${args.code.length} chars)`
-//           : "no input"
-
-//     // This updates the tool-call title immediately, while it is running.
-//     await context.metadata({
-//       title: `Paren repair: ${targetSummary}`,
-//       metadata: {
-//         files,
-//         codeChars: args.code?.length,
-//       },
-//     })
-
-//     const childArgs =
-//       args.files && args.files.length > 0
-//         ? [script, ...args.files]
-//         : [script]
-
-//     return new Promise((resolve) => {
-//       const proc = spawn("bb", childArgs, {
-//         cwd: context.worktree,
-//       })
-
-//       let stdout = ""
-//       let stderr = ""
-
-//       if (args.code !== undefined) {
-//         proc.stdin.end(args.code)
-//       }
-
-//       proc.stdout.on("data", (data) => {
-//         stdout += data.toString()
-//       })
-
-//       proc.stderr.on("data", (data) => {
-//         stderr += data.toString()
-//       })
-
-//       proc.on("close", (exitCode) => {
-//         const successful = exitCode === 0
-
-//         const commandOutput = successful
-//           ? stdout.trim() || "No changes needed"
-//           : `Error (exit ${exitCode}): ${(stderr || stdout).trim()}`
-
-//         const parameterOutput =
-//           files.length > 0
-//             ? `Files passed:\n${files.map((file) => `- ${file}`).join("\n")}`
-//             : args.code !== undefined
-//               ? `Input passed through stdin: ${args.code.length} characters`
-//               : "No files or stdin input were passed"
-
-//         resolve({
-//           title: `Paren repair: ${targetSummary}`,
-//           output: `${parameterOutput}\n\n${commandOutput}`,
-//           metadata: {
-//             files,
-//             codeChars: args.code?.length,
-//             exitCode,
-//             successful,
-//           },
-//         })
-//       })
-
-//       proc.on("error", (error) => {
-//         resolve({
-//           title: `Paren repair failed: ${targetSummary}`,
-//           output: [
-//             files.length > 0
-//               ? `Files passed:\n${files.map((file) => `- ${file}`).join("\n")}`
-//               : `Input: ${targetSummary}`,
-//             `Failed to start bb: ${error.message}`,
-//           ].join("\n\n"),
-//           metadata: {
-//             files,
-//             codeChars: args.code?.length,
-//             successful: false,
-//           },
-//         })
-//       })
-//     })
-//   },
-// })
-
-// export default async function plugin() {
-//   return {
-//     tool: {
-//       "paren-repair": parenRepairTool,
-//     },
-//   }
-// }
+export default {
+  id: "penpot",
+  setup,
+  server,
+}

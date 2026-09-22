@@ -32,6 +32,8 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "staging"
+      # Pin build-docker to the commit build-bundle actually bundled.
+      sha: ${{ needs.build-bundle.outputs.sha }}
       force: ${{ inputs.force || false }}
 
   build-docker-admin-console:

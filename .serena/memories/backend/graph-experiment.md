@@ -13,8 +13,7 @@
 ## Memory Links
 
 - Read `mem:backend/core` for backend architecture, HTTP routes, DB rules, and test commands.
-- Read `mem:backend/rpc-db-worker-subtleties` for RPC and message bus behavior.
-- Read `mem:backend/http-storage-filedata-subtleties` for file data loading and realization.
+- Read `mem:backend/subtleties` for RPC and message bus behavior, and for file data loading and realization.
 - Read `mem:common/changes-architecture` for the change record vocabulary.
 - Read `mem:frontend/routing-app-shell-subtleties` for the existing notification WebSocket.
 - Read `mem:prod-infra/core` for Redis or Valkey message bus topology.

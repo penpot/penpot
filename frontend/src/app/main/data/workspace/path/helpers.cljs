@@ -35,13 +35,18 @@
     (gpt/to-vec common p1)
     (gpt/to-vec common p2))))
 
+(defn mirror-point
+  "Reflects `point` through `center`."
+  [center point]
+  (gpt/subtract (gpt/scale center 2) point))
+
 (defn opposite-handler-target
   "Returns the opposite handler target for mirror or aligned modes."
   [node handler opposite mode]
   (if (and (some? node) (some? handler) (some? opposite))
     (case mode
       :mirror
-      (gpt/subtract (gpt/scale node 2) handler)
+      (mirror-point node handler)
 
       :aligned
       (let [handler-vector (gpt/to-vec node handler)]
@@ -170,21 +175,57 @@
   [index prefix]
   (if (= prefix :c1) (dec index) index))
 
-(defn node-primary-handler
-  "Returns a curve handler for a node, preferring its incoming handle."
-  [content node-index]
+(defn- subpath-bounds
+  "Returns the move-to index and last drawing index of `index`'s subpath."
+  [content index]
+  (when-let [start (->> (range index -1 -1)
+                        (filter #(= :move-to (:command (nth content % nil))))
+                        (first))]
+    [start (->> (range (inc start) (count content))
+                (take-while #(not= :move-to (:command (nth content % nil))))
+                (remove #(= :close-path (:command (nth content % nil))))
+                (last))]))
+
+(defn- seam-twin-index
+  "Returns the other command standing on a closed subpath's start node.
+
+  Such a subpath begins and ends at that node, so the selection holds
+  either its move-to or its last drawing command."
+  [content index]
+  (let [[start end] (subpath-bounds content index)]
+    (when (and (some? end)
+               (= (path.helpers/segment->point (nth content start nil))
+                  (path.helpers/segment->point (nth content end nil))))
+      (condp = index
+        start end
+        end   start
+        nil))))
+
+(defn- command-primary-handler
+  "Returns the curve handler next to `index`, its incoming handle first."
+  [content index]
   (let [n       (count content)
-        out-idx (inc node-index)]
+        out-idx (inc index)]
     (cond
-      (and (>= node-index 0) (< node-index n)
-           (= :curve-to (:command (nth content node-index nil))))
-      [node-index :c2]
+      (and (>= index 0) (< index n)
+           (= :curve-to (:command (nth content index nil))))
+      [index :c2]
 
       (and (< out-idx n)
            (= :curve-to (:command (nth content out-idx nil))))
       [out-idx :c1]
 
       :else nil)))
+
+(defn node-primary-handler
+  "Returns a curve handler for a node, preferring its incoming handle.
+
+  A closed subpath starts and ends at one node, so either of the two
+  commands standing there finds the handlers of both."
+  [content node-index]
+  (or (command-primary-handler content node-index)
+      (some->> (seam-twin-index content node-index)
+               (command-primary-handler content))))
 
 (defn node-handler-ids
   "Returns a node's curve handlers, its primary handle first."
@@ -237,6 +278,67 @@
       (handlers-equal-length? content idx prefix) :mirror
       :else                                       :aligned)
     :independent))
+
+(defn- line-beside-node
+  "Returns the index of the line opposite a node's live handler, looking
+  across the seam of a closed subpath, or nil."
+  [plain node-index [_ prefix] node]
+  (let [line?    #(= :line-to (:command (nth plain % nil)))
+        near-idx (if (= prefix :c2) (inc node-index) node-index)]
+    (if (line? near-idx)
+      near-idx
+      (let [[start end] (subpath-bounds plain node-index)
+            seam-idx    (when (some? end)
+                          (if (= prefix :c2) (inc start) end))]
+        (when (and (some? seam-idx)
+                   (= node (path.helpers/segment->point (get plain start)))
+                   (= node (path.helpers/segment->point (get plain end)))
+                   (line? seam-idx))
+          seam-idx)))))
+
+(defn- curve-line
+  "Turns the line at `line-idx` into a curve with `target` as its handler at
+  `node`. The far handler stays on its node."
+  [plain line-idx node target]
+  (let [segment (get plain line-idx)
+        end     (path.helpers/segment->point segment)]
+    (if (= node end)
+      (let [start (path.helpers/segment->point (get plain (dec line-idx)))]
+        (update plain line-idx path.helpers/update-curve-to start target))
+      (update plain line-idx path.helpers/update-curve-to target end))))
+
+(defn add-missing-handler
+  "Gives a node with a single handler a mirrored opposite.
+
+  A collapsed handler is moved out; a line on the node's other side becomes
+  a curve. Other nodes are returned unchanged."
+  [content node-index]
+  (let [collapsed?    (fn [[idx prefix]]
+                        (= (path/get-handler-point content idx prefix)
+                           (path/handler->node content idx prefix)))
+        handler-ids   (node-handler-ids content node-index)
+        [live & more] (remove collapsed? handler-ids)]
+    (if (or (nil? live) (some? more))
+      content
+      (let [[idx prefix]       live
+            node               (path/handler->node content idx prefix)
+            handler            (path/get-handler-point content idx prefix)
+            target             (mirror-point node handler)
+            plain              (vec content)
+            [op-idx op-prefix] (first (filter collapsed? handler-ids))
+            line-idx           (when (nil? op-idx)
+                                 (line-beside-node plain node-index live node))]
+        (cond
+          (some? op-idx)
+          (let [[cx cy] (path.helpers/prefix->coords op-prefix)]
+            (path/content (update-in plain [op-idx :params] assoc
+                                     cx (:x target) cy (:y target))))
+
+          (some? line-idx)
+          (path/content (curve-line plain line-idx node target))
+
+          :else
+          content)))))
 
 (defn remap-handler-types
   "Remaps handler types by node position after structural changes."
@@ -293,17 +395,27 @@
   [content index]
   (path.helpers/segment->point (nth content index)))
 
+(defn- command-curve-node?
+  "True when a handler next to `index` stands away from its node."
+  [content index]
+  (let [node           (node-position content index)
+        incoming       (when (= :curve-to (:command (nth content index nil)))
+                         (path/get-handler-point content index :c2))
+        outgoing-index (inc index)
+        outgoing       (when (= :curve-to (:command (nth content outgoing-index nil)))
+                         (path/get-handler-point content outgoing-index :c1))]
+    (boolean (some #(and (some? %) (not= node %)) [incoming outgoing]))))
+
 (defn curve-node?
-  "True when the node at `index` has a visible curve handler."
+  "True when the node at `index` has a visible curve handler.
+
+  A closed subpath starts and ends at one node, so either of the two
+  commands standing there sees the handlers of both."
   [content index]
   (when (node? content index)
-    (let [node           (node-position content index)
-          incoming       (when (= :curve-to (:command (nth content index nil)))
-                           (path/get-handler-point content index :c2))
-          outgoing-index (inc index)
-          outgoing       (when (= :curve-to (:command (nth content outgoing-index nil)))
-                           (path/get-handler-point content outgoing-index :c1))]
-      (boolean (some #(and (some? %) (not= node %)) [incoming outgoing])))))
+    (or (command-curve-node? content index)
+        (boolean (some->> (seam-twin-index content index)
+                          (command-curve-node? content))))))
 
 (defn node-positions
   "Set of positions for the given node indices in the content."

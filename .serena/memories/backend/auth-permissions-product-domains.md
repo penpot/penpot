@@ -9,7 +9,7 @@
 - LDAP login validates credentials against the external directory, fetches identity data, then logs in or registers a matching Penpot profile. LDAP registration is not a separate Penpot signup flow.
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
-- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/http-storage-filedata-subtleties`.
+- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.
 
 ## Permission model
 
@@ -23,7 +23,7 @@
 - Team/project commands mix DB changes, email, message bus notifications, media/storage cleanup, feature flags, quotas, and audit metadata. Keep mutations transactional when the existing command does so.
 - Invitation flows validate muted/bounced emails before sending and use tokenized invitation state. Accepting an invitation is tied to the invited member identity, not just possession of a token.
 - Logical deletion is used for many product objects; prefer existing logical-deletion helpers over hard deletes unless the command already performs permanent cleanup.
-- Bounced/spam-complaint emails can mute/block a profile for login/registration and email sending. Devenv MailCatcher is the normal local path for registration/email-flow testing.
+- Bounced/spam-complaint emails can mute/block a profile for login/registration and email sending. Devenv Mailpit is the normal local path for registration/email-flow testing.
 
 ## Comments, webhooks, and audit
 
@@ -37,4 +37,4 @@
 - Enable LDAP login locally with frontend flag `enable-login-with-ldap`; the devenv includes a configured test LDAP service.
 - OIDC testing requires external provider app credentials plus matching backend/frontend config.
 - Backend domain tests usually live under `backend/test/backend_tests/rpc/commands/*_test.clj` or nearby backend test namespaces. Use focused `clojure -M:dev:test --focus ...` from `backend/` when possible.
-- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/http-storage-filedata-subtleties` because RPC-level tests may not exercise cookie/header transforms.
+- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/subtleties` because RPC-level tests may not exercise cookie/header transforms.
