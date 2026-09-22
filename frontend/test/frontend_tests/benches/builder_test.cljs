@@ -42,7 +42,6 @@
 (t/deftest rectangle-workload-keeps-default-count
   (let [instance (rects/build {:seed 42})
         rects    (rect-shapes instance)]
-    (t/is (= 1000 (:count rects/default-params)))
     (t/is (= 1000 (count rects)))
     (t/is (< 1 (count (distinct (map :x rects)))))))
 

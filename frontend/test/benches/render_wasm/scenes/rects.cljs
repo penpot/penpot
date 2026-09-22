@@ -5,23 +5,46 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.scenes.rects
-  "Rectangle fixture, the smallest benchmark workload.
+  "Rectangle scene, the smallest benchmark workload.
 
   Distributes rectangles over the canvas with varied sizes, translucent
   fills and centered strokes, all drawn from the scope's seeded generator.
-  Ticket20 wraps `build` with case declarations; the path and effect
-  fixtures arrive in tickets07/08."
-  (:require
-   [benches.render-wasm.scenes.builder :as sb :include-macros true]))
+  `build` produces the fixture snapshot; `defscene` and `defcase` declare
+  the scene and its standard cases. The three cases share parameters, so
+  they render the same scene. The path and effect fixtures arrive in
+  tickets07/08.
 
-(def default-params
+  Operation bodies are deferred to tickets05/06. The intended threaded
+  shape is:
+
+    (defcase :rects/pan :rects {...}
+      (-> rtx
+          (restore! base-view)
+          (pan! {:frames 20 :distance [120 60] :settle-ms 100})
+          (drain! :full)))
+
+  where `rtx` is the injected runtime and each operation contributes its
+  plain-data identity to the collected case."
+  (:require
+   [benches.render-wasm.scenes.builder :as sb :include-macros true]
+   [benches.render-wasm.scenes.core :as core :include-macros true]))
+
+(def ^:private default-params
   {:count 1000
    :width 1920
    :height 1080
    :min-size 20
    :max-size 100})
 
-(defn rect-defaults
+(def ^:private schema:params
+  [:map {:closed true}
+   [:count [:int {:min 1 :max 100000}]]
+   [:width pos?]
+   [:height pos?]
+   [:min-size pos?]
+   [:max-size pos?]])
+
+(defn- rect-defaults
   "Attribute generators for one rectangle of the workload."
   [{:keys [width height min-size max-size]}]
   {:x       (sb/gen-int 0 width)
@@ -37,7 +60,7 @@
 
 (defn build
   "Builds the seeded rectangle fixture. `params` requires `:seed`; the other
-  keys default to `default-params`."
+  keys default to the standard case parameters."
   [params]
   (let [params (merge default-params params)]
     (sb/fixture {:seed (:seed params)
@@ -48,3 +71,29 @@
                  :defaults {:rect (rect-defaults params)}}
                 (doseq [_ (range (:count params))]
                   (sb/rect)))))
+
+(core/defscene :rects
+  {:version 1
+   :description "Seeded rectangles with translucent fills and centered strokes"
+   :params-schema schema:params}
+  build)
+
+(def ^:private base-view
+  {:scale 1 :x 0 :y 0})
+
+(core/defcase :rects/load :rects
+  {:params default-params
+   :view base-view
+   :context :fresh})
+
+(core/defcase :rects/pan :rects
+  {:params default-params
+   :view base-view
+   :context :reuse
+   :completion :render-full})
+
+(core/defcase :rects/zoom :rects
+  {:params default-params
+   :view base-view
+   :context :reuse
+   :completion :render-full})
