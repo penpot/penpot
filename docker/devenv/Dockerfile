@@ -476,6 +476,7 @@ RUN set -ex; \
       nginx \
       fd-find \
       bat \
+      gettext \
       \
       fontconfig \
       woff-tools \

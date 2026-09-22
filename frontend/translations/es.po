@@ -112,7 +112,7 @@ msgstr "La contraseña ha sido cambiada"
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
-"El perfil aun no ha sido verificado, por favor valida el perfil antes de "
+"El perfil aún no ha sido verificado, por favor valida el perfil antes de "
 "continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
@@ -1818,7 +1818,7 @@ msgstr "Parece que no es una imagen válida."
 msgid "errors.member-is-muted"
 msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
-"spam o alto indice de rebote)."
+"spam o alto índice de rebote)."
 
 #: src/app/main/errors.cljs:483
 msgid "errors.migration-in-progress"
@@ -1859,7 +1859,7 @@ msgstr "El perfil esta blockeado"
 #: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:225, src/app/main/ui/dashboard/team.cljs:731, src/app/main/ui/dashboard/team.cljs:1108, src/app/main/ui/onboarding/team_choice.cljs:109, src/app/main/ui/settings/change_email.cljs:33
 msgid "errors.profile-is-muted"
 msgstr ""
-"Tu perfil tiene los emails silenciados (por reportes de spam o alto indice "
+"Tu perfil tiene los emails silenciados (por reportes de spam o alto índice "
 "de rebote)."
 
 #: src/app/main/data/auth.cljs:346, src/app/main/ui/auth/register.cljs:91
@@ -2642,7 +2642,7 @@ msgstr "Crear nuevo token de acceso"
 
 #: src/app/main/ui/settings/integrations.cljs:632
 msgid "integrations.access-tokens.empty.add-one"
-msgstr "Pulsa el botón \"Crear nuevo token de accesso\" para generar uno."
+msgstr "Pulsa el botón \"Crear nuevo token de acceso\" para generar uno."
 
 #: src/app/main/ui/settings/integrations.cljs:631
 msgid "integrations.access-tokens.empty.no-access-tokens"
@@ -2655,7 +2655,7 @@ msgstr "Tokens de acceso personales"
 #: src/app/main/ui/settings/integrations.cljs:611
 msgid "integrations.access-tokens.personal.description"
 msgstr ""
-"Los tokens de accesso personales funcionan como una alternativa a nuestro "
+"Los tokens de acceso personales funcionan como una alternativa a nuestro "
 "sistema de autenticación usuario/password y se pueden usar para permitir a "
 "otras aplicaciones acceso a la API interna de Penpot"
 
@@ -2665,7 +2665,7 @@ msgstr "Copiar al portapapeles"
 
 #: src/app/main/ui/settings/integrations.cljs:253
 msgid "integrations.create-access-token.title"
-msgstr "Crear token de accesso"
+msgstr "Crear token de acceso"
 
 #: src/app/main/ui/settings/integrations.cljs:252
 msgid "integrations.create-access-token.title.created"
@@ -8505,19 +8505,19 @@ msgstr "Opciones avanzadas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:695, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:702
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Altura.Max"
+msgstr "Altura máx."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:633, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:640
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Ancho.Max"
+msgstr "Ancho máx."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:664, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:672
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Altura.Min"
+msgstr "Altura mín."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:609
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Ancho.Min"
+msgstr "Ancho mín."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -9785,7 +9785,7 @@ msgstr "Nombre del grupo"
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.tokens.grouping-set-alert"
-msgstr "La agrupación de sets aun no está soportada."
+msgstr "La agrupación de sets aún no está soportada."
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:232
 msgid "workspace.tokens.import-button-prefix"
