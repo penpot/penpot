@@ -57,14 +57,15 @@ high-coverage support reference, never the base.
 
 ## QA before commit
 
-- Run `node ./scripts/check-translations.js -l <locale>` from
-  `frontend/` (`pnpm run check-translations` covers `ca`): 0 errors
+- Run `node ./scripts/translations.js check -l <locale>` from
+  `frontend/` (no default locale: pass `-l` explicitly): 0 errors
   required; review warnings by hand. Word lists live in
   `frontend/scripts/check-translations/words.<locale>.txt`
   (`[elision]` `[function]` `[common]` `[ok]` `[brands]`); new valid
-  words that trip the gate go to `[ok]`; `--self-test` covers the
-  detector rules. Without a catalog only the universal checks run.
-  `#, fuzzy` entries are skipped (known-pending, owned elsewhere).
+  words that trip the gate go to `[ok]`; `check --self-test`
+  covers the detector rules. Without a catalog only the universal
+  checks run. `#, fuzzy` entries are skipped (known-pending,
+  owned elsewhere).
 - Placeholder parity per entry (singular AND each plural form,
   also enforced by the script); verify `%s` against the `tr` call
   site when `en`/`es`/code disagree (a `%s` the code never passes
