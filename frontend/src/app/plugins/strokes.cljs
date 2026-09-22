@@ -41,6 +41,10 @@
       {:get (fn [] (:stroke-width @state))
        :set (fn [v] (swap! state assoc :stroke-width v) (on-change!))}
 
+      :strokePerSide
+      {:get (fn [] (:stroke-per-side @state))
+       :set (fn [v] (swap! state assoc :stroke-per-side v) (on-change!))}
+
       :strokeWidthTop
       {:get (fn [] (:stroke-width-top @state))
        :set (fn [v] (swap! state assoc :stroke-width-top v) (on-change!))}
