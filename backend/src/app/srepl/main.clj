@@ -34,6 +34,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
+   [app.srepl.cli :as cli]
    [app.srepl.helpers :as h]
    [app.srepl.procs.file-repair :as procs.file-repair]
    [app.system :as sys]
@@ -745,47 +746,15 @@
 
 (defn delete-profiles-in-bulk!
   [system path]
-  (letfn [(process-data! [system deleted-at emails]
-            (loop [emails  emails
-                   deleted 0
-                   total   0]
-              (if-let [email (first emails)]
-                (if-let [profile (some-> (db/get* system :profile
-                                                  {:email (str/lower email)}
-                                                  {::db/remove-deleted false})
-                                         (profile/decode-row))]
-                  (do
-                    (audit/insert system
-                                  {:name "delete-profile"
-                                   :type "action"
-                                   :profile-id (:id profile)
-                                   :tracked-at deleted-at
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to delete-profiles-in-bulk!"}})
-                    (wrk/invoke! (-> system
-                                     (assoc ::wrk/task :delete-object)
-                                     (assoc ::wrk/params {:object :profile
-                                                          :deleted-at deleted-at
-                                                          :id (:id profile)})))
-                    (recur (rest emails)
-                           (inc deleted)
-                           (inc total)))
-                  (recur (rest emails)
-                         deleted
-                         (inc total)))
-                {:deleted deleted :total total})))]
+  (let [path (fs/path path)]
+    (when-not (fs/exists? path)
+      (throw (ex-info "path does not exists" {:path path})))
 
-    (let [path       (fs/path path)
-          deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
-
-      (when-not (fs/exists? path)
-        (throw (ex-info "path does not exists" {:path path})))
-
-      (db/tx-run! system
-                  (fn [system]
-                    (with-open [reader (io/reader path)]
-                      (process-data! system deleted-at (line-seq reader))))))))
+    (with-open [reader (io/reader path)]
+      (cli/delete-profiles! system
+                            (line-seq reader)
+                            {:triggered-by "srepl"
+                             :cause "explicit call to delete-profiles-in-bulk!"}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CASCADE FIXING

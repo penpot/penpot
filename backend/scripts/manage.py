@@ -137,6 +137,23 @@ def search_profile(email):
     if isinstance(res, list):
         print(tabulate(res, headers="keys"))
 
+def delete_profiles_in_bulk(path):
+    with open(path, encoding="utf-8") as email_file:
+        emails = [line.strip() for line in email_file if line.strip()]
+
+    if not emails:
+        raise RuntimeError("the email file is empty")
+
+    params = {
+        "cmd": "delete-profiles-in-bulk",
+        "params": {
+            "emails": emails,
+        }
+    }
+
+    res = run_cmd(params)
+    print(f"Enqueued: {res['deleted']} / {res['total']}")
+
 def derive_password(password):
     params = {
         "cmd": "derive-password",
@@ -161,6 +178,7 @@ available_commands = (
     "create-profile",
     "update-profile",
     "delete-profile",
+    "delete-profiles-in-bulk",
     "search-profile",
     "derive-password",
 )
@@ -178,6 +196,7 @@ parser.add_argument("-n", "--fullname", help="fullname", action="store")
 parser.add_argument("-e", "--email", help="email", action="store")
 parser.add_argument("-p", "--password", help="password", action="store")
 parser.add_argument("-c", "--connect", help="connect to PREPL", action="store", default="tcp://localhost:6063")
+parser.add_argument("--file", help="file containing one email per line", action="store")
 parser.add_argument("--skip-tutorial", help="mark tutorial as viewed", action="store_true")
 parser.add_argument("--skip-walkthrough", help="mark walkthrough as viewed", action="store_true")
 
@@ -237,4 +256,9 @@ elif args.action == "search-profile":
 
     search_profile(email)
 
+elif args.action == "delete-profiles-in-bulk":
+    if args.file is None:
+        parser.error("delete-profiles-in-bulk requires --file")
+
+    delete_profiles_in_bulk(args.file)
 

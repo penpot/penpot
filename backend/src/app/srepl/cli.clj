@@ -13,11 +13,14 @@
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as audit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
+   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (defn coercer
@@ -121,6 +124,50 @@
              (let [sql (str "select email, fullname, created_at, deleted_at from profile "
                             " where email similar to ? order by created_at desc limit 100")]
                (db/exec! conn [sql email]))))))
+
+(defn delete-profiles!
+  "Enqueue the standard profile deletion task for each provided email."
+  ([system emails]
+   (delete-profiles! system emails
+                     {:triggered-by "prepl"
+                      :cause "explicit call to delete-profiles-in-bulk"}))
+  ([system emails context]
+   (let [deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
+     (db/tx-run! system
+                 (fn [system]
+                   (reduce
+                    (fn [{:keys [deleted total]} email]
+                      (if-let [profile (some-> (db/get* system :profile
+                                                        {:email (str/lower email)}
+                                                        {::db/remove-deleted false})
+                                               (cmd.profile/decode-row))]
+                        (do
+                          (audit/insert system
+                                        {:name "delete-profile"
+                                         :type "action"
+                                         :profile-id (:id profile)
+                                         :tracked-at deleted-at
+                                         :props (audit/profile->props profile)
+                                         :context context})
+                          (wrk/invoke! (-> system
+                                           (assoc ::wrk/task :delete-object)
+                                           (assoc ::wrk/params {:object :profile
+                                                                :deleted-at deleted-at
+                                                                :id (:id profile)})))
+                          {:deleted (inc deleted) :total (inc total)})
+                        {:deleted deleted :total (inc total)}))
+                    {:deleted 0 :total 0}
+                    emails))))))
+
+(defmethod exec-command "delete-profiles-in-bulk"
+  [{:keys [emails]}]
+  (when-not (and (vector? emails) (seq emails) (every? string? emails))
+    (ex/raise :type :assertion
+              :code :invalid-arguments
+              :hint "a non-empty email list should be provided"))
+
+  (some-> (get-current-system)
+          (delete-profiles! emails)))
 
 (defmethod exec-command "derive-password"
   [{:keys [password]}]
