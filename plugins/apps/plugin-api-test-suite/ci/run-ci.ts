@@ -1,9 +1,9 @@
-import { spawn, type ChildProcess } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from 'playwright';
 import type { CoverageReport, TestResult } from '../src/framework/types';
+import { startStaticServer, type StaticServer } from './static-server.ts';
 
 // Out-of-sandbox CI driver (Node + Playwright). Injects the prebuilt
 // `headless.js` bundle (built from the in-sandbox entry `src/ci/headless.ts` —
@@ -19,8 +19,9 @@ import type { CoverageReport, TestResult } from '../src/framework/types';
 //   the given substring (case-insensitive).
 //   Optional env: RENDER_WASM — force the workspace renderer (`true`/`false`).
 //
-// - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle via the e2e
-//   static server and intercepts every backend RPC with Playwright `page.route`,
+// - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle with the
+//   zero-dependency static server in `ci/static-server.ts` and intercepts
+//   every backend RPC with Playwright `page.route`,
 //   reusing the frontend e2e mock fixtures. No backend/login needed. Validates
 //   the frontend Plugin API binding + in-memory store only; results that depend
 //   on real backend behaviour are not faithfully reproduced, so those tests are
@@ -30,6 +31,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 // here = <root>/plugins/apps/plugin-api-test-suite/ci
 const repoRoot = resolve(here, '../../../../');
 const frontendDir = resolve(repoRoot, 'frontend');
+const staticRoot = resolve(frontendDir, 'resources/public');
 const e2eDataDir = resolve(frontendDir, 'playwright/data');
 
 const MOCKED = !!process.env['MOCK_BACKEND'];
@@ -179,16 +181,15 @@ async function waitForServer(url: string, timeoutMs = 30000): Promise<void> {
   }
 }
 
-function startE2eServer(): ChildProcess {
-  // Reuse the frontend e2e static server: it serves frontend/resources/public
-  // on port 3000, which is also the host the app opens its notifications
-  // WebSocket against (ws://localhost:3000/ws/notifications) — so the WS mock
-  // below matches without extra config.
-  const child = spawn('node', ['scripts/e2e-server.js'], {
-    cwd: frontendDir,
-    stdio: 'inherit',
-  });
-  return child;
+function startE2eServer(): Promise<StaticServer> {
+  // Serve the prebuilt bundle from `frontend/resources/public` on port 3000,
+  // which is also the host the app opens its notifications WebSocket against
+  // (ws://localhost:3000/ws/notifications) — so the WS mock below matches
+  // without extra config. This used to shell out to the express-based
+  // `frontend/scripts/e2e-server.js`, but that resolves `express` from
+  // `frontend/node_modules`, which the CI jobs never install (only
+  // `plugins/` deps), so the driver crashed before serving anything.
+  return startStaticServer(staticRoot, 3000);
 }
 
 // Install the frontend e2e WebSocket mock so the workspace's notifications
@@ -337,12 +338,12 @@ function printReport(
 async function main() {
   const bundle = readFileSync(headlessBundlePath, 'utf-8');
 
-  let server: ChildProcess | undefined;
+  let server: StaticServer | undefined;
   let fileUrl: string;
   let authToken: string | undefined;
 
   if (MOCKED) {
-    server = startE2eServer();
+    server = await startE2eServer();
     await waitForServer(MOCK_BASE_URL);
     fileUrl = mockedFileUrl();
   } else {
@@ -463,7 +464,7 @@ async function main() {
   ]);
 
   await browser.close();
-  server?.kill();
+  await server?.close();
 
   printReport(results, coverage, skipped);
 

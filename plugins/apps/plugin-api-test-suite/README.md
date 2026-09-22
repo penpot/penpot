@@ -75,7 +75,9 @@ them the same way the plugin does).
 ### Mocked-backend mode
 
 The same runner can run without a live instance — it serves the prebuilt
-frontend via the frontend e2e static server and intercepts every backend RPC
+frontend with a zero-dependency static server built into the driver
+(`ci/static-server.ts`, same bundle on the same port 3000 — no `frontend/`
+install needed) and intercepts every backend RPC
 with Playwright `page.route`, reusing the frontend e2e mock fixtures:
 
 ```
@@ -83,6 +85,9 @@ pnpm --filter plugin-api-test-suite run test:ci:mocked
 ```
 
 (equivalently `MOCK_BACKEND=1 … run test:ci`). No login or backend is needed.
+This is the per-PR CI gate: the `Run Plugin API Test Suite (mocked)` job in
+`.github/workflows/tests-e2e.yml` restores the frontend bundle that the shared
+workflow builds once per commit (never build it in the job).
 This validates the frontend Plugin API binding + in-memory store only, so it
 can't faithfully reproduce results that depend on real backend behaviour
 (validation, persistence, generated ids, …). Tests that need the real backend

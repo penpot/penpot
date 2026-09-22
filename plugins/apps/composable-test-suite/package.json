@@ -9,6 +9,7 @@
         "build": "tsc && vite build",
         "build:headless": "vite build --config vite.config.headless.ts",
         "test:ci": "pnpm run build:headless && tsx ci/run-ci.ts",
+        "test:unit": "tsx --test ci/static-server.test.ts",
         "preview": "vite preview",
         "bootstrap": "pnpm install --ignore-workspace && pnpm run build && pnpm run start",
         "types:check": "tsc --noEmit",
