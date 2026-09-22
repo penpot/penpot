@@ -967,7 +967,7 @@
   (let [id      (random-uuid)
         content (pth/selectable-path-content)
         state   (-> (pth/selectable-path-state
-                     id content {:nodes #{} :segments #{} :handlers #{[1 :c2]}})
+                     id content path.helpers/empty-selection)
                     (assoc-in [:workspace-local :edit-path id :handler-types] {1 :mirror}))
         state'  (ptk/update (path.tools/remove-handler 1 :c2) state)
         types   (get-in state' [:workspace-local :edit-path id :handler-types])]
@@ -984,7 +984,7 @@
           state   (ptk/update (path.tools/remove-handler 1 :c2) state)
           result  (-> (ptk/update (path.tools/set-handler-type type) state)
                       (path.state/get-path :content))]
-      ;; The removed incoming handler comes back mirroring the outgoing one
+      ;; The removed handler comes back mirroring the one that stayed
       (t/is (= (gpt/point 8 0) (path/get-handler-point result 1 :c2)) (str type))
       (t/is (= (gpt/point 12 0) (path/get-handler-point result 2 :c1)) (str type)))))
 
@@ -995,7 +995,7 @@
                  {:nodes #{1} :segments #{} :handlers #{}})
         result  (-> (ptk/update (path.tools/set-handler-type :aligned) state)
                     (path.state/get-path :content))]
-    ;; The incoming line becomes a curve whose handler mirrors the outgoing one
+    ;; The incoming line becomes a curve mirroring the outgoing handler
     (t/is (= :curve-to (:command (nth result 1))))
     (t/is (= (gpt/point 0 0) (path/get-handler-point result 1 :c1)))
     (t/is (= (gpt/point 8 -4) (path/get-handler-point result 1 :c2)))
@@ -1014,7 +1014,6 @@
         result  (-> (ptk/update (path.tools/set-handler-type :mirror) state)
                     (path.state/get-path :content))
         segment (nth result 2)]
-    ;; The outgoing line becomes a curve that still ends at (20, 0)
     (t/is (= :curve-to (:command segment)))
     (t/is (= (gpt/point 12 -4) (path/get-handler-point result 2 :c1)))
     (t/is (= (gpt/point 20 0) (path/get-handler-point result 2 :c2)))
@@ -1027,10 +1026,9 @@
                  id content {:nodes #{1} :segments #{} :handlers #{}})
         result  (-> (ptk/update (path.tools/set-handler-type :independent) state)
                     (path.state/get-path :content))]
-    (t/is (= :line-to (:command (nth result 1))))
     (t/is (= (vec content) (vec result)))))
 
-(t/deftest aligning-an-end-node-with-one-handler-changes-nothing
+(t/deftest making-an-end-node-with-one-handler-equal-changes-nothing
   (let [content (path/content
                  [{:command :move-to :params {:x 0 :y 0}}
                   {:command :curve-to
@@ -1043,7 +1041,7 @@
                        (path.state/get-path :content))]
         (t/is (= (vec content) (vec result)) (str "node " node))))))
 
-(t/deftest aligning-two-nodes-around-a-line-curves-it-once
+(t/deftest making-two-nodes-equal-curves-the-line-between-them
   (let [id      (random-uuid)
         content (path/content
                  [{:command :move-to :params {:x 0 :y 0}}
@@ -1076,11 +1074,31 @@
                  id content {:nodes #{0} :segments #{} :handlers #{}})
         result  (-> (ptk/update (path.tools/set-handler-type :aligned) state)
                     (path.state/get-path :content))]
-    ;; The line that closes the path into the start node becomes a curve
     (t/is (= :curve-to (:command (nth result 3))))
     (t/is (= (gpt/point 5 10) (path/get-handler-point result 3 :c1)))
     (t/is (= (gpt/point -2 3) (path/get-handler-point result 3 :c2)))
     (t/is (= :line-to (:command (nth result 2))))))
+
+(t/deftest both-commands-of-a-seam-node-align-the-closing-line
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0 :y 0}}
+                  {:command :curve-to
+                   :params {:c1x 2 :c1y -3 :c2x 8 :c2y -3 :x 10 :y 0}}
+                  {:command :line-to :params {:x 5 :y 10}}
+                  {:command :line-to :params {:x 0 :y 0}}
+                  {:command :close-path :params {}}])]
+    ;; The start point is both the move-to and the closing line, and the
+    ;; selection may hold either one.
+    (doseq [node [0 3]]
+      (let [id     (random-uuid)
+            state  (pth/selectable-path-state
+                    id content {:nodes #{node} :segments #{} :handlers #{}})
+            result (-> (ptk/update (path.tools/set-handler-type :aligned) state)
+                       (path.state/get-path :content))]
+        (t/is (path.helpers/curve-node? content node) (str "node " node))
+        (t/is (= :curve-to (:command (nth result 3))) (str "node " node))
+        (t/is (= (gpt/point -2 3) (path/get-handler-point result 3 :c2))
+              (str "node " node))))))
 
 (t/deftest dragging-a-handler-records-it-as-the-last-edited-one
   (let [id      (random-uuid)

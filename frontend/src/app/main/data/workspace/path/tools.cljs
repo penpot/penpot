@@ -95,7 +95,7 @@
 (defn set-handler-type
   "Sets and stores the handler behavior of selected nodes.
 
-  Mirror and aligned give a node with a single handler its opposite back."
+  Mirror and aligned give a single-handler node its opposite back."
   [type]
   (ptk/reify ::set-handler-type
     ptk/UpdateEvent
