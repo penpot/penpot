@@ -3656,11 +3656,7 @@ impl RenderState {
         )?;
 
         if let Some((mut surface, filter_scale)) = filter_result {
-            let cached = shadows::CachedDropShadowFilter::new(
-                bounds,
-                filter_scale,
-                surface.image_snapshot(),
-            );
+            let cached = shadows::CachedDropShadowFilter::new(bounds, filter_scale, &mut surface);
             shadows::blit_cached_drop_shadow_filter(
                 &mut self.surfaces,
                 &cached,
