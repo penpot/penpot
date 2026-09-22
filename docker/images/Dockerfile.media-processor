@@ -4,7 +4,7 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     NODE_VERSION=v24.20.0 \
-    PNPM_VERSION=12.5.0 \
+    PNPM_VERSION=12.5.1 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
@@ -58,12 +58,12 @@ RUN set -eux; \
        aarch64|arm64) \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='60f0b186348a4f740e41269c79351b4d957c28af57b010a336fc7458e4e33134'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
          ;; \
        amd64|x86_64) \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='746979ad910f6eba9187c47080e1edfb73129ce2b8d39cc44cb1f6bc72cd571e'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

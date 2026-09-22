@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.5.0 \
+    PNPM_VERSION=12.5.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -77,13 +77,13 @@ RUN set -eux; \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='60f0b186348a4f740e41269c79351b4d957c28af57b010a336fc7458e4e33134'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='746979ad910f6eba9187c47080e1edfb73129ce2b8d39cc44cb1f6bc72cd571e'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -136,18 +136,18 @@ RUN set -ex; \
 
 FROM base AS setup-opencode2
 
-ENV OPENCODE2_VERSION=2.0.10
+ENV OPENCODE2_VERSION=2.0.12
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='cf5416676240455dc5a98500237af296cb1a00efbd2cca302ad22c92ea080ebc'; \
+         ESUM='33f0dde9f0f055b6a3665d290371bcfc8c63daceade7a535c4b94d386f2bd917'; \
          ;; \
        amd64|x86_64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='ca3c84d78c91005960ef9f3f7d60c7dfb4b2db58b97b0700e4e394a03bd8f42f'; \
+         ESUM='2a79beb2e24382cb2bdbb709237dbc22f498cf52a106d029a6a3a3243760c78b'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; exit 1; \
