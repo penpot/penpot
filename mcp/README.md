@@ -50,7 +50,7 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x).
+The project requires [Node.js](https://nodejs.org/) 20 or later (tested with v22.x).
 
 ### 1. Starting the MCP Server and the Plugin Server
 
