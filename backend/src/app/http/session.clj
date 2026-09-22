@@ -247,6 +247,12 @@
        (let [elapsed (ct/diff modified-at (ct/now))]
          (neg? (compare default-renewal-max-age elapsed)))))
 
+(defn- session-expired?
+  [{:keys [modified-at]}]
+  (and (ct/inst? modified-at)
+       (let [max-age (cf/get :auth-token-cookie-max-age default-cookie-max-age)]
+         (pos? (compare (ct/now) (ct/plus modified-at max-age))))))
+
 (defn- wrap-authz
   [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
@@ -255,6 +261,9 @@
       (cond
         (= type :cookie)
         (let [session (some->> (:sid claims) (read-session manager))
+              ;; Idle-expired sessions authenticate like missing ones:
+              ;; no profile, no renewal. The GC deletes the row later.
+              session (when-not (session-expired? session) session)
 
               request
               (cond-> request
@@ -275,6 +284,7 @@
 
         (= type :bearer)
         (let [session (some->> (:sid claims) (read-session manager))
+              session (when-not (session-expired? session) session)
               request (cond-> request
                         (some? session)
                         (-> (assoc ::profile-id (:profile-id session))
@@ -323,7 +333,13 @@
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid database pool")
   (assert (ct/duration? (::tasks/max-age params)))
-  (assert (ct/duration? (::tasks/max-age-absolute params))))
+  (assert (ct/duration? (::tasks/max-age-absolute params)))
+  ;; NOTE: explicit throw (not `assert`) so the guard fires even when
+  ;; the `:backend-asserts` flag leaves `*assert*` false.
+  (when (pos? (compare (::tasks/max-age params)
+                       (::tasks/max-age-absolute params)))
+    (throw (IllegalArgumentException.
+            "absolute session max-age must be greater than or equal to idle max-age"))))
 
 (defmethod ig/expand-key ::tasks/gc
   [k v]

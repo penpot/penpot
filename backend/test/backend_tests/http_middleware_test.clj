@@ -234,7 +234,7 @@
                                                            :user-agent "user agent"})
                           (#'session/assign-token cfg))
         claims       (tokens/decode cfg (:token session))
-        expected-exp (ct/plus (:created-at session) (ct/duration {:days 30})))]
+        expected-exp (ct/plus (:created-at session) (ct/duration {:days 30}))]
     (t/is (some? (:exp claims)) "session token should contain :exp claim")
     (t/is (= (inst-ms (:exp claims))
              (inst-ms expected-exp))
@@ -432,6 +432,77 @@
                  (get-in expanded [:app.http.session.tasks/gc
                                    :app.http.session.tasks/max-age-absolute]))
               "task max-age-absolute should fall back to the default absolute cap")))))
+
+(t/deftest session-gc-rejects-absolute-below-idle
+  (let [pool   (:app.db/pool th/*system*)
+        params {:app.db/pool pool
+                :app.http.session.tasks/max-age (ct/duration {:days 7})
+                :app.http.session.tasks/max-age-absolute (ct/duration {:days 30})}]
+    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc params))
+          "absolute cap above the idle window should pass")
+    (t/is (nil? (ig/assert-key :app.http.session.tasks/gc
+                               (assoc params
+                                      :app.http.session.tasks/max-age-absolute
+                                      (ct/duration {:days 7}))))
+          "absolute cap equal to the idle window should pass")
+    (t/is (thrown? IllegalArgumentException
+                   (ig/assert-key :app.http.session.tasks/gc
+                                  (assoc params
+                                         :app.http.session.tasks/max-age-absolute
+                                         (ct/duration {:days 3}))))
+          "absolute cap below the idle window should fail fast")))
+
+(t/deftest idle-expired-session-is-rejected
+  (let [cfg      th/*system*
+        profile  (th/create-profile* 1)
+        updated? (atom false)
+        session  {:id          (uuid/random)
+                  :profile-id  (:id profile)
+                  :user-agent  "user agent"
+                  :created-at  (ct/now)
+                  :modified-at (ct/minus (ct/now) (ct/duration {:days 8}))}
+        manager  (reify session/ISessionManager
+                   (read-session [_ _] session)
+                   (create-session [_ _] session)
+                   (update-session [_ s] (reset! updated? true) s)
+                   (delete-session [_ _] nil))
+        token    (:token (#'session/assign-token cfg session))
+        handler  (-> (fn [req] req)
+                     (#'session/wrap-authz (assoc cfg ::session/manager manager))
+                     (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                      :cookie (partial session/decode-token cfg)}))
+        cookie-r (handler (th/make-dummy-request {:cookies {"auth-token" token}}))
+        bearer-r (handler (th/make-dummy-request {:headers {"authorization" (str "Bearer " token)}}))]
+    (t/is (nil? (::session/profile-id cookie-r))
+          "idle-expired session must not authenticate via cookie")
+    (t/is (nil? (::session/session cookie-r))
+          "idle-expired session must not be attached via cookie")
+    (t/is (nil? (::session/profile-id bearer-r))
+          "idle-expired session must not authenticate via bearer")
+    (t/is (false? @updated?)
+          "idle-expired session must not be renewed")))
+
+(t/deftest idle-session-within-window-is-accepted
+  (let [cfg     th/*system*
+        profile (th/create-profile* 1)
+        session {:id          (uuid/random)
+                 :profile-id  (:id profile)
+                 :user-agent  "user agent"
+                 :created-at  (ct/now)
+                 :modified-at (ct/minus (ct/now) (ct/duration {:days 6}))}
+        manager (reify session/ISessionManager
+                  (read-session [_ _] session)
+                  (create-session [_ _] session)
+                  (update-session [_ s] (assoc s :modified-at (ct/now)))
+                  (delete-session [_ _] nil))
+        token   (:token (#'session/assign-token cfg session))
+        handler (-> (fn [req] req)
+                    (#'session/wrap-authz (assoc cfg ::session/manager manager))
+                    (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                     :cookie (partial session/decode-token cfg)}))
+        response (handler (th/make-dummy-request {:cookies {"auth-token" token}}))]
+    (t/is (= (:id profile) (::session/profile-id response))
+          "session within the idle window must authenticate")))
 
 (t/deftest parse-request-illegal-argument-exception
   ;; clojure.data.json raises IllegalArgumentException (case
