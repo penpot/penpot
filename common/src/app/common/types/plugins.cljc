@@ -41,21 +41,25 @@
   "Schema for plugin permissions - a set of valid permission strings."
   [:set {:gen/max 11} (into [:enum] (sort valid-permissions))])
 
+(def max-plugins
+  "Maximum number of plugins a profile can hold."
+  50)
+
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
-   [:name :string]
-   [:description {:optional true} :string]
-   [:host :string]
-   [:code :string]
-   [:icon {:optional true} :string]
+   [:name [:string {:max 500}]]
+   [:description {:optional true} [:string {:max 4096}]]
+   [:host [:string {:max 500}]]
+   [:code [:string {:max 500}]] ;; manifest path, not content
+   [:icon {:optional true} [:string {:max 500}]] ;; manifest path, not content
    [:permissions schema:permissions]])
 
 (def schema:plugin-registry
   [:map
-   [:ids [:vector :string]]
+   [:ids [:vector {:max max-plugins} :string]]
    [:data
-    [:map-of {:gen/max 5}
+    [:map-of {:gen/max 5 :max max-plugins}
      :string
      schema:registry-entry]]])
