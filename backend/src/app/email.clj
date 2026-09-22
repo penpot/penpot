@@ -475,7 +475,7 @@
 
 (def ^:private schema:renewal-notice
   [:map
-   [:user-name [:maybe ::sm/text]]
+   [:user-name [:maybe :string]]
    [:renewal-date ::sm/text]
    [:estimated-amount ::sm/text]
    [:organizations [:vector schema:organization-data]]])

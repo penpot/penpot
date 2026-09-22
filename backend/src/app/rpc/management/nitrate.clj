@@ -707,7 +707,7 @@ RETURNING id, deleted_at;")
   [:map
    [:profile-id ::sm/uuid]
    [:user-email ::sm/email]
-   [:user-name [:maybe ::sm/text]]
+   [:user-name [:maybe :string]]
    [:renewal-date :string]
    [:estimated-amount :double]
    [:organizations [:vector cto/schema:organization-with-avatar]]])
@@ -719,7 +719,11 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
   (let [amount-str (format "$%.2f" estimated-amount)
-        user-name  (if (str/empty? user-name)
+        ;; `nil` means the caller has no name override (e.g. no distinct
+        ;; billing email was set) and wants the account owner's real name.
+        ;; An explicit "" means the caller deliberately wants no name shown
+        ;; (e.g. a billing email was set but no company name was provided).
+        user-name  (if (nil? user-name)
                      (:fullname (profile/get-profile cfg profile-id))
                      user-name)]
     (db/tx-run! cfg (fn [{:keys [::db/conn]}]
