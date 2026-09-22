@@ -9,7 +9,7 @@
    [app.common.schema :as sm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.common :as fixture]
+   [benches.render-wasm.scenes.common :as common]
    [cljs.test :as t :include-macros true]))
 
 (defn- sample-instance
@@ -67,7 +67,7 @@
   "Returns the ex-data of the validation failure, or nil when it passes."
   [instance]
   (try
-    (fixture/validate! instance)
+    (common/validate! instance)
     nil
     (catch :default cause
       (ex-data cause))))
@@ -75,14 +75,14 @@
 (t/deftest canonical-example-is-valid
   (t/testing "validate! returns the same instance"
     (let [instance (sample-instance)]
-      (t/is (identical? instance (fixture/validate! instance)))))
+      (t/is (identical? instance (common/validate! instance)))))
 
   (t/testing "the envelope schema accepts the example"
-    (t/is (true? (sm/validate fixture/schema:instance (sample-instance))))))
+    (t/is (true? (sm/validate common/schema:instance (sample-instance))))))
 
 (t/deftest nested-hierarchy-is-valid
   (let [instance (nested-instance)]
-    (t/is (identical? instance (fixture/validate! instance)))))
+    (t/is (identical? instance (common/validate! instance)))))
 
 (t/deftest root-only-instance-is-valid
   (let [root     (cts/setup-shape {:id uuid/zero :type :frame :name "Root Frame"
@@ -90,18 +90,17 @@
                                    :parent-id uuid/zero :frame-id uuid/zero
                                    :shapes []})
         instance {:objects {uuid/zero root} :refs {}}]
-    (t/is (identical? instance (fixture/validate! instance)))
-    (t/is (= [uuid/zero] (mapv :id (fixture/upload-order instance))))))
+    (t/is (identical? instance (common/validate! instance)))
+    (t/is (= [uuid/zero] (mapv :id (common/upload-order instance))))))
 
 (t/deftest upload-order-starts-at-root
   (let [instance (sample-instance)
-        ids      (mapv :id (fixture/upload-order instance))]
-    (t/is (= uuid/zero (first ids)))
-    (t/is (= [uuid/zero (fixture/ref-id instance :rect)] ids))))
+        ids      (mapv :id (common/upload-order instance))]
+    (t/is (= [uuid/zero (common/ref-id instance :rect)] ids))))
 
 (t/deftest upload-order-is-parent-before-child
   (let [instance (nested-instance)
-        order    (fixture/upload-order instance)
+        order    (common/upload-order instance)
         names    (mapv :name order)
         position (into {} (map-indexed (fn [index shape] [(:id shape) index]) order))]
     (t/is (= ["Root Frame" "A" "A1" "A2" "B" "B1"] names))
@@ -135,39 +134,39 @@
                             a-id shape-a
                             b-id shape-b}
                   :refs {}}]
-    (t/is (identical? instance (fixture/validate! instance)))
+    (t/is (identical? instance (common/validate! instance)))
     (t/is (= ["Root Frame" "Flex" "B" "A"]
-             (mapv :name (fixture/upload-order instance))))))
+             (mapv :name (common/upload-order instance))))))
 
 (t/deftest ref-id-resolves-labels
   (let [instance (sample-instance)]
-    (t/is (= (uuid/custom 1 1) (fixture/ref-id instance :rect)))
-    (t/is (nil? (fixture/ref-id instance :missing)))))
+    (t/is (= (uuid/custom 1 1) (common/ref-id instance :rect)))
+    (t/is (nil? (common/ref-id instance :missing)))))
 
 (t/deftest missing-root-is-rejected
   (let [instance (sample-instance)
         data     (validation-error (update instance :objects dissoc uuid/zero))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= uuid/zero (:id data)))))
 
 (t/deftest non-frame-root-is-rejected
   (let [instance (sample-instance)
         data     (validation-error (assoc-in instance [:objects uuid/zero :type] :rect))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= uuid/zero (:id data)))))
 
 (t/deftest root-with-non-zero-parent-id-is-rejected
   (let [instance (sample-instance)
         data     (validation-error
                   (assoc-in instance [:objects uuid/zero :parent-id] (uuid/custom 9 9)))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= uuid/zero (:id data)))))
 
 (t/deftest object-key-must-match-shape-id
   (let [instance (sample-instance)
-        rect     (get-in instance [:objects (fixture/ref-id instance :rect)])
+        rect     (get-in instance [:objects (common/ref-id instance :rect)])
         data     (validation-error (assoc-in instance [:objects (uuid/custom 7 7)] rect))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= (:id rect) (:shape-id data)))))
 
 (t/deftest missing-child-is-rejected
@@ -175,32 +174,32 @@
         bogus    (uuid/custom 3 3)
         data     (validation-error
                   (assoc-in instance [:objects uuid/zero :shapes] [bogus]))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= bogus (:child data)))))
 
 (t/deftest child-not-listed-by-parent-is-rejected
   (let [instance (sample-instance)
-        rect-id  (fixture/ref-id instance :rect)
+        rect-id  (common/ref-id instance :rect)
         data     (validation-error (assoc-in instance [:objects uuid/zero :shapes] []))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "object is not reachable from the root" (:hint data)))
     (t/is (= rect-id (:id data)))))
 
 (t/deftest mismatched-parent-id-is-rejected
   (let [instance (sample-instance)
-        rect-id  (fixture/ref-id instance :rect)
+        rect-id  (common/ref-id instance :rect)
         data     (validation-error
                   (assoc-in instance [:objects rect-id :parent-id] (uuid/custom 9 7)))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "shape :shapes lists a child with a different :parent-id" (:hint data)))
     (t/is (= rect-id (:child data)))))
 
 (t/deftest duplicate-child-ids-are-rejected
   (let [instance (sample-instance)
-        rect-id  (fixture/ref-id instance :rect)
+        rect-id  (common/ref-id instance :rect)
         data     (validation-error
                   (assoc-in instance [:objects uuid/zero :shapes] [rect-id rect-id]))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "an object is reachable more than once" (:hint data)))
     (t/is (= rect-id (:id data)))))
 
@@ -208,7 +207,7 @@
   (let [instance (sample-instance)
         data     (validation-error
                   (assoc-in instance [:objects uuid/zero :shapes] [uuid/zero]))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "root must not be a descendant of itself" (:hint data)))
     (t/is (= uuid/zero (:id data)))))
 
@@ -228,7 +227,7 @@
                        (assoc (get (sample-instance) :objects)
                               c1-id shape1
                               c2-id shape2)))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "object is not reachable from the root" (:hint data)))
     (t/is (contains? #{c1-id c2-id} (:id data)))))
 
@@ -248,24 +247,24 @@
                      (assoc-in [:objects a-id] shape-a)
                      (assoc-in [:objects b-id] shape-b))
         data     (validation-error instance)]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "shape :shapes lists a child with a different :parent-id" (:hint data)))
     (t/is (= a-id (:child data)))))
 
 (t/deftest non-vector-children-are-rejected
   (let [instance (sample-instance)
-        rect-id  (fixture/ref-id instance :rect)
+        rect-id  (common/ref-id instance :rect)
         data     (validation-error (assoc-in instance [:objects rect-id :shapes] 5))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= "shape :shapes must be a vector" (:hint data)))
     (t/is (= rect-id (:id data)))))
 
 (t/deftest frame-id-mismatch-is-rejected
   (let [instance (nested-instance)
-        a1-id    (fixture/ref-id instance :a1)
+        a1-id    (common/ref-id instance :a1)
         data     (validation-error
                   (assoc-in instance [:objects a1-id :frame-id] uuid/zero))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= :invalid-frame (:code data)))
     (t/is (= a1-id (:shape-id data)))))
 
@@ -273,45 +272,45 @@
   (let [instance (sample-instance)
         data     (validation-error
                   (assoc-in instance [:refs :rect] (uuid/custom 6 6)))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (= :rect (:label data)))))
 
 (t/deftest non-uuid-ref-value-is-rejected
   (let [data (validation-error (assoc-in (sample-instance) [:refs :rect] "not-a-uuid"))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (some? (::sm/explain data)))))
 
 (t/deftest missing-refs-key-is-rejected
   (let [data (validation-error (dissoc (sample-instance) :refs))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (some? (::sm/explain data)))))
 
 (t/deftest non-canonical-shape-is-rejected
   (let [instance (sample-instance)
-        rect-id  (fixture/ref-id instance :rect)
+        rect-id  (common/ref-id instance :rect)
         data     (validation-error (assoc-in instance [:objects rect-id] {:id rect-id}))]
-    (t/is (= ::fixture/invalid-fixture (:type data)))
+    (t/is (= ::common/invalid-fixture (:type data)))
     (t/is (some? (::sm/explain data)))))
 
 (t/deftest malformed-envelopes-are-rejected
   (t/testing "empty objects map"
     (let [data (validation-error {:objects {} :refs {}})]
-      (t/is (= ::fixture/invalid-fixture (:type data)))
+      (t/is (= ::common/invalid-fixture (:type data)))
       (t/is (= uuid/zero (:id data)))))
 
   (t/testing "nil instance"
     (let [data (validation-error nil)]
-      (t/is (= ::fixture/invalid-fixture (:type data)))
+      (t/is (= ::common/invalid-fixture (:type data)))
       (t/is (some? (::sm/explain data)))))
 
   (t/testing "nil shape value"
     (let [instance (sample-instance)
-          rect-id  (fixture/ref-id instance :rect)
+          rect-id  (common/ref-id instance :rect)
           data     (validation-error (assoc-in instance [:objects rect-id] nil))]
-      (t/is (= ::fixture/invalid-fixture (:type data)))
+      (t/is (= ::common/invalid-fixture (:type data)))
       (t/is (some? (::sm/explain data)))))
 
   (t/testing "nil ref value"
     (let [data (validation-error (assoc-in (sample-instance) [:refs :rect] nil))]
-      (t/is (= ::fixture/invalid-fixture (:type data)))
+      (t/is (= ::common/invalid-fixture (:type data)))
       (t/is (some? (::sm/explain data))))))
