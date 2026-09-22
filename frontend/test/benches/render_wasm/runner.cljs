@@ -34,7 +34,7 @@
        "Options:\n"
        summary "\n\n"
        "No command is implemented yet. Upcoming tickets add:\n"
-       "  run      benchmark standard fixtures and operations\n"
+       "  run      benchmark standard scenes and operations\n"
        "  ab       feature A/B matrix\n"
        "  compare  offline comparison of two result files\n\n"
        "Commands, options and reporting arrive with the later renderer\n"
