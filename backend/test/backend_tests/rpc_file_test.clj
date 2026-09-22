@@ -46,25 +46,23 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
-        page-id (uuid/next)]
+        page-id (uuid/next)
+        data    {::th/type :create-file
+                 ::rpc/profile-id (:id prof)
+                 :project-id proj-id
+                 :name "foobar"
+                 :is-shared false}
+        out     (th/command! data)
+        file-id (:id (:result out))]
 
     (t/testing "create file"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
 
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result))))))
+      (let [result (:result out)]
+        (t/is (uuid? file-id))
+        (t/is (= (:name data) (:name result)))
+        (t/is (= proj-id (:project-id result)))))
 
     (t/testing "rename file"
       (let [data {::th/type :rename-file
@@ -140,58 +138,6 @@
 
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
-
-(t/deftest create-file-with-duplicate-id
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        proj-id (:default-project-id prof)
-        file-id (uuid/next)]
-
-    (t/testing "create file with specific id"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "first-file"}
-            out  (th/command! data)]
-        (t/is (nil? (:error out)))))
-
-    (t/testing "create file with duplicate id returns normalized error"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "duplicate-file"}
-            out  (th/command! data)
-            err  (:error out)]
-        (t/is (th/ex-info? err))
-        (t/is (th/ex-of-type? err :not-found))))))
-
-(t/deftest create-file-id-version
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        proj-id (:default-project-id prof)
-        v3-id   "6fa459ea-ee8a-3ca4-894e-db77e160355e"
-        v4-id   "550e8400-e29b-41d4-a716-446655440000"]
-
-    ;; reserved version (v3) must be rejected at the RPC boundary
-    (let [data {::th/type :create-file
-                ::rpc/profile-id (:id prof)
-                :project-id proj-id
-                :id v3-id
-                :name "file with v3 id"}
-          out  (th/command! data)]
-      (t/is (not (th/success? out)))
-      (t/is (th/ex-of-type? (:error out) :validation))
-      (t/is (th/ex-of-code? (:error out) :params-validation)))
-
-    ;; v4 id is accepted
-    (let [data {::th/type :create-file
-                ::rpc/profile-id (:id prof)
-                :project-id proj-id
-                :id v4-id
-                :name "file with v4 id"}
-          out  (th/command! data)]
-      (t/is (th/success? out))
-      (t/is (= v4-id (str (:id (:result out))))))))
 
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
@@ -824,8 +770,7 @@
                   ::rpc/profile-id (:id profile2)
                   :project-id (:default-project-id profile1)
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
+                  :is-shared false}
         out      (th/command! data)
         error    (:error out)]
 
@@ -2118,127 +2063,121 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
-                  :id file-id
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+                  :is-shared false}
+            out  (th/command! data)
+            _    (t/is (nil? (:error out)))
+            file-id (:id (:result out))]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
         (let [result (:result out)]
           (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result)))))
+          (t/is (= proj-id (:project-id result))))
 
-      (let [data {::th/type :delete-file
-                  :id file-id
-                  ::rpc/profile-id (:id prof)}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out))))
+        (let [data {::th/type :delete-file
+                    :id file-id
+                    ::rpc/profile-id (:id prof)}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (t/is (nil? (:result out))))
 
-      ;; get deleted files
-      (let [data {::th/type :get-team-deleted-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [[row1 :as result] (:result out)]
-          (t/is (= 1 (count result)))
-          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
-          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
-          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
 
-      (let [data {::th/type :permanently-delete-team-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id
-                  :ids #{file-id}}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [result (:result out)]
-          (t/is (fn? result))
+        (let [data {::th/type :permanently-delete-team-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id
+                    :ids #{file-id}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
 
-          (let [[ev1 ev2 :as events] (th/consume-sse result)]
-            (t/is (= 2 (count events)))
-            (t/is (= (:ids data) (val ev2)))))
+            (let [[ev1 ev2 :as events] (th/consume-sse result)]
+              (t/is (= 2 (count events)))
+              (t/is (= (:ids data) (val ev2)))))
 
-        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
-          (t/is (= (:deleted-at row) now)))))))
+          (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+            (t/is (= (:deleted-at row) now))))))))
 
 (t/deftest restore-deleted-files
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
-                  :id file-id
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+                  :is-shared false}
+            out  (th/command! data)
+            _    (t/is (nil? (:error out)))
+            file-id (:id (:result out))]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
         (let [result (:result out)]
           (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result)))))
+          (t/is (= proj-id (:project-id result))))
 
-      (let [data {::th/type :delete-file
-                  :id file-id
-                  ::rpc/profile-id (:id prof)}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out))))
+        (let [data {::th/type :delete-file
+                    :id file-id
+                    ::rpc/profile-id (:id prof)}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (t/is (nil? (:result out))))
 
-      ;; get deleted files
-      (let [data {::th/type :get-team-deleted-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [[row1 :as result] (:result out)]
-          (t/is (= 1 (count result)))
-          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
-          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
-          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
 
-      (let [data {::th/type :restore-deleted-team-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id
-                  :ids #{file-id}}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [result (:result out)]
-          (t/is (fn? result))
+        (let [data {::th/type :restore-deleted-team-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id
+                    :ids #{file-id}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
 
-          (let [events (th/consume-sse result)]
-            ;; (pp/pprint events)
-            (t/is (= 2 (count events)))
-            (t/is (= :end (first (last events))))
-            (t/is (= (:ids data) (last (last events)))))))
+            (let [events (th/consume-sse result)]
+              ;; (pp/pprint events)
+              (t/is (= 2 (count events)))
+              (t/is (= :end (first (last events))))
+              (t/is (= (:ids data) (last (last events)))))))
 
-      (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
-        (t/is (nil? (:deleted-at row)))))))
+        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+          (t/is (nil? (:deleted-at row))))))))
 
 
 (t/deftest restore-deleted-files-and-projets
@@ -2721,3 +2660,15 @@
         (t/is (th/ex-info? err))
         (t/is (= :not-found (:type edata)))
         (t/is (= :object-not-found (:code edata)))))))
+
+(t/deftest create-file-rejects-client-id
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-file
+                              ::rpc/profile-id (:id prof)
+                              :project-id (:default-project-id prof)
+                              :name "file with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
