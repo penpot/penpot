@@ -98,7 +98,7 @@
          :aria-label (tr "workspace.tokens.change-token-source")
          :on-click show-libraries-dialog
          :icon "switch"}])
-     (when (and can-edit? (not (= source-file-id file-id)))
+     (when-not (= source-file-id file-id)
        [:> icon-button*
         {:variant "ghost"
          :aria-label (tr "workspace.tokens.open-source-new-tab")
