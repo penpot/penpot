@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-22 10:37+0000\n"
+"PO-Revision-Date: 2026-09-23 10:51+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
@@ -208,7 +208,7 @@ msgstr "所有 Penpot 使用者"
 
 #: src/app/main/ui/viewer/share_link.cljs:198
 msgid "common.share-link.confirm-deletion-link-description"
-msgstr "確定要移除此連結嗎？移除後，任何人都無法再使用此連結。"
+msgstr "確定要移除此連結嗎？移除後，任何人都無法再使用此連結"
 
 #: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
@@ -539,7 +539,7 @@ msgstr "您沒有權限將檔案匯入此團隊"
 
 #: src/app/main/ui/dashboard/import.cljs:134
 msgid "dashboard.import.progress.process-colors"
-msgstr "正在處理顏色"
+msgstr "正在處理色彩"
 
 #: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
 msgid "dashboard.import.progress.process-components"
@@ -1518,7 +1518,7 @@ msgstr "管理員"
 
 #: src/app/main/ui/onboarding/questions.cljs:158
 msgid "labels.adobe-xd"
-msgstr "Adobe XD"
+msgstr ""
 
 #: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:98, src/app/main/ui/workspace/tokens/management/context_menu.cljs:136, src/app/main/ui/workspace/tokens/management/token_pill.cljs:118
 msgid "labels.all"
@@ -1546,7 +1546,7 @@ msgstr "取消"
 
 #: src/app/main/ui/onboarding/questions.cljs:160
 msgid "labels.canva"
-msgstr "Canva"
+msgstr ""
 
 #: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:943, src/app/main/ui/dashboard/projects.cljs:102, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:139, src/app/main/ui/exports/files.cljs:227, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:150, src/app/main/ui/static.cljs:220, src/app/main/ui/viewer/login.cljs:81, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:683, src/app/main/ui/workspace/sidebar/layers.cljs:594, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:257, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:61, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:144, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:458, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
@@ -1763,7 +1763,7 @@ msgstr "內部錯誤"
 
 #: src/app/main/ui/onboarding/questions.cljs:162
 msgid "labels.invision"
-msgstr "InVision"
+msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs:585, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1213
 msgid "labels.invitations"
@@ -2045,7 +2045,7 @@ msgstr "僅顯示您的留言"
 
 #: src/app/main/ui/onboarding/questions.cljs:156
 msgid "labels.sketch"
-msgstr "Sketch"
+msgstr ""
 
 #: src/app/main/ui/onboarding/questions.cljs:53
 msgid "labels.start"
@@ -2111,7 +2111,7 @@ msgstr "檢視者"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:590, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1416
 msgid "labels.webhooks"
-msgstr "Webhooks"
+msgstr ""
 
 #: src/app/main/ui/comments.cljs:862
 msgid "labels.write-new-comment"
@@ -3994,11 +3994,11 @@ msgstr "所有資產"
 
 #: src/app/main/ui/dashboard/grid.cljs:156, src/app/main/ui/dashboard/grid.cljs:189, src/app/main/ui/workspace/colorpicker/libraries.cljs:364, src/app/main/ui/workspace/colorpicker/libraries.cljs:381, src/app/main/ui/workspace/colorpicker/libraries.cljs:395, src/app/main/ui/workspace/sidebar/assets/colors.cljs:512, src/app/main/ui/workspace/sidebar/assets.cljs:164
 msgid "workspace.assets.colors"
-msgstr "顏色"
+msgstr "色彩"
 
 #: src/app/main/ui/workspace/sidebar/assets/colors.cljs:520
 msgid "workspace.assets.colors.add-color"
-msgstr "新增顏色"
+msgstr "新增色彩"
 
 #: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:167, src/app/main/ui/workspace/sidebar/assets/components.cljs:588, src/app/main/ui/workspace/sidebar/assets.cljs:161
 msgid "workspace.assets.components"
@@ -6276,12 +6276,10 @@ msgid "workspace.tokens.no-themes-currently"
 msgstr "您目前沒有任何主題。"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "原始值：%s"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "解析後的值：%s"
 
@@ -6308,7 +6306,6 @@ msgid "workspace.tokens.theme-name"
 msgstr "主題 %s"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "描述"
 
@@ -6328,7 +6325,7 @@ msgstr "值"
 
 #: src/app/main/ui/workspace/tokens/management.cljs:72
 msgid "workspace.tokens.tokens-section-title"
-msgstr "TOKENS -  %s"
+msgstr ""
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:122
 msgid "workspace.tokens.tools"
@@ -6877,7 +6874,7 @@ msgstr "前往資料庫與範本"
 #: src/app/main/ui/dashboard/import.cljs:566
 msgid "dashboard.import.auto-linked-libraries"
 msgid_plural "dashboard.import.auto-linked-libraries"
-msgstr[0] "'已依名稱自動連結 %s 個資料庫。'"
+msgstr[0] "已依名稱自動連結 %s 個資料庫。"
 
 #: src/app/main/ui/dashboard/import.cljs:694
 msgid "dashboard.import.confirm-library-links"
@@ -7045,7 +7042,7 @@ msgstr "全部還原"
 
 #: src/app/main/data/dashboard.cljs:939
 msgid "dashboard.restore-files-success-notification"
-msgstr "「已成功還原 %s 個檔案。」"
+msgstr "已成功還原 %s 個檔案。"
 
 #: src/app/main/ui/dashboard/deleted.cljs:87
 msgid "dashboard.restore-project-button"
@@ -7061,7 +7058,7 @@ msgstr "還原專案"
 
 #: src/app/main/data/dashboard.cljs:911, src/app/main/data/dashboard.cljs:938, src/app/main/data/dashboard.cljs:975, src/app/main/ui/dashboard/file_menu.cljs:199
 msgid "dashboard.restore-success-notification"
-msgstr "「%s 已成功還原。」"
+msgstr "%s 已成功還原。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:383
 msgid "dashboard.section.organizations"
@@ -7742,7 +7739,7 @@ msgstr "個人存取權杖"
 
 #: src/app/main/ui/settings/integrations.cljs:611
 msgid "integrations.access-tokens.personal.description"
-msgstr "個人存取權杖可替代帳號與密碼驗證，讓應用程式存取 Penpot 內部 API。"
+msgstr "個人存取權杖可替代帳號與密碼驗證，讓應用程式存取 Penpot 內部 API"
 
 #: src/app/main/ui/settings/integrations.cljs:68
 msgid "integrations.copy-to-clipboard"
@@ -9300,7 +9297,7 @@ msgstr "免費試用 14 天"
 
 #: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:465, src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:736
 msgid "subscription.settings.unlimited"
-msgstr "Unlimited"
+msgstr ""
 
 #: src/app/main/ui/dashboard/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:647
 msgid "subscription.settings.unlimited-trial"
@@ -10471,3 +10468,16 @@ msgstr "未命名版本"
 #, unused
 msgid "workspace.versions.tooltip.locked-version"
 msgstr "版本已鎖定，只有建立者可以修改"
+
+#: src/app/main/ui/dashboard/deleted.cljs:309
+msgid "dashboard.trash-info-text-part2"
+msgstr " %s 天. "
+
+#: src/app/main/ui/workspace/context_menu.cljs:1029
+msgid "workspace.context-menu.guides.change-color"
+msgstr "參考線色彩"
+
+#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:128
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "%s 種色彩"
