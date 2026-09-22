@@ -26,6 +26,12 @@
    app.common.i18n/tr hooks.i18n/tr-dynamic
    }}
 
+ ;; Avoid false positives in defcases which use helpers available only in the
+ ;; browser
+ :config-in-call
+ {benches.render-wasm.scenes.core/defcase
+  {:linters {:unresolved-symbol {:level :off}}}}
+
  :output
  {:exclude-files
   ["data_readers.clj"
