@@ -58,25 +58,22 @@ high-coverage support reference, never the base.
 ## QA before commit
 
 - Run `node ./scripts/check-translations.js -l <locale>` from
-  `frontend/` (also as `pnpm run check-translations` for `ca`):
-  0 errors required; review warnings by hand. New valid words that
-  trip the gate go to `PARAULES_OK` in the script; `--self-test`
-  covers the detector rules.
+  `frontend/` (`pnpm run check-translations` covers `ca`): 0 errors
+  required; review warnings by hand. Word lists live in
+  `frontend/scripts/check-translations/words.<locale>.txt`
+  (`[elision]` `[function]` `[common]` `[ok]` `[brands]`); new valid
+  words that trip the gate go to `[ok]`; `--self-test` covers the
+  detector rules. Without a catalog only the universal checks run.
+  `#, fuzzy` entries are skipped (known-pending, owned elsewhere).
 - Placeholder parity per entry (singular AND each plural form,
   also enforced by the script); verify `%s` against the `tr` call
   site when `en`/`es`/code disagree (a `%s` the code never passes
   renders literally; a dropped one swallows the argument).
-- Glued words (AI batches drop spaces at wrap boundaries): tokenize
-  `msgstr` against a Catalan frequency list and review every
-  out-of-vocabulary token splittable as function-word + word
-  (`del'equip`, `lapolítica`, `sinecessiteu`), plus `,/.`/`:` without
-  following space, lowercase+Uppercase joins (`delPenpot`,
-  `oCapitalize`), `%s` glued to a word, and entries whose `ca` word
-  count is far below `en`. Known-valid splits, do NOT touch:
-  `compartides`, `edita`, `emplenament`, `desant`, `niar`, `negreta`,
-  `selector`, `atributs`, `sobreescriuran`, adverbs in `-ment`,
-  futures/participles (`desbloquegeu`, `predeterminat`,
-  `seleccionades`, `descarregueu`).
+- Glued words (AI batches drop spaces at wrap boundaries): the
+  script flags function-word splits (`del'equip`, `lapolítica`,
+  `sinecessiteu`), `,/.`/`:` without following space,
+  lowercase+Uppercase joins (`delPenpot`, `oCapitalize`) and `%s`
+  glued to a word.
 - Balanced `[]`/`()` in markdown links; no double spaces; no glued
   words around `·`; trailing spaces match the source.
 - `git diff --stat` must touch only `frontend/translations/<locale>.po`.
