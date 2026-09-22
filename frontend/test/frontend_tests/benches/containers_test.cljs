@@ -12,10 +12,10 @@
    [frontend-tests.benches.test-helpers :as helpers]))
 
 (t/deftest frame-attaches-children-in-order
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/frame {:x 0 :y 0 :width 100 :height 100 :name "F"}
-                                                 (builder/rect {:x 10 :y 10 :width 5 :height 5})
-                                                 (builder/rect {:x 20 :y 20 :width 5 :height 5})))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/frame {:x 0 :y 0 :width 100 :height 100 :name "F"}
+                                               (builder/rect {:x 10 :y 10 :width 5 :height 5})
+                                               (builder/rect {:x 20 :y 20 :width 5 :height 5})))
         frame    (first (helpers/children-of instance uuid/zero))
         rects    (helpers/children-of instance (:id frame))]
     (t/is (= :frame (:type frame)))
@@ -28,10 +28,10 @@
     (t/is (= [100 100] [(:width frame) (:height frame)]))))
 
 (t/deftest nested-frames-keep-frame-ids
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/frame {:x 0 :y 0 :width 100 :height 100 :name "Outer"}
-                                                 (builder/frame {:x 10 :y 10 :width 50 :height 50 :name "Inner"}
-                                                                (builder/rect {:x 20 :y 20 :width 5 :height 5}))))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/frame {:x 0 :y 0 :width 100 :height 100 :name "Outer"}
+                                               (builder/frame {:x 10 :y 10 :width 50 :height 50 :name "Inner"}
+                                                              (builder/rect {:x 20 :y 20 :width 5 :height 5}))))
         outer    (first (helpers/children-of instance uuid/zero))
         inner    (first (helpers/children-of instance (:id outer)))
         rect     (first (helpers/children-of instance (:id inner)))]
@@ -43,10 +43,10 @@
     (t/is (= [20 20] [(:x rect) (:y rect)]))))
 
 (t/deftest group-derives-bounds-from-children
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/group {}
-                                                 (builder/rect {:x 10 :y 20 :width 30 :height 40})
-                                                 (builder/rect {:x 50 :y 80 :width 10 :height 10})))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/group {}
+                                               (builder/rect {:x 10 :y 20 :width 30 :height 40})
+                                               (builder/rect {:x 50 :y 80 :width 10 :height 10})))
         group    (first (helpers/children-of instance uuid/zero))
         rects    (helpers/children-of instance (:id group))]
     (t/is (= :group (:type group)))
@@ -56,11 +56,11 @@
     (t/is (every? #(= (:id group) (:parent-id %)) rects))))
 
 (t/deftest nested-groups-derive-inside-out
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/group {:name "Outer"}
-                                                 (builder/rect {:x 0 :y 0 :width 10 :height 10})
-                                                 (builder/group {:name "Inner"}
-                                                                (builder/rect {:x 100 :y 100 :width 10 :height 10}))))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/group {:name "Outer"}
+                                               (builder/rect {:x 0 :y 0 :width 10 :height 10})
+                                               (builder/group {:name "Inner"}
+                                                              (builder/rect {:x 100 :y 100 :width 10 :height 10}))))
         outer    (first (helpers/children-of instance uuid/zero))
         inner    (second (helpers/children-of instance (:id outer)))]
     (t/is (= :group (:type inner)))
@@ -70,10 +70,10 @@
              [(:x outer) (:y outer) (:width outer) (:height outer)]))))
 
 (t/deftest group-inside-frame-points-at-the-frame
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/frame {:x 0 :y 0 :width 200 :height 200}
-                                                 (builder/group {}
-                                                                (builder/rect {:x 10 :y 10 :width 10 :height 10}))))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/frame {:x 0 :y 0 :width 200 :height 200}
+                                               (builder/group {}
+                                                              (builder/rect {:x 10 :y 10 :width 10 :height 10}))))
         frame    (first (helpers/children-of instance uuid/zero))
         group    (first (helpers/children-of instance (:id frame)))
         rect     (first (helpers/children-of instance (:id group)))]
@@ -82,20 +82,20 @@
     (t/is (= (:id group) (:parent-id rect)))))
 
 (t/deftest masked-group-takes-the-first-child-geometry
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/group {:masked-group true}
-                                                 (builder/rect {:x 10 :y 20 :width 30 :height 40})
-                                                 (builder/rect {:x 0 :y 0 :width 500 :height 500})))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/group {:masked-group true}
+                                               (builder/rect {:x 10 :y 20 :width 30 :height 40})
+                                               (builder/rect {:x 0 :y 0 :width 500 :height 500})))
         group    (first (helpers/children-of instance uuid/zero))]
     (t/is (true? (:masked-group group)))
     (t/is (= [10 20 30 40]
              [(:x group) (:y group) (:width group) (:height group)]))))
 
-(t/deftest container-labels-are-instance-local
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/frame :hero {:x 0 :y 0 :width 10 :height 10}
-                                                 (builder/group [:g 1] {}
-                                                                (builder/rect))))
+(t/deftest container-labels-are-snapshot-local
+  (let [instance (builder/scene {:seed 1}
+                                (builder/frame :hero {:x 0 :y 0 :width 10 :height 10}
+                                               (builder/group [:g 1] {}
+                                                              (builder/rect))))
         refs     (:refs instance)]
     (t/is (= #{:hero [:g 1]} (set (keys refs))))
     (t/is (= (get refs :hero) (first (helpers/child-ids instance uuid/zero))))
@@ -103,29 +103,29 @@
     (t/is (= 1 (count (helpers/child-ids instance uuid/zero))))))
 
 (t/deftest empty-group-is-rejected
-  (let [data (helpers/failure-data #(builder/fixture {:seed 1} (builder/group {})))]
+  (let [data (helpers/failure-data #(builder/scene {:seed 1} (builder/group {})))]
     (t/is (= ::builder/empty-group (:type data)))))
 
 (t/deftest group-geometry-attrs-are-rejected
   (let [data (helpers/failure-data
-              #(builder/fixture {:seed 1}
-                                (builder/group {:x 1}
-                                               (builder/rect))))]
+              #(builder/scene {:seed 1}
+                              (builder/group {:x 1}
+                                             (builder/rect))))]
     (t/is (= ::builder/group-geometry (:type data)))
     (t/is (= :x (:key data)))))
 
 (t/deftest frame-requires-bounds
   (let [data (helpers/failure-data
-              #(builder/fixture {:seed 1}
-                                (builder/frame {:name "F"}
-                                               (builder/rect))))]
+              #(builder/scene {:seed 1}
+                              (builder/frame {:name "F"}
+                                             (builder/rect))))]
     (t/is (= ::builder/frame-bounds (:type data)))))
 
 (t/deftest runtime-attrs-expressions-are-accepted
   (let [frame-attrs {:x 0 :y 0 :width 10 :height 10}
-        instance    (builder/fixture {:seed 1}
-                                     (builder/frame frame-attrs
-                                                    (builder/rect)))
+        instance    (builder/scene {:seed 1}
+                                   (builder/frame frame-attrs
+                                                  (builder/rect)))
         frame       (first (helpers/children-of instance uuid/zero))]
     (t/is (= :frame (:type frame)))
     (t/is (= 10 (:width frame)))))
@@ -133,8 +133,8 @@
 (t/deftest non-map-attrs-are-rejected
   (t/is (= ::builder/invalid-attrs
            (:type (helpers/failure-data
-                   #(builder/fixture {:seed 1}
-                                     (builder/frame :hero (builder/rect)))))))
+                   #(builder/scene {:seed 1}
+                                   (builder/frame :hero (builder/rect)))))))
   (let [state (helpers/run-scope {:seed 1}
                                  (fn []
                                    (try
@@ -144,27 +144,27 @@
 
 (t/deftest non-numeric-frame-bounds-are-rejected
   (let [data (helpers/failure-data
-              #(builder/fixture {:seed 1}
-                                (builder/frame {:x 0 :y 0 :width "100" :height 10}
-                                               (builder/rect))))]
+              #(builder/scene {:seed 1}
+                              (builder/frame {:x 0 :y 0 :width "100" :height 10}
+                                             (builder/rect))))]
     (t/is (= ::builder/frame-bounds (:type data)))
     (t/is (= :width (:invalid data)))))
 
 (t/deftest duplicate-container-labels-are-rejected
   (let [data (helpers/failure-data
-              #(builder/fixture {:seed 1}
-                                (builder/frame :dup {:x 0 :y 0 :width 10 :height 10}
-                                               (builder/rect))
-                                (builder/group :dup {}
-                                               (builder/rect))))]
+              #(builder/scene {:seed 1}
+                              (builder/frame :dup {:x 0 :y 0 :width 10 :height 10}
+                                             (builder/rect))
+                              (builder/group :dup {}
+                                             (builder/rect))))]
     (t/is (= ::builder/duplicate-label (:type data)))
     (t/is (= :dup (:label data)))))
 
 (t/deftest frame-inside-group-keeps-frame-ids
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/group {}
-                                                 (builder/frame {:x 0 :y 0 :width 50 :height 50}
-                                                                (builder/rect))))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/group {}
+                                               (builder/frame {:x 0 :y 0 :width 50 :height 50}
+                                                              (builder/rect))))
         group    (first (helpers/children-of instance uuid/zero))
         frame    (first (helpers/children-of instance (:id group)))
         rect     (first (helpers/children-of instance (:id frame)))]
@@ -174,10 +174,10 @@
     (t/is (= (:id frame) (:frame-id rect)))))
 
 (t/deftest group-of-container-derives-bounds
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/group {}
-                                                 (builder/group {}
-                                                                (builder/rect {:x 5 :y 5 :width 10 :height 10}))))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/group {}
+                                               (builder/group {}
+                                                              (builder/rect {:x 5 :y 5 :width 10 :height 10}))))
         outer    (first (helpers/children-of instance uuid/zero))
         inner    (first (helpers/children-of instance (:id outer)))]
     (t/is (= [5 5 10 10]
@@ -187,8 +187,8 @@
     (t/is (= 1 (count (helpers/child-ids instance (:id outer)))))))
 
 (t/deftest empty-frame-is-allowed
-  (let [instance (builder/fixture {:seed 1}
-                                  (builder/frame {:x 0 :y 0 :width 10 :height 10}))
+  (let [instance (builder/scene {:seed 1}
+                                (builder/frame {:x 0 :y 0 :width 10 :height 10}))
         frame    (first (helpers/children-of instance uuid/zero))]
     (t/is (= [] (helpers/child-ids instance (:id frame))))))
 

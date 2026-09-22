@@ -9,9 +9,9 @@
 
   Distributes rectangles over the canvas with varied sizes, translucent
   fills and centered strokes, all drawn from the scope's seeded generator.
-  `build` produces the fixture snapshot; `defscene` and `defcase` declare
+  `build` produces the scene snapshot; `defscene` and `defcase` declare
   the scene and its standard cases. The three cases share parameters, so
-  they render the same scene. The path and effect fixtures arrive in
+  they render the same scene. The path and effect scenes arrive in
   tickets07/08.
 
   Operation bodies are deferred to tickets05/06. The intended threaded
@@ -59,18 +59,18 @@
    :r4      (sb/gen-int 0 24)})
 
 (defn build
-  "Builds the seeded rectangle fixture. `params` requires `:seed`; the other
+  "Builds the seeded rectangle scene. `params` requires `:seed`; the other
   keys default to the standard case parameters."
   [params]
   (let [params (merge default-params params)]
-    (sb/fixture {:seed (:seed params)
-                 :root {:x 0
-                        :y 0
-                        :width (:width params)
-                        :height (:height params)}
-                 :defaults {:rect (rect-defaults params)}}
-                (doseq [_ (range (:count params))]
-                  (sb/rect)))))
+    (sb/scene {:seed (:seed params)
+               :root {:x 0
+                      :y 0
+                      :width (:width params)
+                      :height (:height params)}
+               :defaults {:rect (rect-defaults params)}}
+              (doseq [_ (range (:count params))]
+                (sb/rect)))))
 
 (core/defscene :rects
   {:version 1
