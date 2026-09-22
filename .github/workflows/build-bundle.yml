@@ -28,12 +28,7 @@ on:
         default: false
     outputs:
       sha:
-        description: >-
-          The exact commit this run resolved gh_ref to and bundled. Callers
-          that also trigger build-docker.yml should pass it through as that
-          workflow's `sha` input, so both pipelines agree on one commit
-          instead of each re-resolving gh_ref independently at a different
-          time.
+        description: 'Bundled commit, full 40-char SHA.'
         value: ${{ jobs.check.outputs.sha }}
 
 # Literal group name: under `workflow_call`, `github.workflow` resolves to the
@@ -53,6 +48,7 @@ jobs:
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
       sha: ${{ steps.vars.outputs.sha }}
       commit_title: ${{ steps.vars.outputs.commit_title }}
       exists: ${{ steps.check.outputs.exists }}
@@ -69,7 +65,8 @@ jobs:
         run: |
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
           echo "bundle_version=$(git describe --tags --always)" >> $GITHUB_OUTPUT
-          echo "sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
 
       # Keyed by commit sha, same as build-docker.yml's marker check, so
@@ -95,7 +92,7 @@ jobs:
 
           BUNDLE_EXISTS=$(aws s3api head-object \
             --bucket ${{ secrets.S3_BUCKET }} \
-            --key "penpot-sha-${{ steps.vars.outputs.sha }}.zip" \
+            --key "penpot-sha-${{ steps.vars.outputs.short_sha }}.zip" \
             > /dev/null 2>&1 && echo "true" || echo "false")
 
           if [ "$BUNDLE_EXISTS" = "true" ]; then
@@ -103,7 +100,7 @@ jobs:
             {
               echo "### ⏭️ Bundle build skipped"
               echo ""
-              echo "The bundle in S3 was already built from \`sha-${{ steps.vars.outputs.sha }}\` (\`${{ steps.vars.outputs.bundle_version }}\`)."
+              echo "The bundle in S3 was already built from \`sha-${{ steps.vars.outputs.short_sha }}\` (\`${{ steps.vars.outputs.bundle_version }}\`)."
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -147,7 +144,7 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           aws s3 cp zips/penpot.zip \
-            s3://${{ secrets.S3_BUCKET }}/penpot-sha-${{ needs.check.outputs.sha }}.zip \
+            s3://${{ secrets.S3_BUCKET }}/penpot-sha-${{ needs.check.outputs.short_sha }}.zip \
             --metadata bundle-version=${{ needs.check.outputs.bundle_version }}
 
       - name: Write step summary
@@ -156,7 +153,7 @@ jobs:
             echo "### ✅ Bundle built"
             echo ""
             echo "- Version: \`${{ needs.check.outputs.bundle_version }}\` (\`git describe --tags --always\`)"
-            echo "- Commit: [\`${{ needs.check.outputs.sha }}\`](https://github.com/${{ github.repository }}/commit/${{ needs.check.outputs.sha }}) — ${{ needs.check.outputs.commit_title }}"
+            echo "- Commit: [\`${{ needs.check.outputs.short_sha }}\`](https://github.com/${{ github.repository }}/commit/${{ needs.check.outputs.short_sha }}) — ${{ needs.check.outputs.commit_title }}"
             echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           } >> "$GITHUB_STEP_SUMMARY"
 

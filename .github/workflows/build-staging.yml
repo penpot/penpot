@@ -32,10 +32,7 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "staging"
-      # Pin the exact commit build-bundle already resolved and uploaded to
-      # S3, instead of letting build-docker re-resolve "staging" on its own
-      # checkout minutes later, which can land on a newer commit than the
-      # one actually bundled.
+      # Pin build-docker to the commit build-bundle actually bundled.
       sha: ${{ needs.build-bundle.outputs.sha }}
       force: ${{ inputs.force || false }}
 
