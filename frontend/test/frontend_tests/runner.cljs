@@ -5,11 +5,11 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
-   [frontend-tests.benches.boolean-fixture-test]
+   [frontend-tests.benches.boolean-test]
    [frontend-tests.benches.builder-test]
    [frontend-tests.benches.containers-test]
    [frontend-tests.benches.contracts-test]
-   [frontend-tests.benches.fixture-test]
+   [frontend-tests.benches.scene-snapshot-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -141,11 +141,11 @@
 
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
-   'frontend-tests.benches.boolean-fixture-test
+   'frontend-tests.benches.boolean-test
    'frontend-tests.benches.builder-test
    'frontend-tests.benches.containers-test
    'frontend-tests.benches.contracts-test
-   'frontend-tests.benches.fixture-test
+   'frontend-tests.benches.scene-snapshot-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
