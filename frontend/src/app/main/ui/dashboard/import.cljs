@@ -336,6 +336,8 @@
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
+        ;; backend-provided error key, dynamic by design
+        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
         (if (some? (:error entry))
           (tr (:error entry))
           (tr "dashboard.import.analyze-error"))]
@@ -344,6 +346,8 @@
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
+        ;; backend-provided error key, dynamic by design
+        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
         (if (some? (:error entry))
           (tr (:error entry))
           (tr "labels.error"))]

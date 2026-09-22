@@ -17,6 +17,7 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]))
 
@@ -238,36 +239,42 @@
 
 (def shortcuts
   {:underline     {:tooltip (ds/meta "U")
+                   :label (fn [] (tr "shortcuts.underline"))
                    :command (ds/c-mod "u")
                    :subsections [:text-editor]
                    :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-underline"})}
 
    :line-through  {:tooltip (ds/alt (ds/meta-shift "5"))
+                   :label (fn [] (tr "shortcuts.line-through"))
                    :command "alt+shift+5"
                    :subsections [:text-editor]
                    :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-line-through"})}
 
    :font-size-inc {:tooltip (ds/meta-shift ">")
+                   :label (fn [] (tr "shortcuts.font-size-inc"))
                    :command (ds/c-mod "shift+.")
                    :subsections [:text-editor]
                    :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:font-size-inc true})}
 
    :font-size-dec {:tooltip (ds/meta-shift "<")
+                   :label (fn [] (tr "shortcuts.font-size-dec"))
                    :command (ds/c-mod "shift+,")
                    :subsections [:text-editor]
                    :section [:workspace]
                    :fn #(update-attrs-when-no-readonly {:font-size-dec true})}
 
    :bold     {:tooltip (ds/meta "b")
+              :label (fn [] (tr "shortcuts.bold"))
               :command (ds/c-mod "b")
               :subsections [:text-editor]
               :section [:workspace]
               :fn #(update-attrs-when-no-readonly {:font-variant-id "toggle-bold"})}
 
    :italic     {:tooltip (ds/meta "i")
+                :label (fn [] (tr "shortcuts.italic"))
                 :command (ds/c-mod "i")
                 :subsections [:text-editor]
                 :section [:workspace]

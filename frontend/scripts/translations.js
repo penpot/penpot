@@ -60,7 +60,12 @@ async function* scanLocales() {
 async function processLocale(options, f) {
   let locales = options.locale;
   if (typeof locales === "string") {
-    locales = locales.split(/,/);
+    // getopts yields "" (not undefined) when -l is absent: an empty
+    // list must mean "all locales", never "no locale".
+    locales = locales.split(/,/).filter((s) => s !== "");
+    if (locales.length === 0) {
+      locales = undefined;
+    }
   } else if (Array.isArray(locales)) {
   } else if (locales === undefined) {
   } else {
@@ -185,20 +190,24 @@ async function rehash(options, ...other) {
   const used = await (async function () {
     const result = {};
 
-    for await (const f of getFiles("src")) {
-      if (!fileRe.test(f)) continue;
+    // Both frontend and shared sources: common holds schemas and
+    // helpers whose translation keys must stay alive as well.
+    for (const dir of ["src", "../common/src"]) {
+      for await (const f of getFiles(dir)) {
+        if (!fileRe.test(f)) continue;
 
-      for await (const [n, line] of readLines(f)) {
-        const strings = getTranslationStrings(line);
+        for await (const [n, line] of readLines(f)) {
+          const strings = getTranslationStrings(line);
 
-        strings.forEach((key) => {
-          const entry = `${f}:${n}`;
-          if (result[key] !== undefined) {
-            result[key].push(entry);
-          } else {
-            result[key] = [entry];
-          }
-        });
+          strings.forEach((key) => {
+            const entry = `${f}:${n}`;
+            if (result[key] !== undefined) {
+              result[key].push(entry);
+            } else {
+              result[key] = [entry];
+            }
+          });
+        }
       }
     }
 
@@ -720,7 +729,7 @@ Available subcommands (run from \`frontend/\`):
 const COMMANDS = {
   rehash: {
     args: "",
-    help: 'Scan ./src for (tr "key") usages and update en.po references.',
+    help: 'Scan ./src and ../common/src for (tr "key") usages and update en.po references.',
     run: (options, params) => rehash(options, ...params),
   },
   sync: {

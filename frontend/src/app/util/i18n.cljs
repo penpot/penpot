@@ -197,6 +197,10 @@
          (apply str/fmt value (map #(if (c? %) @% %) args)))))))
 
 (defn tr
+  "Translate a literal key, e.g. (tr \"workspace.foo\").
+  Always pass a string literal: rehash only detects (tr \"key\")
+  call sites. Never branch inside tr, hoist the conditional out:
+  (if cond (tr \"a\") (tr \"b\")), NOT (tr (if cond \"a\" \"b\"))."
   ([code] (t *current-locale* code))
   ([code & args] (apply t *current-locale* code args)))
 

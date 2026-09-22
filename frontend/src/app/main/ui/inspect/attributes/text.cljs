@@ -107,28 +107,27 @@
      (when (:text-decoration style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Decoration"]
-        ;; Execution time translation strings:
-        ;;   (tr "inspect.attributes.typography.text-decoration.none")
-        ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
-        ;;   (tr "inspect.attributes.typography.text-decoration.underline")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-decoration)}
           [:div {:class (stl/css :button-children)}
-           (tr (dm/str "inspect.attributes.typography.text-decoration." (:text-decoration style)))]]]])
+           (case (:text-decoration style)
+             "none" (tr "inspect.attributes.typography.text-decoration.none")
+             "underline" (tr "inspect.attributes.typography.text-decoration.underline")
+             ;; The style value is "line-through", the label is "strikethrough".
+             "line-through" (tr "inspect.attributes.typography.text-decoration.strikethrough"))]]]])
 
      (when (:text-transform style)
        [:div {:class (stl/css :text-row)}
         [:div {:class (stl/css :global/attr-label)} "Text Transform"]
-        ;; Execution time translation strings:
-        ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
-        ;;   (tr "inspect.attributes.typography.text-transform.none")
-        ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
-        ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
-        ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}
          [:> copy-button* {:data (copy-style-data style :text-transform)}
           [:div {:class (stl/css :button-children)}
-           (tr (dm/str "inspect.attributes.typography.text-transform." (:text-transform style)))]]]])
+           (case (:text-transform style)
+             "lowercase" (tr "inspect.attributes.typography.text-transform.lowercase")
+             "none" (tr "inspect.attributes.typography.text-transform.none")
+             "capitalize" (tr "inspect.attributes.typography.text-transform.capitalize")
+             "uppercase" (tr "inspect.attributes.typography.text-transform.uppercase")
+             "unset" (tr "inspect.attributes.typography.text-transform.unset"))]]]])
 
      [:> copy-button* {:data (str/trim text)
                        :class (stl/css :attributes-content-row)}

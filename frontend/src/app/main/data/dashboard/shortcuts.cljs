@@ -11,11 +11,13 @@
    [app.main.data.event :as ev]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]))
 
 ;; Shortcuts definitions
 (def shortcuts
   {:toggle-theme    {:tooltip (ds/alt "M")
+                     :label (fn [] (tr "shortcuts.toggle-theme"))
                      :command (ds/a-mod "m")
                      :section [:dashboard]
                      :subsections [:generic]
@@ -24,12 +26,14 @@
 
 (def shortcuts-sidebar-navigation
   {:go-to-drafts       {:tooltip "G D"
+                        :label (fn [] (tr "shortcuts.go-to-drafts"))
                         :command "g d"
                         :section [:dashboard]
                         :subsections [:navigation-dashboard]
                         :fn #(st/emit! (dcm/go-to-dashboard-files :project-id :default))}
 
    :go-to-libs         {:tooltip "G L"
+                        :label (fn [] (tr "shortcuts.go-to-libs"))
                         :command "g l"
                         :section [:dashboard]
                         :subsections [:navigation-dashboard]
@@ -37,6 +41,7 @@
 
 (def shortcut-search
   {:go-to-search       {:tooltip (ds/meta "F")
+                        :label (fn [] (tr "shortcuts.go-to-search"))
                         :command (ds/c-mod "f")
                         :section [:dashboard]
                         :subsections [:navigation-dashboard]
@@ -44,6 +49,7 @@
 
 (def shortcut-create-new-project
   {:create-new-project {:tooltip "+"
+                        :label (fn [] (tr "shortcuts.create-new-project"))
                         :command "+"
                         :section [:dashboard]
                         :subsections [:generic]

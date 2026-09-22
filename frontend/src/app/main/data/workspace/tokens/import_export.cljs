@@ -17,7 +17,7 @@
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -54,12 +54,12 @@
   (let [type->tokens (group-by-value unknown-tokens)]
     (l/wrn :hint "unsupported token types found during import"
            :tokens (str/join ", " (map (fn [[path type]] (str path " (" type ")")) unknown-tokens)))
-    (ntf/show {:content (i18n/tr "workspace.tokens.unknown-token-type-message")
+    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
                :is-html true
                :detail (->> (for [[token-type token-paths] type->tokens]
-                              (str (i18n/tr "workspace.tokens.unknown-token-type-section"
-                                            (dom/escape-html token-type)
-                                            (i18n/tr "labels.warning-count" (i18n/c (count token-paths))))
+                              (str (tr "workspace.tokens.unknown-token-type-section"
+                                       (dom/escape-html token-type)
+                                       (tr "labels.warning-count" (i18n/c (count token-paths))))
                                    "<ul>"
                                    (->> token-paths
                                         (sort)

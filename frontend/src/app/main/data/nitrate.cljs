@@ -185,31 +185,34 @@
                          (remove :is-default)
                          (remove #(dm/get-in % [:permissions :is-owner])))})
 
-(def ^:private team-leave-error-messages
-  {:only-owner-can-delete-team "errors.team-leave.only-owner-can-delete"
-   :no-enough-members-for-leave "errors.team-leave.insufficient-members"
-   :member-does-not-exist "errors.team-leave.member-does-not-exists"
-   :owner-cant-leave-team "errors.team-leave.owner-cant-leave"})
+(defn- team-leave-message
+  [code]
+  (case code
+    :only-owner-can-delete-team (tr "errors.team-leave.only-owner-can-delete")
+    :no-enough-members-for-leave (tr "errors.team-leave.insufficient-members")
+    :member-does-not-exist (tr "errors.team-leave.member-does-not-exists")
+    :owner-cant-leave-team (tr "errors.team-leave.owner-cant-leave")
+    nil))
 
 (defn team-leave-on-error
   [error]
   (let [code (-> error ex-data :code)]
-    (if-let [tr-key (get team-leave-error-messages code)]
-      (rx/of (ntf/error (tr tr-key)))
+    (if-let [message (team-leave-message code)]
+      (rx/of (ntf/error message))
       (rx/throw error))))
-
-(def ^:private organization-leave-error-messages
-  (merge team-leave-error-messages
-         {:not-valid-teams "errors.organization-leave.no-valid-teams"
-          :organization-owner-cannot-leave "errors.organization-leave.organization-owner-cannot-leave"}))
 
 (defn org-leave-on-error
   [error]
-  (let [code (-> error ex-data :code)]
-    (if-let [tr-key (get organization-leave-error-messages code)]
+  (let [code (-> error ex-data :code)
+        message (or (team-leave-message code)
+                    (case code
+                      :not-valid-teams (tr "errors.organization-leave.no-valid-teams")
+                      :organization-owner-cannot-leave (tr "errors.organization-leave.organization-owner-cannot-leave")
+                      nil))]
+    (if (some? message)
       (rx/of (dt/fetch-teams)
              (modal/hide)
-             (ntf/error (tr tr-key)))
+             (ntf/error message))
       (rx/throw error))))
 
 (defn leave-organization
@@ -501,18 +504,18 @@
                       (fn [organizations-allowed]
                         (let [has-filtered? (< (count organizations) (count all-organizations))
                               extra-props   (when has-filtered?
-                                              {:info-message-key "dashboard.select-organization-modal.permission-info-add"})]
+                                              {:info-message (tr "dashboard.select-organization-modal.permission-info-add")})]
                           (modal/show :select-organization-modal
                                       (merge {:organizations organizations
                                               :organizations-allowed organizations-allowed
                                               :current-organization current-organization
                                               :on-confirm on-confirm
                                               :team-id team-id
-                                              :title-key "dashboard.select-organization-modal.title"
-                                              :choose-key "dashboard.select-organization-modal.choose"
-                                              :placeholder-key "dashboard.select-organization-modal.select"
-                                              :accept-key "dashboard.select-organization-modal.accept"
-                                              :cancel-key "labels.cancel"}
+                                              :title (tr "dashboard.select-organization-modal.title")
+                                              :choose (tr "dashboard.select-organization-modal.choose")
+                                              :placeholder (tr "dashboard.select-organization-modal.select")
+                                              :accept (tr "dashboard.select-organization-modal.accept")
+                                              :cancel (tr "labels.cancel")}
                                              extra-props))))]
                   (if (empty? organizations)
                     (rx/of (dt/teams-fetched teams)
@@ -577,7 +580,7 @@
                             (let [valid-organizations    (filterv #(true? (get organizations-allowed (:id %))) selectable-organizations)
                                   has-filtered? (< (count organizations) (count all-organizations))
                                   extra-props   (when has-filtered?
-                                                  {:info-message-key "dashboard.select-organization-modal.permission-info"})]
+                                                  {:info-message (tr "dashboard.select-organization-modal.permission-info")})]
                               (rx/of
                                (dt/teams-fetched teams)
                                (if (empty? valid-organizations)
@@ -592,10 +595,10 @@
                                                      :current-organization    source-organization
                                                      :on-confirm              on-confirm
                                                      :team-id                 team-id
-                                                     :title-key               "dashboard.change-organization-modal.title"
-                                                     :description-key         "dashboard.change-organization-modal.description"
-                                                     :choose-key              "dashboard.change-organization-modal.choose"
-                                                     :placeholder-key         "dashboard.change-organization-modal.select"
-                                                     :accept-key              "dashboard.change-organization-modal.accept"
-                                                     :cancel-key              "labels.cancel"}
+                                                     :title                 (tr "dashboard.change-organization-modal.title")
+                                                     :description           (tr "dashboard.change-organization-modal.description")
+                                                     :choose                (tr "dashboard.change-organization-modal.choose")
+                                                     :placeholder           (tr "dashboard.change-organization-modal.select")
+                                                     :accept                (tr "dashboard.change-organization-modal.accept")
+                                                     :cancel                (tr "labels.cancel")}
                                                     extra-props)))))))))))))))))
