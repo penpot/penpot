@@ -31,7 +31,17 @@ http {
     default_type application/octet-stream;
 
     error_log /dev/stderr;
-    access_log /dev/stdout;
+
+    # Access log enriched with upstream diagnostics: what the backend
+    # answered (us), how long it took to connect to it (uct), how long it
+    # took to answer (urt) and which internal address served the request
+    # (ua). With proxy_pass on variables there is no upstream keepalive,
+    # so uct measures one real TCP connection per request.
+    log_format penpot_upstream '$remote_addr - $remote_user [$time_local] "$request" '
+                               '$status $body_bytes_sent "$http_referer" "$http_user_agent" '
+                               'us=$upstream_status uct=$upstream_connect_time '
+                               'urt=$upstream_response_time ua=$upstream_addr';
+    access_log /dev/stdout penpot_upstream;
 
     proxy_connect_timeout 300s;
     proxy_send_timeout 300s;
