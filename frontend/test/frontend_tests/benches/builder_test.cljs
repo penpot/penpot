@@ -209,3 +209,146 @@
 (t/deftest empty-one-of-is-rejected
   (let [data (failure-data #(b/gen-one-of []))]
     (t/is (= ::b/no-values (:type data)))))
+
+(defn- circle-shapes
+  "Circles of a fixture instance in creation order."
+  [instance]
+  (mapv (:objects instance)
+        (get-in instance [:objects uuid/zero :shapes])))
+
+(t/deftest circle-creates-ellipse-type
+  (let [instance (b/fixture {:seed 1}
+                            (b/circle {:x 10 :y 20 :width 30 :height 40}))
+        circle   (first (circle-shapes instance))]
+    (t/is (= :circle (:type circle)))
+    (t/is (= [10 20 30 40] [(:x circle) (:y circle) (:width circle) (:height circle)]))
+    (t/is (= 1 (count (get-in instance [:objects uuid/zero :shapes]))))))
+
+(t/deftest circle-uses-circle-defaults
+  (let [instance (b/fixture {:seed 3
+                             :defaults {:circle {:x (b/gen-int 10 11)}}}
+                            (b/circle))
+        circle   (first (circle-shapes instance))]
+    (t/is (contains? #{10 11} (:x circle)))))
+
+(t/deftest circle-ignores-rect-defaults
+  (let [instance (b/fixture {:seed 1
+                             :defaults {:rect {:x 999}}}
+                            (b/circle))
+        circle   (first (circle-shapes instance))]
+    (t/is (= 0 (:x circle)))))
+
+(t/deftest circle-attrs-override-generated-values
+  (let [instance (b/fixture {:seed 1
+                             :defaults {:circle {:x (b/gen-int 0 100)}}}
+                            (b/circle {:x 7 :fills []}))
+        circle   (first (circle-shapes instance))]
+    (t/is (= 7 (:x circle)))
+    (t/is (= [] (:fills circle)))))
+
+(t/deftest circle-geometry-is-page-relative-and-in-range
+  (let [instance (b/fixture {:seed 7
+                             :defaults {:circle {:x      (b/gen-int 0 800)
+                                                 :y      (b/gen-int 0 600)
+                                                 :width  (b/gen-int 5 15)
+                                                 :height (b/gen-int 5 15)}}}
+                            (doseq [_ (range 40)]
+                              (b/circle)))
+        circles  (circle-shapes instance)]
+    (t/is (= 40 (count circles)))
+    (t/is (every? #(<= 0 (:x %) 800) circles))
+    (t/is (every? #(<= 0 (:y %) 600) circles))
+    (t/is (every? #(<= 5 (:width %) 15) circles))
+    (t/is (every? #(<= 5 (:height %) 15) circles))))
+
+(t/deftest circle-labels-are-instance-local
+  (let [instance (b/fixture {:seed 1}
+                            (b/circle)
+                            (b/circle :hero {})
+                            (b/circle [:tile 1] {}))
+        refs     (:refs instance)
+        children (get-in instance [:objects uuid/zero :shapes])]
+    (t/is (= #{:hero [:tile 1]} (set (keys refs))))
+    (t/is (= (get refs :hero) (second children)))
+    (t/is (= (get refs [:tile 1]) (nth children 2)))))
+
+(t/deftest circle-single-label-form-is-supported
+  (let [instance (b/fixture {:seed 1}
+                            (b/circle :solo))
+        id       (get (:refs instance) :solo)]
+    (t/is (uuid? id))
+    (t/is (= [id] (get-in instance [:objects uuid/zero :shapes])))))
+
+(t/deftest circle-runtime-attrs-maps-are-resolved
+  (let [attrs    {:x 11}
+        instance (b/fixture {:seed 1}
+                            (b/circle attrs))
+        circle   (first (circle-shapes instance))]
+    (t/is (= 11 (:x circle)))))
+
+(t/deftest circle-duplicate-labels-are-rejected
+  (let [data (failure-data
+              #(b/fixture {:seed 1}
+                          (b/circle :dup {})
+                          (b/circle :dup {})))]
+    (t/is (= ::b/duplicate-label (:type data)))
+    (t/is (= :dup (:label data)))))
+
+(t/deftest circle-invalid-labels-are-rejected
+  (let [data (failure-data #(b/fixture {:seed 1} (b/circle "hero" {})))]
+    (t/is (= ::b/invalid-label (:type data)))))
+
+(t/deftest circle-outside-scope-is-rejected
+  (let [data (failure-data #(b/circle))]
+    (t/is (= ::b/outside-scope (:type data)))))
+
+(t/deftest circle-protected-keys-cannot-be-overridden
+  (let [other    (uuid/custom 9 9)
+        instance (b/fixture {:seed 1}
+                            (b/circle {:type :rect :id other :parent-id other}))
+        circle   (first (circle-shapes instance))]
+    (t/is (= :circle (:type circle)))
+    (t/is (not= other (:id circle)))
+    (t/is (= uuid/zero (:parent-id circle)))))
+
+(t/deftest circle-built-instance-feeds-the-snapshot-api
+  (let [instance (b/fixture {:seed 1}
+                            (b/circle :hero {}))
+        order    (common/upload-order instance)
+        hero-id  (common/ref-id instance :hero)]
+    (t/is (= [uuid/zero hero-id] (mapv :id order)))))
+
+(t/deftest circle-repeatable-builds-are-identical
+  (let [build (fn [seed]
+                (b/fixture {:seed seed
+                            :defaults {:circle {:x (b/gen-int 0 100)}}}
+                           (b/circle)
+                           (b/circle)))]
+    (t/is (= (build 42) (build 42)))
+    (t/is (not= (build 42) (build 43)))))
+
+(t/deftest circle-ordinary-forms-work-inside-the-scope
+  (let [instance (b/fixture {:seed 1}
+                            (let [first-id (b/circle {:x 1})]
+                              (t/is (uuid? first-id)))
+                            (doseq [index (range 3)]
+                              (b/circle [:ring index] {:x (* 10 index)}))
+                            (b/circle :last {:x 99}))
+        refs     (:refs instance)
+        circles  (circle-shapes instance)]
+    (t/is (= 5 (count circles)))
+    (t/is (= [0 10 20]
+             (mapv #(:x (get-in instance [:objects (get refs [:ring %])]))
+                   (range 3))))
+    (t/is (= 99 (:x (get-in instance [:objects (get refs :last)]))))))
+
+(t/deftest circle-preserves-radius-attrs
+  (let [instance (b/fixture {:seed 1}
+                            (b/circle {:x 0 :y 0 :width 20 :height 20 :rx 5 :ry 7}))
+        circle   (first (circle-shapes instance))]
+    (t/is (= [5 7] [(:rx circle) (:ry circle)]))))
+
+(t/deftest circle-failed-builds-leak-no-state
+  (let [clean (b/fixture {:seed 42 :defaults {:circle {:x (b/gen-int 0 100)}}} (b/circle) (b/circle))]
+    (failure-data #(b/fixture {:seed 99} (b/circle :dup {}) (b/circle :dup {})))
+    (t/is (= clean (b/fixture {:seed 42 :defaults {:circle {:x (b/gen-int 0 100)}}} (b/circle) (b/circle))))))

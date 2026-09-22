@@ -75,6 +75,35 @@
      ~label
      ~attrs)))
 
+(defmacro circle
+  "Adds one ellipse to the current fixture scope and returns its uuid.
+
+  Forms: `(circle)`, `(circle attrs)`, `(circle label)`, `(circle label attrs)`.
+  A one-argument call is resolved at runtime: a map is `attrs`, anything
+  else is a label. `label` must be a keyword or vector, stored in the
+  instance `:refs`; duplicates and other label types are rejected. `attrs`
+  override the generated defaults attribute by attribute."
+  ([]
+   `(benches.render-wasm.scenes.builder/circle!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     nil
+     {}))
+
+  ([label-or-attrs]
+   `(benches.render-wasm.scenes.builder/circle!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     ~label-or-attrs
+     {}))
+
+  ([label attrs]
+   `(benches.render-wasm.scenes.builder/circle!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     ~label
+     ~attrs)))
+
 (defmacro frame
   "Adds a frame to the current scope, runs `body` with the frame as parent,
   and returns the frame uuid.
