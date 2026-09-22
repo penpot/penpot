@@ -204,6 +204,15 @@
       (t/is (th/success? out))
       (t/is (true? (-> out :result :air-gapped))))))
 
+(t/deftest get-deployment
+  (let [out (th/management-command! {::th/type :get-deployment})]
+    (t/is (th/success? out))
+    (t/is (= "selfhost" (-> out :result :deployment))))
+  (binding [cf/config (assoc cf/config :is-saas true)]
+    (let [out (th/management-command! {::th/type :get-deployment})]
+      (t/is (th/success? out))
+      (t/is (= "saas" (-> out :result :deployment))))))
+
 (t/deftest get-teams-returns-only-owned-non-default-non-deleted
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile      (th/create-profile* 1 {:is-active true})
