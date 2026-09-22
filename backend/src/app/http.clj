@@ -206,8 +206,7 @@
 (defmethod ig/halt-key! ::server
   [_ {:keys [::metrics-sampler ::server ::port] :as cfg}]
   (l/info :msg "stopping http server" :port port)
-  (when (some? metrics-sampler)
-    (px/shutdown-now metrics-sampler))
+  (px/shutdown-now metrics-sampler)
   (yt/stop! server))
 
 (defn- not-found-handler
