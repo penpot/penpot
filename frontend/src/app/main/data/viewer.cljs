@@ -368,9 +368,17 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [zoom-type (get-in state [:viewer-local :zoom-type])
-            params    (rt/get-params state)]
-
-        (rx/of (rt/nav :viewer (assoc params :zoom zoom-type)))))))
+            params    (rt/get-params state)
+            current   (rt/get-query-param params :zoom)
+            expected  (some-> zoom-type name)]
+        ;; Zoom is view state: mirror it into the URL, replacing the history
+        ;; entry, only when the query string does not already describe it.
+        (when (not= current expected)
+          (rx/of (rt/nav :viewer
+                         (if (some? zoom-type)
+                           (assoc params :zoom zoom-type)
+                           (dissoc params :zoom))
+                         {::rt/replace true})))))))
 
 (def increase-zoom
   (ptk/reify ::increase-zoom
