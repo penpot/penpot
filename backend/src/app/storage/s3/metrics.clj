@@ -50,14 +50,17 @@
       (let [ok?      (first-value collection CoreMetric/API_CALL_SUCCESSFUL)
             retries  (retries-count (first-value collection CoreMetric/RETRY_COUNT))
             duration (duration-millis (first-value collection CoreMetric/API_CALL_DURATION))]
-        (mtx/run! metrics :id :storage-s3-requests :inc 1
-                  :labels [operation target (result-label ok?)])
+        (mtx/run-safe! metrics "unable to record s3 metric"
+                       :id :storage-s3-requests :inc 1
+                       :labels [operation target (result-label ok?)])
         (when (pos? retries)
-          (mtx/run! metrics :id :storage-s3-retries :inc retries
-                    :labels [operation target]))
+          (mtx/run-safe! metrics "unable to record s3 metric"
+                         :id :storage-s3-retries :inc retries
+                         :labels [operation target]))
         (when (some? duration)
-          (mtx/run! metrics :id :storage-s3-timing :val duration
-                    :labels [operation target]))))))
+          (mtx/run-safe! metrics "unable to record s3 metric"
+                         :id :storage-s3-timing :val duration
+                         :labels [operation target]))))))
 
 (defn wrap-publisher
   "Return a MetricPublisher that records each S3 API call.

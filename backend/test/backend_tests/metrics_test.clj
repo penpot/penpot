@@ -7,11 +7,15 @@
 (ns backend-tests.metrics-test
   (:require
    [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [clojure.test :as t]
    [integrant.core :as ig])
   (:import
    io.prometheus.client.Collector$MetricFamilySamples
-   io.prometheus.client.Collector$MetricFamilySamples$Sample))
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   io.prometheus.client.CollectorRegistry))
+
+(def ^:private valid-definitions? @#'app.metrics/valid-definitions?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -56,3 +60,54 @@
     200       "unknown" "200"
     nil       "unknown" "unknown"
     nil       "default" "default"))
+
+(def ^:private failing-metrics
+  "A metrics instance whose collector lookup always fails."
+  (reify mtx/IMetrics
+    (get-registry [_])
+    (get-collector [_ _] (throw (ex-info "boom" {})))
+    (get-handler [_])))
+
+(t/deftest run-safe-with-failing-instance-never-throws
+  (t/is (nil? (mtx/run-safe! failing-metrics "test-run-safe" :id :x :inc 1))))
+
+(t/deftest run-safe-with-nil-instance-is-noop
+  (t/is (nil? (mtx/run-safe! nil "test-run-safe-nil" :id :x :inc 1))))
+
+(t/deftest run-safe-records-on-success
+  (let [registry  (CollectorRegistry.)
+        collector (mtx/create-collector {::mdef/name "penpot_test_run_safe"
+                                         ::mdef/help "test helper"
+                                         ::mdef/type :counter
+                                         ::mdef/labels ["result"]
+                                         :app.metrics/registry registry})
+        instance  (reify mtx/IMetrics
+                    (get-collector [_ _] collector))]
+    (t/is (true? (mtx/run-safe! instance "test-run-safe-ok"
+                                :id :x :inc 1 :labels ["ok"])))))
+
+(t/deftest definitions-schema-accepts-all-consumed-keys
+  (t/is (true? (valid-definitions?
+                {:test-timing
+                 {::mdef/name "penpot_test_timing"
+                  ::mdef/help "test"
+                  ::mdef/type :histogram
+                  ::mdef/labels ["op"]
+                  ::mdef/buckets [5 10 25]}
+                 :test-summary
+                 {::mdef/name "penpot_test_summary"
+                  ::mdef/help "test"
+                  ::mdef/type :summary
+                  ::mdef/quantiles [[0.5 0.01]]
+                  ::mdef/max-age 60}}))))
+
+
+(t/deftest definitions-schema-rejects-unknown-keys
+  ;; A typo such as ::mdef/bucksets must fail at startup instead of
+  ;; silently falling back to the default histogram buckets. The
+  ;; definition map is closed, so unknown keys do not validate.
+  (t/is (false? (valid-definitions?
+                 {:bad {::mdef/name "penpot_bad_metric"
+                        ::mdef/help "typo check"
+                        ::mdef/type :histogram
+                        ::mdef/bucksets [100]}}))))

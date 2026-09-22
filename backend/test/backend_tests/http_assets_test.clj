@@ -1173,3 +1173,16 @@
                      (assets/file-objects-handler cfg request))))
     (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "error"])))
     (t/is (= 0.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest result-label-mapping
+  (t/are [status expected]
+         (= expected (#'app.http.assets/result-label status))
+    nil  "error"
+    200  "served"
+    204  "served"
+    307  "served"
+    401  "unauthorized"
+    403  "unauthorized"
+    404  "not-found"
+    429  "error"
+    500  "error"))

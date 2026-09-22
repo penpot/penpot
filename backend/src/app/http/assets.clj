@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -63,28 +62,26 @@
   (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
 
 (defn- result-label
+  "Map a response status to the outcome label. A nil or non-number
+  status is an `error`: every serve path must set ::yres/status."
   [status]
-  (let [code (long (or status 500))]
-    (cond
-      (<= 200 code 399) "served"
-      (= code 401) "unauthorized"
-      (= code 403) "unauthorized"
-      (= code 404) "not-found"
-      :else "error")))
+  (cond
+    (not (number? status))        "error"
+    (< status 400)                "served"
+    (contains? #{401 403} status) "unauthorized"
+    (= status 404)                "not-found"
+    :else                         "error"))
 
 (defn- emit-asset!
   "Record an asset request. `route` is the handler route, `obj` the resolved
   storage object (or nil when it could not be resolved). Never fails."
   [cfg route obj status]
-  (try
-    (when-let [metrics (::mtx/metrics cfg)]
-      (mtx/run! metrics :id :storage-asset-requests :inc 1
-                :labels [route
-                         (mtx/label (some-> obj :backend) "unknown")
-                         (mtx/label (some-> obj meta :bucket) "unknown")
-                         (result-label status)]))
-    (catch Throwable cause
-      (l/dbg :hint "unable to record asset metric" :cause cause))))
+  (mtx/run-safe! (::mtx/metrics cfg) "unable to record asset metric"
+                 :id :storage-asset-requests :inc 1
+                 :labels [route
+                          (mtx/label (some-> obj :backend) "unknown")
+                          (mtx/label (some-> obj meta :bucket) "unknown")
+                          (result-label status)]))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]

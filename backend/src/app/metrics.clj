@@ -58,11 +58,17 @@
 
 (def ^:private schema:definitions
   [:map-of :keyword
-   [:map {:title "definition"}
+   [:map {:title "definition" :closed true}
     [::mdef/name :string]
     [::mdef/help :string]
     [::mdef/type [:enum :gauge :counter :summary :histogram]]
     [::mdef/labels {:optional true} [::sm/vec :string]]
+    [::mdef/quantiles {:optional true} [::sm/vec [:tuple :double :double]]]
+    [::mdef/max-age {:optional true} :int]
+    ;; NB: in :summary, buckets are the age buckets; in :histogram,
+    ;; the observation buckets.
+    [::mdef/buckets {:optional true} [::sm/vec [:or :int :double]]]
+    [::mdef/reg {:optional true} ::registry]
     [::mdef/instance {:optional true} ::collector]]])
 
 (defn metrics?
@@ -149,6 +155,30 @@
   (when-let [mobj (get-collector instance id)]
     (run-collector! mobj params)
     true))
+
+(defonce ^:private warned-hints (atom #{}))
+
+(defn- report-safe-failure!
+  [hint cause]
+  (if (contains? @warned-hints hint)
+    (l/dbg :hint hint :cause cause)
+    (do
+      (swap! warned-hints conj hint)
+      (l/wrn :hint hint :cause cause))))
+
+(defn run-safe!
+  "Like `run!` but never throws and accepts a nil `instance` (no-op).
+  The first failure per `hint` is logged at warn level and subsequent
+  failures at debug, so a broken metrics setup surfaces once without
+  flooding the log on every request."
+  [instance hint & params]
+  (try
+    (when (some? instance)
+      (apply run! instance params)
+      true)
+    (catch Throwable cause
+      (report-safe-failure! hint cause)
+      nil)))
 
 (defn- create-registry
   []
