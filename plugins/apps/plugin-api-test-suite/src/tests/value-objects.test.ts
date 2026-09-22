@@ -117,6 +117,7 @@ describe('Value objects', () => {
       stroke.strokeOpacity = 0.7;
       stroke.strokeStyle = 'dotted';
       stroke.strokeWidth = 4;
+      stroke.strokePerSide = true;
       stroke.strokeAlignment = 'inner';
       stroke.strokeCapStart = 'round';
       stroke.strokeCapEnd = 'square';
@@ -128,6 +129,7 @@ describe('Value objects', () => {
       expect(stroke.strokeOpacity).toBeCloseTo(0.7, 2);
       expect(stroke.strokeStyle).toBe('dotted');
       expect(stroke.strokeWidth).toBeCloseTo(4, 0);
+      expect(stroke.strokePerSide).toBe(true);
       expect(stroke.strokeAlignment).toBe('inner');
       expect(stroke.strokeCapStart).toBe('round');
       expect(stroke.strokeCapEnd).toBe('square');
