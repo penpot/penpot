@@ -90,6 +90,12 @@ the frontend's MCP flag) is copied into each workspace on its initial sync
 only. After that the developer maintains it in each workspace; subsequent
 `--sync` runs leave the workspace copy alone.
 
+The Claude Code skills link, `.claude/skills`, is seeded the same way: it is
+gitignored, so the sync does not carry it, and the first sync creates it as a
+link to `.agents/skills`. A workspace that already has that path keeps what it
+has. No `CLAUDE.md` is created, because Claude Code reads `AGENTS.md` itself
+in a project that has none.
+
 Stopping is equally flexible — each workspace is independent. Shared infra
 stops only when no instances remain running:
 
