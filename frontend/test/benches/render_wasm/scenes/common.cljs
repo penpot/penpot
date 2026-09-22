@@ -5,19 +5,19 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.scenes.common
-  "Utilities shared by generated and saved-page fixtures.
+  "Utilities shared by generated and saved-page scenes.
 
-  A fixture instance is
+  A scene snapshot is
   `{:objects {uuid shape ...} :refs {label uuid ...}}`.
 
       - `:objects` is a Penpot page object map.
-      - `:refs` is an instance-local lookup from custom labels to object uuids.
+      - `:refs` is a snapshot-local lookup from custom labels to object uuids.
 
-  A fixture instance is just static data (a 'snapshot'). It is independent of
+  A scene snapshot is just static data. It is independent of
   camera, operations, WASM buffers and renderer calls, and it never mutates after
   upload.
 
-  Validation uses penpot's facilities, so that benchmark fixtures follow editor
+  Validation uses penpot's facilities, so that benchmark scenes follow editor
   semantics. We do check reachability from the root here because neither the
   editor validator nor file loading guarantees it.
 
@@ -34,24 +34,24 @@
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]))
 
-(def schema:instance
-  "Envelope schema for a fixture snapshot."
-  [:map {:title "RendererBenchmarkFixture"}
+(def schema:snapshot
+  "Envelope schema for a scene snapshot."
+  [:map {:title "RendererBenchmarkSceneSnapshot"}
    [:objects ctp/schema:objects]
    [:refs [:map-of :any ::sm/uuid]]])
 
 (defn- fail!
   [hint data]
-  (throw (ex-info (str "Invalid fixture instance: " hint)
-                  (merge {:type ::invalid-fixture
+  (throw (ex-info (str "Invalid scene snapshot: " hint)
+                  (merge {:type ::invalid-snapshot
                           :hint hint}
                          data))))
 
 (defn- check-schema!
   [instance]
-  (when-not (sm/validate schema:instance instance)
-    (fail! "instance does not match the fixture schema"
-           {::sm/explain (sm/explain schema:instance instance)})))
+  (when-not (sm/validate schema:snapshot instance)
+    (fail! "instance does not match the scene snapshot schema"
+           {::sm/explain (sm/explain schema:snapshot instance)})))
 
 (defn- check-root!
   [instance]
@@ -140,7 +140,7 @@
 
   `cfv/validate-shape` checks parent/child links, frame ids and geometry
   with editor semantics. The file and page only carry the uuids the
-  validation error schema requires; fixtures contain no component shapes.
+  validation error schema requires; scenes contain no component shapes.
   Unreachable objects never reach this walk; `check-reachability!` owns
   them."
   [instance]
@@ -160,9 +160,9 @@
                 :target target})))))
 
 (defn validate!
-  "Validates a fixture instance and returns it unchanged.
+  "Validates a scene snapshot and returns it unchanged.
 
-  Throws `ex-info` with `{:type ::invalid-fixture :hint ...}` when the
+  Throws `ex-info` with `{:type ::invalid-snapshot :hint ...}` when the
   snapshot is invalid. Schema failures also carry `::sm/explain`.
 
   Reachability runs before the production validator, because that walk

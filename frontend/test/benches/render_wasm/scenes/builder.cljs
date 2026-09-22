@@ -5,22 +5,23 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.scenes.builder
-  "Scoped construction for renderer benchmark fixtures.
+  "Scoped construction for renderer benchmark scenes.
 
-  A fixture scope owns one seeded generator, one object map, and one label
-  map. Shape constructors add themselves to the current parent: `rect`, and
-  the `frame`/`group`/`bool` container scopes. The scope returns a validated
-  snapshot in the ticket02 contract `{:objects ... :refs ...}`.
+  A scene scope owns one seeded generator, one object map, and one label
+  map. Shape constructors add themselves to the current parent: `rect`,
+  `circle`, and the `frame`/`group`/`bool` container scopes. The scope
+  returns a validated snapshot in the ticket02 contract
+  `{:objects ... :refs ...}`.
 
   Construction is synchronous by design: the scope and the current parent
   are carried by dynamic vars, so `let`, `doseq` and functions defined
-  outside the scope all work inside a fixture. Fixture scopes cannot nest
+  outside the scope all work inside a scene. Scene scopes cannot nest
   and body exceptions unwind without leaving state behind. A container whose
   body throws is marked unfinished and `finish!` rejects the instance, so a
   caught exception cannot silently produce a half-built scene.
 
   Defaults follow the same theme: `*defaults*` maps a shape type to an
-  attribute generator map, bound by the `fixture` macro from the scope
+  attribute generator map, bound by the `scene` macro from the scope
   params. Per-shape attrs are merged over the generated values, so a recipe
   can override anything locally and rebind `*defaults*` around a section.
 
@@ -148,11 +149,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:dynamic *state*
-  "Current fixture scope; bound by the `fixture` macro."
+  "Current scene scope; bound by the `scene` macro."
   nil)
 
 (def ^:dynamic *defaults*
-  "Per-shape-type attribute generator maps bound by the `fixture` macro,
+  "Per-shape-type attribute generator maps bound by the `scene` macro,
   e.g. `{:rect {:x (gen-int 0 1920) ...}}`. Values are literals or one-arg
   functions of the scope random source."
   {})
@@ -165,15 +166,15 @@
 (defn- check-seed!
   [seed]
   (when-not (and (integer? seed) (<= 0 seed) (< seed 4294967296))
-    (throw (ex-info "fixture scope requires an integer :seed in [0, 2^32)"
+    (throw (ex-info "scene scope requires an integer :seed in [0, 2^32)"
                     {:type ::invalid-seed
                      :seed seed}))))
 
 (defn start
-  "Starts a fixture scope. Returns the scope state atom."
+  "Starts a scene scope. Returns the scope state atom."
   [params]
   (when (some? *state*)
-    (throw (ex-info "fixture scopes cannot nest"
+    (throw (ex-info "scene scopes cannot nest"
                     {:type ::nested-scope})))
   (check-seed! (:seed params))
   (let [seed (:seed params)
@@ -193,7 +194,7 @@
 (defn- ensure-state
   [state]
   (or state
-      (throw (ex-info "shape used outside a fixture scope"
+      (throw (ex-info "shape used outside a scene scope"
                       {:type ::outside-scope}))))
 
 (defn- resolve-attr
@@ -212,7 +213,7 @@
   [state label id]
   (when (some? label)
     (when (contains? (:refs @state) label)
-      (throw (ex-info (str "duplicate fixture label: " label)
+      (throw (ex-info (str "duplicate scene label: " label)
                       {:type ::duplicate-label
                        :label label})))
     (swap! state assoc-in [:refs label] id)))
@@ -384,9 +385,9 @@
           bool      (-> bool (merge inherited) (merge supplied))
 
           ;; `path/update-bool-shape` dispatches to `path/wasm:calc-bool-content`,
-          ;; the renderer override, so fixture content would depend on renderer
+          ;; the renderer override, so scene content would depend on renderer
           ;; initialization and A/B configuration. Compose the pure helpers:
-          ;; fixture generation is untimed and must not vary with the renderer
+          ;; scene generation is untimed and must not vary with the renderer
           ;; being compared.
           content   (path/calc-bool-content bool (:objects scope))
           bool      (path/update-geometry bool content)]
@@ -456,7 +457,7 @@
   [state]
   (let [{:keys [objects refs unfinished]} @state]
     (when (seq unfinished)
-      (throw (ex-info "fixture contains an unfinished container"
+      (throw (ex-info "scene contains an unfinished container"
                       {:type ::unfinished-container
                        :ids (vec (keys unfinished))})))
     (let [instance {:objects objects
