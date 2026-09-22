@@ -32,7 +32,13 @@
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
    [yetti.request :as yreq]
-   [yetti.response :as-alias yres]))
+   [yetti.response :as-alias yres])
+  (:import
+   io.undertow.server.ConnectorStatistics
+   io.undertow.Undertow
+   java.util.concurrent.ScheduledThreadPoolExecutor
+   java.util.concurrent.TimeUnit
+   org.xnio.management.XnioWorkerMXBean))
 
 (declare router-handler)
 
@@ -45,6 +51,94 @@
    ::host "0.0.0.0"
    ::max-body-size 367001600 ; default 350 MiB
    })
+
+(def ^:private metrics-sample-interval-ms 15000)
+
+(defn sample-worker-metrics!
+  "Publishes the current state of the xnio worker thread pool (the
+  request dispatch queue and its threads) as gauges. Negative samples
+  are discarded: the xnio MXBean may return intermediate negative
+  values (e.g. -1 for the busy thread count) and publishing them as
+  gauge values would create false zeros."
+  [metrics ^XnioWorkerMXBean mxbean]
+  (when (and (some? metrics) (some? mxbean))
+    (doseq [[id value] [[:http-worker-queue-size (.getWorkerQueueSize mxbean)]
+                        [:http-worker-busy-threads (.getBusyWorkerThreadCount mxbean)]
+                        [:http-worker-pool-size (.getWorkerPoolSize mxbean)]
+                        [:http-worker-max-pool-size (.getMaxWorkerPoolSize mxbean)]]
+            :when (>= value 0)]
+      (mtx/run! metrics :id id :val value)))
+  true)
+
+(defn sample-connector-metrics!
+  "Publishes the current state of the http listener connection
+  statistics. Undertow exposes absolute totals, so counters are
+  published as deltas of the last seen values (the atom state holds the
+  last observed totals). When a delta comes back negative (mainly
+  because the underlying counters were reset) the counter is skipped
+  and the reference updated."
+  [metrics state ^ConnectorStatistics cs]
+  (when (and (some? metrics) (some? state) (some? cs))
+    (let [{:keys [last-requests last-errors]} (deref state)
+          total-requests (.getRequestCount cs)
+          total-errors   (.getErrorCount cs)
+          delta-requests (max 0 (- total-requests last-requests))
+          delta-errors   (max 0 (- total-errors last-errors))]
+
+      (when (pos? delta-requests)
+        (mtx/run! metrics :id :http-connector-requests-total :inc delta-requests))
+
+      (when (pos? delta-errors)
+        (mtx/run! metrics :id :http-connector-errors-total :inc delta-errors))
+
+      (mtx/run! metrics
+                :id :http-connector-active-connections
+                :val (.getActiveConnections cs))
+
+      (swap! state merge {:last-requests total-requests
+                          :last-errors total-errors})))
+  true)
+
+(defn sample-http-metrics!
+  "Samples the current state of the http server: worker thread pool
+  state and listener connection statistics. Called periodically by a
+  sampler that starts together with the server."
+  [metrics state ^Undertow server]
+
+  (try
+    (let [mxbean (.getMXBean (.getWorker server))]
+      (sample-worker-metrics! metrics mxbean)
+      (when-let [cs (some-> (.getListenerInfo server)
+                            (first)
+                            (.getConnectorStatistics))]
+        (sample-connector-metrics! metrics state cs)))
+
+    (catch Exception cause
+      (l/warn :msg "unexpected error on http metrics sampling"
+              :cause cause))))
+
+(defn create-metrics-sampler
+  "Creates a daemon scheduler that periodically samples the state of
+  the http server and publishes it as metrics. A single thread is used,
+  and an unexpected error on a single sample does NOT cancel the
+  subsequent runs."
+  [^Undertow server metrics]
+  (let [state (atom {:last-requests 0 :last-errors 0})
+        scheduler (ScheduledThreadPoolExecutor.
+                   1
+                   (reify java.util.concurrent.ThreadFactory
+                     (newThread [_ task]
+                       (doto (Thread. ^Runnable task
+                                      "penpot-http-server-metrics-sampler")
+                         (.setDaemon true)))))]
+
+    (.scheduleAtFixedRate scheduler
+                          (fn [] (sample-http-metrics! metrics state server))
+                          0
+                          metrics-sample-interval-ms
+                          TimeUnit/MILLISECONDS)
+
+    scheduler))
 
 (defmethod ig/expand-key ::server
   [k v]
@@ -84,6 +178,7 @@
          :xnio/io-threads (::io-threads cfg)
          :xnio/max-worker-threads (::max-worker-threads cfg)
          :ring/compat :ring2
+         :server/statistics true
          :events/on-dispatch on-dispatch
          :socket/backlog 4069}
 
@@ -99,13 +194,18 @@
           (throw (UnsupportedOperationException. "handler or router are required")))
 
         server
-        (yt/server handler (d/without-nils options))]
+        (yt/start! (yt/server handler (d/without-nils options)))
 
-    (assoc cfg ::server (yt/start! server))))
+        sampler
+        (create-metrics-sampler server metrics)]
+
+    (assoc cfg ::server server ::metrics-sampler sampler)))
 
 (defmethod ig/halt-key! ::server
-  [_ {:keys [::server ::port] :as cfg}]
+  [_ {:keys [::metrics-sampler ::server ::port] :as cfg}]
   (l/info :msg "stopping http server" :port port)
+  (when (some? metrics-sampler)
+    (.shutdownNow ^ScheduledThreadPoolExecutor metrics-sampler))
   (yt/stop! server))
 
 (defn- not-found-handler

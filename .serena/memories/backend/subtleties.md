@@ -38,6 +38,12 @@
 - Session management uses DB storage unless the DB pool is read-only, then falls back to the in-memory manager. DB sessions support both legacy string ids and v2 UUID session ids.
 - Session cookies are renewed when using a legacy string id or when `modified-at` is older than the renewal interval. SameSite is `none` for CORS, otherwise strict/lax based on config.
 
+## HTTP server self-metrics
+
+- `app.http` enables Undertow connection statistics via the yetti option `:server/statistics` (requires yetti ≥ v11.11, which exposes it; before the patch `ListenerInfo#getConnectorStatistics` returned `nil`).
+- A daemon sampler (`ScheduledThreadPoolExecutor`, 15 s, started with the server in `ig/init-key` and shutdown in `halt-key!`) publishes worker and listener state: `penpot_http_worker_queue_size`, `busy_threads`, `pool_size`, `max_pool_size`, `penpot_http_connector_active_connections`, `requests_total`, `errors_total`. Definitions live in `app.main/default-metrics`.
+- The xnio worker MXBean can return transient `-1` (e.g. busy-thread count); negative samples are discarded (gauge keeps its previous value). Undertow exposes absolute request/error totals, so the sampler keeps a watermark atom and publishes deltas; a counter reset (decreasing totals) skips the negative delta and moves the watermark forward.
+
 ## Storage and media
 
 - Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
