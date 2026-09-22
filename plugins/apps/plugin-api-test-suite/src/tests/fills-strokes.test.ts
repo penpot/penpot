@@ -338,10 +338,10 @@ describe('Fills & strokes', () => {
           strokeColor: '#000000',
           strokeWidth: 1,
           strokePerSide: true,
-          strokeWidthTop: 2,
-          strokeWidthRight: 3,
+          strokeWidthTop: 4,
+          strokeWidthRight: 4,
           strokeWidthBottom: 4,
-          strokeWidthLeft: 5,
+          strokeWidthLeft: 4,
         },
       ];
 
@@ -351,10 +351,10 @@ describe('Fills & strokes', () => {
       const reread = r.strokes[0];
       expect(reread.strokeColor).toBe('#ff0000');
       expect(reread.strokePerSide).toBe(true);
-      expect(reread.strokeWidthTop).toBe(2);
-      expect(reread.strokeWidthRight).toBe(3);
+      expect(reread.strokeWidthTop).toBe(4);
+      expect(reread.strokeWidthRight).toBe(4);
       expect(reread.strokeWidthBottom).toBe(4);
-      expect(reread.strokeWidthLeft).toBe(5);
+      expect(reread.strokeWidthLeft).toBe(4);
     });
 
     test('per-side widths are directly settable', (ctx) => {
