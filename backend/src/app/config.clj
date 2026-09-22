@@ -295,6 +295,7 @@
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
     [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
+    [:objects-storage-s3-routes-file {:optional true} :string]
 
     ;; SSRF protection
     [:ssrf-allowed-hosts {:optional true} [::sm/set :string]]
