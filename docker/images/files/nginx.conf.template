@@ -211,4 +211,20 @@ http {
 
         }
     }
+
+    # Dedicated health endpoint consumed by the nginx-prometheus-exporter
+    # sidecar (deployed by ops, scraping http://127.0.0.1:8082/stub_status).
+    # Bound to localhost only and out of the public server, so it can not
+    # be reached from outside the host. Counts client-side connections
+    # only; it says nothing about the upstream pools.
+    server {
+        listen 127.0.0.1:8082;
+        server_name _;
+
+        access_log off;
+
+        location = /stub_status {
+            stub_status;
+        }
+    }
 }
