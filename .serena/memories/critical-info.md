@@ -10,6 +10,8 @@ You are working on the GitHub project `penpot/penpot`, a monorepo.
 - Verified Clojure language behaviors that contradict common assumptions
   (e.g. `int?` covers `Long`; `integer?` is the general predicate):
   `mem:clojure/idioms` — read before assuming stdlib predicate semantics.
+- When designing a solution or an API, read `mem:clojure/design-rules`
+  (function shape, boundary checks, naming).
 
 # Development workflow
 
