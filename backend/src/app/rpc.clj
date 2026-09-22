@@ -228,7 +228,7 @@
       (fn [cfg params]
         (let [request-params (-> params meta ::http/request :params decode)]
           (if (validate request-params)
-            (let [result (f cfg (merge params request-params))]
+            (let [result (f cfg (merge params (d/without-qualified request-params)))]
               (if (instance? clojure.lang.IObj result)
                 (vary-meta result assoc :encode/json encode)
                 result))

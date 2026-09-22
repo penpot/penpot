@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.http :as http]
@@ -900,6 +901,29 @@
                      (catch Exception e e))]
     (t/is (some? ex))
     (t/is (th/ex-of-type? ex :not-found))))
+
+;; --- PARAMS VALIDATION: SERVER AUTH CONTEXT VS CLIENT PARAMS
+
+(t/deftest client-qualified-keys-do-not-override-server-auth-context
+  (let [captured      (atom nil)
+        inner         (fn [_cfg params] (reset! captured params) {:ok true})
+        schema        [:map [:name :string]]
+        wrap-validate @#'rpc/wrap-params-validation
+        wrapped       (wrap-validate nil inner {::sm/params schema})
+        server-pid    (uuid/custom 1 1)
+        attacker-pid  (uuid/custom 2 2)
+        request       {:params {:name "valid"
+                                :app.rpc/profile-id attacker-pid
+                                :app.rpc/auth-type :token
+                                :app.rpc/token-perms #{"admin"}}}
+        params        (with-meta {::rpc/profile-id server-pid
+                                  ::rpc/auth-type :session}
+                        {::http/request request})]
+    (wrapped nil params)
+    (t/is (= server-pid (::rpc/profile-id @captured)))
+    (t/is (= :session (::rpc/auth-type @captured)))
+    (t/is (not (contains? @captured ::rpc/token-perms)))
+    (t/is (= "valid" (:name @captured)))))
 
 ;; --- RESPONSE: NIL BODY WITH CUSTOM HEADERS
 
