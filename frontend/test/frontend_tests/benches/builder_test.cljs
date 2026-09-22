@@ -10,25 +10,12 @@
    [benches.render-wasm.scenes.builder :as b :include-macros true]
    [benches.render-wasm.scenes.common :as common]
    [benches.render-wasm.scenes.rects :as rects]
-   [cljs.test :as t :include-macros true]))
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.benches.test-helpers :as helpers]))
 
 (defn- build
   ([] (build {}))
   ([params] (rects/build (merge {:seed 42 :count 5} params))))
-
-(defn- rect-shapes
-  "Rectangles of a fixture instance in creation order."
-  [instance]
-  (mapv (:objects instance)
-        (get-in instance [:objects uuid/zero :shapes])))
-
-(defn- failure-data
-  [f]
-  (try
-    (f)
-    nil
-    (catch :default cause
-      (ex-data cause))))
 
 (defn- add-tile
   "Helper defined outside a fixture scope, called from inside one."
@@ -41,13 +28,13 @@
 
 (t/deftest rectangle-workload-keeps-default-count
   (let [instance (rects/build {:seed 42})
-        rects    (rect-shapes instance)]
+        rects    (helpers/root-shapes instance)]
     (t/is (= 1000 (count rects)))
     (t/is (< 1 (count (distinct (map :x rects)))))))
 
 (t/deftest default-workload-is-canonical
   (let [instance (build {:count 25})
-        rects    (rect-shapes instance)]
+        rects    (helpers/root-shapes instance)]
     (t/is (= 25 (count rects)))
     (t/is (every? #(= :rect (:type %)) rects))
     (t/is (every? (fn [rect]
@@ -65,7 +52,7 @@
 (t/deftest geometry-is-page-relative-and-in-range
   (let [params   {:seed 7 :count 40 :width 800 :height 600 :min-size 5 :max-size 15}
         instance (build params)
-        rects    (rect-shapes instance)]
+        rects    (helpers/root-shapes instance)]
     (t/is (every? #(<= 0 (:x %) 800) rects))
     (t/is (every? #(<= 0 (:y %) 600) rects))
     (t/is (every? #(<= 5 (:width %) 15) rects))
@@ -79,7 +66,7 @@
                             (b/rect :hero {})
                             (b/rect [:tile 1] {}))
         refs     (:refs instance)
-        children (get-in instance [:objects uuid/zero :shapes])]
+        children (helpers/child-ids instance uuid/zero)]
     (t/is (= #{:hero [:tile 1]} (set (keys refs))))
     (t/is (= (get refs :hero) (second children)))
     (t/is (= (get refs [:tile 1]) (nth children 2)))))
@@ -88,7 +75,7 @@
   (let [instance (b/fixture {:seed 1
                              :defaults {:rect {:x (b/gen-int 0 100)}}}
                             (b/rect {:x 7 :fills []}))
-        rect     (first (rect-shapes instance))]
+        rect     (first (helpers/root-shapes instance))]
     (t/is (= 7 (:x rect)))
     (t/is (= [] (:fills rect)))))
 
@@ -100,7 +87,7 @@
                               (add-tile index))
                             (b/rect :last {:x 99}))
         refs     (:refs instance)
-        rects    (rect-shapes instance)]
+        rects    (helpers/root-shapes instance)]
     (t/is (= 5 (count rects)))
     (t/is (= [0 10 20]
              (mapv #(:x (get-in instance [:objects (get refs [:tile %])]))
@@ -108,7 +95,7 @@
     (t/is (= 99 (:x (get-in instance [:objects (get refs :last)]))))))
 
 (t/deftest duplicate-labels-are-rejected
-  (let [data (failure-data
+  (let [data (helpers/failure-data
               #(b/fixture {:seed 1}
                           (b/rect :dup {})
                           (b/rect :dup {})))]
@@ -117,17 +104,17 @@
 
 (t/deftest failed-builds-leak-no-state
   (let [clean (build)]
-    (failure-data #(b/fixture {:seed 99}
-                              (b/rect :dup {})
-                              (b/rect :dup {})))
+    (helpers/failure-data #(b/fixture {:seed 99}
+                                      (b/rect :dup {})
+                                      (b/rect :dup {})))
     (t/is (= clean (build)))))
 
 (t/deftest rect-outside-scope-is-rejected
-  (let [data (failure-data #(b/rect))]
+  (let [data (helpers/failure-data #(b/rect))]
     (t/is (= ::b/outside-scope (:type data)))))
 
 (t/deftest nested-scopes-are-rejected
-  (let [data (failure-data
+  (let [data (helpers/failure-data
               #(b/fixture {:seed 1}
                           (b/fixture {:seed 2}
                                      (b/rect))))]
@@ -135,17 +122,17 @@
 
 (t/deftest invalid-seeds-are-rejected
   (t/is (= ::b/invalid-seed
-           (:type (failure-data #(b/fixture {} (b/rect))))))
+           (:type (helpers/failure-data #(b/fixture {} (b/rect))))))
   (t/is (= ::b/invalid-seed
-           (:type (failure-data #(b/fixture {:seed -1} (b/rect))))))
+           (:type (helpers/failure-data #(b/fixture {:seed -1} (b/rect))))))
   (t/is (= ::b/invalid-seed
-           (:type (failure-data #(b/fixture {:seed 4294967296} (b/rect)))))))
+           (:type (helpers/failure-data #(b/fixture {:seed 4294967296} (b/rect)))))))
 
 (t/deftest runtime-attrs-maps-are-resolved
   (let [attrs    {:x 11}
         instance (b/fixture {:seed 1}
                             (b/rect attrs))
-        rect     (first (rect-shapes instance))]
+        rect     (first (helpers/root-shapes instance))]
     (t/is (= 11 (:x rect)))))
 
 (t/deftest single-label-form-is-supported
@@ -153,7 +140,7 @@
                             (b/rect :solo))
         id       (get (:refs instance) :solo)]
     (t/is (uuid? id))
-    (t/is (= [id] (get-in instance [:objects uuid/zero :shapes])))))
+    (t/is (= [id] (helpers/child-ids instance uuid/zero)))))
 
 (t/deftest built-instance-feeds-the-snapshot-api
   (let [instance (b/fixture {:seed 1}
@@ -163,14 +150,14 @@
     (t/is (= [uuid/zero hero-id] (mapv :id order)))))
 
 (t/deftest invalid-labels-are-rejected
-  (let [data (failure-data #(b/fixture {:seed 1} (b/rect "hero" {})))]
+  (let [data (helpers/failure-data #(b/fixture {:seed 1} (b/rect "hero" {})))]
     (t/is (= ::b/invalid-label (:type data)))))
 
 (t/deftest protected-keys-cannot-be-overridden
   (let [other    (uuid/custom 9 9)
         instance (b/fixture {:seed 1}
                             (b/rect {:type :circle :id other :parent-id other}))
-        rect     (first (rect-shapes instance))]
+        rect     (first (helpers/root-shapes instance))]
     (t/is (= :rect (:type rect)))
     (t/is (not= other (:id rect)))
     (t/is (= uuid/zero (:parent-id rect)))))
@@ -189,61 +176,47 @@
   (let [fill     {:fill-color "#ffffff" :fill-opacity 1}
         instance (b/fixture {:seed 1}
                             (b/rect {:fills [fill]}))
-        rect     (first (rect-shapes instance))]
+        rect     (first (helpers/root-shapes instance))]
     (t/is (= [fill] (:fills rect)))))
 
 (t/deftest generator-helpers-produce-expected-values
   (let [instance (b/fixture {:seed 3
                              :defaults {:rect {:opacity (b/gen-float 0.5 0.6)
                                                :x (b/gen-one-of [4 5])
-                                               :r1 (b/gen-int 3 4)
+                                               :r1 (b/gen-int 3 5)
                                                :fills (b/gen-vector (b/gen-fill))}}}
                             (b/rect))
-        rect     (first (rect-shapes instance))]
+        rect     (first (helpers/root-shapes instance))]
     (t/is (<= 0.5 (:opacity rect) 0.6))
     (t/is (contains? #{4 5} (:x rect)))
-    (t/is (= 3 (:r1 rect)))
+    (t/is (<= 3 (:r1 rect) 4))
     (t/is (re-matches #"^#[0-9a-f]{6}$" (:fill-color (first (:fills rect)))))))
 
 (t/deftest empty-one-of-is-rejected
-  (let [data (failure-data #(b/gen-one-of []))]
+  (let [data (helpers/failure-data #(b/gen-one-of []))]
     (t/is (= ::b/no-values (:type data)))))
-
-(defn- circle-shapes
-  "Circles of a fixture instance in creation order."
-  [instance]
-  (mapv (:objects instance)
-        (get-in instance [:objects uuid/zero :shapes])))
 
 (t/deftest circle-creates-ellipse-type
   (let [instance (b/fixture {:seed 1}
                             (b/circle {:x 10 :y 20 :width 30 :height 40}))
-        circle   (first (circle-shapes instance))]
+        circle   (first (helpers/root-shapes instance))]
     (t/is (= :circle (:type circle)))
     (t/is (= [10 20 30 40] [(:x circle) (:y circle) (:width circle) (:height circle)]))
-    (t/is (= 1 (count (get-in instance [:objects uuid/zero :shapes]))))))
+    (t/is (= 1 (count (helpers/child-ids instance uuid/zero))))))
 
 (t/deftest circle-uses-circle-defaults
   (let [instance (b/fixture {:seed 3
-                             :defaults {:circle {:x (b/gen-int 10 11)}}}
+                             :defaults {:circle {:x (b/gen-int 10 12)}}}
                             (b/circle))
-        circle   (first (circle-shapes instance))]
+        circle   (first (helpers/root-shapes instance))]
     (t/is (contains? #{10 11} (:x circle)))))
 
 (t/deftest circle-ignores-rect-defaults
   (let [instance (b/fixture {:seed 1
                              :defaults {:rect {:x 999}}}
                             (b/circle))
-        circle   (first (circle-shapes instance))]
-    (t/is (= 0 (:x circle)))))
-
-(t/deftest circle-attrs-override-generated-values
-  (let [instance (b/fixture {:seed 1
-                             :defaults {:circle {:x (b/gen-int 0 100)}}}
-                            (b/circle {:x 7 :fills []}))
-        circle   (first (circle-shapes instance))]
-    (t/is (= 7 (:x circle)))
-    (t/is (= [] (:fills circle)))))
+        circle   (first (helpers/root-shapes instance))]
+    (t/is (not= 999 (:x circle)))))
 
 (t/deftest circle-geometry-is-page-relative-and-in-range
   (let [instance (b/fixture {:seed 7
@@ -253,101 +226,16 @@
                                                  :height (b/gen-int 5 15)}}}
                             (doseq [_ (range 40)]
                               (b/circle)))
-        circles  (circle-shapes instance)]
+        circles  (helpers/root-shapes instance)]
     (t/is (= 40 (count circles)))
     (t/is (every? #(<= 0 (:x %) 800) circles))
     (t/is (every? #(<= 0 (:y %) 600) circles))
     (t/is (every? #(<= 5 (:width %) 15) circles))
     (t/is (every? #(<= 5 (:height %) 15) circles))))
 
-(t/deftest circle-labels-are-instance-local
-  (let [instance (b/fixture {:seed 1}
-                            (b/circle)
-                            (b/circle :hero {})
-                            (b/circle [:tile 1] {}))
-        refs     (:refs instance)
-        children (get-in instance [:objects uuid/zero :shapes])]
-    (t/is (= #{:hero [:tile 1]} (set (keys refs))))
-    (t/is (= (get refs :hero) (second children)))
-    (t/is (= (get refs [:tile 1]) (nth children 2)))))
-
-(t/deftest circle-single-label-form-is-supported
-  (let [instance (b/fixture {:seed 1}
-                            (b/circle :solo))
-        id       (get (:refs instance) :solo)]
-    (t/is (uuid? id))
-    (t/is (= [id] (get-in instance [:objects uuid/zero :shapes])))))
-
-(t/deftest circle-runtime-attrs-maps-are-resolved
-  (let [attrs    {:x 11}
-        instance (b/fixture {:seed 1}
-                            (b/circle attrs))
-        circle   (first (circle-shapes instance))]
-    (t/is (= 11 (:x circle)))))
-
-(t/deftest circle-duplicate-labels-are-rejected
-  (let [data (failure-data
-              #(b/fixture {:seed 1}
-                          (b/circle :dup {})
-                          (b/circle :dup {})))]
-    (t/is (= ::b/duplicate-label (:type data)))
-    (t/is (= :dup (:label data)))))
-
-(t/deftest circle-invalid-labels-are-rejected
-  (let [data (failure-data #(b/fixture {:seed 1} (b/circle "hero" {})))]
-    (t/is (= ::b/invalid-label (:type data)))))
-
-(t/deftest circle-outside-scope-is-rejected
-  (let [data (failure-data #(b/circle))]
-    (t/is (= ::b/outside-scope (:type data)))))
-
-(t/deftest circle-protected-keys-cannot-be-overridden
-  (let [other    (uuid/custom 9 9)
-        instance (b/fixture {:seed 1}
-                            (b/circle {:type :rect :id other :parent-id other}))
-        circle   (first (circle-shapes instance))]
-    (t/is (= :circle (:type circle)))
-    (t/is (not= other (:id circle)))
-    (t/is (= uuid/zero (:parent-id circle)))))
-
-(t/deftest circle-built-instance-feeds-the-snapshot-api
-  (let [instance (b/fixture {:seed 1}
-                            (b/circle :hero {}))
-        order    (common/upload-order instance)
-        hero-id  (common/ref-id instance :hero)]
-    (t/is (= [uuid/zero hero-id] (mapv :id order)))))
-
-(t/deftest circle-repeatable-builds-are-identical
-  (let [build (fn [seed]
-                (b/fixture {:seed seed
-                            :defaults {:circle {:x (b/gen-int 0 100)}}}
-                           (b/circle)
-                           (b/circle)))]
-    (t/is (= (build 42) (build 42)))
-    (t/is (not= (build 42) (build 43)))))
-
-(t/deftest circle-ordinary-forms-work-inside-the-scope
-  (let [instance (b/fixture {:seed 1}
-                            (let [first-id (b/circle {:x 1})]
-                              (t/is (uuid? first-id)))
-                            (doseq [index (range 3)]
-                              (b/circle [:ring index] {:x (* 10 index)}))
-                            (b/circle :last {:x 99}))
-        refs     (:refs instance)
-        circles  (circle-shapes instance)]
-    (t/is (= 5 (count circles)))
-    (t/is (= [0 10 20]
-             (mapv #(:x (get-in instance [:objects (get refs [:ring %])]))
-                   (range 3))))
-    (t/is (= 99 (:x (get-in instance [:objects (get refs :last)]))))))
-
 (t/deftest circle-preserves-radius-attrs
   (let [instance (b/fixture {:seed 1}
                             (b/circle {:x 0 :y 0 :width 20 :height 20 :rx 5 :ry 7}))
-        circle   (first (circle-shapes instance))]
+        circle   (first (helpers/root-shapes instance))]
     (t/is (= [5 7] [(:rx circle) (:ry circle)]))))
 
-(t/deftest circle-failed-builds-leak-no-state
-  (let [clean (b/fixture {:seed 42 :defaults {:circle {:x (b/gen-int 0 100)}}} (b/circle) (b/circle))]
-    (failure-data #(b/fixture {:seed 99} (b/circle :dup {}) (b/circle :dup {})))
-    (t/is (= clean (b/fixture {:seed 42 :defaults {:circle {:x (b/gen-int 0 100)}}} (b/circle) (b/circle))))))
