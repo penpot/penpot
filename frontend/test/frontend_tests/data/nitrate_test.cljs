@@ -121,31 +121,72 @@
         (t/is (nil? (:days-since-member-added event)))))))
 
 (t/deftest accept-organization-invitation-audit-event-test
-  (let [emitted (atom [])
-        props   {:team-id "team-1"
-                 :organization-id "organization-1"
-                 :role :editor
-                 :invitation-id "invitation-1"
-                 :organization-member-add-source "team-invitation"
-                 :belongs-to-team-on-add true
-                 :organization-member-count-before 4}]
+  (let [emitted (atom [])]
     (with-redefs [st/emit! (fn
                              ([event]
                               (swap! emitted conj event))
                              ([event & events]
                               (swap! emitted into (cons event events))))]
-      (verify-token/handle-token
-       {:iss :team-invitation
-        :state :created
-        :team-id "team-1"
-        :organization-invitation-audit
-        {:origin "team-invitation-acceptance"
-         :props props}}))
+      (t/testing "accepting a team invitation that adds an organization member"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :team-id "team-1"
+          :organization-id "organization-1"
+          :role :editor
+          :invitation-id "invitation-1"
+          :user-id "invitee-1"
+          :user-who-send-invitation "inviter-1"
+          :organization-member-count-before 4})
 
-    (let [event @(first @emitted)]
-      (t/is (= "accept-organization-invitation" (::ev/name event)))
-      (t/is (= "team-invitation-acceptance" (::ev/origin event)))
-      (t/is (= props (dissoc event ::ev/name ::ev/origin))))))
+        (t/is (= {::ev/name "accept-organization-invitation"
+                  ::ev/origin "team-invitation-acceptance"
+                  :team-id "team-1"
+                  :organization-id "organization-1"
+                  :role :editor
+                  :invitation-id "invitation-1"
+                  :user-id "invitee-1"
+                  :user-who-send-invitation "inviter-1"
+                  :organization-member-add-source "team-invitation"
+                  :belongs-to-team-on-add true
+                  :organization-member-count-before 4}
+                 @(first @emitted))))
+
+      (reset! emitted [])
+      (t/testing "accepting an invitation directly to the organization"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :organization-id "organization-2"
+          :organization-team-id "team-default"
+          :role :viewer
+          :invitation-id "invitation-2"
+          :user-id "invitee-2"
+          :user-who-send-invitation "inviter-2"
+          :organization-member-count-before 0})
+
+        (t/is (= {::ev/name "accept-organization-invitation"
+                  ::ev/origin "organization-invitation-acceptance"
+                  :organization-id "organization-2"
+                  :role :viewer
+                  :invitation-id "invitation-2"
+                  :user-id "invitee-2"
+                  :user-who-send-invitation "inviter-2"
+                  :organization-member-add-source "direct-organization-invitation"
+                  :belongs-to-team-on-add false
+                  :organization-member-count-before 0}
+                 @(first @emitted))))
+
+      (reset! emitted [])
+      (t/testing "does not audit a team invitation for an existing organization member"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :team-id "team-3"
+          :organization-id "organization-3"
+          :role :editor})
+
+        (t/is (= 3 (count @emitted)))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
+   [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
@@ -45,12 +46,24 @@
 
 (defmethod handle-token :team-invitation
   [{:keys [state team-id organization-team-id organization-name invitation-token] :as tdata}]
-  (when-let [{:keys [origin props]} (:organization-invitation-audit tdata)]
-    (st/emit!
-     (ev/event
-      (assoc props
-             ::ev/name "accept-organization-invitation"
-             ::ev/origin origin))))
+  (when (and (= state :created)
+             (contains? tdata :organization-member-count-before))
+    (let [direct-invitation? (some? organization-team-id)]
+      (st/emit!
+       (ev/event
+        (-> (select-keys tdata [:team-id :organization-id :role
+                                :invitation-id :user-id :user-who-send-invitation
+                                :organization-member-count-before])
+            (d/without-nils)
+            (assoc :organization-member-add-source
+                   (if direct-invitation?
+                     "direct-organization-invitation"
+                     "team-invitation")
+                   :belongs-to-team-on-add (boolean team-id)
+                   ::ev/name "accept-organization-invitation"
+                   ::ev/origin (if direct-invitation?
+                                 "organization-invitation-acceptance"
+                                 "team-invitation-acceptance")))))))
 
   (case state
     :created
