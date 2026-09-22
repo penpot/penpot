@@ -33,6 +33,7 @@ RUN set -eux; \
     esac; \
     curl -LfsSo /tmp/pnpm.tar.gz "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
     echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    mkdir -p /usr/local/bin; \
     tar -xzf /tmp/pnpm.tar.gz -C /usr/local/bin pnpm; \
     chmod 755 /usr/local/bin/pnpm; \
     rm -f /tmp/pnpm.tar.gz; \
