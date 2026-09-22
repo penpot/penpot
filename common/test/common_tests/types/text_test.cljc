@@ -125,6 +125,58 @@
   (assoc-in content-base [:children 0 :children 0 :children 0 :fills]
             [{:fill-color "#ff0000" :fill-opacity 1}]))
 
+;; The newer text editor duplicates typography attrs onto the paragraph
+;; node (not just the leaf) once a non-default style is applied. That
+;; pushes the paragraph map's key count from 4 to 9, crossing the
+;; PersistentArrayMap/PersistentHashMap promotion threshold, which
+;; changes its `type` even though it's still just a map. These fixtures
+;; are built as raw content, matching real editor output exactly
+;; (content-base's paragraph already carries every default attr, so it
+;; can't reproduce the 4-key vs 9-key gap seen in practice).
+(defn- leaf-text-node
+  [font-weight font-variant-id]
+  {:line-height "1.2"
+   :font-style "normal"
+   :typography-ref-id nil
+   :text-transform "none"
+   :font-id "sourcesanspro"
+   :font-size "14"
+   :font-weight font-weight
+   :typography-ref-file nil
+   :font-variant-id font-variant-id
+   :text-decoration "none"
+   :letter-spacing "0"
+   :fills [{:fill-color "#000000" :fill-opacity 1}]
+   :font-family "sourcesanspro"
+   :text "hello world"})
+
+(defn- text-content
+  [paragraph-extra-attrs font-weight font-variant-id]
+  {:type "root"
+   :vertical-align "top"
+   :children
+   [{:type "paragraph-set"
+     :children
+     [(merge {:type "paragraph"
+              :text-align "left"
+              :text-direction "ltr"
+              :children [(leaf-text-node font-weight font-variant-id)]}
+             paragraph-extra-attrs)]}]})
+
+;; A plain, unstyled paragraph: only paragraph-specific attrs, 4 keys.
+(def content-plain-compact-paragraph
+  (text-content {} "400" "regular"))
+
+;; Same bold text/attrs, but the paragraph node also carries the
+;; duplicated attrs (9 keys), like the newer text editor produces.
+(def content-bold-duplicated-paragraph
+  (text-content {:font-id "sourcesanspro"
+                 :font-weight "700"
+                 :font-variant-id "bold"
+                 :font-family "sourcesanspro"
+                 :font-style "normal"}
+                "700" "bold"))
+
 
 (t/deftest test-get-diff-type
   (let [diff-text                 (cttx/get-diff-type content-base content-changed-text)
@@ -188,6 +240,14 @@
     (t/is (= #{:text-content-attribute} diff-text-transform))
     (t/is (= #{:text-content-attribute} diff-typography-ref))
     (t/is (= #{:text-content-attribute} diff-fills))))
+
+(t/deftest test-get-diff-type-paragraph-key-count
+  ;; A real attribute difference (400 vs 700), where only one side's
+  ;; paragraph node has the duplicated keys (9, crossing the map
+  ;; promotion threshold): must be reported as :text-content-attribute,
+  ;; not misclassified as :text-content-structure.
+  (t/is (= #{:text-content-attribute} (cttx/get-diff-type content-plain-compact-paragraph
+                                                          content-bold-duplicated-paragraph))))
 
 
 (t/deftest test-get-diff-attrs
