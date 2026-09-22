@@ -162,6 +162,18 @@
     (or (nil? stored-profile-id)
         (= stored-profile-id request-profile-id))))
 
+(defn- serve-object-measured
+  "Serve `obj`, recording one asset metric per outcome. A failure is
+  counted and then rethrown: never swallowed, never counted twice."
+  [cfg route obj]
+  (try
+    (let [response (serve-object cfg obj)]
+      (emit-asset! cfg route obj (::yres/status response))
+      response)
+    (catch Throwable cause
+      (emit-asset! cfg route obj 500)
+      (throw cause))))
+
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
@@ -191,13 +203,7 @@
         {::yres/status 404})
 
       :else
-      (try
-        (let [response (serve-object cfg obj)]
-          (emit-asset! cfg "by-id" obj (::yres/status response))
-          response)
-        (catch Throwable cause
-          (emit-asset! cfg "by-id" obj 500)
-          (throw cause))))))
+      (serve-object-measured cfg "by-id" obj))))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
@@ -222,13 +228,7 @@
             {::yres/status 404})
           (let [sobj (sto/get-object storage (kf mobj))]
             (if sobj
-              (let [response (try
-                               (serve-object cfg sobj)
-                               (catch Throwable cause
-                                 (emit-asset! cfg route sobj 500)
-                                 (throw cause)))]
-                (emit-asset! cfg route sobj (::yres/status response))
-                response)
+              (serve-object-measured cfg route sobj)
               (do
                 (emit-asset! cfg route nil 404)
                 {::yres/status 404}))))))))

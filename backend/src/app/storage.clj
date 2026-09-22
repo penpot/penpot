@@ -212,20 +212,6 @@
     (catch Throwable cause
       (l/dbg :hint "unable to record storage dedup metric" :cause cause))))
 
-(defn- resolve-label-object
-  "Return the object used for metric labels: the value itself when it is
-  already an object, else the database row, read only when instrumented.
-  Must be called before mutating the row (e.g. del-object!). Never throws."
-  [storage object-or-id]
-  (if (impl/object? object-or-id)
-    object-or-id
-    (when (::mtx/metrics storage)
-      (try
-        ;; NOTE: get-database-object already returns a StorageObject.
-        (get-database-object (db/get-connectable storage)
-                             (:id object-or-id object-or-id))
-        (catch Throwable _ nil)))))
-
 (defn get-object
   [storage id]
   (assert (valid-storage? storage))
@@ -321,20 +307,18 @@
         object))))
 
 (defn touch-object!
-  "Mark object as touched."
-  [storage object-or-id]
+  "Mark object as touched. Takes the object id (UUID). The metric labels
+  come from the updated row itself (RETURNING); no row, no metric."
+  [storage id]
   (assert (valid-storage? storage))
-  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds     (db/get-connectable storage)
-        object (resolve-label-object storage object-or-id)
-        res    (-> (db/update! ds :storage-object
-                               {:touched-at (ct/now)}
-                               {:id id})
-                   (db/get-update-count)
-                   (pos?))]
-    (when res
+  (let [ds  (db/get-connectable storage)
+        res (db/update! ds :storage-object
+                        {:touched-at (ct/now)}
+                        {:id id}
+                        {::db/return-keys [:id :backend :metadata]})]
+    (when-some [object (some-> res row->storage-object)]
       (emit-op! storage "touch" (-> object meta :bucket) object))
-    res))
+    (some? res)))
 
 (defn get-object-data
   "Return an input stream instance of the object content."
@@ -381,19 +365,21 @@
       (-> (impl/get-object-url backend object nil) file-url->path))))
 
 (defn del-object!
-  [storage object-or-id]
+  "Mark the object as deleted (soft delete: the backend content is
+  removed by the GC). Takes the object id (UUID). Only a live row
+  (deleted_at IS NULL) is deleted, so a repeated call is a no-op that
+  returns false. The metric labels come from the updated row itself
+  (RETURNING); no row, no metric."
+  [storage id]
   (assert (valid-storage? storage))
-  (let [id     (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        ds     (db/get-connectable storage)
-        object (resolve-label-object storage object-or-id)
-        res    (-> (db/update! ds :storage-object
-                               {:deleted-at (ct/now)}
-                               {:id id})
-                   (db/get-update-count)
-                   (pos?))]
-    (when res
+  (let [ds  (db/get-connectable storage)
+        res (db/update! ds :storage-object
+                        {:deleted-at (ct/now)}
+                        ["id = ? AND deleted_at IS NULL" id]
+                        {::db/return-keys [:id :backend :metadata]})]
+    (when-some [object (some-> res row->storage-object)]
       (emit-op! storage "del" (-> object meta :bucket) object))
-    res))
+    (some? res)))
 
 (dm/export impl/calculate-hash)
 (dm/export impl/get-hash)

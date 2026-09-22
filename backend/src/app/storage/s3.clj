@@ -99,10 +99,6 @@
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
    [::endpoint {:optional true} ::sm/uri]
-   ;; Physical target id for metric labels. Only :default exists today;
-   ;; reserved for per-bucket S3 routing, do not add more targets here
-   ;; until that plan lands.
-   [::target-id {:optional true} :keyword]
    [::mtx/metrics {:optional true} ::mtx/metrics]])
 
 (defmethod ig/expand-key ::backend
@@ -246,9 +242,13 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::wrk/netty-io-executor ::mtx/metrics ::target-id]}]
+  [{:keys [::region ::endpoint ::wrk/netty-io-executor ::mtx/metrics]}]
+
+  ;; TODO: per-bucket S3 routing will introduce more physical targets;
+  ;; until then the target label is always :default. Do not add more
+  ;; target ids here until that plan lands.
   (let [creds-provider (DefaultCredentialsProvider/create)
-        publisher      (s3m/wrap-publisher metrics (or target-id :default))
+        publisher      (s3m/wrap-publisher metrics :default)
         aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.build))
 

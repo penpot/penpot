@@ -24,7 +24,7 @@
 - `get-object` excludes rows with `deleted_at`.
 - Existing object values can remain readable until physical deletion.
 - `:expired-at` blocks reads after the expiration time.
-- `del-object!` sets `deleted_at`. It does not remove backend content.
+- `del-object!` sets `deleted_at` on live rows only (`deleted_at IS NULL`): a repeated call returns `false`. It does not remove backend content.
 - `storage-gc-deleted` removes the database row and backend content after the deletion delay.
 - `storage-gc-touched` finds references before it sets `deleted_at`.
 - `objects-gc` removes deleted domain rows and touches their storage object IDs.
@@ -122,13 +122,13 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 ## Metrics
 
 - `bucket` is always the Penpot logical bucket (object metadata), never an S3 bucket. Unknown/absent buckets are labeled `"unknown"`.
-- `target` is the physical S3 destination id. Today it is always `"default"`; the per-bucket routing plan will add more targets.
+- `target` is the physical S3 destination id. Today it is always `"default"` (hardcoded in `app.storage.s3/build-s3-client`; the `::target-id` config key was removed as unused until the per-bucket routing plan lands).
 - Physical S3 API calls (AWS SDK `MetricPublisher`, `app.storage.s3.metrics`):
   - `penpot_storage_s3_requests_total{operation,target,result}` — one count per logical SDK call (the published `ApiCall` collection, not per attempt); retries are counted apart in `retries_total`, so total attempts = `requests + retries`. `result` is `"ok"` only when the SDK reports success as exactly `true`; a missing success flag counts as `error`.
   - `penpot_storage_s3_retries_total{operation,target}` — SDK retry count.
-  - `penpot_storage_s3_timing{operation,target}` — call latency histogram (ms).
+  - `penpot_storage_s3_timing{operation,target}` — call latency histogram (ms); explicit buckets up to 60000 ms (S3 slow calls exceed the default 7500 ms cap).
 - Logical storage operations (`app.storage`, `::mtx/metrics` optional):
-  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. All ops are success-only: `put`/`repair` emit after the backend write, `get-*` after the backend fetch opens, `touch`/`del` only when a row actually changed. `touch`/`del` called with a UUID resolve bucket and backend from the row (one extra `SELECT`, only when instrumented); with no row found they emit nothing. Post-open stream read errors stay counted as attempts. `del` only marks `deleted_at`; physical deletion is a GC concern. `exists` is emitted per deduplication-hit probe, always paired with a `hit`/`repair` outcome (never on probe failure), not per user-facing existence check.
+  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. All ops are success-only: `put`/`repair` emit after the backend write, `get-*` after the backend fetch opens, `touch`/`del` only when a row actually changed. `touch-object!`/`del-object!` take the object id (UUID) only — no object overload. Labels come from the updated row itself via `UPDATE ... RETURNING id, backend, metadata` (no extra `SELECT`); with no row matched they emit nothing. `del-object!` only matches live rows (`deleted_at IS NULL`): a repeated del returns `false` and emits nothing. Post-open stream read errors stay counted as attempts. `del` only marks `deleted_at`; physical deletion is a GC concern. `exists` is emitted per deduplication-hit probe, always paired with a `hit`/`repair` outcome (never on probe failure), not per user-facing existence check.
   - `penpot_storage_dedup_total{result,bucket}` — `hit`, `miss`, `repair`, `skip`.
 - Asset serving (`app.http.assets`, `::mtx/metrics` optional):
   - `penpot_storage_asset_requests_total{route,backend,bucket,result}` — `route` is `by-id`, `by-file-media-id`, or `thumbnail`; `result` is `served`, `not-found`, `unauthorized`, or `error` (`error` = an exception raised while serving; it is counted and then rethrown). Permission-denied file-media requests and tempfile ownership mismatches both answer HTTP 404 (to avoid leaking existence) but are counted as `unauthorized`. Malformed UUIDs raise before any emission point and are never counted. Counts backend requests that trigger a browser GET to the object store (one per cache miss), so it is a proxy for object GETs, not an exact count.
