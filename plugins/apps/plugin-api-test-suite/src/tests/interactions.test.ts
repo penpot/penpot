@@ -413,6 +413,28 @@ describe('Interactions', () => {
     expect(r.interactions.map((i) => i.delay)).toEqual([null, 500]);
   });
 
+  // A proxy whose own interaction is gone resolves to no position, so the write
+  // has nothing to address and the API rejects it.
+  test('a write through a removed interaction is rejected', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', {
+      type: 'open-url',
+      url: 'https://example.com',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    const [only] = r.interactions;
+
+    only.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(0);
+
+    expect(() => {
+      only.delay = 500;
+    }).toThrow('The interaction is not part of the shape anymore');
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(0);
+  });
+
   test('interaction trigger can be changed', (ctx) => {
     const dest = board(ctx);
     const r = rect(ctx);
