@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.http.content-negotiation :as cnegot]
    [app.http.errors :as errors]
    [app.util.events :as events]
    [promesa.exec :as px]
@@ -26,17 +27,24 @@
   (.flush output))
 
 (defn- encode
-  [[name data]]
+  [encode-fn [name data]]
   (try
     (let [data (with-out-str
                  (println "event:" (d/name name))
-                 (println "data:" (t/encode-str data {:type :json-verbose}))
+                 (println "data:" (encode-fn data))
                  (println))]
       (.getBytes ^String data "UTF-8"))
     (catch Throwable cause
       (l/err :hint "unexpected error on encoding value on sse stream"
              :cause cause)
       nil)))
+
+(defn- resolve-encoder
+  [format]
+  (case format
+    :transit #(t/encode-str % {:type :json-verbose})
+    :json    cnegot/json-encode-str
+    #(t/encode-str % {:type :json-verbose})))
 
 ;; ---- PUBLIC API
 
@@ -47,27 +55,32 @@
    "X-Accel-Buffering" "no"})
 
 (defn response
+  "Create a streaming SSE response. The payload of each event is
+  encoded in transit or plain JSON depending on the request content
+  negotiation (see `app.http.content-negotiation/negotiate-format`),
+  transit being the default."
   [handler & {:keys [buf] :or {buf 32} :as opts}]
   (fn [request]
-    {::yres/headers default-headers
-     ::yres/status 200
-     ::yres/body (yres/stream-body
-                  (fn [_ output]
+    (let [encode-fn (resolve-encoder (cnegot/negotiate-format request))]
+      {::yres/headers default-headers
+       ::yres/status 200
+       ::yres/body (yres/stream-body
+                    (fn [_ output]
 
-                    (let [channel  (sp/chan :buf buf :xf (keep encode))
-                          listener (events/spawn-listener
-                                    channel
-                                    (partial write! output)
-                                    (partial pu/close! output))]
-                      (try
-                        (binding [events/*channel* channel]
-                          (let [result (handler)]
-                            (events/tap :end result)))
+                      (let [channel  (sp/chan :buf buf :xf (keep (partial encode encode-fn)))
+                            listener (events/spawn-listener
+                                      channel
+                                      (partial write! output)
+                                      (partial pu/close! output))]
+                        (try
+                          (binding [events/*channel* channel]
+                            (let [result (handler)]
+                              (events/tap :end result)))
 
-                        (catch Throwable cause
-                          (let [result (errors/handle' cause request)]
-                            (events/tap channel :error result)))
+                          (catch Throwable cause
+                            (let [result (errors/handle' cause request)]
+                              (events/tap channel :error result)))
 
-                        (finally
-                          (sp/close! channel)
-                          (px/await! listener))))))}))
+                          (finally
+                            (sp/close! channel)
+                            (px/await! listener))))))})))

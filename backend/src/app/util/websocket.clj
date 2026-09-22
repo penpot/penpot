@@ -26,6 +26,9 @@
 (def max-missed-heartbeats 3)
 (def heartbeat-interval 5000)
 
+(def default-encode-fn #(t/encode-str % {:type :json-verbose}))
+(def default-decode-fn t/decode-str)
+
 (defn- encode-beat
   [n]
   (doto (ByteBuffer/allocate 8)
@@ -60,10 +63,16 @@
 
   It also accepts some options that allows you parametrize the
   protocol behavior. The options map will be used as-as for the
-  initial data of the `ws` data structure"
+  initial data of the `ws` data structure.
+
+  The returned map has the resolved options attached in its
+  metadata under the `::options` key; it is intended for testing
+  and introspection purposes only."
   [request & {:keys [::on-rcv-message
                      ::on-snd-message
                      ::on-connect
+                     ::encode-fn
+                     ::decode-fn
                      ::input-buff-size
                      ::output-buff-size
                      ::idle-timeout]
@@ -72,7 +81,9 @@
                    idle-timeout 60000
                    on-connect identity
                    on-snd-message identity-3
-                   on-rcv-message identity-3}
+                   on-rcv-message identity-3
+                   encode-fn default-encode-fn
+                   decode-fn default-decode-fn}
               :as options}]
 
   (assert (fn? on-rcv-message) "'on-rcv-message' should be a function")
@@ -99,40 +110,44 @@
                        (assoc ::output-ch output-ch)
                        (assoc ::close-ch close-ch)
                        (assoc ::remote-addr ip-addr)
-                       (assoc ::user-agent uagent))]
+                       (assoc ::user-agent uagent)
+                       (assoc ::encode-fn encode-fn)
+                       (assoc ::decode-fn decode-fn))]
 
-    {:on-open
-     (fn on-open [channel]
-       (l/dbg :fn "on-open" :conn-id (str id))
-       (let [options (-> options
-                         (assoc ::channel channel)
-                         (on-connect))
-             timeout (ct/duration idle-timeout)]
+    (with-meta
+      {:on-open
+       (fn on-open [channel]
+         (l/dbg :fn "on-open" :conn-id (str id))
+         (let [options (-> options
+                           (assoc ::channel channel)
+                           (on-connect))
+               timeout (ct/duration idle-timeout)]
 
-         (yws/set-idle-timeout! channel timeout)
-         (px/submit! :vthread (partial start-io-loop! options))))
+           (yws/set-idle-timeout! channel timeout)
+           (px/submit! :vthread (partial start-io-loop! options))))
 
-     :on-close
-     (fn on-close [_channel code reason]
-       (l/dbg :fn "on-close"
-              :conn-id (str id)
-              :code code
-              :reason reason)
-       (sp/close! close-ch))
+       :on-close
+       (fn on-close [_channel code reason]
+         (l/dbg :fn "on-close"
+                :conn-id (str id)
+                :code code
+                :reason reason)
+         (sp/close! close-ch))
 
-     :on-error
-     (fn on-error [_channel cause]
-       (sp/close! close-ch cause))
+       :on-error
+       (fn on-error [_channel cause]
+         (sp/close! close-ch cause))
 
-     :on-message
-     (fn on-message [_channel message]
-       (when (string? message)
-         (sp/offer! input-ch message)
-         (swap! state assoc ::last-activity-at (ct/now))))
+       :on-message
+       (fn on-message [_channel message]
+         (when (string? message)
+           (sp/offer! input-ch message)
+           (swap! state assoc ::last-activity-at (ct/now))))
 
-     :on-pong
-     (fn on-pong [_channel data]
-       (sp/put! hbeat-ch data))}))
+       :on-pong
+       (fn on-pong [_channel data]
+         (sp/put! hbeat-ch data))}
+      {::options options})))
 
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]
@@ -143,7 +158,8 @@
 
 (defn- start-io-loop!
   [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch
-           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message]
+           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message
+           ::encode-fn ::decode-fn]
     :as wsp}]
   (try
     (handler wsp {:type :open})
@@ -169,7 +185,7 @@
               (recur i))
 
             (identical? p input-ch)
-            (let [message (t/decode-str msg)
+            (let [message (decode-fn msg)
                   message (on-rcv-message message)
                   {:keys [request-id] :as response} (handler wsp message)]
               (when (map? response)
@@ -181,7 +197,7 @@
 
             (identical? p output-ch)
             (let [message (on-snd-message msg)
-                  message (t/encode-str message {:type :json-verbose})]
+                  message (encode-fn message)]
               (yws/send channel message)
               (recur i))))))
 

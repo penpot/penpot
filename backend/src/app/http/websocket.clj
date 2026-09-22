@@ -9,12 +9,15 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.content-negotiation :as cnegot]
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
@@ -83,6 +86,39 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-encoder
+  "Resolve the outbound message encoder for the negotiated format.
+  The transit encoding is the default for unexpected format values."
+  [format]
+  (case format
+    :transit #(t/encode-str % {:type :json-verbose})
+    :json    cnegot/json-encode-str
+    #(t/encode-str % {:type :json-verbose})))
+
+(defn resolve-decoder
+  "Resolve the inbound message decoder for the negotiated format.
+  The transit decoding is the default for unexpected format values."
+  [format]
+  (case format
+    :transit t/decode-str
+    :json    #(json/decode % {:key-fn json/read-kebab-key})
+    t/decode-str))
+
+(defn normalize-message
+  "Normalize the inbound message into the same shape produced by the
+  transit decoding: the `:type` value is a keyword and the entity ids
+  are UUID objects. This is a no-op for transit decoded messages."
+  [message]
+  (cond-> message
+    (string? (:type message))
+    (assoc :type (keyword (:type message)))
+
+    (string? (:team-id message))
+    (assoc :team-id (uuid/parse* (:team-id message)))
+
+    (string? (:file-id message))
+    (assoc :file-id (uuid/parse* (:file-id message)))))
 
 (defmulti handle-message
   (fn [_ _ message]
@@ -267,7 +303,8 @@
             :id :websocket-messages-total
             :labels recv-labels
             :inc 1)
-  (assoc message :profile-id profile-id :session-id session-id))
+  (let [message (normalize-message message)]
+    (assoc message :profile-id profile-id :session-id session-id)))
 
 (defn- on-snd-message
   [{:keys [::mtx/metrics]} message]
@@ -277,9 +314,13 @@
             :inc 1)
   message)
 
-(defn- http-handler
+(defn http-handler
+  "The websocket upgrade request handler. Returns the upgrade
+  response containing the websocket listener built with the
+  codecs of the negotiated payload format."
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [session-id (some-> params :session-id uuid/parse*)]
+  (let [session-id (some-> params :session-id uuid/parse*)
+        format     (cnegot/negotiate-format request)]
     (when-not (uuid? session-id)
       (ex/raise :type :validation
                 :code :missing-session-id
@@ -301,12 +342,17 @@
 
       :else
       (do
-        (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
+        (l/trace :hint "websocket request"
+                 :profile-id profile-id
+                 :session-id session-id
+                 :format format)
         {::yws/listener (ws/listener request
                                      ::ws/on-rcv-message (partial on-rcv-message cfg)
                                      ::ws/on-snd-message (partial on-snd-message cfg)
                                      ::ws/on-connect (partial on-connect cfg)
                                      ::ws/handler (partial handle-message cfg)
+                                     ::ws/encode-fn (resolve-encoder format)
+                                     ::ws/decode-fn (resolve-decoder format)
                                      ::profile-id profile-id
                                      ::session-id session-id)}))))
 
