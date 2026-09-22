@@ -69,7 +69,9 @@ high-coverage support reference, never the base.
 - Placeholder parity per entry (singular AND each plural form,
   also enforced by the script); verify `%s` against the `tr` call
   site when `en`/`es`/code disagree (a `%s` the code never passes
-  renders literally; a dropped one swallows the argument).
+  renders literally; a dropped one swallows the argument). On
+  `#, unused` keys the script only warns: never "fix" them by
+  deleting placeholders or links, a reactivation may need them.
 - Glued words (AI batches drop spaces at wrap boundaries): the
   script flags function-word splits (`del'equip`, `lapolítica`,
   `sinecessiteu`), `,/.`/`:` without following space,

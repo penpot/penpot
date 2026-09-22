@@ -604,11 +604,17 @@ async function check(locale, words) {
       const textEs = textsEs[i] ?? "";
       const refs = refToks(textEn, textEs);
       if (textEn) {
+        const unused = (e.comments?.flag ?? "")
+          .split(/,\s*/)
+          .includes("unused");
         for (const re of PLACEHOLDER_RES) {
           const nEn = countIn(textEn, re);
           const nLoc = countIn(text, re);
           if (nEn !== nLoc) {
-            errors.push(
+            // Unused keys are never rendered: report, don't fail.
+            // "Fixing" them by deleting placeholders can destroy
+            // content that a reactivation may need.
+            (unused ? warnings : errors).push(
               `${msgid}[${i}]: placeholder mismatch ${re.source}: en=${nEn} ${locale}=${nLoc}`,
             );
           }
