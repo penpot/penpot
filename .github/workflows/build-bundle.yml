@@ -26,6 +26,15 @@ on:
         type: boolean
         required: false
         default: false
+    outputs:
+      sha:
+        description: >-
+          The exact commit this run resolved gh_ref to and bundled. Callers
+          that also trigger build-docker.yml should pass it through as that
+          workflow's `sha` input, so both pipelines agree on one commit
+          instead of each re-resolving gh_ref independently at a different
+          time.
+        value: ${{ jobs.check.outputs.sha }}
 
 # Literal group name: under `workflow_call`, `github.workflow` resolves to the
 # caller's workflow, which put this workflow and the other reusable one called
