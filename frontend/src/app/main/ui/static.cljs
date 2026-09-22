@@ -355,7 +355,7 @@
      [:span
       (tr "labels.nitrate-not-configured.learn-more")
       " "
-      [:a {:href "https://help.penpot.app/technical-guide/getting-started/"
+      [:a {:href "https://help.penpot.app/technical-guide/getting-started/docker/#update-penpot"
            :target "_blank"
            :rel "noopener noreferrer"}
        (tr "labels.nitrate-not-configured.technical-guide")]]]]
