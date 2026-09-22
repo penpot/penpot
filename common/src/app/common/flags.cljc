@@ -191,7 +191,10 @@
     ;; Enables serving link preview (Open Graph) metadata for shared
     ;; links; exposes file names and dashboard thumbnails to anyone
     ;; that knows the file id.
-    :link-preview})
+    :link-preview
+
+    ;; Shows the "link later" option on the files export modal.
+    :export-link-later})
 
 (def all-flags
   (set/union email login varia))
