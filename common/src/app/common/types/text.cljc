@@ -175,6 +175,14 @@
   [node]
   (= "root" (:type node)))
 
+(defn rtl-content?
+  "True when the content has paragraphs and all of them are `\"rtl\"`; picks the
+  growth anchor of auto-width text. Mixed, \"none\" and empty content are ltr."
+  [content]
+  (boolean
+   (when-let [paragraphs (node-seq is-paragraph-node? content)]
+     (every? #(= "rtl" (:text-direction %)) paragraphs))))
+
 (defn is-node?
   [node]
   (or ^boolean (is-text-node? node)
