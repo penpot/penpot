@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.http.session :as session]
    [app.setup :as-alias setup]
@@ -723,3 +724,92 @@
         (t/is (ex/error? e))
         (t/is (= :validation (:type (ex-data e))))
         (t/is (= :invalid-sso-config (:code (ex-data e))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; trusted alternate origins
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private trusted-origin-provider
+  {:id "oidc"
+   :type "oidc"
+   :auth-uri "https://idp.example.com/auth"
+   :client-id "test-client"
+   :scopes ["openid"]})
+
+(t/deftest auth-handler-carries-trusted-origin-in-state
+  (with-redefs [app.auth.oidc/resolve-provider            (constantly trusted-origin-provider)
+                app.loggers.audit/extract-utm-params      (constantly {})
+                app.loggers.audit/get-external-session-id (constantly nil)]
+    (t/testing "trusted origin is stored in the state and used for redirect_uri"
+      (let [request (assoc {:params {}} :app.http/trusted-origin "https://alt.example.com")
+            result  (binding [cf/config {:public-uri "https://alt.example.com"
+                                         :trusted-origins #{"https://alt.example.com"}}]
+                      (#'oidc/auth-handler base-cfg request))
+            uri     (get-in result [::yres/body :redirect-uri])
+            query   (u/query-string->map (:query (u/uri uri)))
+            claims  (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+        (t/is (= "https://alt.example.com" (:origin claims)))
+        (t/is (= "https://alt.example.com/api/auth/oidc/callback" (:redirect_uri query)))))
+
+    (t/testing "without a trusted origin no :origin claim is stored"
+      (let [result (binding [cf/config {:public-uri "http://localhost:3449"
+                                        :trusted-origins #{"https://alt.example.com"}}]
+                     (#'oidc/auth-handler base-cfg {:params {}}))
+            uri    (get-in result [::yres/body :redirect-uri])
+            query  (u/query-string->map (:query (u/uri uri)))
+            claims (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+        (t/is (not (contains? claims :origin)))
+        (t/is (= "http://localhost:3449/api/auth/oidc/callback" (:redirect_uri query)))))))
+
+(t/deftest build-organization-sso-auth-redirect-uri-stores-trusted-origin
+  (let [sso      {:organization-id test-organization-id
+                  :issuer "https://idp.example.com"
+                  :client-id "test-client"
+                  :client-secret "test-secret"}
+        provider trusted-origin-provider
+        uri      (binding [cf/config {:public-uri "https://alt.example.com"
+                                      :trusted-origins #{"https://alt.example.com"}}]
+                   (oidc/build-organization-sso-auth-redirect-uri
+                    base-cfg sso
+                    :dest-url "https://alt.example.com/#/dashboard"
+                    :organization-id test-organization-id
+                    :provider provider
+                    :origin "https://alt.example.com"))
+        query    (u/query-string->map (:query (u/uri uri)))
+        claims   (tokens/verify base-cfg {:token (:state query) :iss "oidc"})]
+    (t/is (= "https://alt.example.com" (:origin claims)))
+    (t/is (= "https://alt.example.com/#/dashboard" (:dest-url claims)))
+    (t/is (= "https://alt.example.com/api/auth/oidc/callback" (:redirect_uri query)))))
+
+(t/deftest callback-applies-stored-trusted-origin
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        seen    (atom nil)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (fn [_ _ _ _]
+                                                            (reset! seen (cf/get :public-uri))
+                                                            {:email "u@e.com" :fullname "U"
+                                                             :backend "oidc" :email-verified false
+                                                             :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (= "https://alt.example.com" @seen))
+          (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
+
+(t/deftest callback-error-uses-stored-trusted-origin
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (assoc (default-request cfg :state state)
+                       :params {:state state :error "access_denied"})]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (let [result (#'oidc/callback-handler cfg request)
+            loc    (redirect-location result)]
+        (t/is (.contains loc "https://alt.example.com?screen=auth-login&"))
+        (t/is (.contains loc "error=unable-to-auth"))))))

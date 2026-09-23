@@ -28,6 +28,11 @@ x-flags: &penpot-flags
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
+  ## Optional: alternate origins the backend may use as the base for generated
+  ## links (emails, assets, redirects) when a request Origin matches. Bare
+  ## origins only, comma/whitespace separated; each must register its OIDC
+  ## callback URL (https://<origin>/api/auth/oidc/callback) at the IdP.
+  # PENPOT_TRUSTED_ORIGINS: https://alt.example.com, https://staging.example.com
 
 x-body-size: &penpot-http-body-size
   # Max body size

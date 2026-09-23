@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token]
@@ -445,3 +446,41 @@
     (t/is (= "safe user-facing hint" (:hint body)))
     (t/is (nil? (:state body)))
     (t/is (nil? (:path body)))))
+
+(t/deftest trusted-origin-middleware-binds-public-uri
+  (let [seen    (atom nil)
+        handler (mw/wrap-trusted-origin
+                 (fn [request]
+                   (reset! seen {:public-uri (cf/get :public-uri)
+                                 :stamp (::http/trusted-origin request)})
+                   {}))]
+    (with-redefs [cf/config (assoc cf/config
+                                   :public-uri "http://localhost:3449"
+                                   :trusted-origins #{"https://alt.example.com"})]
+      (t/testing "trusted origin overrides the public base and stamps the request"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"origin" "https://alt.example.com"}}))
+        (t/is (= "https://alt.example.com" (:public-uri @seen)))
+        (t/is (= "https://alt.example.com" (:stamp @seen))))
+
+      (t/testing "origin is normalized before matching and use"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"origin" "  HTTPS://Alt.Example.com  "}}))
+        (t/is (= "https://alt.example.com" (:public-uri @seen)))
+        (t/is (= "https://alt.example.com" (:stamp @seen))))
+
+      (t/testing "untrusted origin is ignored"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {:headers {"origin" "https://evil.example.com"}}))
+        (t/is (= "http://localhost:3449" (:public-uri @seen)))
+        (t/is (nil? (:stamp @seen))))
+
+      (t/testing "missing origin is ignored"
+        (reset! seen nil)
+        (handler (th/make-dummy-request {}))
+        (t/is (= "http://localhost:3449" (:public-uri @seen)))
+        (t/is (nil? (:stamp @seen))))
+
+      (t/testing "the binding does not leak past the request"
+        (handler (th/make-dummy-request {:headers {"origin" "https://alt.example.com"}}))
+        (t/is (= "http://localhost:3449" (cf/get :public-uri)))))))

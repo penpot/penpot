@@ -20,6 +20,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http :as-alias http]
+   [app.http.middleware :as mw]
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
@@ -441,50 +443,77 @@
                     remote-addr server-name server-port
                     scheme protocol path query ssl-client-cert)))
 
-(defn- prepare-rpc-params
-  [data]
+(defn- build-rpc-params
+  "Builds the params map for a command from `data` and a ring request.
+  A plain-map `:app.http/request` in `data`'s metadata is honored, so
+  tests can inject headers, remote address and auth context (e.g.
+  :app.http/auth-key-id). Non-map requests (reify IRequest stubs) fall
+  back to `request`."
+  [data request]
   (let [params   (reduce-kv (fn [params k v]
                               (if (qualified-keyword? k)
                                 (assoc params k v)
                                 params))
                             {}
                             (dissoc data ::type))
-        ;; Honor a caller-supplied request map from the data metadata so
-        ;; tests can inject headers, remote address and auth context (e.g.
-        ;; :app.http/auth-key-id). Non-map requests (reify IRequest stubs)
-        ;; fall back to the dummy request, which carries the body params
-        ;; the validation wrapper reads.
         supplied (-> data meta :app.http/request)
         request  (if (map? supplied)
                    (assoc supplied :params (merge (:params supplied)
                                                   (d/without-qualified data)))
-                   (assoc (make-dummy-request)
-                          :params (d/without-qualified data)))]
+                   (assoc request :params (d/without-qualified data)))]
 
     (-> params
         (assoc :app.rpc/request-at (ct/now))
         (with-meta {:app.http/request request}))))
 
-(defn command!
-  [{:keys [::type] :as data}]
-  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods type])]
-    (when-not method-fn
-      (ex/raise :type :assertion
-                :code :rpc-method-not-found
-                :hint (str/ffmt "rpc method '%' not found" (name type))))
+(defn- prepare-rpc-params
+  ([data] (prepare-rpc-params data {}))
+  ([data headers]
+   (build-rpc-params data (make-dummy-request {:headers (or headers {})}))))
 
-    (let [params (prepare-rpc-params data)]
-      (try-on! (method-fn params)))))
+(defn command!
+  ([data]
+   (command! data {}))
+  ([{:keys [::type] :as data} {:keys [headers]}]
+   (let [[mdata method-fn] (get-in *system* [:app.rpc/methods type])]
+     (when-not method-fn
+       (ex/raise :type :assertion
+                 :code :rpc-method-not-found
+                 :hint (str/ffmt "rpc method '%' not found" (name type))))
+
+     (let [params (prepare-rpc-params data headers)]
+       (try-on! (method-fn params))))))
 
 (defn management-command!
-  [{:keys [::type] :as data}]
-  (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
-    (when-not method-fn
-      (ex/raise :type :assertion
-                :code :rpc-method-not-found
-                :hint (str/ffmt "management rpc method '%' not found" (name type))))
-    (let [params (prepare-rpc-params data)]
-      (try-on! (method-fn params)))))
+  ([data]
+   (management-command! data {}))
+  ([{:keys [::type] :as data} {:keys [headers]}]
+   (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
+     (when-not method-fn
+       (ex/raise :type :assertion
+                 :code :rpc-method-not-found
+                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
+     (let [params (prepare-rpc-params data headers)]
+       (try-on! (method-fn params))))))
+
+(defn command-through-middleware!
+  "Runs an RPC method wrapped in the HTTP trusted-origin middleware, so
+  the request `Origin` header can override the config :public-uri.
+
+  Accepts the same data map as `command!` plus an options map with
+  `:headers` for the dummy request."
+  ([data]
+   (command-through-middleware! data {}))
+  ([{:keys [::type] :as data} {:keys [headers]}]
+   (let [[_ method-fn] (get-in *system* [:app.rpc/methods type])]
+     (when-not method-fn
+       (ex/raise :type :assertion
+                 :code :rpc-method-not-found
+                 :hint (str/ffmt "rpc method '%' not found" (name type))))
+     (let [handler (fn [request]
+                     (try-on! (method-fn (build-rpc-params data request))))]
+       ((mw/wrap-trusted-origin handler)
+        (make-dummy-request {:headers (or headers {})}))))))
 
 (defn run-task!
   ([name]

@@ -123,6 +123,14 @@
     ;; separated list of origins (e.g. "https://plugins.example.com").
     [:allowed-origins {:optional true} [::sm/set :string]]
 
+    ;; Explicit allowlist of alternate origins the backend may use as the
+    ;; public base for links generated while serving a request whose
+    ;; `Origin` header matches. Configured via PENPOT_TRUSTED_ORIGINS as a
+    ;; comma/whitespace separated list of bare origins
+    ;; (e.g. "https://alt.example.com"). Fail-closed: origins not listed
+    ;; keep using :public-uri.
+    [:trusted-origins {:optional true} [::sm/set :string]]
+
     [:exporter-shared-key {:optional true} :string]
     [:admin-console-shared-key {:optional true} :string]
     [:nexus-shared-key {:optional true} :string]
@@ -412,6 +420,32 @@
   :public-uri. With no segments, returns the normalized base."
   [& segments]
   (apply join-uri (c/get config :public-uri) segments))
+
+(defn normalize-origin
+  "Normalize an origin string for comparison: trim and lowercase it.
+  Returns nil for nil/blank input."
+  [s]
+  (some-> s str/trim str/lower not-empty))
+
+(defn trusted-origin?
+  "Returns true when `origin` matches one of the configured
+  :trusted-origins. Matching is exact on the normalized origin (trimmed
+  and lowercased); no paths, wildcards or subdomain matching."
+  [origin]
+  (let [origin (normalize-origin origin)]
+    (boolean
+     (and (some? origin)
+          (some #(= origin (normalize-origin %))
+                (c/get config :trusted-origins))))))
+
+(defn with-public-uri
+  "Returns a copy of `config` with :public-uri replaced by `base`. When
+  `base` is nil the config is returned unchanged, so callers can use it
+  for requests (or tokens) without a trusted origin."
+  [base config]
+  (if (some? base)
+    (assoc config :public-uri base)
+    config))
 
 (defn get
   "A configuration getter. Helps code be more testable."

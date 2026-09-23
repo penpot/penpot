@@ -1450,3 +1450,41 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest create-team-invitations-uses-trusted-origin-as-link-base
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner (th/create-profile* 1 {:is-active true})
+          team  (th/create-team* 1 {:profile-id (:id owner)})
+          data  {::th/type :create-team-invitations
+                 ::rpc/profile-id (:id owner)
+                 :team-id (:id team)
+                 :role :editor
+                 :emails ["invitee@example.com"]}]
+
+      (with-redefs [cf/config (assoc cf/config
+                                     :public-uri "http://localhost:3449"
+                                     :trusted-origins #{"https://alt.example.com"})]
+        (let [out   (th/command-through-middleware!
+                     data {:headers {"origin" "https://alt.example.com"}})
+              email (-> @mock :call-args-list first first)]
+          (t/is (th/success? out))
+          (t/is (= "https://alt.example.com" (:public-uri email))))))))
+
+(t/deftest create-team-invitations-ignores-untrusted-origin
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [owner (th/create-profile* 1 {:is-active true})
+          team  (th/create-team* 1 {:profile-id (:id owner)})
+          data  {::th/type :create-team-invitations
+                 ::rpc/profile-id (:id owner)
+                 :team-id (:id team)
+                 :role :editor
+                 :emails ["invitee@example.com"]}]
+
+      (with-redefs [cf/config (assoc cf/config
+                                     :public-uri "http://localhost:3449"
+                                     :trusted-origins #{"https://alt.example.com"})]
+        (let [out   (th/command-through-middleware!
+                     data {:headers {"origin" "https://evil.example.com"}})
+              email (-> @mock :call-args-list first first)]
+          (t/is (th/success? out))
+          (t/is (= "http://localhost:3449" (:public-uri email))))))))
