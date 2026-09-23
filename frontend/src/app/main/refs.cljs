@@ -38,6 +38,9 @@
 (def custom-shortcuts
   (l/derived (fn [state] (get-in state [:profile :props :custom-shortcuts])) st/state))
 
+(def stroke-per-side
+  (l/derived (fn [state] (get-in state [:profile :props :stroke-per-side])) st/state))
+
 (def current-page-id
   (l/derived (l/key :current-page-id) st/state))
 
