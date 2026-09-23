@@ -1,6 +1,113 @@
 import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { WorkspacePage } from "../../pages/WorkspacePage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
+
+// Minimal transit helpers, matching ui/pages/ShortcutsPage.js. Used to keep a
+// profile mock that reflects `update-profile-props` calls, so the persisted
+// `stroke-per-side` preference survives the profile refresh that the app
+// triggers after every props update.
+function decodeKeyword(value) {
+  if (typeof value === "string" && value.startsWith("~:")) {
+    return value.slice(2);
+  }
+  if (typeof value === "string" && value.startsWith("~$")) {
+    return value.slice(2);
+  }
+  return value;
+}
+
+function decodeTransit(data) {
+  if (Array.isArray(data)) {
+    if (data[0] === "^ ") {
+      const result = {};
+      for (let i = 1; i < data.length; i += 2) {
+        result[decodeTransit(data[i])] = decodeTransit(data[i + 1]);
+      }
+      return result;
+    }
+    return data.map(decodeTransit);
+  }
+  if (data !== null && typeof data === "object") {
+    const result = {};
+    for (const [key, value] of Object.entries(data)) {
+      result[decodeKeyword(key)] = decodeTransit(value);
+    }
+    return result;
+  }
+  return decodeKeyword(data);
+}
+
+function decodeRequestBody(body) {
+  try {
+    return decodeTransit(JSON.parse(body));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sets up the workspace with a file that contains stroke width and dimensions
+ * tokens, plus a persistent user profile, so the per-side stroke preference
+ * (`stroke-per-side`) round-trips through update-profile-props/get-profile
+ * like it does against a real backend.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {{flags?: string[], profileProps?: object}} [options]
+ */
+const setupStrokePerSideFile = async (page, options = {}) => {
+  const { flags = [], profileProps = {} } = options;
+
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.mockConfigFlags([...flags, "enable-stroke-per-side"]);
+
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile(
+    "workspace/get-file-layout-stroke-token-json",
+  );
+
+  const profileText = await readFile(
+    "playwright/data/logged-in-user/get-profile-wasm-renderer.json",
+    "utf-8",
+  );
+  // Work on the raw transit JSON so keyword values such as `~:renderer`
+  // `~:wasm` keep their type; round-tripping through a generic decoder would
+  // turn them into plain strings and the app would fall back to the SVG
+  // renderer.
+  const profile = JSON.parse(profileText);
+  profile["~:props"] = profile["~:props"] ?? {};
+
+  for (const [key, value] of Object.entries(profileProps)) {
+    profile["~:props"][`~:${key}`] = value;
+  }
+
+  await page.route("**/api/main/methods/update-profile-props", (route) => {
+    const decoded = decodeRequestBody(route.request().postData() ?? "{}");
+    if (decoded?.props) {
+      for (const [key, value] of Object.entries(decoded.props)) {
+        profile["~:props"][`~:${key}`] = value;
+      }
+    }
+    route.fulfill({
+      status: 200,
+      contentType: "application/transit+json",
+      body: "{}",
+    });
+  });
+
+  await page.route("**/api/main/methods/get-profile", (route) => {
+    route.fulfill({
+      status: 200,
+      contentType: "application/transit+json",
+      body: JSON.stringify(profile),
+    });
+  });
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.waitForFirstRender();
+
+  return workspacePage;
+};
 
 const setupEmptyTokensFile = async (page, options = {}) => {
   const { flags = [] } = options;
@@ -398,6 +505,7 @@ const createSet = async (sidebar, setName, finalKey = "Enter") => {
 export {
   setupEmptyTokensFile,
   setupEmptyTokensFileRender,
+  setupStrokePerSideFile,
   setupTokensFile,
   setupTokensFileRender,
   setupTypographyTokensFile,
