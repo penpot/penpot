@@ -179,9 +179,9 @@
        (fn [_ _] (rx/throw (ex-info "offline" {:type :offline})))))))
 
 ;; Scenario: a retry timer fires while the replacement request is still in
-;; flight. The timer is driven by hand: fail the first send, queue a second
-;; edit so its run resends (hanging), then fire the pending timer. Proves:
-;; the firing is skipped instead of double-sending the same commit.
+;; flight. The timer is driven by hand: fail the first send, let the
+;; online signal resend the head (hanging), then fire the pending timer.
+;; Proves: the firing is skipped instead of double-sending the same commit.
 (t/deftest ^:async retry-skips-resend-while-previous-request-is-in-flight
   (let [calls   (atom 0)
         delays  (atom [])
@@ -198,11 +198,10 @@
             (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
                                    "transient failure retries"))
             (t/is (= 1 (count @requests)))
-            ;; Phase 2 — a new edit re-enters the runner under the live
-            ;; episode (status stays :retrying) and resends the head,
-            ;; hanging in flight.
-            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests)) "second edit resends"))
+            ;; Phase 2 — the online signal resends the head under the live
+            ;; episode (status stays :retrying), hanging in flight.
+            (ptk/emit! store (#'dps/resume-on-online))
+            (await (async/wait-for #(= 2 (count @requests)) "online resends"))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             (t/is (= 1 (get-in @store [:persistence :attempts])))
             ;; Phase 3 — the pending timer fires into the in-flight request:
@@ -211,7 +210,7 @@
             (await (async/settle))
             (t/is (= 2 (count @requests)) "no double-send while in flight")
             (t/is (= :retrying (get-in @store [:persistence :status])))
-            (t/is (= 2 (count (get-in @store [:persistence :queue]))))
+            (t/is (= 1 (count (get-in @store [:persistence :queue]))))
             (rx/end! timer-s))))
        (fn [_ _]
          (if (= 1 (swap! calls inc))
@@ -241,6 +240,51 @@
           (t/is (= :retrying (get-in @store [:persistence :status])))
           (t/is (nil? (get-in @store [:persistence :error]))))))
      (fn [_ _] (rx/throw (ex-info "offline" {:type :offline}))))))
+
+;; Scenario: a new edit lands while the episode waits on its backoff timer.
+;; The edit only joins the queue: nothing is sent and no attempt is spent
+;; until the timer fires. The retry then saves the head and the runner
+;; sends the new edit after it. Proves: edits during an episode never
+;; bypass the backoff nor consume the retry budget.
+(t/deftest ^:async new-edit-during-retry-waits-for-the-backoff
+  (let [calls   (atom 0)
+        delays  (atom [])
+        timer-s (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests store]}]
+         (await
+          (mock/with-mocks*
+            {rx/timer (mock/stub (fn [ms] (swap! delays conj ms) timer-s))}
+            ;; Phase 1 — first send fails transiently; the retry pends on
+            ;; the hand-fired timer.
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
+                                   "transient failure retries"))
+            (t/is (= 1 (count @requests)))
+            ;; Phase 2 — a new edit joins the queue without resending.
+            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+            (await (async/wait-for #(= 2 (count (get-in @store [:persistence :queue])))
+                                   "second edit is queued"))
+            (await (async/settle))
+            (t/is (= 1 (count @requests)) "the edit does not resend the head")
+            (t/is (= 1 (get-in @store [:persistence :attempts])) "no attempt is spent")
+            (t/is (= [2000] @delays) "the pending backoff is kept")
+            (t/is (= :retrying (get-in @store [:persistence :status])))
+            ;; Phase 3 — the timer fires: the head saves, then the new edit.
+            (rx/push! timer-s :tick)
+            (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
+                                         (empty? (get-in @store [:persistence :queue])))
+                                   "both edits save"))
+            (t/is (= 3 (count @requests)) "failed send, retry, then the new edit")
+            (let [[first-id retry-id edit-id] (map (comp :commit-id second) @requests)]
+              (t/is (= first-id retry-id) "the retry resends the head")
+              (t/is (not= retry-id edit-id) "the new edit is sent after the head"))
+            (rx/end! timer-s))))
+       (fn [_ _]
+         (if (= 1 (swap! calls inc))
+           (rx/throw (ex-info "offline" {:type :offline}))
+           (rx/of {:revn @calls})))))))
 
 ;; Scenario: a transient failure raises the reconnect notice; the retry
 ;; then succeeds. The timer is driven by hand so the test observes the
@@ -342,11 +386,11 @@
   (filter #(= ::ev/event (ptk/type %)) events))
 
 ;; Scenario: the `online` event arrives while a retry request is already in
-;; flight. The first send fails transiently, a new edit re-enters and
-;; resends (hanging), then connectivity reports back mid-flight. Proves:
-;; the online entry point honors the in-flight guard instead of
-;; double-sending — the same guard as the retry-timer path, through
-;; `resume-on-online` -> `run-persistence-task`.
+;; flight. The first send fails transiently, the retry timer resends
+;; (hanging), then connectivity reports back mid-flight. Proves: the online
+;; entry point honors the in-flight guard instead of double-sending — the
+;; same guard as the retry-timer path, through `resume-on-online` ->
+;; `run-persistence-task`.
 (t/deftest ^:async online-event-does-not-resend-an-in-flight-request
   (let [calls   (atom 0)
         timer-s (rx/subject)]
@@ -362,10 +406,10 @@
             (await (async/wait-for #(= :retrying (get-in @store [:persistence :status]))
                                    "transient failure retries"))
             (t/is (= 1 (count @requests)))
-            ;; Phase 2 — a new edit re-enters the runner under the live
-            ;; episode and resends the head, hanging in flight.
-            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
-            (await (async/wait-for #(= 2 (count @requests)) "second edit resends"))
+            ;; Phase 2 — the retry timer fires and resends the head,
+            ;; hanging in flight.
+            (rx/push! timer-s :tick)
+            (await (async/wait-for #(= 2 (count @requests)) "retry resends"))
             (t/is (= :retrying (get-in @store [:persistence :status])))
             ;; Phase 3 — online arrives mid-flight: silent, never a third send.
             (ptk/emit! store (#'dps/resume-on-online))

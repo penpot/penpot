@@ -400,6 +400,12 @@
     (dom/trigger-download-uri "report" "text/plain" uri)
     (ts/schedule-on-idle #(wapi/revoke-uri uri))))
 
+(defn- report-format
+  "Payload format for `cause`: compact for environment failures, full
+  otherwise."
+  [cause]
+  (if (environment-error? cause) :compact :full))
+
 (defn- emit-flash-report!
   "Reserves, generates and emits the flash report. Returns the generated
   report string, or nil when nothing is emitted (non-exception cause,
@@ -410,7 +416,7 @@
                             :handled "handled-exception"
                             :unhandled "unhandled-exception"
                             :silent nil)]
-      (let [format      (if (environment-error? cause) :compact :full)
+      (let [format      (report-format cause)
             report-hint (ex/get-hint cause)]
         (when (and (string? report-hint) (not (str/empty? report-hint)))
           (when-let [{:keys [occurrences]} (reserve! event-name cause)]
@@ -432,6 +438,9 @@
 
   The report is reserved before being generated, so repeated errors that
   fall inside the governor window do not pay the report-building cost.
+  With `:report-link?` the toast always carries a download link: when no
+  report is emitted (suppressed repeat, empty hint, `:silent`), one is
+  generated for the link alone, without emitting it.
 
   The whole body (report pipeline first, toast after) runs inside a single
   `ts/schedule` callback: nothing report- or toast-related executes
@@ -457,19 +466,23 @@
    (fn [resolve _reject]
      (ts/schedule
       (fn []
-        (let [report (try (emit-flash-report! type cause)
-                          (catch :default err
-                            (.error js/console "error on emitting report" err)
-                            nil))]
+        (let [report      (try (emit-flash-report! type cause)
+                               (catch :default err
+                                 (.error js/console "error on emitting report" err)
+                                 nil))
+              link-report (when report-link?
+                            (or report
+                                (when (ex/exception? cause)
+                                  (generate-report cause {:format (report-format cause)}))))]
           (try (st/emit!
                 (ntf/show
                  (cond-> {:content (or ^boolean hint (tr "errors.generic"))
                           :type :toast
                           :level :error
                           :timeout timeout}
-                   (and report-link? report)
+                   link-report
                    (assoc :links [{:label (tr "labels.download" "report.txt")
-                                   :callback (partial download-report! report)}]))))
+                                   :callback (partial download-report! link-report)}]))))
                (catch :default err
                  (.error js/console "error on emitting toast" err)))
           (resolve report)))))))

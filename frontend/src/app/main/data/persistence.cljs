@@ -232,14 +232,11 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [pstate (:persistence state)]
-          ;; A new edit during `:retrying` re-enters the runner even though
-          ;; the run id no longer matches: the previous runner is stuck
-          ;; behind the failed head, and the emission itself retires it
-          ;; through its stopper. Concurrent re-entries collapse to a
-          ;; single send via the in-flight guard in `attempt-state`.
+          ;; A `:retrying` episode keeps its run id, so a new edit only
+          ;; joins the queue: the live runner sends it after the head, and
+          ;; resends stay on the backoff schedule and its attempt budget.
           (when (and (not= :error (:status pstate))
-                     (or (= run-id (:run-id pstate))
-                         (= :retrying (:status pstate))))
+                     (= run-id (:run-id pstate)))
             (rx/of (update-status :saving)
                    (run-persistence-task))))))))
 

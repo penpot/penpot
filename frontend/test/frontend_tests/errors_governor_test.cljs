@@ -357,3 +357,47 @@
         tm/schedule         (mock/stub (fn [f] (mock/asap f)))}
        (await (errors/flash :cause cause :type :handled))
        (t/is (= 1 (count @events)) "only the toast survives a reporting failure")))))
+
+(defn- toast-links
+  "The download links of every toast collected through the `st/emit!`
+  double, one entry per toast."
+  [events]
+  (->> events
+       (remove #(= ::ev/event (ptk/type %)))
+       (map #(get-in (ptk/update % {}) [:notification :links]))))
+
+(t/deftest ^:async repeated-flash-keeps-the-report-download-link
+  ;; Scenario: the same save failure flashes twice inside the governor
+  ;; window with a report link. The repeat is not emitted, but its toast
+  ;; still offers the report. Proves: the governor bounds emission, never
+  ;; the user's download.
+  (let [generated (atom 0)
+        cause     (error-cause :type :validation :hint "save failed")
+        events    (atom [])]
+    (await
+     (mock/with-mocks*
+       {st/format-last-events (mock/stub (fn [& _] (swap! generated inc) "report"))
+        st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        tm/schedule           (mock/stub (fn [f] (mock/asap f)))}
+       (dotimes [_ 2]
+         (await (errors/flash :cause cause :type :handled :report-link? true)))
+       (t/is (= 1 (count (report-events @events))) "the repeat is not emitted")
+       (t/is (= [1 1] (map count (toast-links @events))) "both toasts carry the link")
+       (t/is (= 2 @generated) "the repeat builds its report for the link only")))))
+
+(t/deftest ^:async unreportable-flash-keeps-the-report-download-link
+  ;; Scenario: a failure with an empty hint flashes with a report link. It
+  ;; cannot be emitted, but its toast still offers the report. Proves: the
+  ;; link does not depend on emission.
+  (let [cause  (ex-info "" {:type :validation})
+        events (atom [])]
+    (await
+     (mock/with-mocks*
+       {st/format-last-events (mock/stub (fn [& _] "report"))
+        st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+        rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+        tm/schedule           (mock/stub (fn [f] (mock/asap f)))}
+       (await (errors/flash :cause cause :type :handled :report-link? true))
+       (t/is (empty? (report-events @events)) "nothing is emitted")
+       (t/is (= [1] (map count (toast-links @events))) "the toast carries the link")))))
