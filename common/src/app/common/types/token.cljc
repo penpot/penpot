@@ -446,12 +446,17 @@
      #{:fill}
 
      (and (= :strokes shape-attr) (nil? changed-sub-attr))
-     #{:stroke-width :stroke-color}
+     (set/union stroke-width-keys #{:stroke-color})
 
      (= :strokes shape-attr)
-     (cond
-       (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
-       (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
+     (let [sub-attrs (set changed-sub-attr)
+           per-side  (set/intersection sub-attrs stroke-width-keys)]
+       (cond
+         (sub-attrs :stroke-color) #{:stroke-color}
+         ;; A single side change must only unapply that side's token, even
+         ;; when the top side also writes the global :stroke-width.
+         (seq per-side) per-side
+         (sub-attrs :stroke-width) stroke-width-keys))
 
      (= :layout-padding shape-attr)
      (if (seq changed-sub-attr)
@@ -472,6 +477,7 @@
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
      (border-radius-keys shape-attr) #{shape-attr}
+     (stroke-width-keys shape-attr) #{shape-attr}
      (shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

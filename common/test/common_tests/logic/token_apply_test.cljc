@@ -110,7 +110,7 @@
       (tht/apply-token-to-shape :frame1 "token-radius" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
       (tht/apply-token-to-shape :frame1 "token-rotation" [:rotation] [:rotation] 30)
       (tht/apply-token-to-shape :frame1 "token-opacity" [:opacity] [:opacity] 0.7)
-      (tht/apply-token-to-shape :frame1 "token-stroke-width" [:stroke-width] [:stroke-width] 2)
+      (tht/apply-token-to-shape :frame1 "token-stroke-width" cto/per-side-stroke-width-keys [:stroke-width] 2)
       (tht/apply-token-to-shape :frame1 "token-color" [:stroke-color] [:stroke-color] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-color" [:fill] [:fill] "#00ff00")
       (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
@@ -261,7 +261,7 @@
                                                       (cto/unapply-tokens-from-shape [:r1 :r2 :r3 :r4])
                                                       (cto/unapply-tokens-from-shape [:rotation])
                                                       (cto/unapply-tokens-from-shape [:opacity])
-                                                      (cto/unapply-tokens-from-shape [:stroke-width])
+                                                      (cto/unapply-tokens-from-shape cto/per-side-stroke-width-keys)
                                                       (cto/unapply-tokens-from-shape [:stroke-color])
                                                       (cto/unapply-tokens-from-shape [:fill])
                                                       (cto/unapply-tokens-from-shape [:width :height])))
@@ -363,6 +363,35 @@
     (t/is (= (count applied-tokens-frame') 0))
     (t/is (= (count applied-tokens-text') 0))
     (t/is (= (count applied-tokens-circle') 0))))
+
+(t/deftest unapply-only-changed-per-side-token
+  (let [file    (-> (setup-file)
+                    (tht/apply-token-to-shape :frame1 "token-stroke-width"
+                                              [:stroke-width-right] [:stroke-width] 2))
+        page    (thf/current-page file)
+        frame1  (ths/get-shape file :frame1)
+
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    (cls/generate-update-shapes [(:id frame1)]
+                                                (fn [shape]
+                                                  (ctn/set-shape-attr
+                                                   shape :strokes
+                                                   (assoc-in (:strokes shape) [0 :stroke-width-top] 5)))
+                                                (:objects page)
+                                                {:changed-sub-attr [:stroke-width-top :stroke-width]}))
+
+        file'   (thf/apply-changes file changes)
+        frame1' (ths/get-shape file' :frame1)]
+
+    (t/testing "a token on an untouched side is preserved"
+      (t/is (= (:stroke-width-right (:applied-tokens frame1')) "token-stroke-width")))
+
+    (t/testing "the other sides have no token"
+      (t/is (nil? (:stroke-width-top (:applied-tokens frame1'))))
+      (t/is (nil? (:stroke-width-bottom (:applied-tokens frame1'))))
+      (t/is (nil? (:stroke-width-left (:applied-tokens frame1')))))))
 
 (t/deftest dont-unapply-automatic-when-null-change
   (let [;; ==== Setup
