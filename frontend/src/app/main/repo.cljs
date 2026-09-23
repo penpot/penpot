@@ -90,6 +90,10 @@
          (= :nitrate-unavailable (:type body)))
     (rx/throw (ex-info "http error" {:type :nitrate-unavailable}))
 
+    (and (= 503 status)
+         (= :nitrate-not-configured (:type body)))
+    (rx/throw (ex-info "http error" {:type :nitrate-not-configured}))
+
     (= 503 status)
     (rx/throw (ex-info "http error" {:type :service-unavailable}))
 

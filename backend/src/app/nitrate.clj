@@ -156,9 +156,13 @@
 (defn call
   [cfg method params]
   (when (contains? cf/flags :admin-console)
-    (let [client (get cfg ::client)
-          method (get client method)]
-      (method params))))
+    (let [uri (cf/get :admin-console-uri)]
+      (if (nil? uri)
+        (ex/raise :type :nitrate-not-configured
+                  :hint "admin console is not configured; refer to the documentation to complete the setup")
+        (let [client (get cfg ::client)
+              method (get client method)]
+          (method params))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -499,6 +503,8 @@
 (defmethod ig/init-key ::client
   [_ cfg]
   (when (contains? cf/flags :admin-console)
+    (when (nil? (cf/get :admin-console-uri))
+      (l/warn :hint "admin console is not configured; nitrate calls will fail until the setup is complete"))
     {:get-team-organization                 (partial get-team-organization-api cfg)
      :get-teams-organizations               (partial get-teams-organizations-api cfg)
      :set-team-organization                 (partial set-team-organization-api cfg)
@@ -593,14 +599,14 @@
   "Enriches a profile map with subscription information from Nitrate.
   Adds a :subscription field containing the user's license details.
   Returns the original profile unchanged if the request fails for a reason
-  other than Nitrate being unreachable. When Nitrate is unreachable the
-  `:nitrate-unavailable` exception propagates so the request is rejected."
+  other than Nitrate being unreachable or unconfigured. When Nitrate is
+  unreachable or unconfigured the exception propagates so the request is rejected."
   [cfg profile]
   (try
     (let [subscription (call cfg :get-subscription {:profile-id (:id profile)})]
       (assoc profile :subscription subscription))
     (catch Throwable cause
-      (if (= :nitrate-unavailable (-> cause ex-data :type))
+      (if (contains? #{:nitrate-unavailable :nitrate-not-configured} (-> cause ex-data :type))
         (throw cause)
         (do
           (l/error :hint "failed to get nitrate licence"

@@ -166,6 +166,13 @@
     {::yres/status 503
      ::yres/body {:type :nitrate-unavailable}}))
 
+(defmethod handle-error :nitrate-not-configured
+  [err request _]
+  (binding [l/*context* (request->context request)]
+    (l/warn :hint "nitrate is not configured; blocking request" :cause err)
+    {::yres/status 503
+     ::yres/body {:type :nitrate-not-configured}}))
+
 (defmethod handle-error :internal
   [error request parent-cause]
   (binding [l/*context* (request->context request)]
