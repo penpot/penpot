@@ -181,13 +181,10 @@
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             ;; Code paths that don't know about per-side data (old render,
             ;; global width input, exports) keep reading :stroke-width, and
-            ;; per spec they must see the TOP side there. So editing the top
-            ;; side also writes :stroke-width; the other sides only write
-            ;; their own attr.
-            (let [attrs (cond-> {attr value}
-                          (= attr :stroke-width-top)
-                          (assoc :stroke-width value))]
-              (st/emit! (dc/change-stroke-attrs ids attrs index)))))
+            ;; per spec they must see the TOP side there. Editing any side
+            ;; materializes the four per-side keys; the other sides keep
+            ;; their current width, and :stroke-width mirrors the top side.
+            (st/emit! (dc/change-stroke-side-width ids attr value index))))
 
         on-stroke-dash-change
         (fn [index value]

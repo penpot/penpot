@@ -16,6 +16,7 @@
    [app.common.types.library :as ctl]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :as types.shadow]
+   [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
@@ -425,6 +426,42 @@
                        :always
                        (assoc-in [:strokes index] attrs))))
                  options)))))))
+
+;; --- Stroke side width
+
+(defn change-stroke-side-width
+  "Change the width of one side on the stroke at `index` of each shape. All
+  four per-side keys are materialized so consumers never fall back to
+  `:stroke-width`: the edited side takes `value`, the others keep their
+  current width (0 when the shape has no stroke). `:stroke-width` mirrors the
+  top side for legacy readers. Only the edited key (+ `:stroke-width` when
+  top) is reported as changed, so a token on an untouched side is not
+  unapplied."
+  ([ids attr value index] (change-stroke-side-width ids attr value index nil))
+  ([ids attr value index options]
+   (when (number? value)
+     (ptk/reify ::change-stroke-side-width
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (let [changed-sub-attr (if (= attr :stroke-width-top)
+                                  [attr :stroke-width]
+                                  [attr])
+               options          (assoc options :changed-sub-attr changed-sub-attr)]
+           (rx/of (dwsh/update-shapes
+                   ids
+                   (fn [shape]
+                     (let [current (get-in shape [:strokes index])
+                           stroke  (cts/materialize-stroke-side-widths
+                                    current #{attr} value)]
+                       (cond-> shape
+                         (not (contains? shape :strokes))
+                         (assoc :strokes [])
+
+                         :always
+                         (assoc-in [:strokes index] stroke))))
+                   options))))))))
+
+;; --- Shadows
 
 (defn change-shadow
   [ids attrs index]

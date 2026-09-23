@@ -15,6 +15,7 @@
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -641,6 +642,114 @@
                (t/is (= (:stroke-width-left stroke') 5)))
              (t/testing "the global width mirrors the top side"
                (t/is (= (:stroke-width stroke') 10))))))))))
+
+(t/deftest test-change-stroke-width-side-no-propagation
+  (t/testing "editing the top side of a stroke with only a global width does not propagate to the other sides"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5}]}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/change-stroke-side-width [(:id rect)] :stroke-width-top 10 0)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the edited side gets the new value"
+               (t/is (= (:stroke-width-top stroke') 10)))
+             (t/testing "the remaining sides keep their width"
+               (t/is (= (:stroke-width-right stroke') 5))
+               (t/is (= (:stroke-width-bottom stroke') 5))
+               (t/is (= (:stroke-width-left stroke') 5)))
+             (t/testing "the global width mirrors the top side"
+               (t/is (= (:stroke-width stroke') 10))))))))))
+
+(t/deftest test-change-stroke-width-side-keeps-other-token
+  (t/testing "editing one side does not unapply a token applied to another side"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5
+                                       :stroke-width-top 2
+                                       :stroke-width-right 9}]
+                            :applied-tokens {:stroke-width-right "stroke-width.sm"}}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/change-stroke-side-width [(:id rect)] :stroke-width-top 10 0)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the edited side changes"
+               (t/is (= (:stroke-width-top stroke') 10)))
+             (t/testing "a side with its own value keeps it"
+               (t/is (= (:stroke-width-right stroke') 9)))
+             (t/testing "the token on the untouched side is not unapplied"
+               (t/is (= (:stroke-width-right (:applied-tokens rect')) "stroke-width.sm"))))))))))
+
+(t/deftest test-change-stroke-width-side-new-shape
+  (t/testing "editing a side of a shape without strokes creates a stroke and zeroes the other sides"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens)
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/change-stroke-side-width [(:id rect)] :stroke-width-top 8 0)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the edited side gets the value"
+               (t/is (= (:stroke-width-top stroke') 8)))
+             (t/testing "the remaining sides go to zero"
+               (t/is (= (:stroke-width-right stroke') 0))
+               (t/is (= (:stroke-width-bottom stroke') 0))
+               (t/is (= (:stroke-width-left stroke') 0)))
+             (t/testing "the global width mirrors the top side"
+               (t/is (= (:stroke-width stroke') 8))))))))))
+
+(t/deftest test-change-stroke-width-side-right-does-not-touch-global
+  (t/testing "editing a non-top side leaves the global width intact"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5
+                                       :stroke-width-top 2}]}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/change-stroke-side-width [(:id rect)] :stroke-width-right 7 0)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the right side gets the new value"
+               (t/is (= (:stroke-width-right stroke') 7)))
+             (t/testing "the global width keeps mirroring the top side"
+               (t/is (= (:stroke-width stroke') 2)))
+             (t/testing "the other sides keep their width"
+               (t/is (= (:stroke-width-bottom stroke') 5))
+               (t/is (= (:stroke-width-left stroke') 5))))))))))
 
 (t/deftest test-apply-dimensions-token-to-stroke-width-per-side
   (t/testing "applying a dimension token to stroke width updates every side"
