@@ -427,6 +427,17 @@
   [s]
   (some-> s str/trim str/lower not-empty))
 
+(def ^:private origin-re
+  #"(?i)^[a-z][a-z0-9+.\-]*://[^/?#\s]+$")
+
+(defn valid-origin?
+  "Returns true when `s` is a bare origin: `scheme://host[:port]` with no
+  path, query, fragment or trailing slash. Used to warn about malformed
+  :trusted-origins entries; matching stays fail-closed regardless."
+  [s]
+  (let [s (normalize-origin s)]
+    (boolean (and (some? s) (re-matches origin-re s)))))
+
 (defn trusted-origin?
   "Returns true when `origin` matches one of the configured
   :trusted-origins. Matching is exact on the normalized origin (trimmed

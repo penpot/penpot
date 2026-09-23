@@ -20,7 +20,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.http :as-alias http]
    [app.http.middleware :as mw]
    [app.main :as main]
    [app.media]
@@ -471,16 +470,22 @@
   ([data headers]
    (build-rpc-params data (make-dummy-request {:headers (or headers {})}))))
 
+(defn- resolve-method!
+  "Resolve a registered method fn from a method registry, raising the
+  standard `rpc-method-not-found` error when missing."
+  [registry type label]
+  (let [[mdata method-fn] (get-in *system* [registry type])]
+    (when-not method-fn
+      (ex/raise :type :assertion
+                :code :rpc-method-not-found
+                :hint (str label " '" (name type) "' not found")))
+    [mdata method-fn]))
+
 (defn command!
   ([data]
    (command! data {}))
   ([{:keys [::type] :as data} {:keys [headers]}]
-   (let [[mdata method-fn] (get-in *system* [:app.rpc/methods type])]
-     (when-not method-fn
-       (ex/raise :type :assertion
-                 :code :rpc-method-not-found
-                 :hint (str/ffmt "rpc method '%' not found" (name type))))
-
+   (let [[_ method-fn] (resolve-method! :app.rpc/methods type "rpc method")]
      (let [params (prepare-rpc-params data headers)]
        (try-on! (method-fn params))))))
 
@@ -488,11 +493,7 @@
   ([data]
    (management-command! data {}))
   ([{:keys [::type] :as data} {:keys [headers]}]
-   (let [[_ method-fn] (get-in *system* [:app.rpc/management-methods type])]
-     (when-not method-fn
-       (ex/raise :type :assertion
-                 :code :rpc-method-not-found
-                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
+   (let [[_ method-fn] (resolve-method! :app.rpc/management-methods type "management rpc method")]
      (let [params (prepare-rpc-params data headers)]
        (try-on! (method-fn params))))))
 
@@ -501,19 +502,17 @@
   the request `Origin` header can override the config :public-uri.
 
   Accepts the same data map as `command!` plus an options map with
-  `:headers` for the dummy request."
+  `:headers` for the dummy request and `:request-attrs` merged into it
+  (for request-scoped values such as `:app.http/auth-data`)."
   ([data]
    (command-through-middleware! data {}))
-  ([{:keys [::type] :as data} {:keys [headers]}]
-   (let [[_ method-fn] (get-in *system* [:app.rpc/methods type])]
-     (when-not method-fn
-       (ex/raise :type :assertion
-                 :code :rpc-method-not-found
-                 :hint (str/ffmt "rpc method '%' not found" (name type))))
-     (let [handler (fn [request]
-                     (try-on! (method-fn (build-rpc-params data request))))]
-       ((mw/wrap-trusted-origin handler)
-        (make-dummy-request {:headers (or headers {})}))))))
+  ([{:keys [::type] :as data} {:keys [headers request-attrs]}]
+   (let [[_ method-fn] (resolve-method! :app.rpc/methods type "rpc method")
+         request  (merge (make-dummy-request {:headers (or headers {})})
+                         request-attrs)
+         handler  (fn [request]
+                    (try-on! (method-fn (build-rpc-params data request))))]
+     ((mw/wrap-trusted-origin handler) request))))
 
 (defn run-task!
   ([name]

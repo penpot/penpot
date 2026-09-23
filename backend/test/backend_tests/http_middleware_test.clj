@@ -452,7 +452,7 @@
         handler (mw/wrap-trusted-origin
                  (fn [request]
                    (reset! seen {:public-uri (cf/get :public-uri)
-                                 :stamp (::http/trusted-origin request)})
+                                 :stamp (:app.http/trusted-origin request)})
                    {}))]
     (with-redefs [cf/config (assoc cf/config
                                    :public-uri "http://localhost:3449"
@@ -484,3 +484,15 @@
       (t/testing "the binding does not leak past the request"
         (handler (th/make-dummy-request {:headers {"origin" "https://alt.example.com"}}))
         (t/is (= "http://localhost:3449" (cf/get :public-uri)))))))
+
+(t/deftest root-middleware-registers-trusted-origin-before-auth
+  ;; The feature only works if `mw/trusted-origin` is part of the root chain
+  ;; and ordered so it wraps auth and errors; guard against silent removal or
+  ;; reordering.
+  (let [names (mapv (comp :name first) (#'app.http/root-middleware {}))
+        pos   (fn [n] (first (keep-indexed (fn [i x] (when (= n x) i)) names)))]
+    (t/is (some? (pos ::mw/trusted-origin)))
+    (t/is (some? (pos ::mw/auth)))
+    (t/is (some? (pos ::mw/errors)))
+    (t/is (apply < (remove nil? [(pos ::mw/trusted-origin) (pos ::mw/auth)])))
+    (t/is (apply < (remove nil? [(pos ::mw/trusted-origin) (pos ::mw/errors)])))))

@@ -46,9 +46,20 @@
           (handler (assoc request ::http/trusted-origin origin)))
         (handler request)))))
 
+(defn- warn-invalid-trusted-origins!
+  "Log a warning for :trusted-origins entries that are not bare origins.
+  They are inert (fail-closed); the warning only surfaces the typo."
+  []
+  (doseq [origin (cf/get :trusted-origins)
+          :when (not (cf/valid-origin? origin))]
+    (l/wrn :hint "ignoring malformed trusted origin (expected scheme://host[:port])"
+           :origin origin)))
+
 (def trusted-origin
   {:name ::trusted-origin
-   :compile (constantly wrap-trusted-origin)})
+   :compile (fn [& _]
+              (warn-invalid-trusted-origins!)
+              wrap-trusted-origin)})
 
 (def params
   {:name ::params

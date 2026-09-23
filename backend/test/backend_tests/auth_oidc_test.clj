@@ -813,3 +813,33 @@
             loc    (redirect-location result)]
         (t/is (.contains loc "https://alt.example.com?screen=auth-login&"))
         (t/is (.contains loc "error=unable-to-auth"))))))
+
+(t/deftest callback-honors-state-origin-even-when-not-in-config
+  ;; The signed state origin was trusted when the flow started; it is used
+  ;; as-is for the lifetime of the token, even if the operator removed it.
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        state   (make-state-token cfg {:origin "https://alt.example.com"})
+        request (default-request cfg :state state)]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{}}]
+      (with-redefs [app.auth.oidc/resolve-provider        (constantly {:type "oidc" :id "oidc"})
+                    app.auth.oidc/get-info                (constantly {:email "u@e.com" :fullname "U"
+                                                                       :backend "oidc" :email-verified false
+                                                                       :props {}})
+                    app.auth.oidc/get-profile             (constantly test-profile)
+                    app.auth.oidc/update-profile-with-info (fn [_ profile _] profile)
+                    app.loggers.audit/submit              (constantly nil)]
+        (let [result (#'oidc/callback-handler cfg request)
+              loc    (redirect-location result)]
+          (t/is (.contains loc "https://alt.example.com?screen=auth-verify-token&")))))))
+
+(t/deftest callback-without-state-redirects-to-canonical-error
+  (let [cfg     (dissoc base-cfg :app.email/blacklist :app.email/whitelist)
+        request {:params {}}]
+    (binding [cf/config {:public-uri "http://localhost:3449"
+                         :trusted-origins #{"https://alt.example.com"}}]
+      (let [result (#'oidc/callback-handler cfg request)
+            loc    (redirect-location result)]
+        (t/is (= 302 (::yres/status result)))
+        (t/is (.contains loc "http://localhost:3449?screen=auth-login&"))
+        (t/is (.contains loc "error=unable-to-auth"))))))

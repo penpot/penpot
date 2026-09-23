@@ -389,7 +389,8 @@ PENPOT_TRUSTED_ORIGINS: https://alt.penpot.mycompany.com, https://staging.penpot
 ```
 
 - The value is a comma or whitespace separated list of bare origins
-  (`scheme://host[:port]`). Paths are not supported.
+  (`scheme://host[:port]`). Paths are not supported; malformed entries are ignored
+  and a warning is logged at startup.
 - The setting is optional and backend-only. With no value, behavior is unchanged
   (fail-closed).
 - Each alternate origin must register its own OIDC callback URL

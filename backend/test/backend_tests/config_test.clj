@@ -69,3 +69,18 @@
     (t/is (= "https://alt.example.com"
              (:public-uri (cf/with-public-uri "https://alt.example.com" config))))
     (t/is (= config (cf/with-public-uri nil config)))))
+
+(t/deftest valid-origin?-checks-bare-origin-shape
+  (t/testing "accepts scheme://host[:port], including IPv6"
+    (doseq [origin ["http://localhost:3449"
+                    "https://alt.example.com"
+                    "https://alt.example.com:8443"
+                    "https://[::1]:3449"
+                    "HTTPS://Alt.Example.com"]]
+      (t/is (cf/valid-origin? origin) origin)))
+
+  (t/testing "rejects nil, blank, missing scheme, paths, query and trailing slash"
+    (doseq [origin [nil "" "   " "alt.example.com" "localhost:3449"
+                    "https://alt.example.com/" "https://alt.example.com/penpot"
+                    "https://alt.example.com?x=1" "https://alt.example.com#frag"]]
+      (t/is (not (cf/valid-origin? origin)) (str origin)))))
