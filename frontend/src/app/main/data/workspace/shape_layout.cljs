@@ -193,7 +193,8 @@
             layout-initializer (get-layout-initializer type from-frame? calculate-params?)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes [id] layout-initializer {:with-objects? true})
+               (dwsh/update-shapes [id] layout-initializer {:with-objects? true
+                                                            :extra-context (str "create-layout-from-id: " id)})
                (dwsh/update-shapes (dm/get-prop parent :shapes) #(dissoc % :constraints-h :constraints-v))
                (ptk/data-event :layout/update {:ids [id]})
                (dwu/commit-undo-transaction undo-id))))))

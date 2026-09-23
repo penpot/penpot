@@ -56,6 +56,10 @@
     :undo-changes '()
     :origin origin}))
 
+(defn empty-changes?
+  [changes]
+  (empty? (:redo-changes changes)))
+
 (defn set-save-undo?
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
@@ -1210,20 +1214,23 @@
 
 (defn get-library-data
   [changes]
+  (assert-library! changes)
   (::library-data (meta changes)))
 
 (defn get-objects
   [changes]
+  (assert-objects! changes)
   (dm/get-in (::file-data (meta changes)) [:pages-index uuid/zero :objects]))
 
 (defn get-page
   [changes]
+  (assert-page! changes)
   (::page (meta changes)))
 
 (defn get-page-id
   [changes]
+  (assert-page-id! changes)
   (::page-id (meta changes)))
-
 
 (defn set-text-content
   [changes id content prev-content]
@@ -1245,3 +1252,12 @@
     (-> changes
         (update :redo-changes conj redo-change)
         (update :undo-changes conj undo-change))))
+
+;; Validate Shapes
+
+(defn validate-shapes
+  [changes page-id shape-ids context]
+  (update changes :redo-changes conj {:type :validate-shapes
+                                      :page-id page-id
+                                      :shape-ids (vec shape-ids)
+                                      :context context}))

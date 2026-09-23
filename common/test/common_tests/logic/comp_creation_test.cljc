@@ -424,7 +424,9 @@
         file-deleted (thf/apply-changes file changes)
         page-deleted (thf/current-page file-deleted)
 
-        changes (cll/generate-restore-component (pcb/empty-changes)
+        changes (cll/generate-restore-component (-> (pcb/empty-changes)
+                                                    (pcb/with-library-data (:data file-deleted))
+                                                    (pcb/with-objects (:objects page-deleted)))
                                                 (:data file-deleted)
                                                 (thi/id :component1)
                                                 (:id file-deleted)
