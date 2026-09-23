@@ -268,6 +268,7 @@
   [_ cfg]
   (rr/router
    [["" {:middleware [[mw/server-timing]
+                      [mw/trusted-origin]
                       [sec/sec-fetch-metadata]
                       [mw/params]
                       [mw/format-response]

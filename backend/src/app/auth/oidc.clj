@@ -916,7 +916,7 @@
 (defn build-organization-sso-auth-redirect-uri
   "Build the OIDC authorization redirect URI for an organization SSO config.
   Raises if the config is incomplete or OIDC discovery fails."
-  [cfg sso & {:keys [dest-url organization-id provider]}]
+  [cfg sso & {:keys [dest-url organization-id provider origin]}]
   (let [organization-id (or organization-id (:organization-id sso))
         issuer          (organization-sso-discovery-uri sso)
         dest-url        (or dest-url (str (cf/get :public-uri)))]
@@ -930,6 +930,7 @@
                                                 :dest-url        dest-url
                                                 :organization-id organization-id
                                                 :issuer          issuer
+                                                :origin          origin
                                                 :exp             (ct/in-future "4h")})]
         (build-auth-redirect-uri oidc-provider state-token))
       (catch Throwable cause
@@ -1013,6 +1014,11 @@
                   :provider (:id provider)
                   :invitation-token (:invitation-token params)
                   :external-session-id esid
+                  ;; Trusted alternate origin stamped by the http
+                  ;; trusted-origin middleware; carried through the signed
+                  ;; state so the callback (a navigation without Origin)
+                  ;; can rebuild links and the token-exchange redirect_uri.
+                  :origin (:app.http/trusted-origin request)
                   :props props
                   :exp (ct/in-future "4h")}
         state  (tokens/generate cfg (d/without-nils params))
@@ -1062,7 +1068,15 @@
             :organization-id organization-id
             :organization-name organization-name}))))))
 
-(defn- callback-handler
+(defn- trusted-origin-from-state
+  "Best-effort extraction of the trusted alternate origin carried by the
+  OIDC state token. Returns nil when the token is missing or invalid."
+  [cfg state-token]
+  (try
+    (:origin (tokens/verify cfg {:token state-token :iss "oidc"}))
+    (catch Throwable _ nil)))
+
+(defn- handle-oidc-callback
   [cfg {:keys [params] :as request}]
   (if-let [error (get params :error)]
     (do
@@ -1141,6 +1155,16 @@
             (l/wrn :hint "error on process oidc callback" :cause cause)
             (l/err :hint "error on process oidc callback" :cause cause))
           (redirect-with-error "unable-to-auth" (ex-message cause)))))))
+
+(defn- callback-handler
+  "Callback entrypoint. The IdP redirect is a browser navigation that
+  normally carries no Origin, so the http trusted-origin middleware
+  cannot help here; re-apply the trusted origin stored in the signed
+  state for the whole callback (token exchange redirect_uri and every
+  redirect target)."
+  [cfg {:keys [params] :as request}]
+  (binding [cf/config (cf/with-public-uri (trusted-origin-from-state cfg (:state params)) cf/config)]
+    (handle-oidc-callback cfg request)))
 
 (def ^:private schema:routes-params
   [:map
