@@ -11,12 +11,15 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http.client :as http]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
+   [app.util.cache :as cache]
    [clojure.data.json :as j]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -24,6 +27,8 @@
    [yetti.response :as-alias yres])
   (:import
    java.net.URI
+   java.nio.charset.StandardCharsets
+   java.security.cert.Certificate
    java.security.cert.CertificateFactory
    java.security.Signature
    java.util.Base64))
@@ -80,69 +85,81 @@
          (apply str))))
 
 (defn- fetch-certificate
-  "Fetches the X.509 certificate from the given URL.
-   Returns an InputStream that must be closed by the caller.
+  "Fetches and parses the X.509 signing certificate from the given URL.
+   Raises on network errors or non-200 responses.
    See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [cfg cert-url]
   (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000}
                            {:sync? true :response-type :input-stream})]
-    (when-not (= 200 (:status response))
-      (when-let [body (:body response)]
-        (.close ^java.io.Closeable body))
-      (l/wrn :hint "failed to fetch SNS signing certificate"
-             :action "sns-cert-fetch-failed"
-             :status (:status response)
-             :cert-url cert-url)
-      (ex/raise :type :internal :code :cert-fetch-failed))
-    (:body response)))
+    (with-open [^java.io.InputStream body (:body response)]
+      (when-not (= 200 (:status response))
+        (ex/raise :type :internal
+                  :code :cert-fetch-failed
+                  :hint "failed to fetch SNS signing certificate"
+                  :status (:status response)
+                  :cert-url cert-url))
+      (let [cf (CertificateFactory/getInstance "X.509")]
+        (.generateCertificate cf body)))))
+
+(defn- create-cert-cache
+  "Creates the cache of parsed signing certificates, keyed by URL."
+  []
+  (cache/create :max-size 64 :expire (ct/duration {:hours 24})))
+
+(defn- get-certificate
+  [{:keys [::cert-cache] :as cfg} cert-url]
+  (cache/get cert-cache cert-url (partial fetch-certificate cfg)))
 
 (defn- verify-signature
-  "Verifies the RSA signature of the message.
-   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
-  [cfg body]
-  (let [cert-url      (get body "SigningCertURL")
-        signature     (get body "Signature")
-        sig-version   (get body "SignatureVersion")
-        algorithm     (case sig-version
-                        "1" "SHA1withRSA"
-                        "2" "SHA256withRSA"
-                        nil)]
-    (when-not algorithm
-      (throw (ex-info "Unsupported SNS signature version"
-                      {:type :validation :version sig-version})))
-    (when (and cert-url signature)
-      (try
-        (let [string-sign (build-string-to-sign body)]
-          (with-open [cert-stream (fetch-certificate cfg cert-url)]
-            (let [cf   (CertificateFactory/getInstance "X.509")
-                  cert (.generateCertificate cf cert-stream)
-                  sig  (Signature/getInstance algorithm)]
-              (.initVerify sig (.getPublicKey cert))
-              (.update sig (.getBytes string-sign java.nio.charset.StandardCharsets/UTF_8))
-              (.verify sig (.decode (Base64/getDecoder) signature)))))
-        (catch clojure.lang.ExceptionInfo e
-          (let [data (ex-data e)]
-            (if (= :validation (:type data))
-              (throw e)
-              (do
-                (l/wrn :hint "SNS signature verification exception"
-                       :action "sns-signature-verification-exception"
-                       :cause e)
-                false))))
-        (catch Exception e
-          (l/wrn :hint "SNS signature verification exception"
-                 :action "sns-signature-verification-exception"
-                 :cause e)
-          false)))))
-
-(defn- verify-sns-message!
-  "Verifies the AWS SNS message signature and URL validity.
-   Throws if verification fails.
+  "Verifies the RSA signature of the message. Returns false when the
+   signature does not match or is malformed. Raises when the signing
+   certificate cannot be obtained.
    See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
   [cfg body]
   (let [cert-url    (get body "SigningCertURL")
+        signature   (get body "Signature")
+        sig-version (get body "SignatureVersion")
+        algorithm   (case sig-version
+                      "1" "SHA1withRSA"
+                      "2" "SHA256withRSA"
+                      nil)]
+    (when-not algorithm
+      (ex/raise :type :validation
+                :code :unsupported-signature-version
+                :version sig-version))
+    (if (string? signature)
+      (let [^Certificate cert (get-certificate cfg cert-url)]
+        (try
+          (let [sig (Signature/getInstance ^String algorithm)]
+            (.initVerify sig (.getPublicKey cert))
+            (.update sig (.getBytes ^String (build-string-to-sign body) StandardCharsets/UTF_8))
+            (.verify sig (.decode (Base64/getDecoder) ^String signature)))
+          (catch Exception e
+            (l/wrn :hint "SNS signature verification exception"
+                   :action "sns-signature-verification-exception"
+                   :cause e)
+            false)))
+      false)))
+
+(defn- verify-sns-message!
+  "Verifies that the message comes from an allowed topic, that its
+   URLs point to SNS and that its signature is valid. Raises a
+   :validation or :authentication error otherwise.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [cfg body]
+  (let [cert-url      (get body "SigningCertURL")
         subscribe-url (get body "SubscribeURL")
-        mtype       (get body "Type")]
+        topic-arn     (get body "TopicArn")
+        mtype         (get body "Type")]
+
+    (when-not (contains? (cf/get :aws-sns-topic-arns) topic-arn)
+      (l/wrn :hint "SNS topic not allowed (check PENPOT_AWS_SNS_TOPIC_ARNS)"
+             :action "sns-topic-not-allowed"
+             :message-type mtype
+             :topic-arn topic-arn)
+      (ex/raise :type :validation
+                :code :topic-not-allowed
+                :hint "SNS topic not allowed"))
 
     (when-not (valid-sns-url? cert-url)
       (l/wrn :hint "SNS certificate URL not from amazonaws.com"
@@ -167,7 +184,7 @@
       (l/wrn :hint "SNS signature verification failed"
              :action "sns-signature-verification-failed"
              :message-type mtype
-             :topic-arn (get body "TopicArn")
+             :topic-arn topic-arn
              :signing-cert-url cert-url)
       (ex/raise :type :authentication
                 :code :invalid-signature
@@ -181,14 +198,18 @@
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  (letfn [(handler [request]
-            (let [data (-> request yreq/body slurp)
-                  result (handle-request cfg data)]
-              {::yres/status (or (:status result) 200)}))]
-    ["/sns" {:handler handler
-             :allowed-methods #{:post}}]))
+  (let [cfg (assoc cfg ::cert-cache (create-cert-cache))]
+    (letfn [(handler [request]
+              (let [data   (-> request yreq/body slurp)
+                    result (handle-request cfg data)]
+                {::yres/status (or (:status result) 200)}))]
+      ["/sns" {:handler handler
+               :allowed-methods #{:post}}])))
 
 (defn handle-request
+  "Handles an SNS message. Returns a map with the HTTP :status: 400 for
+   messages that fail validation (SNS does not retry them) and 500 for
+   unexpected or transient errors (SNS retries them)."
   [cfg data]
   (try
     (let [body  (parse-json data)
@@ -222,8 +243,8 @@
                   :report (pr-str body))
           {:status 400})))
 
-    (catch clojure.lang.ExceptionInfo e
-      (let [data (ex-data e)]
+    (catch Throwable cause
+      (let [data (ex-data cause)]
         (if (#{:validation :authentication} (:type data))
           (do
             (l/wrn :hint "SNS message validation failed"
@@ -232,13 +253,8 @@
             {:status 400})
           (do
             (l/error :hint "unexpected exception on awsns"
-                     :cause e)
-            {:status 500}))))
-
-    (catch Throwable cause
-      (l/error :hint "unexpected exception on awsns"
-               :cause cause)
-      {:status 500})))
+                     :cause cause)
+            {:status 500}))))))
 
 (defn- parse-bounce
   [data]
