@@ -805,7 +805,12 @@
        [:div {:class (stl/css :item-content)}
         [:div {:class (stl/css :item-title)} (tr "workspace.libraries.file-library")]
         [:ul {:class (stl/css :item-contents)}
-         [:> library-description* {:summary summary}]]]
+         (if empty-library?
+           [:> text* {:class (stl/css :empty-library-text)
+                      :as "span"
+                      :typography "body-small"}
+            (tr "workspace.libraries.empty.no-assets")]
+           [:> library-description* {:summary summary}])]]
        (when (and (contains? cf/flags :token-lib-sync)
                   (cfo/effective-tokens-source? local-library (:id local-library))
                   (cfo/has-own-tokens? local-library))
@@ -992,11 +997,12 @@
                    :key (dm/str id)}
              [:div {:class (stl/css :item-content)}
               [:div {:class (stl/css :item-name)} name]
-              [:ul {:class (stl/css :item-contents)} (describe-library
-                                                      (count components)
-                                                      0
-                                                      (count colors)
-                                                      (count typographies))]]
+              [:ul {:class (stl/css :item-contents)}
+               (describe-library
+                (count components)
+                0
+                (count colors)
+                (count typographies))]]
              [:> button* {:class (stl/css :item-update)
                           :disabled updating?
                           :variant "primary"
