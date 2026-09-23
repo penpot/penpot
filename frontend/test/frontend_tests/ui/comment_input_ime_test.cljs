@@ -5,237 +5,125 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.ui.comment-input-ime-test
-  "Regression tests for https://github.com/penpot/penpot/issues/11757.
-
-  Confirming a Japanese IME composition with Enter duplicated the text
-  because the comment-input keydown handler treated every Enter as a
-  Penpot line-break action. The component handlers delegate to
-  `handle-comment-input-key-down` and `handle-thread-key-down`, which
-  run nothing while the keydown belongs to an active IME composition
-  (nativeEvent.isComposing or keyCode 229 as a fallback).
-
-  These tests call the actual handler fns with stubbed dependencies
-  and assert which side effects fire — not a resolver return value —
-  so a guard moved to the wrong place, a reordered handle-select, or
-  a handler bypassing the composition check fails here. The mention
-  snapshot ordering matches the component: handle-select runs first
-  (and may update the open mention) before the branch is read."
+  "Keydown handling of the comment input and floating thread: keys owned
+  by an IME composition run nothing, all other keys keep their
+  commands."
   (:require
    [app.main.ui.comments :as cmt]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]))
 
-(defn- keydown-event
-  "Build a synthetic keydown event shaped like the Rumext keyboard
-  events the comment handlers receive. preventDefault/stopPropagation
-  record into the returned log atom so tests observe real handler
-  side effects on the event itself."
-  [{:keys [key composing? key-code ctrl? meta? log]
-    :or {composing? false ctrl? false meta? false}}]
+(defn- keydown
+  "Fake keyboard event. preventDefault/stopPropagation append to `log`."
+  [key {:keys [composing? key-code mod? log]}]
   #js {:key key
-       :keyCode key-code
-       :ctrlKey ctrl?
-       :metaKey meta?
-       :preventDefault (fn [] (when log (swap! log conj :prevent-default)))
-       :stopPropagation (fn [] (when log (swap! log conj :stop-propagation)))
-       :nativeEvent #js {:isComposing composing?}})
+       :keyCode (or key-code 0)
+       :ctrlKey (boolean mod?)
+       :metaKey (boolean mod?)
+       :preventDefault #(some-> log (swap! conj :prevent-default))
+       :stopPropagation #(some-> log (swap! conj :stop-propagation))
+       :nativeEvent #js {:isComposing (boolean composing?)}})
 
-(defn- enter
-  ([] (enter {}))
-  ([opts] (keydown-event (merge {:key "Enter" :key-code 13} opts))))
+(def ^:private composition-modes
+  {"isComposing" {:composing? true}
+   "keyCode 229" {:key-code 229}})
 
-(defn- escape
-  ([] (escape {}))
-  ([opts] (keydown-event (merge {:key "Escape" :key-code 27} opts))))
-
-(defn- arrow
-  [dir opts]
-  (keydown-event (merge {:key dir
-                         :key-code (if (= dir "ArrowDown") 40 38)}
-                        opts)))
-
-(def ^:private composing {:composing? true})
-(def ^:private ime229 {:composing? false :key-code 229})
-
-(defn- input-deps
-  "Stub dependency map for handle-comment-input-key-down. Every
-  observable side effect appends to :log: mention-panel commands,
-  delegated callbacks, select/input/newline/backspace paths, and the
-  event defaults. :open-mention is read through :get-mention after
-  :do-select runs, mirroring the component ordering."
-  [{:keys [open-mention log select-updates-mention?]
-    :or {log (atom [])}}]
-  (let [mention (atom open-mention)]
-    {:log log
-     :deps {:get-mention (fn [] @mention)
-            :push-mention! (fn [msg] (swap! log conj [:mention msg]))
-            :on-esc (fn [_] (swap! log conj :on-esc))
-            :on-ctrl-enter (fn [_] (swap! log conj :on-ctrl-enter))
-            :do-select (fn [_]
-                         (swap! log conj :select)
-                         (when select-updates-mention?
-                           (reset! mention select-updates-mention?)))
-            :get-node (fn [] :node)
-            :get-span (fn [_] [:span 3])
-            :do-newline (fn [_] (swap! log conj :newline))
-            :do-backspace (fn [_] (swap! log conj :backspace-check))
-            :do-input (fn [] (swap! log conj :input))}}))
+(def ^:private input-keys
+  ["Enter" "Escape" "ArrowDown" "ArrowUp" "Backspace"])
 
 (defn- run-input!
-  [event stub]
-  (cmt/handle-comment-input-key-down event (:deps stub))
-  @(:log stub))
-
-(defn- run-thread!
-  [event]
-  (let [log (atom [])]
-    (cmt/handle-thread-key-down event {:close! (fn [ev] (swap! log conj [:close ev]))})
+  "Runs the comment-input handler for `key` and returns the side-effect
+  log. Mention-panel commands are observed on a real subject and the
+  open mention lives in an atom, as in the component."
+  [key {:keys [event-opts mention select-sets-mention node span on-esc? on-ctrl-enter?]
+        :or   {node :node span [:span 3] on-esc? true on-ctrl-enter? true}}]
+  (let [log         (atom [])
+        cur-mention (atom mention)
+        mentions-s  (rx/subject)
+        sub         (rx/sub! mentions-s #(swap! log conj [:mention (:type %)]))
+        event       (keydown key (assoc event-opts :log log))]
+    (cmt/handle-comment-input-key-down
+     event
+     {:node          node
+      :cur-mention   cur-mention
+      :mentions-s    mentions-s
+      :on-select     (fn [e]
+                       (t/is (identical? event e))
+                       (swap! log conj :select)
+                       (some->> select-sets-mention (reset! cur-mention)))
+      :get-span      (fn [n]
+                       (t/is (= node n))
+                       span)
+      :on-esc        (when on-esc? #(swap! log conj :on-esc))
+      :on-ctrl-enter (when on-ctrl-enter? #(swap! log conj :on-ctrl-enter))
+      :on-newline    #(swap! log conj [:newline (dissoc % :event)])
+      :on-backspace  #(swap! log conj [:backspace (dissoc % :event)])})
+    (rx/dispose! sub)
     @log))
 
-;; --- 1. composing Enter: zero Penpot side effects -----------------------
+(defn- run-thread!
+  [key event-opts]
+  (let [log (atom [])]
+    (cmt/handle-thread-key-down (keydown key event-opts)
+                                #(swap! log conj :close))
+    @log))
 
-(t/deftest composing-enter-produces-zero-side-effects
-  (t/testing "composing Enter fires nothing: no select, no mention, no newline, no event defaults"
-    (let [log (atom [])
-          events (run-input! (enter (merge composing {:log log}))
-                             (input-deps {:log log}))]
-      (t/is (= [] events))))
-  (t/testing "composing Enter with a mention open still fires nothing"
-    (let [log (atom [])
-          events (run-input! (enter (merge composing {:log log}))
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [] events)))))
+(def ^:private ctx {:node :node :span-node :span :offset 3})
 
-;; --- 2. keyCode 229 fallback --------------------------------------------
+(t/deftest composing-keys-run-nothing
+  (doseq [[mode opts] composition-modes
+          key         input-keys
+          mention     [nil "@bob"]]
+    (t/testing (str key " via " mode ", mention " (pr-str mention))
+      (t/is (= [] (run-input! key {:event-opts opts :mention mention}))))))
 
-(t/deftest keycode-229-enter-bypasses-custom-processing
-  (t/testing "keyCode 229 Enter with isComposing=false fires nothing"
-    (let [log (atom [])
-          events (run-input! (enter (merge ime229 {:log log}))
-                             (input-deps {:log log}))]
-      (t/is (= [] events))))
-  (t/testing "229 fallback also covers Escape and arrows"
-    (let [log (atom [])]
-      (t/is (= [] (run-input! (escape (merge ime229 {:log log}))
-                              (input-deps {:log log}))))
-      (t/is (= [] (run-input! (arrow "ArrowDown" (merge ime229 {:log log}))
-                              (input-deps {:log log})))))))
+(t/deftest plain-keys-keep-their-commands
+  (t/testing "Enter inserts a line break at the caret span"
+    (t/is (= [:select [:newline ctx]] (run-input! "Enter" {}))))
+  (t/testing "mod+Enter submits"
+    (t/is (= [:select :on-ctrl-enter]
+             (run-input! "Enter" {:event-opts {:mod? true}}))))
+  (t/testing "mod+Enter without on-ctrl-enter falls back to a line break"
+    (t/is (= [:select [:newline ctx]]
+             (run-input! "Enter" {:event-opts {:mod? true} :on-ctrl-enter? false}))))
+  (t/testing "Escape calls on-esc"
+    (t/is (= [:select :on-esc] (run-input! "Escape" {}))))
+  (t/testing "Escape without on-esc does nothing else"
+    (t/is (= [:select] (run-input! "Escape" {:on-esc? false}))))
+  (t/testing "Backspace runs the mention-deletion check"
+    (t/is (= [:select [:backspace ctx]] (run-input! "Backspace" {}))))
+  (t/testing "other keys only sync the selection"
+    (t/is (= [:select] (run-input! "a" {})))))
 
-;; --- 3. plain Enter regression ------------------------------------------
+(t/deftest open-mention-routes-panel-keys
+  (doseq [[key cmd] {"Enter"     :insert-selected-mention
+                     "ArrowDown" :insert-next-mention
+                     "ArrowUp"   :insert-prev-mention
+                     "Escape"    :hide-mentions}]
+    (t/testing key
+      (t/is (= [:select :prevent-default :stop-propagation [:mention cmd]]
+               (run-input! key {:mention "@bob"})))))
+  (t/testing "Backspace is not a panel key"
+    (t/is (= [:select [:backspace ctx]]
+             (run-input! "Backspace" {:mention "@bob"})))))
 
-(t/deftest plain-enter-keeps-newline-behavior
-  (t/testing "non-composing Enter runs select then the newline path"
-    (let [log (atom [])
-          events (run-input! (enter {:log log}) (input-deps {:log log}))]
-      (t/is (= [:select :newline] events))))
-  (t/testing "non-composing mod+Enter still calls on-ctrl-enter"
-    (let [log (atom [])
-          events (run-input! (enter {:log log :ctrl? true :meta? true})
-                             (input-deps {:log log}))]
-      (t/is (= [:select :on-ctrl-enter] events)))))
+(t/deftest mention-is-read-after-select
+  (t/testing "a mention opened by on-select routes the same key"
+    (t/is (= [:select :prevent-default :stop-propagation
+              [:mention :insert-selected-mention]]
+             (run-input! "Enter" {:select-sets-mention "@new"})))))
 
-;; --- 4. composing Escape in the comment input ---------------------------
+(t/deftest missing-caret-target-runs-only-select
+  (t/testing "no input node"
+    (t/is (= [:select] (run-input! "Enter" {:node nil}))))
+  (t/testing "caret outside a text span"
+    (t/is (= [:select] (run-input! "Enter" {:span nil})))))
 
-(t/deftest composing-escape-calls-no-input-command
-  (t/testing "composing Escape fires nothing, even with on-esc wired"
-    (let [log (atom [])
-          events (run-input! (escape (merge composing {:log log}))
-                             (input-deps {:log log}))]
-      (t/is (= [] events))))
-  (t/testing "composing Escape with a mention open emits no hide-mentions"
-    (let [log (atom [])
-          events (run-input! (escape (merge composing {:log log}))
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [] events))))
-  (t/testing "plain Escape still calls on-esc"
-    (let [log (atom [])
-          events (run-input! (escape {:log log}) (input-deps {:log log}))]
-      (t/is (= [:select :on-esc] events)))))
-
-;; --- 5. composing Escape in the floating thread -------------------------
-
-(t/deftest floating-thread-escape-ownership
-  (t/testing "composing Escape never closes the thread"
-    (t/is (= [] (run-thread! (escape composing))))
-    (t/is (= [] (run-thread! (escape ime229)))))
-  (t/testing "plain Escape still closes the thread"
-    (let [events (run-thread! (escape {}))]
-      (t/is (= 1 (count events)))
-      (t/is (= :close (ffirst events)))))
-  (t/testing "non-Escape keys in the thread do nothing"
-    (t/is (= [] (run-thread! (enter {}))))))
-
-;; --- 6. mention candidate keyboard ownership ----------------------------
-
-(t/deftest composing-mention-keys-trigger-no-mention-command
-  (t/testing "composing mention keys fire nothing"
-    (let [log (atom [])
-          stub (input-deps {:log log :open-mention "@bob"})]
-      (t/is (= [] (run-input! (enter (merge composing {:log log})) stub)))
-      (t/is (= [] (run-input! (arrow "ArrowDown" (merge composing {:log log})) stub)))
-      (t/is (= [] (run-input! (arrow "ArrowUp" (merge composing {:log log})) stub)))
-      (t/is (= [] (run-input! (escape (merge composing {:log log})) stub)))))
-  (t/testing "non-composing mention keys keep existing behavior"
-    (let [log (atom [])
-          events (run-input! (enter {:log log})
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [:select
-                :prevent-default
-                :stop-propagation
-                [:mention {:type :insert-selected-mention}]]
-               events)))
-    (let [log (atom [])
-          events (run-input! (arrow "ArrowDown" {:log log})
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [:select
-                :prevent-default
-                :stop-propagation
-                [:mention {:type :insert-next-mention}]]
-               events)))
-    (let [log (atom [])
-          events (run-input! (arrow "ArrowUp" {:log log})
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [:select
-                :prevent-default
-                :stop-propagation
-                [:mention {:type :insert-prev-mention}]]
-               events)))
-    (let [log (atom [])
-          events (run-input! (escape {:log log})
-                             (input-deps {:log log :open-mention "@bob"}))]
-      (t/is (= [:select
-                :prevent-default
-                :stop-propagation
-                [:mention {:type :hide-mentions}]]
-               events)))))
-
-;; --- ordering: select runs before the mention branch is read -----------
-
-(t/deftest select-runs-before-mention-branch
-  (t/testing "a mention opened by handle-select is visible to the branch"
-    ;; Component ordering: do-select may set the open mention, and the
-    ;; branch reads it afterwards. A snapshot taken before select
-    ;; would miss it and wrongly fall through to the newline path.
-    (let [log (atom [])
-          events (run-input! (enter {:log log})
-                             (input-deps {:log log
-                                          :select-updates-mention? "@new"}))]
-      (t/is (= [:select
-                :prevent-default
-                :stop-propagation
-                [:mention {:type :insert-selected-mention}]]
-               events)))))
-
-;; --- backspace path preserved -------------------------------------------
-
-(t/deftest plain-backspace-keeps-mention-check
-  (t/testing "non-composing Backspace still runs the mention check path"
-    (let [log (atom [])
-          events (run-input! (keydown-event {:key "Backspace" :key-code 8 :log log})
-                             (input-deps {:log log}))]
-      (t/is (= [:select :backspace-check] events))))
-  (t/testing "composing Backspace fires nothing"
-    (let [log (atom [])
-          events (run-input! (keydown-event {:key "Backspace" :key-code 8
-                                             :composing? true :log log})
-                             (input-deps {:log log}))]
-      (t/is (= [] events)))))
+(t/deftest floating-thread-escape
+  (doseq [[mode opts] composition-modes]
+    (t/testing (str "Escape via " mode " keeps the thread open")
+      (t/is (= [] (run-thread! "Escape" opts)))))
+  (t/testing "plain Escape closes the thread"
+    (t/is (= [:close] (run-thread! "Escape" {}))))
+  (t/testing "other keys do nothing"
+    (t/is (= [] (run-thread! "Enter" {})))))
