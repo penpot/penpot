@@ -821,7 +821,8 @@
                   (not page-transition?))
          [:> msr/selection-size-badge*
           {:shapes selected-shapes
-           :zoom zoom}])
+           :zoom zoom
+           :vbox vbox}])
 
        (when show-measures?
          [:> msr/measurement*

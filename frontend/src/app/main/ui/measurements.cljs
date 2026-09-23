@@ -206,8 +206,41 @@
       :top    [p0 p1]
       :left   [p3 p0])))
 
+(defn- opposite-edge
+  [edge]
+  (case edge
+    :bottom :top
+    :top    :bottom
+    :left   :right
+    :right  :left))
+
+(defn- edge-rot-offset
+  [edge]
+  (case edge
+    :bottom 0
+    :right  270
+    :top    180
+    :left   90))
+
+(defn- edge-badge-position
+  "Badge center for a badge anchored to `edge` of the rotated shape."
+  [points edge offset]
+  (let [[ep1 ep2] (get-edge-points points edge)
+        mid-point (gpt/lerp ep1 ep2 0.5)
+        normal    (gpt/normal-right (gpt/subtract ep2 ep1))]
+    {:cx (+ (:x mid-point) (* (:x normal) offset))
+     :cy (+ (:y mid-point) (* (:y normal) offset))}))
+
+(defn- fits-above-vbox-bottom?
+  "True when a badge centered at `cy` (with `badge-height`) still lands above
+  the visible bottom edge of `vbox`."
+  [cy badge-height vbox]
+  (or (nil? vbox)
+      (<= (+ cy (/ badge-height 2))
+          (+ (:y vbox) (:height vbox)))))
+
 (mf/defc selection-size-badge*
-  [{:keys [zoom shapes]}]
+  [{:keys [zoom shapes vbox]}]
   (let [badge-height     (/ selection-badge-height zoom)
         badge-padding-x  (/ selection-badge-padding-x zoom)
         badge-gap        (/ selection-badge-vertical-gap zoom)
@@ -254,26 +287,24 @@
 
     (when-not ^boolean single-line?
       (if has-rotation?
-        (let [edge    (get-edge-for-badge rotation)
-              points  (dm/get-prop single-shape :points)
-
-              [ep1 ep2]  (get-edge-points points edge)
-
-              mid-point  (gpt/lerp ep1 ep2 0.5)
-              normal     (gpt/normal-right (gpt/subtract ep2 ep1))
-
-              rot-offset (case edge
-                           :bottom 0
-                           :right  270
-                           :top    180
-                           :left   90)
-              badge-rot  (+ rotation rot-offset)
+        (let [edge       (get-edge-for-badge rotation)
+              points     (dm/get-prop single-shape :points)
               offset     (+ badge-gap (/ badge-height 2))
+
+              ;; Rotation always follows the naturally-selected edge, so the
+              ;; text stays upright even when the position below is flipped
+              ;; to the opposite edge for lack of visible space.
+              badge-rot  (+ rotation (edge-rot-offset edge))
+
+              position   (edge-badge-position points edge offset)
+              position   (if (fits-above-vbox-bottom? (:cy position) badge-height vbox)
+                           position
+                           (edge-badge-position points (opposite-edge edge) offset))
 
               badge-x    (- (/ badge-width 2))
               badge-y    (- (/ badge-height 2))
-              badge-cx   (+ (:x mid-point) (* (:x normal) offset))
-              badge-cy   (+ (:y mid-point) (* (:y normal) offset))]
+              badge-cx   (:cx position)
+              badge-cy   (:cy position)]
 
           [:g.selection-size-badge {:pointer-events "none"
                                     :transform (dm/str "translate(" badge-cx "," badge-cy ") rotate(" badge-rot ")")}
@@ -291,10 +322,13 @@
                    :dominant-baseline "middle"}
             text]])
 
-        (let [badge-x    (- (/ badge-width 2))
-              badge-y    (- (/ badge-height 2))
-              badge-cx   (+ (:x selrect) (/ (:width selrect) 2))
-              badge-cy   (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))]
+        (let [badge-x     (- (/ badge-width 2))
+              badge-y     (- (/ badge-height 2))
+              badge-cx    (+ (:x selrect) (/ (:width selrect) 2))
+              below-cy    (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))
+              badge-cy    (if (fits-above-vbox-bottom? below-cy badge-height vbox)
+                            below-cy
+                            (- (:y selrect) badge-gap (/ badge-height 2)))]
 
           [:g.selection-size-badge {:pointer-events "none"
                                     :transform (dm/str "translate(" badge-cx "," badge-cy ")")}
