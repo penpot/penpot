@@ -14,8 +14,10 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.metrics :as mtx]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
+   [app.storage.s3.metrics :as s3m]
    [app.storage.tmp :as tmp]
    [app.worker :as-alias wrk]
    [clojure.java.io :as io]
@@ -38,9 +40,11 @@
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
+   software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
    software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
+   software.amazon.awssdk.metrics.MetricPublisher
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.DeleteObjectRequest
@@ -94,7 +98,8 @@
    [::region {:optional true} :keyword]
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
-   [::endpoint {:optional true} ::sm/uri]])
+   [::endpoint {:optional true} ::sm/uri]
+   [::mtx/metrics ::mtx/metrics]])
 
 (defmethod ig/expand-key ::backend
   [k v]
@@ -237,10 +242,20 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::wrk/netty-io-executor]}]
+  [{:keys [::region ::endpoint ::wrk/netty-io-executor ::mtx/metrics]}]
+
+  ;; TODO: per-bucket S3 routing will introduce more physical targets;
+  ;; until then the target label is always :default. Do not add more
+  ;; target ids here until that plan lands.
   (let [creds-provider (DefaultCredentialsProvider/create)
+        publisher      (s3m/wrap-publisher metrics :default)
         aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.build))
+
+        oconfig  (let [builder (ClientOverrideConfiguration/builder)]
+                   (.addMetricPublisher ^software.amazon.awssdk.core.client.config.ClientOverrideConfiguration$Builder builder
+                                        ^MetricPublisher publisher)
+                   (.build ^software.amazon.awssdk.core.client.config.ClientOverrideConfiguration$Builder builder))
 
         sconfig  (-> (S3Configuration/builder)
                      (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
@@ -259,6 +274,7 @@
         client   (let [builder (S3AsyncClient/builder)
                        builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
                        builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
+                       builder (.overrideConfiguration ^S3AsyncClientBuilder builder ^ClientOverrideConfiguration oconfig)
                        builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
                        builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
                        builder (.credentialsProvider ^S3AsyncClientBuilder builder creds-provider)

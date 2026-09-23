@@ -45,6 +45,10 @@
 - The xnio worker MXBean can return transient `-1` (e.g. busy-thread count); negative samples are discarded (gauge keeps its previous value). Undertow exposes absolute request/error totals, so the sampler keeps a watermark atom and publishes deltas; a counter reset (decreasing totals) skips the negative delta and moves the watermark forward.
 - The `process_*` families (`process_open_fds`, `process_max_fds`, `process_cpu_seconds_total`, …) come from the prometheus client `StandardExports`, registered by `app.metrics/create-registry`. They read the OS MXBean reflectively and need the `jdk.management` module: on a pruned `jlink` JRE the MXBean is `sun.management.BaseOperatingSystemImpl`, the getters throw `NoSuchMethodException` and `StandardExports#collect` swallows it, so those families silently vanish from `/metrics`. `docker/images/Dockerfile.backend` keeps `jdk.management` in the `--add-modules` list, and `backend-tests.metrics-test` pins the contract.
 
+## Metrics recording
+
+- `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, and db-pool schemas; `app.db` wires the prometheus `MetricsTrackerFactory` unconditionally. Storage-specific metric contracts: `mem:backend/storage`.
+
 ## Storage and media
 
 - Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
