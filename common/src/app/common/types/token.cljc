@@ -545,6 +545,12 @@
     :text    text-attributes
     nil))
 
+(defn per-side-stroke-shape?
+  "Returns true when the given shape type supports independent stroke
+  widths per side (boards and rectangles)."
+  [shape-type]
+  (contains? #{:rect :frame} shape-type))
+
 (defn appliable-attrs-for-shape
   "Returns which ones of the given `attributes` can be applied to a shape
    of type `shape-type` and `is-layout`."
