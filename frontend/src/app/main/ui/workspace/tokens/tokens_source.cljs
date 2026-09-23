@@ -24,6 +24,7 @@
   [{:keys [tokens-source file-id] :as props}]
 
   (let [files              (mf/deref refs/files)
+        can-edit?          (:can-edit (deref refs/permissions))
         tokens-source-file (get files tokens-source)
         source-file-id     (:id tokens-source-file)
         file-name          (:name tokens-source-file)
@@ -91,11 +92,12 @@
                      :class (stl/css :file-name)
                      :ref file-name-ref}
            file-name]))]
-     [:> icon-button*
-      {:variant "ghost"
-       :aria-label (tr "workspace.tokens.change-token-source")
-       :on-click show-libraries-dialog
-       :icon "switch"}]
+     (when can-edit?
+       [:> icon-button*
+        {:variant "ghost"
+         :aria-label (tr "workspace.tokens.change-token-source")
+         :on-click show-libraries-dialog
+         :icon "switch"}])
      (when-not (= source-file-id file-id)
        [:> icon-button*
         {:variant "ghost"
