@@ -14,7 +14,6 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
-   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -705,13 +704,15 @@
     :createVariantFromComponents
     (fn [shapes]
       (cond
-        (or (not (seq shapes))
+        (or (not (array? shapes))
+            (not (seq shapes))
             (not (every? u/is-main-component-proxy? shapes)))
         (u/not-valid plugin-id :shapes shapes)
 
         :else
-        (let [file-id (obj/get (first shapes) "$file")
-              page-id (obj/get (first shapes) "$page")
+        (let [state   @st/state
+              file-id (:current-file-id state)
+              page-id (:current-page-id state)
               ;; Keep the input order: it determines the order of the
               ;; resulting variant components (see combine-as-variants)
               ids (->> shapes
@@ -719,23 +720,17 @@
                        (distinct)
                        (vec))
 
-              ;; Check that every component is:
-              ;; - in the same page
-              ;; - not already a variant
-              valid?
-              (every?
-               (fn [id]
-                 (let [shape     (u/locate-shape file-id page-id id)
-                       component (u/locate-library-component file-id (:component-id shape))]
-                   (not (ctk/is-variant? component))))
-               ids)]
+              valid? (and (every? #(and (= file-id (obj/get % "$file"))
+                                        (= page-id (obj/get % "$page")))
+                                  shapes)
+                          (dwv/valid-components-for-variants? state page-id ids))]
           (if valid?
             (let [variant-id (uuid/next)]
               (st/emit! (-> (dwv/combine-as-variants
                              ids
                              {:trigger "plugin:combine-as-variants" :variant-id variant-id})
                             (se/add-event plugin-id)))
-              (shape/shape-proxy plugin-id variant-id))
+              (shape/shape-proxy plugin-id file-id page-id variant-id))
 
             (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
 

@@ -138,13 +138,13 @@
    [:stroke-opacity {:optional true} ::sm/safe-number]
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
-   [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-width {:optional true} ::sm/non-negative-safe-number]
    ;; wasm-render only, backwards compatible
    [:stroke-per-side {:optional true} :boolean]
-   [:stroke-width-top {:optional true} ::sm/safe-number]
-   [:stroke-width-right {:optional true} ::sm/safe-number]
-   [:stroke-width-bottom {:optional true} ::sm/safe-number]
-   [:stroke-width-left {:optional true} ::sm/safe-number]
+   [:stroke-width-top {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-right {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-bottom {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-left {:optional true} ::sm/non-negative-safe-number]
    [:stroke-dash {:optional true} ::sm/safe-number]
    [:stroke-gap {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}
@@ -211,10 +211,10 @@
    [:constraints-v {:optional true}
     [::sm/one-of vertical-constraint-types]]
    [:fixed-scroll {:optional true} :boolean]
-   [:r1 {:optional true} ::sm/safe-number]
-   [:r2 {:optional true} ::sm/safe-number]
-   [:r3 {:optional true} ::sm/safe-number]
-   [:r4 {:optional true} ::sm/safe-number]
+   [:r1 {:optional true} ::sm/non-negative-safe-number]
+   [:r2 {:optional true} ::sm/non-negative-safe-number]
+   [:r3 {:optional true} ::sm/non-negative-safe-number]
+   [:r4 {:optional true} ::sm/non-negative-safe-number]
    [:opacity {:optional true} ::sm/safe-number]
    [:grids {:optional true}
     [:vector {:gen/max 2} ctg/schema:grid]]

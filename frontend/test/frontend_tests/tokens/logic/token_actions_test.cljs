@@ -379,6 +379,37 @@
              (t/testing "shapes without layout get ignored"
                (t/is (nil? (:layout-padding frame-1')))))))))))
 
+(t/deftest test-apply-negative-spacing-clamps-padding-and-gap
+  (t/testing "negative spacing tokens write zero padding and gap"
+    (t/async
+      done
+      (let [spacing-token {:name "spacing.negative"
+                           :value "-8"
+                           :type :spacing}
+            file (-> (setup-file-with-tokens)
+                     (ctho/add-frame :frame-1 {:layout :flex})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token spacing-token))))
+            store (ths/setup-store file)
+            frame-1 (cths/get-shape file :frame-1)
+            token (toht/get-token file "spacing.negative")
+            events [(dwta/apply-token {:shape-ids [(:id frame-1)]
+                                       :attributes #{:p1 :p2 :p3 :p4}
+                                       :token token
+                                       :on-update-shape dwta/update-layout-padding})
+                    (dwta/apply-token {:shape-ids [(:id frame-1)]
+                                       :attributes #{:row-gap :column-gap}
+                                       :token token
+                                       :on-update-shape dwta/update-layout-gap})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'    (ths/get-file-from-state new-state)
+                 frame-1' (cths/get-shape file' :frame-1)]
+             (t/is (= (:layout-padding frame-1') {:p1 0 :p2 0 :p3 0 :p4 0}))
+             (t/is (= (:layout-gap frame-1') {:row-gap 0 :column-gap 0})))))))))
+
 (t/deftest test-apply-sizing
   (t/testing "applies sizing token and updates the shapes width and height"
     (t/async
