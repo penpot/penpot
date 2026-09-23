@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.stroke :as cts]
+   [app.common.types.token :as ctt]
    [app.config :as cf]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -62,6 +64,29 @@
              o-strokes (get o-vals :strokes)
              n-strokes (get n-vals :strokes)]
          (identical? o-strokes n-strokes))))
+
+(defn stroke-width-all-attrs
+  "Returns the stroke attributes that set `width` both on the global
+  stroke-width input and on every independent side."
+  [width]
+  {:stroke-width width
+   :stroke-width-top width
+   :stroke-width-right width
+   :stroke-width-bottom width
+   :stroke-width-left width})
+
+(defn per-side-stroke-available?
+  "Whether the per-side stroke width controls apply to this selection.
+  Single boards and rectangles always qualify; a multi-selection only when
+  every shape supports independent sides and the strokes are not mixed."
+  [type strokes ids objects]
+  (and (contains? cf/flags :stroke-per-side)
+       (or (= type :rect)
+           (= type :frame)
+           (and (= type :multiple)
+                (not= strokes :multiple)
+                (seq ids)
+                (every? #(ctt/per-side-stroke-shape? (:type (get objects %))) ids)))))
 
 (mf/defc stroke-menu*
   {::mf/wrap [#(mf/memo' % stroke-menu-check-props)]}
@@ -136,40 +161,19 @@
         (fn [index value]
           (when-not (str/empty? value)
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
-            (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
+            (st/emit! (dc/change-stroke-attrs ids (stroke-width-all-attrs value) index))))
 
         wasm-render?
         (features/use-feature "render-wasm/v1")
 
+        objects
+        (mf/deref refs/workspace-page-objects)
+
         per-side-available?
-        (and (contains? cf/flags :stroke-per-side)
-             (or (= type :rect) (= type :frame)))
+        (per-side-stroke-available? type strokes ids objects)
 
         per-side-disabled?
         (not wasm-render?)
-
-        on-stroke-per-side-toggle
-        (fn [index]
-          (let [stroke  (get-in values [:strokes index])
-                active? (:stroke-per-side stroke)
-                width   (:stroke-width stroke)
-                width   (if (number? width) width 1)]
-            (st/emit! (udw/trigger-bounding-box-cloaking ids))
-            (if active?
-              (st/emit! (dc/change-stroke-attrs ids {:stroke-per-side false} index))
-              ;; Entering per-side mode seeds any missing side from the
-              ;; uniform width, so previous per-side edits are preserved.
-              ;; The top value doubles as the global :stroke-width.
-              (let [top (d/nilv (:stroke-width-top stroke) width)]
-                (st/emit! (dc/change-stroke-attrs
-                           ids
-                           {:stroke-per-side true
-                            :stroke-width top
-                            :stroke-width-top top
-                            :stroke-width-right (d/nilv (:stroke-width-right stroke) width)
-                            :stroke-width-bottom (d/nilv (:stroke-width-bottom stroke) width)
-                            :stroke-width-left (d/nilv (:stroke-width-left stroke) width)}
-                           index))))))
 
         on-stroke-width-side-change
         (fn [index attr value]
@@ -288,7 +292,6 @@
                               :on-stroke-width-change on-stroke-width-change
                               :per-side-available per-side-available?
                               :per-side-disabled per-side-disabled?
-                              :on-stroke-per-side-toggle on-stroke-per-side-toggle
                               :on-stroke-width-side-change on-stroke-width-side-change
                               :on-stroke-dash-change on-stroke-dash-change
                               :on-stroke-gap-change on-stroke-gap-change
