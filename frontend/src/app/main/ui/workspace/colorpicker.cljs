@@ -27,11 +27,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
+   [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
@@ -118,12 +118,11 @@
                                                (d/nilv tab :direct-color)))
         color-style            (deref color-style*)
 
-        toggle-token-color
+        handle-color-style-change
         (mf/use-fn
-         (mf/deps color-style)
-         (fn []
-           (let [new-style (if (= :direct-color color-style) :token-color :direct-color)]
-             (reset! color-style* new-style))))
+         (mf/deps color-style*)
+         (fn [value]
+           (reset! color-style* (keyword value))))
 
         ;; TODO: I think we need to put all this picking state under
         ;; the same object for avoid creating adhoc refs for each
@@ -425,20 +424,20 @@
              :on-change handle-change-mode}]])
 
         (when (and (= origin :sidebar) show-tokens? token-color)
-          [:& radio-buttons {:selected color-style
-                             :on-change toggle-token-color
-                             :name "color-style"}
-           [:& radio-button {:icon i/swatches
-                             :value :direct-color
-                             :title (tr "labels.color")
-                             :id "opt-color"}]
-           [:& radio-button {:icon i/tokens
-                             :value :token-color
-                             :title (if ^boolean token-disabled
-                                      (tr "workspace.tokens.only-first-fill-or-stroke")
-                                      (tr "workspace.colorpicker.color-tokens"))
-                             :disabled token-disabled
-                             :id "opt-token-color"}]])]
+          [:> radio-buttons* {:selected (name color-style)
+                              :on-change handle-color-style-change
+                              :name "color-style"
+                              :options [{:id "opt-color"
+                                         :icon i/swatches
+                                         :label (tr "labels.color")
+                                         :value "direct-color"}
+                                        {:id "opt-token-color"
+                                         :icon i/tokens
+                                         :label (if ^boolean token-disabled
+                                                  (tr "workspace.tokens.only-first-fill-or-stroke")
+                                                  (tr "workspace.colorpicker.color-tokens"))
+                                         :value "token-color"
+                                         :disabled token-disabled}]}])]
 
        (when (and (not= selected-mode :image)
                   (= color-style :direct-color))
