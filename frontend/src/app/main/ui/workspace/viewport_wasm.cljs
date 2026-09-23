@@ -211,6 +211,12 @@
                              (some #(ctk/allow-duplicate? base-objects %)
                                    (map (d/getf base-objects) selected)))
 
+        ;; While actively resizing, `selected-shapes` changes on every pointer
+        ;; move (live modifiers). Throttle the copy used for the size badge so
+        ;; its text updates at most once per interval instead of every single
+        ;; frame, while still staying live during the drag.
+        selected-shapes'  (ui-hooks/use-throttle 100 selected-shapes)
+        badge-shapes      (if (= transform :resize) selected-shapes' selected-shapes)
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -813,14 +819,14 @@
            :zoom zoom}])
 
        (when (and (seq selected-shapes)
-                  (not transform)
+                  (or (not transform) (= transform :resize))
                   (not text-editing?)
                   (not edition)
                   (not read-only?)
                   (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:shapes selected-shapes
+          {:shapes badge-shapes
            :zoom zoom
            :vbox vbox}])
 
