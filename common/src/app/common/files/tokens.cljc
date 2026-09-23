@@ -732,3 +732,43 @@
                   :removed-sets (count (set/difference active-set-ids valid-set-ids)))
         (ctos/set-tokens-status tokens-status valid-theme-ids valid-set-ids))
       tokens-status)))
+
+(defn ids->names
+  "Converts the ids inside a tokens status into full name paths."
+  [tokens-status tokens-lib]
+  (if tokens-lib
+    (let [active-theme-ids   (ctos/get-active-theme-ids tokens-status)
+          xf-theme-name      (comp (map #(ctob/get-theme tokens-lib %))
+                                   (remove nil?)
+                                   (map ctob/get-theme-path))
+          active-theme-names (into #{} xf-theme-name active-theme-ids)
+
+          active-set-ids     (ctos/get-active-set-ids tokens-status)
+          xf-set-name        (comp (map #(ctob/get-set tokens-lib %))
+                                   (remove nil?)
+                                   (map ctob/get-name))
+          active-set-names   (into #{} xf-set-name active-set-ids)]
+
+      {:active-themes active-theme-names
+       :active-sets active-set-names})
+    {:active-themes #{}
+     :active-sets #{}}))
+
+(defn names->ids
+  "Converts the full name paths in the structure in themes and sets ids."
+  [tokens-lib tokens-status-names]
+  (if tokens-lib
+    (let [xf-theme-id      (comp (map #(ctob/get-theme-by-path tokens-lib %))
+                                 (remove nil?)
+                                 (map ctob/get-id))
+          active-theme-ids (into #{} xf-theme-id (get tokens-status-names "activeThemes"))
+
+          xf-set-id        (comp (map #(ctob/get-set-by-name tokens-lib %))
+                                 (remove nil?)
+                                 (map ctob/get-id))
+          active-set-ids   (into #{} xf-set-id (get tokens-status-names "activeSets"))]
+
+      {:active-theme-ids active-theme-ids
+       :active-set-ids active-set-ids})
+    {:active-theme-ids #{}
+     :active-set-ids #{}}))
