@@ -403,10 +403,9 @@
                                     :placeholder (if show-multiple-placeholder?
                                                    (tr "settings.multiple")
                                                    "--")
-                                    :nillable true
                                     :value (if all-sides-equal?
-                                             stroke-width
-                                             nil)}]
+                                             (:stroke-width stroke)
+                                             :multiple)}]
         [:> select* {:default-selected (d/name stroke-alignment)
                      :options stroke-alignment-options
                      :variant "icon-only"
@@ -486,7 +485,6 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-top")
                                     :applied-token (get applied-tokens :stroke-width-top)
-                                    :nillable true
                                     :value (d/nilv (:stroke-width-top stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-right-change
                                     :on-detach on-detach-token-width-right
@@ -498,7 +496,6 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-right")
                                     :applied-token (get applied-tokens :stroke-width-right)
-                                    :nillable true
                                     :value (d/nilv (:stroke-width-right stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-bottom-change
                                     :on-detach on-detach-token-width-bottom
@@ -510,7 +507,6 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-bottom")
                                     :applied-token (get applied-tokens :stroke-width-bottom)
-                                    :nillable true
                                     :value (d/nilv (:stroke-width-bottom stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-left-change
                                     :on-detach on-detach-token-width-left
@@ -522,7 +518,6 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-left")
                                     :applied-token (get applied-tokens :stroke-width-left)
-                                    :nillable true
                                     :value (d/nilv (:stroke-width-left stroke) stroke-width)}]])
 
      ;; Stroke Dash / Gap (only visible for dashed style)
