@@ -146,6 +146,8 @@
    [:is-selected-on-focus {:optional true} :boolean]
    [:nillable {:optional true} :boolean]
    [:applied-token-name {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:token-disabled {:optional true} [:maybe :boolean]]
+   [:token-tooltip {:optional true} [:maybe :string]]
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
    [:on-change-start {:optional true} fn?]
@@ -165,6 +167,7 @@
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token-name empty-to-end
+           token-disabled token-tooltip
            on-change on-change-start on-change-end
            on-blur on-focus on-detach
            property align ref name
@@ -199,6 +202,8 @@
         ;; Default props
         nillable        (d/nilv nillable false)
         disabled        (d/nilv disabled false)
+        token-disabled? (d/nilv token-disabled false)
+        token-tooltip   (d/nilv token-tooltip (tr "ds.inputs.numeric-input.open-token-list-dropdown"))
         select-on-focus (d/nilv is-selected-on-focus true)
 
         default         (mf/with-memo [default nillable]
@@ -743,10 +748,11 @@
                                                                          :icon i/tokens
                                                                          :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
-                                                                         :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                                                                         :aria-label token-tooltip
                                                                          :ref open-dropdown-ref
                                                                          :tooltip-placement tooltip-placement
-                                                                         :on-click open-dropdown}])))
+                                                                         :on-click open-dropdown
+                                                                         :disabled token-disabled?}])))
                                 :max-length max-length})
 
         token-props
