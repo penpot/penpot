@@ -7,6 +7,8 @@
 - Basic Penpot registration is token staged: prepare/register creates or verifies temporary tokens, then profile creation/session setup is reused by other auth backends. The frontend `/auth/verify-token` flow is a hub for registration confirmation, email change, and invitation tokens.
 - OIDC-compatible providers share a generic flow: redirect to provider, validate callback/request token, fetch identity data, then login an existing profile or register a new one. Known providers may have hardcoded endpoints; generic OIDC can use discovery/configured endpoints.
 - LDAP login validates credentials against the external directory, fetches identity data, then logs in or registers a matching Penpot profile. LDAP registration is not a separate Penpot signup flow.
+- LDAP session identity MUST come from the directory-returned email (`info.email`): the profile matching the typed email can differ (aliases, UPNs, multi-valued `mail` attributes) and is used only for lockout checks, never to bind the session.
+- Account lockout (flag `:account-lockout`, `app.auth.login-lockout`) is Redis-backed and keyed per profile id. Password and LDAP flows check/increment on the profile derived from the typed email and clear on the profile that actually logs in.
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
 - HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.

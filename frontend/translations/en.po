@@ -1768,6 +1768,10 @@ msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
 
+#: src/app/main/ui/auth/login.cljs:103
+msgid "errors.account-locked"
+msgstr "Too many failed attempts. Your account has been locked for %s minutes. Please try again later."
+
 #: src/app/main/data/auth.cljs:358, src/app/main/errors.cljs:196, src/app/main/ui/auth/login.cljs:110, src/app/main/ui/auth/register.cljs:129, src/app/main/ui/auth/register.cljs:322, src/app/main/ui/auth/verify_token.cljs:138, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1125, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
 msgstr "Something wrong has happened."
