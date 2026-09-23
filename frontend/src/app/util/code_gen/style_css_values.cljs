@@ -214,17 +214,16 @@
       (fill->color (first fills)))))
 
 (defn stroke-per-side-widths
-  "Returns [top right bottom left] when the stroke has per-side widths
-  enabled and the sides actually differ; nil otherwise."
+  "Returns [top right bottom left] when the stroke sides actually
+  differ; nil otherwise."
   [stroke]
-  (when (:stroke-per-side stroke)
-    (let [width  (:stroke-width stroke)
-          top    (d/nilv (:stroke-width-top stroke) width)
-          right  (d/nilv (:stroke-width-right stroke) width)
-          bottom (d/nilv (:stroke-width-bottom stroke) width)
-          left   (d/nilv (:stroke-width-left stroke) width)]
-      (when-not (= top right bottom left)
-        [top right bottom left]))))
+  (let [width  (:stroke-width stroke)
+        top    (d/nilv (:stroke-width-top stroke) width)
+        right  (d/nilv (:stroke-width-right stroke) width)
+        bottom (d/nilv (:stroke-width-bottom stroke) width)
+        left   (d/nilv (:stroke-width-left stroke) width)]
+    (when-not (= top right bottom left)
+      [top right bottom left])))
 
 (defn- get-border
   [shape]
