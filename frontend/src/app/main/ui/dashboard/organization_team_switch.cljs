@@ -56,6 +56,19 @@
   [team]
   (if (:is-default team) (tr "dashboard.personal-projects") (:name team)))
 
+(defn show-subscription-badge?
+  "Whether `team`'s U/E subscription badge should render: never on a
+  default team (\"Personal projects\" has no billing of its own), and
+  never on a team that belongs to an organization, since a team's
+  `:subscription` reflects its owner's own plan, not any
+  organization-level billing. Pending a real editor/seat billing
+  model for organizations, only a standalone team outside every
+  organization shows its own plan."
+  [team]
+  (and (not (:is-default team))
+       (nil? (dm/get-in team [:organization :id]))
+       (contains? #{"unlimited" "enterprise"} (get-subscription-type (:subscription team)))))
+
 (defn sort-organization-teams
   "Orders the teams of a single organization for the dropdown's second
   column: alphabetical, with the organization's default team
@@ -117,8 +130,9 @@
 (defn create-team-target-id
   "The organization default team id that \"Create new team\" targets,
   or nil when the new team belongs under \"Other teams\". Creation
-  always targets the open dashboard's organization, not the one
-  previewed in the switcher."
+  targets the organization currently previewed in the switcher's left
+  column, i.e. the one the user triggers the action from, not
+  necessarily the open dashboard's own organization."
   [organizations organization-id]
   (when-not (= organization-id personal-bucket-id)
     (:default-team-id (get organizations organization-id))))
@@ -159,7 +173,7 @@
 
 (mf/defc organizations-column*
   {::mf/private true}
-  [{:keys [organizations selected-id ^boolean has-organizations? on-select on-create-organization
+  [{:keys [organizations current-id ^boolean has-organizations? on-select on-create-organization
            admin-console-href ^boolean valid-license on-context-menu on-dismiss-context-menu]}]
   [:li {:role "presentation" :class (stl/css :organizations-column)}
    [:div {:class (stl/css :column-label)}
@@ -182,7 +196,7 @@
            [:li {:role "separator" :class (stl/css :column-separator)}])
          [:> dropdown-menu-item* {:data-value (str bucket-id)
                                   :class (stl/css-case :organization-item true
-                                                       :selected (= bucket-id selected-id))
+                                                       :selected (= bucket-id current-id))
                                   :on-click on-select
                                   :on-context-menu #(on-context-menu % organization)}
           (if personal?
@@ -193,7 +207,7 @@
            [:span {:class (stl/css :organization-text)
                    :title (if personal? (tr "dashboard.other-teams") (:name organization))}
             (if personal? (tr "dashboard.other-teams") (:name organization))]
-           (when (= bucket-id selected-id)
+           (when (= bucket-id current-id)
              [:span {:class (stl/css :tick-icon)}
               [:> icon* {:icon-id i/tick :size "s"}]])]
           [:span {:class (stl/css :chevron-icon)}
@@ -236,7 +250,8 @@
 
      [:ul {:class (stl/css :column-list)}
       (for [team teams]
-        (let [subscription-type (get-subscription-type (:subscription team))]
+        (let [subscription-type (get-subscription-type (:subscription team))
+              show-badge? (show-subscription-badge? team)]
           [:* {:key (str (:id team))}
            ;; "Personal projects" is always last (see
            ;; `sort-organization-teams`/`sort-all-teams`), set apart
@@ -264,7 +279,7 @@
               [:span {:class (stl/css :team-text)
                       :title (team-display-name team)}
                (team-display-name team)]
-              (when (#{"unlimited" "enterprise"} subscription-type)
+              (when show-badge?
                 [:> menu-team-icon* {:subscription-type subscription-type}])
               (when (= (:id team) selected-team-id)
                 [:span {:class (stl/css :tick-icon)}
@@ -460,17 +475,18 @@
         (mf/with-memo [selected-organization profile]
           (resolve-admin-console-href selected-organization profile))
 
-        ;; "Create new team" targets the open dashboard's organization
-        ;; (`current-organization-id`), not the one previewed on the
-        ;; left column; the story keeps this behaviour unchanged.
+        ;; "Create new team" targets the organization previewed on the
+        ;; left column (`selected-organization-id`), i.e. wherever the
+        ;; user triggers the action from, or "Other teams" when
+        ;; that's the previewed group.
         on-create-team
         (mf/use-fn
-         (mf/deps organizations current-organization-id)
+         (mf/deps organizations selected-organization-id)
          (fn []
            (reset! show-menu* false)
            (if (contains? cf/flags :admin-console)
              (st/emit! (dtm/check-and-create-team
-                        (create-team-target-id organizations current-organization-id)))
+                        (create-team-target-id organizations selected-organization-id)))
              (st/emit! (modal/show :team-form {})))))
 
         on-close-context-menu
@@ -531,7 +547,7 @@
          [:span {:class (stl/css :current-team-name)
                  :title (team-display-name team)}
           (team-display-name team)]
-         (when (#{"unlimited" "enterprise"} current-team-subscription-type)
+         (when (show-subscription-badge? team)
            [:> menu-team-icon* {:subscription-type current-team-subscription-type}])]
         (when-let [organization-name (closed-control-line-2 has-organizations? current-organization)]
           [:span {:class (stl/css :current-organization-name)
@@ -564,7 +580,7 @@
                             :id "organization-team-switch"
                             :class (stl/css :organization-team-dropdown)}
          [:> organizations-column* {:organizations (sort-organizations (vals organizations))
-                                    :selected-id selected-organization-id
+                                    :current-id current-organization-id
                                     :has-organizations? has-organizations?
                                     :on-select on-organization-select
                                     :on-create-organization on-create-organization
