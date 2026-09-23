@@ -1180,6 +1180,75 @@
                (t/is (= (:r1 (:applied-tokens rect-without-token')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))
 
+(t/deftest test-toggle-token-completes-partial-per-side-application
+  (t/testing "toggling a token already applied to some sides applies it to all"
+    (t/async
+      done
+      (let [stroke-width-token {:name "strokeWidth.md" :value "10" :type :stroke-width}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5}]}})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token stroke-width-token)))
+                     (toht/apply-token-to-shape :rect-1 "strokeWidth.md"
+                                                #{:stroke-width-right :stroke-width-bottom}))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                        :token (toht/get-token file "strokeWidth.md")
+                                        :attrs ctt/per-side-stroke-width-keys})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect-1' [:strokes 0])]
+             (t/testing "the token is applied to every side"
+               (t/is (= (:stroke-width-top (:applied-tokens rect-1')) "strokeWidth.md"))
+               (t/is (= (:stroke-width-right (:applied-tokens rect-1')) "strokeWidth.md"))
+               (t/is (= (:stroke-width-bottom (:applied-tokens rect-1')) "strokeWidth.md"))
+               (t/is (= (:stroke-width-left (:applied-tokens rect-1')) "strokeWidth.md")))
+
+             (t/testing "every side gets the resolved value"
+               (t/is (= (:stroke-width-top stroke') 10))
+               (t/is (= (:stroke-width-right stroke') 10))
+               (t/is (= (:stroke-width-bottom stroke') 10))
+               (t/is (= (:stroke-width-left stroke') 10))))))))))
+
+(t/deftest test-toggle-token-explicit-attrs-unapplies-when-fully-applied
+  (t/testing "toggling a token applied to every side removes it"
+    (t/async
+      done
+      (let [stroke-width-token {:name "strokeWidth.md" :value "10" :type :stroke-width}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5}]}})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token stroke-width-token)))
+                     (toht/apply-token-to-shape :rect-1 "strokeWidth.md"
+                                                ctt/per-side-stroke-width-keys))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                        :token (toht/get-token file "strokeWidth.md")
+                                        :attrs ctt/per-side-stroke-width-keys})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 applied' (:applied-tokens rect-1')]
+             (t/is (nil? (:stroke-width-top applied')))
+             (t/is (nil? (:stroke-width-right applied')))
+             (t/is (nil? (:stroke-width-bottom applied')))
+             (t/is (nil? (:stroke-width-left applied'))))))))))
+
 (t/deftest test-toggle-spacing-token
   (t/testing "applies spacing token only to layouts and layout children"
     (t/async

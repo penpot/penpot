@@ -854,15 +854,30 @@
               (or (get attr->shape-update (first attrs)) on-update-shape)
               on-update-shape)
 
+            target-attrs
+            (or attrs all-attributes attributes)
+
             unapply-tokens?
-            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+            (if (seq attrs)
+              ;; Explicit attributes come from an input or a plugin apply
+              ;; call. Only toggle off when the token already covers every
+              ;; target attribute on every selected shape; a partial
+              ;; application is completed instead of removed.
+              (and (seq target-attrs)
+                   (cfo/shapes-applied-all?
+                    (cfo/shapes-ids-by-applied-attributes token shapes target-attrs)
+                    (into #{} (map :id) shapes)
+                    target-attrs))
+              ;; No explicit attributes (token pill): toggle off when any
+              ;; selected shape has the token on any attribute.
+              (cfo/shapes-token-applied? token shapes target-attrs))
 
             shape-ids
             (map :id shapes)]
 
         (if unapply-tokens?
           (rx/of
-           (unapply-token {:attributes (or attrs all-attributes attributes)
+           (unapply-token {:attributes target-attrs
                            :token-name (:name token)
                            :shape-ids shape-ids}))
           (rx/of
