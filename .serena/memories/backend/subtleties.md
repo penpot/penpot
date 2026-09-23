@@ -38,6 +38,13 @@
 - Session management uses DB storage unless the DB pool is read-only, then falls back to the in-memory manager. DB sessions support both legacy string ids and v2 UUID session ids.
 - Session cookies are renewed when using a legacy string id or when `modified-at` is older than the renewal interval. SameSite is `none` for CORS, otherwise strict/lax based on config.
 
+## HTTP server self-metrics
+
+- `app.http` enables Undertow connection statistics via the yetti option `:server/statistics` (requires yetti ≥ v11.11, which exposes it; before the patch `ListenerInfo#getConnectorStatistics` returned `nil`).
+- A daemon sampler built on `promesa.exec` (`px/scheduled-executor` plus a self-rescheduling `px/schedule` chain, so a failing sample never cancels the next one; 15 s, started with the server in `ig/init-key` and stopped with `px/shutdown-now` in `halt-key!`) publishes worker and listener state: `penpot_http_worker_queue_size`, `busy_threads`, `pool_size`, `max_pool_size`, `penpot_http_connector_active_connections`, `requests_total`, `errors_total`. Definitions live in `app.main/default-metrics`.
+- The xnio worker MXBean can return transient `-1` (e.g. busy-thread count); negative samples are discarded (gauge keeps its previous value). Undertow exposes absolute request/error totals, so the sampler keeps a watermark atom and publishes deltas; a counter reset (decreasing totals) skips the negative delta and moves the watermark forward.
+- The `process_*` families (`process_open_fds`, `process_max_fds`, `process_cpu_seconds_total`, …) come from the prometheus client `StandardExports`, registered by `app.metrics/create-registry`. They read the OS MXBean reflectively and need the `jdk.management` module: on a pruned `jlink` JRE the MXBean is `sun.management.BaseOperatingSystemImpl`, the getters throw `NoSuchMethodException` and `StandardExports#collect` swallows it, so those families silently vanish from `/metrics`. `docker/images/Dockerfile.backend` keeps `jdk.management` in the `--add-modules` list, and `backend-tests.metrics-test` pins the contract.
+
 ## Storage and media
 
 - Storage abstraction, backend configuration, logical buckets, object lifecycle, deduplication, access rules, and garbage collection: `mem:backend/storage`.
