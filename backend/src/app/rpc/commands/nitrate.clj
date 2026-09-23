@@ -756,7 +756,10 @@
                                     cfg sso
                                     :query-string query-string
                                     :organization-id organization-id
-                                    :profile-id profile-id)
+                                    :profile-id profile-id
+                                    ;; Trusted alternate origin stamped by the
+                                    ;; http trusted-origin middleware.
+                                    :origin (:app.http/trusted-origin request))
                       organization-id (or organization-id (:organization-id sso))]
                   (oidc/submit-organization-sso-auth-started-event
                    cfg request profile-id organization-id)
