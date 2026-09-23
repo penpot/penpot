@@ -12,6 +12,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -545,9 +546,9 @@
             rect-with-stroke (cths/get-shape file :rect-1)
             rect-without-stroke (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
-                                       :attributes #{:stroke-width}
+                                       :attributes ctt/per-side-stroke-width-keys
                                        :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape dwta/update-stroke-width})]]
+                                       :on-update-shape dwta/update-stroke-width-side})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -556,11 +557,236 @@
                  rect-with-stroke' (cths/get-shape file' :rect-1)
                  rect-without-stroke' (cths/get-shape file' :rect-2)]
              (t/testing "token got applied to rect with stroke and shape stroke got updated"
-               (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-top (:applied-tokens rect-with-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-right (:applied-tokens rect-with-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-bottom (:applied-tokens rect-with-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-left (:applied-tokens rect-with-stroke')) (:name token-target')))
                (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
              (t/testing "token got applied to rect without stroke and shape stroke got updated"
-               (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-top (:applied-tokens rect-without-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-right (:applied-tokens rect-without-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-bottom (:applied-tokens rect-without-stroke')) (:name token-target')))
+               (t/is (= (:stroke-width-left (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
+
+(t/deftest test-apply-stroke-width-per-side-new-shape
+  (t/testing "applying a stroke-width token to one side of a shape without strokes zeroes the other sides"
+    (t/async
+      done
+      (let [stroke-width-token {:name "stroke-width.sm"
+                                :value "8"
+                                :type :stroke-width}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token stroke-width-token))))
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dwta/apply-token {:shape-ids [(:id rect)]
+                                       :attributes #{:stroke-width-top}
+                                       :token (toht/get-token file "stroke-width.sm")
+                                       :on-update-shape dwta/update-stroke-width-side})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the applied side gets the token value"
+               (t/is (= (:stroke-width-top stroke') 8)))
+             (t/testing "the remaining sides go to zero"
+               (t/is (= (:stroke-width-right stroke') 0))
+               (t/is (= (:stroke-width-bottom stroke') 0))
+               (t/is (= (:stroke-width-left stroke') 0)))
+             (t/testing "the global width mirrors the top side"
+               (t/is (= (:stroke-width stroke') 8)))
+             (t/testing "only the applied side records the token"
+               (t/is (= (:stroke-width-top (:applied-tokens rect')) "stroke-width.sm"))
+               (t/is (nil? (:stroke-width-right (:applied-tokens rect'))))
+               (t/is (nil? (:stroke-width-bottom (:applied-tokens rect'))))
+               (t/is (nil? (:stroke-width-left (:applied-tokens rect'))))))))))))
+
+(t/deftest test-apply-stroke-width-per-side-keeps-other-sides
+  (t/testing "applying a stroke-width token to one side preserves the other sides"
+    (t/async
+      done
+      (let [stroke-width-token {:name "stroke-width.sm"
+                                :value "10"
+                                :type :stroke-width}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5}]}})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token stroke-width-token))))
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dwta/apply-token {:shape-ids [(:id rect)]
+                                       :attributes #{:stroke-width-top}
+                                       :token (toht/get-token file "stroke-width.sm")
+                                       :on-update-shape dwta/update-stroke-width-side})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect' [:strokes 0])]
+             (t/testing "the applied side gets the token value"
+               (t/is (= (:stroke-width-top stroke') 10)))
+             (t/testing "the remaining sides keep their width"
+               (t/is (= (:stroke-width-right stroke') 5))
+               (t/is (= (:stroke-width-bottom stroke') 5))
+               (t/is (= (:stroke-width-left stroke') 5)))
+             (t/testing "the global width mirrors the top side"
+               (t/is (= (:stroke-width stroke') 10))))))))))
+
+(t/deftest test-apply-dimensions-token-to-stroke-width-per-side
+  (t/testing "applying a dimension token to stroke width updates every side"
+    (t/async
+      done
+      (let [dimensions-token {:name "dimensions.md"
+                              :value "8"
+                              :type :dimensions}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5
+                                                                  :stroke-width-top 2
+                                                                  :stroke-width-right 3
+                                                                  :stroke-width-bottom 4
+                                                                  :stroke-width-left 6}]}})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token dimensions-token))))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                                       :attributes ctt/per-side-stroke-width-keys
+                                       :token (toht/get-token file "dimensions.md")
+                                       :on-update-shape dwta/update-stroke-width-side})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "dimensions.md")
+                 rect-1' (cths/get-shape file' :rect-1)
+                 stroke' (get-in rect-1' [:strokes 0])]
+             (t/testing "every side gets the resolved value"
+               (t/is (= (:stroke-width-top stroke') 8))
+               (t/is (= (:stroke-width-right stroke') 8))
+               (t/is (= (:stroke-width-bottom stroke') 8))
+               (t/is (= (:stroke-width-left stroke') 8))
+               (t/is (= (:stroke-width stroke') 8)))
+             (t/testing "the token is recorded on every side"
+               (t/is (= (:stroke-width-top (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:stroke-width-right (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:stroke-width-bottom (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:stroke-width-left (:applied-tokens rect-1')) (:name token-target')))))))))))
+
+(t/deftest test-apply-stroke-width-overwrites-per-side-token
+  (t/testing "applying token to all sides overwrites per-side token"
+    (t/async
+      done
+      (let [token-sm {:name "stroke-width.sm"
+                      :value "6"
+                      :type :stroke-width}
+            token-lg {:name "stroke-width.lg"
+                      :value "12"
+                      :type :stroke-width}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5}]}})
+                     (update-in [:data :tokens-lib]
+                                (fn [lib]
+                                  (-> lib
+                                      (ctob/add-token (cthi/id :set-a) (ctob/make-token token-sm))
+                                      (ctob/add-token (cthi/id :set-a) (ctob/make-token token-lg))))))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            step2 (fn [state1]
+                    (let [file1 (ths/get-file-from-state state1)
+                          rect1 (cths/get-shape file1 :rect-1)]
+                      ;; Verify token-sm applied to top only
+                      (t/is (= (:stroke-width-top (:applied-tokens rect1)) "stroke-width.sm"))
+                      (t/is (nil? (:stroke-width-right (:applied-tokens rect1))))
+                      ;; Second: apply token-lg to all 4 sides
+                      (let [events2 [(dwta/apply-token {:shape-ids [(:id rect1)]
+                                                        :attributes ctt/per-side-stroke-width-keys
+                                                        :token (toht/get-token file1 "stroke-width.lg")
+                                                        :on-update-shape dwta/update-stroke-width})]]
+                        (tohs/run-store-async
+                         (ths/setup-store file1) done events2
+                         (fn [state2]
+                           (let [file2 (ths/get-file-from-state state2)
+                                 rect2 (cths/get-shape file2 :rect-1)]
+                             (t/testing "token-lg overwrites all sides"
+                               (t/is (= (:stroke-width-top (:applied-tokens rect2)) "stroke-width.lg"))
+                               (t/is (= (:stroke-width-right (:applied-tokens rect2)) "stroke-width.lg"))
+                               (t/is (= (:stroke-width-bottom (:applied-tokens rect2)) "stroke-width.lg"))
+                               (t/is (= (:stroke-width-left (:applied-tokens rect2)) "stroke-width.lg"))
+                               (t/is (= (get-in rect2 [:strokes 0 :stroke-width]) 12)))))))))]
+        ;; First: apply token-sm to top side only
+        (tohs/run-store-async
+         store (constantly nil)
+         [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                             :attributes #{:stroke-width-top}
+                             :token (toht/get-token file "stroke-width.sm")
+                             :on-update-shape dwta/update-stroke-width-side})]
+         step2)))))
+
+(t/deftest test-detach-token-from-single-side
+  (t/testing "detaching token from one side leaves other sides intact"
+    (t/async
+      done
+      (let [token {:name "stroke-width.sm"
+                   :value "10"
+                   :type :stroke-width}
+            file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner
+                                                                  :stroke-style :solid
+                                                                  :stroke-color "#000000"
+                                                                  :stroke-opacity 1
+                                                                  :stroke-width 5}]}})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token token))))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            step2 (fn [state1]
+                    (let [file1 (ths/get-file-from-state state1)
+                          rect1 (cths/get-shape file1 :rect-1)]
+                      ;; Verify all sides have the token
+                      (t/is (= (:stroke-width-top (:applied-tokens rect1)) "stroke-width.sm"))
+                      (t/is (= (:stroke-width-right (:applied-tokens rect1)) "stroke-width.sm"))
+                      (t/is (= (:stroke-width-bottom (:applied-tokens rect1)) "stroke-width.sm"))
+                      (t/is (= (:stroke-width-left (:applied-tokens rect1)) "stroke-width.sm"))
+                      ;; Second: unapply token from top side only
+                      (let [events2 [(dwta/unapply-token {:token-name "stroke-width.sm"
+                                                          :attributes #{:stroke-width-top}
+                                                          :shape-ids [(:id rect1)]})]]
+                        (tohs/run-store-async
+                         (ths/setup-store file1) done events2
+                         (fn [state2]
+                           (let [file2 (ths/get-file-from-state state2)
+                                 rect2 (cths/get-shape file2 :rect-1)]
+                             (t/testing "top side token detached"
+                               (t/is (nil? (:stroke-width-top (:applied-tokens rect2)))))
+                             (t/testing "other sides retain the token"
+                               (t/is (= (:stroke-width-right (:applied-tokens rect2)) "stroke-width.sm"))
+                               (t/is (= (:stroke-width-bottom (:applied-tokens rect2)) "stroke-width.sm"))
+                               (t/is (= (:stroke-width-left (:applied-tokens rect2)) "stroke-width.sm")))))))))]
+        ;; First: apply token to all 4 sides
+        (tohs/run-store-async
+         store (constantly nil)
+         [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                             :attributes ctt/per-side-stroke-width-keys
+                             :token (toht/get-token file "stroke-width.sm")
+                             :on-update-shape dwta/update-stroke-width})]
+         step2)))))
 
 (t/deftest test-apply-shadow
   (t/testing "applies shadow token and updates the shapes with shadow"

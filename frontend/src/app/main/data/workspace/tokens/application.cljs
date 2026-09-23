@@ -129,6 +129,28 @@
                             :page-id page-id
                             :attrs [:strokes]})))))
 
+(defn update-stroke-width-side
+  "Updates the width of the sides in `attributes` on the first stroke of each
+  shape. Sides not in `attributes` keep their current width (0 when the shape
+  had no stroke yet) and all side keys are materialized so consumers never
+  fall back to `:stroke-width`. `:stroke-width` keeps acting as the top-side
+  alias."
+  ([value shape-ids attributes]
+   (update-stroke-width-side value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (when (number? value)
+     (dwsh/update-shapes shape-ids
+                         (fn [shape]
+                           (let [stroke (cts/materialize-stroke-side-widths
+                                         (first (:strokes shape)) attributes value)]
+                             (if (seq (:strokes shape))
+                               (update shape :strokes #(into [stroke] (rest %)))
+                               (assoc shape :strokes [stroke]))))
+                         {:reg-objects? true
+                          :ignore-touched true
+                          :page-id page-id
+                          :attrs [:strokes]}))))
+
 (defn update-color [f value shape-ids page-id]
   (when-let [tc (tinycolor/valid-color value)]
     (let [hex (tinycolor/->hex-string tc)
@@ -553,10 +575,10 @@
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
               page-id)))
 
-    (some attributes #{:stroke-width})
-    (conj #(update-stroke-width
+    (some attributes ctt/stroke-width-keys)
+    (conj #(update-stroke-width-side
             value shape-ids
-            #{:stroke-width}
+            (set/intersection attributes ctt/stroke-width-keys)
             page-id))
 
     (some attributes #{:max-width :max-height :layout-item-max-h :layout-item-max-w :layout-item-min-h :layout-item-min-w})
@@ -631,7 +653,7 @@
   passed to toggle-token) and in propagation.cljs (re-exported from there)."
   {ctt/border-radius-keys  update-shape-radius-for-corners
    ctt/color-keys          update-fill-stroke
-   ctt/stroke-width-keys   update-stroke-width
+   ctt/stroke-width-keys   update-stroke-width-side
    ctt/sizing-keys         apply-dimensions-token
    ctt/opacity-keys        update-opacity
    ctt/rotation-keys       update-rotation
