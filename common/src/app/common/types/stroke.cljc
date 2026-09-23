@@ -6,7 +6,9 @@
 
 (ns app.common.types.stroke
   (:require
-   [app.common.types.color :as clr]))
+   [app.common.data :as d]
+   [app.common.types.color :as clr]
+   [app.common.types.token :as ctt]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -21,3 +23,22 @@
    :stroke-color clr/black
    :stroke-opacity 1
    :stroke-width 1})
+
+(defn materialize-stroke-side-widths
+  "Given a stroke (or nil) and the set of edited side keys, returns the stroke
+  with the four per-side width keys concretized: edited sides take `value`,
+  the rest keep their current per-side width, falling back to `:stroke-width`
+  (0 when `stroke` is nil). `:stroke-width` mirrors the top side so legacy
+  consumers that only read it see the top value."
+  [stroke edited-keys value]
+  (let [base-width (or (:stroke-width stroke) 0)
+        current    (or stroke default-stroke)
+        side-attrs (reduce
+                    (fn [acc side-key]
+                      (assoc acc side-key
+                             (if (contains? edited-keys side-key)
+                               value
+                               (d/nilv (get current side-key) base-width))))
+                    {}
+                    ctt/per-side-stroke-width-keys)]
+    (merge current side-attrs {:stroke-width (get side-attrs :stroke-width-top)})))
