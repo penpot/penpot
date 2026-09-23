@@ -1966,3 +1966,50 @@
           (t/is (= "custom-val" (get-in event [:context :custom-key])))
           (t/is (= "admin-console" (get-in event [:context :initiator])))
           (t/is (string? (get-in event [:context :initiator]))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests: send-renewal-email
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- send-renewal-email-params
+  [profile user-name]
+  {::th/type :send-renewal-email
+   :profile-id (:id profile)
+   :user-email (:email profile)
+   :user-name user-name
+   :renewal-date "2026-01-01"
+   :estimated-amount 42.0
+   :organizations [{:id (uuid/random)
+                    :name "Acme"
+                    :initials "AC"
+                    :logo nil
+                    :avatar-bg-url nil}]})
+
+(t/deftest send-renewal-email-falls-back-to-profile-fullname-when-name-is-nil
+  ;; `nil` user-name means "no override": the RPC must look up the
+  ;; account owner's real name instead of sending a blank greeting.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile nil))]
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "Nitrate User" (:user-name params)))))))
+
+(t/deftest send-renewal-email-keeps-explicit-empty-name
+  ;; An explicit "" means the caller deliberately wants no name shown
+  ;; and must not be replaced by the profile's fullname.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile ""))]
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))
+
+(t/deftest send-renewal-email-rejects-blank-name
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile "   "))]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))

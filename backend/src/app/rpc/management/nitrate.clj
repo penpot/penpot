@@ -707,7 +707,7 @@ RETURNING id, deleted_at;")
   [:map
    [:profile-id ::sm/uuid]
    [:user-email ::sm/email]
-   [:user-name [:maybe :string]]
+   [:user-name [:maybe [:or [:= ""] ::sm/text]]]
    [:renewal-date :string]
    [:estimated-amount :double]
    [:organizations [:vector cto/schema:organization-with-avatar]]])
