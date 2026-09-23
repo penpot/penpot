@@ -348,7 +348,8 @@
   [value]
   (when (string? value)
     (let [value (str/trim value)
-          explicit-scheme? (re-find #"(?i)^[a-z][a-z0-9+.-]*:" value)]
+          ;; A colon followed by a digit is a port (`localhost:3000`), not a scheme
+          explicit-scheme? (re-find #"(?i)^[a-z][a-z0-9+.-]*:(?!\d)" value)]
       (when (or (not explicit-scheme?)
                 (re-find #"(?i)^https?://" value))
         (let [value (if explicit-scheme? value (str "http://" value))]

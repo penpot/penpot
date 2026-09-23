@@ -112,12 +112,23 @@
     :shadow (ctob/convert-dtcg-shadow-composite value)
     value))
 
+(defn- resolution-tokens
+  "Tokens used to resolve references for a token in `set-id`: every token in
+  the library, with the tokens of `set-id` taking precedence."
+  [tokens-lib set-id]
+  (merge (ctob/get-all-tokens-map tokens-lib)
+         (ctob/get-tokens tokens-lib set-id)))
+
+(defn- resolved-without-errors?
+  [resolved]
+  (and (contains? resolved :resolved-value)
+       (empty? (:errors resolved))))
+
 (defn- valid-token-candidate?
   [file-id set-id token attrs]
   (let [tokens-lib (u/locate-tokens-lib file-id)
         candidate  (merge (datafy token) attrs)
-        tokens     (-> (merge (ctob/get-all-tokens-map tokens-lib)
-                              (ctob/get-tokens tokens-lib set-id))
+        tokens     (-> (resolution-tokens tokens-lib set-id)
                        (dissoc (:name token))
                        (assoc (:name candidate) candidate))
         resolved   (get (ts/resolve-tokens tokens) (:name candidate))]
@@ -125,13 +136,28 @@
          (sm/validate (cfo/make-token-value-schema (:type candidate)) (:value candidate))
          (or (nil? (:description candidate))
              (sm/validate cfo/schema:token-description (:description candidate)))
-         (contains? resolved :resolved-value)
-         (empty? (:errors resolved)))))
+         (resolved-without-errors? resolved))))
+
+;; Last resolution result, reused while the tokens library and set are unchanged
+(def ^:private resolution-cache (atom nil))
+
+(defn- resolve-set-tokens
+  [tokens-lib set-id]
+  (let [{:keys [lib set resolved]} @resolution-cache]
+    (if (and (identical? lib tokens-lib) (= set set-id))
+      resolved
+      (let [resolved (ts/resolve-tokens (resolution-tokens tokens-lib set-id))]
+        (reset! resolution-cache {:lib tokens-lib :set set-id :resolved resolved})
+        resolved))))
 
 (defn valid-token-resolution?
+  "Checks that an existing token resolves without errors, which is the only
+  requirement to apply it."
   [file-id set-id id]
   (when-let [token (u/locate-token file-id set-id id)]
-    (valid-token-candidate? file-id set-id token {})))
+    (-> (resolve-set-tokens (u/locate-tokens-lib file-id) set-id)
+        (get (:name token))
+        (resolved-without-errors?))))
 
 (defn- apply-token-to-shapes
   [plugin-id file-id set-id id shape-ids attrs]
@@ -145,7 +171,7 @@
         (nil? token)
         (u/not-valid plugin-id :applyToSelected id)
 
-        (not (valid-token-candidate? file-id set-id token {}))
+        (not (valid-token-resolution? file-id set-id id))
         (u/not-valid plugin-id :applyToSelected (:value token))
 
         (some #(not (token-attr? %)) attrs)

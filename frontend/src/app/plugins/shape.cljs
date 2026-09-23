@@ -87,11 +87,14 @@
         animation-type    (get-in interaction [:animation :animation-type])]
     (and (sm/validate ctsi/schema:interaction interaction)
          (ctsi/valid-delay? interaction)
-         (or (nil? destination-proxy)
-             (and (shape-proxy? destination-proxy)
-                  (= file-id (obj/get destination-proxy "$file"))
-                  (= page-id (obj/get destination-proxy "$page"))))
-         (ctsi/valid-destination? (:objects page) source destination-id)
+         ;; Interactions keep a stale destination after switching to an action
+         ;; without one, so only check it for actions that use it
+         (or (not (ctsi/has-destination interaction))
+             (and (or (nil? destination-proxy)
+                      (and (shape-proxy? destination-proxy)
+                           (= file-id (obj/get destination-proxy "$file"))
+                           (= page-id (obj/get destination-proxy "$page"))))
+                  (ctsi/valid-destination? (:objects page) source destination-id)))
          (ctsi/allowed-animation? (:action-type interaction) animation-type))))
 
 (defn interaction-proxy
