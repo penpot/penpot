@@ -273,10 +273,17 @@
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:stroke-width
-  [:map
-   [:stroke-width {:optional true} schema:token-name]])
+  [:map {:title "StrokeWidthTokenAttrs"}
+   [:stroke-width-top {:optional true} schema:token-name]
+   [:stroke-width-right {:optional true} schema:token-name]
+   [:stroke-width-bottom {:optional true} schema:token-name]
+   [:stroke-width-left {:optional true} schema:token-name]])
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
+
+(def per-side-stroke-width-keys
+  "Per-side stroke width attribute keys."
+  #{:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left})
 
 (def ^:private schema:dimensions
   (-> (reduce mu/union [schema:sizing
@@ -425,6 +432,10 @@
     :fill :fills
     :stroke-color :strokes
     :stroke-width :strokes
+    :stroke-width-top :strokes
+    :stroke-width-right :strokes
+    :stroke-width-bottom :strokes
+    :stroke-width-left :strokes
     token-attr))
 
 (defn- shape-attr->token-attrs*
@@ -570,6 +581,10 @@
    :line-height        [:line-height :number]
    :opacity            [:opacity]
    :stroke-width       [:stroke-width :dimensions]
+   :stroke-width-top   [:stroke-width :dimensions]
+   :stroke-width-right [:stroke-width :dimensions]
+   :stroke-width-bottom [:stroke-width :dimensions]
+   :stroke-width-left  [:stroke-width :dimensions]
    :font-size          [:font-size]
    :font-weight        [:font-weight]
    :text-decoration    [:text-decoration]
