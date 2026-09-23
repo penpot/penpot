@@ -12,6 +12,7 @@
    [app.common.files.tokens :as cfo]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -288,9 +289,63 @@
    (ptk/data-event :expand-border-radius)
    (dwta/update-shape-radius-for-corners value shape-ids attributes)))
 
+(defn- per-side-stroke-eligible?
+  "Per-side stroke width tokens are only offered for selections made
+  entirely of boards and rectangles, and only when the feature flag is on."
+  [context-data]
+  (let [shapes (:selected-shapes context-data)]
+    (and (contains? cf/flags :stroke-per-side)
+         (seq shapes)
+         (every? #(ctt/per-side-stroke-shape? (:type %)) shapes))))
+
+(defn- global-stroke-width-action
+  "Single action that applies the token to the whole stroke width of the
+  selection. It targets the per-side attributes so the design tab keeps
+  showing the token on every side."
+  [{:keys [token selected-shapes]}]
+  (let [attributes ctt/per-side-stroke-width-keys
+        {:keys [all-selected? shape-ids]} (attribute-actions token selected-shapes attributes)]
+    {:title "Stroke Width"
+     :hint (tr "workspace.tokens.stroke-width")
+     :selected? all-selected?
+     :action (fn []
+               (if all-selected?
+                 (st/emit! (dwta/unapply-token {:token-name (:name token)
+                                                :attributes attributes
+                                                :shape-ids shape-ids}))
+                 (st/emit! (dwta/apply-token {:attributes attributes
+                                              :token token
+                                              :shape-ids shape-ids
+                                              :on-update-shape dwta/update-stroke-width}))))}))
+
+(defn stroke-width-actions
+  "Actions for a stroke width token. Boards and rectangles get the per-side
+  options; any other selection gets a single global action."
+  [context-data]
+  (let [allowed (:allowed-shape-attributes context-data)]
+    (when (seq (set/intersection ctt/stroke-width-keys allowed))
+      (if (per-side-stroke-eligible? context-data)
+        (all-or-separate-actions
+         {:attribute-labels {:stroke-width-top "Top"
+                             :stroke-width-right "Right"
+                             :stroke-width-bottom "Bottom"
+                             :stroke-width-left "Left"}
+          :hint (tr "workspace.tokens.stroke-width")
+          :on-update-shape-all dwta/update-stroke-width
+          :on-update-shape dwta/update-stroke-width-side}
+         context-data)
+        [(global-stroke-width-action context-data)]))))
+
+(defn- stroke-width-menu-entries
+  "Entry shown inside the dimensions menu: a submenu for boards and
+  rectangles, or the global action otherwise."
+  [context-data]
+  (if (per-side-stroke-eligible? context-data)
+    [{:title "Stroke Width" :submenu :stroke-width}]
+    (stroke-width-actions context-data)))
+
 (def shape-attribute-actions-map
-  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
-        font-size (partial generic-attribute-actions #{:font-size} "Font Size")
+  (let [font-size (partial generic-attribute-actions #{:font-size} "Font Size")
         letter-spacing (partial generic-attribute-actions #{:letter-spacing} "Letter Spacing")
         font-family (partial generic-attribute-actions #{:font-family} "Font Family")
         line-height #(generic-attribute-actions #{:line-height} "Line Height" (assoc % :on-update-shape dwta/update-line-height))
@@ -320,7 +375,7 @@
                 (generic-attribute-actions #{:rotation} "Rotation" (assoc context-data :on-update-shape dwta/update-rotation))
                 (let [line-height (line-height context-data)]
                   (when (seq line-height) line-height))))
-     :stroke-width stroke-width
+     :stroke-width stroke-width-actions
      :font-size font-size
      :font-family font-family
      :line-height line-height
@@ -338,7 +393,7 @@
                         (when (seq (border-radius context-data))
                           [{:title "Border Radius" :submenu :border-radius}])
                         [:separator]
-                        (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
+                        (stroke-width-menu-entries context-data)
                         [:separator]
                         (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape dwta/update-shape-position :hint (tr "workspace.tokens.axis")))
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
