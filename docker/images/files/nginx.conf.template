@@ -199,11 +199,13 @@ http {
 
     # Dedicated health endpoint consumed by the nginx-prometheus-exporter
     # sidecar (deployed by ops, scraping http://127.0.0.1:8082/stub_status).
-    # Bound to localhost only and out of the public server, so it can not
-    # be reached from outside the host. Counts client-side connections
-    # only; it says nothing about the upstream pools.
+    # `listen 8082` binds every interface and sits out of the public server:
+    # a compose port mapping delivers traffic to the container address, never
+    # to loopback, so only the published port decides who gets in from
+    # outside the host. Counts client-side connections only; it says nothing
+    # about the upstream pools.
     server {
-        listen 127.0.0.1:8082;
+        listen 8082;
         server_name _;
 
         access_log off;
