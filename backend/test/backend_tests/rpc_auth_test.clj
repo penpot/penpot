@@ -12,6 +12,7 @@
    [app.common.generic-pool :as gpool]
    [app.common.uuid :as uuid]
    [app.http.session :as session]
+   [app.loggers.audit :as-alias audit]
    [app.redis :as rds]
    [app.rpc.commands.ldap :as ldap-cmd]
    [backend-tests.helpers :as th]
@@ -228,5 +229,27 @@
       (lol/clear-attempts! cfg (:id profile))
       ;; Verify unlocked
       (t/is (false? (:locked? (lol/locked? cfg (:id profile))))))))
+
+(t/deftest login-with-ldap-binds-session-to-directory-identity
+  "Regression: the session must be bound to the profile resolved from the
+   LDAP-returned email, never to the profile matching the typed email.
+   Both can differ with aliases, UPNs or multi-valued mail attributes."
+  (let [typed     (th/create-profile* 206 {:is-active true})
+        directory (th/create-profile* 207 {:is-active true})
+        cfg       (assoc th/*system* ::ldap/provider {})]
+    (with-redefs [ldap/authenticate
+                  (fn [_ _]
+                    {:email    (:email directory)
+                     :fullname (:fullname directory)
+                     :backend  "ldap"})]
+      (let [result (#'ldap-cmd/sm$login-with-ldap
+                    cfg
+                    {:email    (:email typed)
+                     :password "whatever"})]
+        (t/is (some? result))
+        (t/is (= (:id directory) (::audit/profile-id (meta result)))
+              "session must be bound to the directory-verified profile")
+        (t/is (not= (:id typed) (::audit/profile-id (meta result)))
+              "session must not be bound to the typed-email profile")))))
 
 

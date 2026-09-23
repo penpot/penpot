@@ -45,11 +45,14 @@
               :code :ldap-not-initialized
               :hint "ldap auth provider is not initialized"))
 
-  (let [email   (profile/clean-email (:email params))
-        profile (profile/get-profile-by-email pool email)]
+  (let [email    (profile/clean-email (:email params))
+        account  (profile/get-profile-by-email pool email)]
 
-    (when profile
-      (let [result (login-lockout/locked? cfg (:id profile))]
+    ;; The profile resolved from the typed email is used only for lockout
+    ;; checks. It MUST NOT be used to bind the session: the session is
+    ;; always bound to the identity verified by the LDAP directory.
+    (when account
+      (let [result (login-lockout/locked? cfg (:id account))]
         (when (:locked? result)
           (ex/raise :type :rate-limit
                     :code :account-locked
@@ -58,8 +61,8 @@
 
     (let [info (ldap/authenticate provider params)]
       (when-not info
-        (let [result (when profile
-                       (login-lockout/record-failed-attempt! cfg (:id profile)))]
+        (let [result (when account
+                       (login-lockout/record-failed-attempt! cfg (:id account)))]
           (if (and result (:locked? result))
             (ex/raise :type :rate-limit
                       :code :account-locked
@@ -68,7 +71,7 @@
             (ex/raise :type :validation
                       :code :wrong-credentials))))
 
-      (let [profile (or profile (login-or-register cfg info))]
+      (let [profile (login-or-register cfg info)]
 
         (when (:is-blocked profile)
           (ex/raise :type :restriction
