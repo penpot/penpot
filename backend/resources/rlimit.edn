@@ -98,6 +98,9 @@
    :main/get-subscription-usage}
  [[:get-access-tokens :bucket "150/75/30s"]]
 
+ #{:main/get-environment-data}
+ [[:get-environment-data :bucket "250/125/30s"]]
+
  #{:main/get-enabled-flags}
  [[:get-enabled-flags :bucket "250/125/30s"]]
 

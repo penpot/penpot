@@ -290,6 +290,41 @@
       (t/is (= 0 (count (th/db-exec! ["select * from audit_log"])))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GET-ENVIRONMENT-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest get-environment-data-returns-selfhost-by-default
+  (with-redefs [cf/flags #{:audit-log}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= "selfhost" (-> out :result :deployment))))))
+
+(t/deftest get-environment-data-returns-saas-when-configured
+  (with-redefs [cf/flags #{:telemetry}]
+    (binding [cf/config (assoc cf/config :is-saas true)]
+      (let [out (th/command! {::th/type :get-environment-data})]
+        (t/is (th/success? out))
+        (t/is (= "saas" (-> out :result :deployment)))))))
+
+(t/deftest get-environment-data-only-exposes-event-flags
+  (with-redefs [cf/flags #{:audit-log :telemetry :graph :nrepl-server}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= #{:audit-log :telemetry} (-> out :result :flags))))))
+
+(t/deftest get-environment-data-returns-empty-flags-when-none-enabled
+  (with-redefs [cf/flags #{:graph}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= #{} (-> out :result :flags))))))
+
+(t/deftest get-enabled-flags-still-returns-flat-set
+  (with-redefs [cf/flags #{:audit-log :telemetry :graph}]
+    (let [out (th/command! {::th/type :get-enabled-flags})]
+      (t/is (th/success? out))
+      (t/is (= #{:audit-log :telemetry} (:result out))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PURE HELPER UNIT TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

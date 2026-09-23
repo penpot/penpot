@@ -1052,21 +1052,6 @@ RETURNING id, deleted_at;")
         {:created [] :skipped []}
         emails)))))
 
-;; ---- API: get-deployment
-
-(def ^:private schema:get-deployment-result
-  [:map
-   [:deployment [:enum "saas" "selfhost"]]])
-
-(sv/defmethod ::get-deployment
-  "Returns the deployment type configured for this Penpot instance."
-  {::doc/added "2.18"
-   ::sm/params [:map]
-   ::sm/result schema:get-deployment-result
-   ::rpc/auth false}
-  [_cfg _params]
-  {:deployment (if (cf/get :is-saas) "saas" "selfhost")})
-
 ;; ---- API: get-air-gapped
 
 (def ^:private schema:get-air-gapped-result
