@@ -271,21 +271,13 @@ the issue was sourced.
 
 ### Link the PR to the issue
 
-Append `Closes #<ISSUE_NUMBER>` to the PR body:
+Add `Closes #<ISSUE_NUMBER>` to the PR body for readable context, then run the explicit assignment command from `mem:workflow/creating-prs`:
 
 ```bash
-gh pr view <PR_NUMBER> --repo penpot/penpot --json body --jq '.body' > /tmp/pr-body.md
-printf "\n\nCloses #<ISSUE_NUMBER>\n" >> /tmp/pr-body.md
-gh pr edit <PR_NUMBER> --repo penpot/penpot --body-file /tmp/pr-body.md
-
-# Verify
-gh pr view <PR_NUMBER> --repo penpot/penpot --json body \
-  --jq '.body | test("Closes #<ISSUE_NUMBER>")'
+python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
 ```
 
-**Note:** If the PR is already merged, `Closes` won't auto-close the issue —
-it only creates the "Development" sidebar link. This is the desired
-behavior since the issue is a tracking artifact.
+The command creates the GitHub Development link and verifies it from both the issue and PR. It is safe to rerun and does not close an issue retroactively when the PR is already merged. Do not rely on the body keyword as the assignment operation.
 
 ### Clean up
 

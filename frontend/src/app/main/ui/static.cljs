@@ -125,13 +125,22 @@
         success-register
         (mf/use-fn
          (fn [data]
-           (reset! register-token (:token data))
-           (reset! current-section :register-validate)))
+           (cond
+             (:invitation-token data)
+             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+             (:is-active data)
+             (st/emit! (rt/reload true))
+
+             :else
+             (do
+               (reset! user-email (:email data))
+               (reset! current-section :register-email-sent)))))
 
         register-email-sent
         (mf/use-fn
-         (fn [email]
-           (reset! user-email email)
+         (fn [data]
+           (reset! user-email (if (string? data) data (:email data)))
            (reset! current-section :register-email-sent)))
 
         recovery-email-sent
@@ -355,7 +364,7 @@
      [:span
       (tr "labels.nitrate-not-configured.learn-more")
       " "
-      [:a {:href "https://help.penpot.app/technical-guide/getting-started/"
+      [:a {:href "https://help.penpot.app/technical-guide/getting-started/docker/#update-penpot"
            :target "_blank"
            :rel "noopener noreferrer"}
        (tr "labels.nitrate-not-configured.technical-guide")]]]]

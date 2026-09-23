@@ -25,12 +25,11 @@ scripts/psql --host myhost --user myuser --db mydb
 
 `scripts/psql` must be invoked from the repo root so the path resolves.
 
-## Native Tool Available (opencode)
+## Native Tool Available (OpenCode V2)
 
-A native opencode tool `penpot-psql` is available (defined in
-`.opencode/plugins/penpot.js`, which registers it for both opencode V1 via
-`server()` and opencode V2 via `setup()`). The LLM can call it directly
-with:
+A native OpenCode V2 tool `penpot-psql` is available. It is defined in
+`.opencode/plugins/penpot.js` and registered through `setup()`. The LLM can
+call it directly with:
 - `sql`: SQL command string to execute
 - `test`: Boolean flag to use the `penpot_test` database
 

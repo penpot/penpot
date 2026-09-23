@@ -1,22 +1,9 @@
-// Penpot opencode plugin: custom tools for Penpot development.
+// Penpot OpenCode V2 plugin: custom tools for Penpot development.
 //
-// Dual V1 + V2 implementation from a single file:
-// - OpenCode V1 (>= 1.18.29) calls the default export's `server()` and uses
-//   the returned `tool` map (built with the `tool()` helper from
-//   `@opencode-ai/plugin`).
-// - OpenCode V2 reads the default export's `id` and `setup()` and ignores
-//   `server()`. Tools are registered via `ctx.tool.transform()` with JSON
-//   Schema inputs, and `execute` returns `{ content }`.
-//   See https://opencode.ai/v2/docs/build/plugins/migrate-v1
-//
-// NOTE: the V2 side intentionally does NOT
-// `import { Plugin } from "@opencode/plugin"`. At runtime `Plugin.define` is
-// the identity function, so a plain `{ id, setup }` object is equivalent, and
-// skipping the import keeps this plugin dependency-free
-// (`.opencode/package.json` is gitignored, so a new dependency declared there
-// would not travel with this file).
+// Tools are registered with `ctx.tool.transform()` and JSON Schema inputs.
+// Keep this plugin dependency-free so the auto-discovered local plugin loads
+// without project npm dependencies.
 
-import { tool } from "@opencode-ai/plugin"
 import path from "path"
 import { spawn } from "child_process"
 
@@ -106,64 +93,6 @@ function executeParenRepair({ files, code }, directory) {
   })
 }
 
-// --- V1 tool definitions (OpenCode V1 calls `server()` below) ---
-
-const penpotPsqlTool = tool({
-  description:
-    "Execute a SQL command against the Penpot database. Uses the defaults from scripts/psql.",
-
-  args: {
-    sql: tool.schema
-      .string()
-      .describe("SQL command to execute"),
-
-    test: tool.schema
-      .boolean()
-      .describe("Use the penpot_test database")
-      .optional(),
-  },
-
-  async execute(args, context) {
-    return executePsql(args.sql, args.test === true, context.worktree)
-  },
-})
-
-const parenRepairTool = tool({
-  description:
-    "Fix mismatched parentheses/braces in Clojure files (.clj, .cljs, .cljc) then reformat with cljfmt.",
-
-  args: {
-    // A string is used instead of an array so OpenCode displays it
-    // in the generic tool invocation.
-    files: tool.schema
-      .string()
-      .describe(
-        "Comma-separated file paths to fix, for example: frontend/src/app/config.cljs, backend/src/core.clj",
-      )
-      .optional(),
-
-    code: tool.schema
-      .string()
-      .describe("Code string to fix via stdin")
-      .optional(),
-  },
-
-  async execute(args, context) {
-    return executeParenRepair(args, context.worktree)
-  },
-})
-
-async function server() {
-  return {
-    tool: {
-      "paren-repair": parenRepairTool,
-      "penpot-psql": penpotPsqlTool,
-    },
-  }
-}
-
-// --- V2 setup (OpenCode V2 calls `setup()` and ignores `server()`) ---
-
 const penpotPsqlInputSchema = {
   type: "object",
   properties: {
@@ -199,10 +128,7 @@ const parenRepairInputSchema = {
 }
 
 async function setup(ctx) {
-  // Plugin instance location. This is not the location of every session the
-  // tools may run for, but it is the closest V2 equivalent of the V1
-  // per-execution `context.worktree` (the repo checkout the plugin loaded
-  // from), which is what both tools need as cwd / script base.
+  // Use the plugin instance location as the working directory for both tools.
   const directory =
     ctx.location.directory ?? ctx.location.project?.canonical
 
@@ -240,5 +166,4 @@ async function setup(ctx) {
 export default {
   id: "penpot",
   setup,
-  server,
 }

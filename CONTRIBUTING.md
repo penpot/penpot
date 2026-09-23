@@ -11,12 +11,13 @@ Center](https://help.penpot.app/).
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
+- [AI-Assisted Contributions](#ai-assisted-contributions)
 - [Reporting Bugs](#reporting-bugs)
 - [Pull Requests](#pull-requests)
   - [Workflow](#workflow)
   - [Branch naming](#branch-naming)
   - [Format](#format)
-    - [Title format](#title-format)
+    - [Title format](#title)
     - [Description](#description)
   - [Review process](#review-process)
   - [What we won't accept](#what-we-wont-accept)
@@ -54,6 +55,12 @@ Center](https://help.penpot.app/).
   `.claude/rules/*.md`, which Claude loads beside the project instructions
   without switching the fallback off. Every one of these paths is
   gitignored.
+
+## AI-Assisted Contributions
+
+We support the responsible use of AI tools in the development process. However, all contributions to Penpot - including issues, pull requests, and any other submissions - must meet a reasonable standard of quality, accuracy, and human oversight.
+
+If AI-assisted content is used, it must be carefully reviewed and verified by a human before submission. Contributions that don't meet these standards may be rejected or closed without detailed review or a reply.
 
 ## Reporting Bugs
 
@@ -100,7 +107,7 @@ Branch names are not enforced, but we recommend the following:
   and no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
 
 Since PRs are squash-merged, the branch name does not survive into the
-commit history — what matters is the [PR title](#title-format).
+commit history — what matters is the [PR title](#title).
 
 ### Format
 
@@ -145,7 +152,7 @@ for more concrete information.
   force-push during review, as it breaks comment threads.
 - PRs require at least **one approval** before merge.
 - We use **squash-merge** by default. The PR title becomes the final
-  commit message, so follow the [title format](#title-format) above.
+  commit message, so follow the [title format](#title) above.
 
 ### What we won't accept
 

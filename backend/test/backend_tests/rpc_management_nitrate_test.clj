@@ -1943,3 +1943,26 @@
           (t/is (= "bar" (get-in event [:context :foo])))
           (t/is (= (:full cf/version) (get-in event [:context :version])))
           (t/is (= "app" (get-in event [:context :initiator]))))))))
+
+(t/deftest push-audit-events-initiator-is-plain-string
+  ;; Shared-key callers (e.g. admin-console) carry :app.http/auth-key-id as a
+  ;; keyword; the stored initiator must be a plain string, and a
+  ;; caller-supplied initiator must never survive (server context wins).
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (binding [cf/flags #{:audit-log}]
+      (let [prof   (th/create-profile* 1 {:is-active true})
+            params {::th/type :push-audit-events
+                    :events [{:name "context-test"
+                              :profile-id (:id prof)
+                              :type "action"
+                              :context {:custom-key "custom-val"
+                                        :initiator "spoofed"}}]}
+            params (with-meta params
+                     {::http/request (assoc http-request
+                                            ::http/auth-key-id :admin-console)})
+            out    (th/management-command! params)]
+        (t/is (nil? (:error out)))
+        (let [[_ event] (:call-args @audit-mock)]
+          (t/is (= "custom-val" (get-in event [:context :custom-key])))
+          (t/is (= "admin-console" (get-in event [:context :initiator])))
+          (t/is (string? (get-in event [:context :initiator]))))))))
