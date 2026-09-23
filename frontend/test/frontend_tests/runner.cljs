@@ -104,6 +104,7 @@
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
+   [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
@@ -228,6 +229,7 @@
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
+   'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test
