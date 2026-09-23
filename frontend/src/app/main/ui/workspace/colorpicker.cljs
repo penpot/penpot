@@ -107,14 +107,17 @@
       (dom/set-css-property! node "--lightness-grad-mid" (format-hsl lightness-mid)))))
 
 (mf/defc colorpicker*
-  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token]}]
+  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab applied-token token-disabled]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
         should-update?         (mf/use-var true)
         token-color            (contains? cfg/flags :token-color)
-        color-style*           (mf/use-state (d/nilv tab :direct-color))
+        color-style*           (mf/use-state (if ^boolean token-disabled
+                                               :direct-color
+                                               (d/nilv tab :direct-color)))
         color-style            (deref color-style*)
+
         toggle-token-color
         (mf/use-fn
          (mf/deps color-style)
@@ -431,7 +434,10 @@
                              :id "opt-color"}]
            [:& radio-button {:icon i/tokens
                              :value :token-color
-                             :title (tr "workspace.colorpicker.color-tokens")
+                             :title (if ^boolean token-disabled
+                                      (tr "workspace.tokens.only-first-fill-or-stroke")
+                                      (tr "workspace.colorpicker.color-tokens"))
+                             :disabled token-disabled
                              :id "opt-token-color"}]])]
 
        (when (and (not= selected-mode :image)
@@ -735,6 +741,7 @@
            on-token-change
            on-close
            tab
+           token-disabled
            applied-token
            on-accept]}]
   (let [vport       (mf/deref viewport)
@@ -808,6 +815,7 @@
                        :disable-image disable-image
                        :on-token-change on-token-change
                        :applied-token applied-token
+                       :token-disabled token-disabled
                        :on-change on-change'
                        :origin origin
                        :tab tab

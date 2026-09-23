@@ -8981,6 +8981,11 @@ msgstr "Los sets o temas de la fuente de tokens se han modificado"
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s sets activos"
 
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr ""
+"Los tokens de diseño solo se pueden aplicar al primer relleno o trazo de la "
+"lista."
+
 #: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
 msgid "workspace.tokens.open-source-new-tab"
 msgstr "Abrir la fuente de tokens en una pestaña nueva"

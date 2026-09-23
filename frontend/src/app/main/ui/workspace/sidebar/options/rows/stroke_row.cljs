@@ -62,6 +62,11 @@
   (let [hidden?            (:hidden stroke)
         hidden?            (if (nil? hidden?) false hidden?)
 
+        token-disabled?    (not (soc/tokens-allowed-position? true index))
+
+        token-tooltip      (when token-disabled?
+                             (tr "workspace.tokens.only-first-fill-or-stroke"))
+
         token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
@@ -362,6 +367,7 @@
       [:> color-row* {:color (ctc/stroke->color stroke)
                       :index index
                       :title title
+                      :tokens-first-only true
                       :on-change on-color-change-refactor
                       :on-detach on-color-detach
                       :disable-drag disable-drag
@@ -400,6 +406,8 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width")
                                     :applied-token applied-token-width
+                                    :token-disabled token-disabled?
+                                    :token-tooltip token-tooltip
                                     :placeholder (if show-multiple-placeholder?
                                                    (tr "settings.multiple")
                                                    "--")
@@ -485,6 +493,8 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-top")
                                     :applied-token (get applied-tokens :stroke-width-top)
+                                    :token-disabled token-disabled?
+                                    :token-tooltip token-tooltip
                                     :value (d/nilv (:stroke-width-top stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-right-change
                                     :on-detach on-detach-token-width-right
@@ -496,6 +506,8 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-right")
                                     :applied-token (get applied-tokens :stroke-width-right)
+                                    :token-disabled token-disabled?
+                                    :token-tooltip token-tooltip
                                     :value (d/nilv (:stroke-width-right stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-bottom-change
                                     :on-detach on-detach-token-width-bottom
@@ -507,6 +519,8 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-bottom")
                                     :applied-token (get applied-tokens :stroke-width-bottom)
+                                    :token-disabled token-disabled?
+                                    :token-tooltip token-tooltip
                                     :value (d/nilv (:stroke-width-bottom stroke) stroke-width)}]
         [:> numeric-input-wrapper* {:on-change on-width-left-change
                                     :on-detach on-detach-token-width-left
@@ -518,6 +532,8 @@
                                     :class (stl/css :numeric-input-wrapper)
                                     :property (tr "workspace.options.stroke-width-left")
                                     :applied-token (get applied-tokens :stroke-width-left)
+                                    :token-disabled token-disabled?
+                                    :token-tooltip token-tooltip
                                     :value (d/nilv (:stroke-width-left stroke) stroke-width)}]])
 
      ;; Stroke Dash / Gap (only visible for dashed style)
