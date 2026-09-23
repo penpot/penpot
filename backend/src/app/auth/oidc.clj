@@ -1068,24 +1068,27 @@
             :organization-id organization-id
             :organization-name organization-name}))))))
 
-(defn- trusted-origin-from-state
-  "Best-effort extraction of the trusted alternate origin carried by the
-  OIDC state token. Returns nil when the token is missing or invalid."
-  [cfg state-token]
+(defn- parse-state
+  "Verifies the OIDC state token once. Returns `[state failure]` where
+  exactly one of the two is non-nil: the decoded claims on success, or the
+  verification error when the token is missing, invalid or expired."
+  [cfg params]
   (try
-    (:origin (tokens/verify cfg {:token state-token :iss "oidc"}))
-    (catch Throwable _ nil)))
+    [(tokens/verify cfg {:token (:state params) :iss "oidc"}) nil]
+    (catch Throwable cause
+      [nil cause])))
 
 (defn- handle-oidc-callback
-  [cfg {:keys [params] :as request}]
+  [cfg {:keys [params] :as request} state failure]
   (if-let [error (get params :error)]
     (do
       (submit-organization-sso-oauth-failed-event cfg request (:state params) error)
       (redirect-with-error "unable-to-auth" error))
     (try
-      (let [code     (get params :code)
-            state    (get params :state)
-            state    (tokens/verify cfg {:token state :iss "oidc"})]
+      (when (some? failure)
+        (throw failure))
+
+      (let [code (get params :code)]
 
         ;; Organization SSO flow: state carries :dest-url — exchange the authorization
         ;; code with the OIDC provider to verify authentication actually occurred.
@@ -1163,8 +1166,9 @@
   state for the whole callback (token exchange redirect_uri and every
   redirect target)."
   [cfg {:keys [params] :as request}]
-  (binding [cf/config (cf/with-public-uri (trusted-origin-from-state cfg (:state params)) cf/config)]
-    (handle-oidc-callback cfg request)))
+  (let [[state failure] (parse-state cfg params)]
+    (binding [cf/config (cf/with-public-uri (:origin state) cf/config)]
+      (handle-oidc-callback cfg request state failure))))
 
 (def ^:private schema:routes-params
   [:map
