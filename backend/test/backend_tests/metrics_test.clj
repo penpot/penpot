@@ -61,30 +61,37 @@
     nil       "unknown" "unknown"
     nil       "default" "default"))
 
-(def ^:private failing-metrics
-  "A metrics instance whose collector lookup always fails."
-  (reify mtx/IMetrics
-    (get-registry [_])
-    (get-collector [_ _] (throw (ex-info "boom" {})))
-    (get-handler [_])))
-
-(t/deftest run-safe-with-failing-instance-never-throws
-  (t/is (nil? (mtx/run-safe! failing-metrics "test-run-safe" :id :x :inc 1))))
-
-(t/deftest run-safe-with-nil-instance-is-noop
-  (t/is (nil? (mtx/run-safe! nil "test-run-safe-nil" :id :x :inc 1))))
-
-(t/deftest run-safe-records-on-success
+(t/deftest run-contains-label-arity-bug
+  ;; A wrong label count throws inside the prometheus client; the
+  ;; recording failure must not propagate to the caller.
   (let [registry  (CollectorRegistry.)
-        collector (mtx/create-collector {::mdef/name "penpot_test_run_safe"
+        collector (mtx/create-collector {::mdef/name "penpot_test_run_arity"
+                                         ::mdef/help "test helper"
+                                         ::mdef/type :counter
+                                         ::mdef/labels ["a" "b"]
+                                         :app.metrics/registry registry})
+        instance  (reify mtx/IMetrics
+                    (get-collector [_ _] collector))]
+    (t/is (nil? (mtx/run! instance :id :x :inc 1 :labels ["only-one"])))))
+
+(t/deftest run-fails-loudly-without-metrics-instance
+  ;; A missing or invalid instance is a wiring bug: it must fail on every
+  ;; invocation instead of silently dropping the measurement. With
+  ;; asserts enabled this is an AssertionError; with asserts disabled the
+  ;; collector lookup (outside the recording guard) throws instead.
+  (t/is (thrown? Throwable (mtx/run! nil :id :x :inc 1)))
+  (t/is (thrown? Throwable (mtx/run! :not-metrics :id :x :inc 1))))
+
+(t/deftest run-records-on-success
+  (let [registry  (CollectorRegistry.)
+        collector (mtx/create-collector {::mdef/name "penpot_test_run"
                                          ::mdef/help "test helper"
                                          ::mdef/type :counter
                                          ::mdef/labels ["result"]
                                          :app.metrics/registry registry})
         instance  (reify mtx/IMetrics
                     (get-collector [_ _] collector))]
-    (t/is (true? (mtx/run-safe! instance "test-run-safe-ok"
-                                :id :x :inc 1 :labels ["ok"])))))
+    (t/is (true? (mtx/run! instance :id :x :inc 1 :labels ["ok"])))))
 
 (t/deftest definitions-schema-accepts-all-consumed-keys
   (t/is (true? (valid-definitions?

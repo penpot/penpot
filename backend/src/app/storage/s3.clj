@@ -99,7 +99,7 @@
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
    [::endpoint {:optional true} ::sm/uri]
-   [::mtx/metrics {:optional true} ::mtx/metrics]])
+   [::mtx/metrics ::mtx/metrics]])
 
 (defmethod ig/expand-key ::backend
   [k v]
@@ -253,9 +253,8 @@
                      (.build))
 
         oconfig  (let [builder (ClientOverrideConfiguration/builder)]
-                   (when (some? publisher)
-                     (.addMetricPublisher ^software.amazon.awssdk.core.client.config.ClientOverrideConfiguration$Builder builder
-                                          ^MetricPublisher publisher))
+                   (.addMetricPublisher ^software.amazon.awssdk.core.client.config.ClientOverrideConfiguration$Builder builder
+                                        ^MetricPublisher publisher)
                    (.build ^software.amazon.awssdk.core.client.config.ClientOverrideConfiguration$Builder builder))
 
         sconfig  (-> (S3Configuration/builder)

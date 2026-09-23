@@ -149,13 +149,6 @@
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 
-(defn run!
-  [instance & {:keys [id] :as params}]
-  (assert (metrics? instance) "expected valid metrics instance")
-  (when-let [mobj (get-collector instance id)]
-    (run-collector! mobj params)
-    true))
-
 (defonce ^:private warned-hints (atom #{}))
 
 (defn- report-safe-failure!
@@ -166,19 +159,29 @@
       (swap! warned-hints conj hint)
       (l/wrn :hint hint :cause cause))))
 
-(defn run-safe!
-  "Like `run!` but never throws and accepts a nil `instance` (no-op).
-  The first failure per `hint` is logged at warn level and subsequent
-  failures at debug, so a broken metrics setup surfaces once without
-  flooding the log on every request."
-  [instance hint & params]
-  (try
-    (when (some? instance)
-      (apply run! instance params)
-      true)
-    (catch Throwable cause
-      (report-safe-failure! hint cause)
-      nil)))
+(defn run!
+  "Record a metric.
+
+  Recording never throws: a metrics bug must not change the behavior of
+  the operation being measured. The first failure per metric id logs at
+  warn level and later ones at debug, so a broken setup surfaces once
+  without flooding the log on every request.
+
+  The `instance` precondition is a plain assert: it holds because every
+  component is wired with metrics (`::mtx/metrics` is required by the
+  component schemas). The collector lookup stays outside the recording
+  guard, so a missing instance also fails hard when asserts are
+  disabled."
+  [instance & {:keys [id] :as params}]
+  (assert (metrics? instance) "expected valid metrics instance")
+
+  (when-let [mobj (get-collector instance id)]
+    (try
+      (run-collector! mobj params)
+      true
+      (catch Throwable cause
+        (report-safe-failure! (str "unable to record metric " (pr-str id)) cause)
+        nil))))
 
 (defn- create-registry
   []

@@ -50,31 +50,30 @@
       (let [ok?      (first-value collection CoreMetric/API_CALL_SUCCESSFUL)
             retries  (retries-count (first-value collection CoreMetric/RETRY_COUNT))
             duration (duration-millis (first-value collection CoreMetric/API_CALL_DURATION))]
-        (mtx/run-safe! metrics "unable to record s3 metric"
-                       :id :storage-s3-requests :inc 1
-                       :labels [operation target (result-label ok?)])
+        (mtx/run! metrics
+                  :id :storage-s3-requests :inc 1
+                  :labels [operation target (result-label ok?)])
         (when (pos? retries)
-          (mtx/run-safe! metrics "unable to record s3 metric"
-                         :id :storage-s3-retries :inc retries
-                         :labels [operation target]))
+          (mtx/run! metrics
+                    :id :storage-s3-retries :inc retries
+                    :labels [operation target]))
         (when (some? duration)
-          (mtx/run-safe! metrics "unable to record s3 metric"
-                         :id :storage-s3-timing :val duration
-                         :labels [operation target]))))))
+          (mtx/run! metrics
+                    :id :storage-s3-timing :val duration
+                    :labels [operation target]))))))
 
 (defn wrap-publisher
   "Return a MetricPublisher that records each S3 API call.
 
-  `target` is the physical storage target id. Returns nil when `metrics`
-  is nil so storage can run without instrumentation."
+  `target` is the physical storage target id. `metrics` is required by
+  the s3 backend schema."
   [metrics target]
-  (when metrics
-    (let [target (target-label target)]
-      (reify MetricPublisher
-        (^void publish [_ ^MetricCollection collection]
-          (try
-            (record-collection! metrics target collection)
-            (catch Throwable cause
-              (l/dbg :hint "unable to record s3 metric" :cause cause)))
-          nil)
-        (^void close [_])))))
+  (let [target (target-label target)]
+    (reify MetricPublisher
+      (^void publish [_ ^MetricCollection collection]
+        (try
+          (record-collection! metrics target collection)
+          (catch Throwable cause
+            (l/dbg :hint "unable to record s3 metric" :cause cause)))
+        nil)
+      (^void close [_]))))

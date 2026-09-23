@@ -53,9 +53,6 @@
       (.reportMetric ^MetricCollector collector metric value))
     (.collect ^MetricCollector collector)))
 
-(t/deftest publisher-is-optional
-  (t/is (nil? (s3m/wrap-publisher nil :default))))
-
 (t/deftest publisher-records-operation-retries-and-duration
   (let [metrics   (make-metrics)
         publisher (s3m/wrap-publisher metrics :default)
@@ -106,7 +103,7 @@
                              [CoreMetric/API_CALL_SUCCESSFUL true]
                              [CoreMetric/RETRY_COUNT 0]
                              [CoreMetric/API_CALL_DURATION (Duration/ofMillis 5)]])]
-    (with-mocks [_mock {:target 'app.metrics/run!
+    (with-mocks [_mock {:target 'app.metrics/run-collector!
                         :throw (ex-info "boom" {})}]
       (t/is (nil? (.publish publisher call))))
     (t/is (= 0.0 (counter-value metrics :storage-s3-requests ["PutObject" "default" "ok"])))))

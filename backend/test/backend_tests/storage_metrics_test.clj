@@ -122,15 +122,20 @@
     (t/is (= 1.0 (counter-value metrics :storage-operations ["touch" "file-media-object" "fs"])))
     (t/is (= 1.0 (counter-value metrics :storage-operations ["del" "file-media-object" "fs"])))))
 
-(t/deftest metrics-are-optional
+(t/deftest storage-requires-metrics
+  ;; Metrics is no longer optional: a storage map without it does not
+  ;; validate, and any operation that records fails loudly instead of
+  ;; silently dropping the measurement. `Throwable` covers both the
+  ;; schema assert (elided unless :backend-asserts is on) and the
+  ;; `run!` error.
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend)
-                    (dissoc ::mtx/metrics))
-        object  (sto/put-object! storage {::sto/content (sto/content "content")
-                                          :bucket "file-media-object"
-                                          :content-type "text/plain"})]
-    (t/is (sto/object? object))
-    (t/is (= "content" (slurp (sto/get-object-data storage object))))))
+                    (dissoc ::mtx/metrics))]
+    (t/is (false? (sto/valid-storage? storage)))
+    (t/is (thrown? Throwable
+                   (sto/put-object! storage {::sto/content (sto/content "content")
+                                             :bucket "file-media-object"
+                                             :content-type "text/plain"})))))
 
 (t/deftest default-metrics-definitions
   (let [defs main/default-metrics]
@@ -269,7 +274,7 @@
         storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend)
                     (with-metrics metrics))]
-    (with-mocks [_mock {:target 'app.metrics/run!
+    (with-mocks [_mock {:target 'app.metrics/run-collector!
                         :throw (ex-info "boom" {})}]
       (let [object (put! storage "content" "file-media-object" "hash-metrics-fail")]
         (t/is (sto/object? object))

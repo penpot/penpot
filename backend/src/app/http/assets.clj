@@ -74,14 +74,14 @@
 
 (defn- emit-asset!
   "Record an asset request. `route` is the handler route, `obj` the resolved
-  storage object (or nil when it could not be resolved). Never fails."
+  storage object (or nil when it could not be resolved). Recording never fails."
   [cfg route obj status]
-  (mtx/run-safe! (::mtx/metrics cfg) "unable to record asset metric"
-                 :id :storage-asset-requests :inc 1
-                 :labels [route
-                          (mtx/label (some-> obj :backend) "unknown")
-                          (mtx/label (some-> obj meta :bucket) "unknown")
-                          (result-label status)]))
+  (mtx/run! (::mtx/metrics cfg)
+            :id :storage-asset-requests :inc 1
+            :labels [route
+                     (mtx/label (some-> obj :backend) "unknown")
+                     (mtx/label (some-> obj meta :bucket) "unknown")
+                     (result-label status)]))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]

@@ -76,7 +76,7 @@
   [:map {:title "storage"}
    [::backends schema:backends]
    [::backend [:enum :s3 :fs]]
-   [::mtx/metrics {:optional true} ::mtx/metrics]
+   [::mtx/metrics ::mtx/metrics]
    ::db/pool])
 
 (def valid-storage?
@@ -187,24 +187,24 @@
 (dm/export impl/object?)
 
 (defn- emit-op!
-  "Record a logical storage operation. Never fails: metrics must not change
-  storage behavior."
+  "Record a logical storage operation. Recording never fails: metrics
+  must not change storage behavior."
   ([storage op bucket]
    (emit-op! storage op bucket nil))
   ([storage op bucket object]
-   (mtx/run-safe! (::mtx/metrics storage) "unable to record storage metric"
-                  :id :storage-operations :inc 1
-                  :labels [op
-                           (mtx/label bucket "unknown")
-                           (mtx/label (or (some-> object :backend) (::backend storage))
-                                      "unknown")])))
+   (mtx/run! (::mtx/metrics storage)
+             :id :storage-operations :inc 1
+             :labels [op
+                      (mtx/label bucket "unknown")
+                      (mtx/label (or (some-> object :backend) (::backend storage))
+                                 "unknown")])))
 
 (defn- emit-dedup!
-  "Record a deduplication outcome. Never fails."
+  "Record a deduplication outcome. Recording never fails."
   [storage result bucket]
-  (mtx/run-safe! (::mtx/metrics storage) "unable to record storage dedup metric"
-                 :id :storage-dedup :inc 1
-                 :labels [(name result) (mtx/label bucket "unknown")]))
+  (mtx/run! (::mtx/metrics storage)
+            :id :storage-dedup :inc 1
+            :labels [(name result) (mtx/label bucket "unknown")]))
 
 (defn get-object
   [storage id]

@@ -58,17 +58,19 @@
                               (some? profile-id)
                               (assoc :profile-id profile-id)))))
 
-(defn- make-handler-cfg
-  "Build a minimal cfg map for the assets handlers."
-  [storage]
-  {::sto/storage storage
-   ::assets/path "/assets"})
-
 (defn- make-metrics
   []
   (ig/init-key :app.metrics/metrics
                {:default (select-keys main/default-metrics
                                       [:storage-asset-requests])}))
+
+(defn- make-handler-cfg
+  "Build a minimal cfg map for the assets handlers. It carries a metrics
+  instance because the handlers require one."
+  [storage]
+  {::sto/storage storage
+   ::mtx/metrics (make-metrics)
+   ::assets/path "/assets"})
 
 (defn- make-metrics-cfg
   "Build a handler cfg map with an isolated metrics instance."
@@ -1100,31 +1102,35 @@
     (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "tempfile" "unauthorized"])))
     (t/is (= 0.0 (counter-value metrics ["by-id" "fs" "tempfile" "not-found"])))))
 
-(t/deftest handlers-work-without-metrics
-  ;; The metrics wiring is optional: handlers must serve identically with
-  ;; a cfg that carries no ::mtx/metrics.
-  (let [storage  (-> (:app.storage/storage th/*system*)
-                     (configure-storage-backend))
-        cfg      (make-handler-cfg storage)
-        owner    (th/create-profile* 1)
-        team     (th/create-team* 1 {:profile-id (:id owner)})
-        project  (th/create-project* 1 {:profile-id (:id owner)
-                                        :team-id (:id team)})
-        file     (th/create-file* 1 {:profile-id (:id owner)
-                                     :project-id (:id project)})
-        object   (create-storage-object! storage "file-media-object" "file content")
+(t/deftest handlers-require-metrics
+  ;; Metrics is no longer optional: a handler wired without it must fail
+  ;; loudly instead of silently dropping the measurement.
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (dissoc (make-handler-cfg storage) ::mtx/metrics)
+        owner     (th/create-profile* 1)
+        team      (th/create-team* 1 {:profile-id (:id owner)})
+        project   (th/create-project* 1 {:profile-id (:id owner)
+                                         :team-id (:id team)})
+        file      (th/create-file* 1 {:profile-id (:id owner)
+                                      :project-id (:id project)})
+        object    (create-storage-object! storage "file-media-object" "file content")
         media-obj (th/create-file-media-object* {:file-id (:id file)
                                                  :media-id (:id object)})]
-    (t/is (= 204 (::yres/status (assets/objects-handler
-                                 cfg {:path-params {:id (str (:id object))}}))))
-    (t/is (= 204 (::yres/status (assets/file-objects-handler
-                                 cfg {:path-params {:id (str (:id media-obj))}
-                                      ::session/profile-id (:id owner)}))))
-    (t/is (= 204 (::yres/status (assets/file-thumbnails-handler
-                                 cfg {:path-params {:id (str (:id media-obj))}
-                                      ::session/profile-id (:id owner)}))))
-    (t/is (= 404 (::yres/status (assets/objects-handler
-                                 cfg {:path-params {:id (str (uuid/next))}}))))))
+    (t/is (thrown? Throwable
+                   (assets/objects-handler
+                    cfg {:path-params {:id (str (:id object))}})))
+    (t/is (thrown? Throwable
+                   (assets/file-objects-handler
+                    cfg {:path-params {:id (str (:id media-obj))}
+                         ::session/profile-id (:id owner)})))
+    (t/is (thrown? Throwable
+                   (assets/file-thumbnails-handler
+                    cfg {:path-params {:id (str (:id media-obj))}
+                         ::session/profile-id (:id owner)})))
+    (t/is (thrown? Throwable
+                   (assets/objects-handler
+                    cfg {:path-params {:id (str (uuid/next))}})))))
 
 (t/deftest malformed-uuid-emits-nothing
   ;; get-id raises before any metric emission point is reached.
@@ -1146,7 +1152,7 @@
         cfg      (make-metrics-cfg storage metrics)
         object   (create-storage-object! storage "file-media-object" "file content")
         request  {:path-params {:id (str (:id object))}}]
-    (with-mocks [_mock {:target 'app.metrics/run!
+    (with-mocks [_mock {:target 'app.metrics/run-collector!
                         :throw (ex-info "boom" {})}]
       (let [response (assets/objects-handler cfg request)]
         (t/is (= 204 (::yres/status response)))))))
