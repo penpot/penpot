@@ -125,13 +125,22 @@
         success-register
         (mf/use-fn
          (fn [data]
-           (reset! register-token (:token data))
-           (reset! current-section :register-validate)))
+           (cond
+             (:invitation-token data)
+             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+             (:is-active data)
+             (st/emit! (rt/reload true))
+
+             :else
+             (do
+               (reset! user-email (:email data))
+               (reset! current-section :register-email-sent)))))
 
         register-email-sent
         (mf/use-fn
-         (fn [email]
-           (reset! user-email email)
+         (fn [data]
+           (reset! user-email (if (string? data) data (:email data)))
            (reset! current-section :register-email-sent)))
 
         recovery-email-sent
