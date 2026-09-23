@@ -101,15 +101,28 @@
                                    :no-wasm? true})))))))
 
 (defn update-stroke-width
-  ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids attributes]
+   (update-stroke-width value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
    (when (number? value)
      (let [value (max 0 value)]
        (dwsh/update-shapes shape-ids
                            (fn [shape]
                              (if (seq (:strokes shape))
-                               (assoc-in shape [:strokes 0 :stroke-width] value)
-                               (let [stroke (assoc cts/default-stroke :stroke-width value)]
+                               (let [stroke (get-in shape [:strokes 0])]
+                                 (assoc-in shape [:strokes 0]
+                                           (merge stroke
+                                                  {:stroke-width value
+                                                   :stroke-width-top value
+                                                   :stroke-width-right value
+                                                   :stroke-width-bottom value
+                                                   :stroke-width-left value})))
+                               (let [stroke (assoc cts/default-stroke
+                                                   :stroke-width value
+                                                   :stroke-width-top value
+                                                   :stroke-width-right value
+                                                   :stroke-width-bottom value
+                                                   :stroke-width-left value)]
                                  (assoc shape :strokes [stroke]))))
                            {:reg-objects? true
                             :ignore-touched true
