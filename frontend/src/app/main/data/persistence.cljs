@@ -27,6 +27,7 @@
 (declare ^:private run-persistence-task)
 (declare ^:private persist-commit)
 (declare ^:private resume-persistence)
+(declare ^:private slow-retry-cycle)
 
 (log/set-level! :warn)
 
@@ -35,6 +36,11 @@
 (def queue-conj (fnil conj #queue []))
 
 (def force-persist? #(= % ::force-persist))
+
+(def slow-retry-delay-ms
+  "Pause between the attempts of a queue whose backoff is spent: one attempt
+  per cycle, until it saves or the retry window closes."
+  30000)
 
 (def retry-give-up-ms
   "How long a failing queue keeps being sent. Matches how long the backend
@@ -230,7 +236,7 @@
                                                           (throw (ex-info "invalid state" {})))))
                                        (update :index dissoc commit-id)
                                        (assoc :last-progress-at (inst-ms (ct/now)))
-                                       (dissoc :stall-reported :failing-since
+                                       (dissoc :stall-reported :failing-since :recovering
                                                :attempts :retry-token :retry-for)))))))
 
 (defn- append-commit
@@ -290,23 +296,35 @@
                               :attempts :retry-token :retry-for))))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      ;; The terminal toast supersedes the reconnect notice; hide it
-      ;; explicitly instead of relying on the single-toast replacement.
-      (rx/of (ptk/data-event ::error cause)
-             (ntf/hide :tag reconnecting-tag)))
+    (watch [_ state stream]
+      (rx/merge
+       ;; The terminal toast supersedes the reconnect notice; hide it
+       ;; explicitly instead of relying on the single-toast replacement.
+       (rx/of (ptk/data-event ::error cause)
+              (ntf/hide :tag reconnecting-tag))
+       ;; A transport failure that outlasts the backoff can still pass, so
+       ;; the queue keeps trying at a slow pace.
+       (if (and (transient-error? (ex-data cause))
+                (retry-window-open? (:persistence state)))
+         (slow-retry-cycle stream)
+         (rx/empty))))
 
     ptk/EffectEvent
-    (effect [_ _ _]
-      ;; Report without invoking global handlers that may reload the file or
-      ;; navigate away before the user can recover the retained changes.
-      (errors/flash-persistence cause))))
+    (effect [_ state _]
+      ;; A failed slow attempt repeats a failure the user was already warned
+      ;; about. Report without invoking global handlers that may reload the
+      ;; file or navigate away before the user can recover the retained
+      ;; changes.
+      (when-not (and (dm/get-in state [:persistence :recovering])
+                     (transient-error? (ex-data cause)))
+        (errors/flash-persistence cause)))))
 
 (defn- persistence-transient-failure
   "Transient save failure: the head commit stays queued and a retry is
   scheduled with backoff instead of parking the save in `:error`. Once the
-  budget (`retry-delays-ms`) is exhausted, the failure falls through to the
-  terminal `persistence-failed` path unchanged."
+  budget (`retry-delays-ms`) is exhausted, or when the failed attempt was
+  one of the slow cycle, the failure falls through to the terminal
+  `persistence-failed` path, which schedules the next slow attempt."
   [commit-id cause]
   (ptk/reify ::persistence-transient-failure
     ptk/UpdateEvent
@@ -327,8 +345,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [attempts (dm/get-in state [:persistence :attempts])]
-        (if (> attempts (count retry-delays-ms))
+      (let [{:keys [attempts recovering]} (:persistence state)]
+        (if (or recovering (> attempts (count retry-delays-ms)))
           (rx/of (persistence-failed commit-id cause))
           (rx/merge
            ;; One notice per episode: shown on the first attempt,
@@ -493,19 +511,36 @@
                  (ntf/hide :tag reconnecting-tag)))))))
 
 (defn- resume-persistence
-  []
-  (ptk/reify ::resume-persistence
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :persistence
-              (fn [pstate]
-                (-> pstate
-                    (dissoc :error :attempts :retry-token :retry-for)
-                    (assoc :run-id (uuid/next) :status :saving)
-                    (update :last-progress-at d/nilv (inst-ms (ct/now)))))))
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (run-persistence-task)))))
+  "Starts the queue again. A `recovering` resume is an attempt of the slow
+  cycle, which sends once instead of starting a backoff episode."
+  ([] (resume-persistence false))
+  ([recovering]
+   (ptk/reify ::resume-persistence
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :persistence
+               (fn [pstate]
+                 (-> pstate
+                     (dissoc :error :attempts :retry-token :retry-for)
+                     (assoc :run-id (uuid/next)
+                            :status :saving
+                            :recovering recovering)
+                     (update :last-progress-at d/nilv (inst-ms (ct/now)))))))
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of (run-persistence-task))))))
+
+(defn- slow-retry-cycle
+  "Resumes a failed queue after `slow-retry-delay-ms`, unless the queue is
+  resumed some other way, persistence restarts or the workspace closes."
+  [stream]
+  (let [stopper-s (rx/merge
+                   (rx/filter (ptk/type? ::resume-persistence) stream)
+                   (rx/filter (ptk/type? ::initialize-persistence) stream)
+                   (rx/filter (ptk/type? ::dw/finalize-workspace) stream))]
+    (->> (rx/timer slow-retry-delay-ms)
+         (rx/map (fn [_] (resume-persistence true)))
+         (rx/take-until stopper-s))))
 
 (defn- recover-persistence
   []
