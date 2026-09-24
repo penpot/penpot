@@ -1225,6 +1225,7 @@ pub(super) fn paint_svg_stroke_silhouette(
             scale,
             None,
             None,
+            Stroke::per_side_profile(shape.visible_strokes()),
             true,
         );
         return true;
@@ -1280,6 +1281,7 @@ fn draw_stroke_geometry(canvas: &Canvas, scale: f32, shape: &Shape, stroke: &Str
                 scale,
                 None,
                 None,
+                Stroke::per_side_profile(shape.visible_strokes()),
                 true,
             );
         }

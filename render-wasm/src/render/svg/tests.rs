@@ -3164,3 +3164,181 @@ fn exports_closed_path_with_dotted_outer_image_stroke() {
     assert_evenodd_stroke_clip(&svg);
     insta::assert_snapshot!(svg);
 }
+
+/// A per-side dash or dot pattern is drawn as its own filled path, so the
+/// exported SVG carries far more than the two contours of a solid band.
+fn assert_per_side_pattern(svg: &str, fill: &str) {
+    let needle = format!("<path fill=\"{fill}\"");
+    let from = svg
+        .find(&needle)
+        .unwrap_or_else(|| panic!("no stroke path filled with {fill}: {svg}"));
+    let d_start = svg[from..].find(" d=\"").expect("stroke path has no d") + from + 4;
+    let d_end = svg[d_start..].find('"').expect("unterminated d") + d_start;
+    assert!(
+        svg[d_start..d_end].matches('M').count() > 2,
+        "pattern must leave more than the two band contours: {svg}"
+    );
+}
+
+#[test]
+fn exports_rect_with_per_side_dashed_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Center,
+        20.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([4.0, 12.0, 24.0, 40.0]); // top, right, bottom, left
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rect_with_per_side_dotted_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dotted_stroke(
+        StrokeKind::Center,
+        16.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([6.0, 16.0, 6.0, 16.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rect_with_per_side_dotted_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    // Inner dots have radius = width against an advance of width + 5, so they
+    // only stay discrete below width 5.
+    let mut stroke = dotted_stroke(
+        StrokeKind::Inner,
+        4.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([2.0, 4.0, 2.0, 4.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 60.0, 40.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rounded_rect_with_per_side_dashed_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Outer,
+        12.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([6.0, 12.0, 18.0, 24.0]);
+    add_stroked_rect_with_radius(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 240.0, 180.0),
+        24.0,
+        stroke,
+    );
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn per_side_dashed_stroke_skips_zero_width_sides() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Inner,
+        16.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    // Only the top and bottom sides are drawn.
+    stroke.widths = Some([16.0, 0.0, 16.0, 0.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+/// Widths and colours for a rect whose four sides are four separate strokes.
+fn per_side_colour_sides() -> [(f32, skia::Color); 4] {
+    [
+        (10.0, skia::Color::from_rgb(0xe1, 0x1d, 0x48)),
+        (20.0, skia::Color::from_rgb(0x05, 0x96, 0x69)),
+        (15.0, skia::Color::from_rgb(0x25, 0x63, 0xeb)),
+        (5.0, skia::Color::from_rgb(0xf5, 0x9e, 0x0b)),
+    ]
+}
+
+#[test]
+fn miters_a_rect_whose_sides_are_separate_strokes() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_rect_with_per_side_strokes(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 140.0),
+        0.0,
+        per_side_colour_sides(),
+    );
+
+    let svg = render(&pool, id);
+    // Each side is clipped to its wedge, so every stroke carries a clip path.
+    assert_eq!(
+        svg.matches("<clipPath").count(),
+        4,
+        "each side needs its own miter clip: {svg}"
+    );
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn miters_a_rounded_rect_whose_sides_are_separate_strokes() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_rect_with_per_side_strokes(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 140.0),
+        20.0,
+        per_side_colour_sides(),
+    );
+
+    insta::assert_snapshot!(with_stable_clip_ids(&render(&pool, id)));
+}
+
+#[test]
+fn a_lone_per_side_stroke_is_not_mitered() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = solid_stroke(
+        StrokeKind::Inner,
+        10.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([10.0, 20.0, 15.0, 5.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 220.0, 140.0), stroke);
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("<clipPath"),
+        "one stroke has nothing to miter against, so it stays a plain band: {svg}"
+    );
+}
