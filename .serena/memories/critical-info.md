@@ -63,6 +63,10 @@ The memory is structured in a way that you can get the critical information abou
 
 `frontend -> common`, `backend -> common`, `exporter -> common`, and `frontend -> render-wasm`. Changes in `common` can affect frontend, backend, exporter, file migrations, and design-library behavior; validate across consumers when semantics change.
 
+# Architecture diagrams
+
+- Versioned Mermaid diagrams of the runtime topology and the collaborative edit flow, plus how to render them to HTML or SVG/PNG: `mem:architecture/core`.
+
 # Working with Penpot designs
 
 - Before automating or inspecting Penpot designs through the Plugin API, call the Penpot MCP `high_level_overview` tool.

@@ -1,0 +1,19 @@
+%% Collaborative edit flow: one user's change reaches the other clients.
+sequenceDiagram
+    autonumber
+    participant U as User / browser
+    participant FE as Frontend SPA
+    participant RPC as Backend RPC
+    participant PG as PostgreSQL
+    participant MB as Redis pub/sub
+    participant WS as WebSocket
+    participant O as Other clients
+
+    U->>FE: edits a shape
+    FE->>RPC: mutation update-file (Transit)
+    RPC->>PG: persist change, bump revision
+    RPC->>MB: publish file-change on file topic
+    RPC-->>FE: mutation result
+    MB-->>WS: deliver file-change
+    WS-->>O: push change over WebSocket
+    O->>O: apply change locally

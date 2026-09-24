@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""Render the versioned Mermaid architecture diagrams.
+
+Reads ``*.mmd`` sources from a directory (``.serena/diagrams`` by
+default) and writes a single browsable HTML index. With ``--format
+svg`` or ``--format png`` it shells out to ``mmdc`` from
+``@mermaid-js/mermaid-cli`` instead.
+
+Examples::
+
+    scripts/render-diagrams
+    scripts/render-diagrams --format svg
+    scripts/render-diagrams --diagram architecture-flow
+"""
+
+from __future__ import annotations
+
+import argparse
+import html
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+DEFAULT_SRC = Path(".serena/diagrams")
+DEFAULT_MERMAID_VERSION = "11"
+SOURCE_SUFFIXES = (".mmd", ".mermaid")
+
+
+class RenderError(RuntimeError):
+    """Raised when a diagram cannot be rendered."""
+
+
+def discover_diagrams(src: Path, out: Path | None = None) -> list[Path]:
+    """Return the diagram sources under ``src``, sorted by path.
+
+    ``out``, when given, is skipped so a previous render is never read
+    back as a source.
+    """
+    if not src.is_dir():
+        return []
+
+    ignored = out.resolve() if out is not None else None
+    found: list[Path] = []
+    for path in src.rglob("*"):
+        if not path.is_file() or path.suffix.lower() not in SOURCE_SUFFIXES:
+            continue
+        if ignored is not None and ignored in path.resolve().parents:
+            continue
+        found.append(path)
+    return sorted(found)
+
+
+def filter_diagrams(diagrams: list[Path], names: list[str] | None) -> list[Path]:
+    """Keep only the diagrams whose file stem is in ``names``."""
+    if not names:
+        return diagrams
+    wanted = set(names)
+    return [path for path in diagrams if path.stem in wanted]
+
+
+def build_html(
+    diagrams: list[Path],
+    src: Path,
+    mermaid_version: str = DEFAULT_MERMAID_VERSION,
+) -> str:
+    """Build a self-contained HTML index embedding every diagram source."""
+    sections = []
+    for path in diagrams:
+        source = path.read_text(encoding="utf-8").strip()
+        name = path.relative_to(src).as_posix()
+        sections.append(
+            f'<section class="diagram">\n'
+            f"<h2>{html.escape(name)}</h2>\n"
+            f'<pre class="mermaid">{html.escape(source)}</pre>\n'
+            f"</section>"
+        )
+
+    body = "\n".join(sections) if sections else "<p>No diagrams found.</p>"
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penpot architecture diagrams</title>
+<style>
+  :root {{ color-scheme: light dark; }}
+  body {{ margin: 0; font-family: system-ui, sans-serif; background: #f5f6f8; color: #1c1d21; }}
+  header {{ padding: 1.5rem 2rem; background: #1c1d21; color: #fff; }}
+  header h1 {{ margin: 0; font-size: 1.25rem; }}
+  main {{ padding: 1.5rem 2rem; display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); }}
+  .diagram {{ margin: 0; padding: 1.25rem; background: #fff; border: 1px solid #e0e2e8; border-radius: 10px; overflow: auto; }}
+  .diagram h2 {{ margin: 0 0 .75rem; font-size: .9rem; font-weight: 600; color: #6a6d78; }}
+  .mermaid {{ margin: 0; text-align: center; }}
+</style>
+</head>
+<body>
+<header><h1>Penpot architecture diagrams</h1></header>
+<main>
+{body}
+</main>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@{mermaid_version}/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({{ startOnLoad: true, theme: "neutral" }});
+</script>
+</body>
+</html>
+"""
+
+
+def render(
+    diagrams: list[Path],
+    src: Path,
+    out: Path,
+    mode: str = "html",
+    mermaid_version: str = DEFAULT_MERMAID_VERSION,
+) -> list[Path]:
+    """Render ``diagrams`` into ``out`` and return the produced files."""
+    out.mkdir(parents=True, exist_ok=True)
+
+    if mode == "html":
+        index = out / "index.html"
+        index.write_text(
+            build_html(diagrams, src, mermaid_version), encoding="utf-8"
+        )
+        return [index]
+
+    if shutil.which("mmdc") is None:
+        raise RenderError(
+            "mmdc not found. Install it with "
+            "'pnpm add -D @mermaid-js/mermaid-cli', or use "
+            "--format html."
+        )
+
+    produced = []
+    for path in diagrams:
+        stem = path.relative_to(src).with_suffix("").as_posix().replace("/", "_")
+        target = out / f"{stem}.{mode}"
+        subprocess.run(
+            ["mmdc", "-i", str(path), "-o", str(target)],
+            check=True,
+        )
+        produced.append(target)
+    return produced
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--src",
+        type=Path,
+        default=DEFAULT_SRC,
+        help=f"directory with .mmd sources (default: {DEFAULT_SRC})",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="output directory (default: <src>/out)",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("html", "svg", "png"),
+        default="html",
+        help="output format (default: html)",
+    )
+    parser.add_argument(
+        "--diagram",
+        action="append",
+        default=None,
+        metavar="NAME",
+        help="render only this source stem (repeatable)",
+    )
+    parser.add_argument(
+        "--mermaid-version",
+        default=DEFAULT_MERMAID_VERSION,
+        help=f"CDN Mermaid version for HTML (default: {DEFAULT_MERMAID_VERSION})",
+    )
+    args = parser.parse_args(argv)
+
+    out = args.out if args.out is not None else args.src / "out"
+    diagrams = filter_diagrams(discover_diagrams(args.src, out), args.diagram)
+
+    if not diagrams:
+        print(f"No diagrams found in {args.src}", file=sys.stderr)
+        return 1
+
+    try:
+        produced = render(
+            diagrams, args.src, out, args.format, args.mermaid_version
+        )
+    except (RenderError, subprocess.CalledProcessError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+
+    for path in produced:
+        print(path)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

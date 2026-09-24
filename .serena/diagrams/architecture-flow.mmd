@@ -1,0 +1,60 @@
+%% Penpot runtime architecture: client, backend, services, workers, export.
+flowchart TB
+    user(["User<br/>web browser"])
+
+    subgraph client["Client · browser"]
+        fe["Frontend SPA<br/>ClojureScript + React"]
+        ww["Web Worker<br/>background computation"]
+        wasm["render-wasm<br/>Rust / Skia → WASM"]
+        plugins["Plugin runtime<br/>sandboxed"]
+    end
+
+    subgraph server["Backend · JVM / Clojure"]
+        rpc["RPC API<br/>/api/rpc/query · mutation"]
+        ws["Notifications<br/>WebSocket"]
+        http["HTTP routes<br/>assets · media · export"]
+        dispatcher["Dispatcher<br/>claims task rows"]
+        runner["Runners<br/>execute tasks"]
+    end
+
+    subgraph data["Stateful services"]
+        pg[("PostgreSQL<br/>durable store + task queue")]
+        redis[("Redis / Valkey<br/>pub/sub · cache · rate limit")]
+        obj[("Object storage<br/>S3 or filesystem")]
+    end
+
+    subgraph export["Export pipeline"]
+        exporter["Exporter<br/>ClojureScript / Node"]
+        chrome["Headless Chrome<br/>Playwright"]
+    end
+
+    media["media-processor<br/>sharp · FontForge"]
+    mail["SMTP mailer"]
+
+    user --> fe
+    fe <--> ww
+    fe --> wasm
+    fe --> plugins
+    fe -->|"HTTPS · Transit"| rpc
+    fe <-->|"WebSocket"| ws
+    fe -->|"HTTPS"| http
+    fe -->|"HTTPS export"| exporter
+
+    rpc -->|"SQL"| pg
+    rpc -->|"enqueue task"| pg
+    rpc --> redis
+    rpc --> obj
+    ws <--> redis
+    http --> obj
+
+    pg -->|"FOR UPDATE SKIP LOCKED"| dispatcher
+    dispatcher -->|"RPUSH claimed ids"| redis
+    redis -->|"BLPOP"| runner
+    runner --> pg
+    runner --> obj
+    runner --> mail
+    runner --> media
+    media --> obj
+
+    exporter --> chrome
+    chrome -->|"loads app"| fe
