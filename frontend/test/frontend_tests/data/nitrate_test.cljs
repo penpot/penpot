@@ -19,6 +19,7 @@
    [app.main.ui.auth.verify-token :as verify-token]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (t/deftest account-age-days-test
@@ -295,11 +296,12 @@
                       :default-team-id "default"
                       :leave-fn #(reset! accepted %)
                       :on-error identity})]
-    (with-redefs [rp/cmd! (fn [cmd params]
-                            (swap! requests conj cmd)
-                            (t/is (= {:id "org-1" :default-team-id "default"} params))
-                            (rx/of summary))
-                  modal/show (fn [params] params)]
+    (with-redefs [rp/cmd! (mock/stub
+                           (fn [cmd params]
+                             (swap! requests conj cmd)
+                             (t/is (= {:id "org-1" :default-team-id "default"} params))
+                             (rx/of summary)))
+                  modal/show (mock/stub (fn [params] params))]
       (let [modal-params (atom nil)]
         (rx/sub! (ptk/watch event nil nil) #(reset! modal-params %))
 
