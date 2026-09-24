@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+_render_wasm_lock_source=${BASH_SOURCE[0]}
+_render_wasm_lock_dir=${_render_wasm_lock_source%/*}
+if [[ "$_render_wasm_lock_dir" == "$_render_wasm_lock_source" ]]; then
+    _render_wasm_lock_dir="."
+fi
+_RENDER_WASM_LOCK_DIR=$(cd -- "$_render_wasm_lock_dir" && pwd)
+_RENDER_WASM_BUILD_LOCK_HELD=0
+
+release_build_lock() {
+    if [[ "$_RENDER_WASM_BUILD_LOCK_HELD" == "1" ]]; then
+        _RENDER_WASM_BUILD_LOCK_HELD=0
+        flock --unlock 9 2>/dev/null || true
+    fi
+
+    exec 9>&-
+}
+
+acquire_build_lock() {
+    if ! command -v flock > /dev/null 2>&1; then
+        echo "ERROR: render-wasm builds require flock from util-linux on Linux" >&2
+        return 1
+    fi
+
+    if [[ "$_RENDER_WASM_BUILD_LOCK_HELD" == "1" ]]; then
+        return 0
+    fi
+
+    local lock_file="${RENDER_WASM_LOCK_FILE:-$_RENDER_WASM_LOCK_DIR/.render-wasm-build.lock}"
+
+    if ! exec 9>> "$lock_file"; then
+        echo "ERROR: cannot open render-wasm build lock: $lock_file" >&2
+        return 1
+    fi
+
+    trap 'release_build_lock' EXIT
+    trap 'release_build_lock; exit 129' HUP
+    trap 'release_build_lock; exit 130' INT
+    trap 'release_build_lock; exit 131' QUIT
+    trap 'release_build_lock; exit 143' TERM
+
+    if ! flock --exclusive --nonblock 9; then
+        echo "Waiting for another render-wasm build to finish: $lock_file" >&2
+        if ! flock --exclusive 9; then
+            echo "ERROR: cannot acquire render-wasm build lock: $lock_file" >&2
+            release_build_lock
+            return 1
+        fi
+    fi
+
+    _RENDER_WASM_BUILD_LOCK_HELD=1
+}

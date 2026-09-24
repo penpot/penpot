@@ -30,7 +30,6 @@
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
-    "build:wasm": "exit 0",
     "watch:app": "pnpm run build:wasm && pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main",
     "watch": "pnpm run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",

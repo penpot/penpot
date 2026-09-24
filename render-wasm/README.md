@@ -27,7 +27,7 @@ cd penpot/render-wasm
 
 You can also use `./watch` to run the build on every change.
 
-The build script will compile the project and copy the `.js` and `.wasm` files to their correct location within the frontend app.
+The build script compiles the project and copies the `.js` and `.wasm` files to the app that uses each target.
 
 ### Render targets
 
@@ -51,6 +51,34 @@ since watching both would rebuild twice on every keystroke.
 Each target keeps its own `CARGO_TARGET_DIR` (`target/<target>`), so switching
 between them does not invalidate the other's cache. Set `BUILD_MODE=release`
 (or `NODE_ENV=production`) for an optimized build; the default is `debug`.
+
+### Serialize builds in one checkout
+
+All targets in one checkout share one `flock` lock stored at
+`render-wasm/.render-wasm-build.lock`. The lock covers dependency setup, the
+Cargo build, artifact copy, and target cleanup. If another build or cleanup
+already holds the lock, the new process prints a waiting message and starts
+only after the first process exits.
+
+The watch command takes the lock for each build, then releases it while it
+waits for source changes. The lock file stays in the checkout after a build,
+but the operating system releases its lock when the process exits, including
+after an error or signal.
+
+The lock applies to one checkout and only to commands that use these scripts.
+A manual Cargo build can still write to the same target without taking the
+lock. Set `RENDER_WASM_LOCK_FILE` to the same path in each process when you
+make different checkouts share a `CARGO_TARGET_DIR`. The supported Linux build
+environment must provide `flock` from util-linux; `flock --version` checks this
+dependency.
+
+Use the target cleanup commands instead of running `cargo clean` on the shared
+`target/` directory:
+
+```sh
+./clean frontend   # remove target/frontend only
+./clean export     # remove target/export only
+```
 
 Each target writes its own generated `shared.js` (the enum discriminants the
 CLJS side compiles against) next to the code that imports it — respectively

@@ -5,32 +5,40 @@
 # With no target, builds both. Set BUILD_MODE=release (or NODE_ENV=production)
 # for an optimized build. See `_build_env` for what each target changes.
 
-_SCRIPT_DIR=$(dirname $0);
+_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+_RENDER_TARGET=${1:-}
 
-# Each target needs its own `_build_env`, so re-enter per target.
-case "${1:-}" in
-    frontend|export)
+case "$_RENDER_TARGET" in
+    frontend|export) ;;
+    "")
+        # Each target needs its own `_build_env`, so re-enter per target.
+        for _target in frontend export; do
+            "$_SCRIPT_DIR/build" "$_target" "$@" || exit $?
+        done
+        exit 0
         ;;
     *)
-        for _target in frontend export; do
-            "$_SCRIPT_DIR/build" "$_target" "$@" || exit $?;
-        done
-        exit 0;
+        echo "ERROR: unknown render target '$_RENDER_TARGET' (expected 'frontend' or 'export')" >&2
+        exit 1
         ;;
 esac
 
+set -e
+
 EMSDK_QUIET=1 . /opt/emsdk/emsdk_env.sh
 
-pushd $_SCRIPT_DIR;
+pushd "$_SCRIPT_DIR" > /dev/null
 
-. ./_build_env
+export RENDER_TARGET="$_RENDER_TARGET"
+. ./_build_env "$_RENDER_TARGET"
+. ./_build_lock
 
-set -ex;
+acquire_build_lock
 
-setup;
-build;
-copy_target_artifacts;
+set -x
 
-exit $?;
+setup
+build
+copy_target_artifacts
 
-popd
+popd > /dev/null
