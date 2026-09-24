@@ -87,6 +87,201 @@ fn exports_leaf_opacity_and_blend_mode_as_group_wrappers() {
 }
 
 #[test]
+fn exports_leaf_background_blur_as_foreign_object() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_argb(180, 255, 0, 0),
+    );
+    let blur_value = 10.0;
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, blur_value)));
+    }
+
+    let svg = render(&pool, id);
+    let expected_sigma = radius_to_sigma(blur_value * 1.0);
+    assert!(
+        svg.contains("<foreignObject") && svg.contains("backdrop-filter:blur("),
+        "background blur must emit foreignObject + backdrop-filter: {svg}"
+    );
+    assert!(
+        svg.contains(&format!("backdrop-filter:blur({expected_sigma}px)")),
+        "blur sigma must match radius_to_sigma(value * scale): {svg}"
+    );
+    assert!(
+        svg.contains("clip-path:path(")
+            && (svg.contains("path(nonzero,'") || svg.contains("path(evenodd,'")),
+        "FO div must use CSS path clip with a fill rule: {svg}"
+    );
+    // FO before fill paint.
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    let fill_pos = svg.find("fill=").expect("fill");
+    assert!(
+        fo_pos < fill_pos,
+        "background blur FO must precede fills: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn skips_hidden_background_blur() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, true, 10.0)));
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("foreignObject") && !svg.contains("backdrop-filter"),
+        "hidden background blur must not emit FO: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn background_blur_coexists_with_layer_blur_outside_filter() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_argb(180, 0, 128, 255),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 8.0)));
+        shape.set_blur(Some(Blur::new(BlurType::LayerBlur, false, 4.0)));
+    }
+
+    let svg = render(&pool, id);
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    let filter_pos = svg.find("filter=\"url(#fx").expect("layer blur filter");
+    assert!(
+        fo_pos < filter_pos,
+        "FO must sit outside the layer-blur filter group: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_frame_background_blur_before_children() {
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let child = uid(2);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_argb(100, 255, 255, 255),
+        false,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 6.0)));
+    }
+    add_solid_rect(
+        &mut pool,
+        child,
+        frame_id,
+        (20.0, 20.0, 80.0, 80.0),
+        skia::Color::from_rgb(0, 0, 255),
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_child(child);
+    }
+
+    let svg = render(&pool, frame_id);
+    let expected_sigma = radius_to_sigma(6.0);
+    assert!(
+        svg.contains(&format!("backdrop-filter:blur({expected_sigma}px)")),
+        "frame background blur: {svg}"
+    );
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    // Child rect is painted after the frame FO (and after any frame fill).
+    let child_marker = "width=\"60\" height=\"60\"";
+    let child_pos = svg.find(child_marker).expect("child rect size");
+    assert!(fo_pos < child_pos, "frame FO must precede children: {svg}");
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_group_background_blur_selrect_clip() {
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let a = uid(2);
+    add_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 100.0),
+        &[a],
+    );
+    {
+        let group = pool.get_mut(&group_id).unwrap();
+        group.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 5.0)));
+    }
+    add_solid_rect(
+        &mut pool,
+        a,
+        group_id,
+        (10.0, 10.0, 90.0, 90.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("foreignObject") && svg.contains("clip-path:path("),
+        "group background blur: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_background_blur_with_glyph_clip() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_text(
+        &mut pool,
+        id,
+        (0.0, 0.0, 200.0, 80.0),
+        "Glass",
+        40.0,
+        skia::Color::from_argb(200, 255, 255, 255),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 8.0)));
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("foreignObject")
+            && svg.contains("backdrop-filter:blur(")
+            && svg.contains("clip-path:path("),
+        "text background blur needs FO with CSS glyph path clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_leaf_layer_blur_as_fe_gaussian_blur() {
     let mut pool = ShapesPool::new();
     let id = uid(1);
