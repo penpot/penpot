@@ -1,6 +1,7 @@
 ---
 name: create-commit
 description: Stage, review, and commit files following Penpot commit conventions.
+slash: true
 ---
 
 # Skill: create-commit

@@ -1,6 +1,7 @@
 ---
 name: review-plan
 description: Plan review flow — evaluate an implementation plan before it is executed, delegating the review to a subagent that follows the plan-review-criteria skill. Use it when the user asks to review a plan, in any phrasing.
+slash: true
 ---
 
 # Review Plan
@@ -64,8 +65,6 @@ agent again.
 5. Judge the plan as the implementer would: every task executable without
    guessing, ordering follows the dependency graph, risks named.
 
-## User context
+## User input, overrides and additional context
 
-Extra context in the user's invocation (the message that triggered this skill)
-plays the role command arguments play elsewhere: for example, a plan file path
-to review, or a different agent to run the review.
+$ARGUMENTS

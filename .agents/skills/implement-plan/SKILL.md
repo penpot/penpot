@@ -1,6 +1,7 @@
 ---
 name: implement-plan
-description: Implementation flow — execute a ready plan from the session context: read the plan, detect the flow, then present the full picture (issue and branch to create or the branch to continue on, execution style, task checklist) and wait for confirmation. Default is every task with one final commit; on request ("step by step"), one task and one commit at a time with a pause after each; on request ("direct"), no issue and no branch — the commit lands on the current branch. Use it when the user asks to implement or execute a plan, in any phrasing.
+description: Implementation flow — execute a ready plan from the session context
+slash: true
 ---
 
 # Implement Plan
@@ -152,11 +153,6 @@ instruction from me overrides them):
   `/make-a-plan` by itself if the findings need one.
 - `/create-pr` — when the task is done and the branch is ready to merge.
 
-## User context
+## User input, overrides and additional context
 
-Extra context in the user's invocation (the message that triggered this
-skill) plays the role command arguments play elsewhere: `standalone`,
-`continue`, `direct` (`no branch` / `direct commit`), `no issue` /
-`without issue`, an explicit base such as `from origin/develop`, or
-`step by step` / `one commit per task` for the step-by-step execution
-mode. Modes combine freely, for example "standalone step by step".
+$ARGUMENTS
