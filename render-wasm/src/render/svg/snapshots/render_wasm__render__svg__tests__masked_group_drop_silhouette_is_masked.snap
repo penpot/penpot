@@ -1,0 +1,14 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="157.64102" height="157.64102" viewBox="0 0 157.64102 157.64102"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="157.64102" height="157.64102" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="6.2735023" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.54901963 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter><mask id="mask1" maskUnits="userSpaceOnUse" mask-type="alpha">
+	<ellipse transform="translate(-61.1795 -41.1795)" cx="140" cy="120" rx="60" ry="60"/>
+</mask><mask id="mask2" maskUnits="userSpaceOnUse" mask-type="alpha">
+	<ellipse transform="translate(-69.1795 -53.1795)" cx="140" cy="120" rx="60" ry="60"/>
+</mask></defs><g filter="url(#fx0)"><g mask="url(#mask1)">
+	<rect fill="#FF006E" transform="translate(-61.1795 -41.1795)" x="40" y="45" width="200" height="140"/>
+</g></g><g mask="url(#mask2)">
+	<rect fill="#FF006E" transform="translate(-69.1795 -53.1795)" x="40" y="45" width="200" height="140"/>
+</g></svg>
