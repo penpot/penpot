@@ -46,8 +46,6 @@ jobs:
       - name: Lint
         working-directory: ./exporter
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
           pnpm run check-fmt:clj
           pnpm run lint:clj

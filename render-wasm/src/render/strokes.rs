@@ -1,8 +1,8 @@
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{
-    merge_fills, Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs,
-    Type,
+    arrow_cap_path, merge_fills, square_cap_path, triangle_cap_path, Corners, Fill, ImageFill,
+    Path, Shape, Side, Stroke, StrokeCap, StrokeKind, StrokeStyle, SvgAttrs, Type,
 };
 use skia_safe::{self as skia, ImageFilter, RRect};
 
@@ -22,6 +22,7 @@ pub(super) fn draw_stroke_on_rect(
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
+    miter: Option<[f32; 4]>,
     antialias: bool,
 ) {
     let stroke_rect = stroke.aligned_rect(rect, scale);
@@ -33,7 +34,9 @@ pub(super) fn draw_stroke_on_rect(
 
     // Per-side widths render as a band between an outer and an inner rect.
     if let Some(widths) = stroke.per_side_widths() {
-        draw_per_side_stroke_on_rect(canvas, stroke, rect, corners, &paint, widths, antialias);
+        draw_per_side_stroke_on_rect(
+            canvas, stroke, rect, corners, &paint, widths, scale, miter, antialias,
+        );
         return;
     }
 
@@ -105,8 +108,8 @@ pub(super) fn draw_stroke_on_rect(
 
 /// Draws a rect/frame stroke whose sides have different widths as the area
 /// between an outer and an inner (rounded) rect, mitered like CSS borders.
-/// The band is filled with the stroke fill; dashed/dotted patterns are not
-/// supported per side and render solid.
+/// Dashed/dotted styles cut that band per side, each side fitting a whole
+/// number of dashes the way a browser fits a dashed border.
 #[allow(clippy::too_many_arguments)]
 fn draw_per_side_stroke_on_rect(
     canvas: &skia::Canvas,
@@ -115,9 +118,23 @@ fn draw_per_side_stroke_on_rect(
     corners: &Option<Corners>,
     paint: &skia::Paint,
     widths: [f32; 4],
+    scale: f32,
+    miter: Option<[f32; 4]>,
     antialias: bool,
 ) {
-    let [top, right, bottom, left] = widths;
+    // Strokes sharing a border box are shaped by the whole box: a side this one
+    // does not paint still sets the radii its corners curve to, as in CSS.
+    let band_widths: [f32; 4] = match miter {
+        Some(profile) => std::array::from_fn(|side| {
+            if widths[side] > 0.0 {
+                widths[side]
+            } else {
+                profile[side]
+            }
+        }),
+        None => widths,
+    };
+    let [top, right, bottom, left] = band_widths;
 
     // Fraction of each side width growing outward / inward from the shape
     // boundary, per stroke alignment.
@@ -149,7 +166,7 @@ fn draw_per_side_stroke_on_rect(
     fill_paint.set_anti_alias(antialias);
 
     let mut pb = skia::PathBuilder::new();
-    match corners {
+    let (outer_radii, inner_radii) = match corners {
         Some(radii) => {
             // Straight (zero-radius) corners stay sharp; rounded ones keep
             // their curvature parallel to the shape edge, like CSS borders.
@@ -176,18 +193,279 @@ fn draw_per_side_stroke_on_rect(
             if has_hole {
                 pb.add_rrect(RRect::new_rect_radii(inner, &inner_radii), None, None);
             }
+            (Some(outer_radii), Some(inner_radii))
         }
         None => {
             pb.add_rect(outer, None, None);
             if has_hole {
                 pb.add_rect(inner, None, None);
             }
+            (None, None)
+        }
+    };
+
+    let mut band = pb.detach();
+    band.set_fill_type(skia::PathFillType::EvenOdd);
+
+    // Solid is the common case and the whole band is one fill. A collapsed
+    // band has no sides left to walk, so it fills solid too.
+    let style = stroke.with_width(stroke.max_width()).style_at_scale(scale);
+    let pattern = if style == StrokeStyle::Solid || !has_hole {
+        None
+    } else {
+        expand_side_patterns(
+            stroke,
+            style,
+            rect,
+            &outer,
+            &inner,
+            inner_radii,
+            widths,
+            antialias,
+        )
+    };
+
+    // Sides this stroke shares with another per-side stroke meet on a diagonal,
+    // so each one keeps only its own wedge of the corner.
+    let wedges = miter.and_then(|profile| side_wedges(&outer, outer_radii, profile, widths));
+
+    if pattern.is_none() && wedges.is_none() {
+        canvas.draw_path(&band, &fill_paint);
+        return;
+    }
+
+    // A filtered stroke draws inside a filtered layer, so the blur or shadow
+    // sees the clipped geometry rather than the whole band.
+    match fill_paint.image_filter() {
+        Some(filter) => {
+            fill_paint.set_image_filter(None);
+            let mut layer_paint = skia::Paint::default();
+            layer_paint.set_image_filter(filter);
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+            canvas.save_layer(&layer_rec);
+        }
+        None => {
+            canvas.save();
         }
     }
 
-    let mut path = pb.detach();
-    path.set_fill_type(skia::PathFillType::EvenOdd);
-    canvas.draw_path(&path, &fill_paint);
+    if let Some(wedges) = &wedges {
+        canvas.clip_path(wedges, skia::ClipOp::Intersect, antialias);
+    }
+
+    match &pattern {
+        Some(pattern) => {
+            // Square corners need no clip: the side strips tile the band exactly.
+            // Rounded corners curve past them, and dots straddle the boundary.
+            let rounded = corners.is_some_and(|radii| radii.iter().any(|r| r.x > 0.0 || r.y > 0.0));
+            if rounded || style == StrokeStyle::Dotted {
+                canvas.clip_path(&band, skia::ClipOp::Intersect, antialias);
+            }
+            canvas.draw_path(pattern, &fill_paint);
+        }
+        None => {
+            canvas.draw_path(&band, &fill_paint);
+        }
+    }
+    canvas.restore();
+}
+
+/// Where a corner's miter line sits at the outer edge and at `depth` into the
+/// side. It runs through the centre of curvature, so a corner splits on its arc.
+fn miter_offsets(radius: (f32, f32), own: f32, adjacent: f32, depth: f32) -> (f32, f32) {
+    if own <= 0.0 {
+        return (0.0, adjacent);
+    }
+    // A corner with no neighbour to meet belongs to this side alone.
+    let (along, across) = if adjacent > 0.0 { radius } else { (0.0, 0.0) };
+    let slope = adjacent / own;
+    (along - across * slope, along - (across - depth) * slope)
+}
+
+/// The CSS miter wedges for the sides this stroke paints, each narrowing to a
+/// diagonal where it meets a neighbour. `None` when it already fills the profile.
+fn side_wedges(
+    outer: &Rect,
+    outer_radii: Option<Corners>,
+    profile: [f32; 4],
+    widths: [f32; 4],
+) -> Option<skia::Path> {
+    if widths == profile {
+        return None;
+    }
+    let [top, right, bottom, left] = profile;
+    let radii = outer_radii.unwrap_or_default();
+
+    let mut pb = skia::PathBuilder::new();
+    let mut wedged = false;
+    for side in Side::ALL {
+        if widths[side.index()] <= 0.0 {
+            continue;
+        }
+        // Each side runs from its own corner to the next one clockwise.
+        let lead = side.index();
+        let trail = (lead + 1) % 4;
+        let (own, ccw, cw) = match side {
+            Side::Top => (top, left, right),
+            Side::Right => (right, top, bottom),
+            Side::Bottom => (bottom, right, left),
+            Side::Left => (left, bottom, top),
+        };
+        // A corner radius is an ellipse: the component along the side sets where
+        // the miter meets it, the one across it sets how deep the corner runs.
+        let (lead_radius, trail_radius) = match side {
+            Side::Top | Side::Bottom => (
+                (radii[lead].x, radii[lead].y),
+                (radii[trail].x, radii[trail].y),
+            ),
+            Side::Right | Side::Left => (
+                (radii[lead].y, radii[lead].x),
+                (radii[trail].y, radii[trail].x),
+            ),
+        };
+        // A rounded corner bulges past the straight strip, so the wedge reaches
+        // deeper than the side is thick. The band trims whatever overshoots.
+        let depth = own + lead_radius.1.max(trail_radius.1);
+        let (a_out, a_in) = miter_offsets(lead_radius, own, ccw, depth);
+        let (b_out, b_in) = miter_offsets(trail_radius, own, cw, depth);
+        let quad = match side {
+            Side::Top => [
+                (outer.left + a_out, outer.top),
+                (outer.right - b_out, outer.top),
+                (outer.right - b_in, outer.top + depth),
+                (outer.left + a_in, outer.top + depth),
+            ],
+            Side::Right => [
+                (outer.right, outer.top + a_out),
+                (outer.right, outer.bottom - b_out),
+                (outer.right - depth, outer.bottom - b_in),
+                (outer.right - depth, outer.top + a_in),
+            ],
+            Side::Bottom => [
+                (outer.right - a_out, outer.bottom),
+                (outer.left + b_out, outer.bottom),
+                (outer.left + b_in, outer.bottom - depth),
+                (outer.right - a_in, outer.bottom - depth),
+            ],
+            Side::Left => [
+                (outer.left, outer.bottom - a_out),
+                (outer.left, outer.top + b_out),
+                (outer.left + depth, outer.top + b_in),
+                (outer.left + depth, outer.bottom - a_in),
+            ],
+        };
+        pb.add_polygon(&quad.map(Point::from), true);
+        wedged = true;
+    }
+    wedged.then(|| pb.detach())
+}
+
+/// Expands each side's dash or dot pattern into the geometry it paints, fitted
+/// so the side begins and ends on a dash. `None` when no side produced any.
+#[allow(clippy::too_many_arguments)]
+fn expand_side_patterns(
+    stroke: &Stroke,
+    style: StrokeStyle,
+    rect: &Rect,
+    outer: &Rect,
+    inner: &Rect,
+    inner_radii: Option<Corners>,
+    widths: [f32; 4],
+    antialias: bool,
+) -> Option<skia::Path> {
+    let mut pb = skia::PathBuilder::new();
+    let mut expanded = false;
+
+    let mut stamp_paint = skia::Paint::default();
+    stamp_paint.set_style(skia::PaintStyle::Stroke);
+    stamp_paint.set_stroke_cap(skia::paint::Cap::Butt);
+    stamp_paint.set_anti_alias(antialias);
+
+    for side in Side::ALL {
+        let width = widths[side.index()];
+        if width <= 0.0 {
+            continue;
+        }
+
+        let mut side_stroke = stroke.with_width(width);
+        side_stroke.style = style;
+
+        // Where the uniform renderer would stroke this width, so inner/outer
+        // dots still come out as half circles once the band clips them.
+        let line = side_stroke.outer_rect(rect);
+        let (start, end) = match side {
+            Side::Top => ((outer.left, line.top), (outer.right, line.top)),
+            Side::Right => ((line.right, outer.top), (line.right, outer.bottom)),
+            Side::Bottom => ((outer.right, line.bottom), (outer.left, line.bottom)),
+            Side::Left => ((line.left, outer.bottom), (line.left, outer.top)),
+        };
+        let length = match side {
+            Side::Top | Side::Bottom => outer.width(),
+            Side::Right | Side::Left => outer.height(),
+        };
+
+        let Some(effect) = side_stroke.path_effect_fitted(length) else {
+            continue;
+        };
+        stamp_paint.set_stroke_width(width);
+        stamp_paint.set_path_effect(effect);
+
+        let line_path = {
+            let mut line_pb = skia::PathBuilder::new();
+            line_pb.move_to(start);
+            line_pb.line_to(end);
+            line_pb.detach()
+        };
+
+        let mut outline = skia::Path::default();
+        if skia::path_utils::fill_path_with_paint(
+            &line_path,
+            &stamp_paint,
+            &mut outline,
+            None,
+            None,
+        ) {
+            pb.add_path(&outline);
+            expanded = true;
+        }
+    }
+
+    // A rounded band's corner notches paint solid, as a browser does for uneven
+    // widths. Dots are discrete and must not weld into a solid corner.
+    if style != StrokeStyle::Dotted {
+        if let Some(radii) = inner_radii {
+            for patch in corner_patches(outer, inner, &radii) {
+                pb.add_rect(patch, None, None);
+                expanded = true;
+            }
+        }
+    }
+
+    expanded.then(|| pb.detach())
+}
+
+/// The corner boxes of a rounded band, from each side's leading outer corner to
+/// where that corner's inner arc meets the straight edges.
+fn corner_patches(outer: &Rect, inner: &Rect, inner_radii: &Corners) -> Vec<Rect> {
+    Side::ALL
+        .into_iter()
+        .filter_map(|side| {
+            let radius = inner_radii[side.index()];
+            if radius.x <= 0.0 && radius.y <= 0.0 {
+                return None;
+            }
+            let (left, right) = match side {
+                Side::Top | Side::Left => (outer.left, inner.left + radius.x),
+                Side::Right | Side::Bottom => (inner.right - radius.x, outer.right),
+            };
+            let (top, bottom) = match side {
+                Side::Top | Side::Right => (outer.top, inner.top + radius.y),
+                Side::Bottom | Side::Left => (inner.bottom - radius.y, outer.bottom),
+            };
+            let patch = Rect::from_ltrb(left, top, right, bottom);
+            (patch.width() > 0.0 && patch.height() > 0.0).then_some(patch)
+        })
+        .collect()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -409,6 +687,8 @@ pub(super) fn handle_stroke_caps(
     if let [first_point, .., last_point] = points.as_slice() {
         let mut paint_stroke = paint.clone();
 
+        paint_stroke.set_path_effect(None);
+
         if let Some(filter) = blur {
             paint_stroke.set_image_filter(filter.clone());
         }
@@ -445,40 +725,10 @@ fn draw_square_cap(
     size: f32,
     extra_rotation: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(
-        angle.to_degrees() + extra_rotation,
-        Point::new(center.x, center.y),
+    canvas.draw_path(
+        &square_cap_path(center, direction, size, extra_rotation),
+        paint,
     );
-
-    let half_size = size / 2.0;
-    let rect = Rect::from_xywh(center.x - half_size, center.y - half_size, size, size);
-
-    let points = [
-        Point::new(rect.left(), rect.top()),
-        Point::new(rect.right(), rect.top()),
-        Point::new(rect.right(), rect.bottom()),
-        Point::new(rect.left(), rect.bottom()),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(Point::new(center.x, center.y));
-        pb.move_to(transformed_points[0]);
-        pb.line_to(transformed_points[1]);
-        pb.line_to(transformed_points[2]);
-        pb.line_to(transformed_points[3]);
-        pb.close();
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
 }
 
 fn draw_arrow_cap(
@@ -488,33 +738,7 @@ fn draw_arrow_cap(
     direction: &Point,
     size: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(angle.to_degrees() - 90., Point::new(center.x, center.y));
-
-    let half_height = size / 2.;
-    let points = [
-        Point::new(center.x, center.y - half_height),
-        Point::new(center.x - size, center.y + half_height),
-        Point::new(center.x + size, center.y + half_height),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(transformed_points[1]);
-        pb.line_to(transformed_points[0]);
-        pb.line_to(transformed_points[2]);
-        pb.move_to(Point::new(center.x, center.y));
-        pb.line_to(transformed_points[0]);
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
+    canvas.draw_path(&arrow_cap_path(center, direction, size), paint);
 }
 
 fn draw_triangle_cap(
@@ -524,32 +748,7 @@ fn draw_triangle_cap(
     direction: &Point,
     size: f32,
 ) {
-    let dx = direction.x - center.x;
-    let dy = direction.y - center.y;
-    let angle = dy.atan2(dx);
-
-    let mut matrix = Matrix::new_identity();
-    matrix.pre_rotate(angle.to_degrees() - 90., Point::new(center.x, center.y));
-
-    let half_height = size / 2.;
-    let points = [
-        Point::new(center.x, center.y - half_height),
-        Point::new(center.x - size, center.y + half_height),
-        Point::new(center.x + size, center.y + half_height),
-    ];
-
-    let mut transformed_points = points;
-    matrix.map_points(&mut transformed_points, &points);
-
-    let path = {
-        let mut pb = skia::PathBuilder::new();
-        pb.move_to(transformed_points[0]);
-        pb.line_to(transformed_points[1]);
-        pb.line_to(transformed_points[2]);
-        pb.close();
-        pb.detach()
-    };
-    canvas.draw_path(&path, paint);
+    canvas.draw_path(&triangle_cap_path(center, direction, size), paint);
 }
 
 fn draw_image_stroke_in_container(
@@ -605,6 +804,7 @@ fn draw_image_stroke_in_container(
                 scale,
                 None,
                 None,
+                Stroke::per_side_profile(shape.visible_strokes()),
                 antialias,
             );
         }
@@ -924,6 +1124,7 @@ fn render_merged(
                 scale,
                 None,
                 blur_filter.as_ref(),
+                Stroke::per_side_profile(shape.visible_strokes()),
                 antialias,
             );
         }
@@ -1085,6 +1286,7 @@ fn render_single_internal(
                     scale,
                     shadow,
                     blur.as_ref(),
+                    Stroke::per_side_profile(shape.visible_strokes()),
                     antialias,
                 );
             }
@@ -1180,5 +1382,137 @@ pub fn render_text_paths(
                 draw_outer_stroke_path(canvas, path, &paint, None, antialias);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod per_side_tests {
+    use super::*;
+    use crate::shapes::StrokeStyle;
+
+    /// Outer-aligned radii for a 220x140 rect, radius 20, widths [10, 20, 15, 5]:
+    /// each corner grows by its two adjacent widths, so they are wider than tall.
+    fn outer_radii() -> Corners {
+        [
+            skia::Point::new(25.0, 30.0),
+            skia::Point::new(40.0, 30.0),
+            skia::Point::new(40.0, 35.0),
+            skia::Point::new(25.0, 35.0),
+        ]
+    }
+
+    /// Reads a wedge path back as a flat list of points.
+    fn wedge_points(path: &skia::Path) -> Vec<(f32, f32)> {
+        path.points().iter().map(|p| (p.x, p.y)).collect()
+    }
+
+    #[test]
+    fn a_wedge_reads_the_radius_along_the_side_it_runs_on() {
+        // The outer rect for an outer-aligned stroke: each edge pushed out by
+        // that side's width.
+        let outer = Rect::from_ltrb(-5.0, -10.0, 240.0, 155.0);
+        let profile = [10.0, 20.0, 15.0, 5.0];
+
+        // Only the right side is painted, as one stroke of a per-side colour set.
+        let wedge = side_wedges(&outer, Some(outer_radii()), profile, [0.0, 20.0, 0.0, 0.0])
+            .expect("the right side is painted, so it gets a wedge");
+
+        // The corner ellipses are 40 wide and 30/35 tall, and a vertical side
+        // reads the tall one, so the wedge meets the top edge at the corner.
+        assert_eq!(
+            wedge_points(&wedge),
+            vec![(240.0, 0.0), (240.0, 150.0), (180.0, 105.0), (180.0, 30.0),]
+        );
+    }
+
+    /// Whether `point` sits on the infinite line through `a` and `b`.
+    fn on_line(a: (f32, f32), b: (f32, f32), point: (f32, f32)) -> bool {
+        let cross = (b.0 - a.0) * (point.1 - a.1) - (b.1 - a.1) * (point.0 - a.0);
+        cross.abs() < 1e-3
+    }
+
+    #[test]
+    fn adjacent_wedges_share_one_miter_line() {
+        let outer = Rect::from_ltrb(-5.0, -10.0, 240.0, 155.0);
+        let profile = [10.0, 20.0, 15.0, 5.0];
+        let radii = Some(outer_radii());
+
+        let top = wedge_points(
+            &side_wedges(&outer, radii, profile, [10.0, 0.0, 0.0, 0.0]).expect("top wedge"),
+        );
+        let right = wedge_points(
+            &side_wedges(&outer, radii, profile, [0.0, 20.0, 0.0, 0.0]).expect("right wedge"),
+        );
+
+        // Both edges facing the top-right corner run through its centre of
+        // curvature, so the two sides abut with neither a gap nor an overlap.
+        let centre = (240.0 - 40.0, -10.0 + 30.0);
+        assert!(on_line(top[1], top[2], centre), "top edge missed: {top:?}");
+        assert!(
+            on_line(right[0], right[3], centre),
+            "right edge missed: {right:?}"
+        );
+        // And they are the same line, not merely two lines through one point.
+        assert!(
+            on_line(top[1], top[2], right[0]),
+            "not collinear: {right:?}"
+        );
+    }
+
+    /// Inner-aligned pattern for a 235x175 rect with a nominal 30/30 dash:
+    /// neither side holds whole periods, so each stretches by its own amount.
+    fn dashed_pattern() -> skia::Path {
+        let rect = Rect::from_ltrb(0.0, 0.0, 235.0, 175.0);
+        let widths = [16.0, 16.0, 16.0, 24.0];
+        let mut stroke = Stroke::new_inner_stroke(
+            16.0,
+            StrokeStyle::Dashed,
+            None,
+            None,
+            Some(30.0),
+            Some(30.0),
+        );
+        stroke.widths = Some(widths);
+        let inner = Rect::from_ltrb(24.0, 16.0, 235.0 - 16.0, 175.0 - 16.0);
+        expand_side_patterns(
+            &stroke,
+            StrokeStyle::Dashed,
+            &rect,
+            &rect,
+            &inner,
+            None,
+            widths,
+            true,
+        )
+        .expect("dashed sides must produce a pattern")
+    }
+
+    #[test]
+    fn each_side_starts_and_ends_on_a_dash() {
+        let pattern = dashed_pattern();
+
+        // Top side, over x. Sampled clear of the left and right strips so the
+        // reading is the top side's own pattern.
+        assert!(pattern.contains((30.0, 8.0)), "top must open with a dash");
+        assert!(pattern.contains((210.0, 8.0)), "top must close with a dash");
+
+        // Right side, over y, at the vertical stroke line (235 - 16 / 2).
+        assert!(
+            pattern.contains((227.0, 30.0)),
+            "right must open with a dash"
+        );
+        assert!(
+            pattern.contains((227.0, 145.0)),
+            "right must close with a dash"
+        );
+    }
+
+    #[test]
+    fn sides_keep_their_own_gaps() {
+        let pattern = dashed_pattern();
+        // 235 stretches to 4 dashes of 33.57: the first gap is 33.57..67.14.
+        assert!(!pattern.contains((50.0, 8.0)), "top gap was filled");
+        // 175 stretches to 3 dashes of 35: the first gap is 35..70.
+        assert!(!pattern.contains((227.0, 50.0)), "right gap was filled");
     }
 }

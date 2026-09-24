@@ -37,6 +37,7 @@ See `mem:scripts/paren-repair`.
 UI and packages:
 - App UI components, SCSS modules, style-system boundaries, accessibility, i18n, and render performance: `mem:frontend/ui-conventions-and-style-system`.
 - JS/TS packages, shared UI package, text editor, Storybook, and package builds: `mem:frontend/ui-packages-text-editor-workflow`.
+- PO translation workflow and per-locale conventions: `mem:frontend/translations`.
 
 Workspace behavior:
 - Workspace state, commits, persistence, undo, repo calls, and refs: `mem:frontend/workspace-state-persistence-subtleties`.
@@ -53,6 +54,7 @@ Diagnostics and validation:
 - Source-edit compile/hot-reload diagnostics: `mem:frontend/compile-diagnostics`.
 - Runtime crash recovery: `mem:frontend/handling-crashes`.
 - Tests and live verification: `mem:frontend/testing`.
+- CI end-to-end workflow (build-once frontend bundle, check names): `mem:frontend/e2e-ci-workflow`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Real pointer/keyboard gesture reproduction: `mem:frontend/playwright-gestures`.
 

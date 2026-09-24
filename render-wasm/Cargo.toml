@@ -46,6 +46,15 @@ lto = "fat"
 strip = true
 codegen-units = 1
 
+[profile.profiling]
+inherits = "release"
+strip = false
+# Fat LTO inlines the shadow helpers into their caller, so a profile cannot
+# attribute cost to them. Thin LTO keeps those boundaries; the code is still
+# optimized, so the proportions stay representative.
+lto = "thin"
+codegen-units = 16
+
 [profile.size]
 inherits = "release"
 opt-level = "z"

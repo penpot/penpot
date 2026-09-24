@@ -15,21 +15,20 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid*]]
+   [app.main.ui.dashboard.import :as udi]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.layout-toggle :as lt :refer [layout-toggle*]]
-   [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private menu-icon
-  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
   {::mf/private true}
@@ -37,9 +36,10 @@
   (let [project-id (:id project)
 
         local
-        (mf/use-state
-         {:menu-open false
-          :edition false})
+        (mf/use-state {:edition false})
+
+        menu-open*
+        (mf/use-state false)
 
         on-create-click
         (mf/use-fn
@@ -51,22 +51,27 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
-             (swap! local assoc :menu-open true :menu-pos position))))
-
-        on-menu-close
-        (mf/use-fn #(swap! local assoc :menu-open false))
+           (dom/prevent-default event)
+           (swap! menu-open* not)))
 
         on-edit
-        (mf/use-fn #(swap! local assoc :edition true :menu-open false))
+        (mf/use-fn
+         (fn []
+           (reset! menu-open* false)
+           (swap! local assoc :edition true)))
 
         toggle-pin
         (mf/use-fn
          (mf/deps project)
          #(st/emit! (dd/toggle-project-pin project)))
 
-        on-import
+        file-input
+        (mf/use-ref nil)
+
+        on-import-click
+        (mf/use-fn #(dom/click (mf/ref-val file-input)))
+
+        on-finish-import
         (mf/use-fn
          (mf/deps project-id)
          (fn []
@@ -101,40 +106,56 @@
                           :on-change on-change}]
 
       (when ^boolean can-edit
-        [:a {:class (stl/css :btn-secondary :btn-small :new-file)
-             :tab-index "0"
-             :on-click on-create-click
-             :data-testid "new-file"
-             :on-key-down (fn [event]
-                            (when (kbd/enter? event)
-                              (on-create-click event)))}
+        [:> button* {:variant "secondary"
+                     :class (stl/css :new-file)
+                     :on-click on-create-click
+                     :on-key-down (fn [event]
+                                    (when (kbd/enter? event)
+                                      (on-create-click event)))
+                     :tab-index "0"
+                     :data-testid "new-file"}
          (tr "dashboard.new-file")])
 
       (when-not (:is-default project)
-        [:> pin-button*
-         {:tab-index 0
-          :is-pinned (:is-pinned project)
-          :on-click toggle-pin
-          :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
+        [:> icon-button* {:icon i/pin
+                          :variant "ghost"
+                          :aria-label (tr "dashboard.pin-unpin")
+                          :aria-pressed (:is-pinned project)
+                          :tab-index 0
+                          :on-click toggle-pin
+                          :on-key-down (fn [event]
+                                         (when (kbd/enter? event)
+                                           (toggle-pin event)))}])
 
       (when ^boolean can-edit
-        [:div {:class (stl/css :icon)
-               :tab-index "0"
-               :on-click on-menu-click
-               :title (tr "dashboard.options")
-               :on-key-down (fn [event]
-                              (when (kbd/enter? event)
-                                (on-menu-click event)))}
-         menu-icon])
+        [:*
+         [:> project-menu*
+          {:project project
+           :is-open (deref menu-open*)
+           :on-open-change #(reset! menu-open* %)
+           :on-edit on-edit
+           :on-import-click on-import-click
+           :placement "bottom end"
+           :trigger
+           (mf/html
+            [:> icon-button* {:icon i/menu
+                              :variant "ghost"
+                              :aria-label (tr "dashboard.options")
+                              :aria-pressed (deref menu-open*)
+                              :on-click on-menu-click
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (on-menu-click event)))}])}]
 
-      (when ^boolean can-edit
-        [:> project-menu* {:project project
-                           :show (:menu-open @local)
-                           :left (- (:x (:menu-pos @local)) 180)
-                           :top (:y (:menu-pos @local))
-                           :on-edit on-edit
-                           :on-close on-menu-close
-                           :on-import on-import}])]]))
+         ;; Kept mounted for as long as this header is, regardless of the
+         ;; menu's own open state: the popover really unmounts its content on
+         ;; close (unlike the old context-menu-a11y, which just hid it), and
+         ;; selecting "Import" closes the menu in the same tick — a ref owned
+         ;; inside the popover could already be gone by the time its own
+         ;; click handler fires.
+         [:> udi/import-form* {:ref file-input
+                               :project-id project-id
+                               :on-finish-import on-finish-import}]])]]))
 
 (mf/defc files-section*
   [{:keys [project team layout on-layout-change]}]

@@ -112,7 +112,7 @@ msgstr "La contraseña ha sido cambiada"
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
-"El perfil aun no ha sido verificado, por favor valida el perfil antes de "
+"El perfil aún no ha sido verificado, por favor valida el perfil antes de "
 "continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
@@ -461,7 +461,7 @@ msgstr "(copia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:400
 msgid "dashboard.create-new-organization"
-msgstr "Crear org"
+msgstr "Crear nueva organización"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.create-new-team"
@@ -786,6 +786,10 @@ msgstr "Confirmar vínculos de biblioteca"
 msgid "dashboard.import.error"
 msgstr "La importación ha fallado. Intentalo de nuevo, por favor"
 
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Nombre del archivo"
+
 #: src/app/main/ui/dashboard/import.cljs:292
 #, unused
 msgid "dashboard.import.import-error"
@@ -824,6 +828,10 @@ msgstr[1] "%s ficheros se han importado correctamente."
 #: src/app/main/ui/dashboard/import.cljs:556
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
+
+#: src/app/main/ui/dashboard/import.cljs:704
+msgid "dashboard.import.next-file"
+msgstr "Siguiente archivo"
 
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
@@ -867,9 +875,21 @@ msgstr ""
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Revisa los vínculos de biblioteca antes de confirmar:"
 
-#: src/app/main/ui/dashboard/import.cljs:672
+#: src/app/main/ui/dashboard/import.cljs:430
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "conectar a"
+
+#: src/app/main/ui/dashboard/import.cljs:424
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "biblioteca original"
+
+#: src/app/main/ui/dashboard/import.cljs:675
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Conectar bibliotecas seleccionadas"
+
+#: src/app/main/ui/dashboard/import.cljs:703
 msgid "dashboard.import.review-links"
-msgstr "Revisar vínculos"
+msgstr "Revisar vínculos de biblioteca"
 
 #, unused
 msgid "dashboard.import.summary.auto-linked"
@@ -877,11 +897,23 @@ msgstr "Vinculadas automáticamente"
 
 #: src/app/main/ui/dashboard/import.cljs:491
 msgid "dashboard.import.summary.linked"
-msgstr "Vinculada"
+msgstr "auto-vinculada"
+
+#: src/app/main/ui/dashboard/import.cljs:498
+msgid "dashboard.import.summary.manually-linked"
+msgstr "vinculada manualmente"
+
+#: src/app/main/ui/dashboard/import.cljs:506
+msgid "dashboard.import.summary.new"
+msgstr "Nueva"
 
 #: src/app/main/ui/dashboard/import.cljs:527
 msgid "dashboard.import.summary.no-selection"
 msgstr "Ninguna biblioteca seleccionada"
+
+#: src/app/main/ui/dashboard/import.cljs:503
+msgid "dashboard.import.summary.original"
+msgstr "Original"
 
 #, unused
 msgid "dashboard.import.summary.your-selection"
@@ -1112,10 +1144,6 @@ msgstr "No se puede analizar el manifiest de la extensión"
 #: src/app/main/ui/dashboard.cljs:189
 msgid "dashboard.plugins.try-plugin"
 msgstr "Prueba la extensión: "
-
-#: src/app/main/ui/dashboard/sidebar.cljs:890
-msgid "dashboard.plus-create-new-organization"
-msgstr "+ Crear org"
 
 #: src/app/main/data/dashboard.cljs:758
 msgid "dashboard.progress-notification.deleting-files"
@@ -1711,6 +1739,10 @@ msgstr ""
 "del fichero que se esta intentando abrir. Falta aplicar migraciones para "
 "'%s' antes de poder abrir el fichero."
 
+#: src/app/main/ui/auth/login.cljs:103
+msgid "errors.account-locked"
+msgstr "Demasiados intentos fallidos. Su cuenta ha sido bloqueada durante %s minutos. Por favor, inténtelo más tarde."
+
 #: src/app/main/data/auth.cljs:358, src/app/main/errors.cljs:196, src/app/main/ui/auth/login.cljs:110, src/app/main/ui/auth/register.cljs:129, src/app/main/ui/auth/register.cljs:322, src/app/main/ui/auth/verify_token.cljs:138, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1125, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
 msgstr "Ha ocurrido algún error."
@@ -1790,7 +1822,7 @@ msgstr "Parece que no es una imagen válida."
 msgid "errors.member-is-muted"
 msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
-"spam o alto indice de rebote)."
+"spam o alto índice de rebote)."
 
 #: src/app/main/errors.cljs:483
 msgid "errors.migration-in-progress"
@@ -1831,12 +1863,17 @@ msgstr "El perfil esta blockeado"
 #: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:225, src/app/main/ui/dashboard/team.cljs:731, src/app/main/ui/dashboard/team.cljs:1108, src/app/main/ui/onboarding/team_choice.cljs:109, src/app/main/ui/settings/change_email.cljs:33
 msgid "errors.profile-is-muted"
 msgstr ""
-"Tu perfil tiene los emails silenciados (por reportes de spam o alto indice "
+"Tu perfil tiene los emails silenciados (por reportes de spam o alto índice "
 "de rebote)."
 
 #: src/app/main/data/auth.cljs:346, src/app/main/ui/auth/register.cljs:91
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
+
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"El autoguardado se ha detenido debido a un error. Contacta soporte para informar del error y recarga para continuar desde los últimos cambios guardados."
 
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
@@ -2609,7 +2646,7 @@ msgstr "Crear nuevo token de acceso"
 
 #: src/app/main/ui/settings/integrations.cljs:632
 msgid "integrations.access-tokens.empty.add-one"
-msgstr "Pulsa el botón \"Crear nuevo token de accesso\" para generar uno."
+msgstr "Pulsa el botón \"Crear nuevo token de acceso\" para generar uno."
 
 #: src/app/main/ui/settings/integrations.cljs:631
 msgid "integrations.access-tokens.empty.no-access-tokens"
@@ -2622,7 +2659,7 @@ msgstr "Tokens de acceso personales"
 #: src/app/main/ui/settings/integrations.cljs:611
 msgid "integrations.access-tokens.personal.description"
 msgstr ""
-"Los tokens de accesso personales funcionan como una alternativa a nuestro "
+"Los tokens de acceso personales funcionan como una alternativa a nuestro "
 "sistema de autenticación usuario/password y se pueden usar para permitir a "
 "otras aplicaciones acceso a la API interna de Penpot"
 
@@ -2632,7 +2669,7 @@ msgstr "Copiar al portapapeles"
 
 #: src/app/main/ui/settings/integrations.cljs:253
 msgid "integrations.create-access-token.title"
-msgstr "Crear token de accesso"
+msgstr "Crear token de acceso"
 
 #: src/app/main/ui/settings/integrations.cljs:252
 msgid "integrations.create-access-token.title.created"
@@ -3614,6 +3651,10 @@ msgstr "Mostrar sólo tus comentarios"
 #: src/app/main/ui/onboarding/questions.cljs:156
 msgid "labels.sketch"
 msgstr "Sketch"
+
+#: src/app/main/ui/dashboard/import.cljs:668
+msgid "labels.skip"
+msgstr "Saltar"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1144
 msgid "labels.sources"
@@ -7517,9 +7558,21 @@ msgid_plural "workspace.libraries.components"
 msgstr[0] "1 componente"
 msgstr[1] "%s componentes"
 
+#: src/app/main/ui/workspace/libraries.cljs:541
+msgid "workspace.libraries.connected-libraries"
+msgstr "Biblioteca conectada"
+
+#: src/app/main/ui/workspace/libraries.cljs:550
+msgid "workspace.libraries.connected-through"
+msgstr "Conectada mediante"
+
 #: src/app/main/ui/workspace/libraries.cljs:367
 msgid "workspace.libraries.connected-to"
 msgstr "Conectada con"
+
+#: src/app/main/ui/workspace/libraries.cljs:600
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Aun no hay bibliotecas conectadas."
 
 #: src/app/main/ui/workspace/libraries.cljs:432
 msgid "workspace.libraries.empty.add-some"
@@ -7536,6 +7589,18 @@ msgstr "algunas plantillas aquí"
 #: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.file-library"
 msgstr "Biblioteca del archivo"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.empty.no-assets"
+msgstr "Aún no hay recursos"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.tokens-source"
+msgstr "Fuente de tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Activar fuente de tokens"
 
 #: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
 msgid "workspace.libraries.graphics"
@@ -7585,6 +7650,10 @@ msgstr "Buscar bibliotecas compartidas"
 msgid "workspace.libraries.shared-libraries"
 msgstr "BIBLIOTECAS COMPARTIDAS"
 
+#: src/app/main/ui/workspace/libraries.cljs:311
+msgid "workspace.libraries.shared-library-added"
+msgstr "Añadido"
+
 #: src/app/main/ui/workspace/libraries.cljs:414
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Conectar biblioteca"
@@ -7624,6 +7693,24 @@ msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
 msgstr[0] "1 tipografía"
 msgstr[1] "%s tipografías"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 token set"
+msgstr[1] "%s token sets"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 token theme"
+msgstr[1] "%s token themes"
 
 #: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.unlink-library-btn"
@@ -7979,6 +8066,10 @@ msgstr "Inicios de flujo"
 #, unused
 msgid "workspace.options.flows.remove-flow"
 msgstr "Eliminar flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr "La fuente utilizada por este texto (%s) ya no está disponible. Vuelve a subir la fuente para crear un estilo de tipografía"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
@@ -8426,19 +8517,19 @@ msgstr "Opciones avanzadas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:695, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:702
 msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Altura.Max"
+msgstr "Altura máx."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:633, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:640
 msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Ancho.Max"
+msgstr "Ancho máx."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:664, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:672
 msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Altura.Min"
+msgstr "Altura mín."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:609
 msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Ancho.Min"
+msgstr "Ancho mín."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -9706,7 +9797,7 @@ msgstr "Nombre del grupo"
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.tokens.grouping-set-alert"
-msgstr "La agrupación de sets aun no está soportada."
+msgstr "La agrupación de sets aún no está soportada."
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:232
 msgid "workspace.tokens.import-button-prefix"
@@ -10077,6 +10168,32 @@ msgstr "Usa una referencia"
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
 
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "Esta es la actual fuente de Tokens"
+
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Los sets o temas de la fuente de tokens se han modificado"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:74
+msgid "workspace.tokens.source"
+msgstr "Fuente:"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:79
+msgid "workspace.tokens.this-file"
+msgstr "Este archivo"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:96
+msgid "workspace.tokens.change-token-source"
+msgstr "Cambiar fuente de tokens"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:102
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Abrir la fuente de tokens en una pestaña nueva"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
 msgid "workspace.tokens.warning-name-change"
@@ -10441,3 +10558,9 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.team-management"
+msgstr "Gestión de equipos"
+
+msgid "dashboard.no-organizations-yet"
+msgstr "Todavía no perteneces a ninguna organización"

@@ -47,7 +47,7 @@
 - Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
 - Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
-## 2.18.0 (Unreleased)
+## 2.18.0
 
 ### :rocket: Epics and highlights
 
@@ -177,9 +177,11 @@
 - Fix workspace crash with index out of bounds when removing multiple interactions rapidly [#11546](https://github.com/penpot/penpot/issues/11546) (PR: [#11621](https://github.com/penpot/penpot/pull/11621))
 - Fix workspace crash with 'too much recursion' error when editing grid layout [#11562](https://github.com/penpot/penpot/issues/11562) (PR: [#11563](https://github.com/penpot/penpot/pull/11563))
 - Fix plugin API error when removing interactions [#11618](https://github.com/penpot/penpot/issues/11618) (PR: [#11621](https://github.com/penpot/penpot/pull/11621))
+- Fix MCP REPL server starting in multi-user mode and inheriting the main server bind address [#11631](https://github.com/penpot/penpot/issues/11631) (PR: [#11632](https://github.com/penpot/penpot/pull/11632))
 - Fix chunked upload storing duplicate objects when the same chunk index is sent twice [#11634](https://github.com/penpot/penpot/issues/11634) (PR: [#11635](https://github.com/penpot/penpot/pull/11635))
 - Fix access token expiration select always showing Never after picking another option (by @chulgil) [#11663](https://github.com/penpot/penpot/issues/11663) (PR: [#11664](https://github.com/penpot/penpot/pull/11664))
 - Fix workspace dropping unsaved changes when read-only blocks persistence [#11672](https://github.com/penpot/penpot/issues/11672) (PR: [#11699](https://github.com/penpot/penpot/pull/11699))
+- Fix Plugin API failing silently when writing to an interaction the shape no longer has [#11780](https://github.com/penpot/penpot/issues/11780) (PR: [#11781](https://github.com/penpot/penpot/pull/11781))
 
 ### :sparkles: New features & Enhancements
 
@@ -203,6 +205,8 @@
 - Adopt React Aria [#10802](https://github.com/penpot/penpot/issues/10802) (PR: [#10675](https://github.com/penpot/penpot/pull/10675))
 - Add plugin API function for awaiting component updates beyond waitForLayoutUpdate [#10927](https://github.com/penpot/penpot/issues/10927) (PR: [#10964](https://github.com/penpot/penpot/pull/10964))
 - Emit open-workspace-file audit event with file statistics on workspace load [#11106](https://github.com/penpot/penpot/issues/11106) (PR: [#11138](https://github.com/penpot/penpot/pull/11138))
+- Restrict optional ids to v4, v7 and v8 UUIDs in creation RPC endpoints [#11778](https://github.com/penpot/penpot/issues/11778) (PR: [#11777](https://github.com/penpot/penpot/pull/11777))
+
 ## 2.17.2
 
 ### :bug: Bugs fixed

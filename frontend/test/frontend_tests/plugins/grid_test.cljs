@@ -9,6 +9,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -47,3 +48,17 @@
         (t/is (thrown? js/Error (.setColumn grid 1 "fixed" 10)))
         (t/is (thrown? js/Error (.removeRow grid 1)))
         (t/is (thrown? js/Error (.removeColumn grid 1)))))))
+
+(t/deftest grid-dir-setter-persists-implicit-row
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [{:keys [store ^js grid]} (setup-grid)
+            file-id                  (:current-file-id @store)
+            page-id                  (:current-page-id @store)
+            grid-id                  (:id (u/proxy->shape grid))]
+        (swap! store update-in
+               [:files file-id :data :pages-index page-id :objects grid-id]
+               dissoc
+               :layout-grid-dir)
+        (set! (.-dir grid) "row")
+        (t/is (= "row" (.-dir grid)))))))

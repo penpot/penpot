@@ -51,7 +51,7 @@
         vbox-x                    (:x vbox)
         vbox-y                    (:y vbox)
 
-        base-objects-rect         (mf/with-memo [objects]
+        shapes-rect               (mf/with-memo [objects]
                                     (-> objects
                                         (cfh/get-immediate-children)
                                         (gsh/shapes->rect)))
@@ -64,6 +64,11 @@
         inv-zoom                 (/ 1 zoom)
         vbox-height              (- (:height vbox) (* inv-zoom scroll-height))
         vbox-width               (- (:width vbox) (* inv-zoom scroll-width))
+
+        ;; When there are no shapes there is no content to scroll to, so use a
+        ;; rect matching the viewport itself, which keeps every offset below at 0
+        base-objects-rect         (or shapes-rect
+                                      (grc/make-rect vbox-x vbox-y vbox-width vbox-height))
 
         ;; top space hidden because of the scroll
         top-offset               (-> (- vbox-y (:y base-objects-rect))

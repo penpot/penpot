@@ -454,7 +454,7 @@ msgstr "(copy)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:400
 msgid "dashboard.create-new-organization"
-msgstr "Create org"
+msgstr "Create new organization"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.create-new-team"
@@ -788,6 +788,10 @@ msgstr "Confirm library links"
 msgid "dashboard.import.error"
 msgstr "Import failed. Please try again"
 
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "File name"
+
 #: src/app/main/ui/dashboard/import.cljs:292
 #, unused
 msgid "dashboard.import.import-error"
@@ -826,6 +830,10 @@ msgstr[1] "%s files have been imported successfully."
 #: src/app/main/ui/dashboard/import.cljs:556
 msgid "dashboard.import.import-warning"
 msgstr "Some files containted invalid objects that have been removed."
+
+#: src/app/main/ui/dashboard/import.cljs:704
+msgid "dashboard.import.next-file"
+msgstr "Next file"
 
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
@@ -869,9 +877,21 @@ msgstr ""
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Review the library links before confirming:"
 
-#: src/app/main/ui/dashboard/import.cljs:672
+#: src/app/main/ui/dashboard/import.cljs:430
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "connect to"
+
+#: src/app/main/ui/dashboard/import.cljs:424
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "original library"
+
+#: src/app/main/ui/dashboard/import.cljs:675
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Connect selected libraries"
+
+#: src/app/main/ui/dashboard/import.cljs:703
 msgid "dashboard.import.review-links"
-msgstr "Review links"
+msgstr "Review library links"
 
 #, unused
 msgid "dashboard.import.summary.auto-linked"
@@ -879,11 +899,23 @@ msgstr "Auto-linked"
 
 #: src/app/main/ui/dashboard/import.cljs:491
 msgid "dashboard.import.summary.linked"
-msgstr "Linked"
+msgstr "auto-linked"
+
+#: src/app/main/ui/dashboard/import.cljs:498
+msgid "dashboard.import.summary.manually-linked"
+msgstr "linked manually"
+
+#: src/app/main/ui/dashboard/import.cljs:506
+msgid "dashboard.import.summary.new"
+msgstr "New"
 
 #: src/app/main/ui/dashboard/import.cljs:527
 msgid "dashboard.import.summary.no-selection"
 msgstr "No library selected"
+
+#: src/app/main/ui/dashboard/import.cljs:503
+msgid "dashboard.import.summary.original"
+msgstr "Original"
 
 #, unused
 msgid "dashboard.import.summary.your-selection"
@@ -1112,10 +1144,6 @@ msgstr "Cannot parse the plugin manifest"
 #: src/app/main/ui/dashboard.cljs:189
 msgid "dashboard.plugins.try-plugin"
 msgstr "Try plugin: "
-
-#: src/app/main/ui/dashboard/sidebar.cljs:890
-msgid "dashboard.plus-create-new-organization"
-msgstr "+ Create org"
 
 #: src/app/main/data/dashboard.cljs:758
 msgid "dashboard.progress-notification.deleting-files"
@@ -1646,6 +1674,10 @@ msgstr ""
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
+#: src/app/main/errors.cljs:429
+msgid "errors.connection-error"
+msgstr "Cannot reach the server. Check your connection and try again."
+
 #: src/app/main/errors.cljs:520
 msgid "errors.deprecated"
 msgstr ""
@@ -1735,6 +1767,10 @@ msgid "errors.font-family-invalid-chars"
 msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
+
+#: src/app/main/ui/auth/login.cljs:103
+msgid "errors.account-locked"
+msgstr "Too many failed attempts. Your account has been locked for %s minutes. Please try again later."
 
 #: src/app/main/data/auth.cljs:358, src/app/main/errors.cljs:196, src/app/main/ui/auth/login.cljs:110, src/app/main/ui/auth/register.cljs:129, src/app/main/ui/auth/register.cljs:322, src/app/main/ui/auth/verify_token.cljs:138, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1125, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
@@ -1881,9 +1917,11 @@ msgstr "The registration is currently disabled."
 #: src/app/main/errors.cljs:216
 msgid "errors.save-failed"
 msgstr ""
-"Your latest changes are not confirmed as saved. Saving may not resume "
-"automatically. Do not close or reload this tab: you may lose changes. "
-"Contact support for help."
+"Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
+
+#: src/app/main/data/persistence.cljs:308
+msgid "errors.save-retrying"
+msgstr "Connection lost. Retrying to save your changes."
 
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
@@ -3720,6 +3758,10 @@ msgstr "Show only your comments"
 #: src/app/main/ui/onboarding/questions.cljs:156
 msgid "labels.sketch"
 msgstr "Sketch"
+
+#: src/app/main/ui/dashboard/import.cljs:668
+msgid "labels.skip"
+msgstr "Skip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1144
 msgid "labels.sources"
@@ -7530,6 +7572,10 @@ msgstr "Reset"
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
 
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Retrying to save"
+
 #: src/app/main/ui/workspace/left_header.cljs:123
 msgid "workspace.header.saved"
 msgstr "Saved"
@@ -7690,13 +7736,21 @@ msgid_plural "workspace.libraries.components"
 msgstr[0] "1 component"
 msgstr[1] "%s components"
 
-#: src/app/main/ui/workspace/libraries.cljs:367
-msgid "workspace.libraries.connected-to"
-msgstr "Connected to"
+#: src/app/main/ui/workspace/libraries.cljs:541
+msgid "workspace.libraries.connected-libraries"
+msgstr "Connected library"
+
+#: src/app/main/ui/workspace/libraries.cljs:550
+msgid "workspace.libraries.connected-through"
+msgstr "Connected through"
 
 #: src/app/main/ui/workspace/libraries.cljs:432
 msgid "workspace.libraries.empty.add-some"
 msgstr "Or add some of these to try:"
+
+#: src/app/main/ui/workspace/libraries.cljs:600
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "No connected libraries yet."
 
 #: src/app/main/ui/workspace/libraries.cljs:426
 msgid "workspace.libraries.empty.no-libraries"
@@ -7709,6 +7763,18 @@ msgstr "some templates in here"
 #: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.file-library"
 msgstr "File library"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.empty.no-assets"
+msgstr "No assets yet"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.tokens-source"
+msgstr "Tokens source"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Set as tokens source"
 
 #: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
 msgid "workspace.libraries.graphics"
@@ -7758,6 +7824,10 @@ msgstr "Search shared libraries"
 msgid "workspace.libraries.shared-libraries"
 msgstr "SHARED LIBRARIES"
 
+#: src/app/main/ui/workspace/libraries.cljs:311
+msgid "workspace.libraries.shared-library-added"
+msgstr "Added"
+
 #: src/app/main/ui/workspace/libraries.cljs:414
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Connect library"
@@ -7802,6 +7872,24 @@ msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
 msgstr[0] "1 typography"
 msgstr[1] "%s typographies"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 set"
+msgstr[1] "%s sets"
+
+#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:150
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 theme"
+msgstr[1] "%s themes"
 
 #: src/app/main/ui/workspace/libraries.cljs:381
 msgid "workspace.libraries.unlink-library-btn"
@@ -8192,6 +8280,10 @@ msgstr "Flow starts"
 #, unused
 msgid "workspace.options.flows.remove-flow"
 msgstr "Remove flow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr "The font used by this text (%s) is no longer available. Reupload the font to create a typography style"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
@@ -10415,6 +10507,32 @@ msgstr "Use a reference"
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:102
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "This is the current Tokens source"
+
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Tokens source sets or themes have been modified"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:74
+msgid "workspace.tokens.source"
+msgstr "Source:"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:79
+msgid "workspace.tokens.this-file"
+msgstr "This file"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:96
+msgid "workspace.tokens.change-token-source"
+msgstr "Change token source"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:102
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Open tokens' source in a new tab"
+
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs
 #, unused
 msgid "workspace.tokens.warning-name-change"
@@ -10808,3 +10926,9 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "labels.team-management"
+msgstr "Team management"
+
+msgid "dashboard.no-organizations-yet"
+msgstr "You don't belong to any organization yet"

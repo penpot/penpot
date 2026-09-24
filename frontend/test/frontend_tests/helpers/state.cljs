@@ -34,12 +34,14 @@
 
 (defn setup-store
   ([file] (setup-store file nil))
-  ([file {:keys [renderer] :as _opts}]
+  ([file {:keys [renderer libraries] :as _opts}]
    (let [state (-> initial-state
                    (assoc :current-file-id (:id file)
                           :current-page-id (cthf/current-page-id file)
                           :permissions {:can-edit true}
-                          :files {(:id file) file})
+                          :files (into {(:id file) file}
+                                       (map (juxt :id identity))
+                                       libraries))
                    (cond-> (some? renderer)
                      (assoc-in [:profile :props :renderer] renderer)))
          store (ptk/store {:state state :on-error on-error})]

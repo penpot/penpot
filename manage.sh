@@ -209,9 +209,7 @@ function ensure-devenv-network {
 
 # Compose-project plumbing for the parallel-workspaces layout.
 #
-# - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
-#   under project `penpotdev-infra`.
-# - Shared infrastructure (postgres, minio, mailer, ldap, valkey, minio-setup)
+# - Shared infrastructure (postgres, RustFS, mailer, LDAP, Valkey)
 #   runs under project `penpotdev-infra`.
 # - Each runtime instance (ws0, ws1, ...) runs only its own main container
 #   under project `penpotdev-wsN`. All workspaces uniformly overlay their
@@ -296,16 +294,11 @@ function devenv-main-running {
     [[ -n "$container" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]]
 }
 
-# Bring shared infra up and block until minio-setup has provisioned the
-# shared MinIO user/policy. Idempotent: a second call when everything is
-# already up returns immediately.
+# Bring shared infra up and block until services with healthchecks are healthy.
+# Removing orphaned containers retires old infra services without deleting
+# their named volumes.
 function ensure-infra-up {
-    infra-compose up -d
-    local setup_container
-    setup_container=$(infra-compose ps -aq minio-setup 2>/dev/null)
-    if [[ -n "$setup_container" ]]; then
-        docker wait "$setup_container" >/dev/null 2>&1 || true
-    fi
+    infra-compose up -d --wait --wait-timeout 60 --remove-orphans
 }
 
 # Refuse to sync workspaces if the live repo is in a fragile Git state.
@@ -509,6 +502,17 @@ function sync-workspace {
     local cfg="frontend/resources/public/js/config.js"
     if [[ -f "$PWD/$cfg" && ! -f "$workspace/$cfg" ]]; then
         install -D "$PWD/$cfg" "$workspace/$cfg"
+    fi
+
+    # Initial seed of the Claude Code skills link. It is gitignored, so git
+    # ls-files does not list it, yet Claude Code reads skills from
+    # .claude/skills alone. Seeded only when absent: afterwards the
+    # workspace copy belongs to the user, who may keep their own. No
+    # CLAUDE.md is seeded: Claude Code reads AGENTS.md itself in a project
+    # that has none, and a CLAUDE.md here would switch that off.
+    if [[ ! -e "$workspace/.claude/skills" && ! -L "$workspace/.claude/skills" ]]; then
+        mkdir -p "$workspace/.claude"
+        ln -s ../.agents/skills "$workspace/.claude/skills"
     fi
 
     (
@@ -1231,6 +1235,22 @@ function build-mcp-bundle {
 }
 
 
+function build-media-processor-bundle {
+    echo ">> bundle media-processor start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/media-processor";
+
+    build "media-processor";
+
+    rm -rf $bundle_dir;
+    mv ./media-processor/target $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle media-processor end";
+}
+
 function build-backend-bundle {
     echo ">> bundle backend start";
 
@@ -1346,6 +1366,10 @@ function build-mcp-docker-image {
     _build-release-docker-image mcp bundle-mcp Dockerfile.mcp "$@"
 }
 
+function build-media-processor-docker-image {
+    _build-release-docker-image media-processor bundle-media-processor Dockerfile.media-processor "$@"
+}
+
 function build-storybook-docker-image {
     _build-release-docker-image storybook bundle-storybook Dockerfile.storybook "$@"
 }
@@ -1424,6 +1448,7 @@ function usage {
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
     echo "- build-mcp-bundle                 Build mcp bundle."
+    echo "- build-media-processor-bundle     Build media-processor bundle."
     echo "- build-storybook-bundle           Build storybook bundle."
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
@@ -1435,6 +1460,7 @@ function usage {
     echo "- build-backend-docker-image [--tag TAG]    Build backend docker image."
     echo "- build-exporter-docker-image [--tag TAG]   Build exporter docker image."
     echo "- build-mcp-docker-image [--tag TAG]         Build mcp docker image."
+    echo "- build-media-processor-docker-image [--tag TAG]  Build media-processor docker image."
     echo "- build-storybook-docker-image [--tag TAG]  Build storybook docker image."
     echo "- build-imagemagick-docker-image [--tag TAG] [--push]"
     echo "                                   Build the imagemagick docker image. Local-only by default (single-"
@@ -1490,6 +1516,7 @@ case $1 in
     build-bundle)
         build-frontend-bundle;
         build-mcp-bundle;
+        build-media-processor-bundle;
         build-backend-bundle;
         build-exporter-bundle;
         build-storybook-bundle;
@@ -1501,6 +1528,10 @@ case $1 in
 
     build-mcp-bundle)
         build-mcp-bundle;
+        ;;
+
+    build-media-processor-bundle)
+        build-media-processor-bundle;
         ;;
 
     build-backend-bundle)
@@ -1524,6 +1555,7 @@ case $1 in
         build-backend-docker-image "${@:2}"
         build-exporter-docker-image "${@:2}"
         build-mcp-docker-image "${@:2}"
+        build-media-processor-docker-image "${@:2}"
         build-storybook-docker-image "${@:2}"
         ;;
 
@@ -1541,6 +1573,10 @@ case $1 in
 
     build-mcp-docker-image)
         build-mcp-docker-image "${@:2}"
+        ;;
+
+    build-media-processor-docker-image)
+        build-media-processor-docker-image "${@:2}"
         ;;
 
     build-storybook-docker-image)

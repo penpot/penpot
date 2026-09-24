@@ -227,7 +227,7 @@ test("User opens team management dropdown", async ({ page }) => {
   await dashboardPage.goToSecondTeamDashboard();
   await expect(page.getByText("Team Up")).toBeVisible();
 
-  await page.getByRole("button", { name: "team-management" }).click();
+  await page.getByTestId("team-options-button").click();
 
   await expect(page.getByTestId("team-members")).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();

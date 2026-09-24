@@ -8,6 +8,7 @@ Subcommands:
   issues      List issues in a milestone (or unassigned with milestone=none)
   prs         Fetch details for one or more PRs (by number or milestone)
   advisories  List or inspect GitHub security advisories
+  link-issue  Explicitly link a GitHub issue to a pull request
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
@@ -27,6 +28,7 @@ Usage:
   python3 scripts/gh.py advisories                          (list all advisories)
   python3 scripts/gh.py advisories --severity critical      (filter by severity)
   python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
+  python3 scripts/gh.py link-issue 11235 11243
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -75,6 +77,90 @@ def run_gh_rest(path: str) -> Any:
         print(f"gh error: {result.stderr}", file=sys.stderr)
         sys.exit(1)
     return json.loads(result.stdout)
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: link-issue
+# ─────────────────────────────────────────────
+
+GQL_LINK_TARGETS_QUERY = """\
+query($owner: String!, $repo: String!, $issueNumber: Int!, $prNumber: Int!) {
+  repository(owner: $owner, name: $repo) {
+    issue(number: $issueNumber) { id number }
+    pullRequest(number: $prNumber) { id number }
+  }
+}
+"""
+
+GQL_ADD_CLOSE_ISSUE_REFERENCES = """\
+mutation($issueId: ID!, $pullRequestIds: [ID!]!) {
+  addCloseIssueReferences(input: {issueId: $issueId, pullRequestIds: $pullRequestIds}) {
+    issue { id number }
+  }
+}
+"""
+
+def link_issue_to_pr(issue_number: int, pr_number: int) -> dict:
+    """Add an explicit GitHub issue-to-PR link.
+
+    We trust the successful ``addCloseIssueReferences`` mutation instead of
+    re-querying: GitHub does not reliably report mutation-created links
+    through ``closedByPullRequestsReferences(userLinkedOnly: true)``.
+    """
+    if issue_number <= 0 or pr_number <= 0:
+        raise ValueError("issue and pull request numbers must be positive")
+
+    variables = {
+        "owner": OWNER,
+        "repo": REPO_NAME,
+        "issueNumber": issue_number,
+        "prNumber": pr_number,
+    }
+    target_data = run_gh_graphql(GQL_LINK_TARGETS_QUERY, variables)
+    repository = target_data.get("repository") or {}
+    issue = repository.get("issue") or {}
+    pull_request = repository.get("pullRequest") or {}
+    if not issue.get("id"):
+        raise RuntimeError(f"issue #{issue_number} was not found in {REPO}")
+    if not pull_request.get("id"):
+        raise RuntimeError(f"pull request #{pr_number} was not found in {REPO}")
+
+    mutation_data = run_gh_graphql(
+        GQL_ADD_CLOSE_ISSUE_REFERENCES,
+        {
+            "issueId": issue["id"],
+            "pullRequestIds": [pull_request["id"]],
+        },
+    )
+    mutation_result = mutation_data.get("addCloseIssueReferences") or {}
+    linked_issue = mutation_result.get("issue") or {}
+    if linked_issue.get("number") != issue_number:
+        raise RuntimeError(f"GitHub did not link issue #{issue_number}")
+
+    return {
+        "linked": True,
+        "issue": {"number": issue_number},
+        "pull_request": {"number": pr_number},
+    }
+
+
+def cmd_link_issue(args: argparse.Namespace) -> None:
+    """Handle the ``link-issue`` subcommand."""
+    print(
+        f"Linking issue #{args.issue_number} to pull request #{args.pr_number}...",
+        file=sys.stderr,
+    )
+    try:
+        result = link_issue_to_pr(args.issue_number, args.pr_number)
+    except (ValueError, RuntimeError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    print(
+        f"Linked issue #{args.issue_number} -> pull request #{args.pr_number}",
+        file=sys.stderr,
+    )
+    print(json.dumps(result, indent=2))
 
 
 # ─────────────────────────────────────────────
@@ -763,6 +849,16 @@ def main() -> None:
         help="PR state filter when using --milestone (default: merged)"
     )
     p_prs.set_defaults(func=cmd_prs)
+
+    # --- link-issue ---
+    p_link = sub.add_parser(
+        "link-issue",
+        aliases=["link"],
+        help="Explicitly link an issue to a pull request",
+    )
+    p_link.add_argument("issue_number", type=int, help="Issue number")
+    p_link.add_argument("pr_number", type=int, help="Pull request number")
+    p_link.set_defaults(func=cmd_link_issue)
 
     # --- advisories ---
     p_adv = sub.add_parser("advisories", help="List or inspect GitHub security advisories")

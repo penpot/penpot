@@ -17,6 +17,7 @@
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -34,7 +35,13 @@
    [datoteka.io :as io])
   (:import
    java.io.ByteArrayInputStream
-   java.io.DataInputStream))
+   java.io.DataInputStream
+   java.io.OutputStreamWriter
+   java.io.Writer
+   java.util.zip.Deflater
+   java.util.zip.ZipEntry
+   java.util.zip.ZipFile
+   java.util.zip.ZipOutputStream))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -55,46 +62,47 @@
     (:result out)))
 
 (defn- prepare-simple-file
-  [profile]
-  (let [page-id-1 (uuid/custom 1 1)
-        page-id-2 (uuid/custom 1 2)
-        shape-id  (uuid/custom 2 1)
-        file      (th/create-file* 1 {:profile-id (:id profile)
-                                      :project-id (:default-project-id profile)
-                                      :is-shared false})]
-    (update-file!
-     :file-id (:id file)
-     :profile-id (:id profile)
-     :revn 0
-     :vern 0
-     :changes
-     [{:type :add-page
-       :name "test 1"
-       :id page-id-1}
-      {:type :add-page
-       :name "test 2"
-       :id page-id-2}])
+  ([profile] (prepare-simple-file profile 1))
+  ([profile idx]
+   (let [page-id-1 (uuid/custom 1 1)
+         page-id-2 (uuid/custom 1 2)
+         shape-id  (uuid/custom 2 1)
+         file      (th/create-file* idx {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)
+                                         :is-shared false})]
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-page
+        :name "test 1"
+        :id page-id-1}
+       {:type :add-page
+        :name "test 2"
+        :id page-id-2}])
 
-    (update-file!
-     :file-id (:id file)
-     :profile-id (:id profile)
-     :revn 0
-     :vern 0
-     :changes
-     [{:type :add-obj
-       :page-id page-id-1
-       :id shape-id
-       :parent-id uuid/zero
-       :frame-id uuid/zero
-       :components-v2 true
-       :obj (cts/setup-shape
-             {:id shape-id
-              :name "image"
-              :frame-id uuid/zero
-              :parent-id uuid/zero
-              :type :rect})}])
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-obj
+        :page-id page-id-1
+        :id shape-id
+        :parent-id uuid/zero
+        :frame-id uuid/zero
+        :components-v2 true
+        :obj (cts/setup-shape
+              {:id shape-id
+               :name "image"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :rect})}])
 
-    (dissoc file :data)))
+     (dissoc file :data))))
 
 (def ^:private svg-raw-page-id (uuid/custom 1 1))
 (def ^:private svg-raw-root-id (uuid/custom 3 1))
@@ -103,58 +111,59 @@
 (defn- prepare-svg-raw-file
   "A file containing an svg-raw subtree (an svg-raw parent with an
   svg-raw child), which is what importing an SVG produces."
-  [profile]
-  (let [page-id  svg-raw-page-id
-        root-id  svg-raw-root-id
-        child-id svg-raw-child-id
+  ([profile] (prepare-svg-raw-file profile 1))
+  ([profile idx]
+   (let [page-id  svg-raw-page-id
+         root-id  svg-raw-root-id
+         child-id svg-raw-child-id
 
-        file     (th/create-file* 1 {:profile-id (:id profile)
-                                     :project-id (:default-project-id profile)
-                                     :is-shared false})]
-    (update-file!
-     :file-id (:id file)
-     :profile-id (:id profile)
-     :revn 0
-     :vern 0
-     :changes
-     [{:type :add-page
-       :name "page 1"
-       :id page-id}])
+         file     (th/create-file* idx {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared false})]
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-page
+        :name "page 1"
+        :id page-id}])
 
-    (update-file!
-     :file-id (:id file)
-     :profile-id (:id profile)
-     :revn 0
-     :vern 0
-     :changes
-     [{:type :add-obj
-       :page-id page-id
-       :id root-id
-       :parent-id uuid/zero
-       :frame-id uuid/zero
-       :components-v2 true
-       :obj (cts/setup-shape
-             {:id root-id
-              :name "svg-root"
-              :frame-id uuid/zero
-              :parent-id uuid/zero
-              :type :svg-raw
-              :content {:tag :svg :attrs {} :content []}})}
-      {:type :add-obj
-       :page-id page-id
-       :id child-id
-       :parent-id root-id
-       :frame-id uuid/zero
-       :components-v2 true
-       :obj (cts/setup-shape
-             {:id child-id
-              :name "svg-text"
-              :frame-id uuid/zero
-              :parent-id root-id
-              :type :svg-raw
-              :content {:tag :text :attrs {} :content []}})}])
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-obj
+        :page-id page-id
+        :id root-id
+        :parent-id uuid/zero
+        :frame-id uuid/zero
+        :components-v2 true
+        :obj (cts/setup-shape
+              {:id root-id
+               :name "svg-root"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :svg-raw
+               :content {:tag :svg :attrs {} :content []}})}
+       {:type :add-obj
+        :page-id page-id
+        :id child-id
+        :parent-id root-id
+        :frame-id uuid/zero
+        :components-v2 true
+        :obj (cts/setup-shape
+              {:id child-id
+               :name "svg-text"
+               :frame-id uuid/zero
+               :parent-id root-id
+               :type :svg-raw
+               :content {:tag :text :attrs {} :content []}})}])
 
-    (dissoc file :data)))
+     (dissoc file :data))))
 
 (t/deftest import-binfile-v3-preserves-svg-raw-children
   (let [profile (th/create-profile* 1)
@@ -248,9 +257,9 @@
       (t/is (= "penpot" (get-in imported [:metadata :referer]))))))
 
 (t/deftest read-obj-rejects-oversized-buffer
-  ;; N1-07: read-obj! must reject objects exceeding max-object-size
+  ;; N1-07: read-obj! must reject objects exceeding default-max-binary-entry-size
   ;; before attempting to allocate the buffer
-  (let [size (+ bfc/max-object-size 1)
+  (let [size (+ bfc/default-max-binary-entry-size 1)
         baos (java.io.ByteArrayOutputStream. 17)
         dos  (java.io.DataOutputStream. baos)]
     (.writeByte dos 5)
@@ -302,7 +311,7 @@
        (io/output-stream output))
 
       ;; Read the manifest and check external-libraries
-      (let [manifest (v3/get-manifest output)]
+      (let [manifest (v3/get-manifest th/*system* output)]
         (t/is (some? (:external-libraries manifest)))
         (t/is (= 1 (count (:external-libraries manifest))))
         (let [ext-lib (first (:external-libraries manifest))]
@@ -704,7 +713,7 @@
      (io/output-stream output))
 
     ;; Verify manifest has external-libraries
-    (let [manifest (v3/get-manifest output)
+    (let [manifest (v3/get-manifest th/*system* output)
           ext-libs (:external-libraries manifest)]
       (t/is (some? ext-libs))
       (t/is (pos? (count ext-libs))))
@@ -1455,7 +1464,7 @@
        (io/output-stream output))
 
       ;; Verify slug in manifest
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             ext-lib (first (:external-libraries manifest))]
         (t/is (= "icons-buttons" (:slug ext-lib)))))))
 
@@ -1482,7 +1491,7 @@
        (io/output-stream output))
 
       ;; Library with empty slug should be dropped from external-libraries
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             ext-libs (:external-libraries manifest)]
         (t/is (or (nil? ext-libs)
                   (empty? ext-libs)))))))
@@ -1502,7 +1511,7 @@
      (io/output-stream output))
 
     ;; Manifest should have no external-libraries
-    (let [manifest (v3/get-manifest output)]
+    (let [manifest (v3/get-manifest th/*system* output)]
       (t/is (nil? (:external-libraries manifest))))
 
     ;; Import should succeed with empty resolution
@@ -1620,7 +1629,7 @@
           new-file-id (first (:file-ids result))]
 
       ;; Get the original library id from the manifest
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             original-lib-id (:id (first (:external-libraries manifest)))]
         ;; Get the imported file's data
         (let [imported (:result (th/command! {::th/type :get-file
@@ -1794,7 +1803,7 @@
 
       ;; Refs must remain as original UUID (dangling), NOT remapped to any
       ;; of the candidate libraries
-      (let [manifest (v3/get-manifest output)
+      (let [manifest (v3/get-manifest th/*system* output)
             original-lib-id (:id (first (:external-libraries manifest)))
             imported (:result (th/command! {::th/type :get-file
                                             ::rpc/profile-id (:id profile)
@@ -1850,7 +1859,7 @@
               "viewer should NOT auto-link")
 
         ;; Refs must remain as original UUID (dangling)
-        (let [manifest (v3/get-manifest output)
+        (let [manifest (v3/get-manifest th/*system* output)
               original-lib-id (:id (first (:external-libraries manifest)))
               imported (:result (th/command! {::th/type :get-file
                                               ::rpc/profile-id (:id viewer)
@@ -1879,14 +1888,14 @@
      (io/output-stream output))
 
     ;; Verify manifest has external-libraries (only produced by link-later)
-    (let [manifest (v3/get-manifest output)
+    (let [manifest (v3/get-manifest th/*system* output)
           ext-libs (:external-libraries manifest)]
       (t/is (some? ext-libs)
             "type :link-later should produce external-libraries even with include-libraries=true")
       (t/is (pos? (count ext-libs))))))
 
 (t/deftest import-rejects-too-many-zip-entries
-  ;; import must reject ZIP files exceeding max-zip-entries
+  ;; import must reject ZIP files exceeding max-zip-entries (default-max-zip-entries)
   (let [profile (th/create-profile* 1)
         file    (prepare-simple-file profile)
         output  (tmp/tempfile :suffix ".zip")]
@@ -1942,7 +1951,7 @@
     (dissoc file :data)))
 
 (t/deftest import-rejects-oversized-object
-  ;; import must reject storage objects exceeding max-object-size
+  ;; import must reject storage objects exceeding default-max-binary-entry-size
   (let [profile (th/create-profile* 1)
         file    (prepare-file-with-media profile)
         output  (tmp/tempfile :suffix ".zip")]
@@ -1953,12 +1962,12 @@
          (assoc ::bfc/export-type :detach-libraries))
      (io/output-stream output))
 
-    ;; Import with max-object-size=1 — the media object will exceed this
+    ;; Import with max-binary-entry-size=1 — the media object will exceed this
     (let [cfg (-> th/*system*
                   (assoc ::bfc/project-id (:default-project-id profile))
                   (assoc ::bfc/profile-id (:id profile))
                   (assoc ::bfc/input output)
-                  (assoc ::bfc/import-max-object-size 1))
+                  (assoc ::bfc/import-max-binary-entry-size 1))
           out (try
                 (v3/import-files! cfg)
                 :no-error
@@ -1967,3 +1976,452 @@
                     d)))]
       (t/is (= :validation (:type out)))
       (t/is (= :max-file-size-reached (:code out))))))
+
+;; --- GHSA-qcw7-v626-g6cf: decompression-bomb guards on JSON/text entries
+
+(def ^:private bomb-entry-size
+  "Decompressed size of the test bomb entries. Over the 20 MiB default
+  per-entry limit, small enough to stay fast and lean under the guard."
+  (* 1024 1024 25))
+
+(defn- write-bomb-entry!
+  "Writes a zip entry whose content is a single JSON string of `size` bytes
+  made of a repeated char. Streams in chunks, so neither the writer nor the
+  (guarded) reader ever needs to hold the full payload in memory. Compresses
+  ~1:1000, like the reported exploit."
+  [^ZipOutputStream zos ^String entry-name ^long size]
+  (.putNextEntry zos (ZipEntry. entry-name))
+  (let [w     (OutputStreamWriter. zos "UTF-8")
+        chunk (apply str (repeat 8192 \A))]
+    (.write w "\"")
+    (loop [remaining size]
+      (when (pos? remaining)
+        (let [n (min remaining (count chunk))]
+          (.write ^Writer w ^String chunk (int 0) (int n))
+          (recur (- remaining n)))))
+    (.write w "\"")
+    (.flush w))
+  (.closeEntry zos))
+
+(defn- replace-zip-entry!
+  "Copies the zip at `src-path` to `dst-path`, replacing the entry
+  `entry-name` with a bomb entry of `bomb-size` decompressed bytes."
+  [src-path dst-path entry-name bomb-size]
+  (with-open [zin (ZipFile. (fs/file src-path))
+              out (io/output-stream dst-path)
+              zos (ZipOutputStream. out)]
+    (.setLevel zos Deflater/BEST_COMPRESSION)
+    (doseq [entry (iterator-seq (.entries zin))]
+      (let [entry-name' (.getName ^ZipEntry entry)]
+        (if (= entry-name' entry-name)
+          (write-bomb-entry! zos entry-name bomb-size)
+          (do
+            (.putNextEntry zos (ZipEntry. entry-name'))
+            (with-open [in (.getInputStream zin entry)]
+              (io/copy in zos))
+            (.closeEntry zos)))))))
+
+(defn- try-import-files!
+  "Runs v3/import-files! and returns the ex-data of the raised error,
+  or :no-error when the import unexpectedly succeeds."
+  [cfg]
+  (try
+    (v3/import-files! cfg)
+    :no-error
+    (catch Throwable e
+      (or (ex-data e) (some-> (ex-cause e) ex-data)))))
+
+(t/deftest import-rejects-oversized-json-entry
+  ;; GHSA-qcw7-v626-g6cf: a single files/<id>.json entry expanding beyond
+  ;; the per-entry text limit must be rejected with :max-file-size-reached
+  ;; instead of exhausting the heap. The manifest comes from a real export
+  ;; so it is valid; only the file entry is replaced by the bomb.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        exported (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream exported))
+
+    (let [bombed (tmp/tempfile :suffix ".zip")]
+      (replace-zip-entry! exported bombed
+                          (str "files/" (:id file) ".json")
+                          bomb-entry-size)
+      (let [cfg (-> th/*system*
+                    (assoc ::bfc/project-id (:default-project-id profile))
+                    (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/input bombed))
+            out (try-import-files! cfg)]
+        (t/is (= :validation (:type out)))
+        (t/is (= :max-file-size-reached (:code out)))))))
+
+(t/deftest get-manifest-rejects-oversized-manifest
+  ;; GHSA-qcw7-v626-g6cf: the synchronous manifest read on the RPC thread
+  ;; (v3/get-manifest) must reject a manifest.json bomb the same way.
+  ;; Decoding/validation is never reached, so the payload needs no schema.
+  (let [bombed (tmp/tempfile :suffix ".zip")]
+    (with-open [out (io/output-stream bombed)
+                zos (ZipOutputStream. out)]
+      (.setLevel zos Deflater/BEST_COMPRESSION)
+      (write-bomb-entry! zos "manifest.json" bomb-entry-size))
+    (let [out (try
+                (v3/get-manifest th/*system* bombed)
+                :no-error
+                (catch Throwable e
+                  (or (ex-data e) (some-> (ex-cause e) ex-data))))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
+
+(t/deftest import-rejects-excessive-total-text-size
+  ;; The job-wide cumulative budget must reject an import whose entries,
+  ;; each individually under the per-entry cap, exceed the total limit.
+  ;; A tiny total budget over a legitimate small export proves the
+  ;; cumulative counter fires independently of the per-entry guard.
+  (let [profile (th/create-profile* 1)
+        file    (prepare-simple-file profile)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    (let [cfg (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/input output)
+                  (assoc ::bfc/import-max-text-total-size 100))
+          out (try-import-files! cfg)]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
+
+(defn- text-entries-sizes
+  "Returns the decompressed sizes of every `.json` entry in the zip at
+  `zip-path`. Used to pick a cumulative budget that sits between the
+  largest single entry and the summed total."
+  [zip-path]
+  (with-open [zin (ZipFile. (fs/file zip-path))]
+    (->> (iterator-seq (.entries zin))
+         (filter #(.endsWith ^String (.getName ^ZipEntry %) ".json"))
+         (map #(.getSize ^ZipEntry %))
+         (remove neg?)
+         vec)))
+
+(t/deftest import-rejects-accumulated-text-across-entries
+  ;; The cumulative budget must account bytes across entries sharing one
+  ;; counter: a budget just over the largest single entry (so no entry
+  ;; alone can trip it) but under the summed total (so the running total
+  ;; must trip it) is rejected. If the shared counter ever regressed to
+  ;; a fresh atom per entry, every entry alone would pass and the valid
+  ;; import would succeed, so this test would go red.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-simple-file profile)
+        exported (tmp/tempfile :suffix ".zip")]
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream exported))
+
+    (let [sizes      (text-entries-sizes exported)
+          max-single (apply max 0 sizes)
+          summed     (reduce + 0 sizes)
+          budget     (inc max-single)]
+      ;; Preconditions that make the test meaningful: more than one
+      ;; entry worth of text, so the trip can only come from
+      ;; accumulation, never from a single entry.
+      (t/is (> summed budget))
+      (let [cfg (-> th/*system*
+                    (assoc ::bfc/project-id (:default-project-id profile))
+                    (assoc ::bfc/profile-id (:id profile))
+                    (assoc ::bfc/input exported)
+                    (assoc ::bfc/import-max-text-total-size budget))
+            out (try-import-files! cfg)]
+        (t/is (= :validation (:type out)))
+        (t/is (= :max-file-size-reached (:code out)))
+        (t/is (some? (:path out)))))))
+
+(t/deftest size-limiting-stream-counts-skip
+  ;; Skipped bytes were already decompressed, so they must count against
+  ;; the budget like read bytes do.
+  (let [payload   (.getBytes "abcdefghijklmnopqrstuvwxyz" "UTF-8")
+        mk-stream (fn [cap]
+                    (@#'v3/size-limiting-stream
+                     (ByteArrayInputStream. payload) cap (atom 0) "test-entry"))]
+    ;; Skipping past the cap trips the guard.
+    (let [out (try
+                (with-open [s (mk-stream 10)]
+                  (.skip ^java.io.InputStream s 20)
+                  :no-error)
+                (catch clojure.lang.ExceptionInfo e
+                  (ex-data e)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out)))
+      (t/is (= "test-entry" (:path out))))
+    ;; Skipping under the cap leaves the remainder accounted: 6 skipped
+    ;; plus 10 read over a cap of 10 trips the guard.
+    (let [out (try
+                (with-open [s (mk-stream 10)]
+                  (.skip ^java.io.InputStream s 6)
+                  (.read ^java.io.InputStream s (byte-array 10))
+                  :no-error)
+                (catch clojure.lang.ExceptionInfo e
+                  (ex-data e)))]
+      (t/is (= :validation (:type out)))
+      (t/is (= :max-file-size-reached (:code out))))))
+
+(t/deftest import-configures-finite-transaction-idle-timeout
+  ;; The binfile import transaction must set a finite ceiling for
+  ;; idle_in_transaction_session_timeout (20 min) instead of disabling
+  ;; it entirely: a stalled import must not retain a pool connection
+  ;; without any upper bound. The ceiling must be scoped with SET
+  ;; LOCAL: once the transaction ends, the pool session default must
+  ;; be restored for subsequent transactions.
+  (let [pg-setting-sql ["SELECT setting FROM pg_settings WHERE name = 'idle_in_transaction_session_timeout'"]
+        in-tx  (db/tx-run! th/*system*
+                           (fn [cfg]
+                             (bfc/configure-database-timeouts! cfg)
+                             (:setting (db/exec-one! cfg pg-setting-sql))))
+        ;; SET LOCAL must not leak past the transaction boundary
+        after  (db/tx-run! th/*system*
+                           (fn [cfg]
+                             (:setting (db/exec-one! cfg pg-setting-sql))))]
+    (t/is (= "1200000" in-tx))
+    (t/is (= "300000" after))))
+
+(def ^:private index-test-file-id "22222222-2222-2222-2222-222222222222")
+(def ^:private index-test-page-id "44444444-4444-4444-4444-444444444444")
+
+(defn- index-entries-of
+  [names]
+  (@#'v3/index-entries (map #(java.util.zip.ZipEntry. %) names)))
+
+(t/deftest index-entries-classifies-entry-names
+  (let [f     index-test-file-id
+        page  index-test-page-id
+        index (index-entries-of
+               ["manifest.json"
+                (str "files/" f ".json")
+                (str "files/" f "/plugin-data.json")
+                (str "files/" f "/tokens.json")
+                "objects/11111111-1111-1111-1111-111111111111.json"
+                (str "files/" f "/media/33333333-3333-3333-3333-333333333333.json")
+                (str "files/" f "/colors/not-a-uuid.json")
+                (str "files/" f "/components/comp.json")
+                (str "files/" f "/typographies/t.json")
+                (str "files/" f "/pages/" page ".json")
+                (str "files/" f "/pages/" page "/shape.json")
+                (str "files/" f "/thumbnails/medium/" page "/frame.json")])]
+
+    (t/is (= [(parse-uuid "11111111-1111-1111-1111-111111111111")]
+             (mapv :id (:objects index))))
+
+    (t/is (= #{f} (set (keys (:media index)))))
+    (t/is (= [(parse-uuid "33333333-3333-3333-3333-333333333333")]
+             (mapv :id (get (:media index) f))))
+
+    (t/is (= #{f} (set (keys (:colors index)))))
+    ;; non-uuid ids are preserved as nil, same as the matchers do today
+    (t/is (= [nil] (mapv :id (get (:colors index) f))))
+
+    (t/is (= #{f} (set (keys (:components index)))))
+    (t/is (= #{f} (set (keys (:typographies index)))))
+
+    (t/is (= #{f} (set (keys (:pages index)))))
+    (t/is (= [(parse-uuid page)] (mapv :id (get (:pages index) f))))
+
+    (t/is (= #{f} (set (keys (:shapes index)))))
+    (t/is (= #{page} (set (keys (get (:shapes index) f)))))
+    (t/is (= [nil] (mapv :id (get (get (:shapes index) f) page))))
+
+    (t/is (= #{f} (set (keys (:thumbnails index)))))
+    (let [thumb (first (get (:thumbnails index) f))]
+      (t/is (= "medium" (:tag thumb)))
+      (t/is (= (parse-uuid page) (:page-id thumb)))
+      (t/is (= (parse-uuid "frame") (:frame-id thumb)))
+      (t/is (= f (:file-id thumb))))
+
+    (t/is (= #{f} (set (keys (:tokens index)))))))
+
+(t/deftest index-entries-ignores-unknown-entry-names
+  ;; unknown paths, wrong depth, wrong suffix or non-uuid file segments
+  ;; are all ignored, same as today's anchored regexes
+  (t/is (empty? (index-entries-of ["manifest.json"])))
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id ".json")])))
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/plugin-data.json")])))
+  (t/is (empty? (index-entries-of ["objects/a/b.json"])))
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/media/a/b.json")])))
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/media/a.txt")])))
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/unknown/a.json")])))
+  (t/is (empty? (index-entries-of [(str "files//media/a.json")]))))
+
+(t/deftest index-entries-requires-literal-json-suffix
+  ;; deliberate tightening vs today's regexes: the dot is unescaped in
+  ;; `([^/]+).json$` / `tokens.json$`, so today `tokensXjson` and
+  ;; `objects/x-json` DO match; the classifier requires a literal
+  ;; `.json` suffix and ignores them
+  (t/is (empty? (index-entries-of [(str "files/" index-test-file-id "/tokensXjson")])))
+  (t/is (empty? (index-entries-of ["objects/x-json"]))))
+
+(t/deftest import-binfile-v3-multiple-files-preserves-per-file-content
+  ;; the entries index must attribute every zip entry to the file it
+  ;; belongs to: with several files in the same manifest, pages and
+  ;; shapes of one file must not leak into another. The file also
+  ;; carries library content (color, typography, component and tokens
+  ;; set) so every rewired consumer is exercised on its present path.
+  (let [profile (th/create-profile* 1)
+        simple  (prepare-simple-file profile)
+        color-id (uuid/custom 5 1)
+        typo-id  (uuid/custom 5 2)
+        comp-id  (uuid/custom 5 3)
+        svg     (prepare-svg-raw-file profile 2)
+        output  (tmp/tempfile :suffix ".zip")]
+
+    (update-file!
+     :file-id (:id simple)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-color
+       :color {:id color-id
+               :name "import-color"
+               :color "#FF0000"}}
+      {:type :add-typography
+       :typography {:id typo-id
+                    :name "import-typography"
+                    :font-id "source-sans-pro"
+                    :font-family "Source Sans Pro"
+                    :font-variant-id "regular"
+                    :font-size "16"
+                    :font-weight "400"
+                    :font-style "normal"
+                    :line-height "1.4"
+                    :letter-spacing "0"
+                    :text-transform "none"}}
+      {:type :add-component
+       :id comp-id
+       :name "import-component"
+       :path ""
+       :main-instance-id (uuid/custom 2 1)
+       :main-instance-page (uuid/custom 1 1)}
+      {:type :set-tokens-lib
+       :tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :name "ImportSet")))}])
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id simple) (:id svg)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    ;; import returns the imported file ids plus the library link
+    ;; resolution; the test only needs the ids
+    (let [result (:file-ids (-> th/*system*
+                                (assoc ::bfc/project-id (:default-project-id profile))
+                                (assoc ::bfc/profile-id (:id profile))
+                                (assoc ::bfc/input output)
+                                (v3/import-files!)))
+          files  (map #(bfc/get-file th/*system* %) result)
+          svg-imported (some #(when (contains? (get-in % [:data :pages-index
+                                                          svg-raw-page-id
+                                                          :objects])
+                                               svg-raw-root-id)
+                                %)
+                             files)
+          simple-imported (some #(when (contains? (get-in % [:data :pages-index
+                                                             (uuid/custom 1 1)
+                                                             :objects])
+                                                  (uuid/custom 2 1))
+                                   %)
+                                files)]
+
+      (t/is (= 2 (count result)))
+      (t/is (= 2 (count (distinct result))))
+      (t/is (some? svg-imported))
+      (t/is (some? simple-imported))
+
+      ;; the svg-raw file keeps its subtree on its own page (plus the
+      ;; default page created by create-file)
+      (t/is (= [svg-raw-child-id]
+               (get-in svg-imported [:data :pages-index svg-raw-page-id
+                                     :objects svg-raw-root-id :shapes])))
+      (t/is (= 2 (count (get-in svg-imported [:data :pages-index]))))
+
+      ;; the simple file keeps its default page plus its two pages and
+      ;; its shape
+      (t/is (= 3 (count (get-in simple-imported [:data :pages-index]))))
+      (t/is (contains? (get-in simple-imported
+                               [:data :pages-index (uuid/custom 1 1) :objects])
+                       (uuid/custom 2 1)))
+
+      ;; library content is restored on its present path: the
+      ;; consumers' get-in keys must match the classifier buckets
+      (t/is (some? (get-in simple-imported [:data :colors color-id])))
+      (t/is (some? (get-in simple-imported [:data :typographies typo-id])))
+      (t/is (some? (get-in simple-imported [:data :components comp-id])))
+      (t/is (= ["ImportSet"]
+               (vec (ctob/get-set-names
+                     (get-in simple-imported [:data :tokens-lib]))))))))
+
+(t/deftest import-binfile-v3-restores-media-objects
+  ;; storage objects, per-file media entries and object thumbnails
+  ;; are classified through the entries index and restored end to end
+  (let [profile (th/create-profile* 1)
+        file    (prepare-file-with-media profile)
+        thumb-page-id  (uuid/custom 1 1)
+        thumb-frame-id (uuid/custom 6 1)
+        thumb-tag      "medium"
+        output  (tmp/tempfile :suffix ".zip")]
+
+    ;; a thumbnail row backed by the same storage object as the media
+    ;; object, so the export produces a thumbnails/ zip entry
+    (let [mobj (th/db-get :file-media-object {:file-id (:id file)})]
+      (db/insert! th/*system* :file-tagged-object-thumbnail
+                  {:file-id (:id file)
+                   :tag thumb-tag
+                   :object-id (thc/fmt-object-id {:file-id (:id file)
+                                                  :page-id thumb-page-id
+                                                  :frame-id thumb-frame-id
+                                                  :tag thumb-tag})
+                   :media-id (:media-id mobj)}))
+
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/embed-assets false)
+         (assoc ::bfc/include-libraries false))
+     (io/output-stream output))
+
+    ;; import returns the imported file ids plus the library link
+    ;; resolution; the test only needs the ids
+    (let [result  (:file-ids (-> th/*system*
+                                 (assoc ::bfc/project-id (:default-project-id profile))
+                                 (assoc ::bfc/profile-id (:id profile))
+                                 (assoc ::bfc/input output)
+                                 (v3/import-files!)))
+          mobjs   (db/query th/*system* :file-media-object
+                            {:file-id (first result)})
+          thumbs  (db/query th/*system* :file-tagged-object-thumbnail
+                            {:file-id (first result)})]
+      (t/is (= 1 (count result)))
+      (t/is (pos? (count mobjs)))
+      (t/is (every? some? (map :media-id mobjs)))
+
+      ;; the thumbnail is restored with its object-id rebuilt around
+      ;; the new file id and a media-id that resolves to storage
+      (t/is (= 1 (count thumbs)))
+      (let [thumb (first thumbs)]
+        (t/is (= thumb-tag (:tag thumb)))
+        (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
+                 (:object-id thumb)))
+        (t/is (some? (:media-id thumb)))))))

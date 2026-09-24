@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, Paint};
 
-use crate::shapes::{radius_to_sigma, Shadow, Shape, Type};
+use crate::error::Result;
+use crate::shapes::{radius_to_sigma, Fill, Shadow, Shape, Type};
 use crate::state::ShapesPoolRef;
 
 use crate::render::vector::draw_shape_geometry;
@@ -36,6 +37,10 @@ pub(crate) struct SvgLayerCanvas {
     /// container silhouette (GPU `pre_translate` before rotation). The SVG
     /// filter itself uses a zero offset so rotated shadows stay correct.
     pub(super) silhouette_offset: (f32, f32),
+    /// Stack of group fills inherited by empty-fill children (GPU `nested_fills`).
+    /// Frames push an empty vec to break inheritance. SVG-imported groups often
+    /// carry a default black fill that paths without own fills must paint.
+    pub(super) nested_fills: Vec<Vec<Fill>>,
 }
 
 impl SvgLayerCanvas {
@@ -53,7 +58,28 @@ impl SvgLayerCanvas {
             suppress_filters: false,
             silhouette_spread: 0.0,
             silhouette_offset: (0.0, 0.0),
+            nested_fills: Vec::new(),
         }
+    }
+
+    /// Fills to paint for a leaf: own fills, else inherited group fills (unless
+    /// `fill="none"` broke the SVG inheritance chain). Mirrors GPU nested_fills.
+    /// Returns an owned vec so callers can still mutably borrow `self` afterward.
+    pub(super) fn effective_fills_owned(&self, element: &Shape) -> Vec<Fill> {
+        if !element.fills.is_empty() {
+            return element.fills.clone();
+        }
+        if matches!(element.shape_type, Type::Group(_) | Type::Frame(_)) {
+            return Vec::new();
+        }
+        if element
+            .svg_attrs
+            .as_ref()
+            .is_some_and(|attrs| attrs.fill_none)
+        {
+            return Vec::new();
+        }
+        self.nested_fills.last().cloned().unwrap_or_default()
     }
 
     /// CTM for silhouette geometry: original centered transform, then local
@@ -110,6 +136,24 @@ impl SvgLayerCanvas {
             .push_str(&sanitize_skia_svg_fragment(&remap_ids(inner, &prefix)));
     }
 
+    /// Runs `f` while diverting body markup into a temporary buffer.
+    ///
+    /// Pending Skia fragments are flushed before/after. Defs (filters, clips,
+    /// nested masks) still append to `self.defs`. Used to build `<mask>` bodies
+    /// from a full mask subtree render.
+    pub(super) fn capture_body<F>(&mut self, f: F) -> Result<String>
+    where
+        F: FnOnce(&mut Self) -> Result<()>,
+    {
+        self.flush();
+        let saved = std::mem::take(&mut self.out);
+        let result = f(self);
+        self.flush();
+        let captured = std::mem::replace(&mut self.out, saved);
+        result?;
+        Ok(captured)
+    }
+
     pub(super) fn open_group(&mut self, attrs: &str) {
         self.flush();
         self.out.push_str("<g ");
@@ -142,6 +186,31 @@ impl SvgLayerCanvas {
             ctm.translate_x(),
             ctm.translate_y()
         )
+    }
+
+    /// Maps a shape-local rect through the page CTM into SVG user space.
+    pub(super) fn map_selrect_to_page(
+        &self,
+        local: &skia::Rect,
+        draw_matrix: &skia::Matrix,
+    ) -> skia::Rect {
+        self.page_ctm(draw_matrix).map_rect(*local).0
+    }
+
+    /// Maps a shape-local path through the page CTM into SVG user space.
+    pub(super) fn map_path_to_page(
+        &self,
+        path: &skia::Path,
+        draw_matrix: &skia::Matrix,
+    ) -> skia::Path {
+        path.make_transform(&self.page_ctm(draw_matrix))
+    }
+
+    /// Scale × translate × `draw_matrix` (same CTM as SVG fragment canvases).
+    fn page_ctm(&self, draw_matrix: &skia::Matrix) -> skia::Matrix {
+        let mut ctm = skia::Matrix::scale((self.scale, self.scale));
+        ctm = ctm * skia::Matrix::translate((self.tx, self.ty));
+        ctm * *draw_matrix
     }
 
     /// Emits a `<clipPath>` from a shape's geometry (in device/page space).
@@ -240,6 +309,21 @@ impl SvgLayerCanvas {
             body = body
         ));
         id
+    }
+
+    /// Finalizes a fragment canvas as a luminance `<mask>` def (white shows,
+    /// black hides). Used for outer text strokes: white canvas minus black
+    /// glyphs keeps only the exterior half of a double-width stroke.
+    pub(super) fn finish_mask_fragment(&mut self, id: &str, canvas: skia::svg::Canvas) {
+        let data = canvas.end();
+        let doc = String::from_utf8_lossy(data.as_bytes());
+        let inner = extract_inner_svg(&doc);
+        let prefix = format!("f{}_", self.frag_no);
+        self.frag_no += 1;
+        let geometry = sanitize_skia_svg_fragment(&remap_ids(inner, &prefix));
+        self.defs.push_str(&format!(
+            "<mask id=\"{id}\" maskUnits=\"userSpaceOnUse\">{geometry}</mask>"
+        ));
     }
 }
 

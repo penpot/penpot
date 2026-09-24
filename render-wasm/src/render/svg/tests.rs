@@ -87,6 +87,201 @@ fn exports_leaf_opacity_and_blend_mode_as_group_wrappers() {
 }
 
 #[test]
+fn exports_leaf_background_blur_as_foreign_object() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_argb(180, 255, 0, 0),
+    );
+    let blur_value = 10.0;
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, blur_value)));
+    }
+
+    let svg = render(&pool, id);
+    let expected_sigma = radius_to_sigma(blur_value * 1.0);
+    assert!(
+        svg.contains("<foreignObject") && svg.contains("backdrop-filter:blur("),
+        "background blur must emit foreignObject + backdrop-filter: {svg}"
+    );
+    assert!(
+        svg.contains(&format!("backdrop-filter:blur({expected_sigma}px)")),
+        "blur sigma must match radius_to_sigma(value * scale): {svg}"
+    );
+    assert!(
+        svg.contains("clip-path:path(")
+            && (svg.contains("path(nonzero,'") || svg.contains("path(evenodd,'")),
+        "FO div must use CSS path clip with a fill rule: {svg}"
+    );
+    // FO before fill paint.
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    let fill_pos = svg.find("fill=").expect("fill");
+    assert!(
+        fo_pos < fill_pos,
+        "background blur FO must precede fills: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn skips_hidden_background_blur() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_rgb(255, 0, 0),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, true, 10.0)));
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("foreignObject") && !svg.contains("backdrop-filter"),
+        "hidden background blur must not emit FO: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn background_blur_coexists_with_layer_blur_outside_filter() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_rect(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 80.0),
+        skia::Color::from_argb(180, 0, 128, 255),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 8.0)));
+        shape.set_blur(Some(Blur::new(BlurType::LayerBlur, false, 4.0)));
+    }
+
+    let svg = render(&pool, id);
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    let filter_pos = svg.find("filter=\"url(#fx").expect("layer blur filter");
+    assert!(
+        fo_pos < filter_pos,
+        "FO must sit outside the layer-blur filter group: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_frame_background_blur_before_children() {
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let child = uid(2);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_argb(100, 255, 255, 255),
+        false,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 6.0)));
+    }
+    add_solid_rect(
+        &mut pool,
+        child,
+        frame_id,
+        (20.0, 20.0, 80.0, 80.0),
+        skia::Color::from_rgb(0, 0, 255),
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_child(child);
+    }
+
+    let svg = render(&pool, frame_id);
+    let expected_sigma = radius_to_sigma(6.0);
+    assert!(
+        svg.contains(&format!("backdrop-filter:blur({expected_sigma}px)")),
+        "frame background blur: {svg}"
+    );
+    let fo_pos = svg.find("<foreignObject").expect("foreignObject");
+    // Child rect is painted after the frame FO (and after any frame fill).
+    let child_marker = "width=\"60\" height=\"60\"";
+    let child_pos = svg.find(child_marker).expect("child rect size");
+    assert!(fo_pos < child_pos, "frame FO must precede children: {svg}");
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_group_background_blur_selrect_clip() {
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let a = uid(2);
+    add_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 100.0),
+        &[a],
+    );
+    {
+        let group = pool.get_mut(&group_id).unwrap();
+        group.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 5.0)));
+    }
+    add_solid_rect(
+        &mut pool,
+        a,
+        group_id,
+        (10.0, 10.0, 90.0, 90.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("foreignObject") && svg.contains("clip-path:path("),
+        "group background blur: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_background_blur_with_glyph_clip() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_solid_text(
+        &mut pool,
+        id,
+        (0.0, 0.0, 200.0, 80.0),
+        "Glass",
+        40.0,
+        skia::Color::from_argb(200, 255, 255, 255),
+    );
+    {
+        let shape = pool.get_mut(&id).unwrap();
+        shape.set_background_blur(Some(Blur::new(BlurType::BackgroundBlur, false, 8.0)));
+    }
+
+    let svg = render(&pool, id);
+    assert!(
+        svg.contains("foreignObject")
+            && svg.contains("backdrop-filter:blur(")
+            && svg.contains("clip-path:path("),
+        "text background blur needs FO with CSS glyph path clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn exports_leaf_layer_blur_as_fe_gaussian_blur() {
     let mut pool = ShapesPool::new();
     let id = uid(1);
@@ -219,17 +414,38 @@ fn exports_leaf_drop_shadow_as_svg_filter() {
 
     let svg = render(&pool, id);
     let expected_sigma = radius_to_sigma(8.0);
+    // Geometry leaves: offset is geometric (silhouette), filter only blurs/tints
+    // (matches GPU — no feMorphology, no SourceGraphic in the drop filter).
+    // Page padding shifts both passes; silhouette is padding+(4,6).
     assert!(
-        svg.contains("feOffset") && svg.contains(r#"dx="4""#) && svg.contains(r#"dy="6""#),
-        "drop shadow must offset: {svg}"
+        svg.contains(r#"translate(15.3564 15.3564)"#),
+        "drop silhouette must include geometric offset (4,6) over page pad: {svg}"
+    );
+    assert!(
+        svg.contains(r#"translate(11.3564 9.35641)"#),
+        "content pass must stay at page pad without drop offset: {svg}"
     );
     assert!(
         svg.contains(&format!("stdDeviation=\"{expected_sigma}\"")),
         "drop blur sigma must match canvas: {svg}"
     );
     assert!(
-        svg.contains("filter=\"url(#fx") && svg.contains("SourceGraphic"),
-        "drop shadow filter must blend SourceGraphic: {svg}"
+        svg.contains("filter=\"url(#fx"),
+        "drop shadow must emit a filter: {svg}"
+    );
+    let filter_open = svg.find("<filter id=\"fx").expect("filter def");
+    let filter_close = svg[filter_open..]
+        .find("</filter>")
+        .map(|i| filter_open + i)
+        .expect("filter close");
+    let filter = &svg[filter_open..filter_close];
+    assert!(
+        !filter.contains("SourceGraphic"),
+        "leaf drop silhouette filter must not blend SourceGraphic: {filter}"
+    );
+    assert!(
+        !filter.contains("feMorphology"),
+        "leaf drop must not use feMorphology for spread: {filter}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -262,13 +478,31 @@ fn leaf_drop_offset_follows_rotation_in_user_space() {
     }
 
     let svg = render(&pool, id);
+    // Geometric silhouette: local offset is pre_translated before rotation.
+    let filter_open = svg.find("filter=\"url(#fx").expect("drop filter");
+    let filter_close = svg[filter_open..]
+        .find("</g>")
+        .map(|i| filter_open + i)
+        .expect("silhouette group close");
+    let silhouette = &svg[filter_open..=filter_close];
     assert!(
-        svg.contains(r#"dx="0""#) && svg.contains(r#"dy="10""#),
-        "rotated leaf drop must map local offset into filter user space: {svg}"
+        silhouette.contains("matrix(") || silhouette.contains("translate("),
+        "rotated leaf drop silhouette must carry a CTM: {silhouette}"
+    );
+    // Filter itself keeps zero offset (geometry moved instead).
+    let def_start = svg.find("<filter id=\"fx").expect("filter def");
+    let def_end = svg[def_start..]
+        .find("</filter>")
+        .map(|i| def_start + i)
+        .expect("filter close");
+    let filter = &svg[def_start..def_end];
+    assert!(
+        filter.contains(r#"dx="0""#) && filter.contains(r#"dy="0""#),
+        "rotated leaf drop filter offset must stay zero: {filter}"
     );
     assert!(
-        !svg.contains(r#"dx="10""#),
-        "must not keep unmapped local dx for rotated leaf: {svg}"
+        !filter.contains(r#"dx="10""#),
+        "must not keep unmapped local dx in the filter: {filter}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -366,9 +600,10 @@ fn sliver_leaf_drop_shadow_filter_covers_page_not_bbox_percent() {
 
     let svg = render(&pool, id);
     assert_filter_covers_page(&svg);
+    // Geometric offset (0,12): silhouette y = page_pad_y + 12, content y = page_pad_y.
     assert!(
-        svg.contains(r#"dy="12""#),
-        "sliver drop must keep its offset: {svg}"
+        svg.contains(r#"translate(11.8923 12)"#) && svg.contains(r#"translate(11.8923 0)"#),
+        "sliver drop must apply geometric offset (0,12): {svg}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -500,10 +735,10 @@ fn exports_frame_drop_shadow_wrapping_children() {
 }
 
 #[test]
-fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
-    // clip=ON + drop offset: silhouette fills/children move with
-    // silhouette_draw_matrix, so the board clipPath must move too — otherwise
-    // the unshifted clip truncates the shadow (F1a / show-content=false).
+fn clipped_frame_drop_shadow_silhouette_skips_content_clip() {
+    // clip=ON + drop offset: GPU paints the drop outside the content clip, so
+    // the silhouette must not use clipPath (F1a). Otherwise an unshifted clip
+    // truncates the offset shadow.
     let mut pool = ShapesPool::new();
     let frame_id = uid(1);
     let child = uid(2);
@@ -543,10 +778,6 @@ fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
         svg.contains("filter=\"url(#fx"),
         "clipped frame drop shadow must emit a filter: {svg}"
     );
-    assert!(
-        svg.matches("<clipPath").count() >= 2,
-        "silhouette and content each need a clipPath: {svg}"
-    );
 
     let filter_open = svg.find("filter=\"url(#fx").expect("frame filter");
     let filter_close = svg[filter_open..]
@@ -554,29 +785,78 @@ fn clipped_frame_drop_shadow_clip_follows_silhouette_offset() {
         .map(|i| filter_open + i)
         .expect("silhouette group close");
     let silhouette = &svg[filter_open..=filter_close];
-    let clip_ref = silhouette
-        .find("clip-path=\"url(#")
-        .and_then(|i| {
-            let start = i + "clip-path=\"url(#".len();
-            let end = silhouette[start..].find(')')?;
-            Some(&silhouette[start..start + end])
-        })
-        .expect("silhouette must reference a clipPath");
-
-    let clip_def_start = svg
-        .find(&format!("<clipPath id=\"{clip_ref}\""))
-        .expect("silhouette clipPath def");
-    let clip_def_end = svg[clip_def_start..]
-        .find("</clipPath>")
-        .map(|i| clip_def_start + i)
-        .expect("clipPath close");
-    let clip_geom = &svg[clip_def_start..clip_def_end];
-
-    // Content clip (second clipPath) stays unshifted; silhouette clip must
-    // carry the local drop offset (0, 24) like silhouette fills.
     assert!(
-        clip_geom.contains("translate(") && clip_geom.contains(" 24"),
-        "silhouette clipPath must follow drop offset (0,24): {clip_geom}\nfull: {svg}"
+        !silhouette.contains("clip-path="),
+        "drop silhouette must not use content clip: {silhouette}"
+    );
+    assert!(
+        silhouette.contains(r#"translate(0 24)"#),
+        "silhouette fills must still apply drop offset: {silhouette}"
+    );
+    assert!(
+        svg.contains("<clipPath") && svg.contains("clip-path=\"url(#"),
+        "content pass must still clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn clipped_frame_drop_spread_is_not_truncated_by_content_clip() {
+    // clip=ON + spread 24, offset 0: fills outset in the silhouette, but if the
+    // content clipPath stays at the true selrect the red ring is cut away.
+    let mut pool = ShapesPool::new();
+    let frame_id = uid(1);
+    let child = uid(2);
+    add_frame(
+        &mut pool,
+        frame_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(240, 240, 240),
+        true,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_shadow(Shadow::new(
+            skia::Color::from_rgb(229, 16, 35),
+            0.0,
+            24.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+    }
+    add_solid_rect(
+        &mut pool,
+        child,
+        frame_id,
+        (20.0, 20.0, 180.0, 100.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.add_child(child);
+    }
+
+    let svg = render(&pool, frame_id);
+    let filter_open = svg.find("filter=\"url(#fx").expect("frame filter");
+    let filter_close = svg[filter_open..]
+        .find("</g>")
+        .map(|i| filter_open + i)
+        .expect("silhouette group close");
+    let silhouette = &svg[filter_open..=filter_close];
+    assert!(
+        !silhouette.contains("clip-path="),
+        "spread silhouette must not be content-clipped: {silhouette}"
+    );
+    // 200×120 + 2×24 spread, and child 160×80 + 2×24.
+    assert!(
+        silhouette.contains(r#"width="248""#) && silhouette.contains(r#"height="168""#),
+        "frame fill must outset by spread 24: {silhouette}"
+    );
+    assert!(
+        silhouette.contains(r#"width="208""#) && silhouette.contains(r#"height="128""#),
+        "child fill must outset by inherited spread 24: {silhouette}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -866,9 +1146,10 @@ fn nested_child_drop_shadow_is_not_refiltered_by_frame() {
         child_filter > frame_filter_close,
         "child drop filter must be outside frame drop group to avoid shadow-of-shadow: {svg}"
     );
+    // Child leaf drop offset is geometric (translate), not feOffset.
     assert!(
-        svg.contains(r#"dx="10""#),
-        "child leaf drop must keep filter offset: {svg}"
+        svg.contains(r#"translate(10 10)"#),
+        "child leaf drop must keep geometric offset: {svg}"
     );
     // Frame container drops apply offset geometrically (filter dx=0).
     assert!(
@@ -1069,6 +1350,339 @@ fn exports_a_group_with_two_rects_and_group_opacity() {
     assert!(
         svg.contains("opacity=\"0.7\""),
         "missing group opacity wrapper: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_masked_group_as_alpha_mask() {
+    // First child is the mask; content must be under mask="url(#…)" and the
+    // mask shape must not appear as unmasked sibling content (Closes #11378).
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_id = uid(2);
+    let content_id = uid(3);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 200.0, 120.0),
+        &[mask_id, content_id],
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_id,
+        group_id,
+        (40.0, 20.0, 160.0, 100.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (0.0, 0.0, 200.0, 120.0),
+        skia::Color::from_rgb(61, 123, 255),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("mask-type=\"alpha\"") && svg.contains("maskUnits=\"userSpaceOnUse\""),
+        "masked group must emit an alpha <mask>: {svg}"
+    );
+    assert!(
+        svg.contains("mask=\"url(#mask"),
+        "content must reference the alpha mask: {svg}"
+    );
+
+    // Mask body lives in <defs>; content fill appears under the mask group.
+    let defs_end = svg.find("</defs>").expect("defs");
+    let mask_def = svg[..defs_end]
+        .find("<mask ")
+        .map(|i| &svg[i..defs_end])
+        .expect("mask def");
+    assert!(
+        mask_def.contains(r#"width="120""#) && mask_def.contains(r#"height="80""#),
+        "mask def must paint the mask shape geometry: {mask_def}"
+    );
+
+    let body = &svg[defs_end..];
+    assert!(
+        body.contains("fill=\"#3D7BFF\"") || body.contains("fill=\"#3d7bff\""),
+        "content fill must appear in the body: {body}"
+    );
+    // Mask geometry must not also paint as a sibling outside the mask wrapper.
+    let mask_wrapper = body.find("mask=\"url(#mask").expect("mask wrapper");
+    let before_masked_content = &body[..mask_wrapper];
+    assert!(
+        !before_masked_content.contains(r#"width="120""#)
+            || !before_masked_content.contains(r#"height="80""#),
+        "mask shape must not paint as unmasked content: {svg}"
+    );
+
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn masked_leaf_drop_spread_uses_geometric_silhouette() {
+    // Case 11 style: masked group + circle content with drop spread 16 blur 0.
+    // GPU paints geometric outset (not feMorphology); the ring must stay circular.
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_id = uid(2);
+    let content_id = uid(3);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 160.0, 130.0),
+        &[mask_id, content_id],
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_id,
+        group_id,
+        (0.0, 0.0, 160.0, 130.0),
+        skia::Color::BLACK,
+    );
+    add_solid_circle(
+        &mut pool,
+        content_id,
+        group_id,
+        (30.0, 20.0, 130.0, 120.0),
+        skia::Color::from_rgb(255, 209, 102),
+    );
+    {
+        let content = pool.get_mut(&content_id).unwrap();
+        content.add_shadow(Shadow::new(
+            skia::Color::from_rgb(229, 16, 35),
+            0.0,
+            16.0,
+            (0.0, 0.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+    }
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("mask=\"url(#mask"),
+        "masked group must wrap content: {svg}"
+    );
+    assert!(
+        !svg.contains("feMorphology"),
+        "leaf drop spread must not use feMorphology: {svg}"
+    );
+    // 100×100 circle + 2×16 spread → 132×132 silhouette ellipse.
+    let filter_open = svg.find("filter=\"url(#fx").expect("drop filter");
+    let filter_close = svg[filter_open..]
+        .find("</g>")
+        .map(|i| filter_open + i)
+        .expect("silhouette group close");
+    let silhouette = &svg[filter_open..=filter_close];
+    assert!(
+        silhouette.contains("<ellipse")
+            && (silhouette.contains(r#"rx="66""#) || silhouette.contains(r#"rx=\"66\""#)),
+        "drop silhouette must be a geometrically outset ellipse (rx=66): {silhouette}"
+    );
+    // True-size content ellipse remains under the mask.
+    assert!(
+        svg.contains(r#"rx="50""#) || svg.matches("rx=\"50\"").count() >= 1,
+        "content ellipse must keep true size rx=50: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn masked_group_drop_silhouette_is_masked() {
+    // Circle mask + oversized rect content + group drop: silhouette must be
+    // masked (circular), not the raw rect. Offset stays geometric.
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_id = uid(2);
+    let content_id = uid(3);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (80.0, 60.0, 200.0, 180.0),
+        &[mask_id, content_id],
+    );
+    add_solid_circle(
+        &mut pool,
+        mask_id,
+        group_id,
+        (80.0, 60.0, 200.0, 180.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (40.0, 45.0, 240.0, 185.0),
+        skia::Color::from_rgb(255, 0, 110),
+    );
+    {
+        let group = pool.get_mut(&group_id).unwrap();
+        group.add_shadow(Shadow::new(
+            skia::Color::from_argb(140, 0, 0, 0),
+            10.0,
+            0.0,
+            (8.0, 12.0),
+            ShadowStyle::Drop,
+            false,
+        ));
+    }
+
+    let svg = render(&pool, group_id);
+    let filter_open = svg.find("filter=\"url(#fx").expect("drop filter");
+    let filter_close = svg[filter_open..]
+        .find("</g>")
+        .map(|i| filter_open + i)
+        .expect("silhouette group close");
+    let silhouette = &svg[filter_open..=filter_close];
+    assert!(
+        silhouette.contains("mask=\"url(#mask"),
+        "group drop silhouette must be masked to the mask shape: {silhouette}\nfull: {svg}"
+    );
+    // Silhouette mask body is a circle (ellipse), not only the rect content.
+    let defs_end = svg.find("</defs>").expect("defs");
+    let defs = &svg[..defs_end];
+    assert!(
+        defs.contains("<ellipse") && (defs.contains(r#"rx="60""#) || defs.contains("rx=\"60\"")),
+        "mask def must include the circle mask geometry: {defs}"
+    );
+    // Geometric offset: silhouette rect translate differs from content by (8,12).
+    assert!(
+        silhouette.contains("<rect"),
+        "silhouette still paints content geometry under the mask: {silhouette}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn mask_group_nested_fills_paint_empty_path() {
+    // SVG-imported mask group: resolve-shape-fills gives the group a black
+    // fill; the path child has empty fills and must inherit via nested_fills
+    // (GPU parity). Without inheritance the <mask> body is empty.
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_group = uid(2);
+    let path_id = uid(3);
+    let content_id = uid(4);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (60.0, 55.0, 220.0, 175.0),
+        &[mask_group, content_id],
+    );
+    add_group(
+        &mut pool,
+        mask_group,
+        group_id,
+        (60.0, 55.0, 220.0, 175.0),
+        &[path_id],
+    );
+    {
+        let g = pool.get_mut(&mask_group).unwrap();
+        // Mirrors apply-svg-derived / resolve-shape-fills for groups with :svg-attrs.
+        g.set_fills(vec![Fill::Solid(SolidColor(skia::Color::BLACK))]);
+        g.svg_attrs = Some(crate::shapes::SvgAttrs::default());
+    }
+    add_empty_fill_closed_path(&mut pool, path_id, mask_group, (70.0, 65.0, 210.0, 165.0));
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (30.0, 40.0, 250.0, 190.0),
+        skia::Color::from_rgb(6, 214, 160),
+    );
+
+    let svg = render(&pool, group_id);
+    let defs_end = svg.find("</defs>").expect("defs");
+    let mask_def = &svg[svg.find("<mask ").expect("mask")..defs_end];
+    assert!(
+        !mask_def.contains("<mask") || mask_def.matches("<mask").count() == 1,
+        "mask def present: {mask_def}"
+    );
+    // Closing `</mask>` with no children means inheritance failed.
+    assert!(
+        !mask_def.contains(
+            "<mask id=\"mask0\" maskUnits=\"userSpaceOnUse\" mask-type=\"alpha\"></mask>"
+        ) && (mask_def.contains("<path") || mask_def.contains("<rect")),
+        "mask must paint inherited-fill path geometry, not be empty: {mask_def}\nfull: {svg}"
+    );
+    assert!(
+        svg.contains("mask=\"url(#mask"),
+        "content must reference the mask: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_masked_group_when_mask_is_itself_a_group() {
+    // Issue #11378: mask subtree can be a group of shapes.
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let mask_group = uid(2);
+    let mask_a = uid(3);
+    let mask_b = uid(4);
+    let content_id = uid(5);
+
+    add_masked_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 100.0),
+        &[mask_group, content_id],
+    );
+    add_group(
+        &mut pool,
+        mask_group,
+        group_id,
+        (10.0, 10.0, 110.0, 90.0),
+        &[mask_a, mask_b],
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_a,
+        mask_group,
+        (10.0, 10.0, 50.0, 90.0),
+        skia::Color::BLACK,
+    );
+    add_solid_rect(
+        &mut pool,
+        mask_b,
+        mask_group,
+        (70.0, 10.0, 110.0, 90.0),
+        skia::Color::from_argb(128, 0, 0, 0),
+    );
+    add_solid_rect(
+        &mut pool,
+        content_id,
+        group_id,
+        (0.0, 0.0, 220.0, 100.0),
+        skia::Color::from_rgb(0, 200, 0),
+    );
+
+    let svg = render(&pool, group_id);
+    assert!(
+        svg.contains("mask-type=\"alpha\"") && svg.contains("mask=\"url(#mask"),
+        "nested group mask must still emit alpha <mask>: {svg}"
+    );
+    let defs_end = svg.find("</defs>").expect("defs");
+    let mask_def = &svg[svg.find("<mask ").expect("mask")..defs_end];
+    assert!(
+        mask_def.matches("<rect").count() >= 2,
+        "mask group must paint both children into the mask: {mask_def}"
+    );
+    assert!(
+        mask_def.contains("fill-opacity"),
+        "soft mask child alpha must reach the <mask>: {mask_def}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -1789,7 +2403,7 @@ fn exports_open_path_with_dotted_center_stroke() {
 fn exports_open_path_with_dotted_stroke_and_caps() {
     // Regression: dotted/dashed SVG expansion used stroke_to_path and returned
     // before draw_stroke_geometry, so open-path caps (triangle/circle/…) were
-    // dropped. Caps must be overlaid after the expanded outline.
+    // dropped. `stroke_to_path` now unions them into the expanded outline.
     let mut pool = ShapesPool::new();
     let id = uid(1);
     let mut stroke = dotted_stroke(
@@ -1806,10 +2420,13 @@ fn exports_open_path_with_dotted_stroke_and_caps() {
         svg.contains("fill=\"#1040FF\"") || svg.to_ascii_lowercase().contains("fill=\"#1040ff\""),
         "dotted stroke with caps must emit filled geometry: {svg}"
     );
-    // Caps are separate filled draws (triangle + circle), not only the dotted outline.
-    assert!(
-        svg.matches("<path ").count() >= 2 || svg.contains("<circle"),
-        "expected separate cap geometry besides the dotted outline: {svg}"
+    // Caps are unioned into the expanded outline by `stroke_to_path`, so they
+    // must not be emitted as extra draws: overlapping draws would double the
+    // alpha of translucent strokes. The snapshot below covers the geometry.
+    assert_eq!(
+        svg.matches("<path ").count(),
+        1,
+        "caps must be part of the outline, not extra draws: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -1937,6 +2554,282 @@ fn exports_solid_text_with_font_face() {
     assert!(
         svg.contains("width=\"560\" height=\"240\""),
         "fixed text should export at selrect size: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Center text stroke: stroked `<text>` (SkSVGDevice keeps stroke style).
+#[test]
+fn exports_text_with_solid_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Center, 2.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("stroke-width=\"2\"") && svg.contains("stroke=\"blue\""),
+        "center text stroke must be present: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Semi-transparent center stroke: paint is opaque; alpha is `<g opacity>`.
+#[test]
+fn exports_text_with_alpha_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((
+            StrokeKind::Center,
+            2.0,
+            skia::Color::from_argb(128, 0, 0, 255),
+        )),
+    );
+
+    let svg = render(&pool, id);
+    // 128/255 → Skia emits ~0.5019608, not a rounded 0.5.
+    assert!(
+        svg.contains("opacity=\"0.5"),
+        "alpha center stroke must wrap stroke in <g opacity>: {svg}"
+    );
+    assert!(
+        svg.contains("stroke=\"blue\"") || svg.contains("stroke=\"#0000ff\""),
+        "stroke paint must stay fully opaque: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Inner text stroke: double-width stroke clipped to the glyph silhouette.
+#[test]
+fn exports_text_with_solid_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Inner, 2.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("<clipPath") && svg.contains("clip-path=\"url(#tclip"),
+        "inner text stroke must use a glyph-silhouette clip: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+/// Outer text stroke: double-width stroke under an inverse-glyph luminance mask.
+#[test]
+fn exports_text_with_solid_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_text_with_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        Some((StrokeKind::Outer, 6.0, skia::Color::BLUE)),
+    );
+
+    let svg = render(&pool, id);
+    assert!(svg.contains("<text"), "text glyphs must be present: {svg}");
+    assert!(
+        svg.contains("<mask") && svg.contains("mask=\"url(#tmask"),
+        "outer text stroke must use an exterior glyph mask: {svg}"
+    );
+    assert!(
+        svg.contains("stroke=\"blue\""),
+        "outer text stroke color must be present: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+fn assert_linked_text_image_stroke(svg: &str) {
+    assert!(
+        svg.contains("<image") && svg.contains(TEST_IMAGE_URL),
+        "text image stroke must emit a linked <image>: {svg}"
+    );
+    // SVG clipPath ignores strokes; the silhouette must be a luminance mask.
+    assert!(
+        svg.contains("<mask") && svg.contains("mask=\"url(#txtstrokemask"),
+        "text image stroke must mask to the stroke silhouette: {svg}"
+    );
+    assert!(
+        !svg.contains("data:image"),
+        "must not base64-embed the stroke image: {svg}"
+    );
+}
+
+#[test]
+fn exports_text_with_solid_center_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Center, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_with_solid_inner_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Inner, 8.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("clip-path=\"url(#tclip"),
+        "inner text image stroke must also clip to glyphs: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
+fn exports_text_with_solid_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (0.0, 0.0, 560.0, 240.0),
+        "HOLA",
+        200.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Outer, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("mask=\"url(#tmask"),
+        "outer image stroke must nest inverse-glyph mask like solid outer: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+/// Regression: outer image stroke must remain aligned when the text is not at
+/// the page origin (page translate in CTM). Uses a luminance mask because SVG
+/// clipPath ignores strokes.
+#[test]
+fn exports_offset_text_with_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    add_text_with_image_stroke(
+        &mut pool,
+        id,
+        (165.0, 604.0, 246.0, 690.0),
+        "Aa",
+        72.0,
+        skia::Color::from_rgb(0xE1, 0x7F, 0xDA),
+        image_solid_stroke(StrokeKind::Outer, 10.0, image_id),
+    );
+
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    // Cover-map onto selrect (GPU get_fill_shader), not selrect+delta stretch.
+    // ImageFill fixture is 200×100; selrect 81×86 → scale 0.86 → dest 172×86 at x=119.5.
+    assert!(
+        svg.contains(r#"x="119.5""#) && svg.contains(r#"y="604""#),
+        "image dest must cover-map onto selrect: {svg}"
+    );
+    assert!(
+        svg.contains("preserveAspectRatio=\"xMidYMid slice\""),
+        "text stroke images must cover like GPU shaders: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+#[test]
+fn exports_nofill_text_with_outer_image_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let image_id = uid(42);
+    // No solid fill — only an outer image stroke (matches user report).
+    add_text_with_fills(
+        &mut pool,
+        id,
+        (165.0, 604.0, 246.0, 690.0),
+        "Aa",
+        72.0,
+        vec![],
+    );
+    {
+        let shape = pool.get_mut(&id).expect("text");
+        shape.add_stroke(image_solid_stroke(StrokeKind::Outer, 10.0, image_id));
+    }
+    let svg = render_with(&pool, id, |resources| {
+        resources
+            .images
+            .set_source_url(image_id, TEST_IMAGE_URL.to_string());
+    });
+    assert_linked_text_image_stroke(&svg);
+    assert!(
+        svg.contains("mask=\"url(#tmask"),
+        "nofill outer must nest inverse-glyph mask: {svg}"
+    );
+    // No fill <text> in the body — only the masked image.
+    let body = svg.split("</defs>").last().unwrap_or("");
+    assert!(
+        !body.contains("fill=\"#"),
+        "nofill text must not emit a solid fill: {svg}"
     );
     insta::assert_snapshot!(svg);
 }
@@ -2402,8 +3295,8 @@ fn exports_open_path_with_solid_center_image_stroke() {
 
 #[test]
 fn exports_open_path_with_image_stroke_and_caps() {
-    // Caps go into the clip silhouette with the outline. Image dest must grow
-    // past stroke.delta() so triangle/circle markers stay textured.
+    // Caps are part of the clip silhouette (unioned into the outline). Image
+    // dest must grow past stroke.delta() so triangle/circle markers stay textured.
     let mut pool = ShapesPool::new();
     let id = uid(1);
     let image_id = uid(42);
@@ -2425,11 +3318,12 @@ fn exports_open_path_with_image_stroke_and_caps() {
         .nth(1)
         .and_then(|s| s.split("</clipPath>").next())
         .expect("imgstroke clipPath");
-    assert!(
-        clip.matches("<path ").count() >= 2
-            || clip.contains("<circle")
-            || clip.contains("<ellipse"),
-        "clip must include cap geometry besides the stroke outline: {svg}"
+    // `stroke_to_path` unions the caps into the outline, so the clip is a
+    // single path covering both.
+    assert_eq!(
+        clip.matches("<path ").count(),
+        1,
+        "clip must be the outline with the caps unioned in: {svg}"
     );
     // TriangleArrow margin is width*4 = 48.
     assert!(
@@ -2464,4 +3358,182 @@ fn exports_closed_path_with_dotted_outer_image_stroke() {
     assert_linked_image_stroke(&svg);
     assert_evenodd_stroke_clip(&svg);
     insta::assert_snapshot!(svg);
+}
+
+/// A per-side dash or dot pattern is drawn as its own filled path, so the
+/// exported SVG carries far more than the two contours of a solid band.
+fn assert_per_side_pattern(svg: &str, fill: &str) {
+    let needle = format!("<path fill=\"{fill}\"");
+    let from = svg
+        .find(&needle)
+        .unwrap_or_else(|| panic!("no stroke path filled with {fill}: {svg}"));
+    let d_start = svg[from..].find(" d=\"").expect("stroke path has no d") + from + 4;
+    let d_end = svg[d_start..].find('"').expect("unterminated d") + d_start;
+    assert!(
+        svg[d_start..d_end].matches('M').count() > 2,
+        "pattern must leave more than the two band contours: {svg}"
+    );
+}
+
+#[test]
+fn exports_rect_with_per_side_dashed_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Center,
+        20.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([4.0, 12.0, 24.0, 40.0]); // top, right, bottom, left
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rect_with_per_side_dotted_center_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dotted_stroke(
+        StrokeKind::Center,
+        16.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([6.0, 16.0, 6.0, 16.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rect_with_per_side_dotted_inner_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    // Inner dots have radius = width against an advance of width + 5, so they
+    // only stay discrete below width 5.
+    let mut stroke = dotted_stroke(
+        StrokeKind::Inner,
+        4.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([2.0, 4.0, 2.0, 4.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 60.0, 40.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn exports_rounded_rect_with_per_side_dashed_outer_stroke() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Outer,
+        12.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([6.0, 12.0, 18.0, 24.0]);
+    add_stroked_rect_with_radius(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 240.0, 180.0),
+        24.0,
+        stroke,
+    );
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn per_side_dashed_stroke_skips_zero_width_sides() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = dashed_stroke(
+        StrokeKind::Inner,
+        16.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    // Only the top and bottom sides are drawn.
+    stroke.widths = Some([16.0, 0.0, 16.0, 0.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 240.0, 180.0), stroke);
+
+    let svg = render(&pool, id);
+    assert_per_side_pattern(&svg, "#1040FF");
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+/// Widths and colours for a rect whose four sides are four separate strokes.
+fn per_side_colour_sides() -> [(f32, skia::Color); 4] {
+    [
+        (10.0, skia::Color::from_rgb(0xe1, 0x1d, 0x48)),
+        (20.0, skia::Color::from_rgb(0x05, 0x96, 0x69)),
+        (15.0, skia::Color::from_rgb(0x25, 0x63, 0xeb)),
+        (5.0, skia::Color::from_rgb(0xf5, 0x9e, 0x0b)),
+    ]
+}
+
+#[test]
+fn miters_a_rect_whose_sides_are_separate_strokes() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_rect_with_per_side_strokes(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 140.0),
+        0.0,
+        per_side_colour_sides(),
+    );
+
+    let svg = render(&pool, id);
+    // Each side is clipped to its wedge, so every stroke carries a clip path.
+    assert_eq!(
+        svg.matches("<clipPath").count(),
+        4,
+        "each side needs its own miter clip: {svg}"
+    );
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
+}
+
+#[test]
+fn miters_a_rounded_rect_whose_sides_are_separate_strokes() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_rect_with_per_side_strokes(
+        &mut pool,
+        id,
+        Uuid::nil(),
+        (0.0, 0.0, 220.0, 140.0),
+        20.0,
+        per_side_colour_sides(),
+    );
+
+    insta::assert_snapshot!(with_stable_clip_ids(&render(&pool, id)));
+}
+
+#[test]
+fn a_lone_per_side_stroke_is_not_mitered() {
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    let mut stroke = solid_stroke(
+        StrokeKind::Inner,
+        10.0,
+        skia::Color::from_rgb(0x10, 0x40, 0xff),
+    );
+    stroke.widths = Some([10.0, 20.0, 15.0, 5.0]);
+    add_stroked_rect(&mut pool, id, Uuid::nil(), (0.0, 0.0, 220.0, 140.0), stroke);
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("<clipPath"),
+        "one stroke has nothing to miter against, so it stays a plain band: {svg}"
+    );
 }

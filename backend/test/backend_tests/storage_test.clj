@@ -97,7 +97,7 @@
                                           :content-type "text/plain"
                                           :expired-at (ct/in-future {:seconds 1})})]
     (t/is (sto/object? object))
-    (t/is (true? (sto/del-object! storage object)))
+    (t/is (true? (sto/del-object! storage (:id object))))
 
     ;; retrieving the same object should be not nil because the
     ;; deletion is not immediate

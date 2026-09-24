@@ -310,6 +310,37 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
+### Account lockout
+
+__Since version 2.19.0__
+
+Account lockout is disabled by default. Backend administrators can enable it by
+adding the <code class="language-bash">enable-account-lockout</code> flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-account-lockout
+```
+
+When enabled, Penpot locks an existing account after 5 failed password or LDAP
+login attempts within 15 minutes. It only applies to the password and LDAP
+logins; OIDC and the other authentication providers are not affected. The
+defaults can be changed with:
+
+```bash
+# Backend
+PENPOT_LOGIN_LOCKOUT_MAX_ATTEMPTS: 5
+PENPOT_LOGIN_LOCKOUT_WINDOW: 15m
+```
+
+While the account is locked, login returns HTTP 429 with a `Retry-After`
+header and a JSON error with the code `account-locked` and the remaining
+seconds in `ttl`.
+
+Redis must be available. If Redis fails, login continues without lockout
+checks. This feature prevents repeated password guessing, but anyone who knows
+an email address can lock that account by failing the configured number of
+attempts.
+
 ## Penpot URI
 
 You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
@@ -454,24 +485,97 @@ attributes emitted by the UI, and `blob:`/`data:` for thumbnails, exports and fo
 external Google Fonts and GitHub templates endpoints do not need entries of their own
 because they are reverse proxied by the frontend container.
 
-Two known sources of violations remain, and both are the reason `enforce` is not yet the
-default:
+The inline scripts of the pages served by the container are covered by sha256 hashes
+generated during the frontend build, so they need no exception of their own.
 
-- The `index.html` inline `<script type="module">` and `<script type="importmap">` blocks
-  are not covered by the policy yet.
-- Deployments with plugins enabled report `eval` and remote fetch violations, because the
-  plugin sandbox evaluates third-party code and loads it from arbitrary hosts.
+One known source of violations remains, and it is the reason `enforce` is not yet the
+default. The plugin runtime initialises on every page load, whether or not a plugin is
+opened, and its sandbox needs `eval` to evaluate plugin code. Under the default policy
+those calls are blocked: the application still loads, but the plugin system is degraded,
+and opening a plugin additionally needs its remote host reachable from `connect-src` and
+`frame-src`.
 
-Set your own policy with `PENPOT_CSP_POLICY` if you need to relax or tighten it, for
-example to allow plugins:
+OIDC single sign-on needs no exception: the provider is reached by navigating away from
+Penpot, which no directive of this policy governs, the response returns as a redirect, and
+both discovery and the token exchange happen on the backend rather than in the browser.
+
+#### Extending the policy
+
+Most deployments need to add an origin rather than rewrite the policy: a plugin host, an
+analytics endpoint, a corporate font server. Declare only the addition and the rest of the
+default policy, hashes included, stays in place:
 
 ```bash
-PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https: blob: data:; worker-src 'self' blob:; media-src 'self' blob:; frame-src 'self' https:; manifest-src 'self'"
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https://analytics.example.com"
 ```
 
+The extensible directives are `script-src`, `style-src`, `img-src`, `font-src`,
+`connect-src` and `frame-src`. `base-uri`, `form-action`, `object-src` and
+`frame-ancestors` are not extensible, since relaxing them removes the protection they
+provide and no ordinary deployment needs to.
+
+`PENPOT_CSP_REPORT_URI` adds a `report-uri` directive, which is how a deployment collects
+violations from real traffic while the policy is still in report-only mode.
+
+#### Running plugins under an enforcing policy
+
+Plugins need four directives, and under enforcing mode a missing one fails quietly rather
+than reporting an error. The symptoms are worth knowing: the sandbox refuses to start
+without `script-src`, installing a plugin fails with a network error without
+`connect-src`, its icon does not appear without `img-src`, and its interface stays blank
+without `frame-src`.
+
+```bash
+PENPOT_CSP_SCRIPT_SRC_EXTRA: "'unsafe-eval'"
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https://plugins.example.com"
+PENPOT_CSP_IMG_SRC_EXTRA: "https://plugins.example.com"
+PENPOT_CSP_FRAME_SRC_EXTRA: "https://plugins.example.com"
+```
+
+`'unsafe-eval'` is required because the plugin sandbox evaluates plugin code, and it
+applies to the whole application rather than to plugins alone. Note also that the plugin
+runtime initialises on every page load whether or not a plugin is opened, so without it
+the sandbox reports violations even on a deployment where nobody uses plugins.
+
+Listing the origins explicitly restricts which plugins can run, which the browser then
+enforces. A deployment that cannot know in advance where its users install plugins from
+needs the permissive form instead:
+
+```bash
+PENPOT_CSP_SCRIPT_SRC_EXTRA: "'unsafe-eval'"
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https:"
+PENPOT_CSP_IMG_SRC_EXTRA: "https:"
+PENPOT_CSP_FRAME_SRC_EXTRA: "https:"
+```
+
+#### Replacing the policy
+
+`PENPOT_CSP_POLICY` defines the whole policy and takes precedence, in which case the
+variables above are ignored and a warning is logged at startup.
+
+Be aware that this also replaces the generated hashes, which change on every build. A
+deployment that pins the whole policy has to recompute them at each release or the
+application stops loading, so prefer the extension variables unless you really need to
+remove a directive or add one the variables above do not cover.
+
+`upgrade-insecure-requests` is an example of the latter. To add it, read the policy the
+container is currently serving and use it as the starting point:
+
+```bash
+curl -sI https://penpot.example.com/ | grep -i content-security-policy
+```
+
+Then set the whole thing, with the hashes taken from that output:
+
+```bash
+PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; manifest-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-...' 'sha256-...'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; upgrade-insecure-requests"
+```
+
+Remember to repeat that step on every upgrade, since the hashes will have changed.
+
 <p class="advice">
-  Because of the above, <code class="language-bash">enforce</code> requires a policy of your
-  own. Enforcing the default policy will prevent the application from loading.
+  Because of the above, <code class="language-bash">enforce</code> with the default policy
+  suits deployments that do not use plugins. Anywhere else it needs a policy of your own.
 </p>
 
 ### HTTP Strict Transport Security
@@ -733,8 +837,8 @@ PENPOT_MCP_URI: http://penpot-mcp:4401
 PENPOT_MCP_URI_WS: http://penpot-mcp:4402
 ```
 
-- `PENPOT_MCP_URI`: The URI of the MCP server, used for the streamable HTTP and SSE
-  endpoints.
+- `PENPOT_MCP_URI`: The URI of the MCP server, used for the Streamable HTTP
+  endpoint.
 - `PENPOT_MCP_URI_WS`: The URI of the MCP server used for the websocket connection.
 
 The defaults match the service name used in the official `docker-compose.yaml`. Change

@@ -1296,6 +1296,95 @@
         (t/is (mth/close? (:x target) (:x p) 0.001))
         (t/is (mth/close? (:y target) (:y p) 0.001))))))
 
+(defn- bend-straight-segment
+  "Returns the cubic that the path editor draws when `curve` is grabbed at
+  `grab` and bent onto `target`."
+  [[start end h1 h2 :as curve] grab target]
+  (let [base   (path.helpers/bend-reference-curve curve)
+        t      (path.helpers/curve-closest-t base grab 0.001)
+        deltas (merge-with +
+                           (path.helpers/curve-handler-deltas curve base)
+                           (path.helpers/bend-curve-deltas base t target))]
+    [start end
+     (gpt/point (+ (:x h1) (:c1x deltas)) (+ (:y h1) (:c1y deltas)))
+     (gpt/point (+ (:x h2) (:c2x deltas)) (+ (:y h2) (:c2y deltas)))]))
+
+(defn- start-tangent-angle
+  "Angle, in degrees, between the chord of a cubic and its tangent at the start."
+  [[start end h1 _]]
+  (gpt/angle-with-other (gpt/to-vec start h1) (gpt/to-vec start end)))
+
+(def ^:private straight-segment
+  [(gpt/point 0.0 0.0) (gpt/point 100.0 0.0)
+   (gpt/point 0.0 0.0) (gpt/point 100.0 0.0)])
+
+(t/deftest helpers-bend-reference-curve-spreads-straight-handlers
+  ;; a straight cubic carries its handlers on the chord thirds
+  (let [[_ _ h1 h2] (path.helpers/bend-reference-curve straight-segment)]
+    (t/is (gpt/close? (gpt/point 33.333 0.0) h1))
+    (t/is (gpt/close? (gpt/point 66.667 0.0) h2))))
+
+(t/deftest helpers-bend-reference-curve-keeps-the-segment
+  ;; the spread handlers draw the same straight segment
+  (let [base (path.helpers/bend-reference-curve straight-segment)]
+    (doseq [t [0.0 0.25 0.5 0.75 1.0]]
+      (let [p (path.helpers/curve-values base t)]
+        (t/is (mth/close? 0.0 (:y p) 0.001))
+        (t/is (mth/close? (* 100.0 t) (:x p) 0.001))))))
+
+(t/deftest helpers-bend-reference-curve-leaves-curves-alone
+  ;; a segment that already holds its handlers keeps them
+  (let [curve [(gpt/point 0.0 0.0) (gpt/point 100.0 0.0)
+               (gpt/point 10.0 50.0) (gpt/point 90.0 50.0)]]
+    (t/is (= curve (path.helpers/bend-reference-curve curve)))))
+
+(t/deftest helpers-bend-straight-segment-opens-the-tangent-gradually
+  ;; bending a straight segment starts flat and opens up as it is dragged away
+  (let [grab   (gpt/point 50.0 0.0)
+        angles (mapv #(start-tangent-angle
+                       (bend-straight-segment straight-segment grab (gpt/point 50.0 %)))
+                     [1.0 10.0 50.0])]
+    (t/is (< (nth angles 0) 5.0))
+    (t/is (< (nth angles 0) (nth angles 1) (nth angles 2)))
+    (t/is (< (nth angles 2) 90.0))))
+
+(t/deftest helpers-bend-straight-segment-passes-through-target
+  ;; the grabbed point lands exactly under the pointer
+  (doseq [grab   [(gpt/point 25.0 0.0) (gpt/point 50.0 0.0) (gpt/point 70.0 0.0)]
+          offset [(gpt/point 0.0 12.0) (gpt/point 5.0 -30.0)]]
+    (let [target (gpt/add grab offset)
+          base   (path.helpers/bend-reference-curve straight-segment)
+          t      (path.helpers/curve-closest-t base grab 0.001)
+          p      (path.helpers/curve-values
+                  (bend-straight-segment straight-segment grab target) t)]
+      (t/is (mth/close? (:x target) (:x p) 0.001))
+      (t/is (mth/close? (:y target) (:y p) 0.001)))))
+
+(t/deftest helpers-bend-straight-segment-turns-a-line-into-a-soft-curve
+  ;; the deltas reach the stored line through the content modifiers
+  (let [content (path/content
+                 [{:command :move-to :params {:x 0.0 :y 0.0}}
+                  {:command :line-to :params {:x 100.0 :y 0.0}}])
+        entry   (d/seek #(= 1 (:index %)) (path/segment-entries content))
+        curve   (path.helpers/entry->bezier entry)
+        base    (path.helpers/bend-reference-curve curve)
+        grab    (gpt/point 50.0 0.0)
+        target  (gpt/point 50.0 10.0)
+        t       (path.helpers/curve-closest-t base grab 0.001)
+        deltas  (merge-with +
+                            (path.helpers/curve-handler-deltas curve base)
+                            (path.helpers/bend-curve-deltas base t target))
+        segment (second (vec (path/apply-content-modifiers content {1 deltas})))
+        {:keys [c1x c1y c2x c2y]} (:params segment)
+        bent    [(gpt/point 0.0 0.0) (gpt/point 100.0 0.0)
+                 (gpt/point c1x c1y) (gpt/point c2x c2y)]
+        p       (path.helpers/curve-values bent t)]
+    (t/is (= :curve-to (:command segment)))
+    ;; a 10 unit pull on a 100 unit segment barely tilts the tangents
+    (t/is (< (start-tangent-angle bent) 25.0))
+    (t/is (mth/close? (:x target) (:x p) 0.01))
+    (t/is (mth/close? (:y target) (:y p) 0.01))))
+
 (t/deftest segment-flip-content-horizontal
   ;; mirror every node across the bbox center on the vertical axis
   (let [content (path/content

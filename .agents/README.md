@@ -34,6 +34,39 @@ the "agentic devenv" (`--agentic`) from the technical guide, which
 runs the client outside devenv and wires it in over MCP — here the
 client lives inside the sandboxed devenv docker.
 
+The content lives at the paths the ecosystem agreed on: `AGENTS.md` at the
+repository root and the skills in this folder, `.agents/skills/`. Codex,
+opencode, Cursor, Zed, Amp, omp and pi read both without any setup.
+
+Claude Code reads `AGENTS.md` from 2.1.277, through the built-in
+`agents-md` plugin, but only in a project that has no instruction file of
+its own. A `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` anywhere
+from the repository root down to your working directory hands the whole
+project back to `CLAUDE.md`, and this file's guidance stops arriving. Keep
+none of them here. Personal steering goes in `AGENTS.local.md`, or in
+`.claude/rules/*.md` and `~/.claude/CLAUDE.md`, which the plugin does not
+count and which therefore leave the project guidance in place.
+
+Skills are untouched by that plugin and still load from `.claude/skills`
+alone, which is not committed, so link it once per clone:
+
+```bash
+mkdir -p .claude && ln -s ../.agents/skills .claude/skills
+# or, with Node:
+npx skills add ./.agents/skills --agent claude-code
+```
+
+Below 2.1.277, and on Bedrock, Vertex and Foundry where the fallback has
+not arrived, add `ln -s AGENTS.md CLAUDE.md` and drop it once your client
+has the feature. The auto-update channel decides when that is: `latest`,
+the default, has it; `stable` runs about a week behind; Homebrew and the
+Linux packages update by hand. Personal skills go in
+`.agents/local/skills/<name>/`.
+
+Every one of those paths is gitignored, so your own files keep working and
+no checkout overwrites them. Inside the devenv, `ws0` sees the links from
+the live checkout, and `ws1` and above are seeded on their first sync.
+
 Unlike the agentic devenv, running the client inside the devenv
 docker gives it full access to the live environment: every
 dependency already resolved by the image, so the agent can write
@@ -343,6 +376,39 @@ take each roadmap task in turn, write its own plan (`/make-a-plan`,
 delegating when it helps), review it when the task is complex
 (`/review-plan`), implement it (`/implement-plan`), and mark progress
 on the roadmap as you land each piece.
+
+### Plan file naming (base + derivatives)
+
+Base plans live in `.agents/plans/` as `YYYY-MM-DD-<slug>.md`.
+Derived plans reuse the parent basename verbatim and append one
+suffix per level with `--`, with no new date — the parent prefix
+keeps everything adjacent in `ls`:
+
+- Review followup on implemented work:
+  `2026-09-14-paste-before-init-crash.md` →
+  `2026-09-14-paste-before-init-crash--review-01.md`
+- Roadmap sub-plan (task number from the roadmap):
+  `2026-09-20-upload-pipeline-roadmap.md` →
+  `2026-09-20-upload-pipeline-roadmap--task-01-chunk-upload.md`
+- Chained: `...--task-02-gc--review-01.md`
+
+While a plan is still unimplemented, `/make-a-plan` revises it in
+place. Once implemented and reviewed, it writes a new followup file.
+Full rules live in the `planner` skill.
+
+### Plan status lifecycle
+
+Every plan carries `Status: draft | reviewed | done` plus an
+append-only `Review Log` (UTC ISO 8601, one line per entry):
+
+- `draft` — fresh from `/make-a-plan`.
+- `reviewed` — review feedback incorporated. `/review-plan` stays
+  read-only; only your explicit "apply" makes `/make-a-plan` apply
+  the changes, flip the status, and log one line.
+- `done` — `/implement-plan` closes it on completion, logging the
+  issue URL when one exists (never commit hashes).
+
+A plan approved with no changes goes `draft` → `done` directly.
 
 ## 7. Connecting `gh` CLI with a token
 

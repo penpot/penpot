@@ -27,11 +27,12 @@ bb scripts/paren-repair --help
 ```
 `bb` must be invoked from the repo root so the path `scripts/paren-repair` resolves.
 
-## Native Tool Available (opencode)
+## Native Tool Available (OpenCode V2)
 
-A native opencode tool `paren-repair` is available at `.opencode/scripts/paren-repair.ts`.
-The LLM can call it directly with:
-- `files`: Array of file paths to fix
+A native OpenCode V2 tool `paren-repair` is available. It is defined in
+`.opencode/plugins/penpot.js` and registered through `setup()`. The LLM can
+call it directly with:
+- `files`: comma-separated file paths to fix (a string, not an array)
 - `code`: Code string to fix via stdin
 
 Example usage by the LLM:
