@@ -2007,9 +2007,13 @@
       (let [[params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))
 
-(t/deftest send-renewal-email-rejects-blank-name
-  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+(t/deftest send-renewal-email-treats-blank-name-as-empty
+  ;; A blank name is trimmed and follows the same path as "": no name
+  ;; is shown and the profile's fullname is not used.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile "   "))]
-      (t/is (not (th/success? out)))
-      (t/is (th/ex-of-code? (:error out) :params-validation)))))
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))

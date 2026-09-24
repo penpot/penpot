@@ -707,7 +707,7 @@ RETURNING id, deleted_at;")
   [:map
    [:profile-id ::sm/uuid]
    [:user-email ::sm/email]
-   [:user-name [:maybe [:or [:= ""] ::sm/text]]]
+   [:user-name [:maybe :string]]
    [:renewal-date :string]
    [:estimated-amount :double]
    [:organizations [:vector cto/schema:organization-with-avatar]]])
@@ -722,10 +722,11 @@ RETURNING id, deleted_at;")
         ;; `nil` means the caller has no name override (e.g. no distinct
         ;; billing email was set) and wants the account owner's real name.
         ;; An explicit "" means the caller deliberately wants no name shown
-        ;; (e.g. a billing email was set but no company name was provided).
+        ;; (e.g. a billing email was set but no company name was provided);
+        ;; a blank string is trimmed and treated the same as "".
         user-name  (if (nil? user-name)
                      (:fullname (profile/get-profile cfg profile-id))
-                     user-name)]
+                     (str/trim user-name))]
     (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                       (eml/send! {::eml/conn    conn
                                   ::eml/factory eml/renewal-notice
