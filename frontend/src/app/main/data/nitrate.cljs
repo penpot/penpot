@@ -177,22 +177,13 @@
        (filter #(= (dm/get-in % [:organization :id]) organization-id))))
 
 (defn organization-leave-info
-  "Splits the teams of an organization into what is needed to leave it:
-  the organization's own default team id, the teams owned by the
-  current user (whose membership decides whether they get deleted or
-  offered for transfer), and the teams the user does not own (which
-  are simply left)."
+  "The default team id and the not-owned teams of an organization.
+  Owned teams come from `::get-leave-organization-summary`."
   [org-teams]
-  (let [non-default-teams (remove :is-default org-teams)]
-    {:default-team-id (->> org-teams (filter :is-default) first :id)
-     :owned-teams (filter #(dm/get-in % [:permissions :is-owner]) non-default-teams)
-     :not-owned-teams (remove #(dm/get-in % [:permissions :is-owner]) non-default-teams)}))
-
-(defn transferable-teams
-  "Owned teams with more than one member: the ones the user can offer
-  to transfer to another owner instead of leaving/deleting them."
-  [owned-teams]
-  (filter #(> (count (:members %)) 1) owned-teams))
+  {:default-team-id (->> org-teams (filter :is-default) first :id)
+   :not-owned-teams (->> org-teams
+                         (remove :is-default)
+                         (remove #(dm/get-in % [:permissions :is-owner])))})
 
 (def ^:private team-leave-error-messages
   {:only-owner-can-delete-team "errors.team-leave.only-owner-can-delete"
@@ -268,21 +259,15 @@
               (rx/catch on-error)))))))
 
 (defn leave-organization-fn
-  "Builds the accept callback used by `show-leave-organization-modal`: it
-  folds any teams the user chose to transfer into `:teams-to-leave`,
-  computes `:teams-to-delete` from the owned teams left with a single
-  member, then emits `leave-organization`."
-  [{:keys [organization default-team-id owned-teams not-owned-teams on-error]}]
-  (fn [{:keys [teams-to-transfer member-added-at organization-member-count-before]}]
+  "Builds the accept callback used by `show-leave-organization-modal`:
+  folds transferred teams into `:teams-to-leave` and emits
+  `leave-organization`."
+  [{:keys [organization default-team-id not-owned-teams on-error]}]
+  (fn [{:keys [teams-to-transfer teams-to-delete member-added-at organization-member-count-before]}]
     (let [teams-to-leave
           (cond->> not-owned-teams
             :always (map #(select-keys % [:id]))
-            (seq teams-to-transfer) (concat teams-to-transfer))
-
-          teams-to-delete
-          (->> owned-teams
-               (filter #(= (count (:members %)) 1))
-               (map :id))]
+            (seq teams-to-transfer) (concat teams-to-transfer))]
       (st/emit! (leave-organization {:id (:id organization)
                                      :name (:name organization)
                                      :default-team-id default-team-id
@@ -293,7 +278,7 @@
                                      :on-error on-error})))))
 
 (defn show-leave-organization-modal
-  [{:keys [organization profile default-team-id leave-fn teams-to-transfer on-error]}]
+  [{:keys [organization profile default-team-id leave-fn on-error]}]
   (ptk/reify ::show-leave-organization-modal
     ptk/WatchEvent
     (watch [_ _ _]
@@ -309,6 +294,7 @@
                     (fn [params]
                       (leave-fn
                        (assoc params
+                              :teams-to-delete (:team-ids-to-delete summary)
                               :member-added-at (:member-added-at summary)
                               :organization-member-count-before
                               (:organization-member-count-before summary))))]
@@ -318,7 +304,7 @@
                    (modal/show
                     {:type :leave-and-reassign-organization
                      :profile profile
-                     :teams-to-transfer teams-to-transfer
+                     :teams-to-transfer (:transferable-teams summary)
                      :num-teams-to-delete num-teams-to-delete
                      :accept leave-fn}))
 

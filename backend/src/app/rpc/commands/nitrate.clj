@@ -143,6 +143,7 @@
 
 (def ^:private sql:get-member-teams-info
   "SELECT t.id,
+          t.name,
           t.is_default,
           tpr.is_owner,
           (SELECT count(*)    FROM team_profile_rel WHERE team_id = t.id) AS num_members,
@@ -214,6 +215,19 @@
    [:teams-to-transfer ::sm/int]
    [:teams-to-exit ::sm/int]
    [:teams-to-detach ::sm/int]
+   [:team-ids-to-delete [:vector ::sm/uuid]]
+   [:transferable-teams
+    [:vector
+     [:map
+      [:id ::sm/uuid]
+      [:name ::sm/text]
+      [:members
+       [:vector
+        [:map
+         [:id ::sm/uuid]
+         [:name :string]
+         [:email ::sm/text]
+         [:is-admin ::sm/boolean]]]]]]]
    [:member-added-at [:maybe ct/schema:inst]]
    [:organization-member-count-before ::sm/int]])
 
@@ -361,6 +375,7 @@
 
 (sv/defmethod ::leave-organization
   {::rpc/auth true
+   ::nitrate/sso false
    ::doc/added "2.18"
    ::sm/params schema:leave-organization
    ::db/transaction true}
@@ -371,8 +386,21 @@
                                  :deleted-by-role "organization-member")))
 
 
+(defn- get-transferable-teams
+  "`teams-to-transfer` with their members, except `profile-id`."
+  [{:keys [::db/conn]} teams-to-transfer profile-id]
+  (mapv (fn [{:keys [id name]}]
+          {:id      id
+           :name    name
+           :members (->> (teams/get-team-members conn id)
+                         (remove #(= profile-id (:id %)))
+                         (mapv #(select-keys % [:id :name :email :is-admin])))})
+        teams-to-transfer))
+
+;; Not SSO gated, so members can leave without SSO credentials.
 (sv/defmethod ::get-leave-organization-summary
   {::rpc/auth true
+   ::nitrate/sso false
    ::doc/added "2.18"
    ::sm/params schema:get-leave-organization-summary
    ::sm/result schema:get-leave-organization-summary-result
@@ -394,6 +422,8 @@
                 :code :not-valid-teams))
     (assoc
      (get-leave-organization-summary cfg default-team-id valid-teams-to-delete-ids teams-to-transfer-count teams-to-exit-count)
+     :team-ids-to-delete (vec valid-teams-to-delete-ids)
+     :transferable-teams (get-transferable-teams cfg valid-teams-to-transfer profile-id)
      :member-added-at (:created-at membership)
      :organization-member-count-before (count organization-members))))
 
