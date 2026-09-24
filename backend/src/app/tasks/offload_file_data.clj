@@ -35,7 +35,7 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn execute-offload-file-data!
+(defn execute-offload-file-data
   "Plain job handler: offload the file data rows of one file."
   [cfg params]
   (let [file-id (:file-id params)]
@@ -58,6 +58,6 @@
   [_ cfg]
   {::jobs/name      :offload-file-data
    ::jobs/schema    schema:offload-file-data-params
-   ::jobs/handler   (partial execute-offload-file-data! cfg)
+   ::jobs/handler   (partial execute-offload-file-data cfg)
    ::jobs/decoder   (sm/decoder schema:offload-file-data-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:offload-file-data-params)})

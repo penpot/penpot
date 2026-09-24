@@ -48,7 +48,7 @@
                       (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
     {:processed total}))
 
-(declare execute-file-gc-scheduler!)
+(declare execute-file-gc-scheduler)
 
 (defmethod ig/assert-key ::file-gc-scheduler-job-def
   [_ params]
@@ -68,11 +68,11 @@
   [_ cfg]
   {::jobs/name      :file-gc-scheduler
    ::jobs/schema    schema:file-gc-scheduler-params
-   ::jobs/handler   (partial execute-file-gc-scheduler! cfg)
+   ::jobs/handler   (partial execute-file-gc-scheduler cfg)
    ::jobs/decoder   (sm/decoder schema:file-gc-scheduler-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:file-gc-scheduler-params)})
 
-(defn execute-file-gc-scheduler!
+(defn execute-file-gc-scheduler
   "Plain job handler: select the file gc candidates (media-trim pending
   files before threshold) and schedule one file-gc job per file; no props
   needed (min-age default from config; overridable for the repl runs)."

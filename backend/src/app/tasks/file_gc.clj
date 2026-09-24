@@ -245,7 +245,7 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn execute-file-gc!
+(defn execute-file-gc
   "Plain job handler: clean the media/thumbnails/fdata of one file."
   [cfg params]
   (try
@@ -278,6 +278,6 @@
   [_ cfg]
   {::jobs/name      :file-gc
    ::jobs/schema    schema:file-gc-params
-   ::jobs/handler   (partial execute-file-gc! cfg)
+   ::jobs/handler   (partial execute-file-gc cfg)
    ::jobs/decoder   (sm/decoder schema:file-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:file-gc-params)})

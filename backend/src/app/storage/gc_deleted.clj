@@ -181,7 +181,7 @@
         (recur (+ total deleted))
         total))))
 
-(declare execute-storage-gc-deleted!)
+(declare execute-storage-gc-deleted)
 
 (defmethod ig/assert-key ::storage-gc-deleted-job-def
   [_ params]
@@ -196,13 +196,13 @@
   [_ cfg]
   {::jobs/name      :storage-gc-deleted
    ::jobs/schema    schema:storage-gc-deleted-params
-   ::jobs/handler   (partial execute-storage-gc-deleted! cfg)
+   ::jobs/handler   (partial execute-storage-gc-deleted cfg)
    ::jobs/decoder   (sm/decoder schema:storage-gc-deleted-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:storage-gc-deleted-params)})
 
-(defn execute-storage-gc-deleted!
+(defn execute-storage-gc-deleted
   "Plain job handler: clean the marked-deleted storage objects."
-  ([cfg] (execute-storage-gc-deleted! cfg {}))
+  ([cfg] (execute-storage-gc-deleted cfg {}))
   ([cfg _params]
    ;; NOTE: no outer transaction here on purpose — clean-deleted!
    ;; commits each chunk in its own transaction, so a late failure

@@ -158,7 +158,7 @@
    [:id ::sm/uuid]
    [:file-id {:optional true} ::sm/uuid]])
 
-(defn execute-delete-object!
+(defn execute-delete-object
   "Plain job handler: run the delete-object multimethod on the provided
   params inside a single transaction."
   [cfg params]
@@ -173,6 +173,6 @@
   [_ cfg]
   {::jobs/name      :delete-object
    ::jobs/schema    schema:delete-object-params
-   ::jobs/handler   (partial execute-delete-object! cfg)
+   ::jobs/handler   (partial execute-delete-object cfg)
    ::jobs/decoder   (sm/decoder schema:delete-object-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:delete-object-params)})

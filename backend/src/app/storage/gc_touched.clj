@@ -230,7 +230,7 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare execute-storage-gc-touched!)
+(declare execute-storage-gc-touched)
 
 (defmethod ig/assert-key ::storage-gc-touched-job-def
   [_ params]
@@ -250,14 +250,14 @@
   [_ cfg]
   {::jobs/name      :storage-gc-touched
    ::jobs/schema    schema:storage-gc-touched-params
-   ::jobs/handler   (partial execute-storage-gc-touched! cfg)
+   ::jobs/handler   (partial execute-storage-gc-touched cfg)
    ::jobs/decoder   (sm/decoder schema:storage-gc-touched-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:storage-gc-touched-params)})
 
-(defn execute-storage-gc-touched!
+(defn execute-storage-gc-touched
   "Plain job handler: analyze the touched storage objects and freeze or
   delete them depending on their references."
-  ([cfg] (execute-storage-gc-touched! cfg {}))
+  ([cfg] (execute-storage-gc-touched cfg {}))
   ([cfg params]
    (let [threshold (if (:skip-delay params)
                      (ct/now)

@@ -178,11 +178,11 @@
                    :context {:triggered-by "srepl"
                              :cause cause}})
 
-    (wrk/invoke! (-> system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :profile
-                                          :deleted-at deleted-at
-                                          :id (:id profile)})))
+    (jobs/invoke! (-> system
+                      (assoc ::jobs/name :delete-object)
+                      (assoc ::jobs/params {:object :profile
+                                            :deleted-at deleted-at
+                                            :id (:id profile)})))
     (:id profile)))
 
 (defn delete-profiles-by-email!

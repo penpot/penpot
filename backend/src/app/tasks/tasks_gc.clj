@@ -27,17 +27,17 @@
   [:map
    [:min-age {:optional true} [:or :int :string ::ct/duration]]])
 
-(declare execute-tasks-gc!)
+(declare execute-tasks-gc)
 
 (defmethod ig/init-key ::tasks-gc-job-def
   [_ cfg]
   {::jobs/name      :tasks-gc
    ::jobs/schema    schema:tasks-gc-params
-   ::jobs/handler   (partial execute-tasks-gc! cfg)
+   ::jobs/handler   (partial execute-tasks-gc cfg)
    ::jobs/decoder   (sm/decoder schema:tasks-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:tasks-gc-params)})
 
-(defn execute-tasks-gc!
+(defn execute-tasks-gc
   "Plain job handler: delete terminal `task` rows (the legacy dormant
   table) older than the deletion delay."
   [cfg params]

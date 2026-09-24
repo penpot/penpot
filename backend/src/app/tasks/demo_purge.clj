@@ -18,7 +18,7 @@
 (def schema:demo-purge-params
   [:map
    [:profile-id ::sm/uuid]])
-(declare execute-demo-purge!)
+(declare execute-demo-purge)
 
 (defmethod ig/assert-key ::demo-purge-job-def
   [_ params]
@@ -28,11 +28,11 @@
   [_ cfg]
   {::jobs/name      :demo-purge
    ::jobs/schema    schema:demo-purge-params
-   ::jobs/handler   (partial execute-demo-purge! cfg)
+   ::jobs/handler   (partial execute-demo-purge cfg)
    ::jobs/decoder   (sm/decoder schema:demo-purge-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:demo-purge-params)})
 
-(defn execute-demo-purge!
+(defn execute-demo-purge
   "Plain job handler: mark the demo profile as deleted and submit the
   corresponding delete-object job."
   [cfg params]

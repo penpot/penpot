@@ -379,7 +379,7 @@
            :deleted-v2 result-v2)
     (+ result-legacy result-v2)))
 
-(declare execute-session-gc!)
+(declare execute-session-gc)
 
 (def schema:session-gc-params
   "Params map (no params needed; config-derived only)."
@@ -389,13 +389,13 @@
   [_ cfg]
   {::jobs/name      :session-gc
    ::jobs/schema    schema:session-gc-params
-   ::jobs/handler   (fn [_] (execute-session-gc! cfg))
+   ::jobs/handler   (fn [_] (execute-session-gc cfg))
    ::jobs/decoder   (sm/decoder schema:session-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:session-gc-params)})
 
-(defn execute-session-gc!
+(defn execute-session-gc
   "Plain job handler: delete expired http sessions."
-  ([cfg] (execute-session-gc! cfg nil))
+  ([cfg] (execute-session-gc cfg nil))
   ([cfg _params]
    (jobs/heartbeat! cfg)
    (db/tx-run! cfg collect-expired-tasks)))

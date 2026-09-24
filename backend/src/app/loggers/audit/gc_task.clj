@@ -23,7 +23,7 @@
     (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(declare execute-audit-log-gc!)
+(declare execute-audit-log-gc)
 
 (def schema:audit-log-gc-params
   "Params map (no params needed; config-derived only)."
@@ -33,12 +33,12 @@
   [_ cfg]
   {::jobs/name      :audit-log-gc
    ::jobs/schema    schema:audit-log-gc-params
-   ::jobs/handler   (partial execute-audit-log-gc! cfg)
+   ::jobs/handler   (partial execute-audit-log-gc cfg)
    ::jobs/decoder   (sm/decoder schema:audit-log-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-gc-params)})
 
-(defn execute-audit-log-gc!
+(defn execute-audit-log-gc
   "Plain job handler: delete the archived audit log entries."
-  ([cfg] (execute-audit-log-gc! cfg nil))
+  ([cfg] (execute-audit-log-gc cfg nil))
   ([cfg _params]
    (clean-archived! cfg)))

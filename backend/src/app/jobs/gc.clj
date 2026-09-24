@@ -89,7 +89,7 @@
         (do (jobs/heartbeat! cfg)
             (recur deleted' touched'))))))
 
-(declare execute-jobs-gc!)
+(declare execute-jobs-gc)
 
 (def schema:jobs-gc-params
   "min-age: duration object, integer millis or duration string
@@ -103,11 +103,11 @@
   [_ cfg]
   {::jobs/name      :jobs-gc
    ::jobs/schema    schema:jobs-gc-params
-   ::jobs/handler   (partial execute-jobs-gc! cfg)
+   ::jobs/handler   (partial execute-jobs-gc cfg)
    ::jobs/decoder   (sm/decoder schema:jobs-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:jobs-gc-params)})
 
-(defn execute-jobs-gc!
+(defn execute-jobs-gc
   "Plain job handler: delete expired rows (expires_at) and retained
   internal terminal rows, marking the storage resources of the deleted
   rows as touched.

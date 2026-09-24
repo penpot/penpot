@@ -376,7 +376,7 @@
 (defmethod ig/expand-key ::objects-gc-job-def
   [k v]
   {k (assoc v ::chunk-size 100)})
-(declare execute-objects-gc!)
+(declare execute-objects-gc)
 
 (def schema:objects-gc-params
   "Optional :skip-delay processes everything immediately, ignoring
@@ -391,13 +391,13 @@
   [_ cfg]
   {::jobs/name      :objects-gc
    ::jobs/schema    schema:objects-gc-params
-   ::jobs/handler   (partial execute-objects-gc! cfg)
+   ::jobs/handler   (partial execute-objects-gc cfg)
    ::jobs/decoder   (sm/decoder schema:objects-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:objects-gc-params)})
 
-(defn execute-objects-gc!
+(defn execute-objects-gc
   "Plain job handler: garbage collect orphan storage objects."
-  ([cfg] (execute-objects-gc! cfg {}))
+  ([cfg] (execute-objects-gc cfg {}))
   ([cfg params]
    (let [now       (ct/now)
          threshold (if (:skip-delay params)

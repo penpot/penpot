@@ -201,11 +201,11 @@
                            (update-password conn))]
       (when profile
         (login-lockout/clear-attempts! cfg (:id profile))
-        (eml/send! {::eml/conn conn
-                    ::eml/factory eml/password-changed
-                    :public-uri (cf/get :public-uri)
-                    :to (:email profile)
-                    :name (:fullname profile)})))
+        (eml/send! cfg {::eml/reuse-conn true
+                        ::eml/factory eml/password-changed
+                        :public-uri (cf/get :public-uri)
+                        :to (:email profile)
+                        :name (:fullname profile)})))
 
     nil))
 

@@ -104,7 +104,7 @@
                           (mark-archived! cfg rows)
                           (count events)))))))
 
-(declare execute-audit-log-archive!)
+(declare execute-audit-log-archive)
 
 (def schema:audit-log-archive-params
   "Optional overrides for the repl invocation defaults."
@@ -116,11 +116,11 @@
   [_ cfg]
   {::jobs/name      :audit-log-archive
    ::jobs/schema    schema:audit-log-archive-params
-   ::jobs/handler   (partial execute-audit-log-archive! cfg)
+   ::jobs/handler   (partial execute-audit-log-archive cfg)
    ::jobs/decoder   (sm/decoder schema:audit-log-archive-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-archive-params)})
 
-(defn execute-audit-log-archive!
+(defn execute-audit-log-archive
   "Plain job handler: archive the accumulated audit events in chunks
   (heartbeat per iteration: the sent chunk batches can be long)."
   [cfg params]

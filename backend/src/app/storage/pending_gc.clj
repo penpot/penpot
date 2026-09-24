@@ -77,7 +77,7 @@
         (recur (long (+ total (count rows)))))
       total)))
 
-(declare execute-storage-pending-gc!)
+(declare execute-storage-pending-gc)
 
 (defmethod ig/assert-key ::storage-pending-gc-job-def
   [_ params]
@@ -92,14 +92,14 @@
   [_ cfg]
   {::jobs/name      :storage-pending-gc
    ::jobs/schema    schema:storage-pending-gc-params
-   ::jobs/handler   (partial execute-storage-pending-gc! cfg)
+   ::jobs/handler   (partial execute-storage-pending-gc cfg)
    ::jobs/decoder   (sm/decoder schema:storage-pending-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:storage-pending-gc-params)})
 
-(defn execute-storage-pending-gc!
+(defn execute-storage-pending-gc
   "Plain job handler: reclaim storage objects created in 'pending' state
   that were never promoted to 'valid'."
-  ([cfg] (execute-storage-pending-gc! cfg {}))
+  ([cfg] (execute-storage-pending-gc cfg {}))
   ([cfg _params]
    (jobs/heartbeat! cfg)
    (let [total (process! cfg)]

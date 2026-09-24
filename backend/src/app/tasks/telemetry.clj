@@ -302,7 +302,7 @@
 ;; TASK ENTRY POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare execute-telemetry!)
+(declare execute-telemetry)
 
 (defmethod ig/assert-key ::telemetry-job-def
   [_ params]
@@ -319,11 +319,11 @@
   [_ cfg]
   {::jobs/name      :telemetry
    ::jobs/schema    schema:telemetry-params
-   ::jobs/handler   (partial execute-telemetry! cfg)
+   ::jobs/handler   (partial execute-telemetry cfg)
    ::jobs/decoder   (sm/decoder schema:telemetry-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:telemetry-params)})
 
-(defn execute-telemetry!
+(defn execute-telemetry
   "Plain job handler: send periodic telemetry data."
   [cfg params]
   (let [send?    (get params :send? true)
