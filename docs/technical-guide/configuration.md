@@ -97,8 +97,10 @@ autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITEL
 not-empty content.
 
 Penpot also comes with an option to disable public registration. Users with a
-valid team invitation can still register an account when password login is
-enabled. To disable public registration, use the following flag:
+valid and active team invitation can still register an account when password
+login is enabled. The invitation must still exist in the database and its
+validity period must not have ended. To disable public registration, use the
+following flag:
 
 ```bash
 PENPOT_FLAGS: [...] disable-registration

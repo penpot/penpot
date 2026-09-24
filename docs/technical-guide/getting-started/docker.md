@@ -84,8 +84,9 @@ flag set in the docker-compose.yaml file. For older versions of docker-compose.y
 this flag is set in the backend service.
 
 For users who do not have a team invitation, if public registration is disabled, the
-way to create a new user is with this script. Users with a valid team invitation
-can register through the invitation link when password login is enabled.
+way to create a new user is with this script. Users with a valid and active team
+invitation can register through the invitation link when password login is enabled.
+The invitation must still exist and must not have expired.
 
 ```bash
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile

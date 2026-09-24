@@ -131,6 +131,7 @@
       (verify-token/handle-token
        {:iss :team-invitation
         :state :pending
+        :redirect-to :auth-register
         :invitation-token invitation-token})
 
       (let [event @(first @emitted)]
