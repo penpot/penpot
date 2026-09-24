@@ -498,6 +498,15 @@
          :type :handled
          :hint (tr "errors.connection-error")))
 
+(defn- handle-transport-error
+  "Reports a failure whose answer did not come from the backend. These affect
+  one request and pass on their own, so the user keeps the page and gets a
+  toast."
+  [error prefix]
+  (when-let [cause (::instance error)]
+    (ex/print-throwable cause :prefix prefix))
+  (flash :cause (::instance error) :type :handled))
+
 (defmethod ptk/handle-error :network
   [error]
   ;; Transient network errors (e.g. lost connectivity, DNS failure)
@@ -510,6 +519,18 @@
   ;; Status 0 (browser offline) must not fall through to `:default`:
   ;; that would report it as an unhandled application error.
   (handle-connectivity-error error "Offline Error"))
+
+(defmethod ptk/handle-error :gateway-error
+  [error]
+  (handle-connectivity-error error "Gateway Error"))
+
+(defmethod ptk/handle-error :rate-limit
+  [error]
+  (handle-transport-error error "Rate Limit Error"))
+
+(defmethod ptk/handle-error :unexpected-response
+  [error]
+  (handle-transport-error error "Unexpected Response"))
 
 (def ^:private delegated-persistence-types
   "Save failure causes routed to their own error handler: retaining the
