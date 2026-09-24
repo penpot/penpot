@@ -1,5 +1,6 @@
 use skia_safe::{self as skia};
 
+use std::borrow::Cow;
 use std::collections::HashSet;
 
 use crate::error::Result;
@@ -287,7 +288,13 @@ fn render_leaf_geometry(
 ) -> Result<()> {
     let spread = builder.silhouette_spread;
     // Spread outsets fills only (GPU). Rect/Frame strokes ignore outset.
-    let fill_shape = shape_with_selrect_outset(element, spread);
+    // Paths and circles spread through strokes instead (see below).
+    let fill_outset = if element.spreads_through_strokes() {
+        0.0
+    } else {
+        spread
+    };
+    let fill_shape = shape_with_selrect_outset(element, fill_outset);
     // Always from the original element (not outset selrect) so the pivot
     // matches content; offset comes from the silhouette pass.
     let draw_matrix = builder.silhouette_draw_matrix(element);
@@ -313,13 +320,18 @@ fn render_leaf_geometry(
     )?;
 
     // Stroke geometry stays on the original selrect (GPU Rect/Frame
-    // drop-shadow outset is a no-op for single strokes).
-    let visible_strokes: Vec<_> = element.visible_strokes().collect();
+    // drop-shadow outset is a no-op for single strokes). Paths and circles
+    // spread through widened strokes, as on the GPU.
+    let mut stroke_shape = Cow::Borrowed(element);
+    if spread > 0.0 && element.spreads_through_strokes() {
+        stroke_shape.to_mut().apply_shadow_spread(spread);
+    }
+    let visible_strokes: Vec<_> = stroke_shape.visible_strokes().collect();
     if !visible_strokes.is_empty() {
         emit_strokes(
             builder,
             shared,
-            element,
+            &stroke_shape,
             &visible_strokes,
             scale,
             Some(draw_matrix),

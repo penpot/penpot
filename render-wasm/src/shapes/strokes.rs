@@ -86,6 +86,20 @@ impl Stroke {
         }
     }
 
+    /// Widens the band by `spread` on each side. Inner and Outer bands only
+    /// grow away from the path; the `2·spread` center stroke added by
+    /// `Shape::apply_shadow_spread` covers the other side.
+    pub fn grow_by_spread(&mut self, spread: f32, is_open: bool) {
+        let growth = match self.render_kind(is_open) {
+            StrokeKind::Center => 2.0 * spread,
+            StrokeKind::Inner | StrokeKind::Outer => spread,
+        };
+        self.width += growth;
+        if let Some(widths) = self.widths.as_mut() {
+            widths.iter_mut().for_each(|w| *w += growth);
+        }
+    }
+
     /// The widest side of the stroke: the uniform `width` unless per-side
     /// widths are set, in which case the maximum of the four sides.
     pub fn max_width(&self) -> f32 {
@@ -634,6 +648,23 @@ mod tests {
         let mut stroke = Stroke::new_inner_stroke(2.0, StrokeStyle::Solid, None, None, None, None);
         stroke.widths = widths;
         stroke
+    }
+
+    #[test]
+    fn grow_by_spread_moves_both_band_edges_by_the_spread() {
+        let mut center = Stroke::new_center_stroke(4.0, StrokeStyle::Solid, None, None, None, None);
+        center.grow_by_spread(3.0, false);
+        assert_eq!(center.width, 10.0);
+
+        let mut inner = stroke_with_widths(Some([2.0, 0.0, 2.0, 0.0]));
+        inner.grow_by_spread(3.0, false);
+        assert_eq!(inner.width, 5.0);
+        assert_eq!(inner.widths, Some([5.0, 3.0, 5.0, 3.0]));
+
+        // Open paths render every stroke centered.
+        let mut open_inner = stroke_with_widths(None);
+        open_inner.grow_by_spread(3.0, true);
+        assert_eq!(open_inner.width, 8.0);
     }
 
     #[test]

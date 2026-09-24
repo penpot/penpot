@@ -708,6 +708,29 @@ impl Shape {
         self.strokes.push(s)
     }
 
+    /// Whether a drop-shadow spread grows this shape through its strokes
+    /// ([`Self::apply_shadow_spread`]) instead of a geometric fill outset.
+    pub fn spreads_through_strokes(&self) -> bool {
+        matches!(
+            self.shape_type,
+            Type::Path(_) | Type::Bool(_) | Type::Circle
+        )
+    }
+
+    /// Offsets the shape outline by `spread` with the shape's own joins:
+    /// every stroke widens by `spread` on each side and a black `2·spread`
+    /// center stroke grows the fill.
+    pub fn apply_shadow_spread(&mut self, spread: f32) {
+        let is_open = self.is_open();
+        for stroke in self.strokes.iter_mut() {
+            stroke.grow_by_spread(spread, is_open);
+        }
+        let mut outline =
+            Stroke::new_center_stroke(2.0 * spread, StrokeStyle::Solid, None, None, None, None);
+        outline.fill = Fill::Solid(SolidColor(skia::Color::BLACK));
+        self.add_stroke(outline);
+    }
+
     pub fn set_last_stroke_widths(&mut self, widths: [f32; 4]) -> Result<(), String> {
         let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
         stroke.widths = Some(widths);
@@ -974,12 +997,22 @@ impl Shape {
     }
 
     fn apply_shadow_bounds(&self, bounds: Bounds) -> Bounds {
+        // A path spread is a mitered stroke (`apply_shadow_spread`): its tips
+        // reach up to Skia's miter limit (4) half-widths from the vertex.
+        const MITER_LIMIT: f32 = 4.0;
+        let mitered = matches!(self.shape_type, Type::Path(_) | Type::Bool(_));
+        let max_stroke = Stroke::max_bounds_width(self.strokes.iter(), self.is_open());
+
         let mut rect = bounds.to_rect();
         for shadow in self.shadows_visible() {
             if !shadow.hidden() {
                 if let Some(filter) = shadow.get_drop_shadow_filter() {
-                    let shadow_bounds = filter.compute_fast_bounds(rect);
-                    rect.join(shadow_bounds);
+                    let mut source = rect;
+                    if mitered && shadow.spread > 0.0 {
+                        let tip = (MITER_LIMIT - 1.0) * (max_stroke + shadow.spread);
+                        source.outset((tip, tip));
+                    }
+                    rect.join(filter.compute_fast_bounds(source));
                 }
             }
         }

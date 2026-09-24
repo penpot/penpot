@@ -3542,6 +3542,13 @@ impl RenderState {
         // (which defers strokes to render_shape_exit for clipped frames).
         plain_shape_mut.clip_content = false;
 
+        let spread_outset = if shadow.spread > 0.0 && shape.spreads_through_strokes() {
+            plain_shape_mut.apply_shadow_spread(shadow.spread);
+            None
+        } else {
+            Some(shadow.spread)
+        };
+
         let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
             return Ok(());
         };
@@ -3573,7 +3580,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset),
                     None,
-                    Some(shadow.spread),
+                    spread_outset,
                     target_surface,
                     false,
                 )
@@ -3617,7 +3624,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset), // Offset is geometric
                     None,
-                    Some(shadow.spread),
+                    spread_outset,
                     target_surface,
                     false,
                 )
@@ -3681,7 +3688,7 @@ impl RenderState {
                         false,
                         Some(shadow.offset), // Offset is geometric
                         None,
-                        Some(shadow.spread),
+                        spread_outset,
                         target_surface,
                         false,
                     )
