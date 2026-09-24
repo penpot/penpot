@@ -33,6 +33,7 @@
 ## Performance
 
 - Keep expensive derived data in refs, memoized selectors, or pure helpers. In hot render paths, prefer existing `app.common.data.macros` helpers where local code already uses them.
+- Derive index-aware or sorted/filtered sequences once: wrap the transformation in `mf/with-memo` keyed on the source collection instead of calling `d/enumerate` in the render body. Use the shared `d/xf:add-index`, which attaches `:app.common.data/index` to each item; the items must be associative (maps/records), so it does not work on keywords or plain ids.
 - Avoid creating new callback functions/objects inside hot renders when a named function, memoized callback, data attribute, or precomputed JS props object works.
 - Destructure props/state values used repeatedly. Avoid repeated deref/property access in render loops.
 
