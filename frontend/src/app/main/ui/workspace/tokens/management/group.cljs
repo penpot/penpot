@@ -195,4 +195,5 @@
                         :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click
                         :on-pill-context-menu on-pill-context-menu
-                        :on-node-context-menu on-node-context-menu}])]))
+                        :on-node-context-menu on-node-context-menu
+                        :can-edit can-edit-tokens?}])]))
