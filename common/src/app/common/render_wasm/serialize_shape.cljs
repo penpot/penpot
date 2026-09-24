@@ -25,16 +25,52 @@
   dispatching per changed key through the same underlying `props` setters."
   (:require
    [app.common.render-wasm.api.props :as props]
-   [app.common.render-wasm.api.upload :as upload]))
+   [app.common.render-wasm.api.upload :as upload]
+   [app.common.render-wasm.svg-derived :as svg-derived]))
+
+(defn needs-shape-tail?
+  "True when `shape` needs the per-shape svg-attrs/path tail after a
+  structural upload: svg-attrs present, or `:path`/`:bool` with content.
+  Pure predicate shared by the single and batch serializers so their
+  guards cannot drift."
+  [shape]
+  (let [type (:type shape)]
+    (or (some? (:svg-attrs shape))
+        (and (contains? #{:path :bool} type)
+             (some? (:content shape))))))
+
+(defn- write-shape-tail!
+  "Per-shape svg-attrs/path tail after a structural upload. The caller
+  selects the shape first; these setters act on the current shape."
+  [shape]
+  (when (some? (:svg-attrs shape))
+    (props/set-shape-svg-attrs (:svg-attrs shape)))
+
+  (let [type (:type shape)]
+    (when (and (contains? #{:path :bool} type) (some? (:content shape)))
+      (props/set-shape-path-content (:content shape)))))
 
 (defn serialize-shape!
   "Applies every host-independent WASM property of `shape`."
   [shape]
-  (let [type (get shape :type)]
-    (upload/set-shape-upload! shape {:include-layout? false})
+  (upload/set-shape-upload! shape {:include-layout? false})
 
-    (when (some? (get shape :svg-attrs))
-      (props/set-shape-svg-attrs (get shape :svg-attrs)))
+  (when (needs-shape-tail? shape)
+    (write-shape-tail! shape)))
 
-    (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
-      (props/set-shape-path-content (get shape :content)))))
+(defn serialize-shapes-batch!
+  "Structural batch upload plus per-shape svg-attrs/path tail.
+
+  Derives via svg-derived, uploads one `_set_shapes_batch` with `opts`,
+  then selects each shape needing svg-attrs/path content and applies it.
+  Host text/grid/image sequencing stays in callers. Returns the prepared
+  vector for the downstream host-attrs loop."
+  [shapes opts select-fn]
+  (let [prepared (mapv svg-derived/apply-svg-derived shapes)]
+    (when (seq prepared)
+      (upload/flush-shapes-batch! prepared opts)
+      (doseq [shape prepared]
+        (when (needs-shape-tail? shape)
+          (select-fn (:id shape))
+          (write-shape-tail! shape))))
+    prepared))

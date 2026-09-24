@@ -17,13 +17,13 @@
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
-   [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.mem.heap32 :as mem.h32]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
@@ -50,7 +50,6 @@
    [app.render-wasm.gesture :as wasm-gesture]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.rulers-state :as rulers-state]
-   [app.render-wasm.svg-filters :as svg-filters]
    [app.render-wasm.text-editor :as text-editor]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -1645,7 +1644,7 @@
     {:thumbnails [] :full [] :font-face-keys #{} :pending-font-face-keys #{}}
     (do
       (perf/begin-measure "set-object")
-      (let [shape (svg-filters/apply-svg-derived shape)]
+      (let [shape (svg-derived/apply-svg-derived shape)]
         (serialize-shape/serialize-shape! shape)
         (let [result (set-object-host-attrs shape false)]
           (perf/end-measure "set-object")
@@ -1814,24 +1813,11 @@
         end-index (min total (+ start-index BATCH_MAX_SHAPES))
         chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
                                    start-index end-index))
-        prepared  (mapv svg-filters/apply-svg-derived chunk)]
-
-    ;; One multi-shape structural upload (base+children+blur+shadows+flex+item+fills+strokes).
-    (when (seq prepared)
-      (upload/flush-shapes-batch! prepared {:include-layout? true
-                                            :include-fills-strokes? true}))
-
-    ;; Path + svg-attrs still need the legacy per-shape path (variable/large).
-    (doseq [shape prepared]
-      (let [id   (dm/get-prop shape :id)
-            type (dm/get-prop shape :type)]
-        (when (or (some? (get shape :svg-attrs))
-                  (and (contains? #{:path :bool} type) (some? (get shape :content))))
-          (use-shape id)
-          (when (some? (get shape :svg-attrs))
-            (props/set-shape-svg-attrs (get shape :svg-attrs)))
-          (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
-            (props/set-shape-path-content (get shape :content))))))
+        prepared  (serialize-shape/serialize-shapes-batch!
+                   chunk
+                   {:include-layout? true
+                    :include-fills-strokes? true}
+                   use-shape)]
 
     (loop [xs prepared
            t-acc (transient thumbnails-acc)
@@ -1977,53 +1963,44 @@
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
-  (let [prepared (mapv svg-filters/apply-svg-derived shapes)]
-    (when (seq prepared)
-      (upload/flush-shapes-batch! prepared {:include-layout? true
-                                            :include-fills-strokes? true}))
-    (doseq [shape prepared]
-      (let [id   (dm/get-prop shape :id)
-            type (dm/get-prop shape :type)]
-        (when (or (some? (get shape :svg-attrs))
-                  (and (contains? #{:path :bool} type) (some? (get shape :content))))
-          (use-shape id)
-          (when (some? (get shape :svg-attrs))
-            (props/set-shape-svg-attrs (get shape :svg-attrs)))
-          (when (and (contains? #{:path :bool} type) (some? (get shape :content)))
-            (props/set-shape-path-content (get shape :content))))))
-    (let [total-shapes (count prepared)
-          {:keys [thumbnails full text-font-state]}
-          (loop [index 0
-                 thumbnails-acc (transient [])
-                 full-acc (transient [])
-                 font-state-acc empty-text-font-state]
-            (if (< index total-shapes)
-              (let [shape (nth prepared index)
-                    {:keys [thumbnails full font-face-keys pending-font-face-keys]}
-                    (set-object-host-attrs shape true :skip-fills-strokes? true)]
-                (recur (inc index)
-                       (reduce conj! thumbnails-acc thumbnails)
-                       (reduce conj! full-acc full)
-                       (acc-text-font-state font-state-acc
-                                            (:id shape)
-                                            font-face-keys
-                                            pending-font-face-keys)))
-              {:thumbnails (persistent! thumbnails-acc)
-               :full (persistent! full-acc)
-               :text-font-state font-state-acc}))]
-      (perf/end-measure "set-objects")
-      (when on-shapes-ready (on-shapes-ready))
-      (when (wasm/live?)
-        ;; Rebuild the tile index so _render knows which shapes
-        ;; map to which tiles after a page switch.
-        (h/call wasm/internal-module "_set_view_end")
-        (reset! view-interaction-active? false)
-        (process-pending shapes thumbnails full text-font-state
-                         (fn []
-                           (if render-callback
-                             (render-callback)
-                             (request-render "set-objects-sync-complete"))
-                           (ug/dispatch! (ug/event "penpot:wasm:set-objects"))))))))
+  (let [prepared     (serialize-shape/serialize-shapes-batch!
+                      shapes
+                      {:include-layout? true
+                       :include-fills-strokes? true}
+                      use-shape)
+        total-shapes (count prepared)
+        {:keys [thumbnails full text-font-state]}
+        (loop [index 0
+               thumbnails-acc (transient [])
+               full-acc (transient [])
+               font-state-acc empty-text-font-state]
+          (if (< index total-shapes)
+            (let [shape (nth prepared index)
+                  {:keys [thumbnails full font-face-keys pending-font-face-keys]}
+                  (set-object-host-attrs shape true :skip-fills-strokes? true)]
+              (recur (inc index)
+                     (reduce conj! thumbnails-acc thumbnails)
+                     (reduce conj! full-acc full)
+                     (acc-text-font-state font-state-acc
+                                          (:id shape)
+                                          font-face-keys
+                                          pending-font-face-keys)))
+            {:thumbnails (persistent! thumbnails-acc)
+             :full (persistent! full-acc)
+             :text-font-state font-state-acc}))]
+    (perf/end-measure "set-objects")
+    (when on-shapes-ready (on-shapes-ready))
+    (when (wasm/live?)
+      ;; Rebuild the tile index so _render knows which shapes
+      ;; map to which tiles after a page switch.
+      (h/call wasm/internal-module "_set_view_end")
+      (reset! view-interaction-active? false)
+      (process-pending shapes thumbnails full text-font-state
+                       (fn []
+                         (if render-callback
+                           (render-callback)
+                           (request-render "set-objects-sync-complete"))
+                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
 
 (defn- shapes-in-tree-order
   "Returns shapes sorted in tree order (parents before children).

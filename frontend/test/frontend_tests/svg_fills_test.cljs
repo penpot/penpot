@@ -6,7 +6,7 @@
 
 (ns frontend-tests.svg-fills-test
   (:require
-   [app.render-wasm.svg-fills :as svg-fills]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [cljs.test :refer [deftest is testing]]))
 
 (def sample-shape
@@ -28,7 +28,7 @@
                                   :style "stop-color:#00ff00;stop-opacity:0"}}]}}})
 
 (deftest builds-gradient-fill-from-svg-defs
-  (let [fills (svg-fills/svg-fill->fills sample-shape)
+  (let [fills (svg-derived/svg-fill->fills sample-shape)
         gradient (get-in (first fills) [:fill-color-gradient])]
     (testing "fallback fill is generated"
       (is (= 1 (count fills))))
@@ -40,7 +40,7 @@
       (is (= 0.5 (:fill-opacity (first fills)))))))
 
 (deftest skips-when-no-svg-fill
-  (is (nil? (svg-fills/svg-fill->fills {:svg-attrs {:fill "none"}}))))
+  (is (nil? (svg-derived/svg-fill->fills {:svg-attrs {:fill "none"}}))))
 
 (def elliptical-shape
   {:selrect {:x 0 :y 0 :width 200 :height 100}
@@ -61,7 +61,7 @@
                                   :style "stop-color:#ffffff;stop-opacity:1"}}]}}})
 
 (deftest builds-elliptical-radial-gradient-with-transform
-  (let [fills (svg-fills/svg-fill->fills elliptical-shape)
+  (let [fills (svg-derived/svg-fill->fills elliptical-shape)
         gradient (get-in (first fills) [:fill-color-gradient])]
     (testing "ellipse from gradientTransform is preserved"
       (is (= 1 (count fills)))
@@ -75,22 +75,22 @@
 
 (deftest resolve-shape-fills-prefers-existing-fills
   (let [fills [{:fill-color "#ff00ff" :fill-opacity 0.75}]
-        resolved (svg-fills/resolve-shape-fills {:fills fills})]
+        resolved (svg-derived/resolve-shape-fills {:fills fills})]
     (is (= fills resolved))))
 
 (deftest resolve-shape-fills-falls-back-to-svg-fill
-  (let [resolved (svg-fills/resolve-shape-fills (assoc sample-shape :fills []))]
-    (is (= (svg-fills/svg-fill->fills sample-shape) resolved))))
+  (let [resolved (svg-derived/resolve-shape-fills (assoc sample-shape :fills []))]
+    (is (= (svg-derived/svg-fill->fills sample-shape) resolved))))
 
 (deftest resolve-shape-fills-defaults-to-black
   (is (= [{:fill-color "#000000" :fill-opacity 1}]
-         (svg-fills/resolve-shape-fills {:type :group
-                                         :svg-attrs {}}))))
+         (svg-derived/resolve-shape-fills {:type :group
+                                           :svg-attrs {}}))))
 
 (deftest resolve-shape-fills-accepts-hex-fill
-  (let [fills (svg-fills/resolve-shape-fills {:fills []
-                                              :type :svg-raw
-                                              :svg-attrs {:fill "#fabada"}})]
+  (let [fills (svg-derived/resolve-shape-fills {:fills []
+                                                :type :svg-raw
+                                                :svg-attrs {:fill "#fabada"}})]
     (is (= 1 (count fills)))
     (is (= "#fabada" (:fill-color (first fills))))))
 
