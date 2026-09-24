@@ -1924,11 +1924,11 @@ test("User disables the current set but token still have resolved values shown i
     name: "#ff0000 color.primary",
   });
   await expect(colorTokenPill).toHaveCount(1);
-  await colorTokenPill.hover(); // Force title attribute to be attached to the button
-  await expect(colorTokenPill).toHaveAttribute(
-    "title",
-    /Resolved value: #ff0000/,
-  );
+  await colorTokenPill.hover();
+
+  const tooltip = page.getByRole("tooltip");
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText("Resolved value: #ff0000");
 });
 
 test.describe("User can't create groups that clash with token names", () => {

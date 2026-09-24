@@ -128,7 +128,8 @@
    [:on-token-pill-click {:optional true} fn?]
    [:on-pill-context-menu {:optional true} fn?]
    [:on-node-context-menu {:optional true} fn?]
-   [:can-edit {:optional true} :boolean]])
+   [:can-edit {:optional true} :boolean]
+   [:can-edit-tokens {:optional true} :boolean]])
 
 (mf/defc token-tree*
   {::mf/schema schema:token-tree}
@@ -143,16 +144,17 @@
            on-token-pill-click
            on-pill-context-menu
            on-node-context-menu
-           can-edit]}]
+           can-edit
+           can-edit-tokens]}]
   (let [separator "."
         raw-tree
         (mf/with-memo [tokens]
           (cpn/build-tree-root tokens separator))
 
         on-node-context-menu (mf/use-fn
-                              (mf/deps can-edit on-node-context-menu)
+                              (mf/deps can-edit-tokens on-node-context-menu)
                               (fn [event node]
-                                (when can-edit
+                                (when can-edit-tokens
                                   (on-node-context-menu event node))))
 
         ordered-nodes (mf/with-memo [raw-tree]
