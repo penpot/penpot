@@ -71,11 +71,8 @@
   (let [{:keys [resource total headless run]} (prepare cmd auth-token params)]
     (->> (jobs/create! {:profile-id profile-id
                         :cmd cmd
-                        ;; What the renderer will actually do, not what the
-                        ;; client asked for: `is-wasm` alone still renders in
-                        ;; the browser without the `wasm-export` flag, or for
-                        ;; svg, and the backend decides both the admission cap
-                        ;; and whether the client offers to cancel.
+                        ;; Backend used for admission and cancel UI: headless
+                        ;; WASM when `:is-wasm` is set, otherwise browser.
                         :backend (if headless "wasm" "browser")
                         :total total
                         :name (:name resource)

@@ -8,7 +8,6 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.helpers :as dsh]
@@ -255,9 +254,9 @@
 (def ^:private wasm-export-types #{:jpeg :webp :png :pdf :svg})
 
 (defn- wasm-export-enabled?
+  "True when the active renderer is render-wasm."
   [state]
-  (and (contains? cf/flags :wasm-export)
-       (features/active-feature? state "render-wasm/v1")))
+  (features/active-feature? state "render-wasm/v1"))
 
 (defn- use-wasm-export?
   "Whether to take the client-side WASM export path for `export`."

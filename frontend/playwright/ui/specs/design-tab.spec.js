@@ -511,44 +511,26 @@ test("BUG 12384 - Export crashing when exporting a board", async ({ page }) => {
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "design/get-file-12384.json");
 
-  let hasExportRequestBeenIntercepted = false;
+  // Single export with render-wasm runs in the browser; it must not hit the
+  // exporter API. Fail the test if that path is taken by mistake.
   await workspace.page.route("**/api/export", (route) => {
-    if (hasExportRequestBeenIntercepted) {
-      route.continue();
-      return;
-    }
-
-    hasExportRequestBeenIntercepted = true;
-    const payload = route.request().postData();
-    const parsedPayload = JSON.parse(payload);
-
-    expect(parsedPayload["~:exports"]).toHaveLength(1);
-    expect(parsedPayload["~:exports"][0]["~:file-id"]).toBe(
-      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a7",
-    );
-    expect(parsedPayload["~:exports"][0]["~:page-id"]).toBe(
-      "~ufa6ce865-34dd-80ac-8006-fe0dab5539a8",
-    );
-
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      response: {},
-    });
+    throw new Error("unexpected /api/export request under render-wasm");
   });
 
   await workspace.goToWorkspace({
     fileId: "fa6ce865-34dd-80ac-8006-fe0dab5539a7",
     pageId: "fa6ce865-34dd-80ac-8006-fe0dab5539a8",
   });
+  await workspace.waitForFirstRender();
 
   await workspace.clickLeafLayer("Board");
 
-  let exportRequest = workspace.page.waitForRequest("**/api/export");
+  const [download] = await Promise.all([
+    workspace.page.waitForEvent("download"),
+    workspace.rightSidebar
+      .getByRole("button", { name: "Export 1 element" })
+      .click(),
+  ]);
 
-  await workspace.rightSidebar
-    .getByRole("button", { name: "Export 1 element" })
-    .click();
-
-  await exportRequest;
+  expect(download.suggestedFilename()).toBe("Board.png");
 });
