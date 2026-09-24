@@ -397,5 +397,5 @@
   "Plain job handler: delete expired http sessions."
   ([cfg] (execute-session-gc cfg nil))
   ([cfg _params]
-   (jobs/heartbeat! cfg)
+   (jobs/heartbeat cfg)
    (db/tx-run! cfg collect-expired-tasks)))

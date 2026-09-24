@@ -67,7 +67,7 @@
   []
   (str "penpot.worker.queue:" (cf/get :tenant) ":test"))
 
-(defn- clear-queue!
+(defn- clear-queue
   []
   (let [conn (rds/connect {::rds/client (get th/*system* :app.redis/client)
                            ::mtx/metrics (get th/*system* :app.metrics/metrics)})]
@@ -80,12 +80,12 @@
   (th/database-reset
    (fn []
      (reset! received [])
-     (clear-queue!)
+     (clear-queue)
      (next))))
 
 (t/use-fixtures :each test-fixture)
 
-(defn- mk-job!
+(defn- mk-job
   [{:keys [name status scheduled-at props max-retries]
     :or   {name        "echo-runner"
            status      "new"
@@ -109,7 +109,7 @@
                          :modified-at  (ct/now)})
     id))
 
-(defn- push-payload!
+(defn- push-payload
   [job-id scheduled-at]
   (let [conn (rds/connect {::rds/client (get th/*system* :app.redis/client)
                            ::mtx/metrics (get th/*system* :app.metrics/metrics)})]
@@ -127,7 +127,7 @@
                 (update :error #(cond-> % (db/pgobject? %) db/decode-json-pgobject))
                 (update :result #(cond-> % (db/pgobject? %) db/decode-json-pgobject))))))
 
-(defn- run-one!
+(defn- run-one
   [cfg]
   (@#'wrkr/run-worker-loop! cfg))
 
@@ -140,10 +140,10 @@
                       :deleted-at (ct/now)
                       :id        (uuid/next)}
         scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at :props params})]
+        job-id       (mk-job {:scheduled-at scheduled-at :props params})]
 
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
 
     (t/testing "handler received the decoded params"
       (t/is (= 1 (count @received)))
@@ -162,11 +162,11 @@
 
 (t/deftest runner-skips-cancelled-jobs
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at})
+        job-id       (mk-job {:scheduled-at scheduled-at})
         _            (th/db-update! :job {:status "cancelled"} {:id job-id})]
 
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
 
     (t/testing "conditional claim found 0 rows: state untouched"
       (let [row (get-row job-id)]
@@ -178,7 +178,7 @@
 
 (t/deftest runner-retry-with-backoff-respects-max-retries
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at :max-retries 1})
+        job-id       (mk-job {:scheduled-at scheduled-at :max-retries 1})
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
@@ -186,10 +186,10 @@
                                (throw (ex-info "transient failure"
                                                {:type ::wrk/retry
                                                 :delay (ct/duration {:millis 1000})}))))}]
-    (push-payload! job-id scheduled-at)
+    (push-payload job-id scheduled-at)
 
     (t/testing "first retry attempt"
-      (run-one! (mk-cfg {:defs defs}))
+      (run-one (mk-cfg {:defs defs}))
       (let [row (get-row job-id)]
         (t/is (= "retry" (:status row)))
         (t/is (= 1 (:retry-num row)))
@@ -198,8 +198,8 @@
           (t/is (> (inst-ms (:scheduled-at row)) (inst-ms (ct/now)))))))
 
     (t/testing "second attempt exhausts max-retries and fails"
-      (push-payload! job-id (:scheduled-at (get-row job-id)))
-      (run-one! (mk-cfg {:defs defs}))
+      (push-payload job-id (:scheduled-at (get-row job-id)))
+      (run-one (mk-cfg {:defs defs}))
       (let [row (get-row job-id)]
         (t/is (= "failed" (:status row)))
         (t/is (= 1 (:retry-num row)))
@@ -207,7 +207,7 @@
 
 (t/deftest runner-retry-with-millis-delay-schedules-backoff
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at})
+        job-id       (mk-job {:scheduled-at scheduled-at})
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
@@ -216,8 +216,8 @@
                                                {:type ::wrk/retry
                                                 ;; plain Long literal, not a Duration
                                                 :delay 5000}))))}]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {:defs defs}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
       (t/testing "Long millis delay is honored (int? covers Long)"
         (t/is (= "retry" (:status row)))
@@ -229,7 +229,7 @@
 
 (t/deftest runner-noop-retry-at-zero-schedules-base-delay
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at})
+        job-id       (mk-job {:scheduled-at scheduled-at})
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
@@ -238,8 +238,8 @@
                                                {:type ::wrk/retry
                                                 :strategy ::wrk/noop
                                                 :delay 5000}))))}]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {:defs defs}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
       (t/testing "noop retry schedules instead of NPEing on take 0"
         (t/is (= "retry" (:status row)))
@@ -251,20 +251,20 @@
 
 (t/deftest runner-unhandled-exception-fails-when-no-retries-left
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at :max-retries 0})
+        job-id       (mk-job {:scheduled-at scheduled-at :max-retries 0})
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
                              (fn [_params] (throw (ex-info "fatal" {}))))}]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {:defs defs}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
       (t/is (= "failed" (:status row)))
       (t/is (= {:code "failed" :ex-type "ex-info" :message "fatal"} (:error row))))))
 
 (t/deftest runner-terminal-write-does-not-overwrite-orphan-failure
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at})
+        job-id       (mk-job {:scheduled-at scheduled-at})
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
@@ -277,8 +277,8 @@
                                                :error  (db/json {:code "orphan"})}
                                               {:id jobs/*job-id*})
                                :ok))}]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {:defs defs}))
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
 
     (let [row (get-row job-id)]
       (t/testing "the orphan failure is preserved (first-terminal-wins)"
@@ -288,43 +288,43 @@
 
 (t/deftest runner-claim-requires-current-scheduled-at
   (let [at     (ct/truncate (ct/now) :millisecond)
-        job-id (mk-job! {:status "scheduled" :scheduled-at at})
+        job-id (mk-job {:status "scheduled" :scheduled-at at})
         stale  (ct/minus at (ct/duration {:minutes 6}))]
     (t/testing "stale scheduled_at claims nothing"
-      (t/is (zero? (#'wrkr/claim-job! (mk-cfg {}) job-id stale)))
+      (t/is (zero? (#'wrkr/claim-job (mk-cfg {}) job-id stale)))
       (t/is (= "scheduled" (:status (get-row job-id)))))
     (t/testing "current scheduled_at claims the row"
-      (t/is (= 1 (#'wrkr/claim-job! (mk-cfg {}) job-id at)))
+      (t/is (= 1 (#'wrkr/claim-job (mk-cfg {}) job-id at)))
       (t/is (= "running" (:status (get-row job-id)))))))
 
 (t/deftest runner-skips-stale-payload-after-reschedule
   (let [stale-at (ct/truncate (ct/now) :millisecond)
-        job-id   (mk-job! {:scheduled-at stale-at})
+        job-id   (mk-job {:scheduled-at stale-at})
         fresh-at (ct/plus stale-at (ct/duration {:minutes 6}))]
     ;; dispatcher reschedules: new scheduled_at + fresh payload
     (th/db-update! :job {:status "scheduled" :scheduled-at fresh-at} {:id job-id})
 
     (t/testing "stale payload is skipped, handler never invoked"
-      (push-payload! job-id stale-at)
-      (run-one! (mk-cfg {}))
+      (push-payload job-id stale-at)
+      (run-one (mk-cfg {}))
       (t/is (empty? @received))
       (let [row (get-row job-id)]
         (t/is (= "scheduled" (:status row)))
         (t/is (nil? (:started-at row)))))
 
     (t/testing "fresh payload still executes"
-      (push-payload! job-id fresh-at)
-      (run-one! (mk-cfg {}))
+      (push-payload job-id fresh-at)
+      (run-one (mk-cfg {}))
       (t/is (= 1 (count @received)))
       (t/is (= "completed" (:status (get-row job-id)))))))
 
 (t/deftest runner-unknown-job-name-fails-fast
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:name "no-such-job"
-                               :scheduled-at scheduled-at
-                               :max-retries 3})]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {}))
+        job-id       (mk-job {:name "no-such-job"
+                              :scheduled-at scheduled-at
+                              :max-retries 3})]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
     (let [row (get-row job-id)]
       (t/testing "no retries burned on a permanently-unknown name"
         (t/is (= "failed" (:status row)))
@@ -334,13 +334,13 @@
 
 (t/deftest runner-schema-violation-fails-fast-without-retry
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job! {:scheduled-at scheduled-at
-                               :max-retries 3
-                               :props {:object :snapshot
-                                       :deleted-at (ct/now)
-                                       :id "not-a-uuid"}})]
-    (push-payload! job-id scheduled-at)
-    (run-one! (mk-cfg {}))
+        job-id       (mk-job {:scheduled-at scheduled-at
+                              :max-retries 3
+                              :props {:object :snapshot
+                                      :deleted-at (ct/now)
+                                      :id "not-a-uuid"}})]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
     (let [row (get-row job-id)]
       (t/testing "permanent schema violation fails fast"
         (t/is (= "failed" (:status row)))
@@ -353,9 +353,9 @@
                     :deleted-at "2026-01-01T00:00:00Z"
                     :id (str (uuid/next))}]
     (reset! received [])
-    (let [result (jobs/invoke! (merge (mk-cfg {})
-                                      {::jobs/name   :echo-runner
-                                       ::jobs/params raw-params}))]
+    (let [result (jobs/invoke (merge (mk-cfg {})
+                                     {::jobs/name   :echo-runner
+                                      ::jobs/params raw-params}))]
       (t/is (= 1 (count @received)))
       (let [params' (first @received)]
         (t/is (keyword? (:object params')))
@@ -370,12 +370,12 @@
         cfg          (mk-cfg {:defs defs})
         submit-cfg   {::jobs/defs defs
                       ::db/pool   th/*pool*}
-        job-id       (jobs/submit! submit-cfg {::jobs/name   :tasks-gc
-                                               ::jobs/queue  :test
-                                               ::jobs/params {:min-age "1h"}})
+        job-id       (jobs/submit submit-cfg {::jobs/name   :tasks-gc
+                                              ::jobs/queue  :test
+                                              ::jobs/params {:min-age "1h"}})
         scheduled-at (:scheduled-at (th/db-get :job {:id job-id}))]
-    (push-payload! job-id scheduled-at)
-    (run-one! cfg)
+    (push-payload job-id scheduled-at)
+    (run-one cfg)
     (let [row (get-row job-id)]
       (t/testing "string min-age survives JSON decode, validation and execution"
         (t/is (= "completed" (:status row)))))))
@@ -389,8 +389,8 @@
       (finally
         (rds/close conn))))
   (t/testing "non-JSON payload is skipped, handler never invoked"
-    (run-one! (mk-cfg {}))
+    (run-one (mk-cfg {}))
     (t/is (empty? @received)))
   (t/testing "JSON payload with wrong shape is skipped too"
-    (run-one! (mk-cfg {}))
+    (run-one (mk-cfg {}))
     (t/is (empty? @received))))

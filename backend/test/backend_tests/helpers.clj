@@ -494,16 +494,16 @@
   ([name]
    (run-task! name {}))
   ([name params]
-   (jobs/invoke! (-> *system*
-                     (assoc ::jobs/name name)
-                     (assoc ::jobs/params params)))))
+   (jobs/invoke (-> *system*
+                    (assoc ::jobs/name name)
+                    (assoc ::jobs/params params)))))
 
 (def sql:pending-jobs
   "select * from job
     where status = 'new'
     order by priority desc, scheduled_at")
 
-(defn run-pending-jobs!
+(defn run-pending-jobs
   "Execute the pending (status='new') `job` rows in-process (simulating
   the dispatcher + runner for the tests). Does not touch the row
   status; only the handler side effects matter."
@@ -512,9 +512,9 @@
               (fn [{:keys [::db/conn]}]
                 (let [jobs-rows (db/exec! conn [sql:pending-jobs])]
                   (doseq [row jobs-rows]
-                    (jobs/invoke! (-> *system*
-                                      (assoc ::jobs/name (:name row))
-                                      (assoc ::jobs/params (:props row)))))))))
+                    (jobs/invoke (-> *system*
+                                     (assoc ::jobs/name (:name row))
+                                     (assoc ::jobs/params (:props row)))))))))
 
 ;; --- UTILS
 

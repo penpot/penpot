@@ -25,7 +25,7 @@
 
 (defn- offload-file-data
   [cfg {:keys [id file-id type] :as fdata}]
-  (jobs/heartbeat! cfg)
+  (jobs/heartbeat cfg)
   (fdata/upsert! cfg (assoc fdata :backend "storage"))
   (l/trc :file-id (str file-id)
          :id (str id)

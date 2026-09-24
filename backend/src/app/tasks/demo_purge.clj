@@ -46,8 +46,8 @@
                               {:deleted-at now}
                               {:id profile-id}
                               {::db/return-keys false})
-                  (jobs/submit! cfg
-                                {::jobs/name :delete-object
-                                 ::jobs/params {:object :profile
-                                                :deleted-at now
-                                                :id profile-id}})))))
+                  (jobs/submit cfg
+                               {::jobs/name :delete-object
+                                ::jobs/params {:object :profile
+                                               :deleted-at now
+                                               :id profile-id}})))))

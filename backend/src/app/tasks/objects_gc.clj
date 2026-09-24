@@ -412,7 +412,7 @@
             total 0]
        (if-let [proc-fn (first procs)]
          (let [result (execute-proc! cfg proc-fn)]
-           (jobs/heartbeat! cfg)
+           (jobs/heartbeat cfg)
            (recur (rest procs)
                   (long (+ total result))))
          {:processed total})))))

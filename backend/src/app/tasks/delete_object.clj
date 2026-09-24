@@ -142,7 +142,7 @@
               {::db/return-keys false})
 
   (doseq [team (profile/get-owned-teams conn id)]
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
     (delete-object cfg (assoc team
                               :object :team
                               :deleted-at deleted-at))))

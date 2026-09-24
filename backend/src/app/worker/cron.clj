@@ -60,12 +60,12 @@
                  " WHERE id=? FOR UPDATE SKIP LOCKED")]
     (some? (db/exec-one! conn [sql (d/name id)]))))
 
-(defn submit-cron-job!
+(defn submit-cron-job
   "Submit the system job for the entry to the `:cron` queue. Uses the
   entry id as the job label (stable per entry) and returns the created
   job-id. No-overlap pre-check lives in the caller."
   [cfg {:keys [task props id]}]
-  (jobs/submit!
+  (jobs/submit
    cfg
    {::jobs/name   task
     ::jobs/params (or props {})  ;; entries don't carry props; default to empty map
@@ -104,7 +104,7 @@
                               (if (pos? (or active 0))
                                 (l/dbg :hint "skip scheduling, active instance exists"
                                        :id id :task task)
-                                (let [job-id (submit-cron-job! cfg entry)]
+                                (let [job-id (submit-cron-job cfg entry)]
                                   (l/dbg :hint "cron job submitted"
                                          :id id
                                          :task task

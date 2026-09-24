@@ -395,7 +395,7 @@
                                  @organization-summary-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submission ---
-       wrk-mock    {:target 'app.jobs/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -476,7 +476,7 @@
                                  :get-owned-organizations @owned-organizations-ref
                                  nil))}
        ;; --- Worker mock: capture delete-task submissions ---
-       wrk-mock    {:target 'app.jobs/submit! :return nil}
+       wrk-mock    {:target 'app.jobs/submit :return nil}
        ;; --- Message bus mock: capture published events ---
        mbus-mock   {:target 'app.msgbus/pub! :return nil}]
 
@@ -1993,7 +1993,7 @@
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile nil))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "Nitrate User" (:user-name params)))))))
 
 (t/deftest send-renewal-email-keeps-explicit-empty-name
@@ -2004,7 +2004,7 @@
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile ""))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))
 
 (t/deftest send-renewal-email-treats-blank-name-as-empty
@@ -2015,5 +2015,5 @@
     (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
           out     (th/management-command! (send-renewal-email-params profile "   "))]
       (t/is (th/success? out))
-      (let [[params] (:call-args @email-mock)]
+      (let [[_cfg params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))

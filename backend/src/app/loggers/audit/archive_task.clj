@@ -142,7 +142,7 @@
       (loop [total 0]
         (if-let [n (archive-events! cfg)]
           (do
-            (jobs/heartbeat! cfg)
+            (jobs/heartbeat cfg)
             (px/sleep 100)
             (recur (+ total ^long n)))
           (when (pos? total)

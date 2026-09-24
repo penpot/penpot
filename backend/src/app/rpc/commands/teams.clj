@@ -848,11 +848,11 @@
       (when (contains? cf/flags :admin-console)
         (nitrate/call cfg :delete-team {:profile-id profile-id :team-id team-id}))
 
-      (jobs/submit! cfg
-                    {::jobs/name :delete-object
-                     ::jobs/params {:object :team
-                                    :deleted-at (:deleted-at team)
-                                    :id team-id}})
+      (jobs/submit cfg
+                   {::jobs/name :delete-object
+                    ::jobs/params {:object :team
+                                   :deleted-at (:deleted-at team)
+                                   :id team-id}})
       team)))
 
 (def ^:private schema:delete-team

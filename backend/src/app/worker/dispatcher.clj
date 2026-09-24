@@ -152,11 +152,11 @@ RETURNING job.id, job.queue")
       ;; the next batch interation
       ::wait)))
 
-(defn- sleep-after-error!
+(defn- sleep-after-error
   [cfg]
   (px/sleep (or (::timeout cfg) (ct/duration "10s"))))
 
-(defn run-batch!
+(defn run-batch
   "Execute a single dispatch batch: reschedule lost jobs, mark orphans
   (lease-based) and claim pending jobs into their Redis queues. Exposed
   as a function for testability; the dispatcher thread loops on it."
@@ -177,17 +177,17 @@ RETURNING job.id, job.queue")
         (rds/exception? cause)
         (do
           (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
-          (sleep-after-error! cfg))
+          (sleep-after-error cfg))
 
         (db/sql-exception? cause)
         (do
           (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
-          (sleep-after-error! cfg))
+          (sleep-after-error cfg))
 
         :else
         (do
           (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
-          (sleep-after-error! cfg))))))
+          (sleep-after-error cfg))))))
 
 (defmethod ig/init-key ::wrk/dispatcher
   [_ {:keys [::db/pool ::wait-duration] :as cfg}]
@@ -195,7 +195,7 @@ RETURNING job.id, job.queue")
             (l/inf :hint "started")
             (try
               (loop []
-                (let [result (run-batch! cfg)]
+                (let [result (run-batch cfg)]
                   (when (= result ::wait)
                     (px/sleep wait-duration))
                   (recur)))

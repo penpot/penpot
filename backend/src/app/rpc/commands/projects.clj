@@ -284,11 +284,11 @@
                 :code :non-deletable-project
                 :hint "impossible to delete default project"))
 
-    (jobs/submit! cfg
-                  {::jobs/name :delete-object
-                   ::jobs/params {:object :project
-                                  :deleted-at (:deleted-at project)
-                                  :id project-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params {:object :project
+                                 :deleted-at (:deleted-at project)
+                                 :id project-id}})
 
     project))
 

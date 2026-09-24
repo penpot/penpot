@@ -16,13 +16,13 @@
 (t/deftest min-age-validation
   (let [cfg th/*system*]
     (t/testing "int millis, text and absence validate"
-      (t/is (uuid? (jobs/submit! cfg {::jobs/name   :tasks-gc
-                                      ::jobs/params {:min-age 3600000}})))
-      (t/is (uuid? (jobs/submit! cfg {::jobs/name   :tasks-gc
-                                      ::jobs/params {:min-age "1h"}})))
-      (t/is (uuid? (jobs/submit! cfg {::jobs/name   :tasks-gc
-                                      ::jobs/params {}}))))
+      (t/is (uuid? (jobs/submit cfg {::jobs/name   :tasks-gc
+                                     ::jobs/params {:min-age 3600000}})))
+      (t/is (uuid? (jobs/submit cfg {::jobs/name   :tasks-gc
+                                     ::jobs/params {:min-age "1h"}})))
+      (t/is (uuid? (jobs/submit cfg {::jobs/name   :tasks-gc
+                                     ::jobs/params {}}))))
     (t/testing "garbage fails at submit instead of burning retries"
       (t/is (thrown-with-msg? Exception #"check error"
-                              (jobs/submit! cfg {::jobs/name   :tasks-gc
-                                                 ::jobs/params {:min-age {:bogus true}}}))))))
+                              (jobs/submit cfg {::jobs/name   :tasks-gc
+                                                ::jobs/params {:min-age {:bogus true}}}))))))

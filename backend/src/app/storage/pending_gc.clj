@@ -101,7 +101,7 @@
   that were never promoted to 'valid'."
   ([cfg] (execute-storage-pending-gc cfg {}))
   ([cfg _params]
-   (jobs/heartbeat! cfg)
+   (jobs/heartbeat cfg)
    (let [total (process! cfg)]
      (l/inf :hint "task finished" :total total)
      {:processed total})))

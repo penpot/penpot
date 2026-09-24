@@ -47,7 +47,7 @@
     ;; Race condition: if the job is claimed between get-job and claim! by
     ;; another worker, claim! returns 0 and we return :skip. The conditional
     ;; claim (UPDATE ... WHERE status='new') handles this correctly.
-    (if (and row (pos? (jobs/claim! cfg job-id scheduled-at)))
+    (if (and row (pos? (jobs/claim cfg job-id scheduled-at)))
       {:action :run
        :name   (:name row)
        :props  (:props row)}
@@ -75,7 +75,7 @@
   [cfg {:keys [job-id progress]}]
   ;; A lost race (row already terminal) reports :skip so the worker
   ;; stops retrying a report that can never land, mirroring claim-job.
-  (if (pos? (jobs/progress! cfg job-id progress {::jobs/force? true}))
+  (if (pos? (jobs/progress cfg job-id progress {::jobs/force? true}))
     {:action :run}
     {:action :skip}))
 
@@ -99,7 +99,7 @@
    ::sm/result schema:complete-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id result]}]
-  (if (pos? (jobs/complete! cfg job-id result))
+  (if (pos? (jobs/complete cfg job-id result))
     {:action :run}
     {:action :skip}))
 
@@ -109,7 +109,7 @@
   [:map {:title "fail-job-params"}
    [:job-id ::sm/uuid]
    ;; Rich error report: type/code/hint are required, the map stays
-   ;; open to worker-defined details (see jobs/fail!).
+   ;; open to worker-defined details (see jobs/fail).
    [:error [:map
             [:type :keyword]
             [:code ::sm/text]
@@ -125,6 +125,6 @@
    ::sm/result schema:fail-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id error]}]
-  (if (pos? (jobs/fail! cfg job-id error))
+  (if (pos? (jobs/fail cfg job-id error))
     {:action :run}
     {:action :skip}))

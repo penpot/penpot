@@ -221,7 +221,7 @@
          deleted 0]
     (if-let [chunk (get-chunk pool timestamp)]
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
-        (jobs/heartbeat! cfg)
+        (jobs/heartbeat cfg)
         (recur (long (+ freezed nfo))
                (long (+ deleted ndo))))
       {:freeze freezed :delete deleted})))

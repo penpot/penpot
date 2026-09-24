@@ -66,7 +66,7 @@
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (http/client? (::http/client params)) "expect valid http client"))
 
-(defn process-event-impl!
+(defn process-event-impl
   [cfg {:keys [event-blob]}]
   ;; The blob carries the original typed event; decode it once for the
   ;; lookups below and forward it untouched so deliveries keep the
@@ -86,12 +86,12 @@
       (l/trc :hint "webhooks found for event" :total (count items))
       (db/tx-run! cfg (fn [cfg]
                         (doseq [item items]
-                          (jobs/submit! cfg
-                                        {::jobs/name :run-webhook
-                                         ::jobs/queue :webhooks
-                                         ::jobs/max-retries 3
-                                         ::jobs/params {:event event-blob
-                                                        :config (select-keys item [:id :uri :mtype])}})))))))
+                          (jobs/submit cfg
+                                       {::jobs/name :run-webhook
+                                        ::jobs/queue :webhooks
+                                        ::jobs/max-retries 3
+                                        ::jobs/params {:event event-blob
+                                                       :config (select-keys item [:id :uri :mtype])}})))))))
 
 
 (def schema:process-webhook-event-params
@@ -104,7 +104,7 @@
   [_ cfg]
   {::jobs/name      :process-webhook-event
    ::jobs/schema    schema:process-webhook-event-params
-   ::jobs/handler   (partial process-event-impl! cfg)
+   ::jobs/handler   (partial process-event-impl cfg)
    ::jobs/decoder   (sm/decoder schema:process-webhook-event-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:process-webhook-event-params)})
 ;; --- RUN
@@ -125,7 +125,7 @@
   [k v]
   {k (merge {::max-errors 3} (d/without-nils v))})
 
-(defn run-webhook-impl!
+(defn run-webhook-impl
   [{:keys [::db/pool ::max-errors] :as cfg} props]
   (letfn [(update-webhook! [whook err]
             (if err
@@ -212,7 +212,7 @@
   [_ cfg]
   {::jobs/name      :run-webhook
    ::jobs/schema    schema:run-webhook-params
-   ::jobs/handler   (partial run-webhook-impl! cfg)
+   ::jobs/handler   (partial run-webhook-impl cfg)
    ::jobs/decoder   (sm/decoder schema:run-webhook-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:run-webhook-params)})
 

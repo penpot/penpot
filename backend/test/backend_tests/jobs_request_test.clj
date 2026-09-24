@@ -44,7 +44,7 @@
   [pool]
   {::jobs/request-pool pool})
 
-(defn- clear-queues!
+(defn- clear-queues
   []
   (let [conn (rds/connect {::rds/client  (get th/*system* :app.redis/client)
                            ::mtx/metrics (get th/*system* :app.metrics/metrics)})]
@@ -61,7 +61,7 @@
 (defn- test-fixture [next]
   (th/database-reset
    (fn []
-     (clear-queues!)
+     (clear-queues)
      (next))))
 
 (t/use-fixtures :each test-fixture)
@@ -86,7 +86,7 @@
                         (deliver out ::no-request)
                         (let [[request-id reply-key cmd params :as decoded] (json/decode payload)]
                           (deliver out decoded)
-                          (jobs/reply! {::rds/pool pool} reply-key (response-fn params)))))
+                          (jobs/reply {::rds/pool pool} reply-key (response-fn params)))))
                     (finally
                       (rds/close conn)))))]
       {:future fut
@@ -121,9 +121,9 @@
         cfg     (make-cfg pool)
         payload (with-responder pool (fn [_params] {:ok {:value 42}}))]
 
-    (let [result (jobs/request! cfg {::jobs/queue  :media
-                                     ::jobs/cmd    :process
-                                     ::jobs/params {:x 1}})]
+    (let [result (jobs/request cfg {::jobs/queue  :media
+                                    ::jobs/cmd    :process
+                                    ::jobs/params {:x 1}})]
       (t/is (= {:value 42} result)))
 
     (t/testing "the worker receives the expected payload shape"
@@ -143,18 +143,18 @@
                  {:error {:code :processing-failed
                           :hint "something went wrong"}}))]
     (t/is (thrown-with-msg? Exception #"something went wrong"
-                            (jobs/request! cfg {::jobs/queue  :media
-                                                ::jobs/cmd    :process
-                                                ::jobs/params {:x 1}})))))
+                            (jobs/request cfg {::jobs/queue  :media
+                                               ::jobs/cmd    :process
+                                               ::jobs/params {:x 1}})))))
 
 (t/deftest request-times-out-and-cleans-the-reply-key
   (let [pool (make-pool)
         cfg  (make-cfg pool)]
     (t/is (thrown-with-msg? Exception #"timeout waiting for the job reply"
-                            (jobs/request! cfg {::jobs/queue :media
-                                                ::jobs/cmd   :process
-                                                ::jobs/params {:x 1}
-                                                ::jobs/timeout (ct/duration {:millis 500})})))
+                            (jobs/request cfg {::jobs/queue :media
+                                               ::jobs/cmd   :process
+                                               ::jobs/params {:x 1}
+                                               ::jobs/timeout (ct/duration {:millis 500})})))
 
     (t/testing "no orphan reply key is left behind"
       ;; there is no way to know the exact reply key (random request-id);
@@ -177,15 +177,15 @@
 
     (t/testing "successful request does not consume the connection"
       (with-responder pool (fn [_params] {:ok {:a 1}}))
-      (jobs/request! cfg {::jobs/queue  :media
-                          ::jobs/cmd    :process
-                          ::jobs/params {:x 1}})
+      (jobs/request cfg {::jobs/queue  :media
+                         ::jobs/cmd    :process
+                         ::jobs/params {:x 1}})
 
       (t/testing "and the next request works with a pooled connection"
         (with-responder pool (fn [_params] {:ok {:b 2}}))
-        (t/is (= {:b 2} (jobs/request! cfg {::jobs/queue  :media
-                                            ::jobs/cmd    :process
-                                            ::jobs/params {:x 2}})))
+        (t/is (= {:b 2} (jobs/request cfg {::jobs/queue  :media
+                                           ::jobs/cmd    :process
+                                           ::jobs/params {:x 2}})))
 
         (t/testing "connection command timeout is restored after use"
           (with-open [^AutoCloseable pooled (gpool/get pool)]
@@ -200,10 +200,10 @@
 
     (t/testing "an override bigger than the default works (command timeout raised per call)"
       (t/is (= {:slow 1}
-               (jobs/request! cfg {::jobs/queue  :media
-                                   ::jobs/cmd    :process
-                                   ::jobs/params {:x 1}
-                                   ::jobs/timeout (ct/duration {:seconds 130})}))))))
+               (jobs/request cfg {::jobs/queue  :media
+                                  ::jobs/cmd    :process
+                                  ::jobs/params {:x 1}
+                                  ::jobs/timeout (ct/duration {:seconds 130})}))))))
 
 (t/deftest request-raises-connection-timeout-to-per-call-override
   (let [pool     (make-pool)
@@ -217,10 +217,10 @@
                                     (reset! seen timeout)
                                     (orig conn timeout))]
       (t/is (= {:fast 1}
-               (jobs/request! cfg {::jobs/queue  :media
-                                   ::jobs/cmd    :process
-                                   ::jobs/params {:x 1}
-                                   ::jobs/timeout override}))))
+               (jobs/request cfg {::jobs/queue  :media
+                                  ::jobs/cmd    :process
+                                  ::jobs/params {:x 1}
+                                  ::jobs/timeout override}))))
     (t/is (= (.toMillis ^java.time.Duration (ct/plus override (ct/duration {:seconds 30})))
              (.toMillis ^java.time.Duration @seen)))))
 
@@ -233,10 +233,10 @@
                     :delay-ms 2000)]
 
     (t/is (thrown-with-msg? Exception #"timeout waiting for the job reply"
-                            (jobs/request! cfg {::jobs/queue :media
-                                                ::jobs/cmd   :process
-                                                ::jobs/params {:x 1}
-                                                ::jobs/timeout (ct/duration {:millis 500})})))
+                            (jobs/request cfg {::jobs/queue :media
+                                               ::jobs/cmd   :process
+                                               ::jobs/params {:x 1}
+                                               ::jobs/timeout (ct/duration {:millis 500})})))
 
     (t/testing "the late reply key exists (recreated by the worker) with a short TTL"
       (deref (:future responder) 10000 ::timeout)
@@ -257,5 +257,5 @@
   (let [pool (make-pool)
         cfg  (make-cfg pool)
         _    (with-responder pool (fn [_params] {:ok {}}))]
-    (jobs/request! cfg {::jobs/queue :media ::jobs/cmd :process ::jobs/params {}})
+    (jobs/request cfg {::jobs/queue :media ::jobs/cmd :process ::jobs/params {}})
     (t/is (zero? (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"]))))))

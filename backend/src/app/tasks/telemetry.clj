@@ -333,7 +333,7 @@
         ;; actually going to be sent.
         subs     (delay (get-subscriptions cfg))]
 
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
 
     ;; If we have telemetry enabled, then proceed the normal
     ;; operation sending legacy report

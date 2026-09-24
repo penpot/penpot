@@ -176,7 +176,7 @@
                                                  by-backend))))))]
       ;; Heartbeat per chunk: each chunk commits on its own, so a long
       ;; sweep neither loses work on late failure nor outruns the lease.
-      (jobs/heartbeat! cfg)
+      (jobs/heartbeat cfg)
       (if deleted
         (recur (+ total deleted))
         total))))
@@ -207,7 +207,7 @@
    ;; NOTE: no outer transaction here on purpose — clean-deleted!
    ;; commits each chunk in its own transaction, so a late failure
    ;; only loses the in-flight chunk.
-   (jobs/heartbeat! cfg)
+   (jobs/heartbeat cfg)
    (let [total (clean-deleted! cfg)]
      (l/inf :hint "task finished" :total total)
      {:deleted total})))

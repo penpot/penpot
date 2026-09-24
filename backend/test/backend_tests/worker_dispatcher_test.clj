@@ -34,7 +34,7 @@
    ::lease       (cf/get-jobs-lease)
    ::timeout     (ct/duration "10s")})
 
-(defn- mk-job!
+(defn- mk-job
   [{:keys [name queue status scheduled-at modified-at]
     :or   {name "test-job"
            queue (str (cf/get :tenant) ":test")
@@ -77,7 +77,7 @@
 
 (t/use-fixtures :each test-fixture)
 
-(defn- drain-queue!
+(defn- drain-queue
   [queue-name]
   (let [conn (rds/connect (mk-cfg))]
     (try
@@ -95,8 +95,8 @@
 
 (t/deftest dispatcher-claims-due-jobs-and-pushes-json-payload
   (let [cfg  (mk-cfg)
-        id   (mk-job! {})
-        _    (wdisp/run-batch! cfg)
+        id   (mk-job {})
+        _    (wdisp/run-batch cfg)
         row  (get-row id)
         key  (queue-key "test")]
 
@@ -104,7 +104,7 @@
       (t/is (= "scheduled" (:status row))))
 
     (t/testing "payload is plain JSON [uuid, iso-8601]"
-      (let [payloads (drain-queue! "test")]
+      (let [payloads (drain-queue "test")]
         (t/is (= 1 (count payloads)))
         (let [[job-id scheduled-at :as payload] (json/decode (first payloads))]
           (t/is (string? job-id))
@@ -117,26 +117,26 @@
 
 (t/deftest dispatcher-claims-retry-jobs-too
   (let [cfg (mk-cfg)
-        id  (mk-job! {:status "retry"})]
-    (wdisp/run-batch! cfg)
+        id  (mk-job {:status "retry"})]
+    (wdisp/run-batch cfg)
     (t/is (= "scheduled" (:status (get-row id))))))
 
 (t/deftest dispatcher-does-not-claim-future-or-terminal-jobs
   (let [cfg     (mk-cfg)
-        future  (mk-job! {:scheduled-at (ct/plus (ct/now)
-                                                 (ct/duration {:minutes 10}))})
-        running (mk-job! {:status "running"})]
-    (wdisp/run-batch! cfg)
+        future  (mk-job {:scheduled-at (ct/plus (ct/now)
+                                                (ct/duration {:minutes 10}))})
+        running (mk-job {:status "running"})]
+    (wdisp/run-batch cfg)
     (t/is (= "new" (:status (get-row future))))
     (t/is (= "running" (:status (get-row running))))))
 
 (t/deftest dispatcher-reschedules-lost-scheduled-jobs
   (let [cfg      (mk-cfg)
-        lost-id  (mk-job! {:status     "scheduled"
-                           :scheduled-at (ct/minus (ct/now)
-                                                   (ct/duration {:minutes 6}))})
-        fresh-id (mk-job! {:status "scheduled"})]
-    (wdisp/run-batch! cfg)
+        lost-id  (mk-job {:status     "scheduled"
+                          :scheduled-at (ct/minus (ct/now)
+                                                  (ct/duration {:minutes 6}))})
+        fresh-id (mk-job {:status "scheduled"})]
+    (wdisp/run-batch cfg)
     (let [lost  (get-row lost-id)
           fresh (get-row fresh-id)]
       ;; the lost job is rescheduled to 'new' and claimed again in the
@@ -146,17 +146,17 @@
                (inst-ms (ct/minus (ct/now)
                                   (ct/duration {:minutes 5})))))
       (t/testing "the rescheduled job was pushed again to the queue"
-        (t/is (= 1 (count (drain-queue! "test"))))
+        (t/is (= 1 (count (drain-queue "test"))))
         (t/is (= "scheduled" (:status fresh)))))))
 
 (t/deftest dispatcher-marks-stale-running-jobs-as-orphan-by-lease
   (let [cfg    (mk-cfg)
-        stale  (mk-job! {:status     "running"
-                         :modified-at (ct/minus (ct/now)
-                                                (ct/plus (cf/get-jobs-lease)
-                                                         (ct/duration {:minutes 1})))})
-        fresh  (mk-job! {:status "running"})]
-    (wdisp/run-batch! cfg)
+        stale  (mk-job {:status     "running"
+                        :modified-at (ct/minus (ct/now)
+                                               (ct/plus (cf/get-jobs-lease)
+                                                        (ct/duration {:minutes 1})))})
+        fresh  (mk-job {:status "running"})]
+    (wdisp/run-batch cfg)
     (let [stale-row (get-row stale)]
       (t/is (= "failed" (:status stale-row)))
       (t/is (= {:code "orphan"} (:error stale-row))))
@@ -166,13 +166,13 @@
 
 (t/deftest dispatcher-batch-without-pending-jobs-signals-wait
   (let [cfg (mk-cfg)]
-    (t/is (= ::wdisp/wait (wdisp/run-batch! cfg)))))
+    (t/is (= ::wdisp/wait (wdisp/run-batch cfg)))))
 
 (t/deftest dispatcher-failed-mark-leaves-no-orphan-payload
   ;; Mark runs before push: when the mark fails, the push never runs, so
   ;; a rolled-back batch must leave neither a marked row nor a payload.
   (let [cfg   (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
-        id    (mk-job! {})
+        id    (mk-job {})
         orig  @#'wdisp/mark-as-scheduled
         calls (atom 0)]
     (alter-var-root #'wdisp/mark-as-scheduled
@@ -181,29 +181,29 @@
                                     (throw (ex-info "boom" {})))
                                   (apply orig args))))
     (try
-      (wdisp/run-batch! cfg)
+      (wdisp/run-batch cfg)
       (t/testing "failed mark rolls back with no payload pushed"
         (t/is (= "new" (:status (get-row id))))
-        (t/is (empty? (drain-queue! "test"))))
+        (t/is (empty? (drain-queue "test"))))
       (finally
         (alter-var-root #'wdisp/mark-as-scheduled (constantly orig))))
     (t/testing "next batch delivers exactly once"
-      (wdisp/run-batch! cfg)
+      (wdisp/run-batch cfg)
       (t/is (= "scheduled" (:status (get-row id))))
-      (t/is (= 1 (count (drain-queue! "test")))))))
+      (t/is (= 1 (count (drain-queue "test")))))))
 
 (t/deftest dispatcher-push-failure-rolls-back-without-throwing
   (let [cfg  (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))
-        id   (mk-job! {})
+        id   (mk-job {})
         orig @#'rds/rpush]
     (alter-var-root #'rds/rpush
                     (constantly (fn [& _] (throw (ex-info "redis down" {})))))
     (try
-      ;; run-batch! catches the failure (sleep path) instead of throwing;
+      ;; run-batch catches the failure (sleep path) instead of throwing;
       ;; a throw would error this test by itself
-      (wdisp/run-batch! cfg)
+      (wdisp/run-batch cfg)
       (t/testing "failed push rolls back the batch"
         (t/is (= "new" (:status (get-row id))))
-        (t/is (empty? (drain-queue! "test"))))
+        (t/is (empty? (drain-queue "test"))))
       (finally
         (alter-var-root #'rds/rpush (constantly orig))))))

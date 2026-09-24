@@ -310,11 +310,11 @@ RETURNING id, deleted_at;")
                                      deleted-at
                                      (db/create-array conn "uuid" team-ids)])]
       (doseq [{:keys [id deleted-at]} updated]
-        (jobs/submit! cfg
-                      {::jobs/name :delete-object
-                       ::jobs/params {:object :team
-                                      :deleted-at deleted-at
-                                      :id id}}))))
+        (jobs/submit cfg
+                     {::jobs/name :delete-object
+                      ::jobs/params {:object :team
+                                     :deleted-at deleted-at
+                                     :id id}}))))
   nil)
 
 (defn manage-deleted-organization-teams

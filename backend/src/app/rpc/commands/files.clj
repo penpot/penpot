@@ -1067,11 +1067,11 @@
     (db/delete! conn :file-library-rel
                 {:library-file-id file-id})
 
-    (jobs/submit! cfg
-                  {::jobs/name :delete-object
-                   ::jobs/params {:object :file
-                                  :deleted-at (:deleted-at file)
-                                  :id file-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params {:object :file
+                                 :deleted-at (:deleted-at file)
+                                 :id file-id}})
     file))
 
 (def ^:private
@@ -1277,11 +1277,11 @@
                           {:deleted-at request-at}
                           {:id id}
                           {::db/return-keys false})
-              (jobs/submit! cfg
-                            {::jobs/name :delete-object
-                             ::jobs/params {:object :file
-                                            :deleted-at request-at
-                                            :id id}})
+              (jobs/submit cfg
+                           {::jobs/name :delete-object
+                            ::jobs/params {:object :file
+                                           :deleted-at request-at
+                                           :id id}})
               (conj acc id))
             #{}
             ids)))

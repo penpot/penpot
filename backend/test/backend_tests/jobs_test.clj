@@ -36,8 +36,8 @@
   the job row. This allows the same handler to be tested both ways."
   [cfg params]
   (when (::jobs/job-id cfg)
-    (jobs/heartbeat! cfg)
-    (jobs/progress! cfg {:step "half"}))
+    (jobs/heartbeat cfg)
+    (jobs/progress cfg {:step "half"}))
   params)
 
 (def schema:echo-params
@@ -84,29 +84,29 @@
 (t/deftest submit-validates-params-with-job-schema
   (let [cfg (make-cfg (get-job-defs))]
     (t/is (thrown-with-msg? Exception #"check error"
-                            (jobs/submit! cfg {::jobs/name   :echo
-                                               ::jobs/params {:text "hello"
-                                                              :object :snapshot
-                                                              :deleted-at (ct/now)
-                                                              :id (uuid/next)
-                                                              :file-id "not-an-uuid"}}))))
+                            (jobs/submit cfg {::jobs/name   :echo
+                                              ::jobs/params {:text "hello"
+                                                             :object :snapshot
+                                                             :deleted-at (ct/now)
+                                                             :id (uuid/next)
+                                                             :file-id "not-an-uuid"}}))))
 
   (t/testing "missing job definition raises a clear error"
     (let [cfg (make-cfg (get-job-defs))]
       (t/is (thrown-with-msg? Exception #"no job definition"
-                              (jobs/submit! cfg {::jobs/name   :unknown
-                                                 ::jobs/params {}}))))))
+                              (jobs/submit cfg {::jobs/name   :unknown
+                                                ::jobs/params {}}))))))
 
 (t/deftest submit-persists-row-with-json-props
   (let [cfg   (make-cfg (get-job-defs))
         params (make-params)
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/queue  :test
-                                  ::jobs/delay  1000
-                                  ::jobs/priority 200
-                                  ::jobs/label  "test-label"
-                                  ::jobs/max-retries 5})
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/queue  :test
+                                 ::jobs/delay  1000
+                                 ::jobs/priority 200
+                                 ::jobs/label  "test-label"
+                                 ::jobs/max-retries 5})
         row    (jobs/get-job cfg job-id)]
 
     (t/is (uuid? job-id))
@@ -144,16 +144,16 @@
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)
         label  "dedupe-label"
-        id1    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label
-                                  ::jobs/dedupe true
-                                  ::jobs/delay  10000})
-        id2    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label
-                                  ::jobs/dedupe true
-                                  ::jobs/delay  10000})]
+        id1    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/dedupe true
+                                 ::jobs/delay  10000})
+        id2    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/dedupe true
+                                 ::jobs/delay  10000})]
 
     (t/is (uuid? id1))
     (t/is (uuid? id2))
@@ -170,14 +170,14 @@
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)
         label  "dedupe-active-label"
-        id1    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label})
+        id1    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label})
         _      (th/db-update! :job {:status "running"} {:id id1})
-        id2    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label
-                                  ::jobs/dedupe true})]
+        id2    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/dedupe true})]
 
     (t/is (some? (jobs/get-job cfg id1)))
     (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
@@ -186,16 +186,16 @@
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)
         label  "dedupe-due-label"
-        id1    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label})
+        id1    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label})
         _      (th/db-update! :job {:scheduled-at (ct/minus (ct/now)
                                                             (ct/duration {:seconds 5}))}
                               {:id id1})
-        id2    (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params
-                                  ::jobs/label  label
-                                  ::jobs/dedupe true})]
+        id2    (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params
+                                 ::jobs/label  label
+                                 ::jobs/dedupe true})]
 
     (t/is (some? (jobs/get-job cfg id1)))
     (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job
@@ -208,7 +208,7 @@
                 ::jobs/params params
                 ::jobs/dedupe true
                 ::jobs/label  "atomic-label"}
-        kept   (jobs/submit! cfg opts)
+        kept   (jobs/submit cfg opts)
         calls  (atom 0)
         orig   @#'db/exec-one!]
     ;; fault the INSERT (2nd statement): the DELETE must roll back too
@@ -218,7 +218,7 @@
                                     (throw (ex-info "boom" {})))
                                   (apply orig args))))
     (try
-      (t/is (thrown? Exception (jobs/submit! cfg opts)))
+      (t/is (thrown? Exception (jobs/submit cfg opts)))
       (t/testing "the original row survives, no duplicate left behind"
         (t/is (some? (jobs/get-job cfg kept)))
         (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-label"])))))
@@ -232,7 +232,7 @@
                 ::jobs/params params
                 ::jobs/dedupe true
                 ::jobs/label  "atomic-autocommit-label"}
-        kept   (jobs/submit! cfg opts)
+        kept   (jobs/submit cfg opts)
         calls  (atom 0)
         orig   @#'db/exec-one!]
     ;; a raw connection outside any transaction: DELETE+INSERT must
@@ -245,7 +245,7 @@
                                     (apply orig args))))
       (try
         (t/is (thrown? Exception
-                       (jobs/submit! (assoc cfg ::db/conn conn) opts)))
+                       (jobs/submit (assoc cfg ::db/conn conn) opts)))
         (t/testing "the original row survives, no duplicate left behind"
           (t/is (some? (jobs/get-job cfg kept)))
           (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job WHERE label = ?" "atomic-autocommit-label"])))))
@@ -259,8 +259,8 @@
         prev @@#'jobs/defs-registry]
     (try
       (reset! @#'jobs/defs-registry defs)
-      (let [job-id (jobs/submit! th/*pool* {::jobs/name   :echo
-                                            ::jobs/params (make-params)})]
+      (let [job-id (jobs/submit th/*pool* {::jobs/name   :echo
+                                           ::jobs/params (make-params)})]
         (t/is (uuid? job-id))
         (t/is (some? (jobs/get-job th/*pool* job-id))))
       (finally
@@ -272,66 +272,66 @@
 
   (let [cfg    (make-cfg (get-job-defs))
         params (make-params)
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params})]
     (t/testing "handler receives cfg with job-id context for heartbeats"
       (t/is (= params (echo-handler (assoc cfg ::jobs/job-id job-id) params))))))
 
 (t/deftest submit-strips-rollback-testing-flag-from-props
   (let [cfg    (make-cfg (get-job-defs))
         params (assoc (make-params) :rollback? true)
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params params})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params})]
     (t/testing "durable rows never carry the in-process escape hatch"
       (t/is (nil? (:rollback? (:props (jobs/get-job cfg job-id))))))))
 
 (t/deftest heartbeat-respects-throttle
   (let [cfg   (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
 
     (t/testing "first heartbeat writes"
       ;; Backdate modified-at: submit and heartbeat can land in the same
       ;; millisecond, which would make a strict > assertion flaky.
       (th/db-update! :job {:modified-at (ct/in-past {:seconds 5})}
                      {:id job-id})
-      (jobs/heartbeat! cfg job-id)
+      (jobs/heartbeat cfg job-id)
       (let [row (jobs/get-job cfg job-id)]
         (t/is (> (inst-ms (:modified-at row)) (inst-ms (:created-at row))))))
 
     (t/testing "immediate second heartbeat does not write (throttled)"
       (let [row1 (jobs/get-job cfg job-id)
-            _    (jobs/heartbeat! cfg job-id)
+            _    (jobs/heartbeat cfg job-id)
             row2 (jobs/get-job cfg job-id)]
         (t/is (= (inst-ms (:modified-at row1))
                  (inst-ms (:modified-at row2))))))))
 
 (t/deftest heartbeat-skips-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
     (t/testing "terminal states are never touched by heartbeat"
       (th/db-update! :job {:status "completed"
                            :modified-at (ct/in-past {:days 10})}
                      {:id job-id})
       (swap! @#'jobs/heartbeats dissoc job-id)
       (let [before (jobs/get-job cfg job-id)]
-        (jobs/heartbeat! cfg job-id)
+        (jobs/heartbeat cfg job-id)
         (t/is (= (inst-ms (:modified-at before))
                  (inst-ms (:modified-at (jobs/get-job cfg job-id)))))))))
 
 (t/deftest progress-respects-throttle-and-skips-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
 
     (t/testing "first progress write persists the payload"
-      (jobs/progress! cfg job-id {:step 1})
+      (jobs/progress cfg job-id {:step 1})
       (let [row (jobs/get-job cfg job-id)]
         (t/is (= {:step 1} (:progress row)))))
 
     (t/testing "immediate second progress write is throttled"
-      (jobs/progress! cfg job-id {:step 2})
+      (jobs/progress cfg job-id {:step 2})
       (t/is (= {:step 1} (:progress (jobs/get-job cfg job-id))))
 
       (t/testing "after the throttle window elapses it writes again"
@@ -340,26 +340,26 @@
                  (update-in m [job-id]
                             #(ct/minus %
                                        (ct/duration {:millis 500})))))
-        (jobs/progress! cfg job-id {:step 3})
+        (jobs/progress cfg job-id {:step 3})
         (t/is (= {:step 3} (:progress (jobs/get-job cfg job-id)))))))
 
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
     (t/testing "terminal states are never updated by progress"
       (th/db-update! :job {:status "completed"} {:id job-id})
       (swap! @#'jobs/progresses dissoc job-id)
-      (jobs/progress! cfg job-id {:step 9})
+      (jobs/progress cfg job-id {:step 9})
       (t/is (nil? (:progress (jobs/get-job cfg job-id)))))))
 
 (t/deftest throttle-prune-removes-stale-entries-keeps-fresh
   "When the throttle map exceeds prune-threshold, stale entries (older than
   prune-window) are removed and fresh entries are kept."
   (let [cfg        (make-cfg (get-job-defs))
-        job-id-1   (jobs/submit! cfg {::jobs/name   :echo
-                                      ::jobs/params (make-params)})
-        job-id-2   (jobs/submit! cfg {::jobs/name   :echo
-                                      ::jobs/params (make-params)})
+        job-id-1   (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})
+        job-id-2   (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})
         now        (ct/now)
         stale-time (ct/minus now (ct/duration {:hours 2}))  ;; older than 1h window
         fresh-time (ct/minus now (ct/duration {:minutes 30}))] ;; within 1h window
@@ -371,9 +371,9 @@
                job-id-2 fresh-time})
 
       ;; Trigger a heartbeat for a new job (should trigger prune)
-      (let [job-id-3 (jobs/submit! cfg {::jobs/name   :echo
-                                        ::jobs/params (make-params)})]
-        (jobs/heartbeat! cfg job-id-3)
+      (let [job-id-3 (jobs/submit cfg {::jobs/name   :echo
+                                       ::jobs/params (make-params)})]
+        (jobs/heartbeat cfg job-id-3)
 
         ;; After prune: stale entry (job-id-1) should be gone, fresh (job-id-2) should remain
         (let [state @jobs/heartbeats]
@@ -383,32 +383,32 @@
 
 (t/deftest cancel-skips-running-and-terminal-jobs
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
 
     (t/testing "pending job can be cancelled"
-      (t/is (= 1 (jobs/cancel! cfg job-id)))
+      (t/is (= 1 (jobs/cancel cfg job-id)))
       (t/is (= "cancelled" (:status (jobs/get-job cfg job-id))))
 
       (t/testing "already cancelled job is not affected again"
-        (t/is (zero? (jobs/cancel! cfg job-id))))))
+        (t/is (zero? (jobs/cancel cfg job-id))))))
 
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
     (t/testing "running job cannot be cancelled"
       (th/db-update! :job {:status "running"} {:id job-id})
-      (t/is (zero? (jobs/cancel! cfg job-id)))
+      (t/is (zero? (jobs/cancel cfg job-id)))
       (t/is (= "running" (:status (jobs/get-job cfg job-id)))))))
 
 (t/deftest cancel-affects-scheduled-and-retry-jobs
   (let [cfg (make-cfg (get-job-defs))]
     (doseq [status ["scheduled" "retry"]]
       (t/testing (str status " job can be cancelled")
-        (let [job-id (jobs/submit! cfg {::jobs/name   :echo
-                                        ::jobs/params (make-params)})]
+        (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                       ::jobs/params (make-params)})]
           (th/db-update! :job {:status status} {:id job-id})
-          (t/is (= 1 (jobs/cancel! cfg job-id)))
+          (t/is (= 1 (jobs/cancel cfg job-id)))
           (t/is (= "cancelled" (:status (jobs/get-job cfg job-id)))))))))
 
 (t/deftest get-user-status-maps-internal-statuses
@@ -484,8 +484,8 @@
       ;; cfg WITHOUT ::jobs/defs to exercise the fallback; the echo
       ;; job-def is known to exist in the rebound registry
       (let [cfg    {::db/pool th/*pool*}
-            result (jobs/invoke! (assoc cfg ::jobs/name :echo
-                                        ::jobs/params (make-params)))]
+            result (jobs/invoke (assoc cfg ::jobs/name :echo
+                                       ::jobs/params (make-params)))]
         ;; Should not throw; should find the job-def via the fallback.
         ;; The result is the params map (echo-handler returns params).
         (t/is (some? result))))
@@ -497,13 +497,13 @@
   heartbeat! and progress! are no-ops — they do not write to the
   database or update the throttle atoms."
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
 
     (t/testing "heartbeat! is a no-op when *job-id* is nil"
       (let [row-before (jobs/get-job cfg job-id)]
         (binding [jobs/*job-id* nil]
-          (jobs/heartbeat! cfg))
+          (jobs/heartbeat cfg))
         (let [row-after (jobs/get-job cfg job-id)]
           (t/is (= (inst-ms (:modified-at row-before))
                    (inst-ms (:modified-at row-after)))
@@ -512,7 +512,7 @@
     (t/testing "progress! is a no-op when *job-id* is nil"
       (let [row-before (jobs/get-job cfg job-id)]
         (binding [jobs/*job-id* nil]
-          (jobs/progress! cfg {:step "should-not-write"}))
+          (jobs/progress cfg {:step "should-not-write"}))
         (let [row-after (jobs/get-job cfg job-id)]
           (t/is (nil? (:progress row-after))
                 "progress should remain nil"))))))
@@ -522,8 +522,8 @@
   state (failed, cancelled). The existing test covers 'completed'; this
   test covers the other two terminal states."
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
 
     (doseq [status ["failed" "cancelled"]]
       (t/testing (str "progress! is no-op on " status " status")
@@ -533,7 +533,7 @@
         (swap! jobs/progresses dissoc job-id)
         ;; Call progress — should be a no-op
         (binding [jobs/*job-id* job-id]
-          (jobs/progress! cfg {:step 1}))
+          (jobs/progress cfg {:step 1}))
         ;; Verify progress was NOT updated
         (let [row (jobs/get-job cfg job-id)]
           (t/is (nil? (:progress row))
@@ -552,25 +552,25 @@
 
 (t/deftest heartbeat-bypasses-caller-transaction
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
     ;; backdate so the beat is strictly greater (no same-millis flake)
     (th/db-update! :job {:modified-at (ct/in-past {:minutes 5})} {:id job-id})
     ;; beat inside a transaction that is rolled back: the beat must
     ;; still be visible (it went through the pool, not the tx)
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [{:keys [::db/conn]}]
-                  (jobs/heartbeat! (assoc cfg ::db/conn conn) job-id)))
+                  (jobs/heartbeat (assoc cfg ::db/conn conn) job-id)))
     (let [row (jobs/get-job cfg job-id)]
       (t/is (> (inst-ms (:modified-at row))
                (inst-ms (ct/in-past {:minutes 5})))))))
 
 (t/deftest progress-bypasses-caller-transaction
   (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit! cfg {::jobs/name   :echo
-                                  ::jobs/params (make-params)})]
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [{:keys [::db/conn]}]
-                  (jobs/progress! (assoc cfg ::db/conn conn) job-id {:step 1})))
+                  (jobs/progress (assoc cfg ::db/conn conn) job-id {:step 1})))
     (t/is (= {:step 1} (:progress (jobs/get-job cfg job-id))))))
 

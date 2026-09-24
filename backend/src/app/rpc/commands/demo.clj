@@ -98,10 +98,10 @@
                                          (->> (auth/create-profile cfg params)
                                               (auth/create-profile-rels cfg))))]
 
-    (jobs/submit! cfg
-                  {::jobs/name :demo-purge
-                   ::jobs/delay deletion-delay
-                   ::jobs/params {:profile-id (:id profile)}})
+    (jobs/submit cfg
+                 {::jobs/name :demo-purge
+                  ::jobs/delay deletion-delay
+                  ::jobs/params {:profile-id (:id profile)}})
 
     (with-meta {:email email
                 :password password}

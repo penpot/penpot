@@ -14,21 +14,21 @@
   by reference.
 
   Two execution modes are provided:
-  - `submit!` (durable): validates + JSON-encodes params and inserts a row
+  - `submit` (durable): validates + JSON-encodes params and inserts a row
     into the `job` table; the dispatcher/runner machinery does the rest.
-  - `request!` (ephemeral): synchronous request/response over the redis
+  - `request` (ephemeral): synchronous request/response over the redis
     queues with a reply-key and a dedicated, unbounded connection pool;
-    external workers answer with `reply!`.
+    external workers answer with `reply`.
 
   Params payloads are stored as plain JSON (not transit) in the `props` jsonb
   column and decoded back to typed Clojure values using the job-def decoder.
 
-  Any job that can run longer than `:jobs-lease` must call `heartbeat!`
+  Any job that can run longer than `:jobs-lease` must call `heartbeat`
   on its loop, otherwise the dispatcher marks it orphaned while its side
   effects continue.
 
   Reserved ledger columns (`profile_id`, `target`, `progress`, `error`,
-  `result`, `resource_id`, `expires_at`) have no producers yet: `submit!`
+  `result`, `resource_id`, `expires_at`) have no producers yet: `submit`
   only inserts dispatch columns. The expiration branch, the retention
   carve-out and the resource touch already account for them; user-facing
   jobs (phase B) will define their semantics."
@@ -155,10 +155,10 @@
 (def check-options!
   (sm/check-fn schema:options))
 
-(defn validate-params!
+(defn validate-params
   "Validate the params with the precompiled validator of the job-def; on
-  failure raises with the malli explanation. Shared by `submit!` (raw
-  params) and the runner (decoded params). `invoke!` deliberately stays
+  failure raises with the malli explanation. Shared by `submit` (raw
+  params) and the runner (decoded params). `invoke` deliberately stays
   lenient: it is the in-process escape hatch used by tests (legacy task
   params via `run-task!`) and the REPL."
   [job-def params]
@@ -166,7 +166,7 @@
     (sm/check (::schema job-def) params))
   params)
 
-(defn submit!
+(defn submit
   "Submit a durable job: validates the params with the job-def validator,
   encodes them as plain JSON and inserts a row into the `job` table.
   Fire-and-forget: returns the job id immediately.
@@ -184,7 +184,7 @@
   (check-options! options)
 
   (let [job-def      (get-job-def (get-defs cfg) name)
-        params       (validate-params! job-def params)
+        params       (validate-params job-def params)
         delay        (ct/duration delay)
         now          (ct/now)
         scheduled-at (-> (ct/plus now delay)
@@ -192,7 +192,7 @@
         ;; The :rollback? testing escape hatch must never persist on a
         ;; durable row (the runner would roll everything back yet mark
         ;; the job completed); it stays available in-process via
-        ;; invoke!/run-task!. Validation above is untouched.
+        ;; invoke/run-task!. Validation above is untouched.
         ;; Duration values are normalized to millis: a Duration object
         ;; does not survive JSON encoding (schemas still accept it for
         ;; in-process callers).
@@ -260,7 +260,7 @@
   (some-> (db/get* cfg :job {:id job-id})
           (decode-row)))
 
-(defn cancel!
+(defn cancel
   "Cancel a pending job (new/scheduled/retry). Returns the number of
   affected rows; jobs already running or in a terminal state are left
   untouched (the conditional claim in the runner/management API will skip
@@ -294,7 +294,7 @@
 (def heartbeats (atom {}))
 (def progresses (atom {}))
 
-(defn- assert-connectable!
+(defn- assert-connectable
   "Heartbeat/progress writes always go through the connection pool, so
   the cfg must carry ::db/pool (or be a pool/connection itself).
   Fails fast with a clear error instead of the opaque deep failure
@@ -304,12 +304,12 @@
     (when-not (db/connectable? connectable)
       (ex/raise :type :validation
                 :code :missing-pool
-                :hint "heartbeat!/progress! require ::db/pool on the cfg (or a pool/connection directly)"))))
+                :hint "heartbeat/progress require ::db/pool on the cfg (or a pool/connection directly)"))))
 
 (def ^:dynamic *job-id*
   "Job id of the job being executed on the current thread. The runner
-  binds it around handler invocations; handlers call `heartbeat!`/`progress!`
-  without knowing the id. Nil means no job context (in-process `invoke!`
+  binds it around handler invocations; handlers call `heartbeat`/`progress`
+  without knowing the id. Nil means no job context (in-process `invoke`
   without a row), in which case the throttled writes become no-ops."
   nil)
 
@@ -347,7 +347,7 @@
                    (assoc m job-id now))))))
     @decision))
 
-(defn cleanup-throttle!
+(defn cleanup-throttle
   "Remove `job-id` from the heartbeat and progress throttle atoms.
   Called by the runner after a job completes (success or failure) to
   prevent completed job IDs from accumulating in memory. The prune
@@ -362,7 +362,7 @@
     WHERE id = ?
       AND status IN ('new', 'scheduled', 'running', 'retry')")
 
-(defn heartbeat!
+(defn heartbeat
   "Touch `modified_at` on the running job (throttled: does not write when
   the last beat is more recent than ~60s). Handlers call it on every
   iteration without thinking. The job id comes from the `::job-id` key on
@@ -379,42 +379,42 @@
   ([cfg]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
-       (heartbeat! cfg job-id))))
+       (heartbeat cfg job-id))))
   ([cfg job-id]
    (when (uuid? job-id)
-     (assert-connectable! cfg)
+     (assert-connectable cfg)
      (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
        (db/exec-one! (or (::db/pool cfg) cfg)
                      [sql:touch-heartbeat (ct/now) job-id])
        nil))))
 
-(defn progress!
+(defn progress
   "Persist the `progress` payload and touch `modified_at` (throttled at
   ~250ms; only writes on non-terminal job states). The job id comes from
   the `::job-id` key on the cfg, the thread-bound `*job-id*` (set by the
   runner), or can be passed explicitly. No-op when there is no job
   context.
 
-  Like `heartbeat!`, always writes through the connection pool, never
+  Like `heartbeat`, always writes through the connection pool, never
   through the caller's transaction.
 
   The `::force?` option bypasses the throttle: coarse external callers
   (e.g. the management API) report sparse significant milestones where
   every report counts, unlike hot in-runner loops where intermediate
   beats are redundant."
-  ([cfg progress]
+  ([cfg progress-map]
    (let [job-id (or (get cfg ::job-id) *job-id*)]
      (when (uuid? job-id)
-       (progress! cfg job-id progress))))
-  ([cfg job-id progress] (progress! cfg job-id progress nil))
-  ([cfg job-id progress {:keys [::force?]}]
+       (progress cfg job-id progress-map))))
+  ([cfg job-id progress-map] (progress cfg job-id progress-map nil))
+  ([cfg job-id progress-map {:keys [::force?]}]
    (when (uuid? job-id)
-     (assert-connectable! cfg)
+     (assert-connectable cfg)
      (when (or force? (should-write? progresses job-id (ct/now) progress-interval))
        (db/tx-run! (or (::db/pool cfg) cfg)
                    (fn [{:keys [::db/conn]}]
                      (let [now (ct/now)]
-                       (-> (db/exec-one! conn [sql:persist-progress (db/json progress) now job-id
+                       (-> (db/exec-one! conn [sql:persist-progress (db/json progress-map) now job-id
                                                (db/create-array conn "text" ["new" "scheduled" "running" "retry"])])
                            (db/get-update-count)))))))))
 
@@ -441,7 +441,7 @@
     WHERE id=?
       AND status IN ('running','retry')")
 
-(defn claim!
+(defn claim
   "Claim a job on behalf of an external worker: only transitions a
   pending row (new/scheduled/retry) to `running` and requires an exact
   `scheduled-at` match with the value advertised in the queue payload, so
@@ -466,24 +466,24 @@
              :cause cause)
       nil)))
 
-(defn complete!
+(defn complete
   "Mark a running job as completed with the (JSON-encodable) result.
   Conditional on the non-terminal running/retry states (first-terminal
   wins: a row already marked failed/cancelled — e.g. an orphan detected
   by the dispatcher — is never overwritten). Returns the number of
   affected rows."
   ([cfg job-id]
-   (complete! cfg job-id nil))
+   (complete cfg job-id nil))
   ([cfg job-id result]
    (let [job-name (when (some? result) (:name (get-job cfg job-id)))
          n (-> (db/exec-one! (db/get-connectable cfg)
                              [sql:complete-job (ct/now) (ct/now)
                               (when (some? result) (encode-result job-name result)) job-id])
                (db/get-update-count))]
-     (cleanup-throttle! job-id)
+     (cleanup-throttle job-id)
      n)))
 
-(defn fail!
+(defn fail
   "Mark a running job as failed with the error payload (a JSON object
   with at least a :code). Conditional on the non-terminal running/retry
   states (first-terminal wins). Returns the number of affected rows."
@@ -491,7 +491,7 @@
   (let [n (-> (db/exec-one! (db/get-connectable cfg)
                             [sql:fail-job (ct/now) (db/json error) job-id])
               (db/get-update-count))]
-    (cleanup-throttle! job-id)
+    (cleanup-throttle job-id)
     n))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -551,7 +551,7 @@
 (def check-request-options!
   (sm/check-fn schema:request-options))
 
-(defn reply!
+(defn reply
   "Respond to an ephemeral request: push the JSON response to the
   reply-key and set a short TTL as a safety net for late replies (a
   reply pushed after the caller timeout would otherwise live forever).
@@ -563,7 +563,7 @@
               (rds/rpush conn reply-key [(json/encode response)])
               (rds/expire conn reply-key reply-expire-seconds))))
 
-(defn request!
+(defn request
   "Ephemeral request/response (no job row, no dispatcher): pushes a JSON
   payload [request-id, reply-key, cmd, params] to the target queue and
   blocks on the reply-key with a per-call timeout (defaults to
@@ -624,7 +624,7 @@
 ;; IN-PROCESS INVOCATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn invoke!
+(defn invoke
   "Execute a job handler in-process (no row, no dispatch): decodes the
   params with the job-def decoder and invokes the handler bound to the
   `*job-id*` dynamic (or the provided ::job-id, which makes the

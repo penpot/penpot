@@ -12,7 +12,7 @@ Backend (`app.config`, `PENPOT_*` env vars) is parameterized; deployments choose
 
 ## Task queue and worker model
 
-Async jobs are enqueued via `jobs/submit!` (`app.jobs`), which inserts a row into the shared Postgres `job` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll, never wait, and workers never publish to msgbus. The only completion signal is the `job` row's `status` / `completed_at` columns, which nothing in `rpc/` reads. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
+Async jobs are enqueued via `jobs/submit` (`app.jobs`), which inserts a row into the shared Postgres `job` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll, never wait, and workers never publish to msgbus. The only completion signal is the `job` row's `status` / `completed_at` columns, which nothing in `rpc/` reads. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
 
 Workers run on backends with `enable-backend-worker` in `PENPOT_FLAGS`. Each worker-enabled backend has a `dispatcher` (polls `job` with `FOR UPDATE SKIP LOCKED`, marks status='scheduled', RPUSHes the JSON `[id scheduled-at]` payloads into **its own** Redis list) and one or more `runner`s per queue (BLPOP from that same local list, execute, update the Postgres row). The Redis hand-off list is purely intra-backend — cross-backend coordination happens at the Postgres row level.
 
@@ -23,7 +23,7 @@ Postgres row locking is the only correctness primitive: `job` claims via `FOR UP
 Two known race patterns survive multi-backend operation:
 
 - **Cron dedup is best-effort.** The lock on `scheduled_task` is released when the task body finishes. If two backends' cron timers fire for the same scheduled instant with a gap larger than the task body's runtime, both execute it. Penpot's cron entries are idempotent (`session-gc`, `objects-gc`, `storage-gc-*`, `storage-pending-gc`, `jobs-gc`, `tasks-gc`, `file-gc-scheduler`); the exceptions are `:telemetry` (would double-report) and `:audit-log-archive` (depends on archive target idempotency).
-- **`jobs/submit! ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
+- **`jobs/submit ::dedupe true`** does a non-atomic `DELETE` then `INSERT`. Concurrent cross-backend submits can both bypass the `DELETE` (each sees the other's uncommitted insert as absent) and end up with duplicate `'new'` rows. Each row claims and runs once independently, so the underlying work is fine; the "at most one pending" guarantee weakens.
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).
 

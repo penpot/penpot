@@ -63,7 +63,7 @@
                    LIMIT ?)
    RETURNING resource_id")
 
-(defn- touch-resources!
+(defn- touch-resources
   [conn resource-ids]
   (if (seq resource-ids)
     (-> (db/exec-one! conn [sql:touch-objects (ct/now)
@@ -71,7 +71,7 @@
         (db/get-update-count))
     0))
 
-(defn- delete-jobs!
+(defn- delete-jobs
   [cfg sql & params]
   (loop [deleted 0
          touched 0]
@@ -81,12 +81,12 @@
                         (let [rows         (db/exec! conn (conj (into [sql] params)
                                                                 gc-batch-size))
                               resource-ids (into [] (keep :resource-id) rows)]
-                          [rows (touch-resources! conn resource-ids)])))
+                          [rows (touch-resources conn resource-ids)])))
           deleted' (+ deleted (count rows))
           touched' (+ touched touched-now)]
       (if (< (count rows) gc-batch-size)
         [deleted' touched']
-        (do (jobs/heartbeat! cfg)
+        (do (jobs/heartbeat cfg)
             (recur deleted' touched'))))))
 
 (declare execute-jobs-gc)
@@ -119,11 +119,11 @@
   (let [min-age (ct/duration (or (:min-age params)
                                  (cf/get-jobs-retention)))
         [deleted-expired touched-expired]
-        (delete-jobs! cfg sql:delete-expired-jobs)
+        (delete-jobs cfg sql:delete-expired-jobs)
 
         [deleted-retained touched-retained]
-        (delete-jobs! cfg sql:delete-retained-jobs
-                      (db/interval min-age))]
+        (delete-jobs cfg sql:delete-retained-jobs
+                     (db/interval min-age))]
     (l/dbg :hint "jobs gc finished"
            :deleted-expired deleted-expired
            :touched-expired touched-expired

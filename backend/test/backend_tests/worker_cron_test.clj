@@ -80,7 +80,7 @@
         entry   (first entries)]
 
     ;; Submit a cron job for an entry without :props
-    (let [job-id (cron/submit-cron-job! cfg entry)]
+    (let [job-id (cron/submit-cron-job cfg entry)]
       ;; Job should be created
       (t/is (some? job-id))
 
@@ -102,7 +102,7 @@
         entry   (second entries)]
 
     ;; Submit a cron job for an entry with :props
-    (let [job-id (cron/submit-cron-job! cfg entry)]
+    (let [job-id (cron/submit-cron-job cfg entry)]
       ;; Job should be created
       (t/is (some? job-id))
 
@@ -151,7 +151,7 @@
         entries (get-cron-entries)
         entry   (first entries)]
 
-    (let [job-id (cron/submit-cron-job! cfg entry)
+    (let [job-id (cron/submit-cron-job cfg entry)
           row    (get-job cfg job-id)]
 
       ;; Verify queue is default:cron (tenant:queue format)

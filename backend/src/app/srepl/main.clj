@@ -66,27 +66,27 @@
   ([tname]
    (run-task! tname {}))
   ([tname params]
-   (jobs/invoke! (-> sys/system
-                     (assoc ::jobs/name tname)
-                     (assoc ::jobs/params params)))))
+   (jobs/invoke (-> sys/system
+                    (assoc ::jobs/name tname)
+                    (assoc ::jobs/params params)))))
 
 (defn schedule-task!
   "Submit a durable job to the queue."
   ([name]
    (schedule-task! name {}))
   ([name params]
-   (jobs/submit! sys/system
-                 {::jobs/name name
-                  ::jobs/params params})))
+   (jobs/submit sys/system
+                {::jobs/name name
+                 ::jobs/params params})))
 
 (defn send-test-email!
   [destination]
   (assert (string? destination) "destination should be provided")
-  (jobs/invoke! (-> sys/system
-                    (assoc ::jobs/name :sendmail)
-                    (assoc ::jobs/params {:body "test email"
-                                          :subject "test email"
-                                          :to [destination]}))))
+  (jobs/invoke (-> sys/system
+                   (assoc ::jobs/name :sendmail)
+                   (assoc ::jobs/params {:body "test email"
+                                         :subject "test email"
+                                         :to [destination]}))))
 
 (defn resend-email-verification-email!
   [email]
@@ -178,11 +178,11 @@
                    :context {:triggered-by "srepl"
                              :cause cause}})
 
-    (jobs/invoke! (-> system
-                      (assoc ::jobs/name :delete-object)
-                      (assoc ::jobs/params {:object :profile
-                                            :deleted-at deleted-at
-                                            :id (:id profile)})))
+    (jobs/invoke (-> system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :profile
+                                           :deleted-at deleted-at
+                                           :id (:id profile)})))
     (:id profile)))
 
 (defn delete-profiles-by-email!
@@ -668,11 +668,11 @@
                    :context {:triggered-by "srepl"
                              :cause "explicit call to delete-file!"}
                    :tracked-at tnow})
-    (jobs/invoke! (-> sys/system
-                      (assoc ::jobs/name :delete-object)
-                      (assoc ::jobs/params {:object :file
-                                            :deleted-at tnow
-                                            :id file-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :file
+                                           :deleted-at tnow
+                                           :id file-id})))
     :deleted))
 
 (defn restore-file!
@@ -709,11 +709,11 @@
                              :cause "explicit call to delete-project!"}
                    :tracked-at tnow})
 
-    (jobs/invoke! (-> sys/system
-                      (assoc ::jobs/name :delete-object)
-                      (assoc ::jobs/params {:object :project
-                                            :deleted-at tnow
-                                            :id project-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :project
+                                           :deleted-at tnow
+                                           :id project-id})))
     :deleted))
 
 (defn- restore-project*
@@ -761,11 +761,11 @@
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
 
-    (jobs/invoke! (-> sys/system
-                      (assoc ::jobs/name :delete-object)
-                      (assoc ::jobs/params {:object :team
-                                            :deleted-at tnow
-                                            :id team-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :team
+                                           :deleted-at tnow
+                                           :id team-id})))
     :deleted))
 
 (defn- restore-team*
@@ -817,11 +817,11 @@
                              :cause "explicit call to delete-profile!"}
                    :tracked-at tnow})
 
-    (jobs/invoke! (-> sys/system
-                      (assoc ::jobs/name :delete-object)
-                      (assoc ::jobs/params {:object :profile
-                                            :deleted-at tnow
-                                            :id profile-id})))
+    (jobs/invoke (-> sys/system
+                     (assoc ::jobs/name :delete-object)
+                     (assoc ::jobs/params {:object :profile
+                                           :deleted-at tnow
+                                           :id profile-id})))
     :deleted))
 
 (defn restore-profile!
@@ -880,41 +880,41 @@
   []
   (->> (db/exec! sys/system ["select id, deleted_at from profile where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke! (-> sys/system
-                                 (assoc ::jobs/name :delete-object)
-                                 (assoc ::jobs/params {:object :profile
-                                                       :deleted-at deleted-at
-                                                       :id id})))))))
+               (jobs/invoke (-> sys/system
+                                (assoc ::jobs/name :delete-object)
+                                (assoc ::jobs/params {:object :profile
+                                                      :deleted-at deleted-at
+                                                      :id id})))))))
 
 (defn process-deleted-teams-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from team where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke! (-> sys/system
-                                 (assoc ::jobs/name :delete-object)
-                                 (assoc ::jobs/params {:object :team
-                                                       :deleted-at deleted-at
-                                                       :id id})))))))
+               (jobs/invoke (-> sys/system
+                                (assoc ::jobs/name :delete-object)
+                                (assoc ::jobs/params {:object :team
+                                                      :deleted-at deleted-at
+                                                      :id id})))))))
 
 (defn process-deleted-projects-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from project where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke! (-> sys/system
-                                 (assoc ::jobs/name :delete-object)
-                                 (assoc ::jobs/params {:object :project
-                                                       :deleted-at deleted-at
-                                                       :id id})))))))
+               (jobs/invoke (-> sys/system
+                                (assoc ::jobs/name :delete-object)
+                                (assoc ::jobs/params {:object :project
+                                                      :deleted-at deleted-at
+                                                      :id id})))))))
 
 (defn process-deleted-files-cascade
   []
   (->> (db/exec! sys/system ["select id, deleted_at from file where deleted_at is not null"])
        (run! (fn [{:keys [id deleted-at]}]
-               (jobs/invoke! (-> sys/system
-                                 (assoc ::jobs/name :delete-object)
-                                 (assoc ::jobs/params {:object :file
-                                                       :deleted-at deleted-at
-                                                       :id id})))))))
+               (jobs/invoke (-> sys/system
+                                (assoc ::jobs/name :delete-object)
+                                (assoc ::jobs/params {:object :file
+                                                      :deleted-at deleted-at
+                                                      :id id})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SSO

@@ -539,11 +539,11 @@
                     {:profile-id profile-id}))
 
     ;; Schedule cascade deletion to a worker
-    (jobs/submit! cfg
-                  {::jobs/name :delete-object
-                   ::jobs/params {:object :profile
-                                  :deleted-at deleted-at
-                                  :id profile-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params {:object :profile
+                                 :deleted-at deleted-at
+                                 :id profile-id}})
 
     ;; Invalidate all sessions for this profile to ensure immediate
     ;; access revocation across all devices

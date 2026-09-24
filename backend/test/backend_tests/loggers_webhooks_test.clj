@@ -21,7 +21,7 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest process-event-handler-with-no-webhooks
-  (with-mocks [submit-mock {:target 'app.jobs/submit! :return nil}]
+  (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           res  (th/run-task! :process-webhook-event
                              {:event-blob
@@ -34,7 +34,7 @@
       (t/is (nil? res)))))
 
 (t/deftest process-event-handler
-  (with-mocks [submit-mock {:target 'app.jobs/submit! :return nil}]
+  (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           res  (th/run-task! :process-webhook-event
@@ -48,7 +48,7 @@
       (t/is (nil? res)))))
 
 (t/deftest process-event-submits-consumed-config-subset
-  (with-mocks [submit-mock {:target 'app.jobs/submit! :return nil}]
+  (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})]
       (th/run-task! :process-webhook-event
@@ -149,7 +149,7 @@
 
       ;; Now run the pending jobs (simulates dispatcher + runner)
       ;; This will decode the params from JSON and invoke the handler
-      (th/run-pending-jobs!)
+      (th/run-pending-jobs)
 
       ;; The handler should have been invoked and created a webhook_delivery row
       ;; If uuid types were lost, the lookup would fail with a type error
@@ -180,7 +180,7 @@
       ;; runner decodes it from JSON and delivers it
       (th/run-task! :process-webhook-event
                     {:event-blob (transit/encode-str evt)})
-      (th/run-pending-jobs!)
+      (th/run-pending-jobs)
 
       (t/is (= 1 (:call-count @http-mock)))
       (let [req   (second (:call-args @http-mock))

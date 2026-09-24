@@ -27,14 +27,14 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- mk-storage-object!
+(defn- mk-storage-object
   []
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))]
     (sto/put-object! storage {::sto/content (sto/content "content")
                               :content-type "text/plain"})))
 
-(defn- mk-job!
+(defn- mk-job
   [{:keys [status profile-id resource-id expires-at modified-at]
     :or   {status "new"}}]
   (let [id (uuid/next)]
@@ -55,8 +55,8 @@
     id))
 
 (t/deftest gc-deletes-expired-jobs-and-touches-their-resources
-  (let [old-object   (mk-storage-object!)
-        live-object  (mk-storage-object!)
+  (let [old-object   (mk-storage-object)
+        live-object  (mk-storage-object)
         expired-id   (uuid/next)
         live-id      (uuid/next)]
     (th/db-insert! :job {:id           expired-id
@@ -124,8 +124,8 @@
   (let [defs   {:jobs-gc (ig/init-key ::gc/jobs-gc-job-def {})}
         cfg    {::jobs/defs defs
                 ::db/pool   th/*pool*}
-        job-id (jobs/submit! cfg {::jobs/name   :jobs-gc
-                                  ::jobs/params {:min-age (ct/duration {:hours 1})}})]
+        job-id (jobs/submit cfg {::jobs/name   :jobs-gc
+                                 ::jobs/params {:min-age (ct/duration {:hours 1})}})]
     (t/testing "a Duration object does not reach JSON encoding"
       (t/is (= 3600000 (:min-age (:props (jobs/get-job cfg job-id))))))))
 
@@ -194,7 +194,7 @@
           (t/is (some? (th/db-get :job {:id user-id} :id :status))))))))
 
 (t/deftest gc-retention-touches-resources-of-retained-rows
-  (let [object  (mk-storage-object!)
+  (let [object  (mk-storage-object)
         job-id  (uuid/next)]
     (th/db-insert! :job {:id           job-id
                          :name         "test-job"
@@ -220,7 +220,7 @@
                        "now() - interval '1 hour' "
                        "FROM generate_series(1, " total ")")])
     ;; spread a few resources across batches so every batch touches
-    (let [objects (repeatedly 3 mk-storage-object!)]
+    (let [objects (repeatedly 3 mk-storage-object)]
       (doseq [[object n] (map vector objects (range))]
         (th/db-exec! ["UPDATE job SET resource_id = ?
                         WHERE id = (SELECT id FROM job OFFSET ? LIMIT 1)"
@@ -236,13 +236,13 @@
 (t/deftest gc-commits-each-batch-separately
   (let [total 2500
         calls (atom 0)
-        orig  @#'gc/touch-resources!]
+        orig  @#'gc/touch-resources]
     (th/db-exec! [(str "INSERT INTO job (name, queue, status, expires_at) "
                        "SELECT 'test-job', 'test:default', 'completed', "
                        "now() - interval '1 hour' "
                        "FROM generate_series(1, " total ")")])
     ;; blow up on the 3rd batch: earlier batches must stay committed
-    (alter-var-root #'gc/touch-resources!
+    (alter-var-root #'gc/touch-resources
                     (constantly (fn [conn ids]
                                   (when (= 3 (swap! calls inc))
                                     (throw (ex-info "boom" {})))
@@ -251,7 +251,7 @@
       (t/is (thrown? Exception (th/run-task! :jobs-gc {})))
       (t/is (= 500 (count (th/db-query :job {:queue "test:default"}))))
       (finally
-        (alter-var-root #'gc/touch-resources! (constantly orig))))
+        (alter-var-root #'gc/touch-resources (constantly orig))))
     ;; the next tick completes the sweep
     (let [{:keys [deleted-expired]} (th/run-task! :jobs-gc {})]
       (t/is (= 500 deleted-expired))

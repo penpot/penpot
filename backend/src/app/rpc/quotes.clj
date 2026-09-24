@@ -93,16 +93,16 @@
                             "- Quote ID: '~(::target cfg)'\n"
                             "- Max: ~(::quote cfg)\n"
                             "- Total: ~(::total cfg) (INCR ~(::incr cfg 1))\n")]
-      (jobs/submit! cfg
-                    {::jobs/name :sendmail
-                     ::jobs/delay (ct/duration "30s")
-                     ::jobs/max-retries 4
-                     ::jobs/priority 200
-                     ::jobs/dedupe true
-                     ::jobs/label "quotes-notification"
-                     ::jobs/params {:to (vec admins)
-                                    :subject subject
-                                    :body content}}))))
+      (jobs/submit cfg
+                   {::jobs/name :sendmail
+                    ::jobs/delay (ct/duration "30s")
+                    ::jobs/max-retries 4
+                    ::jobs/priority 200
+                    ::jobs/dedupe true
+                    ::jobs/label "quotes-notification"
+                    ::jobs/params {:to (vec admins)
+                                   :subject subject
+                                   :body content}}))))
 
 (defn- generic-check!
   [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as cfg}]

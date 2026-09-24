@@ -28,9 +28,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- claim-job!
+(defn- claim-job
   "Conditional claim: only transition pending jobs (new/scheduled/retry)
-  to running. Delegates to the shared jobs/claim! so internal and
+  to running. Delegates to the shared jobs/claim so internal and
   external workers can never drift. A cancelled or terminal job produces
   0 affected rows and is skipped without touching its state
   (first-terminal-wins companion). Also predicates the payload
@@ -38,7 +38,7 @@
   (dispatcher re-pushes on reschedule) is never claimed with the stale
   payload."
   [cfg job-id scheduled-at]
-  (jobs/claim! cfg job-id scheduled-at))
+  (jobs/claim cfg job-id scheduled-at))
 
 (def ^:private sql:retry-job
   "UPDATE job
@@ -77,7 +77,7 @@
   (ex/try!
    (some-> (db/get* cfg :job {:id job-id}))))
 
-(defn- run-job
+(defn- execute-job
   [{:keys [::jobs/defs ::id ::queue ::mtx/metrics] :as cfg} job]
   (try
     (l/dbg :hint "start"
@@ -87,7 +87,7 @@
            :runner-id id
            :retry (:retry-num job))
 
-    (if (zero? (claim-job! cfg (:id job) (:scheduled-at job)))
+    (if (zero? (claim-job cfg (:id job) (:scheduled-at job)))
       (l/wrn :hint "skipping job, not claimable"
              :id (str (:id job))
              :name (:name job)
@@ -97,7 +97,7 @@
             params    (try
                         (->> (:props job)
                              (jobs/decode-params job-def)
-                             (jobs/validate-params! job-def))
+                             (jobs/validate-params job-def))
                         (catch Throwable cause
                           ;; Decode/validation of stored props is pure: any
                           ;; failure here is permanent (e.g. schema tightened
@@ -160,9 +160,9 @@
               {:status "failed" :error cause}
               {:status "retry" :error cause})))))
     (finally
-      (jobs/cleanup-throttle! (:id job)))))
+      (jobs/cleanup-throttle (:id job)))))
 
-(defn- run-job!
+(defn- run-job
   [{:keys [::id ::timeout] :as cfg} job-id scheduled-at]
   (loop [job (get-job cfg job-id)]
     (cond
@@ -196,7 +196,7 @@
              :expected-scheduled-at (ct/format-inst scheduled-at))
 
       :else
-      (let [result (run-job cfg job)]
+      (let [result (execute-job cfg job)]
         (with-meta result
           {::job job})))))
 
@@ -265,7 +265,7 @@
                        (str "invalid status received: '" status "'"))))))
 
           (run-job-loop [[job-id scheduled-at]]
-            (loop [result (run-job! cfg job-id scheduled-at)]
+            (loop [result (run-job cfg job-id scheduled-at)]
               (when-let [cause (some-> result process-result)]
                 (if (or (db/connection-error? cause)
                         (db/serialization-error? cause))

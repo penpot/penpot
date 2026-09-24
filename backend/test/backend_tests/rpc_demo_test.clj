@@ -80,8 +80,8 @@
 (t/deftest create-demo-profile-uses-global-delay-by-default
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [captured (atom nil)]
-      (with-redefs [jobs/submit! (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
-                                   (reset! captured {:task name :delay delay}))]
+      (with-redefs [jobs/submit (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
+                                  (reset! captured {:task name :delay delay}))]
         (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
           (t/is (nil? error))
           (t/is (some? (:email result)))
@@ -91,8 +91,8 @@
 (t/deftest create-demo-profile-accepts-short-expires-in
   (with-redefs [cf/flags (conj cf/flags :demo-users)]
     (let [captured (atom nil)]
-      (with-redefs [jobs/submit! (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
-                                   (reset! captured {:task name :delay delay}))]
+      (with-redefs [jobs/submit (fn [_cfg {:keys [::jobs/name ::jobs/delay]}]
+                                  (reset! captured {:task name :delay delay}))]
         (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
                                                    :expires-in "10m"})]
           (t/is (nil? error))

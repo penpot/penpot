@@ -58,7 +58,7 @@
         (->> (db/exec! conn [sql:mark-file-media-object-deleted timestamp id used-media])
              (into #{} (map :id)))]
 
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
     (doseq [id unused-media]
       (l/trc :obj "media-object"
              :file-id (str id)
@@ -89,7 +89,7 @@
         unused (->> (db/exec! conn [sql:mark-file-object-thumbnails-deleted timestamp file-id ids])
                     (into #{} (map :object-id)))]
 
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
     (doseq [object-id unused]
       (l/trc :obj "object-thumbnail"
              :file-id (str file-id)
@@ -108,7 +108,7 @@
   (let [unused (->> (db/exec! conn [sql:mark-file-thumbnails-deleted timestamp id revn])
                     (into #{} (map :revn)))]
 
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
     (doseq [revn unused]
       (l/trc :obj "thumbnail"
              :file-id (str id)
@@ -192,7 +192,7 @@
                                     (db/create-array conn "uuid" used)])
                     (into #{} bfc/xf-map-id))]
 
-    (jobs/heartbeat! cfg)
+    (jobs/heartbeat cfg)
     (doseq [id unused]
       (l/trc :obj "fragment"
              :file-id (str id)
@@ -258,11 +258,11 @@
                             processed? (process-file! cfg params)]
 
                         (when (and processed? (contains? cf/flags :tiered-file-data-storage))
-                          (jobs/submit! cfg
-                                        {::jobs/name :offload-file-data
-                                         ::jobs/params params
-                                         ::jobs/priority 10
-                                         ::jobs/delay 1000}))
+                          (jobs/submit cfg
+                                       {::jobs/name :offload-file-data
+                                        ::jobs/params params
+                                        ::jobs/priority 10
+                                        ::jobs/delay 1000}))
                         processed?))))
     (catch Throwable cause
       (l/err :hint "error on cleaning file"

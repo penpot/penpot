@@ -1083,7 +1083,7 @@
           out    (th/command! params)]
       (t/is (nil? (:error out))))
 
-    (th/run-pending-jobs!)
+    (th/run-pending-jobs)
 
     ;; query the list of files after soft deletion
     (let [data {::th/type :get-project-files
@@ -1461,7 +1461,7 @@
       (t/is (true? (th/run-task! :file-gc {:file-id (:id file)}))))
 
     ;; The FileGC task will schedule an inner taskq
-    (th/run-pending-jobs!)
+    (th/run-pending-jobs)
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
                 (th/run-task! :storage-gc-touched {}))]
@@ -2310,7 +2310,7 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
 
-        (th/run-pending-jobs!)
+        (th/run-pending-jobs)
 
         ;; get deleted files
         (let [data {::th/type :get-team-deleted-files

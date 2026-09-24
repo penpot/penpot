@@ -406,12 +406,12 @@
   (assert (uuid? file-id) "missing file-id")
   (assert (ct/inst? deleted-at) "missing deleted-at")
 
-  (jobs/submit! cfg
-                {::jobs/name :delete-object
-                 ::jobs/params {:object :snapshot
-                                :deleted-at deleted-at
-                                :file-id file-id
-                                :id id}})
+  (jobs/submit cfg
+               {::jobs/name :delete-object
+                ::jobs/params {:object :snapshot
+                               :deleted-at deleted-at
+                               :file-id file-id
+                               :id id}})
   (db/update! cfg :file-change
               {:deleted-at deleted-at}
               {:id id :file-id file-id}

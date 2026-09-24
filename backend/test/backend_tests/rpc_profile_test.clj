@@ -188,7 +188,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-jobs!)
+    (th/run-pending-jobs)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -355,7 +355,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-jobs!)
+    (th/run-pending-jobs)
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
@@ -391,7 +391,7 @@
       (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
-    (th/run-pending-jobs!)
+    (th/run-pending-jobs)
 
     (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
       (t/is (= 3 (count rows))))
@@ -1402,7 +1402,7 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
@@ -1418,7 +1418,7 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
@@ -1437,7 +1437,7 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))

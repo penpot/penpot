@@ -22,7 +22,7 @@
 
 - Job queues are tenant-prefixed (`<tenant>:<queue>`). Submit dedupe only removes not-yet-due `new` jobs with the same name/queue/label; it does not dedupe due, scheduled, retry, running, or completed work.
 - The dispatcher selects `new`/`retry` jobs with `FOR UPDATE SKIP LOCKED`, marks them `scheduled`, and publishes the JSON payload `[id scheduled-at]` to the `penpot.worker.queue:<tenant>:<queue>` Redis list. The runner skips Redis messages whose scheduled timestamp no longer matches DB state.
-- Lost `scheduled` jobs are rescheduled after 5 minutes; `running` jobs untouched longer than `:jobs-lease` (default 30 min) are marked failed with `{"code":"orphan"}`. Long jobs must `heartbeat!`/`progress!`.
+- Lost `scheduled` jobs are rescheduled after 5 minutes; `running` jobs untouched longer than `:jobs-lease` (default 30 min) are marked failed with `{"code":"orphan"}`. Long jobs must `heartbeat`/`progress`.
 - A missing job-def raises (`:no-job-definition`) instead of completing. Throwing with `ex-data :type ::retry` still controls retry behavior; `:strategy ::noop` retries without incrementing retry count.
 - Cron entries claim their `scheduled_task` row with `FOR UPDATE SKIP LOCKED`, disable statement/idle-in-transaction timeouts locally, submit one `job` row per entry when no active instance exists (no-overlap), and reschedule themselves in `finally` unless interrupted. Worker, dispatcher, and cron components do not start when the DB pool is read-only.
 

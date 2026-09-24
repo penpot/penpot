@@ -42,10 +42,10 @@
                                                              ::jobs/decoder identity
                                                              ::jobs/validator (fn [_] true)}}})
         submitted (atom nil)]
-    (with-redefs [jobs/submit! (fn [cfg options]
-                                 (reset! submitted
-                                         {:name (get options ::jobs/name)
-                                          :params (get options ::jobs/params)}))]
+    (with-redefs [jobs/submit (fn [cfg options]
+                                (reset! submitted
+                                        {:name (get options ::jobs/name)
+                                         :params (get options ::jobs/params)}))]
       ((::jobs/handler handler) {:profile-id (:id profile)}))
     (t/is (= :delete-object (:name @submitted)))
     (t/is (= :profile (:object (:params @submitted))))

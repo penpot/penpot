@@ -277,24 +277,24 @@
                           :else               label)
           dedupe?       (boolean (and batch-key batch-timeout))]
 
-      (jobs/submit! cfg
-                    {::jobs/name :process-webhook-event
-                     ::jobs/queue :webhooks
-                     ::jobs/max-retries 0
-                     ::jobs/delay (or batch-timeout 0)
-                     ::jobs/dedupe dedupe?
-                     ::jobs/label label
-                     ;; The event travels as an opaque transit blob:
-                     ;; transit preserves the instant/UUID/set types
-                     ;; that plain JSON props cannot carry.
-                     ::jobs/params {:event-blob
-                                    (t/encode-str
-                                     (-> event
-                                         (d/without-qualified)
-                                         (dissoc :source)
-                                         (dissoc :context)
-                                         (dissoc :ip-addr)
-                                         (dissoc :type)))}})))
+      (jobs/submit cfg
+                   {::jobs/name :process-webhook-event
+                    ::jobs/queue :webhooks
+                    ::jobs/max-retries 0
+                    ::jobs/delay (or batch-timeout 0)
+                    ::jobs/dedupe dedupe?
+                    ::jobs/label label
+                    ;; The event travels as an opaque transit blob:
+                    ;; transit preserves the instant/UUID/set types
+                    ;; that plain JSON props cannot carry.
+                    ::jobs/params {:event-blob
+                                   (t/encode-str
+                                    (-> event
+                                        (d/without-qualified)
+                                        (dissoc :source)
+                                        (dissoc :context)
+                                        (dissoc :ip-addr)
+                                        (dissoc :type)))}})))
   event)
 
 (defn submit*

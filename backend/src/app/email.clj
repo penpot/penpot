@@ -315,13 +315,13 @@
                 (-> params
                     (dissoc ::reuse-conn ::factory)
                     (check-params)))]
-    (jobs/submit! (cond-> (dissoc cfg ::db/conn)
-                    reuse-conn (assoc ::db/conn (::db/conn cfg)))
-                  {::jobs/name :sendmail
-                   ::jobs/delay 0
-                   ::jobs/max-retries 4
-                   ::jobs/priority 200
-                   ::jobs/params email})))
+    (jobs/submit (cond-> (dissoc cfg ::db/conn)
+                   reuse-conn (assoc ::db/conn (::db/conn cfg)))
+                 {::jobs/name :sendmail
+                  ::jobs/delay 0
+                  ::jobs/max-retries 4
+                  ::jobs/priority 200
+                  ::jobs/params email})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SENDMAIL FN / TASK HANDLER
@@ -329,7 +329,7 @@
 
 (declare send-to-logger!)
 
-(defn- sendmail-impl!
+(defn- sendmail-impl
   [cfg params]
   (when (contains? cf/flags :smtp)
     (let [session (create-smtp-session cfg)]
@@ -356,7 +356,7 @@
 (defmethod ig/init-key ::sendmail
   [_ cfg]
   (fn [params]
-    (sendmail-impl! cfg params)))
+    (sendmail-impl cfg params)))
 
 (defmethod ig/init-key ::job-def
   [_ {sendmail ::sendmail}]

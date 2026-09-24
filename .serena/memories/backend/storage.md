@@ -35,7 +35,7 @@
 - `sto/touch-object!` is one `UPDATE storage_object SET touched_at`: DB-only, never touches S3/FS backend content.
 - Physical FK cascades are avoided by convention; domain deletion is logical (`deleted_at`) everywhere. GC removes small objects first, then parents, then grandparents (see `deletion-proc-vars` order in `app.tasks.objects-gc`). Per-row delete cost is small and bounded.
 - `objects-gc` sweeps in chunks of 100 (`::chunk-size`, overridable per job params); `storage-gc-deleted` in chunks of 25. Each chunk is one transaction: cursor fetch + single-row deletes/updates + commit.
-- Consequence: per-chunk cost is DB-only and bounded, so these sweeps cannot outrun the 30-minute jobs lease in practice (would need millions of pending rows in one proc). Per-chunk `heartbeat!` where present is belt-and-braces, not load-bearing.
+- Consequence: per-chunk cost is DB-only and bounded, so these sweeps cannot outrun the 30-minute jobs lease in practice (would need millions of pending rows in one proc). Per-chunk `heartbeat` where present is belt-and-braces, not load-bearing.
 
 ## Connection Reuse Details
 

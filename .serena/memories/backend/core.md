@@ -50,7 +50,7 @@ For deeper details on transaction semantics, advisory locks, Transit vs JSON hel
 
 ## Background tasks (unified jobs)
 
-Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` in its namespace + a malli params schema + an `ig/init-key` that returns the job-def map `{::jobs/name, ::jobs/schema, ::jobs/handler, ::jobs/decoder, ::jobs/validator}` (decoder/validator precompiled at init). The registry is the `::jobs/defs` wiring in `app.main`, which also populates a module-level registry used by `jobs/submit!` as fallback — job-def components cannot ig/ref `::jobs/defs` (wiring cycle). Submit from RPC code passes its RPC cfg (it carries `::jobs/defs` via ig/ref).
+Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` in its namespace + a malli params schema + an `ig/init-key` that returns the job-def map `{::jobs/name, ::jobs/schema, ::jobs/handler, ::jobs/decoder, ::jobs/validator}` (decoder/validator precompiled at init). The registry is the `::jobs/defs` wiring in `app.main`, which also populates a module-level registry used by `jobs/submit` as fallback — job-def components cannot ig/ref `::jobs/defs` (wiring cycle). Submit from RPC code passes its RPC cfg (it carries `::jobs/defs` via ig/ref).
 
 For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, and queue internals: `mem:backend/subtleties`.
 

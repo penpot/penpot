@@ -37,12 +37,12 @@
                                  :file-id (str id)
                                  :revn revn
                                  :modified-at (ct/format-inst modified-at))
-                          (jobs/submit! cfg
-                                        {::jobs/name :file-gc
-                                         ::jobs/params params
-                                         ::jobs/priority 10
-                                         ::jobs/delay 10000})
-                          (jobs/heartbeat! cfg)
+                          (jobs/submit cfg
+                                       {::jobs/name :file-gc
+                                        ::jobs/params params
+                                        ::jobs/priority 10
+                                        ::jobs/delay 10000})
+                          (jobs/heartbeat cfg)
                           (inc total)))
                       0
                       (db/plan conn [sql:get-candidates threshold] {:fetch-size 10}))]
