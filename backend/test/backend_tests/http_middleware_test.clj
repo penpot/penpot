@@ -30,78 +30,17 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(defrecord DummyRequest [headers cookies method body-stream
-                         remote-addr server-name server-port
-                         scheme protocol path query ssl-client-cert]
-  yreq/IRequestCookies
-  (get-cookie [_ name]
-    {:value (get cookies name)})
-
-  yreq/IRequest
-  (get-header [_ name]
-    (get headers name))
-  (method [_] method)
-  (body [_] body-stream)
-  (path [_] path)
-  (query [_] query)
-  (server-port [_] server-port)
-  (server-name [_] server-name)
-  (remote-addr [_] remote-addr)
-  (ssl-client-cert [_] ssl-client-cert)
-  (scheme [_] scheme)
-  (protocol [_] protocol))
-
-(defn- make-dummy-request
-  "Constructs a DummyRequest from an options map. Every key is
-  optional; missing values fall back to sensible defaults. New
-  fields added to DummyRequest won't break existing call sites
-  as long as this constructor keeps its `:or` defaults in sync.
-
-  Recognized keys:
-    :headers         — map of header name → value
-    :cookies         — map of cookie name → value
-    :method          — HTTP method keyword (default :get)
-    :body-stream     — InputStream for the body (used directly)
-    :body-bytes      — bytes or string for the body; wrapped in a
-                       ByteArrayInputStream if :body-stream is not
-                       given
-    :remote-addr     — string (default \"127.0.0.1\")
-    :server-name     — string (default \"test\")
-    :server-port     — long   (default 0)
-    :scheme          — keyword (default :http)
-    :protocol        — string (default \"HTTP/1.1\")
-    :path            — string (default \"/test\")
-    :query           — string or nil (default nil)
-    :ssl-client-cert — X509Certificate or nil (default nil)"
-  [{:keys [headers cookies method body-stream body-bytes
-           remote-addr server-name server-port scheme protocol
-           path query ssl-client-cert]
-    :or   {headers {} cookies {} method :get
-           body-stream nil
-           remote-addr "127.0.0.1" server-name "test" server-port 0
-           scheme :http protocol "HTTP/1.1" path "/test" query nil
-           ssl-client-cert nil}}]
-  (let [body-stream (or body-stream
-                        (when body-bytes
-                          (java.io.ByteArrayInputStream.
-                           (if (string? body-bytes)
-                             (.getBytes ^String body-bytes "UTF-8")
-                             body-bytes))))]
-    (->DummyRequest headers cookies method body-stream
-                    remote-addr server-name server-port
-                    scheme protocol path query ssl-client-cert)))
-
 (t/deftest auth-middleware-1
   (let [request (volatile! nil)
         handler (#'app.http.middleware/wrap-auth
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
 
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:headers {"authorization" "Token aaaa"}}))
+    (handler (th/make-dummy-request {:headers {"authorization" "Token aaaa"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :token token-type))
@@ -114,10 +53,10 @@
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:headers {"authorization" "Bearer aaaa"}}))
+    (handler (th/make-dummy-request {:headers {"authorization" "Bearer aaaa"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :bearer token-type))
@@ -130,10 +69,10 @@
                  (fn [req] (vreset! request req))
                  {})]
 
-    (handler (make-dummy-request {}))
+    (handler (th/make-dummy-request {}))
     (t/is (nil? (::http/auth-data @request)))
 
-    (handler (make-dummy-request {:cookies {"auth-token" "foobar"}}))
+    (handler (th/make-dummy-request {:cookies {"auth-token" "foobar"}}))
 
     (let [{:keys [token claims] token-type :type} (get @request ::http/auth-data)]
       (t/is (= :cookie token-type))
@@ -145,16 +84,16 @@
                  (fn [req] {::yres/status 200})
                  {:test1 "secret-key"})]
 
-    (let [response (handler (make-dummy-request {}))]
+    (let [response (handler (th/make-dummy-request {}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "secret-key2"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "secret-key2"}}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "secret-key"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "secret-key"}}))]
       (t/is (= 403 (::yres/status response))))
 
-    (let [response (handler (make-dummy-request {:headers {"x-shared-key" "test1 secret-key"}}))]
+    (let [response (handler (th/make-dummy-request {:headers {"x-shared-key" "test1 secret-key"}}))]
       (t/is (= 200 (::yres/status response))))))
 
 (t/deftest access-token-authz
@@ -200,7 +139,8 @@
     (t/is (= "https://trusted.example" (get headers "access-control-allow-origin")))
     (t/is (= "true" (get headers "access-control-allow-credentials")))
     (t/is (= "Origin" (get headers "vary")))
-    (t/is (= "content-type" (get headers "access-control-expose-headers")))
+    (t/is (= "content-type, retry-after, x-rate-limit-remaining, x-rate-limit-reset"
+             (get headers "access-control-expose-headers")))
     (t/is (not (str/includes?
                 (get headers "access-control-allow-headers" "")
                 "cookie")))))
@@ -265,7 +205,7 @@
                                                        :user-agent "user agent"})
                       (#'session/assign-token cfg))
 
-        response (handler (make-dummy-request {:cookies {"auth-token" (:token session)}}))
+        response (handler (th/make-dummy-request {:cookies {"auth-token" (:token session)}}))
 
         {:keys [token claims] token-type :type}
         (get response ::http/auth-data)]
@@ -276,6 +216,70 @@
     (t/is (= "penpot" (:aud claims)))
     (t/is (= (:id session) (:sid claims)))
     (t/is (= (:id profile) (:uid claims)))))
+
+(t/deftest session-token-contains-exp-claim
+  (let [cfg     th/*system*
+        manager (session/inmemory-manager)
+        profile (th/create-profile* 1)
+        session (->> (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+                     (#'session/assign-token cfg))
+        claims  (tokens/decode cfg (:token session))
+        exp     (:exp claims)]
+    (t/is (some? exp) "session token should contain :exp claim")
+    (t/is (ct/inst? exp) "exp should be an instant")))
+
+(t/deftest session-token-exp-based-on-created-at
+  (let [cfg              th/*system*
+        manager          (session/inmemory-manager)
+        profile          (th/create-profile* 1)
+        session          (->> (session/create-session manager {:profile-id (:id profile)
+                                                               :user-agent "user agent"})
+                              (#'session/assign-token cfg))
+        claims           (tokens/decode cfg (:token session))
+        expected-exp     (ct/plus (:created-at session) (ct/duration {:days 30}))]
+    (t/is (some? (:exp claims)) "session token should contain :exp claim")
+    (t/is (= (inst-ms (:exp claims))
+             (inst-ms expected-exp))
+          "exp should equal created-at + 30 days")))
+
+(t/deftest session-token-past-exp-is-rejected
+  (let [cfg     th/*system*
+        manager (session/inmemory-manager)
+        profile (th/create-profile* 1)
+        session (->> (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+                     (#'session/assign-token cfg))
+        claims  (tokens/decode cfg (:token session))
+        ;; Manually create a token with exp in the past
+        past-claims (assoc claims :exp (ct/minus (ct/now) (ct/duration {:days 1})))
+        header     {:kid 1 :ver 1}
+        past-token (tokens/generate cfg past-claims header)]
+    (t/is (nil? (session/decode-token cfg past-token))
+          "token with exp in the past should be rejected")))
+
+(t/deftest session-renewal-preserves-original-exp
+  (let [cfg      th/*system*
+        manager  (session/inmemory-manager)
+        profile  (th/create-profile* 1)
+        handler  (-> (fn [req] req)
+                     (#'session/wrap-authz  {::session/manager manager})
+                     (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                      :cookie (partial session/decode-token cfg)}))
+        session  (->> (session/create-session manager {:profile-id (:id profile)
+                                                       :user-agent "user agent"})
+                      (#'session/assign-token cfg))
+        original-exp (:exp (tokens/decode cfg (:token session)))
+        ;; Force renewal by setting modified-at to 7 hours ago
+        old-session  (assoc session :modified-at (ct/minus (ct/now) (ct/duration {:hours 7})))
+        response    (handler (th/make-dummy-request {:cookies {"auth-token" (:token old-session)}}))
+        {:keys [token claims]} (get response ::http/auth-data)
+        new-exp     (:exp claims)]
+    (t/is (some? original-exp) "original token should have :exp")
+    (t/is (some? new-exp) "renewed token should have :exp")
+    (t/is (= (inst-ms original-exp)
+             (inst-ms new-exp))
+          "renewed token should preserve original :exp, not extend it")))
 
 (t/deftest parse-request-illegal-argument-exception
   ;; clojure.data.json raises IllegalArgumentException (case
@@ -292,7 +296,7 @@
         ;; value with a backslash followed by '}', which
         ;; clojure.data.json v0.5.x cannot handle.
         body    (.getBytes "{\"x\": \"\\}\"}" "UTF-8")
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes body})
@@ -311,7 +315,7 @@
   ;; error.
   (let [handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw (RequestTooBigException. "too large"))))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -329,7 +333,7 @@
   ;; should convert it to a 400 :malformed-json validation error.
   (let [handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw (java.io.EOFException. "stream closed"))))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -352,7 +356,7 @@
                   (.initCause iae))
         handler (#'app.http.middleware/wrap-parse-request
                  (fn [_] (throw wrapped)))
-        request (make-dummy-request
+        request (th/make-dummy-request
                  {:method  :post
                   :headers {"content-type" "application/json"}
                   :body-bytes (.getBytes "{}" "UTF-8")})
@@ -370,7 +374,7 @@
   ;; :unexpected. This is the "true internal error" path.
   (let [handler  (#'app.http.middleware/wrap-parse-request
                   (fn [_] (throw (RuntimeException. "boom"))))
-        request  (make-dummy-request
+        request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
                    :body-bytes (.getBytes "{}" "UTF-8")})
@@ -390,7 +394,7 @@
   ;; with :code :io-exception.
   (let [handler  (#'app.http.middleware/wrap-parse-request
                   (fn [_] (throw (java.io.IOException. "network gone"))))
-        request  (make-dummy-request
+        request  (th/make-dummy-request
                   {:method  :post
                    :headers {"content-type" "application/json"}
                    :body-bytes (.getBytes "{}" "UTF-8")})

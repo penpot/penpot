@@ -50,9 +50,33 @@
 (def temp-file-threshold
   (* 1024 1024 2))
 
-;; A maximum (storage) object size allowed: 100MiB
-(def ^:const max-object-size
+;; Maximum size allowed for a single binary entry during binfile
+;; import: 100MiB. Covers the storage blobs (`objects/` entries in v3,
+;; streams in v1), whose declared size and hash are verified against the
+;; imported bytes. Legitimate media objects fit comfortably below this;
+;; anything larger is rejected instead of being buffered into memory.
+(def ^:const default-max-binary-entry-size
   (* 1024 1024 100))
+
+;; Maximum decompressed size allowed for a single JSON/text zip entry
+;; (manifest, files, pages, shapes, colors, components, typographies,
+;; tokens, plugin-data) during binfile import: 20MiB. Legitimate entries
+;; are KB-sized, so this is deliberately much lower than
+;; default-max-binary-entry-size and bounds the DEFLATE amplification of any
+;; single entry.
+(def ^:const default-max-text-entry-size
+  (* 1024 1024 20))
+
+;; Maximum total decompressed size allowed for all JSON/text zip entries
+;; combined within a single import job: 200MiB. Bounds the case where many
+;; entries, each individually under default-max-text-entry-size, still sum
+;; to an unreasonable total.
+(def ^:const default-max-text-total-size
+  (* 1024 1024 200))
+
+;; Maximum number of entries allowed in the import zip: 500,000.
+(def ^:const default-max-zip-entries
+  (* 500 1000))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -647,10 +671,16 @@
             data
             library-ids)))
 
-(defn disable-database-timeouts!
+(def ^:const import-transaction-timeout-ms
+  "Ceiling for binfile import transactions (20 minutes). Interpolated
+  directly into SQL: compile-time constant, never user input."
+  (* 20 60 1000))
+
+(defn configure-database-timeouts!
   [cfg]
   (let [conn (db/get-connection cfg)]
-    (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+    (db/exec-one! conn [(str "SET LOCAL idle_in_transaction_session_timeout = "
+                             import-transaction-timeout-ms)])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file

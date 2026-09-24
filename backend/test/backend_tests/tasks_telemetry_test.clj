@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.tasks.telemetry :as telemetry]
-   [app.util.blob :as blob]
    [app.util.json :as json]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -58,11 +57,6 @@
   (-> (th/db-exec-one! ["SELECT count(*) AS cnt FROM audit_log WHERE source IN ('telemetry:backend', 'telemetry:frontend')"])
       :cnt
       long))
-
-(defn- decode-event-batch
-  "Decode the base64+fressian+zstd event-batch sent to the mock."
-  [b64-str]
-  (blob/decode-str b64-str))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STATS / REPORT STRUCTURE TESTS (existing behaviour, extended)
@@ -140,6 +134,58 @@
       (th/create-profile* 1 {:is-active true})
       (th/run-task! :telemetry {:send? false :enabled? true})
       (t/is (not (:called? @mock))))))
+
+(t/deftest test-telemetry-excluded-host-predicate
+  (t/is (true? (cf/telemetry-excluded-host? "penpot.app")))
+  (t/is (true? (cf/telemetry-excluded-host? "penpot.dev")))
+  (t/is (true? (cf/telemetry-excluded-host? "design.penpot.app")))
+  (t/is (true? (cf/telemetry-excluded-host? "design.penpot.dev")))
+  (t/is (true? (cf/telemetry-excluded-host? "DESIGN.PENPOT.APP")))
+  (t/is (false? (cf/telemetry-excluded-host? "localhost")))
+  (t/is (false? (cf/telemetry-excluded-host? "example.com")))
+  (t/is (false? (cf/telemetry-excluded-host? "mypenpot.app.example.com")))
+  (t/is (false? (cf/telemetry-excluded-host? nil)))
+  (t/is (false? (cf/telemetry-excluded-host? ""))))
+
+(t/deftest test-telemetry-disabled-on-official-host-newsletter-only
+  ;; The limited newsletter report must not be sent from official
+  ;; instances, even when subscriptions exist.
+  (doseq [[idx public-uri] (map-indexed vector ["https://design.penpot.app"
+                                                "https://penpot.app"
+                                                "https://design.penpot.dev"
+                                                "https://penpot.dev"])]
+    (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
+                       :return nil}]
+      (with-redefs [cf/flags  #{}
+                    cf/config (assoc cf/config :public-uri public-uri)]
+        (th/create-profile* (+ 10 idx) {:is-active true
+                                        :props {:newsletter-updates true}})
+        (th/run-task! :telemetry {:send? true})
+        (t/is (not (:called? @mock)) (str "newsletter report must not send for " public-uri))))))
+
+(t/deftest test-telemetry-excluded-skips-subscriptions-query
+  ;; On official hosts the subscriptions query must not even run,
+  ;; since nothing is going to be sent.
+  (with-mocks [mock {:target 'app.tasks.telemetry/get-subscriptions
+                     :return []}]
+    (with-redefs [cf/flags  #{}
+                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+      (th/create-profile* 1 {:is-active true
+                             :props {:newsletter-updates true}})
+      (th/run-task! :telemetry {:send? true})
+      (t/is (not (:called? @mock))))))
+
+(t/deftest test-telemetry-enabled-still-sends-on-official-host
+  ;; An explicitly enabled telemetry still reports on official hosts;
+  ;; only the implicit newsletter fallback is excluded.
+  (with-mocks [mock {:target 'app.tasks.telemetry/make-legacy-request
+                     :return nil}]
+    (with-redefs [cf/flags  #{:telemetry}
+                  cf/config (assoc cf/config :public-uri "https://design.penpot.app")]
+      (th/create-profile* 1 {:is-active true
+                             :props {:newsletter-updates true}})
+      (th/run-task! :telemetry {:send? true :enabled? true})
+      (t/is (:called? @mock)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUDIT-EVENT BATCH COLLECTION TESTS
@@ -245,21 +291,19 @@
             (t/is (not (contains? ev :ip-addr)))))))))
 
 (t/deftest test-batch-encoding-is-decodable
-  ;; Verify that encode-batch produces a blob that round-trips back
-  ;; through blob/decode to the original data.
+  ;; Events are sent as a plain vector of raw event maps (no blob
+  ;; encoding): every batch must JSON round-trip unchanged, because
+  ;; the receiver coerces types from the plain JSON representation.
   (let [events [{:name "navigate" :type "action" :source "telemetry"
                  :tracked-at (ct/now)}
                 {:name "create-file" :type "action" :source "telemetry"
                  :tracked-at (ct/now)}]
-        ;; Call the private fn through the ns-mapped var
-        encode  (ns-resolve 'app.tasks.telemetry 'encode-batch)
-        encoded (encode events)
-        decoded (decode-event-batch encoded)]
-    (t/is (string? encoded))
-    (t/is (seq decoded))
-    (t/is (= (count events) (count decoded)))
-    (t/is (= "navigate" (:name (first decoded))))
-    (t/is (= "create-file" (:name (second decoded))))))
+        encoded (json/encode-str {:events (vec events)})
+        decoded (json/decode encoded)]
+    (t/is (vector? (:events decoded)))
+    (t/is (= (count events) (count (:events decoded))))
+    (t/is (= "navigate" (:name (first (:events decoded)))))
+    (t/is (= "create-file" (:name (second (:events decoded)))))))
 
 (t/deftest test-multiple-batches-when-many-events
   ;; Lower batch-size to 1 so that 3 events produce 3 separate
@@ -787,9 +831,13 @@
             (t/is (= "telemetry-events" (name (:type body))))
             (t/is (string? (:version body)))
             (t/is (some? (:instance-id body)))
-            ;; :events is a base64-encoded blob
-            (t/is (string? (:events body)))
-            (t/is (pos? (count (:events body))))))))))
+            ;; :events is a plain vector of raw event maps
+            (t/is (vector? (:events body)))
+            (t/is (pos? (count (:events body))))
+            (doseq [ev (:events body)]
+              (t/is (string? (:name ev)))
+              (t/is (string? (:source ev)))
+              (t/is (string? (:tracked-at ev))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK BRANCH COVERAGE

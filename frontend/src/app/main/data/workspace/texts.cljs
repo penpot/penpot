@@ -22,11 +22,10 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.reflow :as wrf]
@@ -43,6 +42,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
    [app.render-wasm.text-editor :as wasm.text-editor]
+   [app.util.clipboard :as clipboard]
    [app.util.text-editor :as ted]
    [app.util.text.content :as tc]
    [app.util.text.content.styles :as styles]
@@ -124,7 +124,8 @@
 (defn- await-font-faces
   "Waits for missing WASM faces, then resizes the affected texts."
   [stream face-keys ids]
-  (let [resize-stream (->> (rx/from ids) (rx/map dwwt/resize-wasm-text))]
+  (let [resize-opts   {:stack-undo? true :undo-transation? false}
+        resize-stream (->> (rx/from ids) (rx/map #(dwwt/resize-wasm-text % resize-opts)))]
     (if (empty? face-keys)
       resize-stream
       (->> (rx/merge wasm.fonts/font-stored-stream
@@ -1168,66 +1169,6 @@
   (let [{:keys [name]} (fonts/get-font-data font-id)]
     (assoc typography :name (str name " " (str/title font-variant-id)))))
 
-(defn add-typography
-  "A higher level version of dwl/add-typography, and has mainly two
-  responsabilities: add the typography to the library and apply it to
-  the currently selected text shapes (being aware of the open text
-  editors.
-  Optionally accepts a group-path to place the new typography inside
-  a specific group."
-  ([file-id] (add-typography file-id nil))
-  ([file-id group-path]
-   (ptk/reify ::add-typography
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [selected   (dsh/lookup-selected state)
-             objects    (dsh/lookup-page-objects state)
-
-             xform      (comp (keep (d/getf objects))
-                              (filter cfh/text-shape?))
-             shapes     (into [] xform selected)
-             shape      (first shapes)
-
-             values     (current-text-values
-                         {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                          :shape shape
-                          :attrs txt/text-node-attrs})
-
-             multiple? (or (> 1 (count shapes))
-                           (d/seek (partial = :multiple)
-                                   (vals values)))
-
-             values    (-> (d/without-nils values)
-                           (select-keys
-                            (d/concat-vec txt/text-font-attrs
-                                          txt/text-spacing-attrs
-                                          txt/text-transform-attrs)))
-             values    (cond-> values
-                         (number? (:line-height values))
-                         (update :line-height #(str (mth/precision % 2)))
-
-                         (number? (:letter-spacing values))
-                         (update :letter-spacing #(str (mth/precision % 2))))
-
-             typ-id    (uuid/next)
-             typ       (-> (if multiple?
-                             txt/default-typography
-                             (merge txt/default-typography values))
-                           (generate-typography-name)
-                           (assoc :id typ-id)
-                           (cond-> (string? group-path)
-                             (update :name #(str group-path " / " %))))]
-
-         (rx/concat
-          (rx/of (dwl/add-typography typ)
-                 (ev/event {::ev/name "add-asset-to-library"
-                            :asset-type "typography"}))
-
-          (when (not multiple?)
-            (rx/of (update-attrs (:id shape)
-                                 {:typography-ref-id typ-id
-                                  :typography-ref-file file-id})))))))))
-
 ;; -- Text Editor v2
 
 (defn v2-update-text-editor-styles
@@ -1477,6 +1418,111 @@
                                          (cond-> (or (some? width) (some? height))
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
+
+(defn v3-sync-editor-content
+  "Event pushing the WASM editor content back into the shape, or nil when there is
+   nothing to sync. Every text edit commits through it, menu or keystroke alike."
+  [& {:keys [finalize?]}]
+  (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
+    (let [text (txt/content->text content)
+          name (when (not= text "")
+                 (txt/generate-shape-name text))]
+      (v2-update-text-shape-content shape-id content
+                                    :update-name? true
+                                    :name name
+                                    :finalize? finalize?))))
+
+(defn- sync-editor-content-stream
+  "Stream of the sync event for `reason`, after asking WASM to repaint."
+  [reason]
+  (let [event (v3-sync-editor-content)]
+    (wasm.api/request-render-preserving-target reason)
+    (if (some? event)
+      (rx/of event)
+      (rx/empty))))
+
+(defn- editor-selected-text
+  "Plain text of the current WASM editor selection, or nil when there is none."
+  []
+  (when (and (wasm.text-editor/text-editor-has-focus?)
+             (wasm.text-editor/text-editor-has-selection?))
+    (let [text (wasm.text-editor/text-editor-export-selection)]
+      (when (seq text) text))))
+
+(defn- write-selection-to-clipboard
+  "Write `text` as plain text and HTML; Windows apps often prefer CF_HTML."
+  [text]
+  (clipboard/to-clipboard-multi {"text/plain" text
+                                 "text/html"  (clipboard/plain-text->html text)}))
+
+(defn- on-clipboard-error
+  [cause]
+  (if-let [message (clipboard/error-message cause)]
+    (rx/of (ntf/show {:content message
+                      :type :toast
+                      :level :warning
+                      :timeout 5000}))
+    (do
+      (js/console.error "Clipboard error:" cause)
+      (rx/empty))))
+
+(defn v3-copy-selection
+  "Copy the text editor selection to the system clipboard."
+  []
+  (ptk/reify ::v3-copy-selection
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [text (editor-selected-text)]
+        (->> (rx/from (write-selection-to-clipboard text))
+             (rx/ignore)
+             (rx/catch on-clipboard-error))
+        (rx/empty)))))
+
+(defn v3-cut-selection
+  "Copy the text editor selection to the system clipboard and remove it."
+  []
+  (ptk/reify ::v3-cut-selection
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [text (editor-selected-text)]
+        (->> (rx/from (write-selection-to-clipboard text))
+             (rx/mapcat (fn [_]
+                          ;; Delete only once the text is safely on the clipboard,
+                          ;; so a refused clipboard cannot lose the selection.
+                          (wasm.text-editor/text-editor-delete-backward)
+                          (sync-editor-content-stream "text-cut")))
+             (rx/catch on-clipboard-error))
+        (rx/empty)))))
+
+(defn v3-paste-text
+  "Insert the system clipboard text at the caret, replacing the selection."
+  []
+  (ptk/reify ::v3-paste-text
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-not (wasm.text-editor/text-editor-has-focus?)
+        (rx/empty)
+        (->> (rx/from (clipboard/read-text))
+             (rx/mapcat (fn [text]
+                          (if (seq text)
+                            (do
+                              ;; Pasted text keeps the surrounding style.
+                              (wasm.text-editor/clear-pending-caret-styles!)
+                              (wasm.text-editor/text-editor-insert-text text)
+                              (sync-editor-content-stream "text-paste"))
+                            (rx/empty))))
+             (rx/catch on-clipboard-error))))))
+
+(defn v3-select-all
+  "Select every character of the text being edited."
+  []
+  (ptk/reify ::v3-select-all
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when (wasm.text-editor/text-editor-has-focus?)
+        (wasm.text-editor/clear-pending-caret-styles!)
+        (wasm.text-editor/text-editor-select-all)
+        (wasm.api/render-text-editor-overlay!)))))
 
 (defn replace-layer-names-in-shapes
   [ids search replacement]

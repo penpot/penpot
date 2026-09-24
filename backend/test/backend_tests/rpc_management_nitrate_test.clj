@@ -17,6 +17,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -1806,13 +1807,14 @@
 
 (t/deftest check-organization-sso-returns-valid-true
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid? (constantly true)]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
 
@@ -1827,18 +1829,35 @@
 
 (t/deftest check-organization-sso-passes-issuer-to-validation
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid?
-                             (fn [_cfg sso]
-                               (and (= "test-client" (:client-id sso))
-                                    (= "https://idp.example.com/" (:issuer sso))))]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com/"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid?
+                                      (fn [_cfg sso]
+                                        (and (= "test-client" (:client-id sso))
+                                             (= "https://idp.example.com/" (:issuer sso))))]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com/"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-returns-valid-false-on-ssrf-blocked-issuer
+  (t/testing "an SSRF-blocked issuer must not reach the OIDC validation flow"
+    (let [called? (atom false)
+          out     (with-redefs [oidc/is-organization-sso-config-valid?
+                                (fn [_cfg _sso] (reset! called? true) true)]
+                    (th/management-command!
+                     {::th/type :check-organization-sso
+                      :organization-id (uuid/random)
+                      :client-id "test-client"
+                      :client-secret "test-secret"
+                      :issuer "http://127.0.0.1/idp"}))]
+      (t/is (th/success? out))
+      (t/is (false? (-> out :result :valid)))
+      (t/is (false? @called?)
+            "OIDC validation should not run when the issuer is SSRF-blocked"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUSH AUDIT EVENTS
@@ -1924,3 +1943,26 @@
           (t/is (= "bar" (get-in event [:context :foo])))
           (t/is (= (:full cf/version) (get-in event [:context :version])))
           (t/is (= "app" (get-in event [:context :initiator]))))))))
+
+(t/deftest push-audit-events-initiator-is-plain-string
+  ;; Shared-key callers (e.g. admin-console) carry :app.http/auth-key-id as a
+  ;; keyword; the stored initiator must be a plain string, and a
+  ;; caller-supplied initiator must never survive (server context wins).
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (binding [cf/flags #{:audit-log}]
+      (let [prof   (th/create-profile* 1 {:is-active true})
+            params {::th/type :push-audit-events
+                    :events [{:name "context-test"
+                              :profile-id (:id prof)
+                              :type "action"
+                              :context {:custom-key "custom-val"
+                                        :initiator "spoofed"}}]}
+            params (with-meta params
+                     {::http/request (assoc http-request
+                                            ::http/auth-key-id :admin-console)})
+            out    (th/management-command! params)]
+        (t/is (nil? (:error out)))
+        (let [[_ event] (:call-args @audit-mock)]
+          (t/is (= "custom-val" (get-in event [:context :custom-key])))
+          (t/is (= "admin-console" (get-in event [:context :initiator])))
+          (t/is (string? (get-in event [:context :initiator]))))))))

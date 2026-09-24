@@ -28,13 +28,6 @@
    [app.util.text-editor :as ted]
    [cuerdas.core :as str]))
 
-;; This regex seems duplicated but probably in the future when we support diferent units
-;; this will need to reflect changes for each property
-
-(def ^:private font-size-re #"^\d*\.?\d*$")
-(def ^:private line-height-re #"^\d*\.?\d*$")
-(def ^:private letter-spacing-re #"^-?\d*\.?\d*$")
-(def ^:private text-transform-re #"uppercase|capitalize|lowercase|none")
 (def ^:private text-decoration-re #"underline|line-through|none")
 (def ^:private text-direction-re #"ltr|rtl")
 (def ^:private text-align-re #"left|center|right|justify")
@@ -160,7 +153,7 @@
        (let [font (fonts/find-font-data {:family value})
              variant (fonts/get-default-variant font)]
          (cond
-           (not (string? value))
+           (nil? font)
            (u/not-valid plugin-id :fontFamily value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -182,9 +175,10 @@
      :set
      (fn [self value]
        (let [font    (fonts/get-font-data (obj/get self "fontId"))
-             variant (fonts/get-variant font value)]
+             variant (when (string? value)
+                       (fonts/find-variant font {:id value}))]
          (cond
-           (not (string? value))
+           (nil? variant)
            (u/not-valid plugin-id :fontVariantId value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -207,7 +201,7 @@
      (fn [_ value]
        (let [value (str/trim (dm/str value))]
          (cond
-           (or (empty? value) (not (re-matches font-size-re value)))
+           (not (txt/valid-font-size? value))
            (u/not-valid plugin-id :fontSize value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -289,7 +283,7 @@
      (fn [_ value]
        (let [value (str/trim (dm/str value))]
          (cond
-           (or (empty? value) (not (re-matches line-height-re value)))
+           (not (txt/valid-line-height? value))
            (u/not-valid plugin-id :lineHeight value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -312,7 +306,7 @@
      (fn [_ value]
        (let [value (str/trim (dm/str value))]
          (cond
-           (or (not (string? value)) (not (re-matches letter-spacing-re value)))
+           (not (txt/valid-letter-spacing? value))
            (u/not-valid plugin-id :letterSpacing value)
 
            (not (r/check-permission plugin-id "content:write"))
@@ -334,7 +328,7 @@
      :set
      (fn [_ value]
        (cond
-         (and (string? value) (not (re-matches text-transform-re value)))
+         (not (txt/valid-text-transform? value))
          (u/not-valid plugin-id :textTransform value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -550,7 +544,8 @@
       (fn [self value]
         (let [id      (obj/get self "$id")
               font    (fonts/get-font-data (obj/get self "fontId"))
-              variant (fonts/get-variant font value)]
+              variant (when (string? value)
+                        (fonts/find-variant font {:id value}))]
           (cond
             (not variant)
             (u/not-valid plugin-id :fontVariantId value)
@@ -571,7 +566,7 @@
         (let [id (obj/get self "$id")
               value (str/trim (dm/str value))]
           (cond
-            (or (empty? value) (not (re-matches font-size-re value)))
+            (not (txt/valid-font-size? value))
             (u/not-valid plugin-id :fontSize value)
 
             (not (r/check-permission plugin-id "content:write"))
@@ -640,7 +635,7 @@
         (let [id (obj/get self "$id")
               value (str/trim (dm/str value))]
           (cond
-            (or (empty? value) (not (re-matches line-height-re value)))
+            (not (txt/valid-line-height? value))
             (u/not-valid plugin-id :lineHeight value)
 
             (not (r/check-permission plugin-id "content:write"))
@@ -659,7 +654,7 @@
         (let [id (obj/get self "$id")
               value (str/trim (dm/str value))]
           (cond
-            (or (not (string? value)) (not (re-matches letter-spacing-re value)))
+            (not (txt/valid-letter-spacing? value))
             (u/not-valid plugin-id :letterSpacing value)
 
             (not (r/check-permission plugin-id "content:write"))
@@ -677,7 +672,7 @@
       (fn [self value]
         (let [id (obj/get self "$id")]
           (cond
-            (or (not (string? value)) (not (re-matches text-transform-re value)))
+            (not (txt/valid-text-transform? value))
             (u/not-valid plugin-id :textTransform value)
 
             (not (r/check-permission plugin-id "content:write"))

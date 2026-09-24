@@ -17,7 +17,7 @@
    [promesa.core :as p]))
 
 (defn render
-  [{:keys [file-id page-id share-id token scale type objects skip-children is-wasm] :as params} on-object]
+  [{:keys [file-id page-id share-id token scale type objects skip-children] :as params} on-object]
   (letfn [(prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
                               :height bw/default-viewport-height}
@@ -25,7 +25,7 @@
                                 :height bw/default-viewport-height}
                  :locale "en-US"
                  :storageState #js {:cookies (bw/create-cookies uri {:token token})}
-                 :deviceScaleFactor (if is-wasm 1 scale) ;; wasm won't use deviceScaleFactor
+                 :deviceScaleFactor scale
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
@@ -59,9 +59,7 @@
                     :share-id share-id
                     :object-id (mapv :id objects)
                     :route "objects"
-                    :skip-children skip-children
-                    :wasm (when is-wasm "true")
-                    :scale scale}
+                    :skip-children skip-children}
             uri    (-> (cf/get-internal-uri)
                        (u/ensure-path-slash)
                        (u/join "render.html")

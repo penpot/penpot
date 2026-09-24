@@ -366,12 +366,18 @@
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
               project-id (:default-project-id profile)
+              team       (teams/get-team pool
+                                         :profile-id profile-id
+                                         :project-id project-id)
               cfg        (assoc cfg
                                 ::bfc/overwrite false
                                 ::bfc/profile-id profile-id
                                 ::bfc/project-id project-id
+                                ::bfc/team-id (:id team)
                                 ::bfc/input path
-                                ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                                ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
+                                ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
+                                ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
                                 ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
           (bf.v3/import-files! cfg)
           {::yres/status  200
@@ -628,8 +634,11 @@
                         ::bfc/profile-id profile-id
                         ::bfc/project-id project-id
                         ::bfc/input path
+                        ::bfc/team-id (:id team)
                         ::bfc/features (cfeat/get-team-enabled-features cf/flags team)
-                        ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size)
+                        ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
+                        ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
+                        ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
                         ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
 
       (if (= format :binfile-v3)

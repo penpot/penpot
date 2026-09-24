@@ -15,7 +15,6 @@
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.drawing.curve :as curve]
    [app.main.data.workspace.drawing.line :as line]
-   [app.main.data.workspace.layout :as dwlo]
    [app.main.data.workspace.path :as path]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -46,11 +45,6 @@
       (rx/merge
        (when (= tool :path)
          (rx/of (start-drawing :path)))
-
-       ;; NOTE: comments are a special case and they manage they
-       ;; own interrupt cycle.
-       (when (= tool :comments)
-         (rx/of (dwlo/toggle-layout-flag :display-comments :force? true)))
 
        (when (and (not= tool :comments)
                   (not= tool :path))

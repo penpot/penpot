@@ -10,15 +10,18 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
+   [app.common.files.tokens :as cfo]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [beicon.v2.core :as rx]
+   [clojure.string :as str]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -464,7 +467,10 @@
 ;; ---- Token refs
 
 (def tokens-lib
-  (l/derived :tokens-lib workspace-data))
+  (l/derived dsh/lookup-tokens-lib st/state))
+
+(def tokens-status
+  (l/derived dsh/lookup-tokens-status st/state))
 
 (def workspace-token-theme-groups
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
@@ -501,26 +507,28 @@
 (def workspace-token-sets-tree
   (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
 
-(def workspace-active-theme-paths
-  (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
+(def workspace-active-theme-ids
+  (l/derived (d/nilf ctos/get-active-theme-ids) tokens-status))
 
 (def workspace-all-tokens-map
   (l/derived (d/nilf ctob/get-all-tokens-map) tokens-lib))
 
+;; TODOstatus ver una forma eficiente de hacer un derived de lib y status a la vez
 (defn token-sets-at-path-all-active
   [group-path]
   (l/derived
-   (fn [lib]
-     (when lib
-       (ctob/sets-at-path-all-active? lib group-path)))
-   tokens-lib))
-
-(def workspace-active-theme-paths-no-hidden
-  (l/derived #(disj % ctob/hidden-theme-path) workspace-active-theme-paths))
+   (fn [status]
+     (when status
+       (cfo/sets-at-path-all-active? status @(l/derived identity tokens-lib) group-path)))
+   tokens-status))
 
 ;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
-  (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
+  (l/derived (fn [[status lib]]
+               (if (and status lib)
+                 (cfo/get-tokens-in-active-sets status lib)
+                 {}))
+             [tokens-status tokens-lib]))
 
 (def workspace-token-in-selected-set
   (fn [token-id]
@@ -586,13 +594,22 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
+(defn- resolved-uri?
+  "Returns true if the uri is already a fully resolved URI (blob or data)."
+  [uri]
+  (and (string? uri)
+       (or (str/starts-with? uri "blob:")
+           (str/starts-with? uri "data:"))))
+
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
      (when-let [entry (dm/get-in state [:thumbnails object-id])]
        (cond-> entry
-         (:uri entry) (update :uri cf/resolve-media))))
+         (and (:uri entry)
+              (not (resolved-uri? (:uri entry))))
+         (update :uri cf/resolve-media))))
    st/state))
 
 (def workspace-text-modifier
@@ -658,9 +675,6 @@
 
 (def updating-library
   (l/derived :updating-library st/state))
-
-(def persistence-state
-  (l/derived (comp :status :persistence) st/state))
 
 (def progress
   (l/derived :progress st/state))

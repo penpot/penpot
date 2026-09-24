@@ -154,10 +154,14 @@
                                                  (get-in % [:props :member-email])))
                                         events))]
         (doseq [event [create-organization update-organization]]
+          (t/is (= (str (:id owner))
+                   (get-in event [:props :user-who-send-invitation])))
           (t/is (true? (get-in event [:props :team-belongs-to-organization])))
           (t/is (true? (get-in event [:props :adds-invitee-to-organization])))
           (t/is (true? (get-in event [:props :invitee-already-organization-member]))))
 
+        (t/is (= (str (:id owner))
+                 (get-in create-plain [:props :user-who-send-invitation])))
         (t/is (false? (get-in create-plain [:props :team-belongs-to-organization])))
         (t/is (false? (get-in create-plain [:props :adds-invitee-to-organization])))
         (t/is (false? (get-in create-plain [:props :invitee-already-organization-member])))))))
@@ -521,6 +525,9 @@
 
       (let [event (organization-event)]
         (t/is (= organization-id (get-in event [:props :organization-id])))
+        (t/is (= (:id invitee) (get-in event [:props :user-id])))
+        (t/is (= (:id inviter)
+                 (get-in event [:props :user-who-send-invitation])))
         (t/is (not (contains? (:props event) :organization-member-add-source)))
         (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
         (t/is (not (contains? (:props event) :organization-member-count-before)))
@@ -530,6 +537,10 @@
                  (:origin @frontend-event)))
         (t/is (= organization-id
                  (get-in @frontend-event [:props :organization-id])))
+        (t/is (= (:id invitee)
+                 (get-in @frontend-event [:props :user-id])))
+        (t/is (= (:id inviter)
+                 (get-in @frontend-event [:props :user-who-send-invitation])))
         (t/is (= "direct-organization-invitation"
                  (get-in @frontend-event [:props :organization-member-add-source])))
         (t/is (false? (get-in @frontend-event [:props :belongs-to-team-on-add])))
@@ -570,6 +581,9 @@
         (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
         (t/is (= (:id team) (get-in event [:props :team-id])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
+        (t/is (= (:id invitee) (get-in event [:props :user-id])))
+        (t/is (= (:id inviter)
+                 (get-in event [:props :user-who-send-invitation])))
         (t/is (not (contains? (:props event) :organization-member-add-source)))
         (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
         (t/is (not (contains? (:props event) :organization-member-count-before)))
@@ -578,6 +592,10 @@
         (t/is (= (:id team) (get-in @frontend-event [:props :team-id])))
         (t/is (= organization-id
                  (get-in @frontend-event [:props :organization-id])))
+        (t/is (= (:id invitee)
+                 (get-in @frontend-event [:props :user-id])))
+        (t/is (= (:id inviter)
+                 (get-in @frontend-event [:props :user-who-send-invitation])))
         (t/is (= "team-invitation"
                  (get-in @frontend-event [:props :organization-member-add-source])))
         (t/is (true? (get-in @frontend-event [:props :belongs-to-team-on-add])))
@@ -1408,3 +1426,27 @@
       (t/is (not (th/success? out)))
       (t/is (th/ex-of-type? (:error out) :not-found))
       (t/is (th/ex-of-code? (:error out) :member-does-not-exist)))))
+
+(t/deftest create-team-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest create-team-with-invitations-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-team-with-invitations
+                              ::rpc/profile-id (:id profile)
+                              :name "team with client id"
+                              :emails ["invitee@example.com"]
+                              :role :editor
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

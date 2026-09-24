@@ -5,6 +5,7 @@ Check commit messages against Penpot's commit guidelines.
 Validates commit messages using the rules defined in:
   - .github/workflows/commit-checker.yml (regex pattern)
   - CONTRIBUTING.md (formatting rules, subject length, DCO)
+  - .serena/memories/workflow/creating-commits.md (body wrapped at 76 chars)
 
 By default, checks HEAD. Use --commit to specify a different commit.
 
@@ -37,6 +38,20 @@ COMMIT_PATTERN = re.compile(
 )
 
 MERGE_PATTERN = re.compile(r"^(Merge|Revert|Reapply).+[^.]$")
+
+# ── Body line wrapping ───────────────────────────────────────────────────────
+# Commit bodies must wrap at 76 characters (see
+# .serena/memories/workflow/creating-commits.md). That leaves room for the
+# four-space indent git log adds, fitting an 80-column terminal. Trailers and
+# URLs are exempt: they cannot be wrapped without losing meaning.
+MAX_BODY_LINE = 76
+
+TRAILER_PATTERN = re.compile(
+    r"^(Signed-off-by|Co-authored-by|Co-developed-by|Reviewed-by|"
+    r"Acked-by|Tested-by|Reported-by|Suggested-by|AI-assisted-by):"
+)
+
+URL_PATTERN = re.compile(r"https?://\S+")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Helpers
@@ -93,11 +108,11 @@ def check_regex(message):
 
 
 def check_subject_length(message):
-    """Subject line must be ≤ 90 characters."""
+    """Subject line must be ≤ 70 characters."""
     first_line = message.split("\n")[0]
-    if len(first_line) > 90:
+    if len(first_line) > 70:
         return False, (
-            f"Subject line exceeds 90 characters ({len(first_line)} chars):\n"
+            f"Subject line exceeds 70 characters ({len(first_line)} chars):\n"
             f"  {first_line}"
         )
     return True, None
@@ -148,6 +163,41 @@ def check_body_blank_line(message):
     return True, None
 
 
+def check_body_line_length(message):
+    """Body lines must wrap at 76 characters or fewer.
+
+    The subject (first line) has its own length rule. Trailers (e.g.
+    Signed-off-by) and lines carrying a URL are exempt, since wrapping them
+    would break tooling or lose information.
+    """
+    lines = message.split("\n")
+    offenders = []
+
+    for line_number, line in enumerate(lines[1:], start=2):
+        if len(line) <= MAX_BODY_LINE:
+            continue
+        if TRAILER_PATTERN.match(line):
+            continue
+        if URL_PATTERN.search(line):
+            continue
+        # A long token with no whitespace before the limit cannot be wrapped.
+        if " " not in line[:MAX_BODY_LINE]:
+            continue
+        offenders.append((line_number, line))
+
+    if not offenders:
+        return True, None
+
+    details = "\n".join(
+        f"    line {line_number} ({len(line)} chars): {line!r}"
+        for line_number, line in offenders
+    )
+    return False, (
+        f"Body lines must wrap at {MAX_BODY_LINE} characters or fewer. "
+        "Unwrapped line(s):\n" + details
+    )
+
+
 def check_signed_off_by(message):
     """Check for the DCO Signed-off-by line (required for code changes)."""
     if "Signed-off-by:" not in message:
@@ -179,10 +229,11 @@ def main():
 
     validators = [
         ("Regex pattern", check_regex),
-        ("Subject ≤ 90 chars", check_subject_length),
+        ("Subject ≤ 70 chars", check_subject_length),
         ("No trailing period in subject", check_subject_no_trailing_dot),
         ("Subject capitalized", check_subject_capitalized),
         ("Blank line after subject", check_body_blank_line),
+        ("Body wrapped at 76 chars", check_body_line_length),
     ]
 
     all_ok = True

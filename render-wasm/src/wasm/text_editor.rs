@@ -3,10 +3,8 @@ use macros::{wasm_error, ToJs};
 use crate::globals::{get_render_state, get_text_editor_state};
 use crate::math::{Matrix, Point};
 use crate::mem;
-use crate::render::text_editor as text_editor_render;
-use crate::render::SurfaceId;
-use crate::shapes::{TextAlign, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{State, TextEditorEvent};
+use crate::shapes::{TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::{State, TextEditorEvent, TextEditorState};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::uuid::Uuid;
@@ -133,8 +131,10 @@ pub extern "C" fn text_editor_select_all() -> bool {
     })
 }
 
-#[no_mangle]
-pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+fn with_active_text_at_point<F>(x: f32, y: f32, apply: F)
+where
+    F: FnOnce(&mut TextEditorState, &TextContent, &TextPositionWithAffinity),
+{
     with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
@@ -154,8 +154,30 @@ pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
 
         let point = Point::new(x, y);
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            get_text_editor_state().select_word_boundary(text_content, &position);
+            apply(get_text_editor_state(), text_content, &position);
         }
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_word_boundary(text_content, position)
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_paragraph(x: f32, y: f32) {
+    // A drag that produced a range must survive the trailing click; a jitter
+    // that left the caret collapsed must not suppress the paragraph select.
+    let editor = get_text_editor_state();
+    if editor.is_click_event_skipped && editor.selection.is_selection() {
+        editor.is_click_event_skipped = false;
+        return;
+    }
+
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_paragraph(text_content, position)
     })
 }
 
@@ -827,7 +849,7 @@ fn update_text_layout_if_needed(state: &mut State, shape_id: Uuid) {
 /// Repaint the caret/selection over the last fully rendered frame.
 ///
 /// Re-composes Target from the Backbuffer (which still holds the last complete
-/// render) and draws the editor overlay on top, in a single submitted frame.
+/// render); the compose step draws the editor overlay itself.
 ///
 /// This exists because the caret blink must erase the previous caret, which
 /// means restoring the pixels underneath it. Doing that via `render_from_cache`
@@ -843,49 +865,7 @@ pub extern "C" fn text_editor_render_caret() {
         };
 
         update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        get_render_state().compose_frame(&state.shapes);
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn text_editor_render_overlay() {
-    with_state!(state, {
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return;
-        };
-
-        update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
+        get_render_state().present_frame(&state.shapes);
     });
 }
 
@@ -900,11 +880,11 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let Some(shape) = state.shapes.get(&shape_id) else {
+        let Some(shape) = state.shapes.get_mut(&shape_id) else {
             return std::ptr::null_mut();
         };
 
-        let Type::Text(text_content) = &shape.shape_type else {
+        let Type::Text(text_content) = &mut shape.shape_type else {
             return std::ptr::null_mut();
         };
 
@@ -919,11 +899,18 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\n', "\\n")
                     .replace('\r', "\\r")
                     .replace('\t', "\\t");
-                span_parts.push(format!("\"{}\"", escaped_text));
+                span_parts.push(format!(
+                    "{{\"p\":{},\"s\":{},\"t\":\"{}\"}}",
+                    span.paragraph_position, span.span_position, escaped_text
+                ));
             }
             json_parts.push(format!("[{}]", span_parts.join(",")));
         }
         let json = format!("[{}]", json_parts.join(","));
+
+        // The host rebuilds its content tree out of this JSON, so the current
+        // positions are what the next call has to report against.
+        text_content.reset_span_positions();
 
         let mut bytes = json.into_bytes();
         bytes.push(0);

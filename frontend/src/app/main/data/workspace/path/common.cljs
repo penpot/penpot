@@ -15,7 +15,7 @@
 
 (defn clean-edit-state
   [state]
-  (dissoc state :last-point :prev-handler :drag-handler :preview))
+  (dissoc state :last-point :prev-handler :drag-handler :preview :pending-start))
 
 (defn- drop-trailing-move-to
   "Drops a trailing subpath start without segments."

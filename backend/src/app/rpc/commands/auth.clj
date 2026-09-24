@@ -7,6 +7,7 @@
 (ns app.rpc.commands.auth
   (:require
    [app.auth :as auth]
+   [app.auth.login-lockout :as login-lockout]
    [app.auth.oidc :as oidc]
    [app.auth.passwords :as passwords]
    [app.common.data :as d]
@@ -33,11 +34,9 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
-   [app.setup.welcome-file :refer [create-welcome-file]]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -87,9 +86,21 @@
               (ex/raise :type :restriction
                         :code :profile-blocked
                         :hint "profile is marked as blocked"))
+            (let [result (login-lockout/locked? cfg (:id profile))]
+              (when (:locked? result)
+                (ex/raise :type :rate-limit
+                          :code :account-locked
+                          :hint "account locked due to too many failed login attempts"
+                          :ttl (:ttl result))))
             (when-not (check-password cfg profile password)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
+              (let [result (login-lockout/record-failed-attempt! cfg (:id profile))]
+                (if (and result (:locked? result))
+                  (ex/raise :type :rate-limit
+                            :code :account-locked
+                            :hint "account locked due to too many failed login attempts"
+                            :ttl (:ttl result))
+                  (ex/raise :type :validation
+                            :code :wrong-credentials))))
             (when-let [deleted-at (:deleted-at profile)]
               (when (ct/is-after? (ct/now) deleted-at)
                 (ex/raise :type :validation
@@ -113,6 +124,7 @@
                                {:invitation-token (:invitation-token params)}
                                (assoc profile :is-admin (let [admins (cf/get :admins)]
                                                           (contains? admins (:email profile)))))]
+              (login-lockout/clear-attempts! cfg (:id profile))
               (-> response
                   (rph/with-transform (session/create-fn cfg profile))
                   (rph/with-meta {::audit/props (audit/profile->props profile)
@@ -181,11 +193,19 @@
           (update-password [conn profile-id]
             (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
-              nil))]
+              (db/get-by-id conn :profile profile-id)))]
 
     (passwords/validate-password password)
-    (->> (validate-token token)
-         (update-password conn))
+
+    (let [profile (some->> (validate-token token)
+                           (update-password conn))]
+      (when profile
+        (login-lockout/clear-attempts! cfg (:id profile))
+        (eml/send! {::eml/conn conn
+                    ::eml/factory eml/password-changed
+                    :public-uri (cf/get :public-uri)
+                    :to (:email profile)
+                    :name (:fullname profile)})))
 
     nil))
 
@@ -308,7 +328,6 @@
    [:fullname ::sm/text]
    [:email ::sm/email]
    [:password schema:password]
-   [:create-welcome-file {:optional true} :boolean]
    [:accept-newsletter-updates {:optional true} :boolean]
    [:invitation-token {:optional true} schema:token]])
 
@@ -446,7 +465,7 @@
                  :extra-data ptoken}))))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
         params     (cond-> claims
                      (:accept-newsletter-updates params)
@@ -469,14 +488,7 @@
                      (tokens/verify cfg {:token token :iss :team-invitation}))
 
         props      (-> (audit/profile->props profile)
-                       (assoc :from-invitation (some? invitation)))
-
-
-        create-welcome-file-when-needed
-        (fn []
-          (when (:create-welcome-file params)
-            (let [cfg (dissoc cfg ::db/conn)]
-              (wrk/submit! executor (create-welcome-file cfg profile)))))]
+                       (assoc :from-invitation (some? invitation)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
@@ -525,7 +537,6 @@
                  :email (:email profile)
                  :invitation-token token}
                 (rph/with-transform (session/create-fn cfg profile claims))
-                (rph/with-defer create-welcome-file-when-needed)
                 (rph/with-meta {::audit/replace-props props
                                 ::audit/context {:action "accept-invitation"}
                                 ::audit/profile-id (:id profile)})))
@@ -533,7 +544,6 @@
           (:is-active profile)
           (-> (profile/strip-private-attrs profile)
               (rph/with-transform (session/create-fn cfg profile claims))
-              (rph/with-defer create-welcome-file-when-needed)
               (rph/with-meta
                 {::audit/replace-props props
                  ::audit/context {:action "login"}
@@ -548,7 +558,6 @@
 
             (-> {:id (:id profile)
                  :email (:email profile)}
-                (rph/with-defer create-welcome-file-when-needed)
                 (rph/with-meta
                   {::audit/replace-props props
                    ::audit/context {:action "email-verification"}

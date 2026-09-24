@@ -25,10 +25,10 @@ export function extractCookie(setCookieHeader, name = "auth-token") {
   return match ? match[1] : null;
 }
 
-export async function rpcPost(method, body = {}, { cookieToken, accessToken } = {}) {
+export async function rpcPost(method, body = {}, { cookieToken, accessToken, contentType, accept, query } = {}) {
   const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    "Content-Type": contentType || "application/json",
+    Accept: accept || "application/json",
   };
   if (cookieToken) {
     headers.Cookie = `auth-token=${cookieToken}`;
@@ -37,10 +37,14 @@ export async function rpcPost(method, body = {}, { cookieToken, accessToken } = 
     headers.Authorization = `Token ${accessToken}`;
   }
 
-  const response = await fetch(`${config.baseUrl}/api/main/methods/${method}`, {
+  const url = query
+    ? `${config.baseUrl}/api/main/methods/${method}?${query}`
+    : `${config.baseUrl}/api/main/methods/${method}`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body),
+    body: typeof body === "string" ? body : JSON.stringify(body),
   });
 
   return parseResponse(response);

@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
@@ -290,14 +289,18 @@
        get-components-with-duplicated-variant-props-and-values
        (map :main-instance-id)))
 
+(defn- get-variant-option
+  [val]
+  {:id val
+   :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)})
+
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
   (->> (filter #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (mapv (fn [val] {:id val
-                        :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
+       (mapv get-variant-option)))
 
 (mf/defc component-variant-property*
   [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
@@ -386,7 +389,7 @@
         (mf/use-fn
          (mf/deps component-ids)
          (fn [pos value]
-           (let [value (d/nilv (str/trim value) "")]
+           (let [value (ctv/normalize-property-text (d/nilv value ""))]
              (doseq [id component-ids]
                (st/emit!
                 (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:combo-design-tab"})
@@ -397,11 +400,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (str/trim (dom/get-target-val event))
+           (let [value (ctv/normalize-property-text (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (seq value)
+             (when (ctv/valid-property-name? value)
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))
 
@@ -527,8 +530,12 @@
       (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (get % pos))) properties)
               base-options (get options-by-name (:name prop))
+              no-options?  (empty? base-options)
               boolean-pair (ctv/find-boolean-pair (mapv :id base-options))
               options      (cond-> base-options
+                             no-options?
+                             (conj (get-variant-option (:value prop)))
+
                              mixed-value?
                              (conj {:id mixed-label :label mixed-label :dimmed true}))]
 
@@ -549,6 +556,7 @@
               [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
                            :options options
                            :empty-to-end true
+                           :disabled no-options?
                            :on-change (partial switch-component pos)
                            :key (str (:value prop) "-" key)}]])]))]
 
@@ -734,17 +742,6 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        find-parent-components
-        (mf/use-fn
-         (mf/deps objects)
-         (fn [shape]
-           (->> (cfh/get-parents objects (:id shape))
-                (map :component-id)
-                (remove nil?))))
-
-        ;; Get the ids of the components that are parents of the shapes, to avoid loops
-        parent-components (mapcat find-parent-components shapes)
-
         libraries-options  (map (fn [library] {:value (:id library)
                                                :label (:name library)})
                                 (vals libraries))
@@ -834,10 +831,9 @@
             (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
-                  components (->> (cfh/get-children-with-self (:objects container) (:id root-shape))
-                                  (keep :component-id)
-                                  set)
-                  loop?      (some #(contains? components %) parent-components)]
+                  loop?      (some #(dwl/component-swap-nesting-loop?
+                                     objects % data (:id item))
+                                   shapes)]
               [:> component-swap-item* {:key (dm/str (:id item))
                                         :item item
                                         :loop loop?
@@ -1234,11 +1230,11 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [value (dom/get-target-val event)
+           (let [value (ctv/normalize-property-text (dom/get-target-val event))
                  pos   (-> (dom/get-current-target event)
                            (dom/get-data "position")
                            int)]
-             (when (seq value)
+             (when (ctv/valid-property-name? value)
                (st/emit!
                 (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-component"}))))))
 
@@ -1249,7 +1245,7 @@
            (let [pos (-> (dom/get-current-target event)
                          (dom/get-data "position")
                          int)]
-             (when (> (count properties) 1)
+             (when (ctv/can-remove-property? properties)
                (st/emit!
                 (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:button-design-tab"})
                 (dwv/remove-property variant-id pos))))))

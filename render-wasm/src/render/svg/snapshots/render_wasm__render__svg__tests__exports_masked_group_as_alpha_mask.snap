@@ -1,0 +1,10 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120" viewBox="0 0 200 120"><defs><mask id="mask0" maskUnits="userSpaceOnUse" mask-type="alpha">
+	<rect x="40" y="20" width="120" height="80"/>
+</mask></defs><g mask="url(#mask0)">
+	<rect fill="#3D7BFF" width="200" height="120"/>
+</g></svg>

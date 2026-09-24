@@ -173,9 +173,11 @@ main() {
         fi
     done
 
-    # Get tracked files matching our extensions
-    local files
-    files=$(git ls-files | grep -E "\.(${EXTENSIONS})$" || true)
+    # Get tracked files matching our extensions, excluding this script itself
+    # (it mentions the search string in its own usage docs).
+    local files script_name
+    script_name=$(basename "$0")
+    files=$(git ls-files | grep -E "\.(${EXTENSIONS})$" | grep -v -F "$script_name" || true)
 
     if [[ -z "$files" ]]; then
         log_warn "No tracked files found matching extensions: ${EXTENSIONS}"

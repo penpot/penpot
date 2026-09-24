@@ -110,6 +110,7 @@
                           :command (ds/c-mod "v")
                           :subsections [:edit]
                           :section [:workspace]
+                          :customizable false
                           :fn (constantly nil)}
 
    :paste-replace        {:tooltip (ds/meta (ds/shift "V"))

@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as cc]
+   [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
    [app.main.data.common :as dcm]
@@ -64,6 +65,9 @@
          (or (not (string? value)) (empty? value))
          (u/not-valid plugin-id :name value)
 
+         (not (r/check-permission plugin-id "content:write"))
+         (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
+
          :else
          (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
 
@@ -75,16 +79,28 @@
          (shape/shape-proxy plugin-id file-id page-id frame)))
      :set
      (fn [_ value]
-       (cond
-         (not (shape/shape-proxy? value))
-         (u/not-valid plugin-id :startingBoard value)
+       (let [page (u/locate-page file-id page-id)]
+         (cond
+           (or (not (shape/shape-proxy? value))
+               (not= file-id (obj/get value "$file"))
+               (not= page-id (obj/get value "$page"))
+               (not (ctp/valid-flow-starting-frame? page (obj/get value "$id") id)))
+           (u/not-valid plugin-id :startingBoard value)
 
-         :else
-         (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :startingBoard "Plugin doesn't have 'content:write' permission")
+
+           :else
+           (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id")))))))}
 
     :remove
     (fn []
-      (st/emit! (dwi/remove-flow page-id id)))))
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dwi/remove-flow page-id id))))))
 
 (defn page-proxy? [proxy]
   (obj/type-of? proxy "PageProxy"))
@@ -104,15 +120,16 @@
      :get #(-> % u/proxy->page :name)
      :set
      (fn [_ value]
-       (cond
-         (not (string? value))
-         (u/not-valid plugin-id :name value)
+       (let [value (ctp/normalize-page-name value)]
+         (cond
+           (not (ctp/valid-page-name? value))
+           (u/not-valid plugin-id :name value)
 
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/not-valid plugin-id :name "Plugin doesn't have 'content:write' permission")
 
-         :else
-         (st/emit! (dw/rename-page id value))))}
+           :else
+           (st/emit! (dw/rename-page id value)))))}
 
     :getRoot
     (fn []
@@ -308,25 +325,35 @@
 
     :createFlow
     (fn [name frame]
-      (cond
-        (or (not (string? name)) (empty? name))
-        (u/not-valid plugin-id :createFlow-name name)
+      (let [page (u/locate-page file-id id)]
+        (cond
+          (or (not (string? name)) (empty? name))
+          (u/not-valid plugin-id :createFlow-name name)
 
-        (not (shape/shape-proxy? frame))
-        (u/not-valid plugin-id :createFlow-frame frame)
+          (or (not (shape/shape-proxy? frame))
+              (not= file-id (obj/get frame "$file"))
+              (not= id (obj/get frame "$page"))
+              (not (ctp/valid-flow-starting-frame? page (obj/get frame "$id") nil)))
+          (u/not-valid plugin-id :createFlow-frame frame)
 
-        :else
-        (let [flow-id (uuid/next)]
-          (st/emit!
-           (dwi/add-flow flow-id id name (obj/get frame "$id"))
-           (se/event plugin-id "add-flow"))
-          (flow-proxy plugin-id file-id id flow-id))))
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :createFlow "Plugin doesn't have 'content:write' permission")
+
+          :else
+          (let [flow-id (uuid/next)]
+            (st/emit!
+             (dwi/add-flow flow-id id name (obj/get frame "$id"))
+             (se/event plugin-id "add-flow"))
+            (flow-proxy plugin-id file-id id flow-id)))))
 
     :removeFlow
     (fn [flow]
       (cond
         (not (flow-proxy? flow))
         (u/not-valid plugin-id :removeFlow-flow flow)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :removeFlow "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit!
@@ -335,7 +362,8 @@
 
     :addRulerGuide
     (fn [orientation value board]
-      (let [shape (u/proxy->shape board)]
+      (let [shape (when (shape/shape-proxy? board)
+                    (u/locate-shape file-id id (obj/get board "$id")))]
         (cond
           (not (sm/valid-safe-number? value))
           (u/not-valid plugin-id :addRulerGuide "Value not a safe number")
@@ -343,8 +371,10 @@
           (not (contains? #{"vertical" "horizontal"} orientation))
           (u/not-valid plugin-id :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
 
-          (and (some? shape)
+          (and (some? board)
                (or (not (shape/shape-proxy? board))
+                   (not= file-id (obj/get board "$file"))
+                   (not= id (obj/get board "$page"))
                    (not (cfh/frame-shape? shape))))
           (u/not-valid plugin-id :addRulerGuide "The shape is not a board")
 
@@ -388,7 +418,7 @@
       (let [shape (when board (u/proxy->shape board))
             position (parser/parse-point position)]
         (cond
-          (or (not (string? content)) (empty? content))
+          (not (dc/valid-comment-content? content))
           (u/not-valid plugin-id :addCommentThread "Content not valid")
 
           (or (not (sm/valid-safe-number? (:x position)))

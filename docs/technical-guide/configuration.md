@@ -310,6 +310,37 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
+### Account lockout
+
+__Since version 2.19.0__
+
+Account lockout is disabled by default. Backend administrators can enable it by
+adding the <code class="language-bash">enable-account-lockout</code> flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-account-lockout
+```
+
+When enabled, Penpot locks an existing account after 5 failed password or LDAP
+login attempts within 15 minutes. It only applies to the password and LDAP
+logins; OIDC and the other authentication providers are not affected. The
+defaults can be changed with:
+
+```bash
+# Backend
+PENPOT_LOGIN_LOCKOUT_MAX_ATTEMPTS: 5
+PENPOT_LOGIN_LOCKOUT_WINDOW: 15m
+```
+
+While the account is locked, login returns HTTP 429 with a `Retry-After`
+header and a JSON error with the code `account-locked` and the remaining
+seconds in `ttl`.
+
+Redis must be available. If Redis fails, login continues without lockout
+checks. This feature prevents repeated password guessing, but anyone who knows
+an email address can lock that account by failing the configured number of
+attempts.
+
 ## Penpot URI
 
 You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
@@ -432,6 +463,133 @@ PENPOT_FLAGS: [...] enable-air-gapped-conf
 
 When Penpot starts, it will leave out the Nginx configuration related to external requests. This means that,
 with this flag enabled, the Penpot configuration will disable as well the libraries and templates dashboard and the use of Google fonts.
+
+## Security headers
+
+The frontend container always emits `X-Content-Type-Options`, `Referrer-Policy`,
+`Permissions-Policy` and `X-Frame-Options`. Two additional headers are configurable.
+
+### Content Security Policy
+
+Penpot ships a Content Security Policy in **report-only** mode by default. In this mode
+browsers report violations to the developer console but do not block anything, which makes
+it safe to enable everywhere while the policy is being tuned.
+
+```bash
+PENPOT_CSP_MODE: report-only    # report-only (default) | enforce | disabled
+```
+
+The default policy is same-origin except for what the application genuinely requires:
+`'wasm-unsafe-eval'` for the render engine, `'unsafe-inline'` styles for the inline style
+attributes emitted by the UI, and `blob:`/`data:` for thumbnails, exports and fonts. The
+external Google Fonts and GitHub templates endpoints do not need entries of their own
+because they are reverse proxied by the frontend container.
+
+The inline scripts of the pages served by the container are covered by sha256 hashes
+generated during the frontend build, so they need no exception of their own.
+
+One known source of violations remains, and it is the reason `enforce` is not yet the
+default. The plugin runtime initialises on every page load, whether or not a plugin is
+opened, and its sandbox needs `eval` to evaluate plugin code. Under the default policy
+those calls are blocked: the application still loads, but the plugin system is degraded,
+and opening a plugin additionally needs its remote host reachable from `connect-src` and
+`frame-src`.
+
+OIDC single sign-on needs no exception: the provider is reached by navigating away from
+Penpot, which no directive of this policy governs, the response returns as a redirect, and
+both discovery and the token exchange happen on the backend rather than in the browser.
+
+#### Extending the policy
+
+Most deployments need to add an origin rather than rewrite the policy: a plugin host, an
+analytics endpoint, a corporate font server. Declare only the addition and the rest of the
+default policy, hashes included, stays in place:
+
+```bash
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https://analytics.example.com"
+```
+
+The extensible directives are `script-src`, `style-src`, `img-src`, `font-src`,
+`connect-src` and `frame-src`. `base-uri`, `form-action`, `object-src` and
+`frame-ancestors` are not extensible, since relaxing them removes the protection they
+provide and no ordinary deployment needs to.
+
+`PENPOT_CSP_REPORT_URI` adds a `report-uri` directive, which is how a deployment collects
+violations from real traffic while the policy is still in report-only mode.
+
+#### Running plugins under an enforcing policy
+
+Plugins need four directives, and under enforcing mode a missing one fails quietly rather
+than reporting an error. The symptoms are worth knowing: the sandbox refuses to start
+without `script-src`, installing a plugin fails with a network error without
+`connect-src`, its icon does not appear without `img-src`, and its interface stays blank
+without `frame-src`.
+
+```bash
+PENPOT_CSP_SCRIPT_SRC_EXTRA: "'unsafe-eval'"
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https://plugins.example.com"
+PENPOT_CSP_IMG_SRC_EXTRA: "https://plugins.example.com"
+PENPOT_CSP_FRAME_SRC_EXTRA: "https://plugins.example.com"
+```
+
+`'unsafe-eval'` is required because the plugin sandbox evaluates plugin code, and it
+applies to the whole application rather than to plugins alone. Note also that the plugin
+runtime initialises on every page load whether or not a plugin is opened, so without it
+the sandbox reports violations even on a deployment where nobody uses plugins.
+
+Listing the origins explicitly restricts which plugins can run, which the browser then
+enforces. A deployment that cannot know in advance where its users install plugins from
+needs the permissive form instead:
+
+```bash
+PENPOT_CSP_SCRIPT_SRC_EXTRA: "'unsafe-eval'"
+PENPOT_CSP_CONNECT_SRC_EXTRA: "https:"
+PENPOT_CSP_IMG_SRC_EXTRA: "https:"
+PENPOT_CSP_FRAME_SRC_EXTRA: "https:"
+```
+
+#### Replacing the policy
+
+`PENPOT_CSP_POLICY` defines the whole policy and takes precedence, in which case the
+variables above are ignored and a warning is logged at startup.
+
+Be aware that this also replaces the generated hashes, which change on every build. A
+deployment that pins the whole policy has to recompute them at each release or the
+application stops loading, so prefer the extension variables unless you really need to
+remove a directive or add one the variables above do not cover.
+
+`upgrade-insecure-requests` is an example of the latter. To add it, read the policy the
+container is currently serving and use it as the starting point:
+
+```bash
+curl -sI https://penpot.example.com/ | grep -i content-security-policy
+```
+
+Then set the whole thing, with the hashes taken from that output:
+
+```bash
+PENPOT_CSP_POLICY: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; manifest-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-...' 'sha256-...'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; upgrade-insecure-requests"
+```
+
+Remember to repeat that step on every upgrade, since the hashes will have changed.
+
+<p class="advice">
+  Because of the above, <code class="language-bash">enforce</code> with the default policy
+  suits deployments that do not use plugins. Anywhere else it needs a policy of your own.
+</p>
+
+### HTTP Strict Transport Security
+
+HSTS is enabled automatically when `PENPOT_PUBLIC_URI` uses the `https` scheme, and
+disabled otherwise. Override the header value directly to customise it, or set it to an
+empty value to disable it:
+
+```bash
+PENPOT_HSTS_VALUE: "max-age=63072000; includeSubDomains; preload"
+```
+
+Note that `includeSubDomains` and `preload` affect every host under your domain and are
+hard to roll back, so they are not enabled by default.
 
 ## High availability
 
@@ -660,6 +818,48 @@ PENPOT_INTERNAL_URI: http://penpot-frontend:8080
   `http://penpot-frontend:8080` used in the docker-compose is a good default and
   it is recommended to keep it unchanged.
 
+### MCP
+
+The MCP server lets AI agents read and edit Penpot files. It runs as a separate
+`penpot-mcp` container, and the frontend proxies the requests to it. Enable it with
+the corresponding flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-mcp
+```
+
+With the flag enabled, the frontend container uses these variables to locate the MCP
+server:
+
+```bash
+# Frontend
+PENPOT_MCP_URI: http://penpot-mcp:4401
+PENPOT_MCP_URI_WS: http://penpot-mcp:4402
+```
+
+- `PENPOT_MCP_URI`: The URI of the MCP server, used for the Streamable HTTP
+  endpoint.
+- `PENPOT_MCP_URI_WS`: The URI of the MCP server used for the websocket connection.
+
+The defaults match the service name used in the official `docker-compose.yaml`. Change
+them only if your MCP service has a different name or listens on other ports. Both
+variables are ignored when the `enable-mcp` flag is not set.
+
+### Internal resolver
+
+The frontend container resolves the backend, exporter and MCP service names with the
+DNS servers listed in its `/etc/resolv.conf`. If that autodetection does not work for
+your setup, set the resolver explicitly:
+
+```bash
+# Frontend
+PENPOT_INTERNAL_RESOLVER: 127.0.0.11
+```
+
+- `PENPOT_INTERNAL_RESOLVER`: The DNS server nginx uses to resolve the internal service
+  names. Defaults to the nameservers found in `/etc/resolv.conf`. `127.0.0.11` is the
+  embedded Docker DNS server; use the address of your own resolver on other setups.
+
 ## Other flags
 
 There are other flags that are useful for a more customized Penpot experience. This section has the list of the flags meant
@@ -670,6 +870,9 @@ for the user:
 - <code class="language-bash">enable-backend-api-doc</code>: Enables the <code class="language-bash">/api/doc</code>
   endpoint that lists all rpc methods available on backend
 - <code class="language-bash">disable-login-with-password</code>: allows disable password based login form
+- <code class="language-bash">enable-mcp</code>: Enables the MCP server integration, so AI agents can
+  read and edit Penpot files. It also makes the frontend proxy the MCP endpoints to the
+  <code class="language-bash">penpot-mcp</code> service. Check the [MCP section][8] to get more detail.
 - <code class="language-bash">enable-prepl-server</code>: enables PREPL server, used by manage.py and other additional
   tools to communicate internally with Penpot backend. Check the [CLI section][5] to get more detail.
 
@@ -685,6 +888,9 @@ __Since version 2.0.0__
 - <code class="language-bash">enable-webhooks</code>: enables webhooks. More detail about this configuration in [webhooks section][6].
 - <code class="language-bash">enable-access-tokens</code>: enables access tokens. More detail about this configuration in [access tokens section][7].
 - <code class="language-bash">disable-google-fonts-provider</code>: disables the google fonts provider.
+- <code class="language-bash">enable-link-preview</code>: enables Open Graph link previews for shared links.
+  File names and dashboard thumbnails become readable by anyone holding the link, so only enable
+  it if you accept that trade-off. More detail in the [link previews page][9].
 
 [1]: /technical-guide/getting-started#configure-penpot-with-elestio
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
@@ -693,3 +899,5 @@ __Since version 2.0.0__
 [5]: /technical-guide/getting-started/docker#using-the-cli-for-administrative-tasks
 [6]: /technical-guide/integration/#webhooks
 [7]: /technical-guide/integration/#access-tokens
+[8]: /mcp/
+[9]: /technical-guide/developer/subsystems/link-preview/

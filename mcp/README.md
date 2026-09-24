@@ -50,7 +50,7 @@ Follow the steps below to enable the integration.
 
 ### Prerequisites
 
-The project requires [Node.js](https://nodejs.org/) (tested with v22.x).
+The project requires [Node.js](https://nodejs.org/) 20 or later (tested with v22.x).
 
 ### 1. Starting the MCP Server and the Plugin Server
 
@@ -68,7 +68,7 @@ Once the servers are running, continue with step 2.
 
 #### Running the Source Version from the Repository
 
-The tools `corepack` and `npx` should be available in your terminal.
+The tools `pnpm` and `npx` should be available in your terminal.
 
 On Windows, use the Git Bash terminal to ensure compatibility with the provided scripts.
 
@@ -160,13 +160,13 @@ This bootstrap command will:
 >     inspection. 
 >     (If you are using a standard commercial model, it almost certainly supports vision already.)
 
-By default, the server runs on port 4401 and provides:
+By default, the server provides a Streamable HTTP endpoint at `http://localhost:4401/mcp`.
 
-- **Modern Streamable HTTP endpoint**: `http://localhost:4401/mcp`
-- **Legacy SSE endpoint**: `http://localhost:4401/sse`
+The legacy `/sse` and `/messages` endpoints are no longer supported.
+Clients using the legacy SSE transport must switch to Streamable HTTP at `/mcp`.
 
 You can change the port by setting the `PENPOT_MCP_SERVER_PORT` environment variable
-before starting the server. These endpoints can be used directly by MCP clients that support them.
+before starting the server. This endpoint can be used directly by MCP clients that support Streamable HTTP.
 Simply configure the client to connect the MCP server by providing the respective URL.
 
 #### Configuring your client
@@ -186,7 +186,7 @@ More information on connecting your client follows below.
 
 #### Using a Proxy for stdio Transport
 
-The `mcp-remote` package can proxy stdio transport to HTTP/SSE, 
+The `mcp-remote` package can proxy stdio transport to Streamable HTTP,
 allowing clients that support only stdio to connect to the MCP server indirectly.
 Use it to provide the launch command for your MCP client as follows:
 
@@ -259,17 +259,18 @@ The Penpot MCP server can be configured using environment variables.
 
 ### Server Configuration
 
-| Environment Variable                             | Description                                                                | Default        |
-|--------------------------------------------------|----------------------------------------------------------------------------|----------------|
-| `PENPOT_MCP_SERVER_HOST`                         | Address on which the MCP server listens (binds to)                         | `localhost`    |
-| `PENPOT_MCP_SERVER_PORT`                         | Port for the HTTP/SSE server                                               | `4401`         |
-| `PENPOT_MCP_WEBSOCKET_PORT`                      | Port for the WebSocket server (plugin connection)                          | `4402`         |
-| `PENPOT_MCP_REPL_PORT`                           | Port for the REPL server (development/debugging)                           | `4403`         |
-| `PENPOT_MCP_REPL_ENABLE`                         | Explicitly enable/disable the REPL server. Set to `true` to enable. When unset, defaults to the value of `PENPOT_MCP_DEVENV`. | (unset)        |
-| `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable. | `false`        |
-| `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools. Set to `true` to enable.      | `false`        |
-| `PENPOT_MCP_TOOL_TIMEOUT_S`                      | Timeout, in seconds, for tool calls dispatched to the Penpot plugin        | `120`          |
-| `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).   | `0` (no limit) |
+| Environment Variable                             | Description                                                                                                                                                                                                                                                                 | Default        |
+|--------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------|
+| `PENPOT_MCP_SERVER_HOST`                         | Address on which the MCP server listens (binds to)                                                                                                                                                                                                                          | `localhost`    |
+| `PENPOT_MCP_SERVER_PORT`                         | Port for the MCP server                                                                                                                                                                                                                                                | `4401`         |
+| `PENPOT_MCP_WEBSOCKET_PORT`                      | Port for the WebSocket server (plugin connection)                                                                                                                                                                                                                           | `4402`         |
+| `PENPOT_MCP_REPL_PORT`                           | Port for the REPL server (development/debugging)                                                                                                                                                                                                                            | `4403`         |
+| `PENPOT_MCP_REPL_HOST`                           | Address on which the REPL server listens (binds to)                                                                                                                                                                                                                         | `localhost`    |
+| `PENPOT_MCP_REPL_ENABLE`                         | Explicitly enable/disable the REPL server. Set to `true` to enable. When unset, defaults to the value of `PENPOT_MCP_DEVENV`. The REPL server never starts in multi-user mode.                                                                                              | (unset)        |
+| `PENPOT_MCP_REMOTE_MODE`                         | Enable remote mode (disables file system access). Set to `true` to enable.                                                                                                                                                                                                  | `false`        |
+| `PENPOT_MCP_DEVENV`                              | Enable Penpot development environment tools in local single-user mode. Set to `true` to enable.                                                                                                                                                                             | `false`        |
+| `PENPOT_MCP_TOOL_TIMEOUT_S`                      | Timeout, in seconds, for tool calls dispatched to the Penpot plugin                                                                                                                                                                                                         | `120`          |
+| `PENPOT_MCP_EXPORT_SHAPE_MAX_PARALLEL_REQUESTS`  | Maximum number of parallel export shape requests (multi-user mode only).                                                                                                                                                                                                    | `0` (no limit) |
 | `PENPOT_MCP_REDIS_URI`                           | Redis connection URI (e.g. `redis://host:6379`) enabling multi-instance horizontal scaling via Redis pub/sub task routing (multi-user mode only). When unset, the server runs in single-instance mode, requiring the plugin and MCP client to connect to the same instance. | (unset)        |
 
 ### Logging Configuration

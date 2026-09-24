@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 
 (ns frontend-tests.logic.path-lifecycle-test
@@ -161,7 +161,7 @@
     (run-handle-drawing-end
      false
      (fn [emissions]
-       (t/is (= [::path.drawing/close-drawn-loops
+       (t/is (= [::path.drawing/clean-drawn-content
                  ::path.drawing/setup-frame
                  ::dwdc/handle-finish-drawing
                  ::dwe/clear-edition-mode]
@@ -175,12 +175,36 @@
      true
      (fn [emissions]
        (t/is (= [::path.common/finish-path
-                 ::path.drawing/close-drawn-loops
+                 ::path.drawing/clean-drawn-content
                  ::path.drawing/setup-frame
                  ::dwdc/handle-finish-drawing
                  ::path.drawing/start-created-path-edition]
                 (mapv ptk/type emissions)))
        (done)))))
+
+(t/deftest ending-a-draw-collapses-the-nodes-drawn-on-top-of-each-other
+  (t/async
+    done
+    (run-handle-drawing-end
+     false
+     (fn [emissions]
+       ;; A path drawn back onto one of its own nodes and then closed.
+       (let [clean   (first (filter #(= ::path.drawing/clean-drawn-content (ptk/type %))
+                                    emissions))
+             state   {:workspace-drawing
+                      {:object {:id (random-uuid)
+                                :type :path
+                                :content (path/content
+                                          [{:command :move-to :params {:x 0 :y 0}}
+                                           {:command :line-to :params {:x 10 :y 5}}
+                                           {:command :line-to :params {:x 20 :y 10}}
+                                           {:command :line-to :params {:x 10 :y 5}}
+                                           {:command :close-path :params {}}])}}}
+             content (-> (ptk/update clean state)
+                         (get-in [:workspace-drawing :object :content]))]
+         (t/is (= [:move-to :line-to :line-to] (mapv :command (vec content))))
+         (t/is (= 1 (count (path/point-indices content (gpt/point 10.0 5.0)))))
+         (done))))))
 
 (t/deftest escape-with-pending-segment-cancels-it-and-keeps-drawing
   (let [id        (random-uuid)

@@ -22,29 +22,42 @@
 ;; Regression coverage for issue #9780.
 ;;
 ;; `letterSpacing` accepts negative tracking in the product UI (-200..200,
-;; see typography.cljs), but the plugin validator regex rejected any leading
-;; minus, so negative values were refused. `letter-spacing-re` is the shared
-;; predicate behind both the shape- and range-level setters; pin its
-;; accept/reject contract here.
+;; see typography.cljs), but the plugin setter rejected any leading minus,
+;; so negative values were refused. Pin the accept/reject contract of the
+;; plugin setter here.
 
-(def ^:private letter-spacing-re @#'plugins.text/letter-spacing-re)
+(defn- apply-letter-spacing
+  "Sets `letterSpacing` on a text range proxy and returns the attributes sent
+  to the update event, or nil when the plugin rejected the value."
+  [value]
+  (let [captured (atom nil)
+        range    (plugins.text/text-range-proxy
+                  plugin-id (random-uuid) (random-uuid) (random-uuid) 0 4)]
+    (with-redefs [r/check-permission (constantly true)
+                  u/page-active? (constantly true)
+                  u/not-valid (fn [_ _ _] nil)
+                  dwt/update-text-range
+                  (fn [_ _ _ attrs]
+                    (reset! captured attrs)
+                    :update-text-range)
+                  st/emit! mock/noop]
+      (set! (.-letterSpacing range) value)
+      @captured)))
 
-(defn- valid? [s] (boolean (re-matches letter-spacing-re s)))
+(t/deftest letter-spacing-accepts-negative-values
+  (t/is (= {:letter-spacing "-0.56"} (apply-letter-spacing "-0.56")))
+  (t/is (= {:letter-spacing "-12"} (apply-letter-spacing "-12")))
+  (t/is (= {:letter-spacing "-200"} (apply-letter-spacing "-200"))))
 
-(t/deftest letter-spacing-re-accepts-negative-values
-  (t/is (valid? "-0.56"))
-  (t/is (valid? "-12"))
-  (t/is (valid? "-200")))
+(t/deftest letter-spacing-accepts-non-negative-values
+  (t/is (= {:letter-spacing "0"} (apply-letter-spacing "0")))
+  (t/is (= {:letter-spacing "12"} (apply-letter-spacing "12")))
+  (t/is (= {:letter-spacing "1.5"} (apply-letter-spacing "1.5"))))
 
-(t/deftest letter-spacing-re-accepts-non-negative-values
-  (t/is (valid? "0"))
-  (t/is (valid? "12"))
-  (t/is (valid? "1.5")))
-
-(t/deftest letter-spacing-re-rejects-non-numeric
-  (t/is (not (valid? "abc")))
-  (t/is (not (valid? "1-2")))
-  (t/is (not (valid? "--1"))))
+(t/deftest letter-spacing-rejects-non-numeric
+  (t/is (nil? (apply-letter-spacing "abc")))
+  (t/is (nil? (apply-letter-spacing "1-2")))
+  (t/is (nil? (apply-letter-spacing "--1"))))
 
 
 (t/deftest font-apply-to-text-uses-font-id-not-shape-id

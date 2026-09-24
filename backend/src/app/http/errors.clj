@@ -60,7 +60,13 @@
 
 (defmethod handle-error :restriction
   [err request _]
-  (let [{:keys [code] :as data} (ex-data err)]
+  (let [data    (ex-data err)
+        code    (get data :code)
+        explain (ex/explain data)
+        data    (-> data
+                    (dissoc ::sm/explain)
+                    (cond-> explain (assoc :explain explain)))]
+
     (if (= code :method-not-allowed)
       {::yres/status 405
        ::yres/body data}
@@ -71,9 +77,16 @@
 
 (defmethod handle-error :rate-limit
   [err _ _]
-  (let [headers (-> err ex-data ::http/headers)]
-    {::yres/status 429
-     ::yres/headers headers}))
+  (let [data    (ex-data err)
+        headers (cond-> (::http/headers data)
+                  (some? (:ttl data))
+                  (assoc "retry-after" (str (:ttl data))))]
+    {::yres/status  429
+     ::yres/headers headers
+     ::yres/body    {:type :rate-limit
+                     :code (:code data)
+                     :hint (:hint data)
+                     :ttl  (:ttl data)}}))
 
 (defmethod handle-error :concurrency-limit
   [err _ _]
@@ -159,6 +172,13 @@
     ;; full context is already logged above for operators.
     {::yres/status 503
      ::yres/body {:type :nitrate-unavailable}}))
+
+(defmethod handle-error :nitrate-not-configured
+  [err request _]
+  (binding [l/*context* (request->context request)]
+    (l/warn :hint "nitrate is not configured; blocking request" :cause err)
+    {::yres/status 503
+     ::yres/body {:type :nitrate-not-configured}}))
 
 (defmethod handle-error :internal
   [error request parent-cause]
