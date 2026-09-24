@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -82,6 +83,9 @@
   [{:keys [team-id files]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
+        export-types (cond-> fexp/valid-types
+                       (not (contains? cf/flags :export-link-later))
+                       (disj :link-later))
 
         state        (deref state*)
         selected     (:selected state)
@@ -148,7 +152,7 @@
           [:> text* {:as "p" :typography t/body-large :class (stl/css :modal-msg)}
            "What do you want to do with linked libraries?"]
 
-          (for [type fexp/valid-types]
+          (for [type export-types]
             [:div {:class (stl/css :export-option true)
                    :key (name type)}
              [:label {:for (str "export-" type)

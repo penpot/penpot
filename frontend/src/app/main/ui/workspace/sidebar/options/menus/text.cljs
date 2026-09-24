@@ -520,11 +520,14 @@
                             :on-click          toggle-token-dropdown
                             :tooltip-placement "top-left"
                             :icon              i/tokens}])
-        (when (and (some? font) (not typography) (not multiple?) (not applied-token-name))
+        (when (and (not typography) (not multiple?) (not applied-token-name))
           [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "workspace.options.convert-to-typography")
+                            :aria-label        (if (not font)
+                                                 (tr "workspace.options.font-not-available" (:font-family values))
+                                                 (tr "workspace.options.convert-to-typography"))
                             :on-click          on-convert-to-typography
                             :tooltip-placement "top-left"
+                            :disabled          (not font)
                             :icon              i/add}])]]
       (when (and token-typography-row-enabled? token-dropdown-open?)
         [:> searchable-options-dropdown* {:on-click     on-option-click

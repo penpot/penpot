@@ -31,7 +31,17 @@ http {
     default_type application/octet-stream;
 
     error_log /dev/stderr;
-    access_log /dev/stdout;
+
+    # Access log enriched with upstream diagnostics: what the backend
+    # answered (us), how long it took to connect to it (uct), how long it
+    # took to answer (urt) and which internal address served the request
+    # (ua). With proxy_pass on variables there is no upstream keepalive,
+    # so uct measures one real TCP connection per request.
+    log_format penpot_upstream '$remote_addr - $remote_user [$time_local] "$request" '
+                               '$status $body_bytes_sent "$http_referer" "$http_user_agent" '
+                               'us=$upstream_status uct=$upstream_connect_time '
+                               'urt=$upstream_response_time ua=$upstream_addr';
+    access_log /dev/stdout penpot_upstream;
 
     proxy_connect_timeout 300s;
     proxy_send_timeout 300s;
@@ -61,7 +71,7 @@ http {
     # are served with dynamic Open Graph metadata from the backend.
     map $http_user_agent $penpot_link_preview_agent {
         default 0;
-        ~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky|applebot|googlebot|bingbot|bingpreview|duckduckbot) 1;
+        "~*(slackbot|discordbot|twitterbot|facebookexternalhit|facebookcatalog|whatsapp|telegrambot|linkedinbot|skypeuripreview|pinterestbot|redditbot|embedly|iframely|mastodon|bluesky|applebot|googlebot|bingbot|bingpreview|duckduckbot|mattermost-bot|opengraph[.]xyz|twitter card validator)" 1;
     }
 
     proxy_cache_path /tmp/cache/ levels=2:2 keys_zone=penpot:20m;
@@ -199,6 +209,24 @@ http {
             add_header Cache-Control "no-store, no-cache, max-age=0" always;
             try_files $uri /index.html$is_args$args /index.html =404;
 
+        }
+    }
+
+    # Dedicated health endpoint consumed by the nginx-prometheus-exporter
+    # sidecar (deployed by ops, scraping http://127.0.0.1:8082/stub_status).
+    # `listen 8082` binds every interface and sits out of the public server:
+    # a compose port mapping delivers traffic to the container address, never
+    # to loopback, so only the published port decides who gets in from
+    # outside the host. Counts client-side connections only; it says nothing
+    # about the upstream pools.
+    server {
+        listen 8082;
+        server_name _;
+
+        access_log off;
+
+        location = /stub_status {
+            stub_status;
         }
     }
 }

@@ -320,11 +320,18 @@ fn propagate_transform(
                             }
                         }
                     }
-                    let resize_transform = math::resize_matrix(
+                    // Rtl text keeps its right edge, so scale about the ne corner.
+                    let anchor = if text_content.is_rtl() {
+                        shape_bounds_after.ne
+                    } else {
+                        shape_bounds_after.nw
+                    };
+                    let resize_transform = math::resize_matrix_from(
                         &shape_bounds_after,
                         &shape_bounds_after,
                         new_width,
                         new_height,
+                        anchor,
                     );
                     shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                     transform.post_concat(&resize_transform);

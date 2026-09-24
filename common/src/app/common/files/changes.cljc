@@ -699,9 +699,14 @@
                   xform     (comp
                              (mapcat #(cons % (cfh/get-parent-ids objects %)))
                              (filter #(contains? #{:group :bool} (-> % lookup :type)))
-                             (distinct))]
+                             (distinct)
+                             (map (fn [id] [id (count (cfh/get-parent-ids objects id))])))]
 
               (->> (sequence xform shapes)
+                   ;; Recalculate every affected child before its parents,
+                   ;; including parents shared by multiple changed branches.
+                   (sort-by second >)
+                   (map first)
                    (reduce update-fn objects))))
 
           (set-mask-selrect [group children]

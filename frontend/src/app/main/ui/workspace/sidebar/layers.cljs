@@ -26,6 +26,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -799,7 +800,7 @@
 
 (mf/defc layers-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size-parent]}]
+  [{:keys [size-parent scroll-store]}]
   (let [page           (mf/deref refs/workspace-page)
         page-id        (get page :id)
 
@@ -811,6 +812,8 @@
 
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
+        tree-ref       (mf/use-ref nil)
+        search-ref     (mf/use-ref nil)
 
         [filtered-objects show-more filter-component]
         (use-search page objects)
@@ -834,9 +837,32 @@
               (do (.disconnect ^js @observer-var)
                   (reset! observer-var nil)))))
 
+        ;; The search-results container reuses the lazy-load observer root
+        ;; and additionally tracks its node for scroll restore.
+        on-render-search-container
+        (fn [element]
+          (mf/set-ref-val! search-ref element)
+          (on-render-container element))
+
+        on-scroll-with-save
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers page-id] event)
+           (on-scroll event)))
+
+        on-search-scroll
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers-search page-id] event)))
+
         toogle-focus-mode
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
+
+    (sc/use-restore-scroll scroll-store :layers page-id tree-ref)
+    (sc/use-restore-scroll scroll-store :layers-search page-id search-ref)
 
     [:div {:id "layers"
            :class (stl/css :layers)
@@ -863,13 +889,15 @@
        [:*
         [:div {:class (stl/css :tool-window-content)
                :data-scroll-container true
-               :ref on-render-container}
+               :on-scroll on-search-scroll
+               :ref on-render-search-container}
          [:> filters-tree* {:objects filtered-objects
                             :key (dm/str page-id)
                             :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
 
-        [:div {:on-scroll on-scroll
+        [:div {:on-scroll on-scroll-with-save
+               :ref tree-ref
                :class (stl/css :tool-window-content)
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
@@ -878,7 +906,8 @@
                                    :is-filtered true
                                    :parent-size size-parent}]]]
 
-       [:div {:on-scroll on-scroll
+       [:div {:on-scroll on-scroll-with-save
+              :ref tree-ref
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}

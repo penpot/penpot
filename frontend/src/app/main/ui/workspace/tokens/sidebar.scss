@@ -4,9 +4,11 @@
 //
 // Copyright (c) KALEIDOS SUBSIDIARY SL
 
-@use "ds/typography.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "ds/spacing.scss" as *;
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as *;
 
 .sidebar-wrapper {
   display: grid;
@@ -14,24 +16,24 @@
 
   // Overflow on the bottom section can't be done without hardcoded values for the height
   // This has to be changed from the wrapping sidebar styles
-  height: calc(100vh - #{deprecated.$s-92});
+  block-size: calc(100vh - #{px2rem(92)});
   overflow: hidden;
 }
 
 .token-management-section-wrapper {
   display: flex;
   flex: 1;
-  height: var(--resize-height);
+  block-size: var(--resize-height);
   flex-direction: column;
   overflow-y: auto;
   scrollbar-gutter: stable;
   position: relative;
-  padding-block: var(--sp-m) var(--sp-l);
+  padding-block: var(--sp-xs) var(--sp-l);
 }
 
 .tokens-section-wrapper {
-  height: 100%;
-  padding-left: var(--sp-m);
+  block-size: 100%;
+  padding-inline-start: var(--sp-m);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -40,24 +42,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-left: var(--sp-m);
-  padding-top: var(--sp-m);
+  margin-inline-start: var(--sp-m);
   color: var(--layer-row-foreground-color);
-}
-
-.section-text-icon {
-  font-size: deprecated.$fs-12;
-  width: var(--sp-l);
-  height: var(--sp-l);
-  display: flex;
-  place-content: center;
-}
-
-.section-icon {
-  margin-right: var(--sp-xs);
-
-  // Align better with the label
-  translate: 0 -1px;
 }
 
 .import-export-button-wrapper {
@@ -72,43 +58,41 @@
   box-shadow: var(--el-shadow-dark);
 }
 
-.import-export-button {
-  @extend %button-secondary;
-
-  display: flex;
-  align-items: center;
-  justify-content: end;
-  padding: deprecated.$s-6 var(--sp-s);
-  text-transform: uppercase;
-  gap: var(--sp-s);
-  background-color: var(--color-background-primary);
-  box-shadow: var(--el-shadow-dark);
-}
-
 .import-export-menu {
-  @extend %menu-dropdown;
-
-  top: -#{deprecated.$s-6};
-  right: 0;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  inset-block-start: -#{px2rem(6)};
+  inset-inline-end: 0;
   translate: 0 -100%;
-  width: deprecated.$s-192;
+  inline-size: $sz-192;
+  padding: var(--sp-xs);
   margin: 0;
+  border-radius: $br-8;
+  border: $b-2 solid var(--panel-border-color);
+  z-index: var(--z-index-dropdown);
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
 }
 
 .import-export-menu-item {
-  @extend %menu-item-base;
+  @include use-typography(body-small);
 
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  block-size: $sz-28;
+  padding: px2rem(6);
+  border-radius: $br-8;
   cursor: pointer;
 
   &:hover {
+    background-color: var(--menu-background-color-hover);
     color: var(--menu-foreground-color-hover);
   }
-}
-
-.import-export-menu-item-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .import-menu-item {
@@ -119,17 +103,18 @@
 }
 
 .resize-area-horiz {
-  background-color: var(--panel-background-color);
   position: absolute;
-  left: 0;
-  width: 100%;
-  padding: deprecated.$s-3 0 deprecated.$s-1 0;
-  height: deprecated.$s-6;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  padding-block: px2rem(3) px2rem(1);
+  padding-inline: 0;
+  block-size: $sz-6;
+  background-color: var(--panel-background-color);
   cursor: ns-resize;
-  z-index: 1;
+  z-index: var(--z-index-panels);
 }
 
 .resize-handle-horiz {
-  border-bottom: deprecated.$s-2 solid var(--resize-area-border-color);
+  border-block-end: $b-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }

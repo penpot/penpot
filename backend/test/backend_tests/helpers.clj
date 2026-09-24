@@ -443,14 +443,23 @@
 
 (defn- prepare-rpc-params
   [data]
-  (let [params  (reduce-kv (fn [params k v]
-                             (if (qualified-keyword? k)
-                               (assoc params k v)
-                               params))
-                           {}
-                           (dissoc data ::type))
-        request (-> (make-dummy-request)
-                    (assoc :params (d/without-qualified data)))]
+  (let [params   (reduce-kv (fn [params k v]
+                              (if (qualified-keyword? k)
+                                (assoc params k v)
+                                params))
+                            {}
+                            (dissoc data ::type))
+        ;; Honor a caller-supplied request map from the data metadata so
+        ;; tests can inject headers, remote address and auth context (e.g.
+        ;; :app.http/auth-key-id). Non-map requests (reify IRequest stubs)
+        ;; fall back to the dummy request, which carries the body params
+        ;; the validation wrapper reads.
+        supplied (-> data meta :app.http/request)
+        request  (if (map? supplied)
+                   (assoc supplied :params (merge (:params supplied)
+                                                  (d/without-qualified data)))
+                   (assoc (make-dummy-request)
+                          :params (d/without-qualified data)))]
 
     (-> params
         (assoc :app.rpc/request-at (ct/now))

@@ -136,18 +136,18 @@ RUN set -ex; \
 
 FROM base AS setup-opencode2
 
-ENV OPENCODE2_VERSION=2.0.12
+ENV OPENCODE2_VERSION=2.0.16
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='33f0dde9f0f055b6a3665d290371bcfc8c63daceade7a535c4b94d386f2bd917'; \
+         ESUM='a132a041968b0fcea18824f2f1996f1494c26ad6e4c5be5ca5b9b96a2bb7922e'; \
          ;; \
        amd64|x86_64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='2a79beb2e24382cb2bdbb709237dbc22f498cf52a106d029a6a3a3243760c78b'; \
+         ESUM='08221eb6a781354e9be3b3918ab5b7d91aff2f20739e7e2e0af81bcdc0822c8a'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; exit 1; \

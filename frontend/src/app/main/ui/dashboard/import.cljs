@@ -427,10 +427,10 @@
      [:div {:class (stl/css :library-resolution-file-header)}
       [:> icon* {:icon-id i/document
                  :class (stl/css :library-resolution-file-icon)
-                 :size "s"}]
+                 :size "m"}]
       [:> text* {:class (stl/css :library-resolution-file-name)
                  :as "span"
-                 :typography t/body-medium}
+                 :typography t/body-large}
        (:name unresolved-file)]]
 
      [:> text* {:class (stl/css :library-resolution-message)

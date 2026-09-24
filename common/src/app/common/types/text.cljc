@@ -56,6 +56,40 @@
 (def text-transform-attrs
   [:text-transform])
 
+(def font-size-min 3)
+(def font-size-max 1000)
+(def spacing-min -200)
+(def spacing-max 200)
+(def text-transform-values
+  #{"uppercase" "capitalize" "lowercase" "none" "unset"})
+
+(def ^:private numeric-text-re
+  #"^-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$")
+
+(defn- valid-numeric-text-in-range?
+  [value min-value max-value]
+  (and (string? value)
+       (re-matches numeric-text-re value)
+       (let [value (d/parse-double value)]
+         (and (some? value)
+              (<= min-value value max-value)))))
+
+(defn valid-font-size?
+  [value]
+  (valid-numeric-text-in-range? value font-size-min font-size-max))
+
+(defn valid-line-height?
+  [value]
+  (valid-numeric-text-in-range? value spacing-min spacing-max))
+
+(defn valid-letter-spacing?
+  [value]
+  (valid-numeric-text-in-range? value spacing-min spacing-max))
+
+(defn valid-text-transform?
+  [value]
+  (contains? text-transform-values value))
+
 (def text-fills
   [:fills])
 
@@ -174,6 +208,14 @@
 (defn is-root-node?
   [node]
   (= "root" (:type node)))
+
+(defn rtl-content?
+  "True when the content has paragraphs and all of them are `\"rtl\"`; picks the
+  growth anchor of auto-width text. Mixed, \"none\" and empty content are ltr."
+  [content]
+  (boolean
+   (when-let [paragraphs (node-seq is-paragraph-node? content)]
+     (every? #(= "rtl" (:text-direction %)) paragraphs))))
 
 (defn is-node?
   [node]

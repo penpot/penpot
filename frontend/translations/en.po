@@ -1674,6 +1674,10 @@ msgstr ""
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
+#: src/app/main/errors.cljs:429
+msgid "errors.connection-error"
+msgstr "Cannot reach the server. Check your connection and try again."
+
 #: src/app/main/errors.cljs:520
 msgid "errors.deprecated"
 msgstr ""
@@ -1763,6 +1767,10 @@ msgid "errors.font-family-invalid-chars"
 msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
+
+#: src/app/main/ui/auth/login.cljs:103
+msgid "errors.account-locked"
+msgstr "Too many failed attempts. Your account has been locked for %s minutes. Please try again later."
 
 #: src/app/main/data/auth.cljs:358, src/app/main/errors.cljs:196, src/app/main/ui/auth/login.cljs:110, src/app/main/ui/auth/register.cljs:129, src/app/main/ui/auth/register.cljs:322, src/app/main/ui/auth/verify_token.cljs:138, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1125, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
@@ -1910,6 +1918,10 @@ msgstr "The registration is currently disabled."
 msgid "errors.save-failed"
 msgstr ""
 "Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
+
+#: src/app/main/data/persistence.cljs:308
+msgid "errors.save-retrying"
+msgstr "Connection lost. Retrying to save your changes."
 
 #: src/app/main/errors.cljs:442
 msgid "errors.svg-parser.invalid-svg"
@@ -7560,6 +7572,10 @@ msgstr "Reset"
 msgid "workspace.header.save-error"
 msgstr "Error on saving"
 
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Retrying to save"
+
 #: src/app/main/ui/workspace/left_header.cljs:123
 msgid "workspace.header.saved"
 msgstr "Saved"
@@ -7747,6 +7763,10 @@ msgstr "some templates in here"
 #: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.file-library"
 msgstr "File library"
+
+#: src/app/main/ui/workspace/libraries.cljs:336
+msgid "workspace.libraries.empty.no-assets"
+msgstr "No assets yet"
 
 #: src/app/main/ui/workspace/libraries.cljs:336
 msgid "workspace.libraries.tokens-source"
@@ -8260,6 +8280,10 @@ msgstr "Flow starts"
 #, unused
 msgid "workspace.options.flows.remove-flow"
 msgstr "Remove flow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr "The font used by this text (%s) is no longer available. Reupload the font to create a typography style"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"

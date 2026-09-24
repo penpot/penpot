@@ -143,11 +143,83 @@
     ::mdef/labels []
     ::mdef/type :histogram}
 
+   :storage-s3-requests
+   {::mdef/name "penpot_storage_s3_requests_total"
+    ::mdef/help "Total S3 API calls performed by the storage backend."
+    ::mdef/labels ["operation" "target" "result"]
+    ::mdef/type :counter}
+
+   :storage-s3-retries
+   {::mdef/name "penpot_storage_s3_retries_total"
+    ::mdef/help "Total SDK retries observed on S3 API calls."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :counter}
+
+   :storage-s3-timing
+   {::mdef/name "penpot_storage_s3_timing"
+    ::mdef/help "S3 API call timing (milliseconds)."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :histogram
+    ::mdef/buckets [5 10 25 50 100 250 500 1000 2500 5000 10000 30000 60000]}
+
+   :storage-operations
+   {::mdef/name "penpot_storage_operations_total"
+    ::mdef/help "Logical storage operations by Penpot bucket."
+    ::mdef/labels ["op" "bucket" "backend"]
+    ::mdef/type :counter}
+
+   :storage-dedup
+   {::mdef/name "penpot_storage_dedup_total"
+    ::mdef/help "Storage deduplication outcomes."
+    ::mdef/labels ["result" "bucket"]
+    ::mdef/type :counter}
+
+   :storage-asset-requests
+   {::mdef/name "penpot_storage_asset_requests_total"
+    ::mdef/help "Asset requests served by app.http.assets."
+    ::mdef/labels ["route" "backend" "bucket" "result"]
+    ::mdef/type :counter}
+
    :http-server-dispatch-timing
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
-    ::mdef/type :histogram}})
+    ::mdef/type :histogram}
+
+   :http-worker-queue-size
+   {::mdef/name "penpot_http_worker_queue_size"
+    ::mdef/help "Current number of queued tasks in the http server xnio worker."
+    ::mdef/type :gauge}
+
+   :http-worker-busy-threads
+   {::mdef/name "penpot_http_worker_busy_threads"
+    ::mdef/help "Current number of busy threads in the http server xnio worker."
+    ::mdef/type :gauge}
+
+   :http-worker-pool-size
+   {::mdef/name "penpot_http_worker_pool_size"
+    ::mdef/help "Current number of threads in the http server xnio worker pool."
+    ::mdef/type :gauge}
+
+   :http-worker-max-pool-size
+   {::mdef/name "penpot_http_worker_max_pool_size"
+    ::mdef/help "Maximum number of threads of the http server xnio worker pool."
+    ::mdef/type :gauge}
+
+   :http-connector-active-connections
+   {::mdef/name "penpot_http_connector_active_connections"
+    ::mdef/help "Current number of active connections in the http listener."
+    ::mdef/type :gauge}
+
+   :http-connector-requests-total
+   {::mdef/name "penpot_http_connector_requests_total"
+    ::mdef/help "Total number of requests handled by the http listener."
+    ::mdef/type :counter}
+
+   :http-connector-errors-total
+   {::mdef/name "penpot_http_connector_errors_total"
+    ::mdef/help "Total number of handler errors in the http listener."
+    ::mdef/type :counter}})
 
 (def system-config
   {::db/pool
@@ -310,6 +382,7 @@
    {::http.assets/path              (cf/get :assets-path)
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
+    ::mtx/metrics                   (ig/ref ::mtx/metrics)
     ::sto/storage                   (ig/ref ::sto/storage)
     ::session/manager               (ig/ref ::session/manager)
     ::setup/props                   (ig/ref ::setup/props)
@@ -515,6 +588,7 @@
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
     ::sto/backends
     {:s3 (ig/ref :app.storage.s3/backend)
      :fs (ig/ref :app.storage.fs/backend)
@@ -534,6 +608,7 @@
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
                             (cf/get :objects-storage-s3-io-threads))
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
 
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}

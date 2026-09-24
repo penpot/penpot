@@ -13,6 +13,7 @@
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.exports-selection-test]
    [frontend-tests.data.nitrate-test]
+   [frontend-tests.data.persistence-retry-test]
    [frontend-tests.data.persistence-test]
    [frontend-tests.data.profile-test]
    [frontend-tests.data.repo-test]
@@ -20,6 +21,7 @@
    [frontend-tests.data.svg-upload-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
+   [frontend-tests.data.wasm-text-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-interactions-test]
@@ -32,6 +34,7 @@
    [frontend-tests.data.workspace-texts-test]
    [frontend-tests.data.workspace-thumbnails-test]
    [frontend-tests.data.workspace-versions-test]
+   [frontend-tests.errors-governor-test]
    [frontend-tests.errors-test]
    [frontend-tests.fonts-test]
    [frontend-tests.helpers-shapes-test]
@@ -91,6 +94,7 @@
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
+   [frontend-tests.ui.comment-input-ime-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
@@ -101,8 +105,10 @@
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
+   [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
+   [frontend-tests.util-queue-test]
    [frontend-tests.util-range-tree-test]
    [frontend-tests.util-simple-math-test]
    [frontend-tests.util-text-editor-test]
@@ -131,6 +137,7 @@
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
    'frontend-tests.data.nitrate-test
+   'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-test
    'frontend-tests.data.profile-test
    'frontend-tests.data.repo-test
@@ -140,6 +147,7 @@
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
+   'frontend-tests.data.wasm-text-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-interactions-test
@@ -152,6 +160,7 @@
    'frontend-tests.data.workspace-texts-test
    'frontend-tests.data.workspace-thumbnails-test
    'frontend-tests.data.workspace-versions-test
+   'frontend-tests.errors-governor-test
    'frontend-tests.errors-test
    'frontend-tests.fonts-test
    'frontend-tests.helpers-shapes-test
@@ -209,6 +218,7 @@
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test
    'frontend-tests.ui.colorpicker-token-set-order-test
+   'frontend-tests.ui.comment-input-ime-test
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
@@ -221,8 +231,10 @@
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
+   'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
+   'frontend-tests.util-queue-test
    'frontend-tests.util-range-tree-test
    'frontend-tests.util-simple-math-test
    'frontend-tests.util-text-editor-test

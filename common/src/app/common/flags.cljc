@@ -98,6 +98,8 @@
     :exporter-svgo
     ;; TODO: deprecate this flag and consolidate the code
     :backend-svgo
+    ;; Enables account lockout after repeated failed login attempts.
+    :account-lockout
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
     ;; Enables the Ladybug graph subsystem: the `/dbg` graph console and its
@@ -191,7 +193,10 @@
     ;; Enables serving link preview (Open Graph) metadata for shared
     ;; links; exposes file names and dashboard thumbnails to anyone
     ;; that knows the file id.
-    :link-preview})
+    :link-preview
+
+    ;; Shows the "link later" option on the files export modal.
+    :export-link-later})
 
 (def all-flags
   (set/union email login varia))
