@@ -3194,7 +3194,7 @@ fn exports_rect_with_per_side_dashed_center_stroke() {
 
     let svg = render(&pool, id);
     assert_per_side_pattern(&svg, "#1040FF");
-    insta::assert_snapshot!(svg);
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
 }
 
 #[test]
@@ -3211,7 +3211,7 @@ fn exports_rect_with_per_side_dotted_center_stroke() {
 
     let svg = render(&pool, id);
     assert_per_side_pattern(&svg, "#1040FF");
-    insta::assert_snapshot!(svg);
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
 }
 
 #[test]
@@ -3230,7 +3230,7 @@ fn exports_rect_with_per_side_dotted_inner_stroke() {
 
     let svg = render(&pool, id);
     assert_per_side_pattern(&svg, "#1040FF");
-    insta::assert_snapshot!(svg);
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
 }
 
 #[test]
@@ -3254,7 +3254,7 @@ fn exports_rounded_rect_with_per_side_dashed_outer_stroke() {
 
     let svg = render(&pool, id);
     assert_per_side_pattern(&svg, "#1040FF");
-    insta::assert_snapshot!(svg);
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
 }
 
 #[test]
@@ -3272,7 +3272,7 @@ fn per_side_dashed_stroke_skips_zero_width_sides() {
 
     let svg = render(&pool, id);
     assert_per_side_pattern(&svg, "#1040FF");
-    insta::assert_snapshot!(svg);
+    insta::assert_snapshot!(with_stable_clip_ids(&svg));
 }
 
 /// Widths and colours for a rect whose four sides are four separate strokes.
