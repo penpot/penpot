@@ -136,7 +136,7 @@
           :role :editor
           :invitation-id "invitation-1"
           :user-id "invitee-1"
-          :user-who-send-invitation "inviter-1"
+          :profile-id "inviter-1"
           :organization-member-count-before 4})
 
         (t/is (= {::ev/name "accept-organization-invitation"
@@ -162,7 +162,7 @@
           :role :viewer
           :invitation-id "invitation-2"
           :user-id "invitee-2"
-          :user-who-send-invitation "inviter-2"
+          :profile-id "inviter-2"
           :organization-member-count-before 0})
 
         (t/is (= {::ev/name "accept-organization-invitation"

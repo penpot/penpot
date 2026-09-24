@@ -540,7 +540,7 @@
         (t/is (= (:id invitee)
                  (:user-id @token-result)))
         (t/is (= (:id inviter)
-                 (:user-who-send-invitation @token-result)))
+                 (:profile-id @token-result)))
         (t/is (= 3
                  (:organization-member-count-before @token-result)))
         (t/is (not-any? #(contains? #{"accept-team-invitation"
@@ -593,7 +593,7 @@
         (t/is (= (:id invitee)
                  (:user-id @token-result)))
         (t/is (= (:id inviter)
-                 (:user-who-send-invitation @token-result)))
+                 (:profile-id @token-result)))
         (t/is (= 5
                  (:organization-member-count-before @token-result))))
 
@@ -623,6 +623,48 @@
         (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))
         (t/is (not (contains? @token-result :organization-invitation-audit)))
         (t/is (not (contains? @token-result :organization-member-count-before)))))))
+
+(t/deftest accept-organization-invitation-response-profile-id-matches-invitation-creator
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (let [inviter         (th/create-profile* 211 {:is-active true})
+          invitee         (th/create-profile* 212 {:is-active true})
+          organization-id (uuid/random)
+          default-team-id (uuid/random)
+          ;; Token minted with a stale :profile-id (e.g. a re-sent link
+          ;; requested by someone else); the invitation row says inviter.
+          stale-token     (tokens/generate
+                           th/*system*
+                           {:iss :team-invitation
+                            :exp (ct/in-future "1h")
+                            :profile-id (uuid/random)
+                            :role :editor
+                            :organization-id organization-id
+                            :member-email (:email invitee)
+                            :member-id (:id invitee)})]
+      (db/insert! (:app.db/pool th/*system*)
+                  :team-invitation
+                  {:org-id organization-id
+                   :email-to (:email invitee)
+                   :created-by (:id inviter)
+                   :role "editor"
+                   :valid-until (ct/in-future "48h")})
+
+      (with-redefs [cf/flags (conj cf/flags :admin-console)
+                    nitrate/call
+                    (fn [_cfg method _params]
+                      (case method
+                        :get-organization-membership {:organization-id organization-id
+                                                      :is-member false}
+                        :get-organization-members [(:id inviter)]
+                        nil))
+                    teams/initialize-user-in-organization
+                    (fn [& _] default-team-id)]
+        (let [out (th/command! {::th/type :verify-token
+                                ::rpc/profile-id (:id invitee)
+                                :token stale-token})]
+          (t/is (th/success? out))
+          (t/is (= (:id inviter) (:profile-id (:result out))))
+          (t/is (not (contains? (:result out) :user-who-send-invitation))))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]

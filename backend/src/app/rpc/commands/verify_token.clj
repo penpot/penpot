@@ -175,6 +175,7 @@
    [:map {:title "TeamInvitationClaims"}
     [:iss :keyword]
     [:exp ::ct/inst]
+    ;; The inviter: always the `created-by` of the invitation row.
     [:profile-id ::sm/uuid]
     [:role types.team/schema:role]
     [:team-id {:optional true} ::sm/uuid]
@@ -302,7 +303,15 @@
                                        :user-who-send-invitation (:created-by invitation))
                                 (audit/clean-props))))))
 
-              (cond-> (assoc claims :state :created)
+              (cond-> (assoc claims
+                             :state :created
+                             ;; The invitation row is authoritative for the
+                             ;; inviter: backfill :profile-id so the response
+                             ;; stays consistent even with tokens minted
+                             ;; before :profile-id was aligned with
+                             ;; :created-by (or re-requested by someone else).
+                             :profile-id (or (:created-by invitation)
+                                             (:profile-id claims)))
                 ;; when the invitation is to an organization, instead of a team, add the
                 ;; accepted-team-id as :organization-team-id
                 (:organization-id claims)
@@ -312,7 +321,6 @@
                 (merge (d/without-nils
                         {:invitation-id (:id invitation)
                          :user-id (:id profile)
-                         :user-who-send-invitation (:created-by invitation)
                          :organization-member-count-before
                          organization-member-count-before}))
 
