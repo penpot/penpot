@@ -52,13 +52,15 @@
       (st/emit!
        (ev/event
         (-> (select-keys tdata [:team-id :organization-id :role
-                                :invitation-id :user-id :profile-id
+                                :invitation-id :member-id :profile-id
                                 :organization-member-count-before])
-            ;; The audit event names the inviter :user-who-send-invitation;
-            ;; it always comes from the token :profile-id (the invitation
-            ;; creator, backfilled by the backend from `created-by`).
-            (assoc :user-who-send-invitation (:profile-id tdata))
-            (dissoc :profile-id)
+            ;; The audit event keeps its own names: :user-id is the
+            ;; invitee (:member-id, backfilled by the backend with the
+            ;; accepting profile) and :user-who-send-invitation is the
+            ;; inviter (:profile-id, backfilled from `created-by`).
+            (assoc :user-id (:member-id tdata)
+                   :user-who-send-invitation (:profile-id tdata))
+            (dissoc :member-id :profile-id)
             (d/without-nils)
             (assoc :organization-member-add-source
                    (if direct-invitation?

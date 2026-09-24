@@ -135,7 +135,7 @@
           :organization-id "organization-1"
           :role :editor
           :invitation-id "invitation-1"
-          :user-id "invitee-1"
+          :member-id "invitee-1"
           :profile-id "inviter-1"
           :organization-member-count-before 4})
 
@@ -161,7 +161,7 @@
           :organization-team-id "team-default"
           :role :viewer
           :invitation-id "invitation-2"
-          :user-id "invitee-2"
+          :member-id "invitee-2"
           :profile-id "inviter-2"
           :organization-member-count-before 0})
 

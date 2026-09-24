@@ -311,7 +311,13 @@
                              ;; before :profile-id was aligned with
                              ;; :created-by (or re-requested by someone else).
                              :profile-id (or (:created-by invitation)
-                                             (:profile-id claims)))
+                                             (:profile-id claims))
+                             ;; Likewise, the accepting profile is
+                             ;; authoritative for the invitee: backfill
+                             ;; :member-id (nil for invitations sent to an
+                             ;; unregistered email, possibly stale
+                             ;; otherwise).
+                             :member-id (:id profile))
                 ;; when the invitation is to an organization, instead of a team, add the
                 ;; accepted-team-id as :organization-team-id
                 (:organization-id claims)
@@ -320,7 +326,6 @@
                 organization-id-on-add
                 (merge (d/without-nils
                         {:invitation-id (:id invitation)
-                         :user-id (:id profile)
                          :organization-member-count-before
                          organization-member-count-before}))
 

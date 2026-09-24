@@ -538,7 +538,7 @@
         (t/is (= (get-in event [:props :invitation-id])
                  (:invitation-id @token-result)))
         (t/is (= (:id invitee)
-                 (:user-id @token-result)))
+                 (:member-id @token-result)))
         (t/is (= (:id inviter)
                  (:profile-id @token-result)))
         (t/is (= 3
@@ -591,7 +591,7 @@
         (t/is (= (get-in event [:props :invitation-id])
                  (:invitation-id @token-result)))
         (t/is (= (:id invitee)
-                 (:user-id @token-result)))
+                 (:member-id @token-result)))
         (t/is (= (:id inviter)
                  (:profile-id @token-result)))
         (t/is (= 5
@@ -624,14 +624,15 @@
         (t/is (not (contains? @token-result :organization-invitation-audit)))
         (t/is (not (contains? @token-result :organization-member-count-before)))))))
 
-(t/deftest accept-organization-invitation-response-profile-id-matches-invitation-creator
+(t/deftest accept-organization-invitation-response-ids-match-database
   (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [inviter         (th/create-profile* 211 {:is-active true})
           invitee         (th/create-profile* 212 {:is-active true})
           organization-id (uuid/random)
           default-team-id (uuid/random)
           ;; Token minted with a stale :profile-id (e.g. a re-sent link
-          ;; requested by someone else); the invitation row says inviter.
+          ;; requested by someone else) and no :member-id (invitee was
+          ;; unregistered when invited); the invitation row says inviter.
           stale-token     (tokens/generate
                            th/*system*
                            {:iss :team-invitation
@@ -639,8 +640,7 @@
                             :profile-id (uuid/random)
                             :role :editor
                             :organization-id organization-id
-                            :member-email (:email invitee)
-                            :member-id (:id invitee)})]
+                            :member-email (:email invitee)})]
       (db/insert! (:app.db/pool th/*system*)
                   :team-invitation
                   {:org-id organization-id
@@ -664,7 +664,9 @@
                                 :token stale-token})]
           (t/is (th/success? out))
           (t/is (= (:id inviter) (:profile-id (:result out))))
-          (t/is (not (contains? (:result out) :user-who-send-invitation))))))))
+          (t/is (= (:id invitee) (:member-id (:result out))))
+          (t/is (not (contains? (:result out) :user-who-send-invitation)))
+          (t/is (not (contains? (:result out) :user-id))))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]
