@@ -119,7 +119,8 @@
         grouped-values (group-by dimensions-dictionary app-token-keys)
 
         name-line
-        (mf/html [:* "Name: " [:span {:class (stl/css :token-pill-tooltip-name)} name]])
+        (mf/html [:* (dm/str (tr "workspace.tokens.token-name") ": ")
+                  [:span {:class (stl/css :token-pill-tooltip-name)} name]])
 
         rest-of-title (dm/str (tr "workspace.tokens.original-value" (dwtf/format-token-value value)) "\n"
                               (tr "workspace.tokens.resolved-value" (dwtf/format-token-value resolved-value))
@@ -307,7 +308,6 @@
                   :trigger-ref pill-ref
                   :id pill-id}
      [:button {:ref pill-ref
-               :aria-labelledby pill-id
                :class (stl/css-case
                        :token-pill true
                        :token-pill-no-icon (and (not status-icon?) (not errors?))
