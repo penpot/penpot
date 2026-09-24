@@ -173,7 +173,7 @@
 
 (mf/defc organizations-column*
   {::mf/private true}
-  [{:keys [organizations current-id ^boolean has-organizations? on-select on-create-organization
+  [{:keys [organizations selected-id current-id ^boolean has-organizations? on-select on-create-organization
            admin-console-href ^boolean valid-license on-context-menu on-dismiss-context-menu]}]
   [:li {:role "presentation" :class (stl/css :organizations-column)}
    [:div {:class (stl/css :column-label)}
@@ -196,7 +196,7 @@
            [:li {:role "separator" :class (stl/css :column-separator)}])
          [:> dropdown-menu-item* {:data-value (str bucket-id)
                                   :class (stl/css-case :organization-item true
-                                                       :selected (= bucket-id current-id))
+                                                       :selected (= bucket-id selected-id))
                                   :on-click on-select
                                   :on-context-menu #(on-context-menu % organization)}
           (if personal?
@@ -580,6 +580,7 @@
                             :id "organization-team-switch"
                             :class (stl/css :organization-team-dropdown)}
          [:> organizations-column* {:organizations (sort-organizations (vals organizations))
+                                    :selected-id selected-organization-id
                                     :current-id current-organization-id
                                     :has-organizations? has-organizations?
                                     :on-select on-organization-select
