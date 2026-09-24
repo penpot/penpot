@@ -90,3 +90,35 @@
 
 (t/deftest make-dummy-request-missing-cookie-returns-nil-value
   (t/is (= {:value nil} (yreq/get-cookie (th/make-dummy-request) "missing"))))
+
+;; --- RPC PARAMS: REQUEST METADATA
+
+(t/deftest prepare-rpc-params-preserves-supplied-request
+  (let [supplied {:headers {"x-frontend-version" "1.2.3"}
+                  :app.http/auth-key-id :admin-console}
+        params   (#'th/prepare-rpc-params
+                  (with-meta {::th/type :dummy
+                              :events [{:name "event"}]}
+                    {:app.http/request supplied}))
+        request  (:app.http/request (meta params))]
+    (t/is (= "1.2.3" (yreq/get-header request "x-frontend-version")))
+    (t/is (= :admin-console (:app.http/auth-key-id request)))
+    (t/is (= {:events [{:name "event"}]} (:params request)))))
+
+(t/deftest prepare-rpc-params-builds-dummy-request-without-metadata
+  (let [params  (#'th/prepare-rpc-params {::th/type :dummy
+                                          :events [{:name "event"}]})
+        request (:app.http/request (meta params))]
+    (t/is (instance? backend_tests.helpers.DummyRequest request))
+    (t/is (= {:events [{:name "event"}]} (:params request)))))
+
+(t/deftest prepare-rpc-params-falls-back-to-dummy-for-non-map-request
+  (let [supplied (reify yreq/IRequest
+                   (get-header [_ _] nil))
+        params   (#'th/prepare-rpc-params
+                  (with-meta {::th/type :dummy
+                              :events [{:name "event"}]}
+                    {:app.http/request supplied}))
+        request  (:app.http/request (meta params))]
+    (t/is (instance? backend_tests.helpers.DummyRequest request))
+    (t/is (= {:events [{:name "event"}]} (:params request)))))
