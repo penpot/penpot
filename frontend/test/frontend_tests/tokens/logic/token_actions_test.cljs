@@ -700,6 +700,71 @@
              (t/testing "the token on the untouched side is not unapplied"
                (t/is (= (:stroke-width-right (:applied-tokens rect')) "stroke-width.sm"))))))))))
 
+(t/deftest test-change-stroke-width-side-later-stroke-keeps-first-token
+  (t/testing "editing a side of a later stroke does not unapply a token on the first stroke"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5
+                                       :stroke-width-top 2}
+                                      {:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 3}]
+                            :applied-tokens {:stroke-width-top "stroke-width.sm"}}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/change-stroke-side-width [(:id rect)] :stroke-width-top 10 1)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)
+                 stroke-0 (get-in rect' [:strokes 0])
+                 stroke-1 (get-in rect' [:strokes 1])]
+             (t/testing "the edited second stroke gets the new value"
+               (t/is (= (:stroke-width-top stroke-1) 10)))
+             (t/testing "the first stroke keeps its width"
+               (t/is (= (:stroke-width-top stroke-0) 2)))
+             (t/testing "the token on the first stroke is not unapplied"
+               (t/is (= (:stroke-width-top (:applied-tokens rect')) "stroke-width.sm"))))))))))
+
+(t/deftest test-remove-later-stroke-keeps-first-token
+  (t/testing "removing a later stroke does not unapply tokens on the first stroke"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5}
+                                      {:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 3}]
+                            :applied-tokens {:stroke-width-top "stroke-width.sm"
+                                             :stroke-color "color.sm"}}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/remove-stroke [(:id rect)] 1)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)]
+             (t/testing "only the first stroke remains"
+               (t/is (= 1 (count (:strokes rect')))))
+             (t/testing "the tokens on the first stroke are kept"
+               (t/is (= (:stroke-width-top (:applied-tokens rect')) "stroke-width.sm"))
+               (t/is (= (:stroke-color (:applied-tokens rect')) "color.sm"))))))))))
+
 (t/deftest test-change-stroke-width-side-new-shape
   (t/testing "editing a side of a shape without strokes creates a stroke and zeroes the other sides"
     (t/async

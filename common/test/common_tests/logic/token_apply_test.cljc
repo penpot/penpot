@@ -393,6 +393,72 @@
       (t/is (nil? (:stroke-width-bottom (:applied-tokens frame1'))))
       (t/is (nil? (:stroke-width-left (:applied-tokens frame1')))))))
 
+(t/deftest unapply-not-triggered-when-editing-a-later-stroke
+  (let [;; Apply a token to the first stroke, then add a second one.
+        file    (-> (setup-file)
+                    (tht/apply-token-to-shape :frame1 "token-stroke-width"
+                                              [:stroke-width-top] [:stroke-width] 2))
+        strokes (:strokes (ths/get-shape file :frame1))
+        file    (ths/update-shape file :frame1 :strokes
+                                  (conj strokes {:stroke-alignment :inner
+                                                 :stroke-style :solid
+                                                 :stroke-color "#000000"
+                                                 :stroke-opacity 1
+                                                 :stroke-width 3}))
+        page    (thf/current-page file)
+        frame1  (ths/get-shape file :frame1)
+
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    (cls/generate-update-shapes [(:id frame1)]
+                                                (fn [shape]
+                                                  (-> shape
+                                                      (ctn/set-shape-attr :strokes
+                                                                          (-> (:strokes shape)
+                                                                              (assoc-in [1 :stroke-width-top] 7)
+                                                                              (assoc-in [1 :stroke-width] 7)))))
+                                                (:objects page)
+                                                {:changed-sub-attr [:stroke-width-top :stroke-width]
+                                                 :changed-item-index 1}))
+
+        file'   (thf/apply-changes file changes)
+        frame1' (ths/get-shape file' :frame1)]
+
+    (t/testing "the token on the first stroke is preserved"
+      (t/is (= (:stroke-width-top (:applied-tokens frame1')) "token-stroke-width")))
+
+    (t/testing "the edited second stroke gets the new value"
+      (t/is (= 7 (get-in frame1' [:strokes 1 :stroke-width-top]))))
+
+    (t/testing "the first stroke is untouched"
+      (t/is (= 2 (get-in frame1' [:strokes 0 :stroke-width]))))))
+
+(t/deftest unapply-still-triggered-when-editing-the-first-stroke
+  (let [file    (-> (setup-file)
+                    (tht/apply-token-to-shape :frame1 "token-stroke-width"
+                                              [:stroke-width-top] [:stroke-width] 2))
+        page    (thf/current-page file)
+        frame1  (ths/get-shape file :frame1)
+
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    (cls/generate-update-shapes [(:id frame1)]
+                                                (fn [shape]
+                                                  (-> shape
+                                                      (ctn/set-shape-attr :strokes
+                                                                          (assoc-in (:strokes shape) [0 :stroke-width-top] 5))))
+                                                (:objects page)
+                                                {:changed-sub-attr [:stroke-width-top :stroke-width]
+                                                 :changed-item-index 0}))
+
+        file'   (thf/apply-changes file changes)
+        frame1' (ths/get-shape file' :frame1)]
+
+    (t/testing "editing the first stroke does unapply its token"
+      (t/is (nil? (:stroke-width-top (:applied-tokens frame1')))))))
+
 (t/deftest dont-unapply-automatic-when-null-change
   (let [;; ==== Setup
         file    (-> (setup-file)

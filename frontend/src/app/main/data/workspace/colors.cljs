@@ -402,7 +402,9 @@
    (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
+       (rx/of (let [options (assoc options
+                                   :changed-sub-attr [:stroke-color]
+                                   :changed-item-index index)]
                 (dwsh/update-shapes ids #(update-shape-stroke-color % index color) options)))))))
 
 (defn change-stroke-attrs
@@ -412,7 +414,9 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [changed-sub-attr (keys attrs)
-             options (assoc options :changed-sub-attr changed-sub-attr)]
+             options          (assoc options
+                                     :changed-sub-attr changed-sub-attr
+                                     :changed-item-index index)]
          (rx/of (dwsh/update-shapes
                  ids
                  (fn [shape]
@@ -446,7 +450,9 @@
          (let [changed-sub-attr (if (= attr :stroke-width-top)
                                   [attr :stroke-width]
                                   [attr])
-               options          (assoc options :changed-sub-attr changed-sub-attr)]
+               options          (assoc options
+                                       :changed-sub-attr changed-sub-attr
+                                       :changed-item-index index)]
            (rx/of (dwsh/update-shapes
                    ids
                    (fn [shape]
@@ -553,7 +559,8 @@
                 (update shape :strokes remove-fill-by-index position))]
         (rx/of (dwsh/update-shapes ids
                                    remove-stroke
-                                   {:attrs [:strokes]}))))))
+                                   {:attrs [:strokes]
+                                    :changed-item-index position}))))))
 
 (defn remove-all-strokes
   [ids]
