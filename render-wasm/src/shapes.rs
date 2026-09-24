@@ -1882,6 +1882,26 @@ impl Shape {
         }
     }
 
+    /// How far the masked-group layer filter reaches past the content, in
+    /// document units: the widest drop shadow plus the layer blur.
+    pub fn masked_group_filter_reach(&self) -> f32 {
+        let reach = |filter: Option<skia::ImageFilter>| {
+            filter.map_or(0.0, |f| {
+                let r = f.compute_fast_bounds(math::Rect::default());
+                (-r.left).max(-r.top).max(r.right).max(r.bottom)
+            })
+        };
+        let shadows = self
+            .drop_shadows_visible()
+            .map(|shadow| reach(shadow.get_drop_shadow_filter()))
+            .fold(0.0, f32::max);
+        let blur = self.masked_group_layer_blur().map_or(0.0, |blur| {
+            let sigma = radius_to_sigma(blur.value);
+            reach(skia::image_filters::blur((sigma, sigma), None, None, None))
+        });
+        shadows + blur
+    }
+
     /// Shadows of the given style that the masked-group layer filter must
     /// carry, bottom-most first, already converted to device space.
     ///
@@ -1936,7 +1956,7 @@ impl Shape {
 
         if !skip_shadows {
             for shadow in self.masked_group_layer_shadows(scale, ShadowStyle::Drop) {
-                layers.push(shadow.get_drop_shadow_filter());
+                layers.push(shadow.get_layer_drop_shadow_filter());
             }
         }
 

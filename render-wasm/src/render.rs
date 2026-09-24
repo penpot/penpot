@@ -431,6 +431,9 @@ pub(crate) struct RenderState {
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
+    /// Cumulative [`Shape::masked_group_filter_reach`] of the masked groups
+    /// being walked: their children cast into tiles they don't touch.
+    masked_group_reach: Vec<f32>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     /// Viewer-only whitelist for fixed-scroll layer passes.
@@ -656,6 +659,7 @@ impl RenderState {
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
+            masked_group_reach: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
             include_filter: None,
@@ -2435,6 +2439,7 @@ impl RenderState {
         self.nested_fills.clear();
         self.nested_blurs.clear();
         self.nested_shadows.clear();
+        self.masked_group_reach.clear();
 
         // reorder by distance to the center.
         self.current_tile = None;
@@ -2731,6 +2736,7 @@ impl RenderState {
         let saved_nested_fills = std::mem::take(&mut self.nested_fills);
         let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
         let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+        let saved_masked_group_reach = std::mem::take(&mut self.masked_group_reach);
         let saved_ignore_nested_blurs = self.ignore_nested_blurs;
         let saved_preview_mode = self.preview_mode;
 
@@ -2802,6 +2808,7 @@ impl RenderState {
         self.nested_fills = saved_nested_fills;
         self.nested_blurs = saved_nested_blurs;
         self.nested_shadows = saved_nested_shadows;
+        self.masked_group_reach = saved_masked_group_reach;
         self.ignore_nested_blurs = saved_ignore_nested_blurs;
         self.preview_mode = saved_preview_mode;
 
@@ -2954,6 +2961,10 @@ impl RenderState {
             }
 
             if group.masked {
+                let reach = self.masked_group_reach.last().copied().unwrap_or(0.0)
+                    + element.masked_group_filter_reach();
+                self.masked_group_reach.push(reach);
+
                 // A masked group's blur and shadows are applied as a single
                 // image filter over the whole masked result.
                 let scale = self.get_scale();
@@ -3052,6 +3063,7 @@ impl RenderState {
                 // the blend mode 'destination-in') the content
                 // of the group and the mask.
                 if group.masked {
+                    self.masked_group_reach.pop();
                     self.pending_nodes.push(NodeRenderState {
                         id: element.id,
                         visited_children: true,
@@ -3944,17 +3956,21 @@ impl RenderState {
                 );
 
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
+                let area = match self.masked_group_reach.last() {
+                    Some(&reach) => self.render_area_with_margins.with_outset((reach, reach)),
+                    None => self.render_area_with_margins,
+                };
 
                 let is_visible = export
                     || mask
                     || if is_container || has_effects {
                         let element_extrect =
                             extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
-                        element_extrect.intersects(self.render_area_with_margins)
+                        element_extrect.intersects(area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     } else {
                         let selrect = transformed_element.selrect();
-                        selrect.intersects(self.render_area_with_margins)
+                        selrect.intersects(area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     };
 
