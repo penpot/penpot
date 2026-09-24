@@ -120,6 +120,23 @@
         (t/is (contains? event :days-since-member-added))
         (t/is (nil? (:days-since-member-added event)))))))
 
+(t/deftest pending-team-invitation-redirects-to-register
+  (let [emitted           (atom [])
+        invitation-token "invitation-123"]
+    (with-redefs [st/emit! (fn
+                             ([event]
+                              (swap! emitted conj event))
+                             ([event & events]
+                              (swap! emitted into (cons event events))))]
+      (verify-token/handle-token
+       {:iss :team-invitation
+        :state :pending
+        :invitation-token invitation-token})
+
+      (let [event @(first @emitted)]
+        (t/is (= :auth-register (:id event)))
+        (t/is (= invitation-token (get-in event [:params :invitation-token])))))))
+
 (t/deftest accept-organization-invitation-audit-event-test
   (let [emitted (atom [])]
     (with-redefs [st/emit! (fn

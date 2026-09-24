@@ -206,9 +206,7 @@
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
-        registration-disabled? (not (contains? cf/flags :registration))
-
-        organization-invitation?        (and (contains? cf/flags :admin-console) organization-id)]
+        organization-invitation? (and (contains? cf/flags :admin-console) organization-id)]
 
     (if profile
       (do

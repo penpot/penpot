@@ -96,12 +96,22 @@ enabled with <code class="language-bash">enable-email-whitelist</code> flag. For
 autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
 not-empty content.
 
-Penpot also comes with an option to completely disable the registration process;
-for this, use the following flag:
+Penpot also comes with an option to disable public registration. Users with a
+valid team invitation can still register an account when password login is
+enabled. To disable public registration, use the following flag:
 
 ```bash
 PENPOT_FLAGS: [...] disable-registration
 ```
+
+For invitation-based registration, keep the password login flag enabled:
+
+```bash
+PENPOT_FLAGS: [...] disable-registration enable-login-with-password
+```
+
+The `disable-login-with-password` flag still disables password-based login and
+registration, including password-based registration through an invitation.
 
 This option is only recommended for demo instances, not for production environments.
 
@@ -433,7 +443,8 @@ This is an example of a demo configuration:
 PENPOT_FLAGS: disable-registration enable-demo-users enable-demo-warning
 ```
 
-**disable-registration** prevents any user from registering in the platform.
+**disable-registration** prevents public registration in the platform, while
+valid team invitations can still create accounts when password login is enabled.
 **enable-demo-users** creates users with a default expiration time of 7 days, and
 once expired they are completely deleted with all the generated content.
 From the registration page, there is a link with a `Create demo account` which creates one of these

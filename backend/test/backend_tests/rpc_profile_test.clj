@@ -769,28 +769,32 @@
       (t/is (= :restriction (:type edata)))
       (t/is (= :email-does-not-match-invitation (:code edata))))))
 
-(t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
-  (with-redefs [app.config/flags [:disable-registration]]
-    (let [itoken (tokens/generate th/*system*
-                                  {:iss :team-invitation
-                                   :exp (ct/in-future "48h")
-                                   :role :editor
-                                   :team-id uuid/zero
-                                   :member-email "user@example.com"})
-          data  {::th/type :prepare-register-profile
-                 :invitation-token itoken
-                 :fullname "foobar"
-                 :email "user@example.com"
-                 :password "Foobar12!"}
-          out (th/command! data)]
+(t/deftest prepare-register-with-invitation-and-disabled-registration
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (with-mocks [mock {:target 'app.email/send! :return nil}]
+      (let [itoken (tokens/generate th/*system*
+                                    {:iss :team-invitation
+                                     :exp (ct/in-future "48h")
+                                     :role :editor
+                                     :team-id uuid/zero
+                                     :member-email "user@example.com"})
+            data  {::th/type :prepare-register-profile
+                   :invitation-token itoken
+                   :fullname "foobar"
+                   :email "user@example.com"
+                   :password "Foobar12!"}
+            out (th/command! data)]
 
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :restriction (:type edata)))
-        (t/is (= :registration-disabled (:code edata)))))))
+        (t/is (th/success? out))
+        (t/is (string? (get-in out [:result :token])))
 
-(t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
-  (with-redefs [app.config/flags [:disable-registration]]
+        (let [register-out (th/command! {::th/type :register-profile
+                                         :token (get-in out [:result :token])})]
+          (t/is (th/success? register-out))
+          (t/is (= 1 (:call-count @mock))))))))
+
+(t/deftest prepare-register-with-invitation-and-disabled-registration-and-wrong-email
+  (with-redefs [app.config/flags #{:login-with-password}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -808,10 +812,10 @@
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
-        (t/is (= :registration-disabled (:code edata)))))))
+        (t/is (= :email-does-not-match-invitation (:code edata)))))))
 
-(t/deftest prepare-and-register-with-invitation-and-disabled-login-with-password
-  (with-redefs [app.config/flags [:disable-login-with-password]]
+(t/deftest prepare-register-with-invitation-and-disabled-login-with-password
+  (with-redefs [app.config/flags #{:registration}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -830,6 +834,43 @@
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
         (t/is (= :registration-disabled (:code edata)))))))
+
+(t/deftest verify-token-redirects-invitation-based-on-member-id
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})
+        email  "invited@example.com"
+        token  (fn [claims]
+                 (tokens/generate th/*system*
+                                  (merge {:iss :team-invitation
+                                          :exp (ct/in-future "48h")
+                                          :role :editor
+                                          :profile-id (:id owner)
+                                          :team-id (:id team)
+                                          :member-email email}
+                                         claims)))]
+    (th/db-insert! :team-invitation
+                   {:id (uuid/random)
+                    :team-id (:id team)
+                    :email-to email
+                    :created-by (:id owner)
+                    :role "editor"
+                    :valid-until (ct/in-future "48h")})
+
+    (let [new-user-token (token {})
+          existing-user-token (token {:member-id (uuid/random)})
+          new-user-out (th/command! {::th/type :verify-token
+                                     :token new-user-token})
+          existing-user-out (th/command! {::th/type :verify-token
+                                          :token existing-user-token})]
+      (t/is (th/success? new-user-out))
+      (t/is (= :auth-register (get-in new-user-out [:result :redirect-to])))
+      (t/is (= :pending (get-in new-user-out [:result :state])))
+      (t/is (= new-user-token (get-in new-user-out [:result :invitation-token])))
+
+      (t/is (th/success? existing-user-out))
+      (t/is (= :auth-login (get-in existing-user-out [:result :redirect-to])))
+      (t/is (= :pending (get-in existing-user-out [:result :state])))
+      (t/is (= existing-user-token (get-in existing-user-out [:result :invitation-token]))))))
 
 (t/deftest prepare-register-with-registration-disabled
   (with-redefs [app.config/flags #{}]

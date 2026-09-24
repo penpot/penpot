@@ -227,23 +227,24 @@
 
 (defn- validate-register-attempt!
   [cfg params]
-
-  (if (contains? params :invitation-token)
-    ;; Invitations bypass the disable-registration flag per documentation.
-    ;; Validate the invitation token and verify the email matches.
-    (let [invitation (tokens/verify cfg
-                                    {:token (:invitation-token params)
-                                     :iss :team-invitation})]
-      (when-not (= (:email params) (:member-email invitation))
-        (ex/raise :type :restriction
-                  :code :email-does-not-match-invitation
-                  :hint "email should match the invitation")))
-    ;; No invitation token — enforce the registration-disabled flag.
-    (when (or (not (contains? cf/flags :registration))
-              (not (contains? cf/flags :login-with-password)))
+  (let [invitation? (contains? params :invitation-token)]
+    (when (or (not (contains? cf/flags :login-with-password))
+              (and (not (contains? cf/flags :registration))
+                   (not invitation?)))
       (ex/raise :type :restriction
                 :code :registration-disabled
-                :hint "registration disabled")))
+                :hint "registration disabled"))
+
+    (when invitation?
+      ;; Invitations bypass the disable-registration flag per documentation.
+      ;; Validate the invitation token and verify the email matches.
+      (let [invitation (tokens/verify cfg
+                                      {:token (:invitation-token params)
+                                       :iss :team-invitation})]
+        (when-not (= (:email params) (:member-email invitation))
+          (ex/raise :type :restriction
+                    :code :email-does-not-match-invitation
+                    :hint "email should match the invitation")))))
 
   (when (and (email.blacklist/enabled? cfg)
              (email.blacklist/contains? cfg (:email params)))

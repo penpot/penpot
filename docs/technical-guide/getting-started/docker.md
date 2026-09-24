@@ -83,7 +83,9 @@ Penpot provides a script (`manage.py`) with some administrative tasks to perform
 flag set in the docker-compose.yaml file. For older versions of docker-compose.yaml file,
 this flag is set in the backend service.
 
-For instance, if  the registration is disabled, the only way to create a new user is with this script:
+For users who do not have a team invitation, if public registration is disabled, the
+way to create a new user is with this script. Users with a valid team invitation
+can register through the invitation link when password login is enabled.
 
 ```bash
 docker exec -ti penpot-penpot-backend-1 python3 manage.py create-profile
