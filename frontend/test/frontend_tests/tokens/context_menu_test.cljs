@@ -71,22 +71,22 @@
       ;; app.main.data.workspace.tokens.application/text-attributes
       (tho/add-text :text1 "Hello World!")))
 
-(defn token-menu-actions [shape-names token-name]
+(defn- menu-actions*
+  [shape-names token-name extra]
   (let [file (setup-file)
         token (ctob/get-token-by-name (tht/get-tokens-lib file) "test-token-set" token-name)
         selected-shapes (map #(ths/get-shape file %) shape-names)]
     (wtcm/menu-actions
-     {:token token
-      :selected-shapes selected-shapes})))
+     (merge {:token token
+             :render-wasm true
+             :selected-shapes selected-shapes}
+            extra))))
+
+(defn token-menu-actions [shape-names token-name]
+  (menu-actions* shape-names token-name {}))
 
 (defn submenu-actions [shape-names token-name submenu-type]
-  (let [file (setup-file)
-        token (ctob/get-token-by-name (tht/get-tokens-lib file) "test-token-set" token-name)
-        selected-shapes (map #(ths/get-shape file %) shape-names)]
-    (wtcm/menu-actions
-     {:type submenu-type
-      :token token
-      :selected-shapes selected-shapes})))
+  (menu-actions* shape-names token-name {:type submenu-type}))
 
 (defn token-menu-action-labels [actions]
   (mapv #(if (keyword? %) % (:title %)) actions))
@@ -251,6 +251,30 @@
       (let [actions (token-menu-actions [:rect1] "token-dimensions")
             action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
         (t/is (some #(= {:title "Stroke Width" :submenu :stroke-width} %) action-titles))))))
+
+(t/deftest stroke-width-items-classic-renderer
+  (t/testing "per-side is not offered when the WASM renderer is off"
+    (with-redefs [cf/flags per-side-flags]
+      (t/testing "shows a single global item for boards and rectangles"
+        (doseq [shape [:rect1 :frame1]]
+          (let [actions (menu-actions* [shape] "token-stroke-width" {:render-wasm false})
+                action-titles (mapv :title actions)]
+            (t/is (= action-titles ["Stroke Width"])))))
+
+      (t/testing "shows a single global item for mixed selections"
+        (let [actions (menu-actions* [:rect1 :text1] "token-stroke-width" {:render-wasm false})
+              action-titles (mapv :title actions)]
+          (t/is (= action-titles ["Stroke Width"]))))
+
+      (t/testing "the stroke-width submenu falls back to the global item"
+        (let [actions (menu-actions* [:rect1] "token-dimensions" {:type :stroke-width :render-wasm false})
+              action-titles (mapv :title actions)]
+          (t/is (= action-titles ["Stroke Width"]))))
+
+      (t/testing "the dimensions menu has no stroke-width submenu"
+        (let [actions (menu-actions* [:rect1] "token-dimensions" {:render-wasm false})
+              action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
+          (t/is (not (some #(= {:title "Stroke Width" :submenu :stroke-width} %) action-titles))))))))
 
 (t/deftest opacity-items
   (t/testing "shows opacity items for all shapes"

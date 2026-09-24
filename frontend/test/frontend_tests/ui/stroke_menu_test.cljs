@@ -44,3 +44,13 @@
 
     (t/testing "a multi-selection with mixed strokes is not available"
       (t/is (false? (stroke/per-side-stroke-available? :multiple :multiple [:rect-a :frame-a] objects))))))
+
+(t/deftest per-side-stroke-enabled-test
+  (t/testing "enabled only with the feature flag and the WASM renderer"
+    (with-redefs [cf/flags per-side-flags]
+      (t/is (true? (stroke/per-side-stroke-enabled? true)))
+      (t/is (false? (stroke/per-side-stroke-enabled? false)))))
+
+  (t/testing "disabled when the feature flag is off"
+    (with-redefs [cf/flags (disj cf/flags :stroke-per-side)]
+      (t/is (false? (stroke/per-side-stroke-enabled? true))))))

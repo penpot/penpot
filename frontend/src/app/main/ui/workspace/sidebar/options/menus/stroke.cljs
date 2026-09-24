@@ -88,6 +88,14 @@
                 (seq ids)
                 (every? #(ctt/per-side-stroke-shape? (:type (get objects %))) ids)))))
 
+(defn per-side-stroke-enabled?
+  "Whether per-side stroke editing can work at all: the feature flag must be
+  on and the WASM renderer active. The classic renderer only draws the single
+  `:stroke-width`, so per-side values are inert there."
+  [render-wasm?]
+  (and (contains? cf/flags :stroke-per-side)
+       (boolean render-wasm?)))
+
 (mf/defc stroke-menu*
   {::mf/wrap [#(mf/memo' % stroke-menu-check-props)]}
   [{:keys [ids type values show-caps disable-stroke-style applied-tokens]}]
@@ -163,7 +171,7 @@
             (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids (stroke-width-all-attrs value) index))))
 
-        wasm-render?
+        render-wasm?
         (features/use-feature "render-wasm/v1")
 
         objects
@@ -173,7 +181,7 @@
         (per-side-stroke-available? type strokes ids objects)
 
         per-side-disabled?
-        (not wasm-render?)
+        (not (per-side-stroke-enabled? render-wasm?))
 
         on-stroke-width-side-change
         (fn [index attr value]

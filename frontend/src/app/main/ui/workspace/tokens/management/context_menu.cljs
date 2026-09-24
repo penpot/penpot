@@ -12,17 +12,18 @@
    [app.common.files.tokens :as cfo]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
-   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :as stroke]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -291,10 +292,11 @@
 
 (defn- per-side-stroke-eligible?
   "Per-side stroke width tokens are only offered for selections made
-  entirely of boards and rectangles, and only when the feature flag is on."
+  entirely of boards and rectangles, with the feature flag on and the WASM
+  renderer active (the classic renderer ignores per-side widths)."
   [context-data]
   (let [shapes (:selected-shapes context-data)]
-    (and (contains? cf/flags :stroke-per-side)
+    (and (stroke/per-side-stroke-enabled? (:render-wasm context-data))
          (seq shapes)
          (every? #(ctt/per-side-stroke-shape? (:type %)) shapes))))
 
@@ -569,6 +571,7 @@
         token (mf/deref (refs/workspace-token-in-selected-set token-id))
         token-type (:type token)
         selected-token-set-id (mf/deref refs/selected-token-set-id)
+        render-wasm? (features/use-feature "render-wasm/v1")
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -583,6 +586,7 @@
      [:& menu-tree {:submenu-offset width
                     :token token
                     :errors errors
+                    :render-wasm render-wasm?
                     :selected-token-set-id selected-token-set-id
                     :selected-shapes selected-shapes
                     :is-selected-inside-layout is-selected-inside-layout
