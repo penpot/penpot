@@ -430,6 +430,7 @@
 (defn flash
   "Show error notification banner and emit error report.
   A nil timeout keeps the notification visible until dismissed or replaced.
+  A `:tag` lets the notification be hidden later by that tag.
 
   The payload format is derived from the cause: environment failures get a
   compact report. The audit event name is the canonical one requested by
@@ -460,7 +461,7 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause timeout report-link?]
+  [& {:keys [type hint cause timeout tag report-link?]
       :or {type :handled timeout 5000}}]
   (js/Promise.
    (fn [resolve _reject]
@@ -480,6 +481,9 @@
                           :type :toast
                           :level :error
                           :timeout timeout}
+                   (some? tag)
+                   (assoc :tag tag)
+
                    link-report
                    (assoc :links [{:label (tr "labels.download" "report.txt")
                                    :callback (partial download-report! link-report)}]))))
@@ -544,6 +548,10 @@
       ;; The retained changes no longer apply to the restored version.
       (= :vern-conflict code)))
 
+(def persistence-failed-tag
+  "Tag of the save failure notification, hidden once a save lands."
+  :persistence-failed)
+
 (defn flash-persistence
   [cause]
   (let [data (ex-data cause)]
@@ -555,6 +563,7 @@
       (flash :cause cause
              :type :handled
              :timeout nil
+             :tag persistence-failed-tag
              :report-link? true
              :hint (tr "errors.save-failed")))))
 

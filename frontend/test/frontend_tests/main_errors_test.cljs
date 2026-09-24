@@ -618,6 +618,16 @@
           (t/is (= timeout (get-in state [:notification :timeout])))
           (t/is (= :visible (get-in state [:notification :status]))))))))
 
+(t/deftest persistence-notifications-carry-a-tag-to-hide-them
+  (let [scheduled (atom [])
+        events    (atom [])]
+    (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                  st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+      (errors/flash-persistence nil)
+      (doseq [callback @scheduled] (callback))
+      (let [state (ptk/update (first @events) {})]
+        (t/is (= errors/persistence-failed-tag (get-in state [:notification :tag])))))))
+
 (t/deftest ^:async persistence-notifications-include-an-error-report-download
   (let [scheduled      (atom [])
         idle-callbacks (atom [])

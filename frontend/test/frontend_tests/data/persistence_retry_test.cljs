@@ -538,6 +538,9 @@
             (t/is (= :error (get-in @store [:persistence :status])))
             (t/is (= 1 (count @failures)) "the user is not warned again")
 
+            ;; The warning the first failure left on screen.
+            (ptk/emit! store #(assoc % :notification {:tag errors/persistence-failed-tag
+                                                      :level :error}))
             (rx/push! (last @cycles) :tick)
             (await (async/wait-for #(and (= :saved (get-in @store [:persistence :status]))
                                          (empty? (get-in @store [:persistence :queue])))
@@ -545,7 +548,9 @@
             (t/is (= 6 (count @requests)))
             (t/is (apply = (map (comp :commit-id second) @requests))
                   "every attempt carries the same commit id")
-            (t/is (nil? (get-in @store [:persistence :recovering]))))))
+            (t/is (nil? (get-in @store [:persistence :recovering])))
+            (t/is (nil? (get @store :notification))
+                  "the failure warning goes away once the save lands"))))
        (fn [_ _]
          (if (< (swap! calls inc) 6)
            (rx/throw (ex-info "offline" {:type :offline}))

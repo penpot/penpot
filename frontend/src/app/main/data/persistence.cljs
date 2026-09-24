@@ -501,7 +501,10 @@
                        (rx/filter #(= commit-id (:id %)))
                        (rx/take 1)
                        (rx/mapcat (fn [_]
+                                    ;; A save that lands shows the connection
+                                    ;; is back: the failure warning goes away.
                                     (rx/of (discard-commit commit-id)
+                                           (ntf/hide :tag errors/persistence-failed-tag)
                                            (run-persistence-task)))))
                   (rx/of (persist-commit commit-id)))
                  (rx/take-until stoper-s)))
