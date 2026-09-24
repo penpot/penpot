@@ -137,7 +137,7 @@
                            :on-import on-import}])]]))
 
 (mf/defc files-section*
-  [{:keys [project team]}]
+  [{:keys [project team layout on-layout-change]}]
   (let [files            (mf/deref refs/files)
         project-id       (get project :id)
 
@@ -147,7 +147,6 @@
                                 (sort-by :modified-at)
                                 (reverse)))
 
-
         can-edit?          (-> team :permissions :can-edit)
         project-id         (:id project)
         is-draft-proyect   (:is-default project)
@@ -155,18 +154,15 @@
         [rowref limit]     (hooks/use-dynamic-grid-item-width)
 
         file-count         (or (count files) 0)
+
+        loading?           (and (some? (:count project))
+                                (not= (:count project) file-count))
+
         empty-state-viewer (and (not can-edit?)
-                                (= 0 file-count))
+                                (= 0 file-count)
+                                (not loading?))
 
         selected-files     (mf/deref refs/selected-files)
-
-        layout*            (hooks/use-persisted-state lt/layout-key lt/default-layout)
-        layout             (deref layout*)
-
-        on-layout-change
-        (mf/use-fn
-         (fn [value]
-           (reset! layout* (keyword value))))
 
         on-file-created
         (mf/use-fn
@@ -216,7 +212,7 @@
                                             (tr "dashboard.empty-placeholder-drafts-subtitle")
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
         [:> grid* {:project project
-                   :files files
+                   :files (if loading? nil files)
                    :selected-files selected-files
                    :can-edit can-edit?
                    :origin :files

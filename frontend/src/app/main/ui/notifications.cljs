@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.main.ui.notifications
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
@@ -27,7 +28,20 @@
                          (= :floating (:position notification)))
         toast?       (or (= :toast (:type notification))
                          (some? (:timeout notification)))
-        content     (or (:content notification) "")]
+        content      (or (:content notification) "")
+        toast-content
+        (if-let [links (seq (:links notification))]
+          (mf/html
+           [:div {:class (stl/css :toast-body)}
+            [:div content]
+            [:nav {:class (stl/css :toast-links)}
+             (for [[index {:keys [label callback]}] (map-indexed vector links)]
+               [:a {:key (str "link-" index)
+                    :class (stl/css :toast-link)
+                    :href "#"
+                    :on-click callback}
+                label])]])
+          content)]
 
     (when notification
       (cond
@@ -35,9 +49,10 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
+          :is-html (boolean (:is-html notification))
           :detail (:detail notification)
           :on-close on-close}
-         content]
+         toast-content]
 
         inline?
         [:& inline-notification
@@ -57,5 +72,6 @@
         [:> toast*
          {:level (or (:level notification) :info)
           :type (:type notification)
+          :is-html (boolean (:is-html notification))
           :detail (:detail notification)
-          :on-close on-close} content]))))
+          :on-close on-close} toast-content]))))

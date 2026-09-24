@@ -11,11 +11,13 @@ Center](https://help.penpot.app/).
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
+- [AI-Assisted Contributions](#ai-assisted-contributions)
 - [Reporting Bugs](#reporting-bugs)
 - [Pull Requests](#pull-requests)
   - [Workflow](#workflow)
+  - [Branch naming](#branch-naming)
   - [Format](#format)
-    - [Title format](#title-format)
+    - [Title format](#title)
     - [Description](#description)
   - [Review process](#review-process)
   - [What we won't accept](#what-we-wont-accept)
@@ -37,6 +39,28 @@ Center](https://help.penpot.app/).
 - **Issue tracker**: We use [GitHub Issues](https://github.com/penpot/penpot/issues)
   for public bugs and [Taiga](https://tree.taiga.io/project/penpot/) for
   internal project management. Changelog entries reference both.
+- **AI coding agents**: guidance lives in `AGENTS.md` and the skills in
+  `.agents/skills/`, which Codex, opencode, Cursor, Zed, Amp, omp and pi read
+  without setup. Claude Code reads `AGENTS.md` from 2.1.277, but only in a
+  project that has no instruction file of its own, so keep no `CLAUDE.md`,
+  `.claude/CLAUDE.md` or `CLAUDE.local.md` in your checkout: any one of them
+  hides this repository's guidance from your session. Skills still load from
+  `.claude/skills` alone, so link it once per clone with
+  `mkdir -p .claude && ln -s ../.agents/skills .claude/skills`, or with
+  `npx skills add ./.agents/skills --agent claude-code`. Below 2.1.277, and
+  on Bedrock, Vertex and Foundry where the fallback has not arrived, add
+  `ln -s AGENTS.md CLAUDE.md` and remove it once your client has the
+  feature. Personal instructions belong in `AGENTS.local.md`, personal
+  skills in `.agents/local/skills/`, and personal Claude steering in
+  `.claude/rules/*.md`, which Claude loads beside the project instructions
+  without switching the fallback off. Every one of these paths is
+  gitignored.
+
+## AI-Assisted Contributions
+
+We support the responsible use of AI tools in the development process. However, all contributions to Penpot - including issues, pull requests, and any other submissions - must meet a reasonable standard of quality, accuracy, and human oversight.
+
+If AI-assisted content is used, it must be carefully reviewed and verified by a human before submission. Contributions that don't meet these standards may be rejected or closed without detailed review or a reply.
 
 ## Reporting Bugs
 
@@ -72,6 +96,18 @@ Advisories](https://github.com/penpot/penpot/security/advisories)
    filing an issue first so we can track it independently of your fix.
 4. **Format and lint** — run the checks described in
    [Formatting and Linting](#formatting-and-linting) before submitting.
+
+### Branch naming
+
+Branch names are not enforced, but we recommend the following:
+
+- **`issue-NNNN`** — when working from a GitHub issue, name the branch after
+  it (e.g. `issue-11525`). This makes each PR's origin self-evident.
+- Otherwise, use a short, descriptive name with words separated by hyphens
+  and no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
+
+Since PRs are squash-merged, the branch name does not survive into the
+commit history — what matters is the [PR title](#title).
 
 ### Format
 
@@ -116,7 +152,7 @@ for more concrete information.
   force-push during review, as it breaks comment threads.
 - PRs require at least **one approval** before merge.
 - We use **squash-merge** by default. The PR title becomes the final
-  commit message, so follow the [title format](#title-format) above.
+  commit message, so follow the [title format](#title) above.
 
 ### What we won't accept
 
@@ -175,7 +211,10 @@ Commit messages must follow this format:
 - Add clear and concise description on the body
 - Do not end the subject with a period
 - Keep the subject to **70 characters** or fewer
+- **Wrap body lines at 76 characters or fewer** (trailers and URLs excepted)
 - Separate the subject from the body with a **blank line**
+
+You can check a commit against these rules with `./scripts/check-commit`.
 
 ### Examples
 

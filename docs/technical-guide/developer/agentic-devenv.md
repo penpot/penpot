@@ -148,10 +148,15 @@ automatically, so regular users never run this.
 ```bash
 ./manage.sh run-devenv --agentic \
     [--ws N] [--sync] [--serena-context CTX] \
+    [--opencode-config-dir DIR] \
     [--git-user-name NAME] [--git-user-email EMAIL]
 ```
 
 Brings one agentic instance up. Errors out if the target is already running.
+`--opencode-config-dir DIR` bind-mounts DIR over the container's
+`~/.config/opencode` so personal agents/prompts/skills kept in a separate
+repository are available to the coding agent; see the
+[Dev environment guide](./devenv.md#personal-opencode-config-inside-the-container).
 
 `--ws N` (N ≥ 1) brings that workspace up independently — workspaces can be
 started and stopped in any order. Per-instance ports

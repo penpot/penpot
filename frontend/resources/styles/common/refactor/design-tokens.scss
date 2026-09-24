@@ -291,8 +291,6 @@
   --modal-link-foreground-color: var(--color-accent-primary);
   --modal-border-color: var(--color-background-quaternary);
   --modal-separator-background-color: var(--color-background-quaternary);
-  --modal-navigator-foreground-color-rest: var(--color-background-quaternary);
-  --modal-navigator-foreground-color-active: var(--color-accent-primary);
 
   // ALERTS, NOTIFICATION, TOAST & BADGES
 
@@ -325,7 +323,7 @@
   // STATUS WIDGET
   --status-widget-background-color-success: var(--status-color-success-500);
   --status-widget-background-color-warning: var(--status-color-warning-500);
-  --status-widget-background-color-pending: var(--status-color-info-500);
+  --status-widget-background-color-pending: var(--status-color-warning-500);
   --status-widget-background-color-error: var(--status-color-error-500);
   --status-widget-icon-foreground-color: var(--color-background-primary);
 

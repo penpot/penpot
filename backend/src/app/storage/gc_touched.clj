@@ -149,7 +149,7 @@
                  :status "delete"
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
-      (let [deletion-delay (if (= "tempfile" bucket)
+      (let [deletion-delay (if (= sto/tempfile-bucket bucket)
                              (ct/duration {:hours 2})
                              (cf/get-deletion-delay))]
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
@@ -158,15 +158,16 @@
 
 (defn- process-bucket!
   [conn bucket objects]
-  (case bucket
-    "file-media-object"     (process-objects! conn has-file-media-object-refs? bucket objects)
-    "team-font-variant"     (process-objects! conn has-team-font-variant-refs? bucket objects)
-    "file-object-thumbnail" (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
-    "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? bucket objects)
-    "profile"               (process-objects! conn has-profile-refs? bucket objects)
-    "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
-    "tempfile"              (process-objects! conn (constantly false) bucket objects)
-    "organization"          (process-objects! conn (constantly false) bucket objects)
+  (cond
+    (= bucket "file-media-object")     (process-objects! conn has-file-media-object-refs? bucket objects)
+    (= bucket "team-font-variant")     (process-objects! conn has-team-font-variant-refs? bucket objects)
+    (= bucket "file-object-thumbnail") (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
+    (= bucket "file-thumbnail")        (process-objects! conn has-file-thumbnails-refs? bucket objects)
+    (= bucket "profile")               (process-objects! conn has-profile-refs? bucket objects)
+    (= bucket "file-data")             (process-objects! conn has-file-data-refs? bucket objects)
+    (= bucket sto/tempfile-bucket)     (process-objects! conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket "organization")          (process-objects! conn (constantly false) bucket objects)
+    :else
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))

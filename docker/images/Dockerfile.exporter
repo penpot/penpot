@@ -1,4 +1,4 @@
-FROM dhi.io/node:24.18.1-debian13-dev
+FROM dhi.io/node:24.20.0-debian13-dev
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
@@ -11,7 +11,7 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install passwd; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    apt-get -qq dist-upgrade; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
       curl \
       tzdata \
@@ -91,9 +91,36 @@ COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 
-# DHI Node image installs Node at the system level (symlinked into
-# /usr/bin), so `./setup`'s internal `corepack enable` needs root to write
-# there. Ownership is fixed right after.
+# pnpm ships as a system binary (same tarball + SHA pin as
+# docker/devenv/Dockerfile); the generated ./setup expects it on PATH.
+# Corepack is gone from Node 25+, so nothing here may use it.
+ARG PNPM_VERSION=12.5.1
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
+         ;; \
+       amd64|x86_64) \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/pnpm.tar.gz "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    mkdir -p /usr/local/bin; \
+    tar -xzf /tmp/pnpm.tar.gz -C /usr/local/bin pnpm; \
+    chmod 755 /usr/local/bin/pnpm; \
+    rm -f /tmp/pnpm.tar.gz; \
+    pnpm --version;
+
+# `./setup` only needs pnpm on PATH (installed above as root).
+# Ownership is fixed right after.
 RUN ./setup && chown -R penpot:penpot /opt/penpot/exporter
 
 USER penpot:penpot

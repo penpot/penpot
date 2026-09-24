@@ -425,7 +425,7 @@
 
         nitrate-toast-message
         (condp = params-subscription
-          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-finish-failed")
+          dnt/nitrate-checkout-finish-error-token (tr "subscription.error.nitrate.checkout-failed")
           dnt/nitrate-checkout-cancelled-token    (tr "subscription.error.nitrate.checkout-cancelled")
           nil)
 
@@ -745,7 +745,6 @@
                          :cta-link (if (and (contains? cf/flags :admin-console) nitrate?) #(open-contact-sales-modal subscription-type "Unlimited") #(open-subscription-modal "unlimited" subscription))
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :recommended (= subscription-type "professional")
                          :show-button-cta (= subscription-type "professional")
                          :current-plan false}])
 
@@ -783,6 +782,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
                          :code-action :activate
+                         :recommended (= subscription-type "professional")
                          :show-button-cta (not nitrate-license)
                          :current-plan false
                          :inline-error nitrate-start-error-message}])]]]))
@@ -908,7 +908,7 @@
         (js/encodeURIComponent email)
 
         mailto-url
-        (dm/str "mailto:sales@penpot.net"
+        (dm/str "mailto:sales@penpot.app"
                 "?subject=Request%20to%20Cancel%20Enterprise%20Subscription"
                 "&body=Hello%2C%0A%0A"
                 "I%20would%20like%20to%20cancel%20my%20Enterprise%20subscription.%0A"
@@ -930,8 +930,8 @@
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :modal-text-medium)}
         (tr "nitrate.subscription.settings.manual-contact-us")]
-       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.net"}
-        "sales@penpot.net"]
+       [:a {:class (stl/css :cta-link) :href "mailto:sales@penpot.app"}
+        "sales@penpot.app"]
        [:div {:class (stl/css :action-buttons)}
         [:> button* {:class (stl/css :button-full-width)
                      :variant "primary"

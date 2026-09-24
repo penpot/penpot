@@ -172,7 +172,9 @@ pnpm --filter composable-test-suite run test:ci
 
 This builds the in-sandbox entry (`src/ci/headless.ts`) as a single
 self-executing bundle and hands it to the driver (`ci/run-ci.ts`), which
-serves the prebuilt frontend bundle via the frontend e2e static server,
+serves the prebuilt frontend bundle with a zero-dependency static server
+built into the driver (`ci/static-server.ts`, same bundle on the same port —
+no `frontend/` install needed),
 intercepts every backend RPC with Playwright fixtures (no backend, no login),
 opens the mocked workspace file, injects the bundle directly into the plugin
 sandbox, and streams each test's result from the page console — failing the
@@ -182,9 +184,10 @@ backend's only role is persistence, which the mock answers with a canned
 response.
 
 Prerequisites: the frontend bundle must exist at `frontend/resources/public`
-(the devenv watch build suffices; CI builds it via `frontend/scripts/build`),
-and the Playwright browser must be installed
+(the devenv watch build suffices), and the Playwright browser must be installed
 (`pnpm --filter composable-test-suite exec playwright install chromium`).
+In CI the shared E2E workflow (`.github/workflows/tests-e2e.yml`) builds that
+bundle once per commit and this job restores it; do not add a build step.
 
 Options via environment variables:
 

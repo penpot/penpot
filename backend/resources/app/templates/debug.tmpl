@@ -190,6 +190,20 @@ Debug Main Page
         </div>
       </form>
     </fieldset>
+
+    <fieldset>
+      <legend>Validate file:</legend>
+      <desc>Given an FILE-ID, check the referential integrity.</desc>
+      <form method="get" action="/dbg/actions/file-validate">
+        <div class="row">
+          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+        </div>
+        <div class="row">
+          <input type="submit" name="validate" value="Validate" />
+        </div>
+      </form>
+    </fieldset>
+
   </section>
   <section class="widget">
     <fieldset>
@@ -222,6 +236,7 @@ Debug Main Page
         </div>
       </form>
     </fieldset>
+
     <fieldset>
       <legend>Import binfile:</legend>
       <desc>Import penpot file in binary format.</desc>
@@ -233,6 +248,34 @@ Debug Main Page
 
         <div class="row">
           <input type="submit" name="upload" value="Upload" />
+        </div>
+      </form>
+    </fieldset>
+
+    <fieldset>
+      <legend>Repair file:</legend>
+      <desc>Given an FILE-ID, repair the referential integrity errors.
+        <br/>
+        <br/>
+        <b>WARNING: the reparation is not guaranteed and may cause loss of data!</b>
+        <br/>
+        <br/>
+        You may need to give several repair rounds until all errors are cleared.
+      </desc>
+      <form method="get" action="/dbg/actions/file-repair">
+        <div class="row">
+          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+        </div>
+        <div class="row">
+          <label for="check-snapshot">Skip snapshot</label>
+          <input id="check-snapshot" type="checkbox" name="skip-snapshot" />
+          <br />
+          <small>
+            A snapshot is made just before the validation, unless skipped. 
+          </small>
+        </div>
+        <div class="row">
+          <input type="submit" name="repair" value="Repair" />
         </div>
       </form>
     </fieldset>

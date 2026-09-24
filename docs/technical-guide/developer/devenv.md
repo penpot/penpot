@@ -62,7 +62,7 @@ See the dedicated section [Agentic Dev Environment](../agentic-devenv/) for deta
 ### Parallel workspaces
 
 The devenv runs as separate compose projects:
-  * shared infra (`penpotdev-infra`: Postgres, MinIO, mailer, LDAP)
+  * shared infra (`penpotdev-infra`: Postgres, RustFS, Valkey, mailer, LDAP)
   * `penpotdev-wsN` project per runtime instance.
      - `ws0` (a.k.a. `main`) is the current state of your repo;
      - `ws1` and up are clones that you maintain explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
@@ -89,6 +89,12 @@ again. Live-repo Git in a fragile state (rebase / merge / cherry-pick /
 the frontend's MCP flag) is copied into each workspace on its initial sync
 only. After that the developer maintains it in each workspace; subsequent
 `--sync` runs leave the workspace copy alone.
+
+The Claude Code skills link, `.claude/skills`, is seeded the same way: it is
+gitignored, so the sync does not carry it, and the first sync creates it as a
+link to `.agents/skills`. A workspace that already has that path keeps what it
+has. No `CLAUDE.md` is created, because Claude Code reads `AGENTS.md` itself
+in a project that has none.
 
 Stopping is equally flexible — each workspace is independent. Shared infra
 stops only when no instances remain running:
@@ -139,9 +145,30 @@ until you set an identity. The values are applied every time
 `run-devenv` brings an instance up (idempotent), so re-running
 with different flags is the way to change the in-container identity.
 
+### Personal opencode config inside the container
+
+`run-devenv --opencode-config-dir DIR` bind-mounts a host directory over the
+container's `~/.config/opencode` (opencode's global config dir). This is how
+you keep personal agents, prompts, and skills in a separate repository and
+use them inside the devenv without committing them here or leaving untracked
+files in the repo:
+
+```bash
+./manage.sh run-devenv --agentic --opencode-config-dir ../penpot-opencode
+```
+
+The path must be an existing directory; `~` is expanded and the value is
+resolved to an absolute path automatically. The mount is applied at container
+creation, so changing it requires stopping and re-running `run-devenv` for
+that instance, and it applies only to instances brought up with the flag —
+other workspaces mount nothing. The directory is shared read-write with the
+container (same UID mapping as the source tree). Opencode's own state
+(sessions, `auth.json`) lives in `~/.local/share/opencode`, which stays in
+the container's data volume regardless of this flag.
+
 ### Shared state and workers
 
-All instances share one Penpot database and one MinIO bucket; users, teams,
+All instances share one Penpot database and one RustFS bucket; users, teams,
 files, and MCP tokens are visible from every instance. Per-instance Valkey
 keeps msgbus Pub/Sub channels (collab broadcasts, team-org notifications,
 file-summary cache, rate-limit counters) isolated.
@@ -149,7 +176,7 @@ file-summary cache, rate-limit counters) isolated.
 Background workers (`enable-backend-worker`) run only on ws0 — ws1+ overlays
 disable it. ws1+ RPC handlers still enqueue tasks into the shared Postgres
 `task` table; ws0's dispatcher claims them via `FOR UPDATE SKIP LOCKED` and
-runs them against the shared DB and MinIO. Workers are fire-and-forget:
+runs them against the shared DB and RustFS. Workers are fire-and-forget:
 `wrk/submit!` inserts a row and returns; RPC handlers never wait on
 completion. The "ws0 only" policy avoids multi-instance worker races (cron
 dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across
@@ -163,7 +190,8 @@ Shared infrastructure shuts down only when no instances remain running.
 The devenv compose configuration has been split into two files and reorganized
 into separate compose projects per runtime instance:
 
-- `docker/devenv/docker-compose.infra.yml` (Postgres, MinIO, mailer, LDAP)
+- `docker/devenv/docker-compose.infra.yml` (Postgres, RustFS, Valkey, mailer,
+  LDAP)
   runs under the compose project `penpotdev-infra`.
 - `docker/devenv/docker-compose.main.yml` (one main container + its Valkey)
   runs once per runtime instance under `penpotdev-ws0`, `penpotdev-ws1`, ….
@@ -175,10 +203,17 @@ into separate compose projects per runtime instance:
 If you had the devenv running on the previous single-project (`penpotdev`)
 layout, leftover containers and the auto-generated `penpotdev_default`
 network must be removed before bringing the new ws0 instance up. The named
-data volumes (`penpotdev_postgres_data_pg16`, `penpotdev_minio_data`,
-`penpotdev_user_data`, `penpotdev_valkey_data`) are pinned by explicit
-`name:` entries in the new compose files and are preserved through the
-transition — your Postgres DB, MinIO objects, and home cache survive.
+data volumes (`penpotdev_postgres_data_pg18`, `penpotdev_rustfs_data`,
+`penpotdev_mailpit_data`, `penpotdev_user_data`, `penpotdev_valkey_data`) are
+pinned by explicit `name:` entries in the new compose files. The legacy
+`penpotdev_postgres_data_pg16` and `penpotdev_minio_data` volumes remain
+untouched. PostgreSQL 16 data and MinIO objects are not migrated automatically.
+
+PostgreSQL 18 stores its versioned data directory under
+`/var/lib/postgresql/18/docker`, so the devenv mounts its volume at
+`/var/lib/postgresql`. To retain data from PostgreSQL 16, export and restore it
+with `pg_dump` and `pg_restore`; do not mount the PostgreSQL 16 volume directly
+in the PostgreSQL 18 container.
 
 One-time cleanup, then bring up ws0:
 
@@ -361,14 +396,28 @@ An example of your cursor configuration can be:
 }
 ```
 
+## Object storage
+
+The devenv uses RustFS for S3-compatible object storage. Its API is available
+at [http://localhost:9000](http://localhost:9000), and its management console
+is available at [http://localhost:9001](http://localhost:9001). Log in to the
+console with `penpot-devenv` as both the access key and secret key.
+
+Both ports bind only to the host loopback interface and are not exposed to the
+local network.
+
 ## Email
 
-To test email sending, the devenv includes [MailCatcher](https://mailcatcher.me/),
-a SMTP server that is used for develop. It does not send any mail outbounds.
-Instead, it stores them in memory and allows to browse them via a web interface
-similar to a webmail client. Simply navigate to:
+To test email sending, the devenv includes
+[Mailpit](https://mailpit.axllent.org/), an SMTP server for development. It does
+not send mail externally. Instead, it stores messages in a persistent Docker
+volume and provides a webmail-like interface. Simply navigate to:
 
 [http://localhost:1080](http://localhost:1080)
+
+The inbox persists when the container is recreated. `drop-devenv` preserves
+the `penpotdev_mailpit_data` volume, together with the other devenv data
+volumes.
 
 ## Create user
 

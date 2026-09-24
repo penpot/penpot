@@ -43,7 +43,7 @@
   (mf/with-effect [team]
     (when team
       (let [tname (if (:is-default team)
-                    (tr "dashboard.your-penpot")
+                    (tr "dashboard.personal-projects")
                     (:name team))]
         (case section
           :fonts (dom/set-html-title (tr "title.dashboard.fonts" tname))

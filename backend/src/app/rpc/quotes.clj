@@ -547,6 +547,76 @@
       (generic-check!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: MEDIA-STORAGE-BYTES-PER-TEAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:media-storage-bytes-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
+
+(def ^:private valid-media-storage-bytes-per-team-quote?
+  (sm/lazy-validator schema:media-storage-bytes-per-team))
+
+(def ^:private sql:get-media-storage-bytes-per-team
+  "SELECT COALESCE(SUM(so.size), 0) AS total
+     FROM (
+       SELECT fmo.media_id AS so_id
+         FROM file_media_object AS fmo
+         JOIN file AS f ON (f.id = fmo.file_id)
+         JOIN project AS p ON (p.id = f.project_id)
+        WHERE p.team_id = ?
+          AND fmo.deleted_at IS NULL
+          AND f.deleted_at IS NULL
+        UNION
+        SELECT fmo.thumbnail_id AS so_id
+         FROM file_media_object AS fmo
+         JOIN file AS f ON (f.id = fmo.file_id)
+         JOIN project AS p ON (p.id = f.project_id)
+        WHERE p.team_id = ?
+          AND fmo.thumbnail_id IS NOT NULL
+          AND fmo.deleted_at IS NULL
+          AND f.deleted_at IS NULL
+        UNION
+        SELECT v.otf_file_id AS so_id
+         FROM team_font_variant AS v
+        WHERE v.team_id = ?
+          AND v.otf_file_id IS NOT NULL
+          AND v.deleted_at IS NULL
+        UNION
+        SELECT v.ttf_file_id AS so_id
+         FROM team_font_variant AS v
+        WHERE v.team_id = ?
+          AND v.ttf_file_id IS NOT NULL
+          AND v.deleted_at IS NULL
+        UNION
+        SELECT v.woff1_file_id AS so_id
+         FROM team_font_variant AS v
+        WHERE v.team_id = ?
+          AND v.woff1_file_id IS NOT NULL
+          AND v.deleted_at IS NULL
+        UNION
+        SELECT v.woff2_file_id AS so_id
+         FROM team_font_variant AS v
+        WHERE v.team_id = ?
+          AND v.woff2_file_id IS NOT NULL
+          AND v.deleted_at IS NULL
+     ) AS refs
+     JOIN storage_object AS so ON (so.id = refs.so_id)
+    WHERE so.deleted_at IS NULL")
+
+(defmethod check-quote ::media-storage-bytes-per-team
+  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  (assert (valid-media-storage-bytes-per-team-quote? quote) "invalid quote parameters")
+  (-> quote
+      (assoc ::default (cf/get :quotes-media-storage-bytes-per-team
+                               (* 20 1024 1024 1024)))
+      (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
+      (assoc ::count-sql [sql:get-media-storage-bytes-per-team
+                          team-id team-id team-id team-id team-id team-id])
+      (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: DEFAULT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -86,7 +86,7 @@ export class DashboardPage extends BaseWebSocketPage {
     this.searchInput = page.getByPlaceholder("Search…");
 
     this.teamDropdown = this.sidebar.getByRole("button", {
-      name: "Your Penpot",
+      name: "Personal Projects",
     });
     this.userAccount = this.sidebar.getByRole("button", {
       name: /Princesa Leia/,

@@ -15,7 +15,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 auto;
+  flex-shrink: 0;
   inline-size: 100%;
   block-size: var(--height, $sz-200);
 }

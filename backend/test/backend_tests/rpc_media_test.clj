@@ -137,6 +137,66 @@
       (t/is (uuid? (:thumbnail-id result))))))
 
 
+(t/deftest upload-file-media-object-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        v4-id  "550e8400-e29b-41d4-a716-446655440000"]
+
+    ;; reserved version (v3) must be rejected at the RPC boundary
+    (let [params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile
+                  :id v3-id}
+          out    (th/command! params)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; v4 id is accepted
+    (let [params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile
+                  :id v4-id}
+          out    (th/command! params)]
+      (t/is (th/success? out))
+      (t/is (= v4-id (str (:id (:result out))))))))
+
+(t/deftest create-file-media-object-from-url-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"]
+
+    ;; reserved version (v3) must be rejected before any download happens
+    (let [params {::th/type :create-file-media-object-from-url
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :url "https://example.com/sample.jpg"
+                  :id v3-id}
+          out    (th/command! params)]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))
+
 (t/deftest media-object-from-url-command
   (let [prof   (th/create-profile* 1)
         proj   (th/create-project* 1 {:profile-id (:id prof)
@@ -581,6 +641,41 @@
     (t/is (some? (:error out)))
     (t/is (= :not-found (-> out :error ex-data :type)))))
 
+(t/deftest chunked-upload-other-profile-cannot-assemble
+  ;; assemble-chunks must scope the session lookup to the requesting
+  ;; profile so that a different profile cannot assemble chunks from
+  ;; a session they do not own (BOLA / CWE-639).
+  (let [prof1      (th/create-profile* 1)
+        prof2      (th/create-profile* 2)
+        session-id (create-session! prof1 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        mfile       {:filename "sample.jpg"
+                     :path     source-path
+                     :mtype    "image/jpeg"
+                     :size     312043}]
+
+    ;; prof1 uploads a chunk into their own session
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof1)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile})]
+      (t/is (nil? (:error out))))
+
+    ;; prof2 tries to assemble prof1's session via create-font-variant
+    ;; (which calls assemble-chunks without ownership check)
+    (let [out (th/command! {::th/type        :create-font-variant
+                            ::rpc/profile-id (:id prof2)
+                            :team-id         (:default-team-id prof2)
+                            :font-id         (uuid/next)
+                            :font-family     "TestFont"
+                            :font-weight     400
+                            :font-style      "normal"
+                            :uploads         {"font/ttf" session-id}})]
+      (t/is (some? (:error out)))
+      (t/is (= :not-found (-> out :error ex-data :type)))
+      (t/is (= :object-not-found (-> out :error ex-data :code))))))
+
 (t/deftest chunked-upload-invalid-media-type
   (let [prof       (th/create-profile* 1)
         _          (th/create-project* 1 {:profile-id (:id prof)
@@ -646,6 +741,131 @@
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :missing-chunks (-> out :error ex-data :code))))))
 
+(t/deftest chunked-upload-assemble-rejects-duplicate-indices
+  ;; assemble-chunks must validate the index SET, not just the count: a
+  ;; session declaring 2 chunks but storing [0,0] must fail instead of
+  ;; assembling a corrupt file. Chunks are written at the storage level
+  ;; because upload-chunk itself now rejects the second index.
+  (let [prof        (th/create-profile* 1)
+        _           (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:default-team-id prof)})
+        file        (th/create-file* 1 {:profile-id (:id prof)
+                                        :project-id (:default-project-id prof)
+                                        :is-shared false})
+        session-id  (create-session! prof 2)
+        storage     (:app.storage/storage th/*system*)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        chunks      (split-file-into-chunks source-path 312043)
+        put-chunk!  (fn [idx]
+                      (let [mfile (make-chunk-mfile (first chunks) "image/jpeg")]
+                        (sto/put-object! storage
+                                         {::sto/content      (sto/content (:path mfile))
+                                          ::sto/deduplicate? false
+                                          ::sto/touch        true
+                                          :content-type      "image/jpeg"
+                                          :bucket            sto/tempfile-bucket
+                                          :upload-id         (str session-id)
+                                          :chunk-index       idx})))]
+    (put-chunk! 0)
+    (put-chunk! 0)
+
+    (let [out (th/command! {::th/type        :assemble-file-media-object
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :file-id         (:id file)
+                            :is-local        true
+                            :name            "dupe-indices"
+                            :mtype           "image/jpeg"})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :missing-chunks (-> out :error ex-data :code))))))
+
+(t/deftest chunked-upload-duplicate-then-assemble
+  ;; A rejected duplicate must leave the first chunk intact: upload 0,
+  ;; re-upload 0 (rejected), then assemble succeeds with the original size.
+  (let [prof        (th/create-profile* 1)
+        _           (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:default-team-id prof)})
+        file        (th/create-file* 1 {:profile-id (:id prof)
+                                        :project-id (:default-project-id prof)
+                                        :is-shared false})
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        chunks      (split-file-into-chunks source-path 312043)
+        mtype       "image/jpeg"
+        size        (alength (first chunks))]
+
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         (make-chunk-mfile (first chunks) mtype)})]
+      (t/is (nil? (:error out))))
+
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         (make-chunk-mfile (first chunks) mtype)})]
+      (t/is (some? (:error out)))
+      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
+
+    (let [out (th/command! {::th/type        :assemble-file-media-object
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :file-id         (:id file)
+                            :is-local        true
+                            :name            "after-dupe"
+                            :mtype           mtype})]
+      (t/is (nil? (:error out)))
+      (let [storage (:app.storage/storage th/*system*)
+            mobj    (sto/get-object storage (:media-id (:result out)))]
+        (t/is (= size (:size mobj)))))))
+
+(t/deftest chunked-upload-rejected-duplicate-keeps-session-usable
+  ;; Rejecting a duplicate must not poison the session: the remaining
+  ;; distinct indices still accumulate and assemble normally.
+  (let [prof        (th/create-profile* 1)
+        _           (th/create-project* 1 {:profile-id (:id prof)
+                                           :team-id (:default-team-id prof)})
+        file        (th/create-file* 1 {:profile-id (:id prof)
+                                        :project-id (:default-project-id prof)
+                                        :is-shared false})
+        session-id  (create-session! prof 2)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        chunks      (split-file-into-chunks source-path 110000)
+        mtype       "image/jpeg"]
+
+    (t/is (= 3 (count chunks)))
+
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         (make-chunk-mfile (nth chunks 0) mtype)})]
+      (t/is (nil? (:error out))))
+
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         (make-chunk-mfile (nth chunks 0) mtype)})]
+      (t/is (some? (:error out)))
+      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
+
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           1
+                            :content         (make-chunk-mfile (nth chunks 1) mtype)})]
+      (t/is (nil? (:error out))))
+
+    ;; The live store holds exactly the two distinct indices: the
+    ;; rejected duplicate stored nothing.
+    (let [rows (th/db-exec! ["SELECT (metadata->>'~:chunk-index')::integer AS idx FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND deleted_at IS NULL ORDER BY idx"
+                             (str session-id)])]
+      (t/is (= [0 1] (mapv :idx rows))))))
+
 (t/deftest chunked-upload-session-not-found
   (let [prof       (th/create-profile* 1)
         _          (th/create-project* 1 {:profile-id (:id prof)
@@ -683,6 +903,24 @@
       (t/is (= :max-quote-reached (-> out :error ex-data :code)))
       (t/is (= "upload-chunks-per-session" (-> out :error ex-data :target))))))
 
+(t/deftest chunked-upload-invalid-total-chunks
+  ;; total-chunks must be at least 1; zero and negative values are rejected
+  ;; with a :validation error.
+  (let [prof (th/create-profile* 1)]
+    ;; zero total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    0})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))
+
+    ;; negative total-chunks
+    (let [out (th/command! {::th/type        :create-upload-session
+                            ::rpc/profile-id (:id prof)
+                            :total-chunks    -1})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type))))))
+
 (t/deftest chunked-upload-invalid-chunk-index
   ;; Both a negative index and an index >= total-chunks must be
   ;; rejected with a :validation / :invalid-chunk-index error.
@@ -714,6 +952,77 @@
       (t/is (= :validation (-> out :error ex-data :type)))
       (t/is (= :invalid-chunk-index (-> out :error ex-data :code))))))
 
+(t/deftest chunked-upload-duplicate-index-rejected
+  ;; Uploading the same chunk index twice into one session must fail:
+  ;; the second call raises :validation / :duplicate-chunk-index and
+  ;; stores nothing, so one session+index keeps at most one object.
+  (let [prof        (th/create-profile* 1)
+        session-id  (create-session! prof 1)
+        source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+        chunks      (split-file-into-chunks source-path 312043)
+        mtype       "image/jpeg"
+        mfile1      (make-chunk-mfile (first chunks) mtype)
+        mfile2      (make-chunk-mfile (first chunks) mtype)]
+
+    ;; First upload succeeds
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile1})]
+      (t/is (nil? (:error out))))
+
+    ;; Second upload of the same index must be rejected
+    (let [out (th/command! {::th/type        :upload-chunk
+                            ::rpc/profile-id (:id prof)
+                            :session-id      session-id
+                            :index           0
+                            :content         mfile2})]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :duplicate-chunk-index (-> out :error ex-data :code))))
+
+    ;; Exactly one live object stored for that session/index
+    (let [rows (th/db-exec! ["SELECT id FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND (metadata->>'~:chunk-index') = '0' AND deleted_at IS NULL"
+                             (str session-id)])]
+      (t/is (= 1 (count rows))))))
+
+(t/deftest chunked-upload-chunk-too-large
+  ;; Chunks larger than the configured cap must be rejected with
+  ;; :validation / :chunk-too-large before anything is stored, while a
+  ;; chunk exactly at the cap still uploads fine.
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:upload-max-chunk-size 1024})}]
+    (let [prof        (th/create-profile* 1)
+          session-id  (create-session! prof 1)
+          source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+          chunks      (split-file-into-chunks source-path 312043)
+          mtype       "image/jpeg"]
+
+      ;; 312043 bytes exceeds the mocked 1024-byte cap: rejected
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         (make-chunk-mfile (first chunks) mtype)})]
+        (t/is (some? (:error out)))
+        (t/is (= :validation (-> out :error ex-data :type)))
+        (t/is (= :chunk-too-large (-> out :error ex-data :code))))
+
+      ;; Nothing stored for the rejected chunk
+      (let [rows (th/db-exec! ["SELECT id FROM storage_object WHERE (metadata->>'~:upload-id') = ?::text AND deleted_at IS NULL"
+                               (str session-id)])]
+        (t/is (= 0 (count rows))))
+
+      ;; A chunk exactly at the cap still uploads fine
+      (let [out (th/command! {::th/type        :upload-chunk
+                              ::rpc/profile-id (:id prof)
+                              :session-id      session-id
+                              :index           0
+                              :content         (make-chunk-mfile (byte-array 1024 (byte 1)) mtype)})]
+        (t/is (nil? (:error out)))))))
+
 (t/deftest chunked-upload-sessions-per-profile-quota
   ;; With the session limit set to 2, creating a third session for the
   ;; same profile must fail with :restriction / :max-quote-reached.
@@ -734,3 +1043,143 @@
         (t/is (some? (:error out)))
         (t/is (= :restriction (-> out :error ex-data :type)))
         (t/is (= :max-quote-reached (-> out :error ex-data :code)))))))
+
+;; --- Clone File Media Object BOLA tests ---
+
+(defn- create-storage-object!
+  [content content-type]
+  (let [storage (:app.storage/storage th/*system*)]
+    (sto/put-object! storage {::sto/content (sto/content content)
+                              :content-type content-type})))
+
+(t/deftest clone-file-media-object-success
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "image-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "test-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+        file2  (th/create-file* 2 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof1)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (t/is (nil? (:error out)))
+    (let [result (:result out)]
+      (t/is (= (:id file2) (:file-id result)))
+      (t/is (= (:name mobj) (:name result)))
+      (t/is (= (:media-id mobj) (:media-id result)))
+      (t/is (uuid? (:id result)))
+      (t/is (not= (:id mobj) (:id result))))))
+
+(t/deftest clone-file-media-object-no-read-access
+  (let [prof1  (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof1)
+                                      :team-id (:default-team-id prof1)})
+        file1  (th/create-file* 1 {:profile-id (:id prof1)
+                                   :project-id (:default-project-id prof1)
+                                   :is-shared false})
+        sobj   (create-storage-object! "private-content" "image/png")
+        mobj   (th/create-file-media-object* {:file-id (:id file1)
+                                              :name "private-media"
+                                              :width 100
+                                              :height 100
+                                              :mtype "image/png"
+                                              :media-id (:id sobj)})
+
+        prof2  (th/create-profile* 2)
+        _      (th/create-project* 2 {:profile-id (:id prof2)
+                                      :team-id (:default-team-id prof2)})
+        file2  (th/create-file* 2 {:profile-id (:id prof2)
+                                   :project-id (:default-project-id prof2)
+                                   :is-shared false})
+
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof2)
+                :file-id         (:id file2)
+                :is-local        true
+                :id              (:id mobj)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest clone-file-media-object-source-not-found
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        params {::th/type        :clone-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id         (:id file)
+                :is-local        true
+                :id              (uuid/random)}
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= :not-found (:type error-data)))
+      (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest assemble-file-media-object-id-version
+  (let [prof   (th/create-profile* 1)
+        _      (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        v3-id  "6fa459ea-ee8a-3ca4-894e-db77e160355e"
+        v4-id  "550e8400-e29b-41d4-a716-446655440000"
+        mtype  "image/jpeg"]
+
+    ;; reserved version (v3) must be rejected without touching any session
+    (let [out (th/command! {::th/type :assemble-file-media-object
+                            ::rpc/profile-id (:id prof)
+                            :session-id (uuid/next)
+                            :file-id (:id file)
+                            :is-local true
+                            :name "assembled-image"
+                            :mtype mtype
+                            :id v3-id})]
+      (t/is (not (th/success? out)))
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :params-validation)))
+
+    ;; v4 id is accepted through the full chunked flow
+    (let [source-path (th/tempfile "backend_tests/test_files/sample.jpg")
+          chunks      (split-file-into-chunks source-path 312043)
+          session-id  (create-session! prof 1)
+          mfile       (make-chunk-mfile (first chunks) mtype)
+          _           (th/command! {::th/type :upload-chunk
+                                    ::rpc/profile-id (:id prof)
+                                    :session-id session-id
+                                    :index 0
+                                    :content mfile})
+          out         (th/command! {::th/type :assemble-file-media-object
+                                    ::rpc/profile-id (:id prof)
+                                    :session-id session-id
+                                    :file-id (:id file)
+                                    :is-local true
+                                    :name "assembled-image"
+                                    :mtype mtype
+                                    :id v4-id})]
+      (t/is (th/success? out))
+      (t/is (= v4-id (str (:id (:result out))))))))

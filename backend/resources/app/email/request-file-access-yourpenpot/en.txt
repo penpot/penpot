@@ -5,7 +5,7 @@ Hello!
 
 {{requested-by|abbreviate:25}} ({{requested-by-email}}) has requested access to the file named “{{file-name|abbreviate:25}}”.
 
-Please note that the file is currently in Your Penpot 's team, so direct access cannot be granted. However, you have two options to provide the requested access:
+Please note that the file is currently in Personal Projects, so direct access cannot be granted. However, you have two options to provide the requested access:
 
 - Move the File to Another Team:
 

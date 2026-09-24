@@ -69,7 +69,6 @@
    [:onboarding-questions-answered {:optional true} ::sm/boolean]
    [:nitrate-onboarding-viewed {:optional true} ::sm/boolean]
    [:v2-info-shown {:optional true} ::sm/boolean]
-   [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
     [::sm/text {:max 100}]]
    [:notifications {:optional true} schema:props-notifications]
@@ -135,15 +134,13 @@
 
     (catch Throwable cause
       (if (= :not-found (-> cause ex-data :type))
-        {:id uuid/zero :fullname "Anonymous User"}
+        (with-nitrate-licence {:id uuid/zero :fullname "Anonymous User"} cfg)
         (throw cause)))))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
   [conn id & {:as opts}]
-  ;; NOTE: We need to set ::db/remove-deleted to false because demo profiles
-  ;; are created with a set deleted-at value
-  (-> (db/get-by-id conn :profile id (assoc opts ::db/remove-deleted false))
+  (-> (db/get-by-id conn :profile id opts)
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)
@@ -166,8 +163,12 @@
   ;; the same row/object.
   (let [profile (get-profile conn profile-id ::db/for-update true)
         fullname (d/normalize-string fullname)
-        lang     (d/normalize-string lang)
-        theme    (d/normalize-string theme)
+        lang     (if (contains? params :lang)
+                   (d/normalize-string lang)
+                   (:lang profile))
+        theme    (if (contains? params :theme)
+                   (d/normalize-string theme)
+                   (:theme profile))
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)
@@ -520,7 +521,7 @@
     ;; Penpot back through two paths: ::notify-user-organizations-deletion
     ;; (during delete-owned-organizations) and ::notify-organization-deletion.
     ;; Both preserve organization teams unchanged and only prefix or delete
-    ;; imported "Your Penpot" teams according to whether they still have files.
+    ;; imported "Personal Projects" teams according to whether they still have files.
     ;; Let Nitrate clean up the data associated with the deleted Penpot user:
     ;; owned organizations, remaining memberships, and subscription cancellation.
     (when (contains? cf/flags :admin-console)

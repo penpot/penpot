@@ -13,7 +13,7 @@
    [app.main.ui.auth.login :refer [login-page*]]
    [app.main.ui.auth.recovery :refer [recovery-page*]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page*]]
-   [app.main.ui.auth.register :refer [register-page* register-success-page* register-validate-page* terms-register*]]
+   [app.main.ui.auth.register :refer [register-page* register-success-page* register-validate-page* terms-service-privacy-policy*]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*] :as raw-svg]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.util.dom :as dom]
@@ -74,7 +74,7 @@
         [:> recovery-page* {:params params}])
 
       (when (= section :auth-register)
-        [:> terms-register*])]]))
+        [:> terms-service-privacy-policy*])]]))
 
 
 (mf/defc auth-page*

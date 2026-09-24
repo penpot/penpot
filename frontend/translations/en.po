@@ -388,6 +388,9 @@ msgstr ""
 msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
+msgid "dashboard.change-organization-modal.description"
+msgstr "Projects and files will remain available to team members. The team will get the configuration from the new organization."
+
 #: src/app/main/ui/dashboard/deleted.cljs:316
 msgid "dashboard.clear-trash-button"
 msgstr "Clear trash"
@@ -410,7 +413,7 @@ msgstr "Pin this version"
 
 #: src/app/main/ui/components/context_menu_a11y.cljs:300, src/app/main/ui/dashboard/sidebar.cljs:882
 msgid "dashboard.default-team-name"
-msgstr "Your Penpot"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/dashboard/deleted.cljs:265
 msgid "dashboard.delete-all-forever-confirmation.description"
@@ -453,9 +456,13 @@ msgstr "Delete team"
 msgid "dashboard.deleted.empty-state-description"
 msgstr "Your trash is empty. Deleted files and projects will appear here."
 
-#: src/app/main/ui/dashboard/grid.cljs:247
+#: src/app/main/ui/dashboard/grid.cljs:252
 msgid "dashboard.deleted.will-be-deleted-at"
 msgstr "Will be deleted %s"
+
+#: src/app/main/ui/dashboard/grid.cljs:256
+msgid "dashboard.grid.last-modified-at"
+msgstr "Last modified %s"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/workspace/main_menu.cljs:732
 msgid "dashboard.download-binary-file"
@@ -868,8 +875,8 @@ msgid "dashboard.move-to-other-team"
 msgstr "Move to other team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:348, src/app/main/ui/dashboard/sidebar.cljs:349, src/app/main/ui/dashboard/sidebar.cljs:761
-msgid "dashboard.my-teams"
-msgstr "My Teams"
+msgid "dashboard.other-teams"
+msgstr "Other teams"
 
 #: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
 msgid "dashboard.new-file"
@@ -1107,11 +1114,11 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
-#, unused
 msgid "dashboard.select-organization-modal.permission-info"
-msgstr ""
-"Here you find all your organizations where you are allowed to create or add "
-"teams."
+msgstr "Here you'll find the organizations you are part of where you are allowed to move the team."
+
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "Here you'll find the organizations you are part of where you are allowed to create or add teams."
 
 #, unused
 msgid "dashboard.select-organization-modal.select"
@@ -1243,7 +1250,7 @@ msgstr "Your project has been moved successfully"
 
 #, unused
 msgid "dashboard.team-belong-organization"
-msgstr "This team now belongs to %s"
+msgstr "This team is now part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1602
 msgid "dashboard.team-info"
@@ -1255,7 +1262,7 @@ msgstr "Team members"
 
 #, unused
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "This team no longer belongs to the organization %s"
+msgstr "This team is no longer part of the organization %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1609
 msgid "dashboard.team-organization"
@@ -1430,11 +1437,8 @@ msgid "dashboard.your-name"
 msgstr "Your name"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:352, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:616, src/app/main/ui/dashboard/team.cljs:1191, src/app/main/ui/dashboard/team.cljs:1471, src/app/main/ui/dashboard/team.cljs:1577
-msgid "dashboard.your-penpot"
-msgstr "Your Penpot"
-
-msgid "dashboard.my-files"
-msgstr "My Files"
+msgid "dashboard.personal-projects"
+msgstr "Personal Projects"
 
 #: src/app/main/ui/alert.cljs:36
 msgid "ds.alert-ok"
@@ -1766,7 +1770,7 @@ msgstr "At least 1 uppercase letter"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-digits"
-msgstr "At least 1 digit"
+msgstr "At least 1 number"
 
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/auth/register.cljs
 msgid "errors.weak-password.insufficient-special"
@@ -1791,6 +1795,11 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 #: src/app/main/data/auth.cljs:342, src/app/main/ui/auth/register.cljs:91
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
+
+#: src/app/main/errors.cljs:216
+msgid "errors.save-failed"
+msgstr ""
+"Autosave is not working due to an error. Contact support to report the error and reload to continue from your last saved version."
 
 #: src/app/main/errors.cljs:337
 msgid "errors.svg-parser.invalid-svg"
@@ -3220,6 +3229,22 @@ msgstr ""
 "Penpot is temporarily unavailable due to a system issue. Please try again "
 "shortly."
 
+#: src/app/main/ui/static.cljs:344
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot can't start yet."
+
+#: src/app/main/ui/static.cljs:345
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr "This instance needs a setup step that comes with the latest version."
+
+#: src/app/main/ui/static.cljs:346
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Check out our"
+
+#: src/app/main/ui/static.cljs:346
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "technical guide"
+
 #: src/app/main/ui/dashboard/comments.cljs:120, src/app/main/ui/workspace/comments.cljs:162
 msgid "labels.no-comments-available"
 msgstr "You're all caught up! New comment notifications will appear here."
@@ -4377,6 +4402,9 @@ msgstr "This code has expired."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Invalid code."
 
+msgid "nitrate.activation-code.used-error"
+msgstr "This code has already been used."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:57
 msgid "nitrate.activation-success.active-until"
 msgstr "Your plan is active until %s."
@@ -4400,14 +4428,17 @@ msgid "nitrate.modal-success.title"
 msgstr "Welcome to Enterprise!"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:104
-msgid "nitrate.code-activation.footer-before"
-msgstr "Need a code? Download your "
+msgid "nitrate.code-activation.footer-title"
+msgstr "Need a code?"
 
-msgid "nitrate.code-activation.footer-link"
-msgstr "activation code request"
+msgid "nitrate.code-activation.footer-download"
+msgstr "Download request"
 
 msgid "nitrate.code-activation.footer-after"
-msgstr " and contact us:"
+msgstr "Send the file to"
+
+msgid "nitrate.code-activation.footer-before"
+msgstr "and we will send you your code."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:86
 msgid "nitrate.code-activation.input-label"
@@ -4618,7 +4649,7 @@ msgstr "You don't have access to this file."
 
 #: src/app/main/ui/static.cljs:62, src/app/main/ui/static.cljs:265, src/app/main/ui/static.cljs:271, src/app/main/ui/static.cljs:277, src/app/main/ui/static.cljs:283, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:301
 msgid "not-found.no-permission.go-dashboard"
-msgstr "Go to your Penpot"
+msgstr "Go to Personal Projects"
 
 #: src/app/main/ui/static.cljs:289, src/app/main/ui/static.cljs:298
 msgid "not-found.no-permission.if-approves"
@@ -6072,12 +6103,6 @@ msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "The payment was not completed. Please try again. "
 "If the problem persists, contact us: support@penpot.app."
-
-#: src/app/main/ui/settings/subscription.cljs:407
-msgid "subscription.error.nitrate.checkout-finish-failed"
-msgstr ""
-"We couldn’t confirm your subscription. Please check your subscription "
-"status on the Subscription page. You may try again if needed."
 
 #: src/app/main/ui/settings/sidebar.cljs:114, src/app/main/ui/settings/subscription.cljs:505, src/app/main/ui/settings/subscription.cljs:565
 msgid "subscription.labels"
@@ -10339,3 +10364,15 @@ msgstr "Click to close the path"
 
 msgid "notifications.invitation-canceled"
 msgstr "This invitation is no longer available."
+
+msgid "labels.sso-error.title"
+msgstr "We couldn't sign you in to %s"
+
+msgid "labels.sso-error.desc-message"
+msgstr "Sign-in with your organization's identity provider didn't complete. The provider may be unavailable, or your account may not be in its directory yet."
+
+msgid "labels.sso-error.retry"
+msgstr "Try again"
+
+msgid "dashboard.invite-profile-disabled"
+msgstr "You don't have permission to invite people to this team"

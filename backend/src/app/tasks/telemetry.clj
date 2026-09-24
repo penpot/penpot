@@ -17,7 +17,6 @@
    [app.http.client :as http]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
-   [app.util.blob :as blob]
    [app.util.json :as json]
    [integrant.core :as ig]
    [promesa.exec :as px]))
@@ -27,7 +26,8 @@
   (let [sql "SELECT email FROM profile where props->>'~:newsletter-updates' = 'true'"]
     (db/run! cfg (fn [{:keys [::db/conn]}]
                    (->> (db/exec! conn [sql])
-                        (mapv :email))))))
+                        (into [] (map :email))
+                        (not-empty))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LEGACY DATA COLLECTION
@@ -248,20 +248,16 @@
     :props      (or (some-> props db/decode-transit-pgobject) {})
     :context    (or (some-> context db/decode-transit-pgobject) {})}))
 
-(defn- encode-batch
-  "Encode a sequence of event maps into a fressian+zstd base64 string
-  suitable for JSON transport."
-  ^String [events]
-  (blob/encode-str events {:version 4}))
-
 (defn send-event-batch
   "Send a single batch of events to the telemetry endpoint. Returns
-  true on success."
+  true on success. The events are sent as a plain vector of event
+  maps; the JSON encoder handles UUID and temporal types natively and
+  the receiver coerces them back to proper types."
   [{:keys [::setup/props] :as cfg} batch]
   (let [payload {:type :telemetry-events
                  :version (:full cf/version)
                  :instance-id (:instance-id props)
-                 :events (encode-batch batch)}
+                 :events (vec batch)}
         request {:method  :post
                  :uri     (cf/get :telemetry-uri)
                  :headers {"content-type" "application/json"}
@@ -317,8 +313,9 @@
           send?    (get params :send? true)
           enabled? (or (get params :enabled? false)
                        (contains? cf/flags :telemetry))
-          subs     (get-subscriptions cfg)]
-
+          ;; Deferred so the query runs only when a report is
+          ;; actually going to be sent.
+          subs     (delay (get-subscriptions cfg))]
 
       ;; If we have telemetry enabled, then proceed the normal
       ;; operation sending legacy report
@@ -332,7 +329,7 @@
 
           (try
             (let [stats (db/run! cfg get-legacy-stats)]
-              (send-legacy-data cfg stats subs))
+              (send-legacy-data cfg stats @subs))
             (catch Exception cause
               (l/wrn :hint "unable to send legacy report"
                      :cause cause)))
@@ -351,7 +348,10 @@
         ;; onboarding dialog or the profile section, then proceed to
         ;; send a limited telemetry data, that consists in the list of
         ;; subscribed emails and the running penpot version.
-        (when (and send? (seq subs))
+        ;; Official instances (penpot.dev / penpot.app) are excluded:
+        ;; they must never send subscriber emails to the telemetry
+        ;; endpoint (which is ourselves).
+        (when (and (not (cf/telemetry-excluded?)) send? @subs)
           (px/sleep (rand-int 10000))
           (ex/ignoring
-           (send-legacy-data cfg nil subs)))))))
+           (send-legacy-data cfg nil @subs)))))))

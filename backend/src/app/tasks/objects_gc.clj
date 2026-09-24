@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.features.fdata :as fdata]
    [app.storage :as sto]
+   [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
 
 (def ^:private sql:get-profiles
@@ -32,6 +33,11 @@
 
                  ;; Mark as deleted the storage object
                  (some->> photo-id (sto/touch-object! storage))
+
+                 ;; Cascade soft-delete to owned teams, projects, files, etc.
+                 (dobj/delete-object cfg {:object :profile
+                                          :id id
+                                          :deleted-at timestamp})
 
                  (let [affected (-> (db/delete! conn :profile {:id id})
                                     (db/get-update-count))]

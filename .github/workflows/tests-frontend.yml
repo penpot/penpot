@@ -34,7 +34,7 @@ jobs:
   test-frontend:
     if: ${{ !github.event.pull_request.draft }}
     name: "Frontend Tests"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:
@@ -48,8 +48,6 @@ jobs:
       - name: Lint
         working-directory: ./frontend
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
           pnpm run check-fmt:js
           pnpm run check-fmt:clj

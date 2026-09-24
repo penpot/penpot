@@ -204,20 +204,27 @@
 
 (defn- bind!
   [shortcuts]
-  (->> shortcuts
-       (remove #(:disabled (second %)))
-       (run! (fn [[key {:keys [command fn type overwrite]}]]
-               (let [callback  (wrap-cb key fn)
-                     commands  (if (vector? command)
-                                 (into-array command)
-                                 #js [command])]
-                 (if (vector? type)
-                   (do (mousetrap/bind commands callback (nth type 0) overwrite)
-                       (mousetrap/bind commands callback (nth type 1) overwrite))
-                   (let [undefined (js* "(void 0)")]
-                     (if type
-                       (mousetrap/bind commands callback type overwrite)
-                       (mousetrap/bind commands callback undefined overwrite)))))))))
+  (let [entries (remove #(:disabled (second %)) shortcuts)
+        bind-fn (fn [[key {:keys [command fn type overwrite]}]]
+                  (let [callback  (wrap-cb key fn)
+                        commands  (if (vector? command)
+                                    (into-array command)
+                                    #js [command])]
+                    (if (vector? type)
+                      (do (mousetrap/bind commands callback (nth type 0) overwrite)
+                          (mousetrap/bind commands callback (nth type 1) overwrite))
+                      (let [undefined (js* "(void 0)")]
+                        (if type
+                          (mousetrap/bind commands callback type overwrite)
+                          (mousetrap/bind commands callback undefined overwrite))))))]
+    ;; Bind non-overwrite entries first so that entries flagged with
+    ;; `:overwrite` are bound last and can reliably splice out the
+    ;; colliding callbacks bound earlier (mousetrap's overwrite only
+    ;; removes callbacks that were already registered for the same
+    ;; combo). Map iteration order is hash-based, so we must force the
+    ;; order explicitly.
+    (run! bind-fn (remove (comp :overwrite second) entries))
+    (run! bind-fn (filter (comp :overwrite second) entries))))
 
 (defn- reset!
   ([]

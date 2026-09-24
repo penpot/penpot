@@ -9,6 +9,7 @@
         "build": "tsc && vite build",
         "build:headless": "vite build --config vite.config.headless.ts",
         "test:ci": "pnpm run build:headless && tsx ci/run-ci.ts",
+        "test:unit": "tsx --test ci/static-server.test.ts",
         "preview": "vite preview",
         "bootstrap": "pnpm install --ignore-workspace && pnpm run build && pnpm run start",
         "types:check": "tsc --noEmit",
@@ -23,8 +24,8 @@
         "playwright": "^1.62.1",
         "prettier": "^3.9.6",
         "typescript": "^5.9.3",
-        "vite": "^8.2.0",
+        "vite": "^8.2.2",
         "vite-live-preview": "^0.4.0"
     },
-    "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
+    "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f"
 }

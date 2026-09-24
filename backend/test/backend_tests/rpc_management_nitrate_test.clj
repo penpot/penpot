@@ -17,6 +17,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -178,7 +179,7 @@
           (t/is (th/success? out))
           (t/is (= "Trusted Organization" (:name organization)))
           (t/is (= "" (:initials organization)))
-          (t/is (str/ends-with? (:logo organization)
+          (t/is (str/ends-with? (str (:logo organization))
                                 (str "/assets/by-id/" logo-id)))
           (t/is (nil? (:avatar-bg-url organization)))
           (t/is (true? (:sso-active organization))))))))
@@ -193,6 +194,15 @@
       (t/is (or (nil? (get version k))
                 (string? (get version k)))))
     (t/is (= cf/version version))))
+
+(t/deftest get-air-gapped
+  (let [out (th/management-command! {::th/type :get-air-gapped})]
+    (t/is (th/success? out))
+    (t/is (false? (-> out :result :air-gapped))))
+  (binding [cf/flags (conj cf/flags :air-gapped-conf)]
+    (let [out (th/management-command! {::th/type :get-air-gapped})]
+      (t/is (th/success? out))
+      (t/is (true? (-> out :result :air-gapped))))))
 
 (t/deftest get-teams-returns-only-owned-non-default-non-deleted
   (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
@@ -268,7 +278,7 @@
           new-team     (th/db-get :team {:id new-team-id})]
       (t/is (th/success? out))
       (t/is (= 1 (count (set/difference after-teams before-teams))))
-      (t/is (= "Your Penpot" (:name new-team)))
+      (t/is (= "Personal Projects" (:name new-team)))
       (t/is (true? (:is-default new-team))))))
 
 (t/deftest get-managed-profiles-returns-unique-members-for-owned-teams
@@ -1797,13 +1807,14 @@
 
 (t/deftest check-organization-sso-returns-valid-true
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid? (constantly true)]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
 
@@ -1818,18 +1829,35 @@
 
 (t/deftest check-organization-sso-passes-issuer-to-validation
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid?
-                             (fn [_cfg sso]
-                               (and (= "test-client" (:client-id sso))
-                                    (= "https://idp.example.com/" (:issuer sso))))]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com/"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid?
+                                      (fn [_cfg sso]
+                                        (and (= "test-client" (:client-id sso))
+                                             (= "https://idp.example.com/" (:issuer sso))))]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com/"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-returns-valid-false-on-ssrf-blocked-issuer
+  (t/testing "an SSRF-blocked issuer must not reach the OIDC validation flow"
+    (let [called? (atom false)
+          out     (with-redefs [oidc/is-organization-sso-config-valid?
+                                (fn [_cfg _sso] (reset! called? true) true)]
+                    (th/management-command!
+                     {::th/type :check-organization-sso
+                      :organization-id (uuid/random)
+                      :client-id "test-client"
+                      :client-secret "test-secret"
+                      :issuer "http://127.0.0.1/idp"}))]
+      (t/is (th/success? out))
+      (t/is (false? (-> out :result :valid)))
+      (t/is (false? @called?)
+            "OIDC validation should not run when the issuer is SSRF-blocked"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUSH AUDIT EVENTS
@@ -1915,3 +1943,26 @@
           (t/is (= "bar" (get-in event [:context :foo])))
           (t/is (= (:full cf/version) (get-in event [:context :version])))
           (t/is (= "app" (get-in event [:context :initiator]))))))))
+
+(t/deftest push-audit-events-initiator-is-plain-string
+  ;; Shared-key callers (e.g. admin-console) carry :app.http/auth-key-id as a
+  ;; keyword; the stored initiator must be a plain string, and a
+  ;; caller-supplied initiator must never survive (server context wins).
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (binding [cf/flags #{:audit-log}]
+      (let [prof   (th/create-profile* 1 {:is-active true})
+            params {::th/type :push-audit-events
+                    :events [{:name "context-test"
+                              :profile-id (:id prof)
+                              :type "action"
+                              :context {:custom-key "custom-val"
+                                        :initiator "spoofed"}}]}
+            params (with-meta params
+                     {::http/request (assoc http-request
+                                            ::http/auth-key-id :admin-console)})
+            out    (th/management-command! params)]
+        (t/is (nil? (:error out)))
+        (let [[_ event] (:call-args @audit-mock)]
+          (t/is (= "custom-val" (get-in event [:context :custom-key])))
+          (t/is (= "admin-console" (get-in event [:context :initiator])))
+          (t/is (string? (get-in event [:context :initiator]))))))))

@@ -21,7 +21,7 @@
 
 .section-title,
 .subsection-title {
-  @include t.use-typography("title-small");
+  @include t.use-typography("headline-small");
 
   display: flex;
   align-items: center;
@@ -43,6 +43,7 @@
 }
 
 .subsection-title {
+  block-size: $sz-32;
   text-transform: none;
   padding-inline-start: var(--sp-m);
 }

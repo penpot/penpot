@@ -209,9 +209,7 @@ function ensure-devenv-network {
 
 # Compose-project plumbing for the parallel-workspaces layout.
 #
-# - Shared infrastructure (postgres, minio, mailer, ldap, minio-setup) runs
-#   under project `penpotdev-infra`.
-# - Shared infrastructure (postgres, minio, mailer, ldap, valkey, minio-setup)
+# - Shared infrastructure (postgres, RustFS, mailer, LDAP, Valkey)
 #   runs under project `penpotdev-infra`.
 # - Each runtime instance (ws0, ws1, ...) runs only its own main container
 #   under project `penpotdev-wsN`. All workspaces uniformly overlay their
@@ -223,8 +221,10 @@ function ensure-devenv-network {
 # those stale values would leak into substitution. And because Docker Compose
 # gives shell-env precedence over --env-file, the re-injected per-instance
 # overrides cleanly override the defaults.env baseline. Re-injected: HOME/PATH
-# (tooling), CURRENT_USER_ID/PENPOT_SOURCE_PATH (always per-call), and the
-# instance-env-overrides block.
+# (tooling), CURRENT_USER_ID/PENPOT_SOURCE_PATH (always per-call), the
+# optional PENPOT_OPENCODE_CONFIG_DIR (set only by run-devenv's
+# --opencode-config-dir within this process), and the instance-env-overrides
+# block.
 function infra-compose {
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         docker compose -p penpotdev-infra \
@@ -245,14 +245,26 @@ function instance-compose {
     # Per-instance overrides apply to all workspaces uniformly.
     mapfile -t overrides < <(instance-env-overrides "$instance")
 
+    # Optional personal-opencode-config overlay: the extra -f and variable
+    # are only present when run-devenv --opencode-config-dir resolved a host
+    # directory into PENPOT_OPENCODE_CONFIG_DIR; when unset neither the file
+    # nor the variable is referenced, so default behaviour is unchanged.
+    local -a compose_files=(-f docker/devenv/docker-compose.main.yml)
+    local -a opencode_env=()
+    if [[ -n "${PENPOT_OPENCODE_CONFIG_DIR:-}" ]]; then
+        compose_files+=(-f docker/devenv/docker-compose.opencode.yml)
+        opencode_env=("PENPOT_OPENCODE_CONFIG_DIR=${PENPOT_OPENCODE_CONFIG_DIR}")
+    fi
+
     env -i HOME="$HOME" PATH="$PATH" PWD="$PWD" \
         CURRENT_USER_ID="${CURRENT_USER_ID:-$(id -u)}" \
         PENPOT_SOURCE_PATH="$source_path" \
         DEVENV_TAG="$DEVENV_TAG" \
+        "${opencode_env[@]}" \
         "${overrides[@]}" \
         docker compose -p "penpotdev-${instance}" \
             --env-file "$DEVENV_DEFAULTS_FILE" \
-            -f docker/devenv/docker-compose.main.yml \
+            "${compose_files[@]}" \
             "$@"
 }
 
@@ -282,16 +294,11 @@ function devenv-main-running {
     [[ -n "$container" ]] && [[ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]]
 }
 
-# Bring shared infra up and block until minio-setup has provisioned the
-# shared MinIO user/policy. Idempotent: a second call when everything is
-# already up returns immediately.
+# Bring shared infra up and block until services with healthchecks are healthy.
+# Removing orphaned containers retires old infra services without deleting
+# their named volumes.
 function ensure-infra-up {
-    infra-compose up -d
-    local setup_container
-    setup_container=$(infra-compose ps -aq minio-setup 2>/dev/null)
-    if [[ -n "$setup_container" ]]; then
-        docker wait "$setup_container" >/dev/null 2>&1 || true
-    fi
+    infra-compose up -d --wait --wait-timeout 60 --remove-orphans
 }
 
 # Refuse to sync workspaces if the live repo is in a fragile Git state.
@@ -497,6 +504,17 @@ function sync-workspace {
         install -D "$PWD/$cfg" "$workspace/$cfg"
     fi
 
+    # Initial seed of the Claude Code skills link. It is gitignored, so git
+    # ls-files does not list it, yet Claude Code reads skills from
+    # .claude/skills alone. Seeded only when absent: afterwards the
+    # workspace copy belongs to the user, who may keep their own. No
+    # CLAUDE.md is seeded: Claude Code reads AGENTS.md itself in a project
+    # that has none, and a CLAUDE.md here would switch that off.
+    if [[ ! -e "$workspace/.claude/skills" && ! -L "$workspace/.claude/skills" ]]; then
+        mkdir -p "$workspace/.claude"
+        ln -s ../.agents/skills "$workspace/.claude/skills"
+    fi
+
     (
         cd "$workspace"
         git switch -C "${instance}/${CURRENT_BRANCH}" >/dev/null
@@ -658,6 +676,26 @@ function parse-ws-integer {
     echo "ws$raw"
 }
 
+# Strict parser for --opencode-config-dir. Resolves the value to an absolute
+# host directory (docker compose resolves relative bind-mount sources against
+# the compose file's directory, not $PWD, so relative values would be
+# misinterpreted) and verifies it exists. Echoes the absolute path; anything
+# else fails fast.
+function parse-opencode-config-dir {
+    local raw="$1"
+    if [[ -z "$raw" ]]; then
+        echo "Invalid --opencode-config-dir: value is empty." >&2
+        return 1
+    fi
+    raw="${raw/#\~/$HOME}"
+    local abs
+    if ! abs=$(realpath -e "$raw" 2>/dev/null) || [[ ! -d "$abs" ]]; then
+        echo "Invalid --opencode-config-dir: '$raw' is not an existing directory." >&2
+        return 1
+    fi
+    echo "$abs"
+}
+
 
 # Bring a single instance up: compose up + detached tmux start. When agentic
 # is true (the default) the tmux session gets MCP + Serena enabled; when false
@@ -764,6 +802,7 @@ function run-devenv {
     local serena_context="desktop-app"
     local git_user_name=""
     local git_user_email=""
+    local opencode_config_dir=""
     local -a extra_env_args=()
 
     while [[ $# -gt 0 ]]; do
@@ -778,6 +817,8 @@ function run-devenv {
                 do_attach=true; shift;;
             --serena-context)
                 serena_context="$2"; shift 2;;
+            --opencode-config-dir)
+                opencode_config_dir="$(parse-opencode-config-dir "$2")" || return 1; shift 2;;
             --git-user-name)
                 git_user_name="$2"; shift 2;;
             --git-user-email)
@@ -787,13 +828,16 @@ function run-devenv {
             -e*)
                 extra_env_args+=(-e "${1#-e}"); shift;;
             -h|--help)
-                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--serena-context CTX] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
+                echo "Usage: run-devenv [--ws N] [--sync] [--attach] [--agentic] [--serena-context CTX] [--opencode-config-dir DIR] [--git-user-name NAME] [--git-user-email EMAIL] [-e KEY=VAL]"
                 echo "  Bring a single workspace up."
                 echo "  --ws N                target workspace (default: 0)."
                 echo "  --sync                re-seed the wsN clone from the live repo (forbidden on ws0)."
                 echo "  --attach              attach to the tmux session after startup."
                 echo "  --agentic             enable MCP + Serena (AI-agent mode)."
                 echo "  --serena-context CTX  context passed to Serena (default: desktop-app)."
+                echo "  --opencode-config-dir DIR  bind-mount DIR at ~/.config/opencode inside the"
+                echo "                        container (personal agents/prompts/skills kept in a"
+                echo "                        separate repo). Applied at container creation."
                 echo "  --git-user-name NAME  git author name inside the container (default: host git config)."
                 echo "  --git-user-email EMAIL  git author email inside the container."
                 echo "  -e KEY=VAL            forward env var to docker exec on attach."
@@ -861,6 +905,14 @@ function run-devenv {
 
     if [[ "$agentic" == "true" ]]; then
         write-instance-mcp-configs "$target"
+    fi
+
+    # Scope the personal opencode config to this process only: instance-compose
+    # includes the overlay compose file and the variable just when it is set,
+    # so instances brought up without the flag mount nothing.
+    if [[ -n "$opencode_config_dir" ]]; then
+        echo "[$target] mounting personal opencode config: $opencode_config_dir -> ~/.config/opencode"
+        export PENPOT_OPENCODE_CONFIG_DIR="$opencode_config_dir"
     fi
 
     echo "Starting $target..."
@@ -1338,6 +1390,11 @@ function usage {
     echo "                                     --attach              attach to the tmux session after startup."
     echo "                                     --agentic             enable MCP + Serena (AI-agent mode)."
     echo "                                     --serena-context CTX  passed to Serena (default: desktop-app)."
+    echo "                                     --opencode-config-dir DIR"
+    echo "                                                           bind-mount DIR over the container's"
+    echo "                                                           ~/.config/opencode (personal opencode"
+    echo "                                                           agents/prompts/skills kept outside this"
+    echo "                                                           repo; applied at container creation)."
     echo "                                     -e KEY=VAL            forwarded to 'docker exec' on attach."
     echo "                                     --git-user-name NAME / --git-user-email EMAIL"
     echo "                                                           identity wired into the container's git config"

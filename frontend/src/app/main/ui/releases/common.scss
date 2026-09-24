@@ -4,28 +4,29 @@
 //
 // Copyright (c) KALEIDOS INC Sucursal en España SL
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .step-dots {
   display: grid;
   grid-template-columns: none;
   grid-auto-flow: column;
-  gap: deprecated.$s-8;
-  height: fit-content;
-  width: fit-content;
+  gap: var(--sp-s);
+  block-size: fit-content;
+  inline-size: fit-content;
   margin: 0;
   padding: 0;
   place-self: center flex-start;
 }
 
 .dot {
-  height: deprecated.$s-12;
-  width: deprecated.$s-12;
-  border-radius: deprecated.$br-circle;
-  background-color: var(--modal-navigator-foreground-color-rest);
-  cursor: pointer;
+  block-size: $sz-12;
+  inline-size: $sz-12;
+  border-radius: $br-circle;
+  background-color: var(--color-background-quaternary);
 }
 
 .current {
-  background-color: var(--modal-navigator-foreground-color-active);
+  background-color: var(--color-accent-primary);
 }

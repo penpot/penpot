@@ -5,9 +5,10 @@
 ## Layout and commands
 
 - Source: `exporter/src/`; config: `deps.edn`, `shadow-cljs.edn`, `package.json`; runtime helpers/assets: `vendor/`, `scripts/`.
-- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; lint `pnpm run lint`; format check/fix `pnpm run check-fmt` / `pnpm run fmt`.
+- From `exporter/`: setup `./scripts/setup`; watch `pnpm run watch` or `pnpm run watch:app`; production build `pnpm run build`; test bundle `pnpm run build:test`; tests `pnpm run test` or `pnpm run test:quiet`; lint `pnpm run lint:clj`; format check/fix `pnpm run check-fmt:clj` / `pnpm run fmt:clj`.
 - Because exporter consumes `common/`, shared file/shape/model changes may need exporter verification even when the immediate change is not under `exporter/`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
+- Exporter test conventions and CI: `mem:exporter/testing`.
 
 ## HTTP and browser pool
 

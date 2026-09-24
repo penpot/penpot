@@ -78,6 +78,14 @@
 (def content-changed-line-height
   (assoc-in content-base [:children 0 :children 0 :line-height] "1.5"))
 
+;; Token/WASM may store full float precision; editor round-trips often
+;; truncate (e.g. CSS / f32). These must compare as equal.
+(def content-line-height-full-precision
+  (assoc-in content-base [:children 0 :children 0 :line-height] "1.3333333333333333"))
+
+(def content-line-height-truncated
+  (assoc-in content-base [:children 0 :children 0 :line-height] "1.33333"))
+
 (def content-redundant-span-line-height
   (assoc-in content-base [:children 0 :children 0 :children 0 :line-height] "1.5"))
 
@@ -208,6 +216,8 @@
         ;; Other text-node-attr categories
         attrs-font-family          (cttx/get-diff-attrs content-base content-changed-font-family)
         attrs-line-height          (cttx/get-diff-attrs content-base content-changed-line-height)
+        attrs-line-height-precision (cttx/get-diff-attrs content-line-height-full-precision
+                                                         content-line-height-truncated)
         attrs-span-line-height     (cttx/get-diff-attrs content-base content-redundant-span-line-height)
         attrs-roundtrip-line-height (cttx/get-diff-attrs content-token-like-line-height
                                                          content-after-editor-roundtrip)
@@ -242,6 +252,7 @@
     ;; Each text-node-attr category reports correct attr key
     (t/is (= #{:font-family} attrs-font-family))
     (t/is (= #{:line-height} attrs-line-height))
+    (t/is (= #{} attrs-line-height-precision))
     (t/is (= #{} attrs-span-line-height))
     (t/is (= #{} attrs-roundtrip-line-height))
     (t/is (= #{} attrs-nil-typography-refs))

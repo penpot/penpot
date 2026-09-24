@@ -145,7 +145,42 @@
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
     ::mdef/labels []
-    ::mdef/type :histogram}})
+    ::mdef/type :histogram}
+
+   :http-worker-queue-size
+   {::mdef/name "penpot_http_worker_queue_size"
+    ::mdef/help "Current number of queued tasks in the http server xnio worker."
+    ::mdef/type :gauge}
+
+   :http-worker-busy-threads
+   {::mdef/name "penpot_http_worker_busy_threads"
+    ::mdef/help "Current number of busy threads in the http server xnio worker."
+    ::mdef/type :gauge}
+
+   :http-worker-pool-size
+   {::mdef/name "penpot_http_worker_pool_size"
+    ::mdef/help "Current number of threads in the http server xnio worker pool."
+    ::mdef/type :gauge}
+
+   :http-worker-max-pool-size
+   {::mdef/name "penpot_http_worker_max_pool_size"
+    ::mdef/help "Maximum number of threads of the http server xnio worker pool."
+    ::mdef/type :gauge}
+
+   :http-connector-active-connections
+   {::mdef/name "penpot_http_connector_active_connections"
+    ::mdef/help "Current number of active connections in the http listener."
+    ::mdef/type :gauge}
+
+   :http-connector-requests-total
+   {::mdef/name "penpot_http_connector_requests_total"
+    ::mdef/help "Total number of requests handled by the http listener."
+    ::mdef/type :counter}
+
+   :http-connector-errors-total
+   {::mdef/name "penpot_http_connector_errors_total"
+    ::mdef/help "Total number of handler errors in the http listener."
+    ::mdef/type :counter}})
 
 (def system-config
   {::db/pool
@@ -200,7 +235,7 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.client/client
-   {}
+   {::wrk/executor (ig/ref ::wrk/executor)}
 
    ::session/manager
    {::db/pool (ig/ref ::db/pool)}
@@ -392,6 +427,8 @@
 
      :delete-object
      (ig/ref :app.tasks.delete-object/handler)
+     :demo-purge
+     (ig/ref :app.tasks.demo-purge/handler)
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
@@ -427,6 +464,9 @@
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.delete-object/handler
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.demo-purge/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler

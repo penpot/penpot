@@ -67,8 +67,6 @@ function clean {
 }
 
 function setup {
-    corepack enable;
-    corepack install;
     pnpm install;
 }
 

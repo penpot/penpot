@@ -6,8 +6,88 @@
 
 @use "./common";
 @use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.forgot-password-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forgot-password-link {
+  @include use-typography("title-small");
+
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  display: inline;
+  color: var(--color-accent-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.form-submit-buttons {
+  display: grid;
+  gap: var(--sp-s);
+}
 
 .sso-icon {
   max-inline-size: px2rem(26);
   max-block-size: px2rem(26);
+}
+
+.sso-row {
+  display: flex;
+  gap: var(--sp-s);
+}
+
+.sso-btn {
+  --button-bg-color: var(--color-background-tertiary);
+  --button-fg-color: var(--color-foreground-primary);
+
+  @include use-typography("title-small");
+
+  display: flex;
+  align-items: center;
+  gap: px2rem(6);
+  inline-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--button-bg-color);
+  color: var(--button-fg-color);
+
+  &:hover {
+    --button-bg-color: var(--color-background-quaternary);
+    --button-fg-color: var(--color-foreground-primary);
+  }
+}
+
+.register-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-s);
+  padding: 0;
+}
+
+.register-text {
+  @include use-typography("title-small");
+
+  text-align: right;
+  color: var(--color-foreground-secondary);
+}
+
+.register-link {
+  @include use-typography("title-small");
+
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  display: inline;
+  color: var(--color-accent-primary);
+
+  &:hover {
+    text-decoration: underline;
+  }
 }

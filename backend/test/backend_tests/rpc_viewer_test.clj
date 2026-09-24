@@ -128,3 +128,80 @@
         (let [result (:result out)]
           (t/is (contains? result :file))
           (t/is (contains? result :project)))))))
+
+(t/deftest share-link-token-disclosure
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        file   (th/create-file* 1 {:profile-id (:id owner)
+                                   :project-id proj-id
+                                   :is-shared false})
+
+        page-a (get-in file [:data :pages 0])
+        page-b (uuid/random)
+
+        ;; Add a second page to the file
+        _      (th/command! {::th/type :update-file
+                             ::rpc/profile-id (:id owner)
+                             :id (:id file)
+                             :session-id (uuid/random)
+                             :revn 0
+                             :vern 0
+                             :changes [{:type :add-page
+                                        :id page-b
+                                        :page {:id page-b
+                                               :name "Page B"
+                                               :options {}
+                                               :objects {}}}]})
+
+        ;; Create Link A: restrictive (no pages, team-only comments/inspect)
+        link-a (th/command! {::th/type :create-share-link
+                             ::rpc/profile-id (:id owner)
+                             :file-id (:id file)
+                             :pages #{}
+                             :who-comment "team"
+                             :who-inspect "team"})
+        link-a-id (get-in link-a [:result :id])
+
+        ;; Create Link B: permissive (all pages, all can comment/inspect)
+        link-b (th/command! {::th/type :create-share-link
+                             ::rpc/profile-id (:id owner)
+                             :file-id (:id file)
+                             :pages #{page-a page-b}
+                             :who-comment "all"
+                             :who-inspect "all"})
+        link-b-id (get-in link-b [:result :id])]
+
+    (t/testing "restrictive share-link holder cannot see other share-link tokens"
+      (let [out (th/command! {::th/type :get-view-only-bundle
+                              :share-id link-a-id
+                              :file-id (:id file)})
+            err (:error out)
+            result (:result out)
+            share-links (:share-links result)]
+
+        ;; Should not error
+        (t/is (nil? err))
+
+        ;; Should only see the share-link used for authentication
+        (t/is (= 1 (count share-links)))
+        (t/is (= link-a-id (:id (first share-links))))
+
+        ;; Should NOT see Link B's token
+        (t/is (not (some #(= link-b-id (:id %)) share-links)))))
+
+    (t/testing "team member still sees all share-links"
+      (let [out (th/command! {::th/type :get-view-only-bundle
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)})
+            err (:error out)
+            result (:result out)
+            share-links (:share-links result)]
+
+        ;; Should not error
+        (t/is (nil? err))
+
+        ;; Team member should see both share-links
+        (t/is (= 2 (count share-links)))
+        (t/is (some #(= link-a-id (:id %)) share-links))
+        (t/is (some #(= link-b-id (:id %)) share-links))))))

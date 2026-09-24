@@ -144,6 +144,66 @@
                    (db/get-update-count)
                    (pos?)))))))
 
+(defn parse-emails
+  "Parse the emails into a seq of cleaned emails. Accepts a single
+  email, a comma separated list of emails or a coll of emails.
+  Blank entries are skipped."
+  [emails]
+  (->> (cond
+         (string? emails)
+         (str/split emails #",")
+
+         (sequential? emails)
+         emails
+
+         :else
+         (throw (ex-info "expected email or comma separated list of emails"
+                         {:emails emails})))
+       (map str/trim)
+       (remove str/empty?)))
+
+(defn- delete-profile-by-email*
+  [system email deleted-at cause]
+  (when-let [profile (some-> (db/get* system :profile
+                                      {:email (str/lower email)}
+                                      {::db/remove-deleted false})
+                             (profile/decode-row))]
+    (audit/insert system
+                  {:name "delete-profile"
+                   :type "action"
+                   :profile-id (:id profile)
+                   :tracked-at deleted-at
+                   :props (audit/profile->props profile)
+                   :context {:triggered-by "srepl"
+                             :cause cause}})
+
+    (wrk/invoke! (-> system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :profile
+                                          :deleted-at deleted-at
+                                          :id (:id profile)})))
+    (:id profile)))
+
+(defn delete-profiles-by-email!
+  "Mark profiles for deletion by email. Accepts a single email or a
+  comma separated list of emails (or a coll of emails).
+
+  The deletion is immediate: the deleted-at is backdated with the
+  configured deletion-delay so the profiles and their owned teams are
+  purged on the next gc pass."
+  [emails]
+  (let [emails     (parse-emails emails)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-by-email!"]
+    (db/tx-run! sys/system
+                (fn [system]
+                  (reduce (fn [acc email]
+                            (if-let [id (delete-profile-by-email* system email deleted-at cause)]
+                              (update acc :deleted conj id)
+                              (update acc :not-found conj email)))
+                          {:total (count emails) :deleted [] :not-found []}
+                          emails)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -398,10 +458,6 @@
                         (println (sm/humanize-explain explain))
                         (ex/print-throwable cause))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PROCESSING
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn repair-file!
   "Repair the list of errors detected by validation."
   [file-id & {:keys [rollback?] :or {rollback? true} :as options}]
@@ -409,6 +465,10 @@
         file-id (h/parse-uuid file-id)
         options (assoc options ::h/with-libraries? true)]
     (db/tx-run! system h/process-file! file-id procs.file-repair/repair-file options)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROCESSING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-file!
   "Apply a function to the file. Optionally save the changes or not.
@@ -745,47 +805,24 @@
 
 (defn delete-profiles-in-bulk!
   [system path]
-  (letfn [(process-data! [system deleted-at emails]
-            (loop [emails  emails
-                   deleted 0
-                   total   0]
-              (if-let [email (first emails)]
-                (if-let [profile (some-> (db/get* system :profile
-                                                  {:email (str/lower email)}
-                                                  {::db/remove-deleted false})
-                                         (profile/decode-row))]
-                  (do
-                    (audit/insert system
-                                  {:name "delete-profile"
-                                   :type "action"
-                                   :profile-id (:id profile)
-                                   :tracked-at deleted-at
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to delete-profiles-in-bulk!"}})
-                    (wrk/invoke! (-> system
-                                     (assoc ::wrk/task :delete-object)
-                                     (assoc ::wrk/params {:object :profile
-                                                          :deleted-at deleted-at
-                                                          :id (:id profile)})))
-                    (recur (rest emails)
-                           (inc deleted)
-                           (inc total)))
-                  (recur (rest emails)
-                         deleted
-                         (inc total)))
-                {:deleted deleted :total total})))]
+  (let [path       (fs/path path)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-in-bulk!"]
 
-    (let [path       (fs/path path)
-          deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
+    (when-not (fs/exists? path)
+      (throw (ex-info "path does not exists" {:path path})))
 
-      (when-not (fs/exists? path)
-        (throw (ex-info "path does not exists" {:path path})))
-
-      (db/tx-run! system
-                  (fn [system]
-                    (with-open [reader (io/reader path)]
-                      (process-data! system deleted-at (line-seq reader))))))))
+    (db/tx-run! system
+                (fn [system]
+                  (with-open [reader (io/reader path)]
+                    (loop [emails  (line-seq reader)
+                           deleted 0
+                           total   0]
+                      (if-let [email (first emails)]
+                        (if (delete-profile-by-email* system email deleted-at cause)
+                          (recur (rest emails) (inc deleted) (inc total))
+                          (recur (rest emails) deleted (inc total)))
+                        {:deleted deleted :total total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CASCADE FIXING

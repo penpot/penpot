@@ -448,6 +448,21 @@
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
+(register!
+ {:type ::user-provided-uuid
+  :pred uuid/user-provided?
+  :type-properties
+  {:title "user-provided-uuid"
+   :description "UUID provided by the user (v4, v7 or v8)"
+   :error/message "should be a user provided uuid (v4, v7 or v8)"
+   :gen/gen (sg/uuid)
+   :decode/string parse-uuid
+   :decode/json parse-uuid
+   :encode/string encode-uuid
+   :encode/json encode-uuid
+   ::oapi/type "string"
+   ::oapi/format "uuid"}})
+
 ;; Strict email regex aligned with app.common.spec/email-re.
 ;; Local part: valid RFC chars, no leading/trailing dot, no consecutive dots.
 ;; Domain: labels can't start/end with hyphen, no empty labels.

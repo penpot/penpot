@@ -83,18 +83,18 @@
               (instance? IllegalArgumentException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "invalid JSON in request body"
                         :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
                         :code :request-body-too-large
-                        :hint (ex-message cause))
+                        :hint "request body exceeds size limit")
 
               (instance? java.io.EOFException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "unexpected end of request body"
                         :cause cause)
 
               (instance? RuntimeException cause)
@@ -330,7 +330,7 @@
   {:name ::auth
    :compile (constantly wrap-auth)})
 
-(defn- constant-time-eq?
+(defn constant-time-eq?
   "Compare strings in constant time to prevent timing attacks."
   [^String a ^String b]
   (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
@@ -350,7 +350,7 @@
                 (handler))
             {::yres/status 403}))
         {::yres/status 403}))
-    (fn [_ _]
+    (fn [_]
       {::yres/status 403})))
 
 (def shared-key-auth

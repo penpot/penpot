@@ -125,6 +125,17 @@
           (t/is (= "en" (:lang result)))
           (t/is (= "dark" (:theme result))))))
 
+    (t/testing "update profile preserves omitted optional fields"
+      (let [data {::th/type :update-profile
+                  ::rpc/profile-id (:id profile)
+                  :fullname "Updated Name"}
+            out  (th/command! data)]
+
+        (t/is (nil? (:error out)))
+        (t/is (= "Updated Name" (get-in out [:result :fullname])))
+        (t/is (= "en" (get-in out [:result :lang])))
+        (t/is (= "dark" (get-in out [:result :theme])))))
+
     (t/testing "update photo"
       (let [data {::th/type :update-profile-photo
                   ::rpc/profile-id (:id profile)
@@ -413,6 +424,38 @@
     (let [count-after (:count (th/db-exec-one! ["SELECT count(*) FROM http_session_v2 WHERE profile_id = ?" (:id prof)]))]
       (t/is (= 0 count-after)))))
 
+(t/deftest profile-deletion-via-gc-cascades
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        team-id (:default-team-id prof)
+        project-id (:default-project-id prof)
+        file-id (:id file)
+
+        deleted-at (ct/minus (ct/now) (ct/duration {:days 1}))]
+
+    (th/db-update! :profile
+                   {:deleted-at deleted-at}
+                   {:id (:id prof)})
+
+    (let [team-before (th/db-get :team {:id team-id} {::db/remove-deleted false})]
+      (t/is (nil? (:deleted-at team-before))))
+
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (pos? (:processed result))))
+
+    (let [profile-after (th/db-get :profile {:id (:id prof)} {::db/remove-deleted false})]
+      (t/is (nil? profile-after)))
+
+    (let [team-after (th/db-get :team {:id team-id} {::db/remove-deleted false})]
+      (t/is (nil? team-after)))
+
+    (let [project-after (th/db-get :project {:id project-id} {::db/remove-deleted false})]
+      (t/is (nil? project-after)))
+
+    (let [file-after (th/db-get :file {:id file-id} {::db/remove-deleted false})]
+      (t/is (nil? file-after)))))
 
 (t/deftest email-blacklist-1
   (t/is (false? (email.blacklist/enabled? th/*system*)))

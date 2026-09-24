@@ -12,7 +12,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.types.text :as txt]
-   [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
@@ -91,11 +90,147 @@
            (constantly nil)))))
     @loaded?))
 
-;; --- FEATURE: font preview (flag :font-preview) ------------------------------
-;; font-item-preview* and use-font-lazy-load are the whole feature. They are only
-;; rendered/called behind the `:font-preview` flag check in font-item* below, so
-;; their hooks never run when the flag is off. To remove the flag, inline
-;; font-item-preview* into font-item* and drop the plain-name branch.
+;; --- OPTICAL CENTERING OF SAMPLE TEXT --------------------------------------
+
+;; Fonts with exaggerated vertical metrics (huge ascender/descender, small
+;; caps) render their line box lower within a fixed-height row, so a plain
+;; `align-items: center` leaves the visible glyphs sitting low. We measure the
+;; font-wide vs glyph-ink bounding boxes once per font/sample and shift the
+;; text by the computed offset so the visible glyphs are optically centered.
+;; The offset is expressed in `em`, which makes it size-independent: the same
+;; measurement corrects both the 16px `Ag` sample and the smaller font-name
+;; labels in the font selector.
+
+(defonce ^:private optical-offset-cache (atom {}))
+
+(defn- optical-offset-key [family weight style text]
+  (dm/str family "|" weight "|" style "|" text))
+
+(defn- optical-offset-em
+  "Vertical shift (in `em` units, i.e. relative to the font size) that centers
+  the ink of `text` within a single line box.
+
+  For a centered line the shift reduces to the difference between the font-wide
+  and ink bounding boxes:
+  dy = ((ink-ascent - font-ascent) + (font-descent - ink-descent)) / 2.
+  Measuring at 16px and dividing the pixel shift by it yields the `em` value."
+  [family weight style text]
+  (when-some [{:keys [font-ascent font-descent ink-ascent ink-descent]}
+              (dom/measure-text-metrics family weight style text 16)]
+    (let [dy (/ (+ (- ink-ascent font-ascent)
+                   (- font-descent ink-descent))
+                2)
+          em (/ dy 16)]
+      ;; Round to avoid float noise leaking into the transform string.
+      (/ (js/Math.round (* em 10000)) 10000))))
+
+(defn- load-optical-offset
+  [font-id family weight style text]
+  (let [key (optical-offset-key family weight style text)]
+    (if-let [cached (get @optical-offset-cache key)]
+      (p/resolved cached)
+      (-> (fonts/ensure-loaded! font-id)
+          (p/then
+           (fn [_]
+             ;; ensure-loaded! only guarantees the @font-face CSS text has
+             ;; been injected, not that the browser has actually fetched and
+             ;; parsed the font file: that fetch is lazy, normally triggered
+             ;; by the browser laying out DOM text with the font. Canvas
+             ;; measureText doesn't reliably trigger it, so without this
+             ;; explicit wait it can silently measure the fallback font
+             ;; instead, and the resulting bogus offset then gets cached
+             ;; forever — pushing the sample glyphs outside the clipped
+             ;; sample box instead of just centering them slightly wrong.
+             (let [spec (dm/str (or weight "400") " " (or style "normal") " 16px \"" family "\"")]
+               (-> (.load js/document.fonts spec)
+                   (p/catch (constantly nil))))))
+          (p/then
+           (fn [_]
+             (let [em (or (optical-offset-em family weight style text) 0)]
+               (swap! optical-offset-cache assoc key em)
+               em)))))))
+
+(defn- use-optical-offset
+  "Lazily resolve the optical-centering offset (in `em`) for sample text in a
+  given font, measuring once per font/sample and caching it. Falls back to 0
+  when the font isn't available or the metrics can't be measured.
+
+  Returns `[offset ready?]`. `ready?` is true immediately when a value is
+  already cached, and false only while the very first measurement of a given
+  font/sample is still pending. Callers should keep the sample hidden until
+  `ready?`: the offset (and so the sample's rendered position) jumps once
+  that first, async measurement resolves, and painting the glyphs before
+  then makes automated screenshot/position-based tests flaky — whether the
+  test runs before or after the jump is a timing race, not a deterministic
+  outcome."
+  [font-id family weight style text]
+  (let [key     (optical-offset-key family weight style text)
+        offset* (mf/use-state #(get @optical-offset-cache key 0))
+        ready?* (mf/use-state #(contains? @optical-offset-cache key))]
+    (mf/use-effect
+     (mf/deps font-id family weight style text)
+     (fn []
+       (let [cancelled? (volatile! false)]
+         (if (contains? @optical-offset-cache key)
+           (do
+             (reset! offset* (get @optical-offset-cache key))
+             (reset! ready?* true))
+           (let [task (tm/schedule-on-idle
+                       (fn []
+                         (-> (load-optical-offset font-id family weight style text)
+                             (p/then
+                              (fn [em]
+                                (when-not @cancelled?
+                                  (reset! offset* em)
+                                  (reset! ready?* true)))))))]
+             (fn []
+               (vreset! cancelled? true)
+               (tm/dispose! task)))))
+       nil))
+    [(deref offset*) (deref ready?*)]))
+
+(defn- sample-container-style
+  "Inline style that applies the typography font to the (clipped, fixed-height)
+  sample container. Must be a real JS object (`#js`), not a ClojureScript map:
+  the `:style` value here is a runtime expression, not a literal recognized by
+  the hiccup macro, so it reaches React unconverted.
+
+  Falls back to `font-data` (the live fontsdb entry for the typography's
+  `:font-id`) when the typography's own `:font-family` is blank: a font that
+  was unloaded when a typography's font/variant was last changed can leave
+  that field nil on the record (the same failure mode `remove-nil-style-attrs`
+  repairs for shape text spans), and the sample would otherwise render in
+  whatever fallback font the browser picks instead of the intended one.
+
+  The family name is quoted, matching `font-item-preview*` below: setting
+  `style.fontFamily` to a raw, unquoted string parses it as CSS's
+  `<family-name>` grammar, i.e. whitespace-separated `<custom-ident>`s. A
+  family like \"Micro 5\" then tokenizes as the ident `Micro` followed by
+  the *number* `5` — not a valid ident — so the whole property is invalid
+  CSS and the browser silently drops it. A quoted `<string>` sidesteps that
+  entirely, since it isn't tokenized as identifiers at all."
+  [typography font-data]
+  #js {:fontFamily (let [family (:font-family typography)
+                         family (if (str/blank? family) (:family font-data) family)]
+                     (when-not (str/blank? family)
+                       (dm/str "\"" family "\"")))
+       :fontWeight (:font-weight typography)
+       :fontStyle  (:font-style typography)})
+
+(defn- sample-text-style
+  "Inline style that optically centers the sample glyphs. Must be applied to
+  the text node itself, not to the clipped container: a transform on an
+  `overflow: hidden` element moves its own clip region along with it, so it
+  would shift the whole box relative to the row instead of the glyphs inside it.
+
+  Hidden until `ready?` (see `use-optical-offset`), so the glyphs only ever
+  appear already in their final, correctly centered position instead of
+  visibly jumping there after the first paint."
+  [em ready?]
+  #js {:transform (when-not (zero? em) (dm/str "translateY(" em "em)"))
+       :visibility (when-not ready? "hidden")})
+
+;; --- FONT SELECTOR --------------------------------------------------------
 
 (mf/defc font-item-preview*
   "Row content with previews: a vector preview from the shared sprite for catalog
@@ -103,54 +238,75 @@
   cover."
   {::mf/wrap [mf/memo]}
   [{:keys [font]}]
-  (let [font-id    (:id font)
+  (let [font-id    (get font :id)
         sprite     (mf/deref fonts/preview-sprite)
-        in-sprite? (contains? (:ids sprite) font-id)
 
-        ;; Fallback is ONLY for custom fonts: ones the (ready) sprite doesn't
-        ;; cover. If the sprite isn't ready (loading/error) we show the plain name
-        ;; rather than runtime-loading the whole catalog.
-        fallback?  (and (= :ready (:status sprite))
-                        (not in-sprite?))
-        loaded?    (use-font-lazy-load font-id fallback?)]
+        ;; The sprite is only referenceable once it's been attached to the DOM,
+        ;; so the `<use>` glyph is gated on `attached?`. Until then we show the
+        ;; plain name: no blank rows, and no per-font load storm either (see
+        ;; `fallback?` below).
+        attached?  (pos? (:refs sprite))
+
+        ;; Fallback is ONLY for custom fonts: ones the (attached) sprite doesn't
+        ;; cover. If the sprite isn't ready (loading/error) or not yet attached,
+        ;; we show the plain name rather than runtime-loading the whole catalog.
+        in-sprite? (and attached? (contains? (:ids sprite) font-id))
+        fallback?  (and (= :ready (:status sprite)) attached? (not in-sprite?))
+        loaded?    (use-font-lazy-load font-id fallback?)
+
+        ;; Optical centering for the fallback name (custom fonts the sprite
+        ;; doesn't cover): extreme vertical metrics would push the name low in
+        ;; the row, so shift it by the measured offset once the font is known.
+        ;; The label renders at `body-medium` (400/normal), which is the weight
+        ;; and style we measure against.
+        ;; The selector always shows the font's name text as-is, unlike the
+        ;; small "Ag" sample elsewhere in this file, so unlike there this
+        ;; doesn't need to hide anything until the offset is ready — a
+        ;; shifting label is a minor, acceptable visual nicety here, not
+        ;; the row's only content.
+        [label-offset _label-ready?]
+        (use-optical-offset font-id
+                            (:family font)
+                            "400"
+                            "normal"
+                            (:name font))]
     (if in-sprite?
       ;; `fill: currentColor` (scss) makes the sprite glyph follow the row color.
       [:svg {:class (stl/css :font-item-preview)
              :role "img"
              :aria-label (:name font)}
        [:use {:href (dm/str "#" fonts/preview-sprite-prefix font-id)}]]
-      [:span {:class (stl/css :font-item-label)
-              :style (when loaded?
-                       #js {:fontFamily (dm/str "\"" (:family font) "\", sans-serif")})}
-       (:name font)])))
+      ;; The vertical correction goes on an INNER span, not on `.font-item-label`
+      ;; itself: that class carries its own `overflow: hidden` (from the
+      ;; text-ellipsis mixin, needed to truncate long font names), and a
+      ;; transform applied to a self-clipping element moves its clip region
+      ;; along with it — a no-op. The inner span has no overflow of its own, so
+      ;; the shift actually moves the ink within the outer's fixed clip area.
+      [:span {:class (stl/css :font-item-label)}
+       [:span {:style #js {:fontFamily (when loaded?
+                                         (dm/str "\"" (:family font) "\", sans-serif"))
+                           :transform  (when-not (zero? label-offset)
+                                         (dm/str "translateY(" label-offset "em)"))}}
+        (:name font)]])))
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
   [{:keys [font is-current on-click style]}]
   (let [item-ref (mf/use-ref)
-        on-click (mf/use-fn (mf/deps font) #(on-click font))
-        ;; FLAG :font-preview — gates the feature markup AND its row styling
-        ;; (.font-item-preview-on in the scss). Remove this and its two uses below.
-        preview? (contains? cf/flags :font-preview)]
+        on-click (mf/use-fn (mf/deps font) #(on-click font))]
 
-    (mf/use-effect
-     (mf/deps is-current)
-     (fn []
-       (when is-current
-         (let [element (mf/ref-val item-ref)]
-           (when-not (dom/is-in-viewport? element)
-             (dom/scroll-into-view! element))))))
+    (mf/with-effect [is-current]
+      (when is-current
+        (let [element (mf/ref-val item-ref)]
+          (when-not (dom/is-in-viewport? element)
+            (dom/scroll-into-view! element)))))
 
     [:div {:class (stl/css :font-wrapper)
            :style style
            :ref item-ref
            :on-click on-click}
-     [:div {:class  (stl/css-case :font-item true
-                                  :font-item-preview-on preview?
-                                  :selected is-current)}
-      (if preview?
-        [:> font-item-preview* {:font font}]
-        [:span {:class (stl/css :font-item-label)} (:name font)])
+     [:div {:class  (stl/css-case :font-item true :selected is-current)}
+      [:> font-item-preview* {:font font}]
       (when is-current
         [:> icon* {:icon-id i/tick
                    :size "s"}])]]))
@@ -255,20 +411,28 @@
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
-    ;; FLAG :font-preview — materialize the preview sprite into the DOM only while
-    ;; the picker is open (markup is prefetched on workspace load), removing it on
-    ;; close so its ~2000 nodes aren't kept around idle. Remove the flag clause to
-    ;; drop the feature.
+    ;; Materialize the preview sprite into the DOM only while the picker is open
+    ;; (markup is prefetched on workspace load), removing it on close so its
+    ;; ~2000 nodes aren't kept around idle. The attachment is deferred so the
+    ;; dropdown can paint first with plain names, then the sprite swaps in on the
+    ;; next tick.
     (mf/with-effect [sprite-status]
-      (when (and (contains? cf/flags :font-preview)
-                 (= :ready sprite-status))
-        (let [node (fonts/attach-preview-sprite!)]
-          #(fonts/detach-preview-sprite! node))))
+      (when (= :ready sprite-status)
+        (let [node*  (volatile! nil)
+              task   (tm/schedule
+                      (fn []
+                        (vreset! node* (fonts/attach-preview-sprite!))))]
+          (fn []
+            (tm/dispose! task)
+            (when-some [n @node*]
+              (fonts/detach-preview-sprite! n))))))
 
     (mf/with-effect [@selected]
-      (when-let [inst (mf/ref-val flist)]
-        (when-let [index (:index @selected)]
-          (.scrollToRow ^js inst index))))
+      (let [node  (mf/ref-val flist)
+            index (:index @selected)]
+        ;; This is nil safe operation, do nothing if node or index are
+        ;; invalid.
+        (dom/scroll-to-row node index)))
 
     (mf/with-effect [@selected]
       (on-select @selected))
@@ -279,11 +443,12 @@
         (st/emit! (dsc/pop-shortcuts :typography))))
 
     (mf/with-effect []
-      (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
-            inst   (mf/ref-val flist)]
+      (let [index (d/index-of-pred fonts #(= (:id %) (:id current-font)))
+            node  (mf/ref-val flist)]
         (tm/schedule
-         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
-            (.scrollToPosition ^js inst offset)))))
+         #(let [offset (.getOffsetForRow ^js node #js {:alignment "center" :index index})]
+            ;; Safe operaton, do nothing if node or offset has invalid values
+            (dom/scroll-to-position node offset)))))
 
     [:div {:class [(stl/css-case :font-selector true
                                  :fonts-on-modal (not full-size?))]}
@@ -592,6 +757,12 @@
         font-data      (fonts/get-font-data (:font-id typography))
         typography-id  (:id typography)
         show-actions?  (and is-asset? is-editable)
+        [offset offset-ready?]
+        (use-optical-offset (:font-id typography)
+                            (:font-family typography)
+                            (:font-weight typography)
+                            (:font-style typography)
+                            "Ag")
 
         on-delete
         (mf/use-fn
@@ -626,10 +797,9 @@
          [:*
           [:div {:class (stl/css :font-name-wrapper)}
            [:div {:class (stl/css :typography-sample-input)
-                  :style {:font-family (:font-family typography)
-                          :font-weight (:font-weight typography)
-                          :font-style (:font-style typography)}}
-            (tr "workspace.assets.typography.sample")]
+                  :style (sample-container-style typography font-data)}
+            [:span {:style (sample-text-style offset offset-ready?)}
+             (tr "workspace.assets.typography.sample")]]
 
            [:input
             {:class (stl/css :adv-typography-name)
@@ -663,11 +833,9 @@
          [:div {:class (stl/css :typography-info-wrapper)}
           [:div {:class (stl/css :typography-name-wrapper)}
            [:div {:class (stl/css :typography-sample)
-
-                  :style {:font-family (:font-family typography)
-                          :font-weight (:font-weight typography)
-                          :font-style (:font-style typography)}}
-            (tr "workspace.assets.typography.sample")]
+                  :style (sample-container-style typography font-data)}
+            [:span {:style (sample-text-style offset offset-ready?)}
+             (tr "workspace.assets.typography.sample")]]
 
            [:div {:class (stl/css :typography-name)
                   :title (:name typography)}
@@ -714,6 +882,12 @@
         open?                (deref open*)
         font-data            (fonts/get-font-data (:font-id typography))
         name-only?           (= (:name typography) (:name font-data))
+        [offset offset-ready?]
+        (use-optical-offset (:font-id typography)
+                            (:font-family typography)
+                            (:font-weight typography)
+                            (:font-style typography)
+                            "Ag")
 
         on-name-blur
         (mf/use-fn
@@ -748,6 +922,13 @@
              (when ^boolean esc?
                (dom/blur! input-node)))))]
 
+    ;; use-optical-offset only triggers a font load as a side effect of an
+    ;; uncached offset measurement, so on a cache hit (e.g. a `0` offset
+    ;; cached from before the font was ever loaded) the font itself never
+    ;; gets fetched and the sample silently renders in the fallback font.
+    ;; Load it unconditionally too, same as the advanced-options view does.
+    (fonts/ensure-loaded! (:font-id typography))
+
     (mf/with-effect [is-editing]
       (when is-editing
         (reset! open* is-editing)))
@@ -771,10 +952,9 @@
         [:div {:class (stl/css :font-name-wrapper)}
          [:div
           {:class (stl/css :typography-sample-input)
-           :style {:font-family (:font-family typography)
-                   :font-weight (:font-weight typography)
-                   :font-style (:font-style typography)}}
-          (tr "workspace.assets.typography.sample")]
+           :style (sample-container-style typography font-data)}
+          [:span {:style (sample-text-style offset offset-ready?)}
+           (tr "workspace.assets.typography.sample")]]
 
          [:input
           {:class (stl/css :adv-typography-name)
@@ -791,10 +971,9 @@
           :on-context-menu on-context-menu}
          [:div
           {:class (stl/css :typography-sample)
-           :style {:font-family (:font-family typography)
-                   :font-weight (:font-weight typography)
-                   :font-style (:font-style typography)}}
-          (tr "workspace.assets.typography.sample")]
+           :style (sample-container-style typography font-data)}
+          [:span {:style (sample-text-style offset offset-ready?)}
+           (tr "workspace.assets.typography.sample")]]
 
          [:div {:class (stl/css :name-block)
                 :title (if name-only?

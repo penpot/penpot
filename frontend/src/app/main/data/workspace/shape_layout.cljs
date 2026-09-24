@@ -23,6 +23,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
@@ -131,14 +132,14 @@
               (->> stream
                    (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
                    (rx/take 1)
-                   (rx/take-until (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream))
+                   (rx/take-until (rx/filter (ptk/type? ::dw/finalize-workspace) stream))
                    ;; No events are derived from this
                    (rx/ignore))
               (rx/empty))]
 
         (cond->> (rx/concat update-positions-stream drain-stream)
           (d/not-empty? reflow-tasks)
-          (rx/finalize #(run! wrf/finish! reflow-tasks)))))))
+          (rx/finalize #(wrf/finish-tasks! reflow-tasks)))))))
 
 (defn- without-root-board
   [ids]

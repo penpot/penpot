@@ -7,6 +7,7 @@
 (ns app.loggers.mattermost
   "A mattermost integration for error reporting."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
@@ -25,7 +26,7 @@
 (defn- send-mattermost-notification!
   [cfg {:keys [id] :as report}]
   (let [type (get report :type)
-        text (str "#" type " | " (get report :hint) "\n"
+        text (str "#" type " | " (d/escape-markdown (get report :hint)) "\n"
                   (when id
                     (str (u/join (cf/get :public-uri) "/dbg/error/" id) " "))
 
@@ -38,7 +39,7 @@
                   "- tenant: #" (:tenant report) "\n"
                   "- origin: #" (:origin report) "\n"
                   (when-let [href (get report :href)]
-                    (str "- href: `" href "`\n"))
+                    (str "- href: `" (d/escape-markdown href) "`\n"))
                   (when-let [version (get report :frontend-version)]
                     (str "- frontend-version: `" version "`\n"))
                   (when-let [version (get report :backend-version)]

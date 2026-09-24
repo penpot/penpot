@@ -79,15 +79,21 @@
     {:type :gradient
      :gradient fill-color-gradient}
 
-    (and (string? fill-color) (some? fill-opacity) (not= fill-opacity 1))
+    (and (string? fill-color)
+         (cc/hex-color-string? fill-color)
+         (some? fill-opacity)
+         (not= fill-opacity 1))
     {:type :transparent
      :hex fill-color
      :opacity fill-opacity}
 
-    (string? fill-color)
+    (and (string? fill-color)
+         (cc/hex-color-string? fill-color))
     {:type :solid
      :hex fill-color
-     :map-to fill-color}))
+     :map-to fill-color}
+
+    :else nil))
 
 (defn- retrieve-colors
   "Given a text shape returns a triple with the values:

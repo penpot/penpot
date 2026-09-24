@@ -10,9 +10,12 @@
    ["xml-js" :as xml]
    [app.browser :as bw]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.types.color :as ctc]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.renderer.svg-gradient :as svg-gradient]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
    [clojure.walk :as walk]
@@ -125,19 +128,23 @@
   (letfn [(convert-to-ppm [pngpath]
             (let [ppmpath (str/concat pngpath "origin.ppm")]
               (l/trace :fn :convert-to-ppm :path ppmpath)
-              (-> (sh/run-cmd! (str "convert " pngpath " " ppmpath))
+              (-> (sh/run-cmd! "convert" pngpath ppmpath)
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
             (l/trace :fn :trace-color-mask :pbmpath pbmpath)
             (let [svgpath (str/concat pbmpath ".svg")]
-              (-> (sh/run-cmd! (str "potrace --flat -b svg " pbmpath " -o " svgpath))
+              (-> (sh/run-cmd! "potrace" "--flat" "-b" "svg" pbmpath "-o" svgpath)
                   (p/then (constantly svgpath)))))
 
           (generate-color-layer [ppmpath color]
+            (when-not (ctc/hex-color-string? color)
+              (ex/raise :type :validation
+                        :code :invalid-color
+                        :hint (str "invalid hex color: " color)))
             (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
             (let [pbmpath (str/concat ppmpath ".mask-" (subs color 1) ".pbm")]
-              (-> (sh/run-cmd! (str/format "ppmcolormask \"%s\" %s" color ppmpath))
+              (-> (sh/run-cmd! "ppmcolormask" color ppmpath)
                   (p/then (fn [stdout]
                             (-> (sh/write-file! pbmpath stdout)
                                 (p/then (constantly pbmpath)))))
@@ -166,33 +173,11 @@
                 :else
                 (update node "attributes" assoc "fill" color))))
 
-          (get-stops [data]
-            (->> (get-in data ["gradient" "stops"])
-                 (mapv (fn [stop-data]
-                         {"type" "element"
-                          "name" "stop"
-                          "attributes" {"offset" (get stop-data "offset")
-                                        "stop-color" (get stop-data "color")
-                                        "stop-opacity" (get stop-data "opacity")}}))))
-
-          (data->gradient-def [id [color data]]
-            (let [id (str "gradient-" id "-" (subs color 1))]
-              (if (= type "linear")
-                {"type" "element"
-                 "name" "linearGradient"
-                 "attributes" {"id" id "x1" "0.5" "y1" "1" "x2" "0.5" "y2" "0"}
-                 "elements" (get-stops data)}
-
-                {"type" "element"
-                 "name" "radialGradient"
-                 "attributes" {"id" id "cx" "0.5" "cy" "0.5" "r" "0.5"}
-                 "elements" (get-stops data)})))
-
           (get-gradients [id mapping]
             (->> mapping
                  (filter (fn [[_color data]]
                            (= (get data "type") "gradient")))
-                 (mapv (partial data->gradient-def id))))
+                 (mapv (partial svg-gradient/data->gradient-def id))))
 
           (join-color-layers [{:keys [id x y width height mapping] :as node} layers]
             (l/trace :fn :join-color-layers :mapping mapping)
@@ -369,4 +354,3 @@
                        (assoc :query (u/map->query-string params)))]
       (bw/exec! (prepare-options uri)
                 (partial render uri)))))
-

@@ -266,16 +266,17 @@
   [{:keys [objects frame vbox x y width height background]}]
   (let [shape-wrapper (shape-wrapper-factory objects)]
     [:& (mf/provider muc/render-thumbnails) {:value false}
-     [:svg {:view-box vbox
-            :width (ust/format-precision width viewbox-decimal-precision)
-            :height (ust/format-precision height viewbox-decimal-precision)
-            :version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :fill "none"}
-      (when (some? background)
-        [:rect {:x x :y y :width width :height height :fill background}])
-      [:& shape-wrapper {:shape frame}]]]))
+     [:& (mf/provider muc/is-render?) {:value true}
+      [:svg {:view-box vbox
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :fill "none"}
+       (when (some? background)
+         [:rect {:x x :y y :width width :height height :fill background}])
+       [:& shape-wrapper {:shape frame}]]]]))
 
 ;; Component that serves for render frame thumbnails, mainly used in
 ;; the viewer and inspector

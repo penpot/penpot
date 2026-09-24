@@ -37,6 +37,7 @@
                      :command "p"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/change-edit-mode :draw))}
 
    :add-node        {:tooltip (ds/shift "+")
@@ -49,7 +50,9 @@
                      :command ["del" "backspace"]
                      :subsections [:path-editor]
                      :section [:workspace]
-                     :fn #(st/emit! (drp/remove-node))}
+                     :overwrite true
+                     :fn #(st/emit!
+                           (drp/remove-node))}
 
    :merge-nodes     {:tooltip (ds/meta "J")
                      :command (ds/c-mod "j")
@@ -67,6 +70,7 @@
                      :command "k"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/separate-nodes))}
 
    :make-corner     {:tooltip "X"
@@ -79,6 +83,7 @@
                      :command "c"
                      :subsections [:path-editor]
                      :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (drp/make-curve))}
 
    :snap-nodes      {:tooltip (ds/meta "'")
@@ -89,8 +94,20 @@
                      :fn #(st/emit! (drp/toggle-snap))}
 
    :escape          {:tooltip (ds/esc)
-                     :command ["escape" "enter" "v"]
+                     :command ["escape" "v"]
                      :section [:workspace]
+                     :fn #(st/emit! (esc-pressed))}
+
+   ;; Reuses the `:start-editing` key (instead of adding "enter" to
+   ;; the `:escape` command above) so that merging this shortcut set
+   ;; on top of the base workspace shortcuts (see `dsc/push-shortcuts`)
+   ;; deterministically replaces the workspace's `enter` binding
+   ;; (which enters path edit mode) instead of both ending up bound
+   ;; to the same physical key at once.
+   :start-editing   {:tooltip (ds/enter)
+                     :command "enter"
+                     :section [:workspace]
+                     :overwrite true
                      :fn #(st/emit! (esc-pressed))}
 
    :undo            {:tooltip (ds/meta "Z")

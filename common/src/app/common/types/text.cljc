@@ -9,6 +9,7 @@
     [app.common.data :as d]
     [app.common.data.macros :as dm]
     [app.common.flags :as flags]
+    [app.common.math :as mth]
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
     [clojure.set :as set]
@@ -217,7 +218,10 @@
       attributes or other things that may be attached).
     - Consider nil values, empty strings or empty lists all equal.
     - Normalize numeric values (legacy) into strings.
-    - No value is equal than the default value."
+    - No value is equal than the default value.
+    - Numeric attrs (e.g. line-height) compare with float tolerance so
+      editor/WASM round-trips like \"1.3333333333333333\" vs \"1.33333\"
+      do not count as a real style change (avoids detaching tokens)."
   [key value1 value2]
   (when (text-node-attr? key)
     (let [default-value (get default-text-attrs key)
@@ -229,7 +233,16 @@
                                 $)))
           value1' (normalize-value value1)
           value2' (normalize-value value2)]
-      (not= value1' value2'))))
+      (cond
+        (= value1' value2')
+        false
+
+        :else
+        (let [n1 (when (string? value1') (d/parse-double value1'))
+              n2 (when (string? value2') (d/parse-double value2'))]
+          (if (and (some? n1) (some? n2))
+            (not (mth/close? n1 n2))
+            true))))))
 
 (defn- compare-text-content
   "Given two content text structures, conformed by maps and vectors,

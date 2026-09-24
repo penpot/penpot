@@ -13,14 +13,18 @@
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.nitrate :as dnt]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.worker]
+   [app.util.dom :as dom]
    [app.util.globals :as g]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -168,8 +172,17 @@
                 :href (rt/get-current-href)
                 :report report}))))
 
+(defn- download-report!
+  [report event]
+  (dom/prevent-default event)
+  (let [blob (wapi/create-blob report "text/plain")
+        uri  (wapi/create-uri blob)]
+    (dom/trigger-download-uri "report" "text/plain" uri)
+    (ts/schedule-on-idle #(wapi/revoke-uri uri))))
+
 (defn flash
   "Show error notification banner and emit error report.
+  A nil timeout keeps the notification visible until dismissed or replaced.
 
   The notification is scheduled asynchronously (via tm/schedule) to
   avoid pushing a new event into the potok store while the store's own
@@ -177,23 +190,28 @@
   synchronously from inside an error handler creates a re-entrant
   event-processing cycle that can exhaust the JS call stack
   (RangeError: Maximum call stack size exceeded)."
-  [& {:keys [type hint cause] :or {type :handled}}]
-  (when (ex/exception? cause)
-    (when-let [event-name (case type
-                            :handled "handled-exception"
-                            :unhandled "unhandled-exception"
-                            :silent nil)]
-      (let [report (generate-report cause)]
+  [& {:keys [type hint cause timeout report-link?]
+      :or {type :handled timeout 5000}}]
+  (let [report (when (ex/exception? cause) (generate-report cause))]
+    (when report
+      (when-let [event-name (case type
+                              :handled "handled-exception"
+                              :unhandled "unhandled-exception"
+                              :silent nil)]
         (submit-report :event-name event-name
                        :report report
-                       :hint (ex/get-hint cause)))))
+                       :hint (ex/get-hint cause))))
 
-  (ts/schedule
-   #(st/emit!
-     (ntf/show {:content (or ^boolean hint (tr "errors.generic"))
-                :type :toast
-                :level :error
-                :timeout 5000}))))
+    (ts/schedule
+     #(st/emit!
+       (ntf/show
+        (cond-> {:content (or ^boolean hint (tr "errors.generic"))
+                 :type :toast
+                 :level :error
+                 :timeout timeout}
+          (and report-link? report)
+          (assoc :links [{:label (tr "labels.download" "report.txt")
+                          :callback (partial download-report! report)}])))))))
 
 (defmethod ptk/handle-error :network
   [error]
@@ -203,6 +221,39 @@
   (when-let [cause (::instance error)]
     (ex/print-throwable cause :prefix "Network Error"))
   (flash :cause (::instance error) :type :handled))
+
+(def ^:private delegated-persistence-types
+  "Save failure causes routed to their own error handler: retaining the
+  changes cannot resolve them."
+  #{:authentication :not-found})
+
+(defn- delegated-persistence-failure?
+  [{:keys [type cause-type code]}]
+  (or (contains? delegated-persistence-types type)
+      (contains? delegated-persistence-types cause-type)
+      ;; The retained changes no longer apply to the restored version.
+      (= :vern-conflict code)))
+
+(defn flash-persistence
+  [cause]
+  (let [data (ex-data cause)]
+    (if (delegated-persistence-failure? data)
+      ;; The persistence state wraps the failure and records the original
+      ;; type under :cause-type; dispatch on it to reach the cause's handler.
+      (on-error (-> (exception->error-data cause)
+                    (assoc :type (or (:cause-type data) (:type data)))))
+      (flash :cause cause
+             :type :handled
+             :timeout nil
+             :report-link? true
+             :hint (tr "errors.save-failed")))))
+
+(defmethod ptk/handle-error :persistence
+  [error]
+  ;; The persistence failure event reports the original cause. Waiters still
+  ;; reject, but must not report that same incident again.
+  (when-not (::handled? error)
+    (flash-persistence (::instance error))))
 
 (defmethod ptk/handle-error :internal
   [error]
@@ -234,9 +285,8 @@
 ;; We receive a explicit authentication error; If the uri is for
 ;; workspace, dashboard, viewer or settings, then assign the exception
 ;; for show the error page. Otherwise this explicitly clears all
-;; profile data and redirect the user to the login page. This is here
-;; and not in app.main.errors because of circular dependency.
-(defmethod ptk/handle-error :authentication
+;; profile data and redirect the user to the login page.
+(defn- show-authentication-error
   [error]
   (let [message (tr "errors.auth.unable-to-login")
         uri     (rt/get-current-href)
@@ -252,6 +302,85 @@
       (do
         (st/emit! (da/logout))
         (ts/schedule 500 #(st/emit! (ntf/warn message)))))))
+
+;; The user does belong to an organization with SSO active, but there is
+;; no provider to send them to (unusable or incomplete SSO config). Show
+;; the SSO error dialog, which offers an explicit retry, rather than
+;; claiming they have no access.
+(defn- show-sso-error
+  [{:keys [organization-id team-id]}]
+  (let [uri (rt/get-current-href)]
+    (st/async-emit!
+     (rt/assign-exception {:type :sso-error
+                           :organization-id organization-id
+                           :team-id team-id
+                           :is-workspace (str/includes? uri "workspace")
+                           :is-dashboard (str/includes? uri "dashboard")}))))
+
+;; A page issues many SSO-guarded requests at once, and all of them fail
+;; together the moment the organization SSO session lapses; without this
+;; only-one-in-flight guard each of them would start its own identity
+;; provider round-trip.
+(def ^:private sso-renewal-pending? (volatile! false))
+
+(defn- renew-organization-sso
+  "Recover from a request rejected by the organization SSO gate.
+
+  Asks the backend what can be done for the current location and acts on
+  the answer: go through the identity provider when there is one (it
+  re-authenticates transparently while the user still has a live session
+  with it), retry the location when the gate turns out to be satisfied
+  already (another tab renewed the session, or SSO was turned off), show
+  the SSO error dialog when SSO is required but unusable, and report a
+  permission failure only when the user really has no access to the team.
+  A failing check is left to the generic error handling, so a network
+  blip is not turned into a permission error."
+  [{:keys [organization-id team-id] :as error}]
+  (when-not @sso-renewal-pending?
+    (vreset! sso-renewal-pending? true)
+    (let [dest-url (rt/get-current-href)]
+      (->> (dnt/check-organization-sso
+            {:organization-id organization-id
+             :team-id team-id
+             :dest-url dest-url})
+           ;; Release the guard however the check ends, including an
+           ;; unsubscription or a completion without a result: a stuck guard
+           ;; would silently drop every later rejection.
+           (rx/finalize (fn [] (vreset! sso-renewal-pending? false)))
+           (rx/subs! (fn [{:keys [authorized reason redirect-uri]}]
+                       (cond
+                         ;; SSO must be renewed and we know where to send them
+                         (some? redirect-uri)
+                         (st/emit! (rt/nav-raw :uri (str redirect-uri)))
+
+                         ;; The gate is satisfied after all, so the request
+                         ;; that failed can be retried. Only an affirmative
+                         ;; reason is accepted here: reloading on any
+                         ;; unrecognized "authorized" answer would spin
+                         ;; whenever the reload hits the same rejection.
+                         (= :sso-satisfied reason)
+                         (st/emit! (rt/reload false))
+
+                         ;; SSO is required but the provider is unusable
+                         (not authorized)
+                         (show-sso-error error)
+
+                         ;; No access to the team, so the gate was never
+                         ;; evaluated: this really is a permission failure
+                         :else
+                         (show-authentication-error error)))
+                     on-error)))))
+
+(defmethod ptk/handle-error :authentication
+  [error]
+  ;; Without an organization or a team there is nothing to check, and asking
+  ;; anyway would fail schema validation and report that instead of the
+  ;; authentication problem the user actually hit.
+  (if (and (= :nitrate-sso-required (get error :code))
+           (or (some? (get error :organization-id))
+               (some? (get error :team-id))))
+    (renew-organization-sso error)
+    (show-authentication-error error)))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -309,6 +438,12 @@
                   :level :error
                   :timeout 3000})))
 
+    (= code :invalid-sso-config)
+    ;; SSO error page needs :organization-id to retry
+    (if (:organization-id error)
+      (st/async-emit! (rt/assign-exception (assoc error :type :sso-error)))
+      (st/async-emit! (rt/assign-exception error)))
+
     :else
     (st/async-emit! (rt/assign-exception error))))
 
@@ -364,6 +499,7 @@
 (defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
+(defmethod ptk/handle-error :nitrate-not-configured [error] (handle-exceptional-state error))
 
 (defn- redirect-to-dashboard
   []

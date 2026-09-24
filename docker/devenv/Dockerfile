@@ -6,7 +6,7 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq dist-upgrade; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         python3 \
         unzip \
@@ -66,7 +66,8 @@ RUN set -ex; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v24.18.1 \
+ENV NODE_VERSION=v24.21.0 \
+    PNPM_VERSION=12.5.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -75,10 +76,14 @@ RUN set -eux; \
        aarch64|arm64) \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -89,10 +94,14 @@ RUN set -eux; \
     mkdir -p /opt/node; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
+    PNPM_URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    curl -LfsSo /tmp/pnpm.tar.gz "${PNPM_URL}"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/pnpm.tar.gz -C /opt/node/bin pnpm; \
+    chmod 755 /opt/node/bin/pnpm; \
     chown -R root /opt/node; \
     find /opt/node/include/node/openssl/archs -mindepth 1 -maxdepth 1 ! -name "$OPENSSL_ARCH" -exec rm -rf {} \; ; \
-    corepack enable; \
-    rm -rf /tmp/nodejs.tar.gz;
+    rm -f /tmp/nodejs.tar.gz /tmp/pnpm.tar.gz;
 
 ################################################################################
 ## OPENCODE SETUP
@@ -100,7 +109,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.11
+ENV OPENCODE_VERSION=1.18.31
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -120,6 +129,37 @@ RUN set -ex; \
     tar -xzf /tmp/opencode.tar.gz -C /tmp/opencode; \
     chmod +x /tmp/opencode/opencode; \
     rm -f /tmp/opencode.tar.gz;
+
+################################################################################
+## OPENCODE2 SETUP (V2, side-by-side with V1 `opencode`)
+################################################################################
+
+FROM base AS setup-opencode2
+
+ENV OPENCODE2_VERSION=2.0.12
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
+         ESUM='33f0dde9f0f055b6a3665d290371bcfc8c63daceade7a535c4b94d386f2bd917'; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
+         ESUM='2a79beb2e24382cb2bdbb709237dbc22f498cf52a106d029a6a3a3243760c78b'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/opencode2.tgz "${BINARY_URL}"; \
+    echo "${ESUM} */tmp/opencode2.tgz" | sha256sum -c -; \
+    mkdir -p /tmp/opencode2; \
+    tar -xzf /tmp/opencode2.tgz -C /tmp/opencode2 --strip-components=2 package/bin; \
+    mv /tmp/opencode2/opencode /tmp/opencode2/opencode2; \
+    chmod +x /tmp/opencode2/opencode2; \
+    rm -f /tmp/opencode2.tgz;
 
 
 ################################################################################
@@ -166,12 +206,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='5b222fce0b7076a10ac7ae3b1009a6c2caf4f35bc4e81de72010af6750c5e146'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_aarch64.tar.gz'; \
+         ESUM='9fa5bf865783c43840101fcdc3a5222b60daf4fe11f26806247bf807c08aba38'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='4b7c114917aebd0fc6284fc7111245d7747a4d9603bd12d86b384b1abc9d575d'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu26.32.13-ca-jdk26.0.2-linux_x64.tar.gz'; \
+         ESUM='ccbc15c4edbedfdcc03c2d29a2aa2c6daf9e6ffb4cda7dd5ece0fcbb37350267'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu27.28.101-ca-jdk27.0.0-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -242,16 +282,17 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2026.07.24 \
-    BABASHKA_VERSION=1.13.219 \
+ENV CLJKONDO_VERSION=2026.08.04 \
+    BABASHKA_VERSION=1.13.223 \
     CLJFMT_VERSION=0.16.5 \
-    PIXI_VERSION=0.75.0 \
-    GITHUB_CLI_VERSION=2.97.0 \
-    UV_VERSION=0.12.1 \
+    PIXI_VERSION=0.81.0 \
+    GITHUB_CLI_VERSION=2.101.0 \
+    AWS_CLI_VERSION=2.36.49 \
+    UV_VERSION=0.12.17 \
     UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/opt/utils/bin \
     UV_PYTHON_INSTALL_DIR=/opt/uv/python \
-    SERENA_VERSION=1.6.1
+    SERENA_VERSION=1.7.0
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -356,24 +397,30 @@ RUN set -ex; \
     tar -xv --strip-components=1 -f /tmp/gh.tar.gz; \
     rm -rf /tmp/gh.tar.gz;
 
-# Install minio client
+# Install AWS CLI
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://dl.min.io/client/mc/release/linux-arm64/mc"; \
+         BINARY_ARCH="aarch64"; \
+         BINARY_SHA256="2dec26fdaff2f5e34961ea98f456297104f73d8409fc3599c8f2909c6e27a07e"; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://dl.min.io/client/mc/release/linux-amd64/mc"; \
+         BINARY_ARCH="x86_64"; \
+         BINARY_SHA256="6b51b62d232217350e72d8f2493f47d3461239d011d1d5eef960dfcd8cb07069"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    wget -O /tmp/mc ${BINARY_URL}; \
-    mv /tmp/mc /opt/utils/bin/; \
-    chmod +x /opt/utils/bin/mc;
+    BINARY_URL="https://awscli.amazonaws.com/awscli-exe-linux-${BINARY_ARCH}-${AWS_CLI_VERSION}.zip"; \
+    curl -LfsSo /tmp/awscliv2.zip ${BINARY_URL}; \
+    echo "${BINARY_SHA256} */tmp/awscliv2.zip" | sha256sum -c -; \
+    cd /tmp; \
+    unzip -q awscliv2.zip; \
+    ./aws/install --install-dir /opt/utils/aws-cli --bin-dir /opt/utils/bin; \
+    rm -rf /tmp/aws /tmp/awscliv2.zip;
 
 # Install uv
 RUN set -ex; \
@@ -417,7 +464,7 @@ RUN set -ex; \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq dist-upgrade; \
+    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install init-system-helpers; \
     apt-get -qqy install --no-install-recommends \
       redis-tools \
@@ -503,7 +550,7 @@ RUN set -ex; \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt trixie-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
-    apt-get -qqy install postgresql-client-16; \
+    apt-get -qqy install postgresql-client-18; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -540,6 +587,7 @@ COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
+COPY --from=setup-opencode2 /tmp/opencode2/opencode2 /opt/utils/bin/opencode2
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
@@ -560,4 +608,3 @@ COPY files/init.sh             /home/init.sh
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]
-

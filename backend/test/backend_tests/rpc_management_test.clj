@@ -57,6 +57,22 @@
     (t/is (not= (get-in out1 [:result :id])
                 (get-in out2 [:result :id])))))
 
+(t/deftest upload-tempfile-rejects-html-content-type
+  ;; N2-13: upload-tempfile must reject non-allowed content types
+  (let [profile (th/create-profile* 1 {:is-active true})
+        path    (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-upload-tempfile-")
+        _       (io/write* path "<script>alert(1)</script>")
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.html"
+                           :path path
+                           :mtype "text/html"
+                           :size 27}}
+        out     (th/management-command! params)]
+    (t/is (some? (:error out)))
+    (t/is (= :validation (th/ex-type (:error out))))
+    (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
+
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

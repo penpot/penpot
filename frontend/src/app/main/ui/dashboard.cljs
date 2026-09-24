@@ -27,6 +27,7 @@
    [app.main.ui.dashboard.files :refer [files-section*]]
    [app.main.ui.dashboard.fonts :refer [fonts-page* font-providers-page*]]
    [app.main.ui.dashboard.import]
+   [app.main.ui.dashboard.layout-toggle :as lt]
    [app.main.ui.dashboard.libraries :refer [libraries-page*]]
    [app.main.ui.dashboard.projects :refer [projects-section*]]
    [app.main.ui.dashboard.search :refer [search-page*]]
@@ -51,7 +52,7 @@
 
 (mf/defc dashboard-content*
   {::mf/private true}
-  [{:keys [team projects project section search-term profile default-project]}]
+  [{:keys [team projects project section search-term profile default-project layout on-layout-change]}]
   (let [container       (mf/use-ref)
         content-width   (mf/use-state 0)
 
@@ -100,18 +101,18 @@
        :dashboard-recent
        (when (seq projects)
          [:*
-          [:> projects-section*
-           {:team team
-            :projects projects
-            :profile profile}]
+          [:> projects-section* {:team team
+                                 :projects projects
+                                 :profile profile
+                                 :layout layout
+                                 :on-layout-change on-layout-change}]
 
           (when ^boolean show-templates?
-            [:> templates-section*
-             {:profile profile
-              :project-id project-id
-              :team-id team-id
-              :default-project-id default-project-id
-              :content-width @content-width}])])
+            [:> templates-section* {:profile profile
+                                    :project-id project-id
+                                    :team-id team-id
+                                    :default-project-id default-project-id
+                                    :content-width @content-width}])])
 
        :dashboard-fonts
        [:> fonts-page* {:team team}]
@@ -123,14 +124,15 @@
        (when project
          [:*
           [:> files-section* {:team team
-                              :project project}]
+                              :project project
+                              :layout layout
+                              :on-layout-change on-layout-change}]
           (when ^boolean show-templates?
-            [:> templates-section*
-             {:profile profile
-              :team-id team-id
-              :project-id project-id
-              :default-project-id default-project-id
-              :content-width @content-width}])])
+            [:> templates-section* {:profile profile
+                                    :team-id team-id
+                                    :project-id project-id
+                                    :default-project-id default-project-id
+                                    :content-width @content-width}])])
 
        :dashboard-search
        [:> search-page* {:team team
@@ -155,7 +157,9 @@
        :dashboard-deleted
        [:> deleted-section* {:team team
                              :projects projects
-                             :profile profile}]
+                             :profile profile
+                             :layout layout
+                             :on-layout-change on-layout-change}]
 
        nil)]))
 
@@ -313,7 +317,15 @@
         (mf/with-memo [projects]
           (->> projects
                (filter :is-default)
-               (first)))]
+               (first)))
+
+        layout*         (hooks/use-persisted-state lt/layout-key lt/default-layout)
+        layout          (deref layout*)
+
+        on-layout-change
+        (mf/use-fn
+         (fn [value]
+           (reset! layout* (keyword value))))]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts-dashboard :dashboard)
 
@@ -347,22 +359,22 @@
      ;; team is already set so don't put the team into mf/deps.
      [:main {:class (stl/css :dashboard)
              :key (dm/str (:id team))}
-      [:> sidebar*
-       {:team team
-        :projects projects
-        :project project
-        :default-project default-project
-        :profile profile
-        :section section
-        :search-term search-term}]
-      [:> dashboard-content*
-       {:projects projects
-        :profile profile
-        :project project
-        :default-project default-project
-        :section section
-        :search-term search-term
-        :team team}]]]))
+      [:> sidebar* {:team team
+                    :projects projects
+                    :project project
+                    :default-project default-project
+                    :profile profile
+                    :section section
+                    :search-term search-term}]
+      [:> dashboard-content* {:projects projects
+                              :profile profile
+                              :project project
+                              :default-project default-project
+                              :section section
+                              :search-term search-term
+                              :team team
+                              :layout layout
+                              :on-layout-change on-layout-change}]]]))
 
 (mf/defc dashboard-page*
   {::mf/lazy-load true}

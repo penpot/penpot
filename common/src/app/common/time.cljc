@@ -175,8 +175,14 @@
 
 #?(:clj
    (defn parse-duration
+     "Parse a value into a Duration. Total: returns the input unchanged
+     when it cannot be parsed, so schema decoding never throws and
+     invalid values fail validation with a clean params error instead."
      [s]
-     (duration s)))
+     (try
+       (duration s)
+       (catch Exception _
+         s))))
 
 #?(:clj
    (defn format-duration

@@ -1353,12 +1353,13 @@ export interface Context {
 
   /**
    * This method returns a promise that will be resolved when all the
-   * pending layout updates have finished. If no layout work is pending
-   * the promise resolves immediately.
+   * pending layout updates have finished and the components have synchronized.
+   * If no layout work is pending the promise resolves immediately.
    * @param timeout Maximum time to wait, in milliseconds. If the timeout
    * elapses before the layout settles, the promise is rejected. Defaults to
    * 30000; the promise never waits indefinitely.
-   * @return The promise to be resolved when the layout is updated
+   * @return The promise to be resolved when the layout is updated. It is
+   * rejected with an Error, both on timeout and on an invalid timeout value.
    */
   waitForLayoutUpdate(timeout?: number): Promise<void>;
 }
@@ -4109,13 +4110,14 @@ export interface ShapeBase extends PluginData {
   remove(): void;
 
   /**
-   * This method returns a promise that will be resolved when the pending
-   * layout updates for this shape and its children have finished. If no layout
-   * work is pending for them the promise resolves immediately.
+   * This method returns a promise that will be resolved when all the
+   * pending layout updates have finished and the components have synchronized.
+   * If no layout work is pending the promise resolves immediately.
    * @param timeout Maximum time to wait, in milliseconds. If the timeout
    * elapses before the shape's layout settles, the promise is rejected.
    * Defaults to 30000; the promise never waits indefinitely.
-   * @return The promise to be resolved when the shape's layout is updated
+   * @return The promise to be resolved when the shape's layout is updated. It
+   * is rejected with an Error, both on timeout and on an invalid timeout value.
    */
   waitForLayoutUpdate(timeout?: number): Promise<void>;
 }

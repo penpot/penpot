@@ -1978,6 +1978,26 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0026-fix-svg-raw-shapes-uuids"
+  ;; Before the svg-raw schema declared :shapes as a vector of uuid,
+  ;; the JSON decoder had no type information for those child ids and
+  ;; left them as plain strings on any round trip, so they got
+  ;; persisted as strings. Once the schema was tightened, such files
+  ;; fail schema validation; this migration parses the strings back
+  ;; into uuid instances.
+  [data _]
+  (letfn [(update-object [object]
+            (cond-> object
+              (cfh/svg-raw-shape? object)
+              (d/update-when :shapes #(mapv uuid/coerce %))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2060,4 +2080,5 @@
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
          "0024b-fix-stroke-cap-placement"
-         "0025-repair-empty-text-content"]))
+         "0025-repair-empty-text-content"
+         "0026-fix-svg-raw-shapes-uuids"]))

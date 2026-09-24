@@ -219,16 +219,8 @@
        (tr "labels.deleted")]]]))
 
 (mf/defc deleted-section*
-  [{:keys [team projects]}]
-  (let [layout* (hooks/use-persisted-state lt/layout-key lt/default-layout)
-        layout  (deref layout*)
-
-        on-layout-change
-        (mf/use-fn
-         (fn [value]
-           (reset! layout* (keyword value))))
-
-        deleted-map
+  [{:keys [team projects layout on-layout-change]}]
+  (let [deleted-map
         (mf/deref ref:deleted-files)
 
         projects

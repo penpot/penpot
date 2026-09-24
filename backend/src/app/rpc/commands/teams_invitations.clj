@@ -235,9 +235,8 @@
                        :organization-name (:name organization)
                        :member-email (:email-to invitation)
                        :member-id (:id member)
-                       :role role}
-                organization
-                (assoc :user-who-send-invitation (str profile-id))
+                       :role role
+                       :user-who-send-invitation (str profile-id)}
 
                 (not organization)
                 (assoc :team-belongs-to-organization (boolean team-organization-id)
@@ -460,6 +459,10 @@
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
+        team     (db/get-by-id cfg :team team-id)
+        team-with-org (when (contains? cf/flags :admin-console)
+                        (nitrate/add-organization-info-to-team cfg team {}))
+        organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -474,6 +477,24 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    (when (and (contains? cf/flags :admin-console)
+               organization
+               (not (cto/allowed? :send-invitations
+                                  {:organization-perms {:owner-id    (:owner-id organization)
+                                                        :permissions (:permissions organization)}
+                                   :profile-id profile-id
+                                   :team-perms perms})))
+      (ex/raise :type :validation
+                :code :insufficient-permissions
+                :hint "Organization policy does not allow you to send invitations"))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms))
+               (or (= role :owner)
+                   (some #(= :owner (:role %)) (:invitations params))))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
@@ -517,7 +538,7 @@
   [:map {:title "create-team-with-invitations"}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
+   [:id {:optional true} ::sm/user-provided-uuid]
    [:emails [::sm/set ::sm/email]]
    [:role types.team/schema:role]])
 
@@ -581,7 +602,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! cfg profile-id team-id)
+  (teams/check-edition-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
@@ -617,6 +638,11 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms)) (= role :owner))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (db/update! conn :team-invitation
                 {:role (name role) :updated-at (ct/now)}

@@ -341,3 +341,9 @@
 (def ^:const resize-sample-time default-sample-time)
 (def ^:const rotation-sample-time default-sample-time)
 (def ^:const move-sample-time default-sample-time)
+
+(def ^:const sidebar-transform-sample-time
+  "Time in ms for coalescing sidebar measures-panel transform commits: at
+  most one full commit per window during a burst, plus a trailing flush
+  with the exact final value."
+  50)

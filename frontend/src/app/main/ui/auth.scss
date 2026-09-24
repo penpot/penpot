@@ -6,6 +6,7 @@
 
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "./ds/mixins.scss" as *;
 
 .auth-section {
   display: grid;
@@ -26,6 +27,8 @@
 }
 
 .auth-section.register {
+  @include custom-scrollbar;
+
   display: flex;
   justify-content: center;
   align-items: center;

@@ -1,0 +1,28 @@
+{
+  "~:iss": "~:verify-email",
+  "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+  "~:profile": {
+    "~:id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+    "~:email": "foo@example.com",
+    "~:fullname": "Princesa Leia",
+    "~:auth-backend": "penpot",
+    "~:is-active": true,
+    "~:is-demo": false,
+    "~:is-muted": false,
+    "~:is-blocked": false,
+    "~:theme": "",
+    "~:default-team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+    "~:default-project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+    "~:created-at": "~m1713533116365",
+    "~:modified-at": "~m1713533116365",
+    "~:props": {
+      "~:nudge": {
+        "~:big": 10,
+        "~:small": 1
+      },
+      "~:v2-info-shown": true,
+      "~:viewed-tutorial?": false,
+      "~:viewed-walkthrough?": false
+    }
+  }
+}

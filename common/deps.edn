@@ -17,14 +17,14 @@
   org.slf4j/slf4j-api {:mvn/version "2.0.18"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.43"}
 
-  selmer/selmer {:mvn/version "1.13.4"}
+  selmer/selmer {:mvn/version "1.13.5"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "1.0.0"
                     :exclusions [com.fasterxml.jackson.core/jackson-core
                                  com.fasterxml.jackson.core/jackson-databind]}
-  com.fasterxml.jackson.core/jackson-core {:mvn/version "2.22.1"}
-  com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.22.1"}
+  com.fasterxml.jackson.core/jackson-core {:mvn/version "2.22.2"}
+  com.fasterxml.jackson.core/jackson-databind {:mvn/version "2.22.2"}
 
 
   metosin/malli {:mvn/version "0.20.1"}
@@ -60,7 +60,7 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "1.5.1"}
-    thheller/shadow-cljs {:mvn/version "3.4.11"}
+    thheller/shadow-cljs {:mvn/version "3.5.0"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
     com.bhauman/rebel-readline {:mvn/version "0.1.11"}
     criterium/criterium {:mvn/version "0.4.6"}

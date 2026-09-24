@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.tokens.errors
   (:require
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]))
 
@@ -25,12 +26,12 @@
    :error.import/invalid-token-name
    {:error/code :error.import/invalid-token-name
     :error/fn #(tr "errors.tokens.invalid-json-token-name")
-    :error/detail #(tr "errors.tokens.invalid-json-token-name-detail" %)}
+    :error/detail #(tr "errors.tokens.invalid-json-token-name-detail" (dom/escape-html %))}
 
    :error.import/style-dictionary-reference-errors
    {:error/code :error.import/style-dictionary-reference-errors
     :error/fn #(str (tr "errors.tokens.import-error") "\n\n" (first %))
-    :error/detail #(str/join "\n\n" (rest %))}
+    :error/detail #(str/join "\n\n" (map dom/escape-html (rest %)))}
 
    :error.import/style-dictionary-unknown-error
    {:error/code :error.import/style-dictionary-reference-errors

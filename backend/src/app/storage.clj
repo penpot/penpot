@@ -38,6 +38,10 @@
 (def default-bucket
   "file-media-object")
 
+(def tempfile-bucket
+  "Bucket name for temporary file uploads (10-minute expiry)."
+  "tempfile")
+
 (def valid-buckets
   #{"file-media-object"
     "team-font-variant"
@@ -45,7 +49,7 @@
     "file-thumbnail"
     "profile"
     "organization"
-    "tempfile"
+    tempfile-bucket
     "file-data"
     "file-data-fragment"
     "file-change"})
@@ -136,7 +140,7 @@
         result (when (and (::deduplicate? params)
                           (:hash mdata)
                           (:bucket mdata)
-                          (not= "tempfile" (:bucket mdata)))
+                          (not= tempfile-bucket (:bucket mdata)))
                  (let [result (get-database-object-by-hash connectable backend
                                                            (:bucket mdata)
                                                            (:hash mdata))]

@@ -33,11 +33,9 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
-   [app.setup.welcome-file :refer [create-welcome-file]]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -308,7 +306,6 @@
    [:fullname ::sm/text]
    [:email ::sm/email]
    [:password schema:password]
-   [:create-welcome-file {:optional true} :boolean]
    [:accept-newsletter-updates {:optional true} :boolean]
    [:invitation-token {:optional true} schema:token]])
 
@@ -367,7 +364,7 @@
         email     (str/lower email)
         fullname  (d/normalize-string (:fullname params))
         locale    (d/normalize-string locale)
-        theme     (d/normalize-string theme)
+        theme     (some-> theme d/normalize-string not-empty)
 
         photo-id  (some->> (or (:oidc/picture props)
                                (:google/picture props)
@@ -446,7 +443,7 @@
                  :extra-data ptoken}))))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
         params     (cond-> claims
                      (:accept-newsletter-updates params)
@@ -469,14 +466,7 @@
                      (tokens/verify cfg {:token token :iss :team-invitation}))
 
         props      (-> (audit/profile->props profile)
-                       (assoc :from-invitation (some? invitation)))
-
-
-        create-welcome-file-when-needed
-        (fn []
-          (when (:create-welcome-file params)
-            (let [cfg (dissoc cfg ::db/conn)]
-              (wrk/submit! executor (create-welcome-file cfg profile)))))]
+                       (assoc :from-invitation (some? invitation)))]
 
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
@@ -525,7 +515,6 @@
                  :email (:email profile)
                  :invitation-token token}
                 (rph/with-transform (session/create-fn cfg profile claims))
-                (rph/with-defer create-welcome-file-when-needed)
                 (rph/with-meta {::audit/replace-props props
                                 ::audit/context {:action "accept-invitation"}
                                 ::audit/profile-id (:id profile)})))
@@ -533,7 +522,6 @@
           (:is-active profile)
           (-> (profile/strip-private-attrs profile)
               (rph/with-transform (session/create-fn cfg profile claims))
-              (rph/with-defer create-welcome-file-when-needed)
               (rph/with-meta
                 {::audit/replace-props props
                  ::audit/context {:action "login"}
@@ -548,7 +536,6 @@
 
             (-> {:id (:id profile)
                  :email (:email profile)}
-                (rph/with-defer create-welcome-file-when-needed)
                 (rph/with-meta
                   {::audit/replace-props props
                    ::audit/context {:action "email-verification"}

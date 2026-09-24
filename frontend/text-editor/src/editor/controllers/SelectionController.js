@@ -46,6 +46,7 @@ import {
   getTextNodeLength,
   getClosestTextNode,
   isTextNode,
+  resolveTextNodePosition,
 } from "../content/dom/TextNode.js";
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
@@ -537,6 +538,14 @@ export class SelectionController extends EventTarget {
    */
   selectAll() {
     if (this.#textEditor.isEmpty) {
+      // There is nothing to select, but we still need a valid caret: leaving
+      // the selection untouched keeps `focusNode` null and makes any later
+      // insertion (typing, pasting) fail.
+      const lineBreak =
+        this.#textEditor.root?.firstElementChild?.firstElementChild?.firstChild;
+      if (lineBreak) {
+        this.collapse(lineBreak, 0);
+      }
       return this;
     }
 
@@ -1132,6 +1141,10 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   insertPaste(fragment) {
+    if (this.isCollapsed && !this.#normalizeFocus()) {
+      return;
+    }
+
     const hasOnlyOneParagraph = fragment.children.length === 1;
     const forceTextSpan =
       fragment.firstElementChild?.dataset?.textSpan === "force";
@@ -1396,12 +1409,43 @@ export class SelectionController extends EventTarget {
   }
 
   /**
+   * Moves the caret to an equivalent position on a text node or a line break.
+   *
+   * The browser can report the caret on a container element (with the offset
+   * being a child index) or, when the editor was focused without any content,
+   * on nothing at all. Both states break every insertion path, which expects
+   * the focus node to be a text node or a <br>.
+   *
+   * @returns {boolean} true when the focus is usable.
+   */
+  #normalizeFocus() {
+    if (this.isTextFocus || this.isLineBreakFocus) {
+      return true;
+    }
+
+    const position =
+      resolveTextNodePosition(this.focusNode, this.focusOffset) ??
+      resolveTextNodePosition(this.#textEditor.root, 0);
+
+    if (!position?.node?.isConnected) {
+      return false;
+    }
+
+    this.collapse(position.node, position.offset);
+    return true;
+  }
+
+  /**
    * Replaces the currently focus element
    * with some text.
    *
    * @param {string} newText
    */
   insertIntoFocus(newText) {
+    if (!this.#normalizeFocus()) {
+      return;
+    }
+
     if (this.isTextFocus) {
       this.focusNode.nodeValue = insertInto(
         this.focusNode.nodeValue,

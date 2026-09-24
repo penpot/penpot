@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.file :as ctf]
    [app.common.types.objects-map :as omap]
    [app.config :as cf]
    [app.db :as db]
@@ -159,15 +160,17 @@
                                      :content-type "application/octet-stream"
                                      :file-id file-id
                                      :id id})
-          metadata {:storage-ref-id (:id sobject)}
+          metadata (-> (:metadata params)
+                       (assoc :storage-ref-id (:id sobject)))
           params   (-> params
                        (assoc :metadata metadata)
                        (assoc :data nil))]
       (upsert-in-database cfg params))
 
     (= backend "db")
-    (->> (dissoc params :metadata)
-         (upsert-in-database cfg))
+    (let [metadata (dissoc (:metadata params) :storage-ref-id)
+          params   (assoc params :metadata metadata)]
+      (upsert-in-database cfg params))
 
     (= backend "legacy-db")
     (cond
@@ -213,18 +216,11 @@
   [backend]
   (or backend (cf/get :file-data-backend)))
 
-(def ^:private schema:metadata
-  [:map {:title "Metadata"}
-   [:storage-ref-id {:optional true} ::sm/uuid]])
-
-(def decode-metadata-with-schema
-  (sm/decoder schema:metadata sm/json-transformer))
-
 (defn decode-metadata
   [metadata]
   (some-> metadata
           (db/decode-json-pgobject)
-          (decode-metadata-with-schema)))
+          (ctf/decode-file-metadata)))
 
 (def ^:private schema:update-params
   [:map {:closed true}
@@ -232,7 +228,7 @@
    [:type [:enum "main" "snapshot" "fragment"]]
    [:file-id ::sm/uuid]
    [:backend {:optional true} [:enum "db" "legacy-db" "storage"]]
-   [:metadata {:optional true} [:maybe schema:metadata]]
+   [:metadata {:optional true} ctf/schema:file-metadata]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::ct/inst]
    [:modified-at {:optional true} [:maybe ::ct/inst]]

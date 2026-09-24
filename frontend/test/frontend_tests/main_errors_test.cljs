@@ -11,10 +11,27 @@
     - stale-asset-error?          – pure predicate
     - exception->error-data       – pure transformer
     - on-error re-entrancy guard  – prevents recursive invocations
-    - flash schedules async emit  – ntf/show is not emitted synchronously"
+    - flash schedules async emit  – ntf/show is not emitted synchronously
+    - organization SSO recovery   – expired SSO sessions go back to the provider
+    - invalid-sso-config handler  – requires :organization-id to promote to :sso-error
+    - save failure notification   – sticky toast carrying the error report
+    - delegated save failures     – causes handled by the handler for their type"
   (:require
+   [app.common.uuid :as uuid]
+   [app.main.data.persistence :as dps]
+   [app.main.data.workspace :as-alias dw]
    [app.main.errors :as errors]
+   [app.main.refs :as refs]
+   [app.main.repo :as rp]
+   [app.main.router :as rt]
+   [app.main.store :as st]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n]
+   [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 ;; ---------------------------------------------------------------------------
@@ -134,3 +151,423 @@
     (errors/on-error (ex-info "test" {:type ::test-reentrant :hint "first"}))
     ;; The guard must have allowed only the first invocation through.
     (t/is (= 1 @reentrant-call-count))))
+
+;; ---------------------------------------------------------------------------
+;; Expired organization SSO session
+;;
+;; The backend rejects SSO-guarded requests with an :authentication error
+;; coded :nitrate-sso-required once the organization SSO session lapses.
+;; The user must be sent back through the identity provider instead of
+;; being told they have no access to the file.
+;; ---------------------------------------------------------------------------
+
+(def ^:private workspace-href
+  "https://penpot.example.com/#/workspace?team-id=b8f8bb52-8b70-8144-8004-4a5085f0bdc9")
+
+(def ^:private organization-id "d1a4c0f2-2f36-8114-8006-1b0e6d9d0c11")
+
+(defn- sso-required-error
+  []
+  {:type :authentication
+   :code :nitrate-sso-required
+   :organization-id organization-id
+   :team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"})
+
+(t/deftest expired-organization-sso-navigates-to-identity-provider
+  (t/async done
+    (t/testing "the browser is sent to the identity provider instead of an error page"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))
+            (done'))
+          done)))))
+
+(t/deftest expired-organization-sso-comes-back-to-the-current-location
+  (t/async done
+    (t/testing "the SSO check asks the provider to return the user where they were"
+      (let [rpc-calls (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [command params]
+                               (swap! rpc-calls conj {:command command :params params})
+                               (rx/of {:authorized false
+                                       :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         mock/noop}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [{:command :check-nitrate-sso
+                       :params {:team-id "b8f8bb52-8b70-8144-8004-4a5085f0bdc9"
+                                :organization-id organization-id
+                                :url workspace-href}}]
+                     @rpc-calls))
+            (done'))
+          done)))))
+
+(t/deftest already-satisfied-organization-sso-retries-the-location
+  (t/async done
+    (t/testing "a session renewed meanwhile (e.g. in another tab) reloads instead of erroring"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :sso-satisfied})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::rt/reload] (mapv ptk/type @events)))
+            (done'))
+          done)))))
+
+(t/deftest organization-sso-without-usable-provider-shows-the-sso-error-dialog
+  (t/async done
+    (t/testing "SSO is required but there is nowhere to go: offer a retry, not a permission error"
+      (let [assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized false :redirect-uri nil})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= :sso-error (:type @assigned*)))
+            (t/is (= organization-id (:organization-id @assigned*)))
+            (t/is (true? (:is-workspace @assigned*)))
+            (done'))
+          done)))))
+
+(t/deftest organization-sso-without-team-access-reports-a-permission-failure
+  (t/async done
+    (t/testing "a user who cannot reach the team keeps getting the authentication error"
+      (let [assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub
+                             (fn [_command _params]
+                               (rx/of {:authorized true :reason :no-team-access})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= :authentication (:type @assigned*)))
+            (t/is (= :nitrate-sso-required (:code @assigned*)))
+            (done'))
+          done)))))
+
+(t/deftest organization-sso-does-not-retry-on-an-unexplained-authorization
+  (t/async done
+    (t/testing "reloading on an answer we don't understand would spin on the same rejection"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params] (rx/of {:authorized true})))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error] (ptk/data-event ::assigned error))
+           st/async-emit!   (fn [& emitted] (swap! events into emitted))}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (t/is (= [::assigned] (mapv ptk/type @events)))
+            (done'))
+          done)))))
+
+(t/deftest organization-sso-error-without-context-is-reported-as-it-arrives
+  (t/async done
+    (t/testing "with no organization and no team there is nothing to check"
+      (let [rpc-calls (atom 0)
+            assigned* (atom nil)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params]
+                                         (swap! rpc-calls inc)
+                                         (rx/empty)))
+           rt/get-current-href (constantly workspace-href)
+           rt/assign-exception (fn [error]
+                                 (reset! assigned* error)
+                                 (ptk/data-event ::assigned error))}
+          (fn [done']
+            (errors/on-error {:type :authentication
+                              :code :nitrate-sso-required})
+            (t/is (zero? @rpc-calls))
+            (t/is (= :nitrate-sso-required (:code @assigned*)))
+            (done'))
+          done)))))
+
+(t/deftest a-resultless-organization-sso-check-does-not-wedge-later-rejections
+  (t/async done
+    (t/testing "the one-in-flight guard is released even when no answer arrives"
+      (let [rpc-calls (atom 0)]
+        (mock/with-mocks
+          {rp/cmd!          (mock/stub (fn [_command _params]
+                                         (swap! rpc-calls inc)
+                                         (rx/empty)))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!         mock/noop}
+          (fn [done']
+            (errors/on-error (sso-required-error))
+            (errors/on-error (sso-required-error))
+            (t/is (= 2 @rpc-calls))
+            (done'))
+          done)))))
+
+;; A failing check must stay a failing check: the generic handling turns it
+;; into a toast, whereas swallowing it would show a permission error for
+;; what may be a momentary network blip. The mocked RPC fails on a later
+;; tick, like a real request, so the handler is not inside on-error's
+;; re-entrancy guard when the failure arrives.
+
+(def ^:private check-failures (atom []))
+
+(defmethod ptk/handle-error ::test-check-failure
+  [error]
+  (swap! check-failures conj error))
+
+(t/deftest failing-organization-sso-check-is-not-reported-as-missing-access
+  (t/async done
+    (reset! check-failures [])
+    (let [assigned* (atom nil)]
+      (mock/with-mocks
+        {rp/cmd!
+         (mock/stub
+          (fn [_command _params]
+            (->> (rx/timer 0)
+                 (rx/mapcat (fn [_]
+                              (rx/throw (ex-info "boom" {:type ::test-check-failure})))))))
+
+         rt/get-current-href
+         (constantly workspace-href)
+
+         rt/assign-exception
+         (fn [error]
+           (reset! assigned* error)
+           (ptk/data-event ::assigned error))}
+
+        (fn [done']
+          (errors/on-error (sso-required-error))
+          (tm/schedule
+           50
+           (fn []
+             (t/is (= [::test-check-failure] (mapv :type @check-failures)))
+             (t/is (nil? @assigned*))
+             (done'))))
+        done))))
+
+;; ---------------------------------------------------------------------------
+;; :validation / :invalid-sso-config
+;;
+;; The SSO error page needs an organization-id to retry meaningfully. Promote
+;; to :sso-error only when that id is present; otherwise keep :validation so
+;; we do not surface a broken SSO dialog for a future code path that omits it.
+;; ---------------------------------------------------------------------------
+
+(defn- capture-async-exception
+  "Invoke `ptk/handle-error` while capturing the error map passed to
+  `rt/assign-exception` via `st/async-emit!`.
+
+  `st/async-emit!` is variadic (`[& params]`); the mock must be too,
+  otherwise CLJS looks up `IFn$_invoke$arity$variadic` and throws."
+  [error]
+  (let [captured (atom nil)]
+    (with-redefs [st/async-emit!      (fn [& events]
+                                        (reset! captured (first events)))
+                  rt/assign-exception (fn [err] err)]
+      (ptk/handle-error error)
+      @captured)))
+
+(t/deftest invalid-sso-config-with-organization-id-promotes-to-sso-error
+  (t/testing "invalid-sso-config with :organization-id is shown as :sso-error"
+    (let [org-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+          assigned (capture-async-exception
+                    {:type :validation
+                     :code :invalid-sso-config
+                     :organization-id org-id
+                     :hint "missing issuer"})]
+      (t/is (= :sso-error (:type assigned)))
+      (t/is (= org-id (:organization-id assigned)))
+      (t/is (= :invalid-sso-config (:code assigned))))))
+
+(t/deftest invalid-sso-config-without-organization-id-keeps-validation
+  (t/testing "invalid-sso-config without :organization-id must not become :sso-error"
+    (let [assigned (capture-async-exception
+                    {:type :validation
+                     :code :invalid-sso-config
+                     :hint "missing issuer"})]
+      (t/is (= :validation (:type assigned)))
+      (t/is (nil? (:organization-id assigned)))
+      (t/is (= :invalid-sso-config (:code assigned))))))
+
+(t/deftest persistence-notifications-do-not-expire-but-other-flashes-do
+  (doseq [[notify timeout] [[#(errors/flash :hint "Ordinary error") 5000]
+                            [#(errors/flash :hint "Custom error" :timeout 1000) 1000]
+                            [#(errors/flash-persistence nil) nil]]]
+    (let [scheduled (atom [])
+          events    (atom [])]
+      (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                    st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+        (notify)
+        (t/is (empty? @events) "Keep notification delivery asynchronous")
+        (doseq [callback @scheduled] (callback))
+        (t/is (= 1 (count @events)))
+        (let [state (ptk/update (first @events) {})]
+          (t/is (= timeout (get-in state [:notification :timeout])))
+          (t/is (= :visible (get-in state [:notification :status]))))))))
+
+(t/deftest persistence-notifications-include-an-error-report-download
+  (let [scheduled      (atom [])
+        idle-callbacks (atom [])
+        events         (atom [])
+        downloads      (atom [])
+        revoked        (atom [])
+        report         "generated error report"
+        cause          (ex-info "Save failed" {:type :validation})]
+    (with-redefs [dom/prevent-default         (fn [_])
+                  dom/trigger-download-uri    (fn [& params]
+                                                (swap! downloads conj params))
+                  errors/generate-report      (fn [_] report)
+                  errors/submit-report        (fn [& _])
+                  ;; `tr` is called with one and with two arguments, and its
+                  ;; two-argument arity is variadic: the stub exposes both
+                  ;; shapes so the compiled static calls resolve.
+                  i18n/tr                     (fn ([key] (str key ":"))
+                                                ([key & args]
+                                                 (str key ":" (first args))))
+                  st/emit!                    (mock/stub (fn [& emitted]
+                                                           (swap! events into emitted)))
+                  tm/schedule                 (mock/stub (fn [callback]
+                                                           (swap! scheduled conj callback)))
+                  tm/schedule-on-idle         (mock/stub (fn [callback]
+                                                           (swap! idle-callbacks conj callback)))
+                  wapi/create-blob            (mock/stub (fn [content media-type]
+                                                           {:content content :media-type media-type}))
+                  wapi/create-uri             (fn [_] "blob:report")
+                  wapi/revoke-uri             (fn [uri]
+                                                (swap! revoked conj uri))]
+      (errors/flash-persistence cause)
+      (doseq [callback @scheduled] (callback))
+      (let [state    (ptk/update (first @events) {})
+            download (get-in state [:notification :links 0])]
+        (t/is (= "labels.download:report.txt" (:label download)))
+        ((:callback download) nil)
+        (t/is (= [["report" "text/plain" "blob:report"]] @downloads))
+        (doseq [callback @idle-callbacks] (callback))
+        (t/is (= ["blob:report"] @revoked))))))
+
+(t/deftest persistence-waiters-do-not-report-an-already-handled-failure
+  (let [reports  (atom [])
+        rejected (atom [])
+        pstate   (atom {:status :saving})
+        store    (ptk/store {:state {} :on-error errors/on-error})
+        cause    (ex-info "Save failed" {:type :network})]
+    (with-redefs [refs/persistence pstate
+                  errors/submit-report (fn [& params]
+                                         (swap! reports conj (apply hash-map params)))
+                  tm/schedule (mock/stub (fn [_]))]
+      (try
+        (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
+        (reset! pstate (:persistence @store))
+        (dotimes [_ 2]
+          (->> (dps/wait-persisted-or-error)
+               (rx/subs! (fn [_] (t/is false "A failed save must still reject"))
+                         (fn [error]
+                           (swap! rejected conj error)
+                           (errors/on-error error)))))
+        (t/is (= 2 (count @rejected)))
+        (t/is (= 1 (count @reports)))
+        ;; A standalone timeout and a later save failure are new incidents.
+        (errors/on-error (ex-info "Save timed out" {:type :persistence :code :save-timeout}))
+        (t/is (= 2 (count @reports)))
+        (ptk/emit! store (#'dps/persistence-failed (uuid/next) cause))
+        (t/is (= 3 (count @reports)))
+        (finally
+          (rx/dispose! store))))))
+
+;; ---------------------------------------------------------------------------
+;; Save failures that belong to their own handler
+;;
+;; Some causes are not resolved by retaining the changes: the session has to
+;; be renewed, the file is gone, or a different version was restored.  Each
+;; one is handled by the error handler for its own type.
+;; ---------------------------------------------------------------------------
+
+(t/deftest expired-session-during-save-goes-to-the-authentication-handler
+  (t/testing "a lost session is handled as an authentication error, not notified"
+    (let [assigned  (atom nil)
+          scheduled (atom [])]
+      (with-redefs [rt/get-current-href (constantly workspace-href)
+                    rt/assign-exception (fn [error] error)
+                    st/async-emit!      (fn [& events] (reset! assigned (first events)))
+                    tm/schedule         (mock/stub (fn [callback]
+                                                     (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "Session expired" {:type :authentication}))
+        (t/is (= :authentication (:type @assigned)))
+        (t/is (empty? @scheduled) "An expired session shows no save notification")))))
+
+(t/deftest expired-organization-sso-during-save-renews-the-session
+  (t/async done
+    (t/testing "an SSO-guarded save failure goes back through the identity provider"
+      (let [events (atom [])]
+        (mock/with-mocks
+          {rp/cmd!             (mock/stub
+                                (fn [_command _params]
+                                  (rx/of {:authorized false
+                                          :redirect-uri "https://idp.example.com/authorize"})))
+           rt/get-current-href (constantly workspace-href)
+           st/emit!            (mock/stub (fn [& emitted] (swap! events into emitted)))}
+          (fn [done']
+            (errors/flash-persistence (ex-info "SSO required" (sso-required-error)))
+            (t/is (= [::rt/nav-raw] (mapv ptk/type @events)))
+            (done'))
+          done)))))
+
+(t/deftest a-deleted-file-during-save-shows-the-exception-page
+  (t/testing "a file that no longer exists shows its page, not the save notification"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [rt/assign-exception (fn [error] error)
+                    st/emit!            (mock/stub (fn [& emitted]
+                                                     (swap! events into emitted)))
+                    tm/schedule         (mock/stub (fn [callback]
+                                                     (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "File not found" {:type :not-found}))
+        (doseq [callback @scheduled] (callback))
+        (t/is (= [:not-found] (mapv :type @events)))))))
+
+(t/deftest a-restored-version-during-save-reloads-the-file
+  (t/testing "a version restored elsewhere reloads the file instead of notifying"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [st/emit!    (mock/stub (fn [& emitted] (swap! events into emitted)))
+                    tm/schedule (mock/stub (fn [callback]
+                                             (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "A different version has been restored"
+                                           {:type :validation :code :vern-conflict}))
+        (t/is (= [::dw/reload-current-file] (mapv ptk/type @events)))
+        (t/is (empty? @scheduled) "A restored version shows no save notification")))))
+
+(t/deftest other-validation-failures-during-save-keep-the-notification
+  (t/testing "a validation failure without a recovery of its own is still notified"
+    (let [events    (atom [])
+          scheduled (atom [])]
+      (with-redefs [errors/generate-report (fn [_] "generated error report")
+                    errors/submit-report   (fn [& _])
+                    st/emit!               (mock/stub (fn [& emitted]
+                                                        (swap! events into emitted)))
+                    tm/schedule            (mock/stub (fn [callback]
+                                                        (swap! scheduled conj callback)))]
+        (errors/flash-persistence (ex-info "Invalid data" {:type :validation
+                                                           :code :invalid-data}))
+        (doseq [callback @scheduled] (callback))
+        (t/is (= 1 (count @events)))
+        (let [state (ptk/update (first @events) {})]
+          (t/is (nil? (get-in state [:notification :timeout])))
+          (t/is (some? (get-in state [:notification :links 0]))))))))

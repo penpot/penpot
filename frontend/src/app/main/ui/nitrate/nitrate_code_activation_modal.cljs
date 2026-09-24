@@ -53,10 +53,10 @@
                           (modal/show {:type :nitrate-activation-success})
                           (dprof/refresh-profile))))
                      (fn [error]
-                       ;; TODO: "Already used" is not yet detectable (CC upserts on reuse).
                        (let [code (-> error ex-data :code)]
                          (reset! error* (case code
                                           :expired-activation-code (tr "nitrate.activation-code.expired-error")
+                                          :used-activation-code    (tr "nitrate.activation-code.used-error")
                                           (tr "nitrate.activation-code.invalid-error")))))))))))
 
         on-key-down
@@ -111,11 +111,16 @@
           :value (tr "nitrate.code-activation.submit")
           :on-click on-accept}]]
        [:div {:class (stl/css :footer-text)}
-        (tr "nitrate.code-activation.footer-before")
-        [:a {:class (stl/css :link)
-             :on-click on-download-request-click}
-         (tr "nitrate.code-activation.footer-link")]
-        (tr "nitrate.code-activation.footer-after") " "
-        [:a {:class (stl/css :link)
-             :href "mailto:sales@nitrate.com"}
-         "sales@nitrate.com"]]]]]))
+        [:div {:class (stl/css :code-label)} (tr "nitrate.code-activation.footer-title")]
+        [:div
+
+         [:a {:class (stl/css :link)
+              :on-click on-download-request-click}
+          (tr "nitrate.code-activation.footer-download")]]
+        [:div
+         (tr "nitrate.code-activation.footer-after") " "
+         [:a {:class (stl/css :link)
+              :href "mailto:sales@penpot.app"}
+          "sales@penpot.app"]
+         " "
+         (tr "nitrate.code-activation.footer-before")]]]]]))

@@ -9,6 +9,8 @@ repository via GraphQL and REST APIs through the authenticated `gh` CLI.
 - Finding issues with no milestone.
 - Fetching PR details by number or by milestone.
 - Comparing milestone issues against CHANGES.md to find missing entries.
+- Explicitly linking a GitHub issue to a pull request and verifying both sides.
+- Listing or inspecting GitHub Security Advisories (GHSA).
 
 ## Prerequisites
 
@@ -71,6 +73,41 @@ python3 scripts/gh.py prs --milestone "2.16.0" --state all
 ```
 
 **Output**: JSON array to stdout; progress to stderr.
+
+### `link-issue`
+
+Explicitly assign a GitHub issue to a pull request and verify the relationship from both sides:
+
+```bash
+python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
+# Short alias: python3 scripts/gh.py link <ISSUE_NUMBER> <PR_NUMBER>
+```
+
+The command resolves both node IDs, calls `addCloseIssueReferences`, and checks the issue's manually linked PRs and the PR's closing issue references. It is safe to rerun, works for merged PRs, and does not close an issue retroactively. JSON goes to stdout; progress and errors go to stderr; a missing link exits non-zero.
+
+### `advisories`
+
+List or inspect GitHub Security Advisories for the repository.
+
+```bash
+# List all advisories (summary view)
+python3 scripts/gh.py advisories
+
+# Filter by severity
+python3 scripts/gh.py advisories --severity critical
+
+# Filter by state
+python3 scripts/gh.py advisories --state triage
+
+# Get full detail for a single advisory
+python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7
+```
+
+**Summary output fields**: ghsa_id, cve_id, severity, cvss_score, state, summary, cwes, published_at, closed_at, url.
+
+**Detail output** (single advisory) adds: description, vulnerabilities (package, version ranges), credits, timestamps.
+
+**Output**: JSON to stdout; progress to stderr.
 
 ## Key principles
 
