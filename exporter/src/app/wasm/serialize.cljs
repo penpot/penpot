@@ -28,13 +28,13 @@
   host-specific parts are handled here: fills/strokes (image bytes are provisioned
   separately) and text content (fonts provisioned separately)."
   [shape]
-  (let [type (get shape :type)]
-    (serialize-shape/serialize-shape! shape)
-    (props/write-shape-fills! (get shape :fills))
+  (let [prepared (serialize-shape/serialize-shape! shape)
+        type (:type prepared)]
+    (props/write-shape-fills! (:fills prepared))
     (when-not (= type :group)
-      (props/write-shape-strokes! (get shape :strokes)))
+      (props/write-shape-strokes! (:strokes prepared)))
     (when (= type :text)
-      (text/set-shape-text! (get shape :content)))))
+      (text/set-shape-text! (:content prepared)))))
 
 (defn serialize-scene!
   "Loads every shape of an `objects` map into the WASM design state. Resets the

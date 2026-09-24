@@ -30,9 +30,7 @@
 
 (defn needs-shape-tail?
   "True when `shape` needs the per-shape svg-attrs/path tail after a
-  structural upload: svg-attrs present, or `:path`/`:bool` with content.
-  Pure predicate shared by the single and batch serializers so their
-  guards cannot drift."
+  structural upload: svg-attrs present, or `:path`/`:bool` with content."
   [shape]
   (let [type (:type shape)]
     (or (some? (:svg-attrs shape))
@@ -40,8 +38,7 @@
              (some? (:content shape))))))
 
 (defn- write-shape-tail!
-  "Per-shape svg-attrs/path tail after a structural upload. The caller
-  selects the shape first; these setters act on the current shape."
+  "Per-shape svg-attrs/path tail after a structural upload."
   [shape]
   (when (some? (:svg-attrs shape))
     (props/set-shape-svg-attrs (:svg-attrs shape)))
@@ -53,10 +50,13 @@
 (defn serialize-shape!
   "Applies every host-independent WASM property of `shape`."
   [shape]
-  (upload/set-shape-upload! shape {:include-layout? false})
+  (let [shape (svg-derived/apply-svg-derived shape)]
+    (upload/set-shape-upload! shape {:include-layout? false})
 
-  (when (needs-shape-tail? shape)
-    (write-shape-tail! shape)))
+    (when (needs-shape-tail? shape)
+      (write-shape-tail! shape))
+
+    shape))
 
 (defn serialize-shapes-batch!
   "Structural batch upload plus per-shape svg-attrs/path tail.

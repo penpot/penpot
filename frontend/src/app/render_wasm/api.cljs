@@ -23,7 +23,6 @@
    [app.common.render-wasm.serialize-shape :as serialize-shape]
    [app.common.render-wasm.serializers :as sr]
    [app.common.render-wasm.serializers.color :as sr-clr]
-   [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
@@ -1644,11 +1643,10 @@
     {:thumbnails [] :full [] :font-face-keys #{} :pending-font-face-keys #{}}
     (do
       (perf/begin-measure "set-object")
-      (let [shape (svg-derived/apply-svg-derived shape)]
-        (serialize-shape/serialize-shape! shape)
-        (let [result (set-object-host-attrs shape false)]
-          (perf/end-measure "set-object")
-          result)))))
+      (let [prepared (serialize-shape/serialize-shape! shape)
+            result (set-object-host-attrs prepared false)]
+        (perf/end-measure "set-object")
+        result))))
 
 (defn- update-text-layouts
   "Synchronously update text layouts for all shapes and send rect updates

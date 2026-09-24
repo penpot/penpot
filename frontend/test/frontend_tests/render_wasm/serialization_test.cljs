@@ -17,6 +17,7 @@
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [cljs.test :as t :include-macros true]))
 
 (defn- with-ffi-stubs*
@@ -43,8 +44,7 @@
 (def ^:private tail-cases
   "Shared spec for the svg-attrs/path tail. Each entry states whether the
   tail must fire (`:tail?`) and which writes it must perform (`:svg?`,
-  `:path?`). Both routing tests derive their expectations from this table,
-  so single/batch guard drift fails."
+  `:path?`). Tests for single and batch serialization share this table."
   [{:shape {:id (random-uuid) :type :frame} :tail? false :svg? false :path? false}
    {:shape {:id (random-uuid) :type :rect} :tail? false :svg? false :path? false}
    {:shape {:id (random-uuid) :type :rect :svg-attrs {:fill "blue"}}
@@ -134,12 +134,12 @@
           stubs {:flush (fn [s o] (swap! flush-calls conj {:shapes s :opts o}) nil)
                  :svg-attrs (fn [attrs] (swap! svg-applied conj attrs) nil)
                  :path (fn [content] (swap! path-applied conj content) nil)}]
-      (with-ffi-stubs* stubs #(serialize-shape/serialize-shape! shape))
-      ;; Deliberate Step 2 tripwire: moving derivation inside
-      ;; `serialize-shape!` assocs `:fills`/`:blur`/`:shadow`, so this strict
-      ;; equality must break that day and gain a derivation assertion.
-      (t/is (= [{:shapes [shape] :opts {:include-layout? false}}] @flush-calls)
-            (str "single structural upload without layout for " (:type shape)))
+      (let [expected (svg-derived/apply-svg-derived shape)
+            result (with-ffi-stubs* stubs #(serialize-shape/serialize-shape! shape))]
+        (t/is (= [{:shapes [expected] :opts {:include-layout? false}}] @flush-calls)
+              (str "single upload carries derived shape without layout for " (:type shape)))
+        (t/is (= expected result)
+              (str "returns the derived shape for downstream host attrs for " (:type shape))))
       (t/is (= (if svg? [(:svg-attrs shape)] []) @svg-applied)
             (str "svg-attrs write iff spec for " (:type shape)))
       (t/is (= (if path? [(:content shape)] []) @path-applied)
