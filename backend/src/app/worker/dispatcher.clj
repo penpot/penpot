@@ -7,11 +7,13 @@
 (ns app.worker.dispatcher
   (:require
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.transit :as t]
+   [app.config :as cf]
    [app.db :as db]
+   [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as mtx]
    [app.redis :as rds]
    [app.worker :as-alias wrk]
@@ -26,6 +28,7 @@
 (def ^:private schema:dispatcher
   [:map
    [::wrk/tenant ::sm/text]
+   [::lease {:optional true} ::ct/duration]
    ::mtx/metrics
    ::db/pool
    ::rds/client])
@@ -35,14 +38,15 @@
   {k (-> (d/without-nils v)
          (assoc ::timeout (ct/duration "10s"))
          (assoc ::batch-size 100)
-         (assoc ::wait-duration (ct/duration "5s")))})
+         (assoc ::wait-duration (ct/duration "5s"))
+         (assoc ::lease (cf/get-jobs-lease)))})
 
 (defmethod ig/assert-key ::wrk/dispatcher
   [_ cfg]
   (assert (sm/check schema:dispatcher cfg)))
 
-(def ^:private sql:select-next-tasks
-  "SELECT id, queue, scheduled_at from task AS t
+(def ^:private sql:select-next-jobs
+  "SELECT id, name, queue, scheduled_at from job AS t
     WHERE t.scheduled_at <= ?::timestamptz
       AND (t.status = 'new' OR t.status = 'retry')
       AND queue ~~* ?::text
@@ -51,128 +55,180 @@
       FOR UPDATE
      SKIP LOCKED")
 
-(def ^:private sql:mark-task-scheduled
-  "UPDATE task SET status = 'scheduled'
+(def ^:private sql:mark-job-scheduled
+  "UPDATE job SET status = 'scheduled', modified_at = ?
     WHERE id = ANY(?)")
 
 (def ^:private sql:reschedule-lost
-  "UPDATE task
+  "UPDATE job
       SET status='new', scheduled_at=?::timestamptz
      FROM (SELECT t.id
-             FROM task AS t
+             FROM job AS t
             WHERE status = 'scheduled'
-              AND (?::timestamptz - t.scheduled_at) > '5 min'::interval) AS subquery
-    WHERE task.id=subquery.id
-RETURNING task.id, task.queue")
+              AND t.scheduled_at < ?::timestamptz - '5 min'::interval) AS subquery
+    WHERE job.id=subquery.id
+RETURNING job.id, job.queue")
 
-(def ^:private sql:clean-orphan
-  "UPDATE task
+(def ^:private sql:mark-orphan
+  "UPDATE job
       SET status='failed', modified_at=?::timestamptz,
-          error='orphan with running status'
+          error='{\"code\":\"orphan\"}'::jsonb
      FROM (SELECT t.id
-             FROM task AS t
+             FROM job AS t
             WHERE status = 'running'
-              AND (?::timestamptz - t.modified_at) > '24 hour'::interval) AS subquery
-    WHERE task.id=subquery.id
-RETURNING task.id, task.queue")
+              AND t.modified_at < ?::timestamptz) AS subquery
+    WHERE job.id=subquery.id
+RETURNING job.id, job.queue")
+
+(defn- encode-payload
+  [{:keys [id scheduled-at]}]
+  (json/encode [(str id) (ct/format-inst scheduled-at)]))
+
+(defn- reschedule-lost-jobs
+  [{:keys [::db/conn ::timestamp] :as cfg}]
+  (doseq [{:keys [id queue]} (db/exec! conn [sql:reschedule-lost timestamp timestamp]
+                                       {:return-keys true})]
+    (jobs-metrics/record-rescheduled (::mtx/metrics cfg) queue)
+    (l/wrn :hint "reschedule"
+           :id (str id)
+           :queue queue)))
+
+(defn- mark-orphan-jobs
+  [{:keys [::db/conn ::timestamp ::lease] :as cfg}]
+  (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))]
+    (doseq [{:keys [id queue]} (db/exec! conn [sql:mark-orphan timestamp cutoff]
+                                         {:return-keys true})]
+      (jobs-metrics/record-orphan (::mtx/metrics cfg) queue)
+      (l/wrn :hint "marked job as orphan"
+             :id (str id)
+             :queue queue))))
+
+(defn- get-jobs
+  [{:keys [::db/conn ::timestamp ::batch-size ::wrk/tenant]}]
+  (let [prefix (str tenant ":%")
+        result (db/exec! conn [sql:select-next-jobs timestamp prefix batch-size])]
+    (not-empty result)))
+
+(defn- mark-as-scheduled
+  [{:keys [::db/conn]} items]
+  (let [ids (map :id items)
+        sql [sql:mark-job-scheduled
+             (ct/now)
+             (db/create-array conn "uuid" ids)]]
+    (db/exec-one! conn sql)))
+
+(defn- push-jobs
+  [{:keys [::rds/conn] :as cfg} [queue jobs]]
+  ;; Mark first, push last: a crash between mark and push leaves a
+  ;; `scheduled` row that reschedule-lost-jobs re-queues, while the
+  ;; reverse order leaves a duplicate payload nothing deduplicates.
+  (mark-as-scheduled cfg jobs)
+  (let [items (mapv encode-payload jobs)
+        key   (str/ffmt "penpot.worker.queue:%" queue)]
+
+    (rds/rpush conn key items)
+
+    (jobs-metrics/record-dispatcher-size (::mtx/metrics cfg) queue (count jobs))
+    (doseq [{:keys [id name queue]} jobs]
+      (jobs-metrics/record-dispatched (::mtx/metrics cfg) name queue 1)
+      (l/trc :hist "schedule"
+             :id (str id)
+             :queue queue))))
+
+(defn- run-batch'
+  [cfg]
+  (let [cfg (assoc cfg ::timestamp (ct/now))
+        tpoint (ct/tpoint)]
+    (try
+      ;; Reschedule lost in transit jobs (can happen when
+      ;; redis server is restarted just after job is pushed)
+      (reschedule-lost-jobs cfg)
+
+      ;; Mark as failed all jobs that are still marked as running but
+      ;; their last modification (heartbeat or progress) is older than
+      ;; the configured lease
+      (mark-orphan-jobs cfg)
+
+      ;; Then, schedule the next jobs in queue
+      (let [result (if-let [jobs (get-jobs cfg)]
+                     (do
+                       (->> (group-by :queue jobs)
+                            (run! (partial push-jobs cfg)))
+                       nil)
+
+                     ;; If no jobs found on this batch run, we signal the
+                     ;; run-loop to wait for some time before start running
+                     ;; the next batch iteration
+                     ::wait)]
+        (jobs-metrics/record-dispatcher-batch
+         (::mtx/metrics cfg)
+         :dispatch
+         :completed
+         (inst-ms (tpoint)))
+        result)
+      (catch InterruptedException cause
+        (throw cause))
+      (catch Throwable cause
+        (jobs-metrics/record-dispatcher-batch
+         (::mtx/metrics cfg)
+         :dispatch
+         :failed
+         (inst-ms (tpoint)))
+        (throw cause)))))
+
+(defn- sleep-after-error
+  [cfg]
+  (px/sleep (or (::timeout cfg) (ct/duration "10s"))))
+
+(defn run-batch
+  "Execute a single dispatch batch: reschedule lost jobs, mark orphans
+  (lease-based) and claim pending jobs into their Redis queues. Exposed
+  as a function for testability; the dispatcher thread loops on it."
+  [cfg]
+  (let [tpoint (ct/tpoint)]
+    (try
+      (let [rconn (rds/connect cfg)]
+        (try
+          (-> cfg
+              (assoc ::rds/conn rconn)
+              (db/tx-run! run-batch'))
+          (finally
+            (.close ^AutoCloseable rconn))))
+      (catch InterruptedException cause
+        (throw cause))
+
+      (catch Exception cause
+        (cond
+          (rds/exception? cause)
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :redis :failed (inst-ms (tpoint)))
+            (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg))
+
+          (db/sql-exception? cause)
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :database :failed (inst-ms (tpoint)))
+            (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg))
+
+          :else
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :execution :failed (inst-ms (tpoint)))
+            (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg)))))))
 
 (defmethod ig/init-key ::wrk/dispatcher
-  [_ {:keys [::db/pool ::wrk/tenant ::batch-size ::timeout] :as cfg}]
-  (letfn [(reschedule-lost-tasks [{:keys [::db/conn ::timestamp]}]
-            (doseq [{:keys [id queue]} (db/exec! conn [sql:reschedule-lost timestamp timestamp]
-                                                 {:return-keys true})]
-              (l/wrn :hint "reschedule"
-                     :id (str id)
-                     :queue queue)))
-
-          (clean-orphan [{:keys [::db/conn ::timestamp]}]
-            (doseq [{:keys [id queue]} (db/exec! conn [sql:clean-orphan timestamp timestamp]
-                                                 {:return-keys true})]
-              (l/wrn :hint "mark as orphan failed"
-                     :id (str id)
-                     :queue queue)))
-
-          (get-tasks [{:keys [::db/conn ::timestamp] :as cfg}]
-            (let [prefix (str tenant ":%")
-                  result (db/exec! conn [sql:select-next-tasks timestamp prefix batch-size])]
-              (not-empty result)))
-
-          (mark-as-scheduled [{:keys [::db/conn]} items]
-            (let [ids (map :id items)
-                  sql [sql:mark-task-scheduled
-                       (db/create-array conn "uuid" ids)]]
-              (db/exec-one! conn sql)))
-
-          (push-tasks [{:keys [::rds/conn] :as cfg} [queue tasks]]
-            (let [items (mapv (juxt :id :scheduled-at) tasks)
-                  key   (str/ffmt "penpot.worker.queue:%" queue)]
-
-              (rds/rpush conn key (mapv t/encode-str items))
-              (mark-as-scheduled cfg tasks)
-
-              (doseq [{:keys [id queue]} tasks]
-                (l/trc :hist "schedule"
-                       :id (str id)
-                       :queue queue))))
-
-          (run-batch' [cfg]
-            (let [cfg (assoc cfg ::timestamp (ct/now))]
-              ;; Reschedule lost in transit tasks (can happen when
-              ;; redis server is restarted just after task is pushed)
-              (reschedule-lost-tasks cfg)
-
-              ;; Mark as failed all tasks that are still marked as
-              ;; running but it's been more than 24 hours since its
-              ;; last modification
-              (clean-orphan cfg)
-
-              ;; Then, schedule the next tasks in queue
-              (if-let [tasks (get-tasks cfg)]
-                (->> (group-by :queue tasks)
-                     (run! (partial push-tasks cfg)))
-
-                ;; If no tasks found on this batch run, we signal the
-                ;; run-loop to wait for some time before start running
-                ;; the next batch interation
-                ::wait)))
-
-          (run-batch []
-            (try
-              (let [rconn (rds/connect cfg)]
-                (try
-                  (-> cfg
-                      (assoc ::rds/conn rconn)
-                      (db/tx-run! run-batch'))
-                  (finally
-                    (.close ^AutoCloseable rconn))))
-
-              (catch InterruptedException cause
-                (throw cause))
-
-              (catch Exception cause
-                (cond
-                  (rds/exception? cause)
-                  (do
-                    (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))
-
-                  (db/sql-exception? cause)
-                  (do
-                    (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))
-
-                  :else
-                  (do
-                    (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))))))
-
-          (dispatcher []
+  [_ {:keys [::db/pool ::wait-duration] :as cfg}]
+  (letfn [(dispatcher []
             (l/inf :hint "started")
             (try
               (loop []
-                (let [result (run-batch)]
+                (let [result (run-batch cfg)]
                   (when (= result ::wait)
-                    (px/sleep (::wait-duration cfg)))
+                    (px/sleep wait-duration))
                   (recur)))
               (catch InterruptedException _
                 (l/trc :hint "interrupted"))

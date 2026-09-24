@@ -27,7 +27,7 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest create-team-invitations
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
           profile3 (th/create-profile* 3 {:is-active true :is-muted true})
@@ -106,7 +106,7 @@
           (t/is (= :member-is-muted (:code edata))))))))
 
 (t/deftest create-and-update-team-invitations-include-organization-props
-  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+  (with-mocks [email-mock {:target 'app.email/send :return nil}
                audit-mock {:target 'app.loggers.audit/submit :return nil}]
     (let [owner      (th/create-profile* 101 {:is-active true})
           invitee    (th/create-profile* 102 {:is-active true})
@@ -167,7 +167,7 @@
         (t/is (false? (get-in create-plain [:props :invitee-already-organization-member])))))))
 
 (t/deftest create-team-invitations-blacklisted-domain
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           team     (th/create-team* 1 {:profile-id (:id profile1)})
           data     {::th/type :create-team-invitations
@@ -207,7 +207,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest create-team-invitations-with-request-access
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1  (th/create-profile* 1 {:is-active true})
           requester (th/create-profile* 2 {:is-active true :email "requester@example.com"})
 
@@ -244,7 +244,7 @@
 
 
 (t/deftest create-team-invitations-with-request-access-2
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1   (th/create-profile* 1 {:is-active true})
           requester  (th/create-profile* 2 {:is-active true
                                             :email "requester@example.com"})
@@ -307,7 +307,7 @@
 
 
 (t/deftest invitation-tokens
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
 
@@ -669,7 +669,7 @@
           (t/is (not (contains? (:result out) :user-id))))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
           profile3 (th/create-profile* 3 {:is-active true :is-muted true})
@@ -900,7 +900,7 @@
         (t/is (= 1 (count result)))
         (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]
@@ -968,7 +968,7 @@
       #_(th/print-result! out)
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [rows (th/db-exec! ["select * from team where id = ?" (:id team)])]
       (t/is (= 1 (count rows)))
@@ -979,7 +979,7 @@
         (t/is (= 7 (:processed result)))))))
 
 (t/deftest create-team-access-request
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner      (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester  (th/create-profile* 3 {:is-active true :email "requester@bar.com"})
           team       (th/create-team* 1 {:profile-id (:id owner)})
@@ -1026,7 +1026,7 @@
 
 
 (t/deftest create-team-access-request-owner-muted
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :is-muted true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1045,7 +1045,7 @@
 
 
 (t/deftest create-team-access-request-requester-muted
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :is-muted true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1071,7 +1071,7 @@
 
 
 (t/deftest create-team-access-request-owner-bounce
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1099,7 +1099,7 @@
         (t/is (= "private" (:email edata)))))))
 
 (t/deftest create-team-access-request-requester-bounce
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner       (th/create-profile* 1 {:is-active true :email "owner@bar.com"})
           requester   (th/create-profile* 2 {:is-active true :email "requester@bar.com"})
           team        (th/create-team* 1 {:profile-id (:id owner)})
@@ -1156,7 +1156,7 @@
       (t/is (th/success? out)))))
 
 (t/deftest create-team-invitations-email-cooldown
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           team     (th/create-team* 1 {:profile-id (:id profile1)})
 
@@ -1290,7 +1290,7 @@
 ;; --- T7-F-01: Role ceiling in team invitations ---
 
 (t/deftest admin-cannot-create-invitation-with-owner-role
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1314,7 +1314,7 @@
         (t/is (= 0 (:call-count @mock)))))))
 
 (t/deftest admin-cannot-create-invitation-with-owner-role-invitations-format
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1337,7 +1337,7 @@
         (t/is (= 0 (:call-count @mock)))))))
 
 (t/deftest admin-cannot-update-invitation-role-to-owner
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           admin   (th/create-profile* 2 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
@@ -1371,7 +1371,7 @@
         (t/is (th/ex-of-code? (:error out) :cant-promote-to-owner))))))
 
 (t/deftest owner-can-create-invitation-with-owner-role
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [owner   (th/create-profile* 1 {:is-active true})
           team    (th/create-team* 1 {:profile-id (:id owner)})]
 

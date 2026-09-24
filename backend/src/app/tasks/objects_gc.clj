@@ -9,9 +9,11 @@
   of deleted or unreachable objects."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.tasks.delete-object :as dobj]
    [integrant.core :as ig]))
@@ -44,9 +46,9 @@
   pending purge. Referenced storage objects are touched so the storage GC
   reclaims them with its usual delay; chunk mappings are removed before the
   session row (NO ACTION foreign keys)."
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (let [stalled-threshold (ct/minus timestamp {:hours 1})]
-    (->> (db/plan conn [sql:get-upload-sessions timestamp stalled-threshold timestamp chunk-size]
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (let [stalled-threshold (ct/minus threshold {:hours 1})]
+    (->> (db/plan conn [sql:get-upload-sessions threshold stalled-threshold threshold chunk-size]
                   {:fetch-size 5})
          (reduce (fn [total {:keys [id]}]
                    (l/trc :obj "upload-session" :id (str id))
@@ -71,8 +73,8 @@
      SKIP LOCKED")
 
 (defn- delete-profiles!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-profiles timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::timestamp ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-profiles threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :obj "profile" :id (str id))
 
@@ -99,8 +101,8 @@
      SKIP LOCKED")
 
 (defn- delete-teams!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-teams timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-teams threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :obj "team"
                         :id (str id)
@@ -126,8 +128,8 @@
      SKIP LOCKED")
 
 (defn- delete-fonts!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-fonts timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-fonts threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                  (l/trc :obj "font-variant"
                         :id (str id)
@@ -156,8 +158,8 @@
      SKIP LOCKED")
 
 (defn- delete-projects!
-  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-projects timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-projects threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :obj "project"
                         :id (str id)
@@ -182,8 +184,8 @@
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-files timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-files threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :obj "file"
                         :id (str id)
@@ -206,8 +208,8 @@
      SKIP LOCKED")
 
 (defn delete-file-thumbnails!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-thumbnails timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-thumbnails threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :obj "file-thumbnail"
                         :file-id (str file-id)
@@ -233,8 +235,8 @@
      SKIP LOCKED")
 
 (defn delete-file-object-thumbnails!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-object-thumbnails timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-object-thumbnails threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :obj "file-object-thumbnail"
                         :file-id (str file-id)
@@ -261,8 +263,8 @@
      SKIP LOCKED")
 
 (defn- delete-file-media-objects!
-  [{:keys [::db/conn ::timestamp ::chunk-size ::sto/storage] :as cfg}]
-  (->> (db/plan conn [sql:get-file-media-objects timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/plan conn [sql:get-file-media-objects threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                  (l/trc :obj "file-media-object"
                         :id (str id)
@@ -289,8 +291,8 @@
      SKIP LOCKED")
 
 (defn- delete-file-data!
-  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-data timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-data threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id id type deleted-at metadata backend]}]
 
                  (some->> metadata
@@ -323,8 +325,8 @@
      SKIP LOCKED")
 
 (defn- delete-file-changes!
-  [{:keys [::db/conn ::timestamp ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-change timestamp chunk-size] {:fetch-size 5})
+  [{:keys [::db/conn ::threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-change threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
                  (l/trc :obj "file-change"
                         :id (str id)
@@ -352,7 +354,7 @@
    #'delete-fonts!
    #'delete-teams!])
 
-(defn- execute-proc!
+(defn- execute-proc
   "A generic function that executes the specified proc iterativelly
   until 0 results is returned"
   [cfg proc-fn]
@@ -365,29 +367,52 @@
         (recur (long (+ total result)))
         total))))
 
-(defmethod ig/assert-key ::handler
+
+(defmethod ig/assert-key ::objects-gc-job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected a valid database pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
-(defmethod ig/expand-key ::handler
+(defmethod ig/expand-key ::objects-gc-job-def
   [k v]
   {k (assoc v ::chunk-size 100)})
+(declare execute-objects-gc)
 
-(defmethod ig/init-key ::handler
+(def schema:objects-gc-params
+  "Optional :skip-delay processes everything immediately, ignoring
+  deleted-at schedules (operator/repl escape hatch, mirrors
+  storage-gc-touched). Optional :chunk-size overrides the per-proc batch
+  size from config."
+  [:map {:closed true}
+   [:skip-delay {:optional true} :boolean]
+   [:chunk-size {:optional true} :int]])
+
+(defmethod ig/init-key ::objects-gc-job-def
   [_ cfg]
-  (fn [{:keys [props]}]
-    (let [skip-delay (:skip-delay props)
-          chunk-size (or (:chunk-size props) (::chunk-size cfg))
-          cfg        (-> cfg
-                         (assoc ::chunk-size chunk-size)
-                         (assoc ::timestamp (if skip-delay
-                                              (ct/in-future {:days 3650})
-                                              (ct/now))))]
-      (loop [procs (map deref deletion-proc-vars)
-             total 0]
-        (if-let [proc-fn (first procs)]
-          (let [result (execute-proc! cfg proc-fn)]
-            (recur (rest procs)
-                   (long (+ total result))))
-          {:processed total})))))
+  {::jobs/name      :objects-gc
+   ::jobs/schema    schema:objects-gc-params
+   ::jobs/handler   (partial execute-objects-gc cfg)
+   ::jobs/decoder   (sm/decoder schema:objects-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:objects-gc-params)})
+
+(defn execute-objects-gc
+  "Plain job handler: garbage collect orphan storage objects."
+  ([cfg] (execute-objects-gc cfg {}))
+  ([cfg params]
+   (let [now       (ct/now)
+         threshold (if (:skip-delay params)
+                     (ct/in-future {:days 3650})
+                     now)
+         cfg       (assoc cfg
+                          ::timestamp now
+                          ::threshold threshold
+                          ::chunk-size (or (:chunk-size params)
+                                           (::chunk-size cfg)))]
+     (loop [procs (map deref deletion-proc-vars)
+            total 0]
+       (if-let [proc-fn (first procs)]
+         (let [result (execute-proc cfg proc-fn)]
+           (jobs/heartbeat cfg)
+           (recur (rest procs)
+                  (long (+ total result))))
+         {:processed total})))))

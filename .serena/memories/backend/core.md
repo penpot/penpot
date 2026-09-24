@@ -36,21 +36,33 @@ Backend RPC command areas without focused memories include access tokens, binfil
 
 `app.db` helpers accept cfg, pool, or conn in most places and convert kebab-case to snake_case:
 - `db/get`, `db/get*`, `db/query`, `db/insert!`, `db/update!`, `db/delete!`.
+- `db/get*`/`db/query` signature is `(ds table where-params & {:as opts})`: trailing keywords become an opts MAP (ignored by the select builder — use `{::db/remove-deleted false}` map as the single vararg to also see rows with `deleted_at` set), while a trailing ODD number of keywords crashes with "Don't know how to create ISeq from: Keyword". Extra keywords are NOT a column filter: rows always come back with all columns.
+- Next.js/JDBC caveat: where-maps don't support value vectors (no `IN`); use `status = ANY(?)` with `db/create-array` inside `db/tx-run!`.
 - Use `db/run!` for multiple operations on one connection.
 - Use `db/tx-run!` for transactions.
+- `job`-substrate specifics (unified jobs): claims and terminal writers are conditional updates (see `app.jobs`); GC deletes return resource ids via `RETURNING` inside one transaction.
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
-For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump
-the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
+For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 
 For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/subtleties`.
 
-## Background tasks
+## Background tasks (unified jobs)
 
-A task handler is an Integrant component with `ig/assert-key`, `ig/expand-key`, and `ig/init-key`, returning the function run by the worker. New tasks also need wiring in `app.main`: handler config, worker registry entry, and cron entry if scheduled.
+Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` in its namespace + a malli params schema + an `ig/init-key` that returns the job-def map `{::jobs/name, ::jobs/schema, ::jobs/handler, ::jobs/decoder, ::jobs/validator}` (decoder/validator precompiled at init). The registry is the `::jobs/defs` wiring in `app.main`, which also populates a module-level registry used by `jobs/submit` as fallback — job-def components cannot ig/ref `::jobs/defs` (wiring cycle). Submit from RPC code passes its RPC cfg (it carries `::jobs/defs` via ig/ref).
 
-For worker dispatch, cron, retry semantics, deduplication, and queue internals: `mem:backend/subtleties`.
+For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, and queue internals: `mem:backend/subtleties`.
+
+## Jobs metrics
+
+- `app.jobs.metrics` owns the jobs metric names, bounded labels and the periodic backlog sampler.
+- Metrics use only `name`, `queue`, `outcome`, `reason`, `stage` and `kind` labels. Job IDs, profile IDs, props, reply bodies and exception text must never be labels.
+- The durable lifecycle metrics are submitted, dispatched, completed, retries, orphaned and rescheduled counters; queue-wait, execution and total-time histograms; dispatcher and backlog state; GC, cron and ephemeral request metrics.
+- `app.metrics/run!` is safe for recording failures, but metrics components still require a valid metrics instance. Durable submit call sites carry `::mtx/metrics` through RPC or job-def configuration.
+- The backlog sampler runs every 30 seconds on worker-enabled, writable systems. It groups by status and publishes the oldest pending age; it must not query a read-only database.
+- `penpot_tasks_timing` remains exported for compatibility while the jobs-specific histograms are adopted.
+
 
 ## REPL
 
@@ -97,9 +109,7 @@ IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory.
 * **Linting:** `pnpm run lint:clj`.
 * **Formatting:** `pnpm run check-fmt:clj` to check, `pnpm run fmt:clj` to fix. After running `fmt:clj`, `check-fmt:clj` is redundant. Avoid unrelated whitespace diffs.
 
-**Before linting:** if delimiter errors are suspected (after LLM edits), run
-`scripts/paren-repair` on the affected files first. Delimiter errors produce
-misleading linter/compiler output. See `mem:scripts/paren-repair`.
+**Before linting:** if delimiter errors are suspected (after LLM edits), run `scripts/paren-repair` on the affected files first. Delimiter errors produce misleading linter/compiler output. See `mem:scripts/paren-repair`.
 
 ## Testing
 
