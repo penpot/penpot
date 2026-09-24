@@ -8281,6 +8281,10 @@ msgstr "Flow starts"
 msgid "workspace.options.flows.remove-flow"
 msgstr "Remove flow"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr "The font used by this text (%s) is no longer available. Reupload the font to create a typography style"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
 msgstr "Auto"

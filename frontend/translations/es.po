@@ -8067,6 +8067,10 @@ msgstr "Inicios de flujo"
 msgid "workspace.options.flows.remove-flow"
 msgstr "Eliminar flujo"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr "La fuente utilizada por este texto (%s) ya no está disponible. Vuelve a subir la fuente para crear un estilo de tipografía"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
 msgstr "Automático"
