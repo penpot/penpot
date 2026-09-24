@@ -447,8 +447,8 @@
 
 (defn get-jobs-retention
   "How long terminal (completed/failed/cancelled) internal job rows are
-  kept before the jobs GC deletes them; parity with the legacy tasks-gc
-  deletion delay."
+  kept before the jobs GC deletes them. The legacy task table is cleaned
+  by the parallel legacy version."
   []
   (or (c/get config :jobs-retention)
       (ct/duration {:days 7})))

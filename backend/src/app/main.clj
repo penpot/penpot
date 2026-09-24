@@ -462,7 +462,6 @@
     :storage-gc-touched    (ig/ref ::sto.gc-touched/storage-gc-touched-job-def)
     :storage-pending-gc    (ig/ref ::sto.pending-gc/storage-pending-gc-job-def)
     :jobs-gc               (ig/ref :app.jobs.gc/jobs-gc-job-def)
-    :tasks-gc              (ig/ref :app.tasks.tasks-gc/tasks-gc-job-def)
     :telemetry             (ig/ref :app.tasks.telemetry/telemetry-job-def)
     :session-gc            (ig/ref ::session/session-gc-job-def)
     :file-gc-scheduler     (ig/ref :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def)
@@ -514,9 +513,6 @@
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.jobs.gc/jobs-gc-job-def
-   {::db/pool (ig/ref ::db/pool)}
-
-   :app.tasks.tasks-gc/tasks-gc-job-def
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.telemetry/telemetry-job-def
@@ -646,9 +642,6 @@
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :jobs-gc}
-
-     {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :tasks-gc}
 
      {:cron #penpot/cron "0 0 2 * * ?" ;; daily
       :task :file-gc-scheduler}

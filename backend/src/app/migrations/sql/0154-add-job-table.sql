@@ -10,8 +10,8 @@
 -- NULL`. There is no `modified_at` trigger: the application code updates it on
 -- every UPDATE (used for the unified lease/orphan detection).
 --
--- The legacy `task` table stays in place (dormant): it keeps historical rows
--- and keeps being cleaned by tasks-gc until its eventual removal.
+-- The legacy `task` table stays in place (dormant). Its cleanup remains
+-- the responsibility of the parallel legacy version during migration.
 
 CREATE TABLE job (
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,12 +32,12 @@ CREATE TABLE job (
     props        jsonb NOT NULL DEFAULT '{}',
 
     -- optional ledger columns (user-facing jobs)
-    profile_id   uuid NULL REFERENCES profile(id) ON DELETE CASCADE,
+    profile_id   uuid NULL REFERENCES profile(id) ON DELETE NO ACTION DEFERRABLE,
     target       jsonb,
     progress     jsonb,
     error        jsonb,
     result       jsonb,
-    resource_id  uuid NULL REFERENCES storage_object(id) ON DELETE SET NULL,
+    resource_id  uuid NULL REFERENCES storage_object(id) ON DELETE SET NULL DEFERRABLE,
     expires_at   timestamptz
 );
 

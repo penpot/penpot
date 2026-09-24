@@ -11,9 +11,9 @@
     user or internal). Expiration is the mechanism for user-facing jobs
     and for jobs carrying volatile resources.
   - retention: deletes internal terminal rows (no profile, status in
-    completed/failed/cancelled) older than the `:jobs-retention` delay;
-    parity with the legacy tasks-gc, which keeps cleaning the dormant
-    `task` table. User-facing terminal rows (profile_id NOT NULL) are
+    completed/failed/cancelled) older than the `:jobs-retention` delay.
+    The dormant legacy `task` table is cleaned by the parallel legacy
+    version. User-facing terminal rows (profile_id NOT NULL) are
     NOT swept by retention: they are governed by `expires_at` (or stay
     as ledger history).
 

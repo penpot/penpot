@@ -354,7 +354,7 @@
    #'delete-fonts!
    #'delete-teams!])
 
-(defn- execute-proc!
+(defn- execute-proc
   "A generic function that executes the specified proc iterativelly
   until 0 results is returned"
   [cfg proc-fn]
@@ -411,7 +411,7 @@
      (loop [procs (map deref deletion-proc-vars)
             total 0]
        (if-let [proc-fn (first procs)]
-         (let [result (execute-proc! cfg proc-fn)]
+         (let [result (execute-proc cfg proc-fn)]
            (jobs/heartbeat cfg)
            (recur (rest procs)
                   (long (+ total result))))
