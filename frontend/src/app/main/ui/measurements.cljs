@@ -283,9 +283,17 @@
         text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
 
         text-width   (* (count text) badge-char-width)
-        badge-width  (+ text-width (* 2 badge-padding-x))]
+        badge-width  (+ text-width (* 2 badge-padding-x))
 
-    (when-not ^boolean single-line?
+        ;; badge-width/height and shape-width/height are already in the same
+        ;; canvas-space coordinates, with the badge's constants pre-divided
+        ;; by zoom, so comparing them directly already accounts for zoom —
+        ;; no extra scaling needed.
+        hidden?      (or single-line?
+                        (< shape-width badge-width)
+                        (< shape-height badge-height))]
+
+    (when-not ^boolean hidden?
       (if has-rotation?
         (let [edge       (get-edge-for-badge rotation)
               points     (dm/get-prop single-shape :points)
