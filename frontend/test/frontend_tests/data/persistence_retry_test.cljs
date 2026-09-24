@@ -218,9 +218,9 @@
            (rx/subject)))))))
 
 ;; Scenario: a persist-commit arrives with a superseded episode token after
-;; a transient failure. Without the token guard it would fail terminally as
-;; `:save-outcome-unknown`; with it, nothing happens. Proves: stale retry
-;; timers stay silent.
+;; a transient failure. Without the token guard it would send outside the
+;; backoff schedule; with it, nothing happens. Proves: stale retry timers
+;; stay silent.
 (t/deftest ^:async stale-retry-token-stays-silent
   (await
    (with-persistence
