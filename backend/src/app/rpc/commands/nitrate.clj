@@ -703,7 +703,10 @@
               (let [redirect-uri (oidc/build-organization-sso-auth-redirect-uri
                                   cfg sso
                                   :dest-url url
-                                  :organization-id organization-id)
+                                  :organization-id organization-id
+                                  ;; Trusted alternate origin stamped by the
+                                  ;; http trusted-origin middleware.
+                                  :origin (:app.http/trusted-origin request))
                     organization-id (or organization-id (:organization-id sso))]
                 (oidc/submit-organization-sso-auth-started-event
                  cfg request profile-id organization-id)

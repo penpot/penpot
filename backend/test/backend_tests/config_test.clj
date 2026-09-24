@@ -38,3 +38,49 @@
   (t/testing "a leading slash would drop the subpath, so it fails fast"
     (t/is (thrown? AssertionError
                    (cf/join-uri "https://example.com/penpot" "/assets/by-id/123")))))
+
+(t/deftest trusted-origins-decodes-from-env-string
+  (t/testing "comma and whitespace separated origins become a set"
+    (let [config (cf/decode-config {:tenant "default"
+                                    :host "localhost"
+                                    :public-uri "http://localhost:3449"
+                                    :trusted-origins "https://a.example.com, https://b.example.com https://c.example.com"})]
+      (t/is (= #{"https://a.example.com" "https://b.example.com" "https://c.example.com"}
+               (:trusted-origins config))))))
+
+(t/deftest trusted-origin?-checks-normalized-allowlist
+  (with-redefs [cf/config (assoc cf/config :trusted-origins #{"https://alt.example.com"})]
+    (t/testing "exact and normalized matches"
+      (t/is (cf/trusted-origin? "https://alt.example.com"))
+      (t/is (cf/trusted-origin? "  HTTPS://Alt.Example.com  ")))
+    (t/testing "nil, blank, unlisted, subdomain and path variants are rejected"
+      (t/is (not (cf/trusted-origin? nil)))
+      (t/is (not (cf/trusted-origin? "")))
+      (t/is (not (cf/trusted-origin? "https://other.example.com")))
+      (t/is (not (cf/trusted-origin? "https://sub.alt.example.com")))
+      (t/is (not (cf/trusted-origin? "https://alt.example.com/penpot"))))))
+
+(t/deftest trusted-origin?-without-configuration
+  (with-redefs [cf/config (assoc cf/config :trusted-origins nil)]
+    (t/is (not (cf/trusted-origin? "https://alt.example.com")))))
+
+(t/deftest with-public-uri-overrides-base
+  (let [config {:public-uri "http://localhost:3449" :host "localhost"}]
+    (t/is (= "https://alt.example.com"
+             (:public-uri (cf/with-public-uri "https://alt.example.com" config))))
+    (t/is (= config (cf/with-public-uri nil config)))))
+
+(t/deftest valid-origin?-checks-bare-origin-shape
+  (t/testing "accepts scheme://host[:port], including IPv6"
+    (doseq [origin ["http://localhost:3449"
+                    "https://alt.example.com"
+                    "https://alt.example.com:8443"
+                    "https://[::1]:3449"
+                    "HTTPS://Alt.Example.com"]]
+      (t/is (cf/valid-origin? origin) origin)))
+
+  (t/testing "rejects nil, blank, missing scheme, paths, query and trailing slash"
+    (doseq [origin [nil "" "   " "alt.example.com" "localhost:3449"
+                    "https://alt.example.com/" "https://alt.example.com/penpot"
+                    "https://alt.example.com?x=1" "https://alt.example.com#frag"]]
+      (t/is (not (cf/valid-origin? origin)) (str origin)))))

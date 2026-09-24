@@ -264,19 +264,27 @@
   [_ params]
   (assert (sm/check schema:router-params params)))
 
+(defn- root-middleware
+  "Root middleware chain applied to every route. Exposed as a function so
+  tests can assert the trusted-origin middleware is registered and ordered
+  so it wraps the rest of the chain."
+  [cfg]
+  [[mw/server-timing]
+   [mw/trusted-origin]
+   [sec/sec-fetch-metadata]
+   [mw/params]
+   [mw/format-response]
+   [mw/auth {:bearer (partial session/decode-token cfg)
+             :cookie (partial session/decode-token cfg)
+             :token  (partial actoken/decode-token cfg)}]
+   [mw/parse-request]
+   [mw/errors errors/handle]
+   [mw/restrict-methods]])
+
 (defmethod ig/init-key ::router
   [_ cfg]
   (rr/router
-   [["" {:middleware [[mw/server-timing]
-                      [sec/sec-fetch-metadata]
-                      [mw/params]
-                      [mw/format-response]
-                      [mw/auth {:bearer (partial session/decode-token cfg)
-                                :cookie (partial session/decode-token cfg)
-                                :token  (partial actoken/decode-token cfg)}]
-                      [mw/parse-request]
-                      [mw/errors errors/handle]
-                      [mw/restrict-methods]]}
+   [["" {:middleware (root-middleware cfg)}
 
      (::mtx/routes cfg)
      (::assets/routes cfg)

@@ -368,6 +368,38 @@ If you're using the official <code class="language-bash">docker-compose.yml</cod
     may limit the usage of Penpot; as an example, the clipboard does not work with HTTP.
 </p>
 
+### Trusted alternate origins
+
+When Penpot is served on an alternate domain (a temporary deployment, a canary, or a
+migration between domains) while `PENPOT_PUBLIC_URI` still points at the canonical
+domain, the backend keeps building absolute links from `PENPOT_PUBLIC_URI`. Users
+browsing the alternate domain then get links (for example in invitation emails) that
+send them to the canonical deployment.
+
+`PENPOT_TRUSTED_ORIGINS` lets operators list the alternate origins the backend may use
+instead. When a request carries an `Origin` header that matches one of the listed
+origins, the backend uses that origin as the base for the links it generates while
+serving the request (transactional emails, asset URLs, audit and webhook link fields,
+and redirects). Origins that are not listed, and requests without an `Origin` header,
+keep using `PENPOT_PUBLIC_URI`.
+
+```bash
+# Backend
+PENPOT_TRUSTED_ORIGINS: https://alt.penpot.mycompany.com, https://staging.penpot.mycompany.com
+```
+
+- The value is a comma or whitespace separated list of bare origins
+  (`scheme://host[:port]`). Paths are not supported; malformed entries are ignored
+  and a warning is logged at startup.
+- The setting is optional and backend-only. With no value, behavior is unchanged
+  (fail-closed).
+- Each alternate origin must register its own OIDC callback URL
+  (`https://<origin>/api/auth/oidc/callback`) at the identity provider. If you use SSO
+  logout, its post-logout redirect URL must be registered as well.
+- Notifications sent later by background workers keep the canonical `PENPOT_PUBLIC_URI`,
+  because they run outside the request that triggered them. The same applies to
+  server-to-server calls (for example the management API) that carry no `Origin`.
+
 ## Email configuration
 
 By default, <code class="language-bash">smtp</code> flag is disabled, the email will be
