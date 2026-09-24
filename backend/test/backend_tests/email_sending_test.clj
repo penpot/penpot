@@ -124,9 +124,9 @@
 (t/deftest send-with-reuse-conn-and-no-conn-raises
   (t/testing "reuse-conn without a caller connection fails fast"
     (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"reuse-conn"
-                            (emails/send! {}
-                                          {::emails/reuse-conn true
-                                           ::emails/factory (fn [_] {:to "a@example.com"})})))))
+                            (emails/send {}
+                                         {::emails/reuse-conn true
+                                          ::emails/factory (fn [_] {:to "a@example.com"})})))))
 
 (t/deftest send-with-reuse-conn-joins-caller-transaction
   (let [job-def (ig/init-key ::emails/job-def
@@ -135,7 +135,7 @@
         email   {:to "a@example.com" :subject "hi" :body "hello"}
         job-id  (db/tx-run! {::db/pool th/*pool*}
                             (fn [cfg]
-                              (emails/send! (assoc cfg ::jobs/defs defs)
-                                            (assoc email ::emails/reuse-conn true))))]
+                              (emails/send (assoc cfg ::jobs/defs defs)
+                                           (assoc email ::emails/reuse-conn true))))]
     (t/testing "the email job is submitted through the caller conn"
       (t/is (= "sendmail" (:name (th/db-get :job {:id job-id})))))))

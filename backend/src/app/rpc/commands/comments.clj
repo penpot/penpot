@@ -113,7 +113,7 @@
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
+          (eml/send
            cfg
            {::eml/reuse-conn true
             ::eml/factory eml/comment-mention
@@ -129,7 +129,7 @@
     (doseq [mention thread-mentions]
       (let [{:keys [fullname email props]} (get team-users mention)]
         (when (mention-email? props)
-          (eml/send!
+          (eml/send
            cfg
            {::eml/reuse-conn true
             ::eml/factory eml/comment-thread
@@ -145,7 +145,7 @@
     (doseq [user-id notificate-users-ids]
       (let [{:keys [id fullname email props]} (get team-users user-id)]
         (when (notification-email? id (:owner-id thread) props)
-          (eml/send!
+          (eml/send
            cfg
            {::eml/reuse-conn true
             ::eml/factory eml/comment-notification

@@ -51,9 +51,9 @@
                 cf/config (assoc cf/config :user-feedback-destination "fb@example.com")]
     (let [profile  (th/create-profile* 1 {})
           captured (atom nil)]
-      (with-redefs [eml/send! (fn [cfg params]
-                                (reset! captured {:cfg cfg :params params})
-                                nil)]
+      (with-redefs [eml/send (fn [cfg params]
+                               (reset! captured {:cfg cfg :params params})
+                               nil)]
         (let [{:keys [error]} (th/command! {::th/type       :send-user-feedback
                                             ::rpc/profile-id (:id profile)
                                             :subject        "s"

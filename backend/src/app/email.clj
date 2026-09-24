@@ -6,6 +6,7 @@
 
 (ns app.email
   "Main api for send emails."
+  (:refer-clojure :exclude [send])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -296,7 +297,7 @@
   [email-factory params]
   (email-factory params))
 
-(defn send!
+(defn send
   "Schedule an already defined email to be sent asynchronously
   using the unified jobs machinery. The first `cfg` parameter is the
   connectable context that provides the `::jobs/defs` registry (an RPC

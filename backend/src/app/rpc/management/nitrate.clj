@@ -728,14 +728,14 @@ RETURNING id, deleted_at;")
                      (:fullname (profile/get-profile cfg profile-id))
                      (str/trim user-name))]
     (db/tx-run! cfg (fn [tx-cfg]
-                      (eml/send! tx-cfg {::eml/reuse-conn true
-                                         ::eml/factory eml/renewal-notice
-                                         :public-uri   (cf/get :public-uri)
-                                         :to           user-email
-                                         :user-name    user-name
-                                         :renewal-date renewal-date
-                                         :estimated-amount amount-str
-                                         :organizations organizations}))))
+                      (eml/send tx-cfg {::eml/reuse-conn true
+                                        ::eml/factory eml/renewal-notice
+                                        :public-uri   (cf/get :public-uri)
+                                        :to           user-email
+                                        :user-name    user-name
+                                        :renewal-date renewal-date
+                                        :estimated-amount amount-str
+                                        :organizations organizations}))))
   nil)
 
 ;; API: exists-organization-team-invitations-for-non-members /

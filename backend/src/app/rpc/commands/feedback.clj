@@ -57,16 +57,16 @@
         (d/without-nils
          {"error-report.txt" (:error-report params)})]
 
-    (eml/send! cfg {::eml/reuse-conn true
-                    ::eml/factory eml/user-feedback
-                    :to       destination
-                    :reply-to (:email profile)
-                    :email    (:email profile)
-                    :attachments attachments
+    (eml/send cfg {::eml/reuse-conn true
+                   ::eml/factory eml/user-feedback
+                   :to       destination
+                   :reply-to (:email profile)
+                   :email    (:email profile)
+                   :attachments attachments
 
-                    :feedback-subject (:subject params)
-                    :feedback-type (:type params "not-specified")
-                    :feedback-content (:content params)
-                    :feedback-error-href (:error-href params)
-                    :profile profile})
+                   :feedback-subject (:subject params)
+                   :feedback-type (:type params "not-specified")
+                   :feedback-content (:content params)
+                   :feedback-error-href (:error-href params)
+                   :profile profile})
     nil))

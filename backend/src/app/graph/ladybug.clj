@@ -417,7 +417,7 @@
                   :err err)))
     ps))
 
-(defn execute-prepared
+(defn execute-prepared!
   "Bind `params` into `ps` and execute it on `conn`.
 
   `params` keys are parameter names without the `$` (keyword or string);
@@ -448,7 +448,7 @@
           (vswap! prepared conj {:ps     (prepare-on-connection! conn cypher)
                                  :params params})))
       (doseq [{:keys [ps params]} @prepared]
-        (execute-prepared conn ps params))
+        (execute-prepared! conn ps params))
       (finally
         (run! #(.close ^PreparedStatement (:ps %)) @prepared)))))
 

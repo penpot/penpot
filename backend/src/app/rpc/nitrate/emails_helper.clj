@@ -55,11 +55,11 @@
   [{:keys [::db/conn] :as cfg} organization-name {:keys [email profile]}]
   (when (or (nil? profile)
             (eml/allow-send-emails? conn profile))
-    (eml/send! cfg {::eml/reuse-conn true
-                    ::eml/factory eml/organization-setup-sso
-                    :public-uri (cf/get :public-uri)
-                    :to email
-                    :organization-name organization-name})))
+    (eml/send cfg {::eml/reuse-conn true
+                   ::eml/factory eml/organization-setup-sso
+                   :public-uri (cf/get :public-uri)
+                   :to email
+                   :organization-name organization-name})))
 
 (defn- get-organization-sso-notify-recipients
   "Unique organization members and pending organization/team invitees for SSO activation emails."
