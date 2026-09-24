@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.tokens.management.token-tree
   (:require-macros [app.main.style :as stl])
@@ -140,14 +140,17 @@
            on-pill-context-menu
            on-node-context-menu]}]
   (let [separator "."
-        raw-tree      (mf/with-memo [tokens]
-                        (cpn/build-tree-root tokens separator))
-        permissions   (mf/use-ctx ctx/permissions)
-        can-edit?     (:can-edit permissions)
+        raw-tree
+        (mf/with-memo [tokens]
+          (cpn/build-tree-root tokens separator))
+
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
+
         on-node-context-menu (mf/use-fn
-                              (mf/deps can-edit? on-node-context-menu)
+                              (mf/deps can-edit-file? on-node-context-menu)
                               (fn [event node]
-                                (when can-edit?
+                                (when can-edit-file?
                                   (on-node-context-menu event node))))
 
         ordered-nodes (mf/with-memo [raw-tree]

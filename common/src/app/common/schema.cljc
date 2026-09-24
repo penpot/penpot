@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.schema
   (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean type keys select-keys])
@@ -448,6 +448,21 @@
    ::oapi/type "string"
    ::oapi/format "uuid"}})
 
+(register!
+ {:type ::user-provided-uuid
+  :pred uuid/user-provided?
+  :type-properties
+  {:title "user-provided-uuid"
+   :description "UUID provided by the user (v4, v7 or v8)"
+   :error/message "should be a user provided uuid (v4, v7 or v8)"
+   :gen/gen (sg/uuid)
+   :decode/string parse-uuid
+   :decode/json parse-uuid
+   :encode/string encode-uuid
+   :encode/json encode-uuid
+   ::oapi/type "string"
+   ::oapi/format "uuid"}})
+
 ;; Strict email regex aligned with app.common.spec/email-re.
 ;; Local part: valid RFC chars, no leading/trailing dot, no consecutive dots.
 ;; Domain: labels can't start/end with hyphen, no empty labels.
@@ -868,6 +883,14 @@
 (register! ::safe-number [::number {:gen/gen (sg/small-double)
                                     :max max-safe-int
                                     :min min-safe-int}])
+(register! ::non-negative-safe-number
+           [:and {:gen/gen (sg/small-double :min 0)}
+            ::safe-number
+            [:fn #(not (neg? %))]])
+(register! ::positive-safe-number
+           [:and {:gen/gen (sg/small-double :min 0.01)}
+            ::safe-number
+            [:fn pos?]])
 
 (defn parse-boolean
   [v]
@@ -1092,6 +1115,12 @@
 
 (def valid-safe-number?
   (lazy-validator ::safe-number))
+
+(def valid-non-negative-safe-number?
+  (lazy-validator ::non-negative-safe-number))
+
+(def valid-positive-safe-number?
+  (lazy-validator ::positive-safe-number))
 
 (def valid-safe-int?
   (lazy-validator ::safe-int))

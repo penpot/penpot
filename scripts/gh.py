@@ -5,8 +5,10 @@ gh.py — Multi-purpose CLI helper for penpot/penpot GitHub operations.
 Uses GitHub GraphQL and REST APIs via the authenticated ``gh`` CLI.
 
 Subcommands:
-  issues   List issues in a milestone (or unassigned with milestone=none)
-  prs      Fetch details for one or more PRs (by number or milestone)
+  issues      List issues in a milestone (or unassigned with milestone=none)
+  prs         Fetch details for one or more PRs (by number or milestone)
+  advisories  List or inspect GitHub security advisories
+  link-issue  Explicitly link a GitHub issue to a pull request
 
 Usage:
   python3 scripts/gh.py issues <milestone-title>            (default: state=closed)
@@ -23,6 +25,10 @@ Usage:
   cat prs.txt | python3 scripts/gh.py prs --stdin
   python3 scripts/gh.py prs --milestone "2.16.0"            (default: state=merged)
   python3 scripts/gh.py prs --milestone "2.16.0" --state all
+  python3 scripts/gh.py advisories                          (list all advisories)
+  python3 scripts/gh.py advisories --severity critical      (filter by severity)
+  python3 scripts/gh.py advisories GHSA-xvj6-fh9w-gjw7     (single advisory detail)
+  python3 scripts/gh.py link-issue 11235 11243
 
 Prerequisites:
   - gh CLI authenticated (gh auth status)
@@ -61,6 +67,100 @@ def run_gh_graphql(query: str, variables: dict) -> Any:
             print(f"GraphQL error: {err.get('message')}", file=sys.stderr)
         sys.exit(1)
     return body["data"]
+
+
+def run_gh_rest(path: str) -> Any:
+    """Run a REST API call via ``gh api``."""
+    cmd = ["gh", "api", path]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"gh error: {result.stderr}", file=sys.stderr)
+        sys.exit(1)
+    return json.loads(result.stdout)
+
+
+# ─────────────────────────────────────────────
+#  Subcommand: link-issue
+# ─────────────────────────────────────────────
+
+GQL_LINK_TARGETS_QUERY = """\
+query($owner: String!, $repo: String!, $issueNumber: Int!, $prNumber: Int!) {
+  repository(owner: $owner, name: $repo) {
+    issue(number: $issueNumber) { id number }
+    pullRequest(number: $prNumber) { id number }
+  }
+}
+"""
+
+GQL_ADD_CLOSE_ISSUE_REFERENCES = """\
+mutation($issueId: ID!, $pullRequestIds: [ID!]!) {
+  addCloseIssueReferences(input: {issueId: $issueId, pullRequestIds: $pullRequestIds}) {
+    issue { id number }
+  }
+}
+"""
+
+def link_issue_to_pr(issue_number: int, pr_number: int) -> dict:
+    """Add an explicit GitHub issue-to-PR link.
+
+    We trust the successful ``addCloseIssueReferences`` mutation instead of
+    re-querying: GitHub does not reliably report mutation-created links
+    through ``closedByPullRequestsReferences(userLinkedOnly: true)``.
+    """
+    if issue_number <= 0 or pr_number <= 0:
+        raise ValueError("issue and pull request numbers must be positive")
+
+    variables = {
+        "owner": OWNER,
+        "repo": REPO_NAME,
+        "issueNumber": issue_number,
+        "prNumber": pr_number,
+    }
+    target_data = run_gh_graphql(GQL_LINK_TARGETS_QUERY, variables)
+    repository = target_data.get("repository") or {}
+    issue = repository.get("issue") or {}
+    pull_request = repository.get("pullRequest") or {}
+    if not issue.get("id"):
+        raise RuntimeError(f"issue #{issue_number} was not found in {REPO}")
+    if not pull_request.get("id"):
+        raise RuntimeError(f"pull request #{pr_number} was not found in {REPO}")
+
+    mutation_data = run_gh_graphql(
+        GQL_ADD_CLOSE_ISSUE_REFERENCES,
+        {
+            "issueId": issue["id"],
+            "pullRequestIds": [pull_request["id"]],
+        },
+    )
+    mutation_result = mutation_data.get("addCloseIssueReferences") or {}
+    linked_issue = mutation_result.get("issue") or {}
+    if linked_issue.get("number") != issue_number:
+        raise RuntimeError(f"GitHub did not link issue #{issue_number}")
+
+    return {
+        "linked": True,
+        "issue": {"number": issue_number},
+        "pull_request": {"number": pr_number},
+    }
+
+
+def cmd_link_issue(args: argparse.Namespace) -> None:
+    """Handle the ``link-issue`` subcommand."""
+    print(
+        f"Linking issue #{args.issue_number} to pull request #{args.pr_number}...",
+        file=sys.stderr,
+    )
+    try:
+        result = link_issue_to_pr(args.issue_number, args.pr_number)
+    except (ValueError, RuntimeError) as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    print(
+        f"Linked issue #{args.issue_number} -> pull request #{args.pr_number}",
+        file=sys.stderr,
+    )
+    print(json.dumps(result, indent=2))
 
 
 # ─────────────────────────────────────────────
@@ -459,8 +559,10 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
             state
             mergedAt
             createdAt
+            headRefName
             author { login }
             labels(first: 20) { nodes { name } }
+            files(first: 100) { nodes { path } }
             closingIssuesReferences(first: 5) { nodes { number } }
           }
         }
@@ -480,8 +582,9 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
         states: GraphQL states enum array literal, e.g. ``"[MERGED]"`` or ``"[OPEN CLOSED MERGED]"``
 
     Returns:
-        List of {number, title, body, state, merged_at, created_at, author,
-                labels: [str], closing_issues: [int]}
+        List of {number, title, body, state, merged_at, created_at,
+                head_ref_name, author, labels: [str], files: [str],
+                closing_issues: [int]}
     """
     query = GQL_MILESTONE_PRS_QUERY.replace("__STATES__", states)
     all_nodes: list[dict] = []
@@ -508,8 +611,10 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
                 "state": node["state"],
                 "merged_at": node.get("mergedAt"),
                 "created_at": node.get("createdAt"),
+                "head_ref_name": node.get("headRefName"),
                 "author": node["author"]["login"] if node["author"] else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "files": [file["path"] for file in node["files"]["nodes"]],
                 "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
             })
 
@@ -582,6 +687,106 @@ def cmd_prs(args: argparse.Namespace) -> None:
 
 
 # ─────────────────────────────────────────────
+#  Subcommand: advisories
+# ─────────────────────────────────────────────
+
+
+def fetch_advisories() -> list[dict]:
+    """Fetch all security advisories for the repository via REST API."""
+    all_advisories: list[dict] = []
+    page = 1
+
+    while True:
+        advisories = run_gh_rest(
+            f"repos/{REPO}/security-advisories?per_page=100&page={page}"
+        )
+        all_advisories.extend(advisories)
+
+        if len(advisories) < 100:
+            break
+        page += 1
+
+    return all_advisories
+
+
+def fetch_advisory(ghsa_id: str) -> dict:
+    """Fetch a single security advisory by GHSA ID."""
+    return run_gh_rest(f"repos/{REPO}/security-advisories/{ghsa_id}")
+
+
+def format_advisory_summary(adv: dict) -> dict:
+    """Extract a summary view of an advisory."""
+    return {
+        "ghsa_id": adv["ghsa_id"],
+        "cve_id": adv.get("cve_id"),
+        "severity": adv.get("severity"),
+        "cvss_score": (adv.get("cvss") or {}).get("score"),
+        "state": adv.get("state"),
+        "summary": adv.get("summary"),
+        "cwes": [c["cwe_id"] for c in adv.get("cwes", [])],
+        "published_at": adv.get("published_at"),
+        "closed_at": adv.get("closed_at"),
+        "url": adv.get("html_url"),
+    }
+
+
+def format_advisory_detail(adv: dict) -> dict:
+    """Extract full detail view of an advisory."""
+    summary = format_advisory_summary(adv)
+    summary["description"] = adv.get("description")
+    summary["vulnerabilities"] = [
+        {
+            "package": v.get("package", {}).get("name"),
+            "vulnerable_version_range": v.get("vulnerable_version_range"),
+            "patched_versions": v.get("patched_versions"),
+        }
+        for v in adv.get("vulnerabilities", [])
+    ]
+    summary["credits"] = [
+        {"login": c.get("user", {}).get("login"), "type": c.get("type")}
+        for c in adv.get("credits_detailed", [])
+    ]
+    summary["created_at"] = adv.get("created_at")
+    summary["updated_at"] = adv.get("updated_at")
+    summary["withdrawn_at"] = adv.get("withdrawn_at")
+    return summary
+
+
+def cmd_advisories(args: argparse.Namespace) -> None:
+    """Handle the ``advisories`` subcommand."""
+
+    # ── Single advisory detail ──────────────────────────────
+    if args.ghsa_id:
+        ghsa_id = args.ghsa_id.upper()
+        if not ghsa_id.startswith("GHSA-"):
+            ghsa_id = f"GHSA-{ghsa_id}"
+        print(f"Fetching advisory {ghsa_id}...", file=sys.stderr)
+        adv = fetch_advisory(ghsa_id)
+        print(json.dumps(format_advisory_detail(adv), indent=2))
+        return
+
+    # ── List all advisories ─────────────────────────────────
+    print("Fetching security advisories...", file=sys.stderr)
+    advisories = fetch_advisories()
+    print(f"Fetched {len(advisories)} advisories", file=sys.stderr)
+
+    results = [format_advisory_summary(adv) for adv in advisories]
+
+    # Apply filters
+    if args.severity:
+        sev = args.severity.lower()
+        results = [r for r in results if (r.get("severity") or "").lower() == sev]
+        print(f"After severity filter ({sev}): {len(results)} advisories", file=sys.stderr)
+
+    if args.state:
+        st = args.state.lower()
+        results = [r for r in results if (r.get("state") or "").lower() == st]
+        print(f"After state filter ({st}): {len(results)} advisories", file=sys.stderr)
+
+    print(json.dumps(results, indent=2))
+
+
+# ─────────────────────────────────────────────
 #  CLI entrypoint
 # ─────────────────────────────────────────────
 
@@ -644,6 +849,32 @@ def main() -> None:
         help="PR state filter when using --milestone (default: merged)"
     )
     p_prs.set_defaults(func=cmd_prs)
+
+    # --- link-issue ---
+    p_link = sub.add_parser(
+        "link-issue",
+        aliases=["link"],
+        help="Explicitly link an issue to a pull request",
+    )
+    p_link.add_argument("issue_number", type=int, help="Issue number")
+    p_link.add_argument("pr_number", type=int, help="Pull request number")
+    p_link.set_defaults(func=cmd_link_issue)
+
+    # --- advisories ---
+    p_adv = sub.add_parser("advisories", help="List or inspect GitHub security advisories")
+    p_adv.add_argument(
+        "ghsa_id", nargs="?",
+        help="GHSA ID to fetch (e.g. 'GHSA-xvj6-fh9w-gjw7'); omit to list all"
+    )
+    p_adv.add_argument(
+        "--severity", choices=["critical", "high", "medium", "low"],
+        help="Filter by severity level"
+    )
+    p_adv.add_argument(
+        "--state", choices=["triage", "draft", "published", "closed", "withdrawn"],
+        help="Filter by advisory state"
+    )
+    p_adv.set_defaults(func=cmd_advisories)
 
     args = parser.parse_args()
     args.func(args)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.projects
   (:require
@@ -196,13 +196,13 @@
     (assoc project :is-pinned false)))
 
 (def ^:private schema:create-project
-  [:map {:title "create-project"}
+  [:map {:title "create-project" :closed true}
    [:team-id ::sm/uuid]
-   [:name [:string {:max 250 :min 1}]]
-   [:id {:optional true} ::sm/uuid]])
+   [:name [:string {:max 250 :min 1}]]])
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::webhooks/event? true
    ::sm/params schema:create-project}
   [cfg {:keys [::rpc/profile-id team-id] :as params}]

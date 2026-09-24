@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: penpot-runner-01
+    runs-on: penpot-standar-runner
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -43,17 +43,12 @@ jobs:
           ref: ${{ inputs.gh_ref }}
 
       # START: Setup Node and PNPM enabling cache
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup pnpm + Node.js
+        uses: pnpm/setup@v2
         with:
-          node-version-file: .nvmrc
-
-      - name: Enable PNPM
-        working-directory: ./plugins
-        shell: bash
-        run: |
-          corepack enable;
-          corepack install;
+          working-directory: plugins
+          runtime: node@24.21.0
+          install: false
 
       - name: Get pnpm store path
         id: pnpm-store

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.path.subpath
   (:require
@@ -28,13 +28,17 @@
 (defn add-subpath-command
   "Adds a command to the subpath"
   [subpath command]
-  (let [command (if (= :close-path (:command command))
-                  (helpers/make-line-to (:from subpath))
-                  command)
-        p (helpers/segment->point command)]
-    (-> subpath
-        (assoc :to p)
-        (update :data conj command))))
+  (let [close? (= :close-path (:command command))]
+    (if (and close? (pt= (:from subpath) (:to subpath)))
+      ;; Avoid adding a duplicate node at an already closed seam.
+      subpath
+      (let [command (if close?
+                      (helpers/make-line-to (:from subpath))
+                      command)
+            p       (helpers/segment->point command)]
+        (-> subpath
+            (assoc :to p)
+            (update :data conj command))))))
 
 (defn reverse-command
   "Reverses a single command"
@@ -95,25 +99,30 @@
 
 (defn- merge-paths
   "Tries to merge into candidate the subpaths. Will return the candidate with the subpaths merged
-  and removed from subpaths the subpaths merged"
-  [candidate subpaths]
-  (let [merge-with-candidate
+  and removed from subpaths the subpaths merged. Only meeting points accepted
+  by `meet?` are joined"
+  [candidate subpaths meet?]
+  (let [joins?
+        (fn [point other]
+          (and (pt= point other) (meet? point)))
+
+        merge-with-candidate
         (fn [[candidate result] current]
           (cond
             (pt= (:to current) (:from current))
             ;; Subpath is already a closed path
             [candidate (conj result current)]
 
-            (pt= (:to candidate) (:from current))
+            (joins? (:to candidate) (:from current))
             [(subpaths-join candidate current) result]
 
-            (pt= (:from candidate) (:to current))
+            (joins? (:from candidate) (:to current))
             [(subpaths-join current candidate) result]
 
-            (pt= (:to candidate) (:to current))
+            (joins? (:to candidate) (:to current))
             [(subpaths-join candidate (reverse-subpath current)) result]
 
-            (pt= (:from candidate) (:from current))
+            (joins? (:from candidate) (:from current))
             [(subpaths-join (reverse-subpath current) candidate) result]
 
             :else
@@ -159,35 +168,58 @@
     (into [] xf-mapcat-data merged)))
 
 (defn close-subpaths
-  "Searches a path for possible subpaths that can create closed loops and merge them"
+  "Searches a path for possible subpaths that can create closed loops and merge them.
+  When `meet?` is given only subpaths that touch at an accepted point are merged"
+  ([content]
+   (close-subpaths content (constantly true)))
+  ([content meet?]
+   (let [subpaths (get-subpaths content)
+         closed-subpaths
+         (loop [result []
+                current (first subpaths)
+                subpaths (rest subpaths)]
+
+           (if (some? current)
+             (let [[new-current new-subpaths]
+                   (if (is-closed? current)
+                     [current subpaths]
+                     (merge-paths current subpaths meet?))]
+
+               (if (= current new-current)
+                 ;; If equal we haven't found any matching subpaths we advance
+                 (recur (conj result new-current)
+                        (first new-subpaths)
+                        (rest new-subpaths))
+
+                 ;; If different we need to pass again the merge to check for additional
+                 ;; subpaths to join
+                 (recur result
+                        new-current
+                        new-subpaths)))
+             result))]
+
+     (into [] xf-mapcat-data closed-subpaths))))
+
+(defn- close-loop
+  "Adds an explicit close command when a subpath's endpoints meet."
+  [{:keys [from to data] :as subpath}]
+  (let [last-seg (peek data)]
+    (if (or (< (count data) 2)
+            (= :close-path (:command last-seg))
+            (not (pt= from to)))
+      subpath
+      (let [data (cond-> data
+                   (= :line-to (:command last-seg)) (pop))]
+        (assoc subpath
+               :to from
+               :data (conj data {:command :close-path :params {}}))))))
+
+(defn close-loops
+  "Adds close commands to subpaths whose endpoints meet."
   [content]
-  (let [subpaths (get-subpaths content)
-        closed-subpaths
-        (loop [result []
-               current (first subpaths)
-               subpaths (rest subpaths)]
-
-          (if (some? current)
-            (let [[new-current new-subpaths]
-                  (if (is-closed? current)
-                    [current subpaths]
-                    (merge-paths current subpaths))]
-
-              (if (= current new-current)
-                ;; If equal we haven't found any matching subpaths we advance
-                (recur (conj result new-current)
-                       (first new-subpaths)
-                       (rest new-subpaths))
-
-                ;; If different we need to pass again the merge to check for additional
-                ;; subpaths to join
-                (recur result
-                       new-current
-                       new-subpaths)))
-            result))]
-
-
-    (into [] xf-mapcat-data closed-subpaths)))
+  (->> (get-subpaths content)
+       (mapv close-loop)
+       (into [] xf-mapcat-data)))
 
 ;; FIXME: revisit this fn impl for perfromance
 (defn reverse-content

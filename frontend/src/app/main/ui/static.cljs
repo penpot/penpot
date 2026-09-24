@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
+   [app.main.data.nitrate :as dnt]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -124,13 +125,22 @@
         success-register
         (mf/use-fn
          (fn [data]
-           (reset! register-token (:token data))
-           (reset! current-section :register-validate)))
+           (cond
+             (:invitation-token data)
+             (st/emit! (rt/nav :auth-verify-token {:token (:invitation-token data)}))
+
+             (:is-active data)
+             (st/emit! (rt/reload true))
+
+             :else
+             (do
+               (reset! user-email (:email data))
+               (reset! current-section :register-email-sent)))))
 
         register-email-sent
         (mf/use-fn
-         (fn [email]
-           (reset! user-email email)
+         (fn [data]
+           (reset! user-email (if (string? data) data (:email data)))
            (reset! current-section :register-email-sent)))
 
         recovery-email-sent
@@ -184,7 +194,7 @@
                 :on-click set-section} (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
-           [:> register/terms-register*]]]
+           [:> register/terms-service-privacy-policy*]]]
 
          :register-validate
          [:div {:class (stl/css :form-container)}
@@ -341,6 +351,27 @@
    [:p {:class (stl/css :nitrate-unavailable-footer)}
     (tr "labels.copyright-period")]])
 
+(mf/defc nitrate-not-configured-page*
+  []
+  [:section {:class (stl/css :nitrate-unavailable-layout)}
+   [:div {:class (stl/css :nitrate-unavailable-content)}
+    [:> raw-svg* {:id "logo-nitrate-unavailable" :class (stl/css :nitrate-unavailable-logo)}]
+    [:div {:class (stl/css :nitrate-unavailable-message)}
+     (tr "labels.nitrate-not-configured.main-message")]
+    [:div {:class (stl/css :nitrate-not-configured-message)}
+     (tr "labels.nitrate-not-configured.desc-message")]
+    [:div {:class (stl/css :nitrate-not-configured-message)}
+     [:span
+      (tr "labels.nitrate-not-configured.learn-more")
+      " "
+      [:a {:href "https://help.penpot.app/technical-guide/getting-started/docker/#update-penpot"
+           :target "_blank"
+           :rel "noopener noreferrer"}
+       (tr "labels.nitrate-not-configured.technical-guide")]]]]
+
+   [:p {:class (stl/css :nitrate-unavailable-footer)}
+    (tr "labels.copyright-period")]])
+
 (mf/defc webgl-context-lost*
   []
   (let [on-reload (mf/use-fn #(js/location.reload))]
@@ -433,43 +464,6 @@
                        (rx/of default)
                        (rx/throw cause)))))))
 
-(mf/defc exception-section*
-  {::mf/private true}
-  [{:keys [data] :as props}]
-  (let [type   (get data :type)
-        cause  (get data ::errors/instance)
-
-        report (mf/with-memo [cause]
-                 (when (ex/exception? cause)
-                   (errors/generate-report cause)))
-
-        props  (mf/spread-props props {:report report})]
-
-    (mf/with-effect [report type cause]
-      (when (and (ex/exception? cause)
-                 (not (contains? #{:not-found :authentication} type)))
-        (errors/submit-report :event-name "exception-page"
-                              :report report
-                              :hint (ex/get-hint cause))))
-
-    (case type
-      :not-found
-      [:> not-found* {}]
-
-      :authentication
-      [:> not-found* {}]
-
-      :bad-gateway
-      [:> bad-gateway* props]
-
-      :service-unavailable
-      [:> service-unavailable*]
-
-      :nitrate-unavailable
-      [:> nitrate-unavailable*]
-
-      [:> internal-error* props])))
-
 (mf/defc context-wrapper*
   [{:keys [is-workspace is-dashboard is-viewer profile children]}]
   [:*
@@ -514,6 +508,106 @@
          :search-term ""}]]])
 
    children])
+
+(mf/defc sso-error-section*
+  "Shown in place of the dashboard/workspace (same static skeleton and
+  `request-dialog*` used by the no-permission dialogs) when the organization
+  SSO exchange with the identity provider fails."
+  {::mf/private true}
+  [{:keys [organization-id team-id profile is-workspace is-dashboard organization-name]}]
+  (let [clean-url
+        (mf/with-memo []
+          (-> (rt/get-current-href)
+              (dom/remove-query-param :sso-error)
+              (dom/remove-query-param :organization-id)))
+
+        _ (mf/with-effect []
+            ;; Consume the marker once: scrub it from the URL bar so a
+            ;; browser refresh doesn't keep re-showing this dialog.
+            (dom/replace-history-state! clean-url))
+
+        on-close
+        (mf/use-fn
+         (mf/deps profile)
+         (fn []
+           ;; Land on the user's own default team
+           (st/emit! (rt/assign-exception nil)
+                     (dcm/go-to-dashboard-recent :team-id (:default-team-id profile)))))
+
+        on-retry
+        (mf/use-fn
+         (mf/deps organization-id team-id clean-url)
+         (fn []
+           (st/emit! (rt/assign-exception nil))
+           (if (or team-id organization-id)
+             ;; Retry with team-id and/or organization-id to trigger SSO check
+             (st/emit! (dnt/retry-organization-sso {:team-id team-id
+                                                    :organization-id organization-id
+                                                    :dest-url clean-url}))
+             ;; Fallback: just navigate to clean URL
+             (st/emit! (rt/nav-raw :uri clean-url)))))]
+
+    [:> context-wrapper* {:is-dashboard (or is-dashboard (not is-workspace))
+                          :is-workspace is-workspace
+                          :profile profile}
+     [:> request-dialog* {:title (tr "labels.sso-error.title", organization-name)
+                          :content [(tr "labels.sso-error.desc-message")]
+                          :button-text (tr "labels.sso-error.retry")
+                          :on-button-click on-retry
+                          :cancel-text (tr "not-found.no-permission.go-dashboard")
+                          :on-close on-close}]]))
+
+(mf/defc exception-section*
+  {::mf/private true}
+  [{:keys [data] :as props}]
+  (let [type        (get data :type)
+        cause       (get data ::errors/instance)
+        environment (errors/environment-error? cause)
+
+        report      (mf/with-memo [cause]
+                      (when (ex/exception? cause)
+                        (errors/generate-report cause {:format (if environment :compact :full)})))
+
+        props       (mf/spread-props props {:report report})]
+
+    (mf/with-effect [report type cause]
+      (when (and (ex/exception? cause)
+                 (not (contains? #{:not-found :authentication} type)))
+        ;; Environment pages are audit-only: they use the canonical
+        ;; `handled-exception` event instead of `exception-page`.
+        (errors/submit-report :event-name (if environment "handled-exception" "exception-page")
+                              :report report
+                              :hint (ex/get-hint cause)
+                              :cause cause)))
+
+    (case type
+      :not-found
+      [:> not-found* {}]
+
+      :authentication
+      [:> not-found* {}]
+
+      :bad-gateway
+      [:> bad-gateway* props]
+
+      :service-unavailable
+      [:> service-unavailable*]
+
+      :nitrate-unavailable
+      [:> nitrate-unavailable*]
+
+      :nitrate-not-configured
+      [:> nitrate-not-configured-page*]
+
+      :sso-error
+      [:> sso-error-section* {:organization-id (get data :organization-id)
+                              :organization-name (get data :organization-name)
+                              :team-id (get data :team-id)
+                              :profile (mf/deref refs/profile)
+                              :is-workspace (get data :is-workspace false)
+                              :is-dashboard (get data :is-dashboard true)}]
+
+      [:> internal-error* props])))
 
 (mf/defc exception-page*
   [{:keys [data route] :as props}]

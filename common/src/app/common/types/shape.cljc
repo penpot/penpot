@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape
   (:require
@@ -138,13 +138,13 @@
    [:stroke-opacity {:optional true} ::sm/safe-number]
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
-   [:stroke-width {:optional true} ::sm/safe-number]
+   [:stroke-width {:optional true} ::sm/non-negative-safe-number]
    ;; wasm-render only, backwards compatible
    [:stroke-per-side {:optional true} :boolean]
-   [:stroke-width-top {:optional true} ::sm/safe-number]
-   [:stroke-width-right {:optional true} ::sm/safe-number]
-   [:stroke-width-bottom {:optional true} ::sm/safe-number]
-   [:stroke-width-left {:optional true} ::sm/safe-number]
+   [:stroke-width-top {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-right {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-bottom {:optional true} ::sm/non-negative-safe-number]
+   [:stroke-width-left {:optional true} ::sm/non-negative-safe-number]
    [:stroke-dash {:optional true} ::sm/safe-number]
    [:stroke-gap {:optional true} ::sm/safe-number]
    [:stroke-alignment {:optional true}
@@ -211,10 +211,10 @@
    [:constraints-v {:optional true}
     [::sm/one-of vertical-constraint-types]]
    [:fixed-scroll {:optional true} :boolean]
-   [:r1 {:optional true} ::sm/safe-number]
-   [:r2 {:optional true} ::sm/safe-number]
-   [:r3 {:optional true} ::sm/safe-number]
-   [:r4 {:optional true} ::sm/safe-number]
+   [:r1 {:optional true} ::sm/non-negative-safe-number]
+   [:r2 {:optional true} ::sm/non-negative-safe-number]
+   [:r3 {:optional true} ::sm/non-negative-safe-number]
+   [:r4 {:optional true} ::sm/non-negative-safe-number]
    [:opacity {:optional true} ::sm/safe-number]
    [:grids {:optional true}
     [:vector {:gen/max 2} ctg/schema:grid]]
@@ -624,8 +624,9 @@
   {:type :path
    :name "Path"
    :fills []
+   ;; Paths use centered strokes by default.
    :strokes [{:stroke-style :solid
-              :stroke-alignment :inner
+              :stroke-alignment :center
               :stroke-width 1
               :stroke-color clr/black
               :stroke-opacity 1}]})
@@ -657,10 +658,15 @@
   [type]
   (let [type  (if (= type :curve) :path type)
         attrs (get-minimal-shape type)
-        attrs (cond-> attrs
-                (and (not= :path type)
-                     (not= :bool type))
-                (-> (assoc :x 0)
+        attrs (if (or (= :path type)
+                      (= :bool type))
+                (-> attrs
+                    (assoc :x nil)
+                    (assoc :y nil)
+                    (assoc :width nil)
+                    (assoc :height nil))
+                (-> attrs
+                    (assoc :x 0)
                     (assoc :y 0)
                     (assoc :width 0.01)
                     (assoc :height 0.01)))

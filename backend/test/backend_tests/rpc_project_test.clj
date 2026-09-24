@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-project-test
   (:require
@@ -21,20 +21,19 @@
 (t/deftest projects-simple-crud
   (let [profile    (th/create-profile* 1)
         team       (th/create-team* 1 {:profile-id (:id profile)})
-        project-id (uuid/next)]
+        data       {::th/type :create-project
+                    ::rpc/profile-id (:id profile)
+                    :team-id (:id team)
+                    :name "test project"}
+        out        (th/command! data)
+        _          (t/is (nil? (:error out)))
+        project-id (:id (:result out))]
 
     ;; create project
-    (let [data {::th/type :create-project
-                ::rpc/profile-id (:id profile)
-                :id project-id
-                :team-id (:id team)
-                :name "test project"}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (= (:name data) (:name result)))))
+    ;; (th/print-result! out)
+    (t/is (uuid? project-id))
+    (let [result (:result out)]
+      (t/is (= (:name data) (:name result))))
 
     ;; query the list of projects of a team
     (let [data {::th/type :get-projects
@@ -241,3 +240,37 @@
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
         (t/is (= (:type error-data) :not-found))))))
+
+(t/deftest get-project-nonexistent
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-project
+                           ::rpc/profile-id (:id prof)
+                           :id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-project-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        proj  (th/create-project* 1 {:profile-id (:id owner)
+                                     :team-id (:default-team-id owner)})
+        out   (th/command! {::th/type :get-project
+                            ::rpc/profile-id (:id other)
+                            :id (:id proj)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest create-project-rejects-client-id
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-project
+                              ::rpc/profile-id (:id profile)
+                              :team-id (:id team)
+                              :name "project with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.libraries
   (:require
@@ -16,6 +16,7 @@
    [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.logic.tokens :as clo]
    [app.common.logic.variants :as clv]
    [app.common.path-names :as cpn]
    [app.common.time :as ct]
@@ -40,11 +41,13 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.pages :as-alias dwpg]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.thumbnails-wasm :as dwt.wasm]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -653,6 +656,7 @@
                      (merge (meta it))))
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
+                (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                 (dws/select-shapes (d/ordered-set (:id new-shape)))
                 (when start-move?
@@ -836,7 +840,11 @@
          (rx/merge
           (->> (rx/of library-id)
                (rx/delay 5000)
-               (rx/map fetch-library-thumbnails)))
+               (rx/map fetch-library-thumbnails))
+          (when (ch/tokens-lib-changed? changes)
+            (rx/of (dwtp/propagate-workspace-tokens)))
+          (when (ch/notifiable-token-change-occured? changes)
+            (rx/of (ntf/info (tr "workspace.tokens.notifications.source-sets-or-themes-updated")))))
 
          (rx/take-until stopper-s))))))
 
@@ -1041,6 +1049,17 @@
                  second)
             0)))))
 
+(defn component-swap-nesting-loop?
+  [objects shape library-data component-id]
+  (let [component (ctkl/get-component library-data component-id true)
+        page      (ctf/get-component-page library-data component)
+        root      (ctf/get-component-root library-data component)]
+    (and page
+         root
+         (cfh/components-nesting-loop?
+          (cfh/get-children-with-self (:objects page) (:id root))
+          (cfh/get-parents-with-self objects (:parent-id shape))))))
+
 (defn component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component keep-touched?]
@@ -1095,9 +1114,10 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
+         (dwtp/propagate-workspace-tokens)  ;; Make the new instance get the token values from the current file, not from the component's library
          (when (and (features/active-feature? state "render-wasm/v1")
                     (seq new-text-ids))
-           (dwwt/resize-wasm-text-all new-text-ids))
+           (dwwt/resize-wasm-text-all new-text-ids {:skip-component-sync? true}))
          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))
@@ -1129,6 +1149,16 @@
 (def valid-asset-types
   #{:colors :components :typographies})
 
+(defn- sync-file-pending-ids
+  [file-id changes]
+  ;; Track the file and every changed page object.
+  (into #{file-id}
+        (comp
+         (filter :page-id)
+         (keep :id)
+         (remove uuid/zero?))
+        (:redo-changes changes)))
+
 (defn set-updating-library
   [updating?]
   (ptk/reify ::set-updating-library
@@ -1137,6 +1167,32 @@
       (if updating?
         (assoc state :updating-library true)
         (dissoc state :updating-library)))))
+
+(defn- sync-file-frontend-events
+  [file-id changes updated-frames undo-group]
+  (rx/concat
+   (rx/of (set-updating-library false)
+          (ntf/hide {:tag :sync-dialog}))
+   (when (seq (:redo-changes changes))
+     (rx/of (dch/commit-changes changes)))
+   (when-not (empty? updated-frames)
+     (let [frames-by-page (group-by :page-id updated-frames)]
+       (rx/merge
+        ;; Emit one layout/update event for each page.
+        (->> frames-by-page
+             (map (fn [[page-id frames]]
+                    (ptk/data-event :layout/update
+                                    {:page-id page-id
+                                     :ids (map :id frames)
+                                     :undo-group undo-group})))
+             (rx/from))
+        (->> (rx/from updated-frames)
+             (rx/mapcat
+              (fn [shape]
+                (rx/of
+                 (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                 (when-not (= (:frame-id shape) uuid/zero)
+                   (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))))
 
 (defn sync-file
   "Synchronize the given file from the given library. Walk through all
@@ -1196,35 +1252,20 @@
                updated-frames  (->> changes
                                     :redo-changes
                                     (mapcat find-frames)
-                                    distinct)]
+                                    distinct)
+
+               pending-ids     (sync-file-pending-ids file-id changes)
+
+               frontend-sync
+               (sync-file-frontend-events
+                file-id changes updated-frames undo-group)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                               (:redo-changes changes)
                                                               ldata))
            (rx/concat
-            (rx/of (set-updating-library false)
-                   (ntf/hide {:tag :sync-dialog}))
-            (when (seq (:redo-changes changes))
-              (rx/of (dch/commit-changes changes)))
-            (when-not (empty? updated-frames)
-              (let [frames-by-page (->> updated-frames
-                                        (group-by :page-id))]
-                (rx/merge
-                 ;; Emit one layout/update event for each page
-                 (rx/from
-                  (map (fn [[page-id frames]]
-                         (ptk/data-event :layout/update
-                                         {:page-id page-id
-                                          :ids (map :id frames)
-                                          :undo-group undo-group}))
-                       frames-by-page))
-                 (->> (rx/from updated-frames)
-                      (rx/mapcat
-                       (fn [shape]
-                         (rx/of
-                          (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                          (when-not (= (:frame-id shape) uuid/zero)
-                            (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))
+            ;; Keep the sync pending until its layout work starts.
+            (wrf/with-pending :sync-file pending-ids frontend-sync)
 
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the
@@ -1323,6 +1364,9 @@
                                #(do (apply st/emit! (map (fn [library]
                                                            (sync-file file-id (:id library)))
                                                          libraries-with-changes))
+                                    ;; Launch a local tokens propagation, so that the copies have the token values
+                                    ;; with the local tokens status, not the one coming from the external library.
+                                    (st/emit! (dwtp/propagate-workspace-tokens))
                                     (st/emit! (ntf/hide)))
 
                                do-dismiss
@@ -1375,8 +1419,8 @@
        (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
-  "Watch the state for changes that affect to any main instance. If a change is detected will throw
-  an update-component-sync, so changes are immediately propagated to the component and copies."
+  "Watch the state for changes that affect to any main instance. If a change is detected will call
+   component-changed, so changes are immediately propagated to the component and copies."
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
@@ -1400,66 +1444,91 @@
                  (rx/buffer 2 1)
                  (rx/map first))
 
-            changes-s
+            ;; Barriers open before async inspection and close after detection.
+            pending-sync-barriers* (atom #{})
+
+            start-sync-barrier
+            (fn [{:keys [file-id save-undo?] :as event}]
+              (let [task (when (and save-undo? (uuid? file-id))
+                           (wrf/start! :sync-file [file-id]))]
+                (when task
+                  (swap! pending-sync-barriers* conj task))
+                [event task]))
+
+            finish-sync-barrier!
+            (fn [task]
+              (when task
+                (wrf/finish! task)
+                (swap! pending-sync-barriers* disj task)))
+
+            commits-s
             (->> stream
                  (rx/filter dch/commit?)
                  (rx/map deref)
                  (rx/filter #(= :local (:source %)))
+                 ;; Translation commits never propagate component changes.
+                 (rx/filter (complement :translation?))
+                 ;; Derived / corrective commits (font-load selrect fix,
+                 ;; position-data regen) are not user component edits.
+                 (rx/filter (complement :skip-component-sync?))
+                 ;; Keep waits pending while component changes are checked.
+                 (rx/map start-sync-barrier)
                  (rx/observe-on :async))
 
-            check-changes
+            get-component-events
             (fn [[event old-data]]
-              (cond
-                (nil? old-data)
-                (rx/empty)
+              (let [{:keys [file-id changes save-undo? undo-group]} event
+                    changed-components
+                    (when (and old-data
+                               (or (nil? file-id) (= file-id (:id old-data))))
+                      (into #{}
+                            (mapcat (partial ch/components-changed old-data))
+                            changes))]
+                (cond
+                  (empty? changed-components)
+                  (rx/empty)
 
-                (:translation? event)
-                (rx/empty)
+                  save-undo?
+                  (do
+                    (log/info :hint "detected component changes"
+                              :ids (map str changed-components)
+                              :undo-group undo-group)
+                    (->> (rx/from changed-components)
+                         (rx/map #(component-changed
+                                   % (:id old-data) undo-group))))
 
-                :else
-                (let [{:keys [file-id changes save-undo? undo-group]} event
+                  :else
+                  ;; Undos only bump :modified-at.
+                  (->> (rx/from changed-components)
+                       (rx/map touch-component)))))
 
-                      changed-components
-                      (when (or (nil? file-id) (= file-id (:id old-data)))
-                        (->> changes
-                             (map (partial ch/components-changed old-data))
-                             (reduce into #{})))]
-
-                  (if (d/not-empty? changed-components)
-                    (if save-undo?
-                      (do (log/info :hint "detected component changes"
-                                    :ids (map str changed-components)
-                                    :undo-group undo-group)
-                          (->> (rx/from changed-components)
-                               (rx/map #(component-changed % (:id old-data) undo-group))))
-                      ;; save-undo? false (undos): just bump :modified-at
-                      (->> (rx/from changed-components)
-                           (rx/map touch-component)))
-
-                    (rx/empty)))))
-
-            changes-s
-            (->> changes-s
+            component-events-s
+            (->> commits-s
                  (rx/with-latest-from workspace-buffer-s)
-                 (rx/mapcat check-changes)
+                 (rx/mapcat
+                  (fn [[[event task] old-data]]
+                    (->> (get-component-events [event old-data])
+                         (rx/finalize #(finish-sync-barrier! task)))))
+                 ;; Close barriers left behind when the page shuts down.
+                 (rx/finalize #(wrf/finish-tasks! @pending-sync-barriers*))
                  (rx/share))
 
             notifier-s
-            (->> changes-s
+            (->> component-events-s
                  (rx/debounce 5000)
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
         (when (or (contains? cf/flags :component-thumbnails)
                   (features/active-feature? state "render-wasm/v1"))
           (->> (rx/merge
-                changes-s
+                component-events-s
 
                 ;; WASM only: render the thumbnail on every component
                 ;; change so single edits (fill, etc.) update instantly.
                 ;; Non-WASM persists on every render, so it stays on the
                 ;; debounced path below to avoid per-edit backend posts.
                 (if (features/active-feature? state "render-wasm/v1")
-                  (->> changes-s
+                  (->> component-events-s
                        (rx/filter (ptk/type? ::component-changed))
                        (rx/map deref)
                        (rx/map render-component-thumbnail-event))
@@ -1467,7 +1536,7 @@
 
                 ;; Persist to the server in batches, 5s after the user
                 ;; goes idle.
-                (->> changes-s
+                (->> component-events-s
                      (rx/filter (ptk/type? ::component-changed))
                      (rx/map deref)
                      (rx/buffer-until notifier-s)
@@ -1476,12 +1545,53 @@
                                (update-component-thumbnail component-id file-id))))
 
                 ;; Undo/redo emit touch-component instead.
-                (->> changes-s
+                (->> component-events-s
                      (rx/filter (ptk/type? ::touch-component))
                      (rx/map deref)
                      (rx/map render-component-thumbnail-event)))
 
                (rx/take-until stopper-s)))))))
+
+(defn sync-tokens-status-with-lib
+  []
+  (ptk/reify ::sync-tokens-status-with-lib
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [tokens-lib    (dsh/lookup-tokens-lib state)
+            tokens-status (dsh/lookup-tokens-status state)]
+        (when (and tokens-lib tokens-status)
+          (let [data    (dsh/lookup-file-data state)
+                changes (-> (pcb/empty-changes)
+                            (pcb/with-library-data data)
+                            (clo/generate-sync-tokens-status-with-lib tokens-status tokens-lib))]
+            (rx/of (dch/commit-changes changes))))))))
+
+(defn watch-token-changes
+  "Watch the state for changes that affect the tokens library. If a change is detected,
+   launches a sync-tokens-status event so the tokens-status is kept in sync with the library."
+  []
+  (ptk/reify ::watch-token-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper-s
+            (->> stream
+                 (rx/map ptk/type)
+                 (rx/filter (fn [event-type]
+                              (or (= ::dwpg/finalize-page event-type)
+                                  (= ::watch-token-changes event-type)))))
+
+            changes-s
+            (->> stream
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
+                 (rx/filter #(= :local (:source %)))
+                 (rx/observe-on :async))]
+
+        (->> changes-s
+             (rx/filter (comp ch/tokens-lib-changed? :changes))
+             (rx/debounce 5000)
+             (rx/map (fn [_] (sync-tokens-status-with-lib)))
+             (rx/take-until stopper-s))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
@@ -1528,6 +1638,7 @@
                    (map #(assoc % :library-of file-id))
                    (d/index-by :id))))))
 
+
 (defn- load-library-file
   [file-id library-id]
   (ptk/reify ::load-library-file
@@ -1537,8 +1648,9 @@
         (rx/merge
          (->> (rp/cmd! :get-file {:id library-id :features features})
               (rx/merge-map fpmap/resolve-file)
-              (rx/map (fn [file]
-                        (libraries-fetched file-id [file]))))
+              (rx/mapcat (fn [file]
+                           (rx/of
+                            (libraries-fetched file-id [file])))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -1547,10 +1659,10 @@
 
 (defn link-file-to-library
   [file-id library-id]
-  (ptk/reify ::attach-library
+  (ptk/reify ::link-file-to-library
     ev/Event
     (-data [_]
-      {::ev/name "attach-library"
+      {::ev/name "link-file-to-library"
        :file-id file-id
        :library-id library-id})
 
@@ -1567,23 +1679,22 @@
                                   (map first)
                                   set)]
         (rx/concat
-         (rx/merge
-          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-               (rx/merge-map (fn [libraries-to-load]
-                               (as-> libraries-to-load $
-                                 (remove loaded-libraries $)
-                                 (conj $ library-id)
-                                 (map #(load-library-file file-id %) $))))
-               (rx/catch (fn [cause]
-                           (let [error (ex-data cause)]
-                             (if (= (:code error) :circular-library-reference)
-                               (rx/of (ntf/error (tr "errors.circular-library-reference")))
-                               (rx/throw cause)))))))
-         (rx/of (ptk/reify ::attach-library-finished))
+         (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+              (rx/merge-map (fn [libraries-to-load]
+                              (as-> libraries-to-load $
+                                (remove loaded-libraries $)
+                                (conj $ library-id)
+                                (map #(load-library-file file-id %) $))))
+              (rx/catch (fn [cause]
+                          (let [error (ex-data cause)]
+                            (if (= (:code error) :circular-library-reference)
+                              (rx/of (ntf/error (tr "errors.circular-library-reference")))
+                              (rx/throw cause))))))
+         (rx/of (ptk/reify ::link-file-to-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
                 (rx/map (fn [library-usage]
-                          (ev/event {::ev/name "attach-library-variants"
+                          (ev/event {::ev/name "link-file-to-library-variants"
                                      :file-id file-id
                                      :library-id library-id
                                      :variants-count variants-count
@@ -1631,5 +1742,3 @@
            (rx/mapcat (fn [_]
                         (rp/cmd! :get-file-libraries {:file-id file-id})))
            (rx/map (partial cleanup-unlinked-libraries file-id))))))
-
-

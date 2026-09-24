@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.assets.typographies
   (:require-macros [app.main.style :as stl])
@@ -15,6 +15,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts-events :as dwte]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -170,7 +171,7 @@
          (mf/deps file-id prefix)
          (fn [_]
            (st/emit! (dw/set-assets-section-open file-id :typographies true)
-                     (dwt/add-typography file-id prefix))))]
+                     (dwte/add-typography file-id prefix))))]
 
     [:div {:class (stl/css :typographies-group)
            :on-drag-enter on-drag-enter
@@ -278,7 +279,7 @@
          (mf/deps file-id)
          (fn [_]
            (st/emit! (dw/set-assets-section-open file-id :typographies true))
-           (st/emit! (dwt/add-typography file-id))))
+           (st/emit! (dwte/add-typography file-id))))
 
         handle-change
         (mf/use-fn

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-audit-test
   (:require
@@ -34,6 +34,21 @@
       (case name
         "x-forwarded-for" "127.0.0.44"
         "x-real-ip" "127.0.0.43"))))
+
+(t/deftest prepare-context-initiator-is-plain-string
+  ;; The initiator must always be a plain string, never a keyword: shared-key
+  ;; authenticated callers (exporter, admin-console) arrive as keywords on
+  ;; :app.http/auth-key-id and transit would persist them as "~:exporter".
+  (let [base {:headers {"x-forwarded-for" "127.0.0.44"}}]
+    (t/is (= "app" (:initiator (audit/prepare-context-from-request base))))
+    (t/is (= "exporter"
+             (:initiator (audit/prepare-context-from-request
+                          (assoc base :app.http/auth-key-id :exporter)))))
+    (t/is (= "admin-console"
+             (:initiator (audit/prepare-context-from-request
+                          (assoc base :app.http/auth-key-id :admin-console)))))
+    (t/is (string? (:initiator (audit/prepare-context-from-request
+                                (assoc base :app.http/auth-key-id :nexus)))))))
 
 (t/deftest push-events-1
   (with-redefs [app.config/flags #{:audit-log}]

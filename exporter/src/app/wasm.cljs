@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.wasm
   "Headless driver for the render-wasm module under Node: the GPU-free
@@ -25,6 +25,7 @@
    [app.common.uuid :as uuid]
    ;; Required for side effects: binds the generated enums.
    [app.wasm.enums]
+   [cuerdas.core :as str]
    [promesa.core :as p]
    [shadow.esm :refer [dynamic-import]]))
 
@@ -33,8 +34,8 @@
 
 ;; render_shape_raster / render_shape_pixels result header: [len u32][w u32][h u32].
 (def ^:private RASTER-HEADER-BYTES 12)
-;; render_shape_pdf result header: [len u32] only.
-(def ^:private PDF-HEADER-BYTES 4)
+;; render_shape_pdf / render_shape_svg result header: [len u32] only.
+(def ^:private LEN-HEADER-BYTES 4)
 ;; get_fonts_for_shape entry: [uuid 16 bytes][weight u32][style u32].
 (def ^:private FONT-ENTRY-BYTES 24)
 
@@ -43,9 +44,9 @@
   path in devenv and inside the bundle, so it is a constant."
   "resources/wasm")
 
-(def image-cache-mb
-  "Byte budget (MB) the image store is trimmed to between requests."
-  256)
+(def image-cache-size
+  "Byte budget the image store is trimmed to between requests."
+  (* 256 1024 1024))
 
 (defn- read-result-bytes
   "Reads `len` bytes from the WASM heap starting at `offset`, copying them out
@@ -121,9 +122,9 @@
   [(aget id 0) (aget id 1) (aget id 2) (aget id 3) weight style])
 
 (defn fonts-for-shapes
-  "Distinct font families needed by every subtree in `shape-ids`. Objects in a
-  partition overwhelmingly share families, so deduping here means one download
-  and one `_store_font` per family rather than one per object."
+  "Distinct font families needed by every subtree in `shape-ids`. Objects in one
+  export overwhelmingly share families, so deduping here means one download and
+  one `_store_font` per family rather than one per object."
   [shape-ids]
   (into [] (comp (mapcat fonts-for-shape)
                  (d/distinct-xf font-key))
@@ -146,6 +147,20 @@
             (aget id 0) (aget id 1) (aget id 2) (aget id 3)
             weight style (boolean emoji?) (boolean fallback?))))
 
+(defn store-font-url!
+  "Registers the public URL a font family was loaded from. The SVG export emits
+  one `@font-face` per family from these, and skips families without one, so
+  this must run for every family `store-font!` uploads.
+
+  Does NOT call `mem/free`, for the same reason as `store-font!`."
+  [{:keys [id weight style]} url]
+  (let [bytes (js/Buffer.from url "utf-8")
+        ptr   (mem/alloc (.-byteLength bytes))]
+    (mem/write-buffer ptr (mem/get-heap-u8) bytes)
+    (h/call wasm/internal-module "_store_font_url"
+            (aget id 0) (aget id 1) (aget id 2) (aget id 3)
+            weight style)))
+
 (defn clear-fonts!
   "Resets the WASM font store. Must be called once per render request because
   the shared module would otherwise accumulate fonts across requests."
@@ -156,10 +171,14 @@
   "Recomputes a text shape's layout with the currently provisioned fonts. Text is
   laid out at serialize time using the fallback font (real fonts aren't uploaded
   yet), so this must run again after `provision-fonts!` or glyph metrics/line
-  breaks are wrong."
+  breaks are wrong.
+
+  Forced, because provisioning a font changes nothing `update_layout` keys on:
+  it early-returns while the content is unchanged and the layout still matches
+  its container, which is exactly the case here."
   [shape-id]
   (let [buf (uuid/get-u32 shape-id)]
-    (h/call wasm/internal-module "_update_shape_text_layout_for"
+    (h/call wasm/internal-module "_force_update_shape_text_layout_for"
             (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3))))
 
 (defn image-cached?
@@ -171,6 +190,22 @@
     (not (zero? (h/call wasm/internal-module "_is_image_cached"
                         (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
                         false)))))
+
+(defn store-image-url!
+  "Registers the public URL an image was loaded from. The SVG export emits
+  linked `<image href>` from these, and falls back to Skia base64 when missing,
+  so this should run for every media id the scene references (including
+  already-cached images).
+
+  Does NOT call `mem/free`, for the same reason as `store-font-url!`."
+  [image-id url]
+  (when (and (some? url) (not (str/blank? url)))
+    (let [bytes (js/Buffer.from url "utf-8")
+          ptr   (mem/alloc (.-byteLength bytes))
+          quart (uuid/get-u32 image-id)]
+      (mem/write-buffer ptr (mem/get-heap-u8) bytes)
+      (h/call wasm/internal-module "_store_image_url"
+              (aget quart 0) (aget quart 1) (aget quart 2) (aget quart 3)))))
 
 (defn store-image!
   "Uploads one image's *encoded* bytes (PNG/JPEG — Skia decodes, no WebGL) into
@@ -205,21 +240,26 @@
     (h/call module "_store_image")))
 
 (defn evict-images!
-  "Evicts least-recently-used images until the store retains at most `max-mb`
-  megabytes. Returns the number evicted."
-  [max-mb]
-  (h/call wasm/internal-module "_evict_images_to_budget" max-mb))
+  "Evicts least-recently-used images until the store retains at most `max-bytes`
+  bytes. Returns the number evicted."
+  [max-bytes]
+  (h/call wasm/internal-module "_evict_images_to_budget" max-bytes))
 
 (defn provision-fonts!
   "Resolves and uploads every font needed by `shape-ids`, each family fetched
   once. `resolve-font` is an injected fn of the family map -> promise of TTF
-  bytes (or nil to skip). This keeps the font *source* (gfonts proxy / custom
-  assets / backend) out of the driver."
-  [shape-ids resolve-font]
+  bytes (or nil to skip); optional `font-url` is a fn of the family map -> the
+  public URL those bytes came from. This keeps the font *source* (gfonts proxy
+  / custom assets / backend) out of the driver."
+  [shape-ids resolve-font & {:keys [font-url]}]
   (->> (fonts-for-shapes shape-ids)
        (map (fn [family]
               (->> (resolve-font family)
-                   (p/fmap (fn [bytes] (when bytes (store-font! family bytes)))))))
+                   (p/fmap (fn [bytes]
+                             (when bytes
+                               (store-font! family bytes)
+                               (when-let [url (when font-url (font-url family))]
+                                 (store-font-url! family url))))))))
        (p/all)))
 
 ;; --- RENDER
@@ -252,4 +292,13 @@
     (-> (h/call wasm/internal-module "_render_shape_pdf"
                 (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
                 scale)
-        (read-render-result PDF-HEADER-BYTES))))
+        (read-render-result LEN-HEADER-BYTES))))
+
+(defn render-shape-svg
+  "Renders the shape subtree to SVG markup bytes (Uint8Array)."
+  [shape-id scale]
+  (let [buf (uuid/get-u32 shape-id)]
+    (-> (h/call wasm/internal-module "_render_shape_svg"
+                (aget buf 0) (aget buf 1) (aget buf 2) (aget buf 3)
+                scale)
+        (read-render-result LEN-HEADER-BYTES))))

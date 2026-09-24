@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.tokens.application
   (:require
@@ -25,7 +25,6 @@
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.tokenscript :as ts]
-   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -95,26 +94,27 @@
      (watch [_ _ _]
        (when (number? value)
          (rx/of
-          (udw/trigger-bounding-box-cloaking shape-ids)
-          (udw/increase-rotation shape-ids value nil
-                                 {:page-id page-id
-                                  :ignore-touched true
-                                  :no-wasm? true})))))))
+          (dwtr/trigger-bounding-box-cloaking shape-ids)
+          (dwtr/increase-rotation shape-ids value nil
+                                  {:page-id page-id
+                                   :ignore-touched true
+                                   :no-wasm? true})))))))
 
 (defn update-stroke-width
   ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (when (number? value)
-     (dwsh/update-shapes shape-ids
-                         (fn [shape]
-                           (if (seq (:strokes shape))
-                             (assoc-in shape [:strokes 0 :stroke-width] value)
-                             (let [stroke (assoc cts/default-stroke :stroke-width value)]
-                               (assoc shape :strokes [stroke]))))
-                         {:reg-objects? true
-                          :ignore-touched true
-                          :page-id page-id
-                          :attrs [:strokes]}))))
+     (let [value (max 0 value)]
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (if (seq (:strokes shape))
+                               (assoc-in shape [:strokes 0 :stroke-width] value)
+                               (let [stroke (assoc cts/default-stroke :stroke-width value)]
+                                 (assoc shape :strokes [stroke]))))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs [:strokes]})))))
 
 (defn update-color [f value shape-ids page-id]
   (when-let [tc (tinycolor/valid-color value)]
@@ -164,7 +164,7 @@
            :hidden false
            :offset-x offset-x
            :offset-y offset-y
-           :blur blur
+           :blur (cond-> blur (number? blur) (max 0))
            :color (value->color color)
            :spread spread
            :style
@@ -240,7 +240,7 @@
          (let [ids-with-layout (shape-ids-with-layout state (or page-id (:current-page-id state)) shape-ids)]
            (rx/of
             (dwsl/update-layout ids-with-layout
-                                {:layout-padding (zipmap attrs (repeat value))}
+                                {:layout-padding (zipmap attrs (repeat (max 0 value)))}
                                 {:ignore-touched true
                                  :page-id page-id}))))))))
 
@@ -265,7 +265,7 @@
     (watch [_ state _]
       (when (number? value)
         (let [ids-with-layout (shape-ids-with-layout state (or page-id (:current-page-id state)) shape-ids)
-              layout-attributes (attributes->layout-gap attributes value)]
+              layout-attributes (attributes->layout-gap attributes (max 0 value))]
           (rx/of
            (dwsl/update-layout ids-with-layout
                                layout-attributes
@@ -279,7 +279,8 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (when (number? value)
-         (let [props (-> {:layout-item-min-w value
+         (let [value (max 0 value)
+               props (-> {:layout-item-min-w value
                           :layout-item-min-h value
                           :layout-item-max-w value
                           :layout-item-max-h value}
@@ -675,9 +676,10 @@
                   (ctt/typography-token-keys (:type token)) (set/union attributes-to-remove ctt/typography-keys)
                   (ctt/typography-keys (:type token)) (set/union attributes-to-remove ctt/typography-token-keys)
                   :else attributes-to-remove)]
-            (when-let [tokens (some-> (dsh/lookup-file-data state)
-                                      (get :tokens-lib)
-                                      (ctob/get-tokens-in-active-sets))]
+            (when-let [tokens (let [tokens-lib    (dsh/lookup-tokens-lib state)
+                                    tokens-status (dsh/lookup-tokens-status state)]
+                                (when (and tokens-lib tokens-status)
+                                  (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))]
               (->> (if (contains? cf/flags :tokenscript)
                      (rx/of (ts/resolve-tokens tokens))
                      (sd/resolve-tokens tokens))

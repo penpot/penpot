@@ -32,7 +32,7 @@ jobs:
   test-backend:
     if: ${{ !github.event.pull_request.draft }}
     name: "Backend Tests"
-    runs-on: penpot-runner-02
+    runs-on: penpot-extended-runner
     container:
       image: penpotapp/devenv:latest
       volumes:

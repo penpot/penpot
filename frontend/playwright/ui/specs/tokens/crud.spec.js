@@ -569,7 +569,7 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByText("ABeeZee");
+    const fontOption = tokensUpdateCreateModal.getByRole('img', { name: 'ABeeZee' })
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -583,7 +583,7 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByText("Almendra Display");
+    const fontOption2 = tokensUpdateCreateModal.getByRole('img', {name: "Almendra Display"});
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
 
@@ -1521,7 +1521,7 @@ test.describe("Tokens - creation", () => {
     });
     await selectDropdown.click();
 
-    const fontOption = tokensUpdateCreateModal.getByText("ABeeZee");
+    const fontOption = tokensUpdateCreateModal.getByRole("img", {name: "ABeeZee"});
     await expect(fontOption).toBeVisible();
 
     await fontOption.click();
@@ -1536,7 +1536,7 @@ test.describe("Tokens - creation", () => {
       name: "Search font",
     });
     await searchField.fill("alme");
-    const fontOption2 = tokensUpdateCreateModal.getByText("Almendra Display");
+    const fontOption2 = tokensUpdateCreateModal.getByRole("img", {name: "Almendra Display"});
     await expect(fontOption2).toBeVisible();
     await fontOption2.click();
     await expect(
@@ -1936,6 +1936,9 @@ test.describe("User can't create groups that clash with token names", () => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
     const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      // Same file as the outer setup: re-navigating would reload the
+      // app and wipe the fixture tokens this test clashes against.
+      file: "workspace/get-file-tokens-all-types.json",
       flags: ["enable-token-shadow"],
     });
 
@@ -1975,6 +1978,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -1990,6 +1994,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2005,6 +2010,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2020,6 +2026,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2035,6 +2042,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2050,6 +2058,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2065,6 +2074,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2080,6 +2090,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2095,6 +2106,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2110,6 +2122,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2125,6 +2138,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2140,6 +2154,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2155,6 +2170,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar, tokenContextMenuForToken } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2177,6 +2193,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2186,6 +2203,9 @@ test.describe("User can't create groups that clash with token names", () => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
     const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      // Same file as the outer setup: re-navigating would reload the
+      // app and wipe the fixture tokens this test clashes against.
+      file: "workspace/get-file-tokens-all-types.json",
       flags: ["enable-token-shadow"],
     });
 
@@ -2249,6 +2269,7 @@ test.describe("User can't create groups that clash with token names", () => {
     const { tokenThemesSetsSidebar, tokensSidebar } =
       await setupTokensFileRender(page, {
         file: "workspace/get-file-tokens-all-types.json",
+        flags: ["enable-token-shadow"],
       });
 
     await expect(tokensSidebar).toBeVisible();
@@ -2258,6 +2279,9 @@ test.describe("User can't create groups that clash with token names", () => {
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
     const { tokensUpdateCreateModal } = await setupTokensFileRender(page, {
+      // Same file as the outer setup: re-navigating would reload the
+      // app and wipe the fixture tokens this test clashes against.
+      file: "workspace/get-file-tokens-all-types.json",
       flags: ["enable-token-shadow"],
     });
 

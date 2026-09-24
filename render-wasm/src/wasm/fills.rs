@@ -8,7 +8,7 @@ mod gradient;
 mod image;
 mod solid;
 
-const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
+pub(crate) const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
 
 #[repr(C, u8, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
@@ -186,5 +186,31 @@ mod tests {
 
         assert_eq!(bytes[0], 0x03);
         assert_eq!(shapes::Fill::from(RawFillData::from(bytes)), fill);
+    }
+
+    #[test]
+    fn test_image_fill_with_transform_round_trip() {
+        let transform = shapes::ImageFillTransform {
+            x: 0.1,
+            y: -0.2,
+            width: 1.5,
+            height: 2.0,
+        };
+        let image_fill = shapes::ImageFill::new_with_transform(
+            crate::uuid::Uuid::nil(),
+            0xcc,
+            400,
+            300,
+            false,
+            Some(transform),
+        );
+        let fill = shapes::Fill::Image(image_fill);
+        let raw_fill =
+            RawFillData::try_from(&fill).expect("image fill with transform must be serializable");
+        let bytes = <[u8; RAW_FILL_DATA_SIZE]>::from(raw_fill);
+
+        assert_eq!(bytes[0], 0x03);
+        let deserialized = shapes::Fill::from(RawFillData::from(bytes));
+        assert_eq!(deserialized, fill);
     }
 }

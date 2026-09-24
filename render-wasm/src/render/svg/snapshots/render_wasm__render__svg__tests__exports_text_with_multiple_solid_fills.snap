@@ -1,0 +1,13 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="560" height="240" viewBox="0 0 560 240"><defs><style type="text/css"><![CDATA[@font-face{font-family:"Source Sans Pro";font-style:normal;font-weight:400;src:url("fonts/sourcesanspro-regular.ttf") format("truetype");}]]></style></defs>
+	<text fill="#003FFF" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+	<text fill="#F50000" fill-opacity="0.50196081" font-size="200" font-family="Source Sans Pro" x="0, 130.37109, 263.08594, 360.83984" y="181">
+			HOLA
+	</text>
+</svg>

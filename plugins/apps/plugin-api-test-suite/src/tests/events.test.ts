@@ -67,4 +67,33 @@ describe('Events', () => {
 
     expect(count).toBe(0);
   });
+
+  test('a blank shapeId leaves the other listeners working', async (ctx) => {
+    const rect = ctx.penpot.createRectangle();
+    ctx.board.appendChild(rect);
+
+    // Listeners are store watches notified by a plain iteration, so one that
+    // raises aborts the loop and the listeners after it miss the change.
+    const blankListenerId = ctx.penpot.on('shapechange', () => {}, {
+      shapeId: '',
+    });
+
+    let received: string[] | null = null;
+    const listenerId = ctx.penpot.on('selectionchange', (ids) => {
+      received = ids;
+    });
+
+    ctx.penpot.selection = [rect];
+    await waitFor(() => received !== null);
+    ctx.penpot.off(listenerId);
+    ctx.penpot.off(blankListenerId);
+
+    expect(received).not.toBeNull();
+  });
+
+  test('a malformed shapeId is rejected when the listener is registered', (ctx) => {
+    expect(() =>
+      ctx.penpot.on('shapechange', () => {}, { shapeId: 'not-a-uuid' }),
+    ).toThrow();
+  });
 });

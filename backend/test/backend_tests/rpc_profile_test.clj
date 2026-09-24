@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-profile-test
   (:require
@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
    [app.nitrate :as nitrate]
@@ -124,6 +125,17 @@
           (t/is (= "Full Name" (:fullname result)))
           (t/is (= "en" (:lang result)))
           (t/is (= "dark" (:theme result))))))
+
+    (t/testing "update profile preserves omitted optional fields"
+      (let [data {::th/type :update-profile
+                  ::rpc/profile-id (:id profile)
+                  :fullname "Updated Name"}
+            out  (th/command! data)]
+
+        (t/is (nil? (:error out)))
+        (t/is (= "Updated Name" (get-in out [:result :fullname])))
+        (t/is (= "en" (get-in out [:result :lang])))
+        (t/is (= "dark" (get-in out [:result :theme])))))
 
     (t/testing "update photo"
       (let [data {::th/type :update-profile-photo
@@ -388,6 +400,63 @@
     (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 10 (:processed result))))))
 
+(t/deftest profile-deletion-invalidates-all-sessions
+  (let [prof (th/create-profile* 1)
+
+        ;; Insert 3 sessions for this profile directly into the database
+        session-ids (doall
+                     (for [i (range 3)]
+                       (let [sid (uuid/random)]
+                         (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id, user_agent) VALUES (?, ?, ?)"
+                                           sid (:id prof) (str "user-agent-" i)])
+                         sid)))]
+
+    ;; Verify sessions exist
+    (let [count-before (:count (th/db-exec-one! ["SELECT count(*) FROM http_session_v2 WHERE profile_id = ?" (:id prof)]))]
+      (t/is (= 3 count-before)))
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof)}
+          out    (th/command! params)]
+      (t/is (nil? (:error out))))
+
+    ;; Verify ALL sessions were invalidated (not just one)
+    (let [count-after (:count (th/db-exec-one! ["SELECT count(*) FROM http_session_v2 WHERE profile_id = ?" (:id prof)]))]
+      (t/is (= 0 count-after)))))
+
+(t/deftest profile-deletion-via-gc-cascades
+  (let [prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})
+        team-id (:default-team-id prof)
+        project-id (:default-project-id prof)
+        file-id (:id file)
+
+        deleted-at (ct/minus (ct/now) (ct/duration {:days 1}))]
+
+    (th/db-update! :profile
+                   {:deleted-at deleted-at}
+                   {:id (:id prof)})
+
+    (let [team-before (th/db-get :team {:id team-id} {::db/remove-deleted false})]
+      (t/is (nil? (:deleted-at team-before))))
+
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (pos? (:processed result))))
+
+    (let [profile-after (th/db-get :profile {:id (:id prof)} {::db/remove-deleted false})]
+      (t/is (nil? profile-after)))
+
+    (let [team-after (th/db-get :team {:id team-id} {::db/remove-deleted false})]
+      (t/is (nil? team-after)))
+
+    (let [project-after (th/db-get :project {:id project-id} {::db/remove-deleted false})]
+      (t/is (nil? project-after)))
+
+    (let [file-after (th/db-get :file {:id file-id} {::db/remove-deleted false})]
+      (t/is (nil? file-after)))))
 
 (t/deftest email-blacklist-1
   (t/is (false? (email.blacklist/enabled? th/*system*)))
@@ -1128,26 +1197,29 @@
 
 
 (t/deftest update-profile-password
-  (let [profile (th/create-profile* 1)
-        data  {::th/type :update-profile-password
-               ::rpc/profile-id (:id profile)
-               :old-password "Test123!"
-               :password "Foobar12!"}
-        out   (th/command! data)]
-    (t/is (nil? (:error out)))
-    (t/is (nil? (:result out)))))
+  (with-mocks [_ {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data  {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "Test123!"
+                 :password "Foobar12!"}
+          out   (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))))
 
 
 (t/deftest update-profile-password-bad-old-password
-  (let [profile (th/create-profile* 1)
-        data  {::th/type :update-profile-password
-               ::rpc/profile-id (:id profile)
-               :old-password "badpassword"
-               :password "Foobar12!"}
-        {:keys [result error] :as out} (th/command! data)]
-    (t/is (th/ex-info? error))
-    (t/is (th/ex-of-type? error :validation))
-    (t/is (th/ex-of-code? error :old-password-not-match))))
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data  {::th/type :update-profile-password
+                 ::rpc/profile-id (:id profile)
+                 :old-password "badpassword"
+                 :password "Foobar12!"}
+          {:keys [result error] :as out} (th/command! data)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :old-password-not-match))
+      (t/is (= 0 (:call-count @mock))))))
 
 
 (t/deftest update-profile-password-email-as-password
@@ -1317,3 +1389,55 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+
+(t/deftest update-profile-password-sends-notification
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          data    {::th/type :update-profile-password
+                   ::rpc/profile-id (:id profile)
+                   :old-password "Test123!"
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))
+
+
+(t/deftest update-profile-password-sends-notification-for-first-password
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1 {:password "!"})
+          data    {::th/type :update-profile-password
+                   ::rpc/profile-id (:id profile)
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out)))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))
+
+
+(t/deftest recover-profile-sends-notification
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [profile (th/create-profile* 1)
+          token   (tokens/generate th/*system*
+                                   {:iss :password-recovery
+                                    :exp (ct/in-future "15m")
+                                    :profile-id (:id profile)})
+          data    {::th/type :recover-profile
+                   :token token
+                   :password "Foobar12!"}
+          out     (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (:call-count @mock)))
+      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+        (t/is (= eml/password-changed factory))
+        (t/is (= (:email profile) to))
+        (t/is (= (:fullname profile) name))))))

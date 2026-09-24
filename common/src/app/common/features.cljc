@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.features
   (:require
@@ -134,7 +134,6 @@
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-text-editor-wasm "text-editor-wasm/v1"
     :feature-render-wasm "render-wasm/v1"
-    :feature-wasm-export "wasm-export/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"
     nil))

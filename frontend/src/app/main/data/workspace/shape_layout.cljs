@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.shape-layout
   (:require
@@ -23,6 +23,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
@@ -131,14 +132,14 @@
               (->> stream
                    (rx/filter (ptk/type? ::dwsh/update-shapes-buffer-commit))
                    (rx/take 1)
-                   (rx/take-until (rx/filter (ptk/type? :app.main.data.workspace/finalize) stream))
+                   (rx/take-until (rx/filter (ptk/type? ::dw/finalize-workspace) stream))
                    ;; No events are derived from this
                    (rx/ignore))
               (rx/empty))]
 
         (cond->> (rx/concat update-positions-stream drain-stream)
           (d/not-empty? reflow-tasks)
-          (rx/finalize #(run! wrf/finish! reflow-tasks)))))))
+          (rx/finalize #(wrf/finish-tasks! reflow-tasks)))))))
 
 (defn- without-root-board
   [ids]
@@ -317,6 +318,36 @@
                         (remove-layout selected)
                         (create-layout type))]
             (rx/of (with-meta event (meta it)))))))))
+
+(defn change-grid-direction
+  "Set grid direction and reflow single-span auto items in one undo step."
+  [ids dir]
+  (ptk/reify ::change-grid-direction
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwsh/update-shapes
+                ids
+                (fn [shape]
+                  (let [from-dir (d/nilv (:layout-grid-dir shape) :row)]
+                    (cond
+                      (not= :grid (:layout shape))
+                      shape
+
+                      (not (contains? #{:row :column} dir))
+                      shape
+
+                      (= from-dir dir)
+                      (assoc shape :layout-grid-dir dir)
+
+                      :else
+                      (ctl/reflow-grid-auto-items-for-direction shape from-dir dir))))
+                ;; Auto cells are already reflowed, so skip generic reassignment
+                ;; and child reordering.
+                {:skip-grid-reassignment? true})
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-layout
   ([ids changes] (update-layout ids changes nil))

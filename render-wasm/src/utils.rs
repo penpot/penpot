@@ -34,7 +34,20 @@ pub fn get_fallback_fonts() -> &'static HashSet<String> {
 }
 
 pub fn get_font_collection() -> &'static FontCollection {
-    with_state!(state, { state.font_collection() })
+    if crate::globals::has_render_resources() {
+        get_resources().fonts.font_collection()
+    } else {
+        with_state!(state, { state.font_collection() })
+    }
+}
+
+/// A negative f32 means "unset" — the renderer falls back to its default.
+pub fn decode_optional_f32(value: f32) -> Option<f32> {
+    if value.is_finite() && value >= 0.0 {
+        Some(value)
+    } else {
+        None
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

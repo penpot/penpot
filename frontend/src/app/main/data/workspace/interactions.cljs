@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.interactions
   (:require
@@ -210,7 +210,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [interactions (ctsi/update-interaction (:interactions shape) index update-fn)
-             interaction (nth interactions index)]
+             interaction (get interactions index)]
          (rx/of
           (dwsh/update-shapes
            [(:id shape)]

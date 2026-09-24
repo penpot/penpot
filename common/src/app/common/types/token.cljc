@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.token
   (:require
@@ -122,9 +122,13 @@
 
 (def composite-dtcg-token-type->token-type
   "Same as above, in the opposite direction."
-  (assoc dtcg-token-type->token-type
-         "lineHeights" :line-height
-         "lineHeight"  :line-height))
+  (let [mapping (assoc dtcg-token-type->token-type
+                       "lineHeights" :line-height
+                       "lineHeight"  :line-height)]
+    (into mapping
+          (map (fn [[key value]]
+                 [(keyword (str/kebab key)) value]))
+          mapping)))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
@@ -423,11 +427,8 @@
     :stroke-width :strokes
     token-attr))
 
-(defn shape-attr->token-attrs
-  "Returns the token-attr affected when a given attribute in a shape is changed.
-   The sub-attr is for attributes that may have multiple values, like strokes
-   (may be width or color) and layout padding & margin (may have 4 edges)."
-  ([shape-attr] (shape-attr->token-attrs shape-attr nil))
+(defn- shape-attr->token-attrs*
+  ([shape-attr] (shape-attr->token-attrs* shape-attr nil))
   ([shape-attr changed-sub-attr]
    (cond
      (= :fills shape-attr)
@@ -467,6 +468,20 @@
      (rotation-keys shape-attr) #{shape-attr}
      (number-keys shape-attr) #{shape-attr}
      (axis-keys shape-attr) #{shape-attr})))
+
+(def ^:private shape-attr->token-attrs-1
+  (memoize shape-attr->token-attrs*))
+
+(defn shape-attr->token-attrs
+  "Returns the token-attr affected when a given attribute in a shape is changed.
+   The sub-attr is for attributes that may have multiple values, like strokes
+   (may be width or color) and layout padding & margin (may have 4 edges)."
+  ([shape-attr]
+   (shape-attr->token-attrs-1 shape-attr))
+  ([shape-attr changed-sub-attr]
+   (if (nil? changed-sub-attr)
+     (shape-attr->token-attrs-1 shape-attr)
+     (shape-attr->token-attrs* shape-attr changed-sub-attr))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for token attributes by shape type

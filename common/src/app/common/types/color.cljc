@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.color
   (:refer-clojure :exclude [test])
@@ -72,6 +72,13 @@
   [:map {:title "PlainColorAttrs"}
    [:color schema:hex-color]])
 
+(def schema:image-transform
+  [:map {:title "ImageTransform" :closed true}
+   [:x {:optional true} ::sm/safe-number]
+   [:y {:optional true} ::sm/safe-number]
+   [:width {:optional true} ::sm/safe-number]
+   [:height {:optional true} ::sm/safe-number]])
+
 (def schema:image
   [:map {:title "ImageColor" :closed true}
    [:width [::sm/int {:min 0 :gen/gen sg/int}]]
@@ -79,7 +86,8 @@
    [:mtype {:gen/gen (sg/elements cm/image-types)} ::sm/text]
    [:id ::sm/uuid]
    [:name {:optional true} ::sm/text]
-   [:keep-aspect-ratio {:optional true} :boolean]])
+   [:keep-aspect-ratio {:optional true} :boolean]
+   [:transform {:optional true} schema:image-transform]])
 
 (def image-attrs
   "A set of attrs that corresponds to image data type"

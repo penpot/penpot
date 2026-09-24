@@ -58,6 +58,36 @@ describe('Shadows', () => {
     expect(shadow.style).toBe('inner-shadow');
     expect(shadow.hidden).toBe(true);
   });
+
+  test('negative shadow blur throws', (ctx) => {
+    const r = rect(ctx);
+    expect(() => {
+      r.shadows = [
+        {
+          style: 'drop-shadow',
+          offsetX: 0,
+          offsetY: 0,
+          blur: -1,
+          spread: 0,
+          color: { color: '#000000', opacity: 1 },
+        },
+      ];
+    }).toThrow();
+
+    r.shadows = [
+      {
+        style: 'drop-shadow',
+        offsetX: 0,
+        offsetY: 0,
+        blur: 1,
+        spread: 0,
+        color: { color: '#000000', opacity: 1 },
+      },
+    ];
+    expect(() => {
+      r.shadows[0].blur = -1;
+    }).toThrow();
+  });
 });
 
 describe('Blur', () => {
@@ -77,5 +107,15 @@ describe('Blur', () => {
 
     expect(r.backgroundBlur).toBeDefined();
     expect(r.backgroundBlur && r.backgroundBlur.value).toBeCloseTo(5, 0);
+  });
+
+  test('negative layer and background blur throw', (ctx) => {
+    const r = rect(ctx);
+    expect(() => {
+      r.blur = { value: -1 };
+    }).toThrow();
+    expect(() => {
+      r.backgroundBlur = { value: -1 };
+    }).toThrow();
   });
 });

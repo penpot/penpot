@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.flex
   (:require
@@ -165,7 +165,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :rowGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -183,7 +183,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :columnGap value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -201,7 +201,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :verticalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -219,7 +219,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :horizontalPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -237,7 +237,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :topPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -255,7 +255,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :rightPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -273,7 +273,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :bottomPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -291,7 +291,7 @@
      :set
      (fn [this value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :leftPadding value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -325,7 +325,12 @@
 
     :remove
     (fn []
-      (st/emit! (dwsl/remove-layout #{id})))
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id :remove "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dwsl/remove-layout #{id}))))
 
     :appendChild
     (fn [child]
@@ -349,6 +354,9 @@
 
           (u/changes-component-copy-structure? objects shape child-shape)
           (u/not-valid plugin-id :appendChild "Cannot change the structure of a component copy")
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/not-valid plugin-id :appendChild "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit!
@@ -633,7 +641,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :maxWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -651,7 +659,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :minWidth value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -669,7 +677,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :maxHeight value)
 
          (not (r/check-permission plugin-id "content:write"))
@@ -687,7 +695,7 @@
      :set
      (fn [_ value]
        (cond
-         (not (sm/valid-safe-number? value))
+         (not (sm/valid-non-negative-safe-number? value))
          (u/not-valid plugin-id :minHeight value)
 
          (not (r/check-permission plugin-id "content:write"))

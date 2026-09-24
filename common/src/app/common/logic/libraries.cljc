@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.logic.libraries
   #?(:cljs (:require-macros [app.common.logic.libraries :refer [shape-log container-log]]))
@@ -2345,7 +2345,12 @@
               updated-sync-groups (into #{}
                                         (keep #(ctk/resolve-sync-group (:type previous-shape) %))
                                         updated-attrs)
-              new-touched (set/union (or (:touched current-shape) #{}) updated-sync-groups)
+              text-sub-touched #{:text-content-text :text-content-attribute :text-content-structure}
+              new-touched (set/union (or (:touched current-shape) #{})
+                                     updated-sync-groups
+                                     (when (contains? updated-sync-groups :content-group)
+                                       (set/intersection (or (:touched previous-shape) #{})
+                                                         text-sub-touched)))
               roperations (into [{:type :set-touched :touched new-touched}] roperations)
               uoperations (into (list {:type :set-touched :touched (:touched current-shape)}) uoperations)]
           (cond-> changes
@@ -2778,7 +2783,7 @@
   (let [shape-inst (ctn/get-shape container id)
         objects    (:objects container)
         parent     (get objects (:parent-id shape-inst))
-        head       (ctn/get-component-shape container parent)
+        head       (ctn/get-component-shape objects parent)
         changes
         (-> changes
             (pcb/with-container container)
@@ -2797,6 +2802,10 @@
             (pcb/with-objects objects)
             (generate-sync-shape-direct file-full libraries container id true))]
 
+    ;; If the shape has been swapped, the reset also have to undo the swap. As the
+    ;; shape has been reset and it's not touched now, by the sync above, if we
+    ;; do another reset of the parent, the shape will be reset as it is in the
+    ;; near main component.
     (cond-> changes
       (some? swap-slot)
       (generate-sync-head file-full libraries container id true))))

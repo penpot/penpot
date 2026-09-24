@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.media.remote
   "Remote media processing via the media-processor HTTP service."
@@ -75,10 +75,10 @@
                            {:method method
                             :uri uri
                             :body body
-                            :headers headers}
+                            :headers headers
+                            :timeout timeout}
                            {:response-type :input-stream
-                            :skip-ssrf-check? true
-                            :timeout timeout})
+                            :skip-ssrf-check? true})
             status (:status resp)]
         (when (not (<= 200 status 299))
           (let [body (:body resp)]

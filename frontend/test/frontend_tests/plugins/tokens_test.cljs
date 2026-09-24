@@ -2,28 +2,36 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.tokens-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.register :as r]
    [app.plugins.tokens :as ptok]
    [app.plugins.utils :as u]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
 
-(t/use-fixtures :each {:before cthi/reset-idmap!})
+(t/use-fixtures :each
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after thw/teardown-wasm-mocks!})
 
 (def ^:private get-resolved-value @#'ptok/get-resolved-value)
 
@@ -80,6 +88,18 @@
   (t/is (= :m3 (ptok/token-attr-plugin->token-attr :margin-bottom)))
   (t/is (= :m4 (ptok/token-attr-plugin->token-attr :margin-left))))
 
+(t/deftest token-attr-plugin->token-attr-resolves-font-family-alias
+  ;; Plugin-facing `fontFamilies` (kebab-cased to `:font-families` by the
+  ;; schema layer) maps to the canonical internal `:font-family`.
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr :font-families)))
+  (t/is (= :font-family (ptok/token-attr-plugin->token-attr "font-families"))))
+
+(t/deftest token-attr->token-attr-plugin-resolves-font-family-alias
+  ;; Symmetric direction: the canonical internal attribute maps to the
+  ;; plural plugin-facing name so applied-token readback serializes as
+  ;; camelCase `fontFamilies`, not the undocumented singular `fontFamily`.
+  (t/is (= :font-families (ptok/token-attr->token-attr-plugin :font-family))))
+
 (t/deftest token-attr-plugin->token-attr-coerces-string-input
   ;; This is the actual regression — JS plugin calls supply strings.
   (t/is (= :fill (ptok/token-attr-plugin->token-attr "fill")))
@@ -107,24 +127,25 @@
     done
     (let [set-id    (cthi/new-id! :token-set)
           token-id  (cthi/new-id! :spacing-token)
-          file      (-> (cthf/sample-file :file1 :page-label :page1)
-                        (ctho/add-frame :frame1 {:layout :flex})
-                        (ctht/add-tokens-lib)
-                        (ctht/update-tokens-lib
-                         #(-> %
-                              (ctob/add-set
-                               (ctob/make-token-set :id set-id
-                                                    :name "spacing"))
-                              (ctob/add-theme
-                               (ctob/make-token-theme :name "theme"
-                                                      :sets #{"spacing"}))
-                              (ctob/set-active-themes #{"/theme"})
-                              (ctob/add-token
-                               set-id
-                               (ctob/make-token :id token-id
-                                                :name "spacing.medium"
-                                                :type :spacing
-                                                :value 16)))))
+          theme-id  (cthi/new-id! :theme)
+          file      (-> (ctht/sample-file-with-tokens
+                         :file-id :file1
+                         :lib-fn #(-> %
+                                      (ctob/add-set
+                                       (ctob/make-token-set :id set-id
+                                                            :name "spacing"))
+                                      (ctob/add-theme
+                                       (ctob/make-token-theme :id theme-id
+                                                              :name "theme"
+                                                              :sets #{"spacing"}))
+                                      (ctob/add-token
+                                       set-id
+                                       (ctob/make-token :id token-id
+                                                        :name "spacing.medium"
+                                                        :type :spacing
+                                                        :value "16")))
+                         :status-fn #(ctos/set-tokens-status % #{theme-id} #{set-id}))
+                        (ctho/add-frame :frame1 {:layout :flex}))
           store     (ths/setup-store file)
           _         (set! st/state store)
           _         (set! st/stream (ptk/input-stream store))
@@ -146,6 +167,59 @@
                     (get-in @store
                             [:files (:id file) :data :pages-index page-id
                              :objects shape-id :applied-tokens :p1])))
+           (done)))
+       0))))
+
+(t/deftest shape-apply-token-accepts-font-families
+  (t/async
+    done
+    (let [theme-id  (cthi/new-id! :token-theme)
+          set-id    (cthi/new-id! :token-set)
+          token-id  (cthi/new-id! :font-family-token)
+          file      (-> (cthf/sample-file :file1 :page-label :page1)
+                        (ctho/add-text :text1 "Hello World!")
+                        (ctht/add-tokens-lib)
+                        (ctht/update-tokens-lib
+                         #(-> %
+                              (ctob/add-set
+                               (ctob/make-token-set :id set-id
+                                                    :name "fonts"))
+                              (ctob/add-theme
+                               (ctob/make-token-theme :name "theme"
+                                                      :sets #{"fonts"}))
+                              (ctob/add-token
+                               set-id
+                               (ctob/make-token :id token-id
+                                                :name "font.primary"
+                                                :type :font-family
+                                                :value ["Inter"]))))
+                        (ctht/update-tokens-status
+                         #(ctos/set-tokens-status % #{theme-id} #{set-id})))
+          store     (ths/setup-store file)
+          _         (set! st/state store)
+          _         (set! st/stream (ptk/input-stream store))
+          ^js context   (api/create-context "00000000-0000-0000-0000-000000000000")
+          ^js page      (.-currentPage context)
+          ^js shape     (.getShapeById page (str (cthi/id :text1)))
+          ^js library   (.-library context)
+          ^js local     (.-local library)
+          ^js catalog   (.-tokens local)
+          ^js token-set (.getSetById catalog (str set-id))
+          ^js token     (.getTokenById token-set (str token-id))]
+      (.applyToken shape token #js ["fontFamilies"])
+      (js/setTimeout
+       (fn []
+         (let [shape-id (cthi/id :text1)
+               page-id  (cthf/current-page-id file)]
+           ;; Plugin readback exposes the documented plural key.
+           (t/is (= "font.primary" (.. shape -tokens -fontFamilies)))
+           ;; The undocumented singular spelling must not leak.
+           (t/is (undefined? (.. shape -tokens -fontFamily)))
+           ;; Internal state keeps the canonical `:font-family` key.
+           (t/is (= "font.primary"
+                    (get-in @store
+                            [:files (:id file) :data :pages-index page-id
+                             :objects shape-id :applied-tokens :font-family])))
            (done)))
        0))))
 
@@ -191,10 +265,11 @@
   ;; Demonstrates the bug: resolving the new token against active sets
   ;; only leaves the reference unresolved.
   (let [tokens-lib (inactive-set-library)
+        tokens-status (cfo/make-tokens-status-from-lib tokens-lib)
         token (ctob/make-token {:name "color.bg.default"
                                 :value "{color.gray.50}"
                                 :type :color})
-        tokens-tree (-> (ctob/get-tokens-in-active-sets tokens-lib)
+        tokens-tree (-> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
                         (assoc (:name token) token))
         resolved (ts/resolve-tokens tokens-tree)
         {:keys [errors resolved-value]} (get resolved (:name token))]
@@ -234,15 +309,18 @@
 (t/deftest token-set-duplicate-returns-the-duplicated-set
   (let [file-id (cthi/new-id! :file)
         set-id  (cthi/new-id! :set)
-        dup-id  (cthi/new-id! :dup)
-        proxy   (ptok/token-set-proxy "plugin-id" file-id set-id)]
-    (with-redefs [dwtl/duplicate-token-set
+        dup-id  (cthi/new-id! :dup)]
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  dwtl/duplicate-token-set
                   (mock/stub (fn [id {:keys [id-ref]}]
                                (t/is (= set-id id))
                                (reset! id-ref dup-id)
                                :duplicate-token-set))
                   st/emit! mock/noop]
-      (let [dup (.duplicate proxy)]
+      (let [proxy (ptok/token-set-proxy "plugin-id" file-id set-id)
+            dup   (.duplicate proxy)]
         (t/is (ptok/token-set-proxy? dup))
         (t/is (= (str dup-id) (.-id dup)))))))
 
@@ -250,10 +328,11 @@
   (let [file-id  (cthi/new-id! :file)
         theme-id (cthi/new-id! :theme)
         set-id   (cthi/new-id! :set)
-        set      (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
-        theme    (ptok/token-theme-proxy "plugin-id" file-id theme-id)
         captured (atom [])]
-    (with-redefs [u/locate-token-theme
+    (with-redefs [u/locate-tokens-lib (constantly nil)
+                  r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
+                  u/locate-token-theme
                   (fn [_file _theme]
                     (ctob/make-token-theme :id theme-id
                                            :name "Theme"
@@ -263,21 +342,39 @@
                     (swap! captured conj {:id id :theme theme})
                     :update-token-theme)
                   st/emit! mock/noop]
-      (.addSet theme set)
-      (.removeSet theme set)
-      (t/is (= [theme-id theme-id] (mapv :id @captured)))
-      (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
-      (t/is (not (contains? (-> @captured second :theme :sets) "Primitives"))))))
+      (let [set   (ptok/token-set-proxy "plugin-id" file-id set-id "Primitives")
+            theme (ptok/token-theme-proxy "plugin-id" file-id theme-id)]
+        (.addSet theme set)
+        (.removeSet theme set)
+        (t/is (= [theme-id theme-id] (mapv :id @captured)))
+        (t/is (contains? (-> @captured first :theme :sets) "Primitives"))
+        (t/is (not (contains? (-> @captured second :theme :sets) "Primitives")))))))
 
 (t/deftest font-family-token-value-accepts-a-string
-  (let [file-id  (cthi/new-id! :file)
-        set-id   (cthi/new-id! :set)
-        token-id (cthi/new-id! :token)
+  ;; The setter validates the candidate token against the file tokens library,
+  ;; so the token has to live in a real library.
+  (let [set-id   (cthi/new-id! :token-set)
+        token-id (cthi/new-id! :font-token)
+        file     (-> (cthf/sample-file :file1 :page-label :page1)
+                     (ctht/add-tokens-lib)
+                     (ctht/update-tokens-lib
+                      #(-> %
+                           (ctob/add-set
+                            (ctob/make-token-set :id set-id
+                                                 :name "fonts"))
+                           (ctob/add-token
+                            set-id
+                            (ctob/make-token :id token-id
+                                             :name "font.primary"
+                                             :type :font-family
+                                             :value ["Inter"])))))
+        store    (ths/setup-store file)
+        _        (set! st/state store)
+        _        (set! st/stream (ptk/input-stream store))
+        file-id  (:id file)
         captured (atom nil)]
-    (with-redefs [u/locate-token (constantly {:id token-id
-                                              :name "font.primary"
-                                              :type :font-family
-                                              :value ["Inter"]})
+    (with-redefs [r/check-permission (constantly true)
+                  u/check-editable-tokens (constantly nil)
                   dwtl/update-token (mock/stub (fn [set-id token-id attrs]
                                                  (reset! captured {:set-id set-id
                                                                    :token-id token-id
@@ -347,12 +444,15 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
-                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+    (with-redefs [r/check-permission      (constantly true)
+                  u/locate-tokens-lib     (constantly nil)
+                  u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
         (.addSet theme-proxy (str set-id))
         (t/is (= #{"Core"} (-> @emitted first :theme :sets)))
@@ -367,12 +467,15 @@
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
         invalid   (atom [])]
-    (with-redefs [u/locate-token-set   (fn [_ id] (when (= id set-id) token-set))
-                  u/locate-token-theme (fn [_ id] (when (= id theme-id) theme))
-                  u/not-valid          (fn [_ code value] (swap! invalid conj [code value]))
+    (with-redefs [r/check-permission      (constantly true)
+                  u/locate-tokens-lib     (constantly nil)
+                  u/locate-token-set      (fn [_ id] (when (= id set-id) token-set))
+                  u/locate-token-theme    (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens (constantly nil)
+                  u/not-valid             (fn [_ code value] (swap! invalid conj [code value]))
                   dwtl/update-token-theme (fn [id theme] {:id id :theme theme})
-                  st/emit!             (fn ([event] (swap! emitted conj event) nil)
-                                         ([event & _] (swap! emitted conj event) nil))]
+                  st/emit!                (fn ([event] (swap! emitted conj event) nil)
+                                            ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
             set-proxy   (ptok/token-set-proxy plugin-id file-id set-id "Core")]
         (.addSet theme-proxy set-proxy)
@@ -385,18 +488,323 @@
         theme-id  (uuid/next)
         theme     (ctob/make-token-theme :id theme-id :group "mode" :name "Light")
         emitted   (atom [])
-        errors    (atom [])]
-    (with-redefs [u/locate-token-set         (constantly nil)
-                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+        invalid   (atom [])]
+    (with-redefs [u/locate-tokens-lib        (constantly nil)
+                  u/locate-token-set         (constantly nil)
                   u/throw-validation-errors? (constantly true)
+                  u/locate-token-theme       (fn [_ id] (when (= id theme-id) theme))
+                  u/check-editable-tokens    (constantly nil)
+                  u/handle-error             (fn [plugin-id]
+                                               (fn [cause]
+                                                 (u/not-valid plugin-id :error (str cause))))
                   dwtl/update-token-theme    (fn [id theme] {:id id :theme theme})
                   st/emit!                   (fn ([event] (swap! emitted conj event) nil)
                                                ([event & _] (swap! emitted conj event) nil))]
       (let [theme-proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
-        ;; Non-id, non-proxy arguments are rejected by the schema coercer.
-        (try (.addSet theme-proxy 42) (catch :default e (swap! errors conj e)))
-        (try (.removeSet theme-proxy nil) (catch :default e (swap! errors conj e)))
+        (try (.addSet theme-proxy 42) (catch :default e (swap! invalid conj e)))
+        (try (.removeSet theme-proxy nil) (catch :default e (swap! invalid conj e)))
         (t/is (empty? @emitted))
-        (t/is (= 2 (count @errors)))
-        (t/is (every? #(instance? js/Error %) @errors))))))
+        (t/is (= 2 (count @invalid)))
+        (t/is (every? #(instance? js/Error %) @invalid))))))
+
+;; ═══════════════════════════════════════════════════════════════
+;; Permission check tests (T9-F-01)
+;; ═══════════════════════════════════════════════════════════════
+
+;; Note: token-proxy-name-setter-checks-permission test removed because
+;; schema validation runs before the permission check, making it impossible
+;; to test the permission check directly for setters with schemas.
+
+(t/deftest token-proxy-value-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        token-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token  (constantly {:id token-id :name "test" :type :color})
+                  u/locate-tokens-lib (constantly nil)
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-proxy plugin-id file-id set-id token-id)]
+        (set! (.-value proxy) "#ff0000")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :value "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-proxy-description-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        token-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token  (constantly {:id token-id :name "test"})
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-proxy plugin-id file-id set-id token-id)]
+        (set! (.-description proxy) "A description")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :description "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-proxy-duplicate-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        token-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token  (constantly {:id token-id :name "test" :type :color :value "#000"})
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-proxy plugin-id file-id set-id token-id)]
+        (.duplicate proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :duplicate "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-proxy-remove-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        token-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-proxy plugin-id file-id set-id token-id)]
+        (.remove proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :remove "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-name-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (set! (.-name proxy) "new-core")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :name "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-active-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (set! (.-active proxy) true)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :active "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-toggle-active-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "test-plugin")]
+        (.toggleActive proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :toggleActive "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-add-token-checks-permission
+  (let [plugin-id  "test-plugin"
+        file-id    (uuid/next)
+        set-id     (uuid/next)
+        tokens-lib (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set :id set-id :name "core")))
+        errors     (atom [])]
+    (with-redefs [u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/locate-tokens-lib (constantly tokens-lib)
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (t/is (fn? (.-addToken proxy)))
+        (.addToken proxy #js {"type" "color" "name" "color.test" "value" "#FF0000"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addToken "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-duplicate-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id)]
+        (.duplicate proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :duplicate "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-set-proxy-remove-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-set-proxy plugin-id file-id set-id)]
+        (.remove proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :remove "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-group-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-theme (constantly {:id theme-id :name "Light" :group "mode"})
+                  u/locate-tokens-lib (constantly nil)
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (set! (.-group proxy) "new-group")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :group "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-name-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-theme (constantly {:id theme-id :name "Light" :group "mode"})
+                  u/locate-tokens-lib (constantly nil)
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (set! (.-name proxy) "Dark")
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :name "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-active-setter-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (set! (.-active proxy) true)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :active "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-toggle-active-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.toggleActive proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :toggleActive "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-add-set-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-theme (constantly {:id theme-id :name "Light" :sets #{}})
+                  u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
+            set-proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (.addSet proxy set-proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addSet "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-remove-set-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        set-id    (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-theme (constantly {:id theme-id :name "Light" :sets #{"core"}})
+                  u/locate-token-set (constantly {:id set-id :name "core"})
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)
+            set-proxy (ptok/token-set-proxy plugin-id file-id set-id "core")]
+        (.removeSet proxy set-proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :removeSet "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-duplicate-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-token-theme (constantly {:id theme-id :name "Light" :group "mode"})
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.duplicate proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :duplicate "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest token-theme-proxy-remove-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        theme-id  (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [proxy (ptok/token-theme-proxy plugin-id file-id theme-id)]
+        (.remove proxy)
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :remove "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest tokens-catalog-add-theme-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [catalog (ptok/tokens-catalog plugin-id file-id)]
+        (.addTheme catalog #js {"name" "NewTheme" "group" "mode"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addTheme "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
+
+(t/deftest tokens-catalog-add-set-checks-permission
+  (let [plugin-id "test-plugin"
+        file-id   (uuid/next)
+        errors    (atom [])]
+    (with-redefs [u/locate-tokens-lib (constantly (ctob/make-tokens-lib))
+                  u/not-valid     (mock/stub (fn [pid prop msg] (swap! errors conj [pid prop msg])))
+                  r/check-permission (constantly false)
+                  st/emit!        mock/noop]
+      (let [catalog (ptok/tokens-catalog plugin-id file-id)]
+        (.addSet catalog #js {"name" "NewSet"})
+        (t/is (= 1 (count @errors)))
+        (t/is (= [plugin-id :addSet "Plugin doesn't have 'content:write' permission"] (first @errors)))))))
 

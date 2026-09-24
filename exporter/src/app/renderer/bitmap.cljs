@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.renderer.bitmap
   "A bitmap renderer."
@@ -17,7 +17,7 @@
    [promesa.core :as p]))
 
 (defn render
-  [{:keys [file-id page-id share-id token scale type objects skip-children is-wasm] :as params} on-object]
+  [{:keys [file-id page-id share-id token scale type objects skip-children] :as params} on-object]
   (letfn [(prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
                               :height bw/default-viewport-height}
@@ -25,7 +25,7 @@
                                 :height bw/default-viewport-height}
                  :locale "en-US"
                  :storageState #js {:cookies (bw/create-cookies uri {:token token})}
-                 :deviceScaleFactor (if is-wasm 1 scale) ;; wasm won't use deviceScaleFactor
+                 :deviceScaleFactor scale
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
@@ -38,7 +38,7 @@
                 :webp (p/let [png-path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix ".png")]
                         ;; playwright only supports jpg and png, we need to convert it afterwards
                         (bw/screenshot node {:omit-background? true :type :png :path png-path})
-                        (sh/run-cmd! (str "convert " png-path " -quality 100 WEBP:" path))))
+                        (sh/run-cmd! "convert" png-path "-quality" "100" (str "WEBP:" path))))
               (on-object (assoc object :path path))))
 
           (render [uri page]
@@ -59,9 +59,7 @@
                     :share-id share-id
                     :object-id (mapv :id objects)
                     :route "objects"
-                    :skip-children skip-children
-                    :wasm (when is-wasm "true")
-                    :scale scale}
+                    :skip-children skip-children}
             uri    (-> (cf/get-internal-uri)
                        (u/ensure-path-slash)
                        (u/join "render.html")

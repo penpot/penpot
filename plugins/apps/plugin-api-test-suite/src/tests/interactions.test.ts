@@ -156,7 +156,7 @@ describe('Interactions', () => {
 
   test('after-delay trigger carries a delay', (ctx) => {
     const dest = board(ctx);
-    const r = rect(ctx);
+    const r = board(ctx);
     const interaction = r.addInteraction(
       'after-delay',
       { type: 'navigate-to', destination: dest },
@@ -169,7 +169,7 @@ describe('Interactions', () => {
   // A zero delay is a valid value (fires immediately), not an error.
   test('after-delay accepts a zero delay', (ctx) => {
     const dest = board(ctx);
-    const r = rect(ctx);
+    const r = board(ctx);
     const interaction = r.addInteraction(
       'after-delay',
       { type: 'navigate-to', destination: dest },
@@ -198,7 +198,7 @@ describe('Interactions', () => {
   // "don't persist" — that is stale: CI confirms they do.)
   test('interaction delay and action setters persist', (ctx) => {
     const dest = board(ctx);
-    const r = rect(ctx);
+    const r = board(ctx);
     const interaction = r.addInteraction(
       'after-delay',
       { type: 'navigate-to', destination: dest },
@@ -218,7 +218,7 @@ describe('Interactions', () => {
   // The delay setter accepts zero (fires immediately) as a valid value.
   test('delay setter accepts a zero value', (ctx) => {
     const dest = board(ctx);
-    const r = rect(ctx);
+    const r = board(ctx);
     const interaction = r.addInteraction(
       'after-delay',
       { type: 'navigate-to', destination: dest },
@@ -349,6 +349,92 @@ describe('Interactions', () => {
     expect(r.interactions.length).toBe(before - 1);
   });
 
+  // Removing an interaction shifts the ones after it, so draining a shape from
+  // a single read of the array must reach every interaction it returned. Both
+  // removal entry points are covered.
+  test('every interaction can be removed from one read of the array', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', { type: 'open-url', url: 'https://a.example' });
+    await ctx.penpot.waitForLayoutUpdate();
+    r.addInteraction('mouse-enter', {
+      type: 'open-url',
+      url: 'https://b.example',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(2);
+
+    for (const interaction of r.interactions) {
+      interaction.remove();
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    expect(r.interactions).toHaveLength(0);
+  });
+
+  test('removeInteraction can drain a shape from one read of the array', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', { type: 'open-url', url: 'https://a.example' });
+    await ctx.penpot.waitForLayoutUpdate();
+    r.addInteraction('mouse-enter', {
+      type: 'open-url',
+      url: 'https://b.example',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(2);
+
+    for (const interaction of r.interactions) {
+      r.removeInteraction(interaction);
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    expect(r.interactions).toHaveLength(0);
+  });
+
+  // A held interaction addresses itself rather than a position, so a write
+  // reaches it even once an earlier interaction has shifted it.
+  test('an interaction still writes to itself after an earlier one is removed', async (ctx) => {
+    const r = rect(ctx);
+    for (const trigger of ['click', 'mouse-enter', 'mouse-leave'] as const) {
+      r.addInteraction(trigger, {
+        type: 'open-url',
+        url: `https://${trigger}.example`,
+      });
+      await ctx.penpot.waitForLayoutUpdate();
+    }
+    const [first, , last] = r.interactions;
+
+    first.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    last.delay = 500;
+    await ctx.penpot.waitForLayoutUpdate();
+
+    expect(r.interactions.map((i) => i.trigger)).toEqual([
+      'mouse-enter',
+      'mouse-leave',
+    ]);
+    expect(r.interactions.map((i) => i.delay)).toEqual([null, 500]);
+  });
+
+  // A proxy whose own interaction is gone resolves to no position, so the write
+  // has nothing to address and the API rejects it.
+  test('a write through a removed interaction is rejected', async (ctx) => {
+    const r = rect(ctx);
+    r.addInteraction('click', {
+      type: 'open-url',
+      url: 'https://example.com',
+    });
+    await ctx.penpot.waitForLayoutUpdate();
+    const [only] = r.interactions;
+
+    only.remove();
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(0);
+
+    expect(() => {
+      only.delay = 500;
+    }).toThrow('The interaction is not part of the shape anymore');
+    await ctx.penpot.waitForLayoutUpdate();
+    expect(r.interactions).toHaveLength(0);
+  });
+
   test('interaction trigger can be changed', (ctx) => {
     const dest = board(ctx);
     const r = rect(ctx);
@@ -361,33 +447,203 @@ describe('Interactions', () => {
     expect(interaction.trigger).toBe('mouse-enter');
   });
 
+  test('unknown interaction triggers are rejected', (ctx) => {
+    const dest = board(ctx);
+    const r = rect(ctx);
+    expect(() =>
+      r.addInteraction('unknown-trigger' as unknown as 'click', {
+        type: 'navigate-to',
+        destination: dest,
+      }),
+    ).toThrow();
+
+    const interaction = r.addInteraction('click', {
+      type: 'navigate-to',
+      destination: dest,
+    });
+    expect(() => {
+      interaction.trigger = 'unknown-trigger' as unknown as 'click';
+    }).toThrow();
+  });
+
   // ---------------------------------------------------------------------------
   // Edge cases. "fail" tests assert invalid interaction input is
   // rejected; the "success" test checks several triggers coexisting.
   // ---------------------------------------------------------------------------
-  // addInteraction validates the interaction's structure (schema) but not the
-  // liveness of a navigate destination nor the format of an open-url string,
-  // so both of these are accepted rather than rejected. These pin the current
-  // (lenient) behaviour.
-  test('navigate-to a removed board is accepted (dangling destination)', (ctx) => {
+  test('navigate-to a removed board throws', (ctx) => {
     const dest = board(ctx);
     const r = rect(ctx);
     dest.remove();
     expect(() =>
       r.addInteraction('click', { type: 'navigate-to', destination: dest }),
-    ).not.toThrow();
+    ).toThrow();
   });
 
-  test('open-url accepts an arbitrary url string', (ctx) => {
+  test('open-url rejects invalid input and normalizes a bare hostname', (ctx) => {
     const r = rect(ctx);
+    expect(() =>
+      r.addInteraction('click', {
+        type: 'open-url',
+        url: 'not a valid url',
+      }),
+    ).toThrow();
+    expect(() =>
+      r.addInteraction('click', {
+        type: 'open-url',
+        url: 'ftp://example.com/file',
+      }),
+    ).toThrow();
     const interaction = r.addInteraction('click', {
       type: 'open-url',
-      url: 'not a valid url',
+      url: 'example.com/path',
     });
     expect(interaction.action.type).toBe('open-url');
     if (interaction.action.type === 'open-url') {
-      expect(interaction.action.url).toBe('not a valid url');
+      expect(interaction.action.url).toBe('http://example.com/path');
     }
+  });
+
+  test('after-delay is board-only and initializes its default delay', (ctx) => {
+    const dest = board(ctx);
+    const r = rect(ctx);
+    expect(() =>
+      r.addInteraction('after-delay', {
+        type: 'navigate-to',
+        destination: dest,
+      }),
+    ).toThrow();
+
+    const source = board(ctx);
+    const interaction = source.addInteraction('click', {
+      type: 'navigate-to',
+      destination: dest,
+    });
+    interaction.trigger = 'after-delay';
+    expect(interaction.delay).toBeCloseTo(600, 0);
+    expect(() => {
+      const invalid = r.addInteraction('click', {
+        type: 'navigate-to',
+        destination: dest,
+      });
+      invalid.trigger = 'after-delay';
+    }).toThrow();
+  });
+
+  test('after-delay creation rejects invalid delays', (ctx) => {
+    const dest = board(ctx);
+    const source = board(ctx);
+    for (const delay of ['bad', 1.5, -1]) {
+      expect(() =>
+        source.addInteraction(
+          'after-delay',
+          { type: 'navigate-to', destination: dest },
+          delay as unknown as number,
+        ),
+      ).toThrow();
+    }
+
+    const interaction = source.addInteraction(
+      'after-delay',
+      { type: 'navigate-to', destination: dest },
+      10,
+    );
+    for (const delay of ['bad', 1.5, -1]) {
+      expect(() => {
+        interaction.delay = delay as unknown as number;
+      }).toThrow();
+    }
+  });
+
+  test('navigation destinations must be eligible boards', (ctx) => {
+    const source = board(ctx);
+    const child = rect(ctx);
+    const rectangle = rect(ctx);
+    expect(() =>
+      source.addInteraction('click', {
+        type: 'navigate-to',
+        destination: source,
+      }),
+    ).toThrow();
+    expect(() =>
+      child.addInteraction('click', {
+        type: 'navigate-to',
+        destination: ctx.board,
+      }),
+    ).toThrow();
+    expect(() =>
+      source.addInteraction('click', {
+        type: 'navigate-to',
+        destination: rectangle as unknown as Board,
+      }),
+    ).toThrow();
+  });
+
+  test('interaction destinations must belong to the current page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+
+    const source = rect(ctx);
+    const localDestination = board(ctx);
+    const interaction = source.addInteraction('click', {
+      type: 'navigate-to',
+      destination: localDestination,
+    });
+    const otherPage = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(otherPage);
+      const otherBoard = ctx.penpot.createBoard();
+      (otherPage.root as Board).appendChild(otherBoard);
+      await ctx.penpot.openPage(original);
+
+      expect(() =>
+        source.addInteraction('click', {
+          type: 'navigate-to',
+          destination: otherBoard,
+        }),
+      ).toThrow();
+      expect(() => {
+        interaction.action = {
+          type: 'navigate-to',
+          destination: otherBoard,
+        };
+      }).toThrow();
+    } finally {
+      if (ctx.penpot.currentPage?.id !== original.id) {
+        await ctx.penpot.openPage(original);
+      }
+      otherPage.remove();
+    }
+  });
+
+  test('push animation is rejected for overlay actions and replacements', (ctx) => {
+    const overlay = board(ctx);
+    const r = rect(ctx);
+    const push = {
+      type: 'push' as const,
+      direction: 'left' as const,
+      duration: 300,
+      easing: 'linear' as const,
+    };
+    expect(() =>
+      r.addInteraction('click', {
+        type: 'open-overlay',
+        destination: overlay,
+        animation: push,
+      }),
+    ).toThrow();
+
+    const interaction = r.addInteraction('click', {
+      type: 'navigate-to',
+      destination: overlay,
+    });
+    expect(() => {
+      interaction.action = {
+        type: 'open-overlay',
+        destination: overlay,
+        animation: push,
+      };
+    }).toThrow();
   });
 
   test('several triggers on one shape coexist', (ctx) => {

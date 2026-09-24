@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.text
   (:require-macros [app.main.style :as stl])
@@ -20,6 +20,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
    [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -307,6 +308,11 @@
         main-menu-open?      (:main-menu menu-state)
         more-options-open?   (:more-options menu-state)
 
+        font-id         (or (:font-id values) (:font-id txt/default-typography))
+
+        fonts           (mf/deref fonts/fontsdb)
+        font            (get fonts font-id)
+
         token-dropdown-open* (mf/use-state false)
         token-dropdown-open? (deref token-dropdown-open*)
 
@@ -412,7 +418,7 @@
                                    (select-keys txt/text-node-attrs))]
              (when (features/active-feature? @st/state "text-editor-wasm/v1")
                (st/emit! (dwt-v3/v3-update-text-editor-styles (first ids) attrs)))
-             (st/emit! (dwt/save-font updated-attrs)
+             (st/emit! (dwt/save-default-font updated-attrs)
                        (dwt/update-all-attrs ids attrs)))))
 
         on-change
@@ -498,6 +504,8 @@
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
     [:section {:class      (stl/css :element-set)
+               ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
+               :data-keep-editing-on-blur true
                :aria-label (tr "workspace.options.text-options.text-section")}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true
@@ -514,9 +522,12 @@
                             :icon              i/tokens}])
         (when (and (not typography) (not multiple?) (not applied-token-name))
           [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "workspace.options.convert-to-typography")
+                            :aria-label        (if (not font)
+                                                 (tr "workspace.options.font-not-available" (:font-family values))
+                                                 (tr "workspace.options.convert-to-typography"))
                             :on-click          on-convert-to-typography
                             :tooltip-placement "top-left"
+                            :disabled          (not font)
                             :icon              i/add}])]]
       (when (and token-typography-row-enabled? token-dropdown-open?)
         [:> searchable-options-dropdown* {:on-click     on-option-click

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.types.shape-interactions-test
   (:require
@@ -859,7 +859,20 @@
     (t/testing "Update interaction"
       (let [new-interactions (ctsi/update-interaction interactions 1 #(ctsi/set-action-type % :open-url))]
         (t/is (= (count new-interactions) 2))
-        (t/is (= (:action-type (last new-interactions)) :open-url))))))
+        (t/is (= (:action-type (last new-interactions)) :open-url))))
+
+    (t/testing "Remove interaction with an index out of range"
+      (t/is (= interactions (ctsi/remove-interaction interactions 2)))
+      (t/is (= interactions (ctsi/remove-interaction interactions -1)))
+      (t/is (= interactions (ctsi/remove-interaction interactions nil)))
+      (t/is (= [] (ctsi/remove-interaction nil 0))))
+
+    (t/testing "Update interaction with an index out of range"
+      (let [update-fn #(ctsi/set-action-type % :open-url)]
+        (t/is (= interactions (ctsi/update-interaction interactions 2 update-fn)))
+        (t/is (= interactions (ctsi/update-interaction interactions -1 update-fn)))
+        (t/is (= interactions (ctsi/update-interaction interactions nil update-fn)))
+        (t/is (nil? (ctsi/update-interaction nil 0 update-fn)))))))
 
 
 (t/deftest remap-interactions
@@ -1125,3 +1138,21 @@
         (t/testing (str "overlay position ignores filter bounds for " pos-type)
           (t/is (= pos-plain pos-shadow))
           (t/is (= snap-plain snap-shadow)))))))
+
+(t/deftest normalize-url
+  (t/testing "adds http to urls without a scheme, including host:port"
+    (t/is (= "http://example.com" (ctsi/normalize-url "example.com")))
+    (t/is (= "http://localhost:3000" (ctsi/normalize-url "localhost:3000")))
+    (t/is (= "http://example.com:8080/x" (ctsi/normalize-url " example.com:8080/x "))))
+
+  (t/testing "keeps http and https urls"
+    (t/is (= "https://a.example" (ctsi/normalize-url "https://a.example")))
+    (t/is (= "http://a.example/p?q=1" (ctsi/normalize-url "http://a.example/p?q=1"))))
+
+  (t/testing "rejects other schemes and malformed urls"
+    (t/is (nil? (ctsi/normalize-url "javascript:alert(1)")))
+    (t/is (nil? (ctsi/normalize-url "mailto:someone@example.com")))
+    (t/is (nil? (ctsi/normalize-url "ftp://example.com")))
+    (t/is (nil? (ctsi/normalize-url "www.example.com/a b")))
+    (t/is (nil? (ctsi/normalize-url "")))
+    (t/is (nil? (ctsi/normalize-url nil)))))

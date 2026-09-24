@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.colorpicker
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.color :as cc]
@@ -28,10 +29,12 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs*]]
    [app.main.ui.workspace.colorpicker.color-tokens :refer [token-section*]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
@@ -433,10 +436,12 @@
 
        (when (and (not= selected-mode :image)
                   (= color-style :direct-color))
-         [:button {:class (stl/css-case :picker-btn true
-                                        :selected picking-color?)
-                   :on-click handle-click-picker}
-          deprecated-icon/picker])
+         [:> icon-button* {:icon i/picker
+                           :variant "ghost"
+                           :aria-label (tr "workspace.colorpicker.color-picker")
+                           :aria-pressed picking-color?
+                           :class (stl/css :picker-btn)
+                           :on-click handle-click-picker}])
 
        (when (= color-style :token-color)
          [:div {:class (stl/css :token-color-title)}
@@ -467,25 +472,19 @@
              [:div {:class (stl/css :select-image)}
               [:div {:class (stl/css :content)}
                (when (:image current-color)
-                 [:img {:src uri}])]
+                 [:img {:src uri
+                        :class (stl/css :content-image)}])]
 
               (when (some? (:image current-color))
                 [:div {:class (stl/css :checkbox-option)}
-                 [:label {:for "keep-aspect-ratio"
-                          :class (stl/css-case  :global/checked keep-aspect-ratio?)}
-                  [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
-                   (when keep-aspect-ratio?
-                     deprecated-icon/status-tick)]
-                  (tr "media.keep-aspect-ratio")
-                  [:input {:type "checkbox"
-                           :id "keep-aspect-ratio"
-                           :checked keep-aspect-ratio?
-                           :on-change handle-change-keep-aspect-ratio}]]])
-              [:button
-               {:class (stl/css :choose-image)
-                :title (tr "media.choose-image")
-                :aria-label (tr "media.choose-image")
-                :on-click on-fill-image-click}
+                 [:> checkbox* {:id "keep-aspect-ratio"
+                                :checked keep-aspect-ratio?
+                                :on-change handle-change-keep-aspect-ratio
+                                :label (tr "media.keep-aspect-ratio")}]])
+
+              [:> button* {:class (stl/css :choose-image)
+                           :variant "secondary"
+                           :on-click on-fill-image-click}
                (tr "media.choose-image")
                [:& file-uploader
                 {:input-id "fill-image-upload"
@@ -554,11 +553,10 @@
                             :color-origin color-origin}])]
      (when (fn? on-accept)
        [:div {:class (stl/css :actions)}
-        [:button {:class (stl/css-case
-                          :accept-color true
-                          :btn-disabled disabled-color-accept?)
-                  :on-click on-color-accept
-                  :disabled disabled-color-accept?}
+        [:> button* {:class (stl/css :accept-color)
+                     :variant "primary"
+                     :on-click on-color-accept
+                     :disabled disabled-color-accept?}
          (tr "workspace.libraries.colors.save-color")]])]))
 
 (defn calculate-position
@@ -762,10 +760,15 @@
         tokens-lib
         (mf/deref refs/tokens-lib)
 
+        tokens-status
+        (mf/deref refs/tokens-status)
+
         active-sets-names
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib
-                  (ctob/get-active-themes-set-names)))
+        (mf/with-memo [tokens-status tokens-lib]
+          (when (and tokens-status tokens-lib)
+            (into #{}
+                  (map ctob/get-name)
+                  (cfo/get-active-sets tokens-status tokens-lib))))
 
         active-tokens (if (delay? active-tokens)
                         @active-tokens
@@ -785,7 +788,7 @@
                   (filter-active-sets active-sets-names)
                   (filter-non-empty-sets)
                   (group-sets)
-                  (combine-groups-with-resolved  color-tokens)))]
+                  (combine-groups-with-resolved color-tokens)))]
 
     (mf/with-effect []
       (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts :workspace)))

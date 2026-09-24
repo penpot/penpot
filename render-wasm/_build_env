@@ -63,7 +63,14 @@ export CARGO_PARAMS="${@:2}";
 
 export CARGO_PROFILE_DIR="debug";
 
-if [ "$BUILD_MODE" = "release" ]; then
+if [ "$BUILD_MODE" = "profiling" ]; then
+    # Optimized like release, but keeps the wasm name section so the Firefox
+    # profiler can resolve Rust frames (release strips them). `--profiling-funcs`
+    # preserves function names through wasm-opt without pulling in DWARF.
+    export CARGO_PARAMS="--profile profiling $CARGO_PARAMS";
+    export CARGO_PROFILE_DIR="profiling";
+    export EMCC_CFLAGS="-O3 -sASSERTIONS=0 --profiling-funcs $EMCC_CFLAGS";
+elif [ "$BUILD_MODE" = "release" ]; then
     case "$RENDER_TARGET" in
         frontend)
             export CARGO_PARAMS="--release $CARGO_PARAMS";
@@ -95,8 +102,6 @@ function clean {
 }
 
 function setup {
-    corepack enable;
-    corepack install;
     pnpm install;
 }
 
