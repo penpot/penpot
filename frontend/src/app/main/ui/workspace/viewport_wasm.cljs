@@ -219,8 +219,8 @@
         ;; uses the immediate value, unthrottled.
         selected-shapes'  (ui-hooks/use-throttle 100 selected-shapes)
         badge-shapes      (if (= transform :resize)
-                             selected-shapes'
-                             selected-shapes)
+                            selected-shapes'
+                            selected-shapes)
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)

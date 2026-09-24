@@ -290,8 +290,8 @@
         ;; by zoom, so comparing them directly already accounts for zoom —
         ;; no extra scaling needed.
         hidden?      (or single-line?
-                        (< shape-width badge-width)
-                        (< shape-height badge-height))]
+                         (< shape-width badge-width)
+                         (< shape-height badge-height))]
 
     (when-not ^boolean hidden?
       (if has-rotation?
