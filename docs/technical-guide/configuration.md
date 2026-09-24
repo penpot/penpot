@@ -332,9 +332,9 @@ PENPOT_LOGIN_LOCKOUT_MAX_ATTEMPTS: 5
 PENPOT_LOGIN_LOCKOUT_WINDOW: 15m
 ```
 
-While the account is locked, login returns HTTP 429 with a <code class="language-bash">Retry-After</code>
-header and a JSON error with the code <code class="language-bash">account-locked</code>
-and the remaining seconds in `ttl`.
+While the account is locked, login returns HTTP 429 with a `Retry-After`
+header and a JSON error with the code `account-locked` and the remaining
+seconds in `ttl`.
 
 Redis must be available. If Redis fails, login continues without lockout
 checks. This feature prevents repeated password guessing, but anyone who knows
