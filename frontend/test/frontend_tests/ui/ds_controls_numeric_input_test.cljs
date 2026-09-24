@@ -7,7 +7,7 @@
 (ns frontend-tests.ui.ds-controls-numeric-input-test
   (:require
    [app.common.data :as d]
-   [app.main.ui.ds.controls.numeric-input :refer [next-focus-index parse-value]]
+   [app.main.ui.ds.controls.numeric-input :refer [next-focus-index parse-value token-shortcut]]
    [app.main.ui.formats :as fmt]
    [cljs.test :as t :include-macros true]))
 
@@ -100,6 +100,20 @@
    {:id "c" :type :item :name "Charlie"}
    {:id "d" :type :separator :name "---"}
    {:id "e" :type :item :name "Echo"}])
+
+(t/deftest test-token-shortcut
+  (t/testing "opens the token dropdown on { when tokens are enabled"
+    (t/is (= :open (token-shortcut #js {:key "{"} false))))
+
+  (t/testing "applies the token on } when tokens are enabled"
+    (t/is (= :apply (token-shortcut #js {:key "}"} false))))
+
+  (t/testing "ignores other keys"
+    (t/is (nil? (token-shortcut #js {:key "a"} false))))
+
+  (t/testing "is inert when tokens are disabled for the input"
+    (t/is (nil? (token-shortcut #js {:key "{"} true)))
+    (t/is (nil? (token-shortcut #js {:key "}"} true)))))
 
 (t/deftest test-next-focus-index
   (t/testing "returns index of next focusable item going down"

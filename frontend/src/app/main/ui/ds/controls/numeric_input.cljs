@@ -100,6 +100,17 @@
   [options]
   (some #(when (focusable-option? %) (:id %)) options))
 
+(defn token-shortcut
+  "Returns the token shortcut triggered by `event`: `:open` for `{` and
+  `:apply` for `}`. Returns nil when tokens are disabled for the input
+  (for example, strokes after the first one), so the shortcuts are inert
+  there."
+  [event token-disabled?]
+  (when-not token-disabled?
+    (cond
+      (kbd/is-key? event "{") :open
+      (kbd/is-key? event "}") :apply)))
+
 (defn next-focus-index
   [options focused-id direction]
   (let [options (if (delay? options) @options options)
@@ -434,7 +445,7 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change)
+         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change token-disabled?)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?          (kbd/up-arrow? event)
@@ -442,8 +453,9 @@
                  enter?       (kbd/enter? event)
                  esc?         (kbd/esc? event)
                  node         (mf/ref-val ref)
-                 open-tokens  (kbd/is-key? event "{")
-                 close-tokens (kbd/is-key? event "}")
+                 shortcut     (token-shortcut event token-disabled?)
+                 open-tokens  (= :open shortcut)
+                 close-tokens (= :apply shortcut)
                  options      (mf/ref-val options-ref)
                  options      (if (delay? options) @options options)]
 
