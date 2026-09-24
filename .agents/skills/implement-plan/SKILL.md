@@ -13,6 +13,14 @@ By default it ends with exactly one commit. When the user asks for it
 ("step by step"), it commits once per task instead and waits for the
 user's confirmation after each one (see *Execution modes*).
 
+## Plan file handling
+
+Plan files are local workflow artifacts. They must never be staged or
+committed, even when `.gitignore` already excludes them. Never use
+`git add -f`, change ignore rules, or otherwise force a plan file into a
+commit. Close and update the plan when this flow requires it, but leave it
+in the local working tree.
+
 ## When to use
 
 - The user asks to implement or execute a plan, in any phrasing:
@@ -107,12 +115,13 @@ When the implementation is complete, close the plan file first: flip its
 with the issue URL when one exists (standalone mode, e.g.
 `https://github.com/penpot/penpot/issues/NNNN`); in continue/direct
 mode with no issue, just `done` with no invented identifier. Never
-record commit hashes. Then load the **`create-commit`** skill
-and follow its workflow to commit the changes together with the
-closed plan file, so plan and code land in the same commit. Provide a brief summary
-of what was implemented and why, the issue reference (`issue-NNNN`) when
-there is one, and the model name you are running as so the
-`AI-assisted-by` trailer is set correctly.
+record commit hashes. Leave the closed plan file local and uncommitted.
+Then load the **`create-commit`** skill and follow its workflow to commit
+only the implementation, tests, memory, and documentation changes. Before
+committing, verify that the staged file list does not contain the plan
+file. Provide a brief summary of what was implemented and why, the issue
+reference (`issue-NNNN`) when there is one, and the model name you are
+running as so the `AI-assisted-by` trailer is set correctly.
 
 ### Step-by-step mode (on request)
 
@@ -123,9 +132,9 @@ per task" — loop one task at a time:
 - Commit it now: load the **`create-commit`** skill and follow it —
   one commit per task, never two tasks in one commit. Same inputs as
   always: what and why, the issue reference, your model name.
-- After the final task, close the plan file (`Status: done`, one
-  `Review Log` line with the issue URL when one exists) and include
-  it in that last commit.
+- After the final task commit, close the plan file (`Status: done`, one
+  `Review Log` line with the issue URL when one exists). Leave it local
+  and uncommitted; never amend the task commit to include it.
 - Show the user the result (what changed, files touched, how it was
   verified).
 - WAIT for the user's confirmation before starting the next task.
