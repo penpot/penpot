@@ -18,9 +18,9 @@
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
-   [app.main.refs :as refs]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -118,11 +118,13 @@
                      (tr "labels.all"))
         grouped-values (group-by dimensions-dictionary app-token-keys)
 
-        base-title (dm/str "Token: " name "\n"
-                           (tr "workspace.tokens.original-value" (dwtf/format-token-value value)) "\n"
-                           (tr "workspace.tokens.resolved-value" (dwtf/format-token-value resolved-value))
-                           (when (= (:type token) :number)
-                             (dm/str "\n" (tr "workspace.tokens.more-options"))))]
+        name-line
+        (mf/html [:* "Name: " [:span {:class (stl/css :token-pill-tooltip-name)} name]])
+
+        rest-of-title (dm/str (tr "workspace.tokens.original-value" (dwtf/format-token-value value)) "\n"
+                              (tr "workspace.tokens.resolved-value" (dwtf/format-token-value resolved-value))
+                              (when (= (:type token) :number)
+                                (dm/str "\n" (tr "workspace.tokens.more-options"))))]
 
     (cond
       ;; If there are errors, show the appropriate message
@@ -137,15 +139,21 @@
 
       ;; If the token is applied and the user is a is-viewer, show the details
       (and is-applied? is-viewer)
-      (->> [base-title
-            (tr "workspace.tokens.applied-to")
-            (if (= :dimensions type)
-              (translate-and-format grouped-values)
-              (str "- " title ": " applied-to))]
-           (str/join "\n"))
+      (mf/html
+       [:*
+        name-line
+        [:div rest-of-title]
+        [:div (tr "workspace.tokens.applied-to")]
+        [:div (if (= :dimensions type)
+                (translate-and-format grouped-values)
+                (str "- " title ": " applied-to))]])
 
       ;; Otherwise only show the base title
-      :else base-title)))
+      :else
+      (mf/html
+       [:*
+        name-line
+        [:div rest-of-title]]))))
 
 ;; FIXME: the token thould already have precalculated references, so
 ;; we don't need to perform this regex operation on each rerender
@@ -179,10 +187,16 @@
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
-  [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
+  [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens can-edit]}]
   (let [{:keys [name value type]} token
         resolved-token (get active-theme-tokens (:name token))
         errors         (:errors resolved-token)
+
+        pill-ref       (mf/use-ref nil)
+        pill-id        (mf/use-id)
+
+        tooltip-content* (mf/use-state "")
+        tooltip-content  (deref tooltip-content*)
 
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cfo/is-reference? token)
@@ -210,10 +224,8 @@
                    (not half-applied?)
                    (not (attributes-match-selection? selected-shapes attributes {:selected-inside-layout? is-selected-inside-layout})))
 
-        ;; FIXME: move to context or props
-        can-edit? (:can-edit (deref refs/permissions))
 
-        is-viewer? (not can-edit?)
+        is-viewer? (not can-edit)
 
         ref-not-in-active-set
         (if (contains? cf/flags :tokenscript)
@@ -259,77 +271,90 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps can-edit? on-context-menu token)
+         (mf/deps can-edit on-context-menu token)
          (fn [e]
            (dom/stop-propagation e)
-           (when can-edit?
+           (when can-edit
              (on-context-menu e token))))
 
         on-click
         (mf/use-fn
-         (mf/deps errors? on-click)
+         (mf/deps errors? on-click can-edit)
          (fn [event]
            (dom/stop-propagation event)
-           (when (and can-edit? (not (seq errors)) on-click)
+           (when (and can-edit (not (seq errors)) on-click)
              (on-click event))))
 
         on-hover
         (mf/use-fn
          (mf/deps selected-shapes is-viewer? active-theme-tokens token half-applied? no-valid-value ref-not-in-active-set name-collision errors)
-         (fn [event]
-           (let [node  (dom/get-current-target event)
-                 theme-token (get active-theme-tokens name)
+         (fn [_]
+           (let [theme-token (get active-theme-tokens name)
                  title (generate-tooltip is-viewer? (first selected-shapes) theme-token token
                                          half-applied? no-valid-value ref-not-in-active-set name-collision errors)]
-             (dom/set-attribute! node "title" title))))]
+             (reset! tooltip-content* title))))
 
-    [:button {:class (stl/css-case
-                      :token-pill true
-                      :token-pill-no-icon (and (not status-icon?) (not errors?))
-                      :token-pill-default can-edit?
-                      :token-pill-disabled disabled?
-                      :token-pill-applied (and can-edit? applied?)
-                      :token-pill-invalid (and can-edit? errors?)
-                      :token-pill-invalid-applied (and applied? errors? can-edit?)
+        ;; `tooltip-content` may hold rich (hiccup) content, so it's wrapped
+        ;; in a function to satisfy the tooltip's `:content` schema; this
+        ;; wrapper is cheap, the actual (expensive) computation still only
+        ;; happens once, inside `on-hover`.
+        tooltip-content-fn
+        (mf/use-fn
+         (mf/deps tooltip-content)
+         (fn [] tooltip-content))]
 
-                      :token-pill-viewer is-viewer?
-                      :token-pill-applied-viewer (and is-viewer?
-                                                      applied?)
-                      :token-pill-invalid-viewer (and is-viewer?
-                                                      errors?)
-                      :token-pill-invalid-applied-viewer (and is-viewer?
-                                                              applied?))
-              :id (str "token-pill-" (:id token))
-              :type "button"
-              :on-focus on-hover
+    [:> tooltip* {:content tooltip-content-fn
+                  :trigger-ref pill-ref
+                  :id pill-id}
+     [:button {:ref pill-ref
+               :aria-labelledby pill-id
+               :class (stl/css-case
+                       :token-pill true
+                       :token-pill-no-icon (and (not status-icon?) (not errors?))
+                       :token-pill-default can-edit
+                       :token-pill-disabled disabled?
+                       :token-pill-applied (and can-edit applied?)
+                       :token-pill-invalid (and can-edit errors?)
+                       :token-pill-invalid-applied (and applied? errors? can-edit)
 
-              :on-click on-click
-              :on-mouse-enter on-hover
+                       :token-pill-viewer is-viewer?
+                       :token-pill-applied-viewer (and is-viewer?
+                                                       applied?)
+                       :token-pill-invalid-viewer (and is-viewer?
+                                                       errors?)
+                       :token-pill-invalid-applied-viewer (and is-viewer?
+                                                               applied?))
+               :id (str "token-pill-" (:id token))
+               :type "button"
+               :on-focus on-hover
 
-              :on-context-menu on-context-menu}
-     (cond
-       errors?
-       [:> icon*
-        {:icon-id i/broken-link
-         :class (stl/css :token-pill-icon)
-         :aria-label (if name-collision
-                       (wte/resolve-error-message (first errors))
-                       (tr "workspace.tokens.missing-reference"))}]
+               :on-click on-click
+               :on-mouse-enter on-hover
 
-       color
-       [:> swatch* {:background color
-                    :size "small"}]
+               :on-context-menu on-context-menu}
+      (cond
+        errors?
+        [:> icon*
+         {:icon-id i/broken-link
+          :class (stl/css :token-pill-icon)
+          :aria-label (if name-collision
+                        (wte/resolve-error-message (first errors))
+                        (tr "workspace.tokens.missing-reference"))}]
 
-       status-icon?
-       [:> token-status-icon*
-        {:icon-id token-status-id
-         :class (stl/css :token-pill-icon)}])
+        color
+        [:> swatch* {:background color
+                     :size "small"}]
 
-     (if contains-path?
-       (let [[_ last-part] (cpn/split-by-last-period name)]
-         [:span {:class (stl/css :divided-name-wrapper)
-                 :aria-label name}
-          [:span {:class (stl/css :last-name-wrapper)} last-part]])
-       [:span {:class (stl/css :name-wrapper)
-               :aria-label name}
-        name])]))
+        status-icon?
+        [:> token-status-icon*
+         {:icon-id token-status-id
+          :class (stl/css :token-pill-icon)}])
+
+      (if contains-path?
+        (let [[_ last-part] (cpn/split-by-last-period name)]
+          [:span {:class (stl/css :divided-name-wrapper)
+                  :aria-label name}
+           [:span {:class (stl/css :last-name-wrapper)} last-part]])
+        [:span {:class (stl/css :name-wrapper)
+                :aria-label name}
+         name])]]))
