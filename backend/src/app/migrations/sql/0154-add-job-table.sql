@@ -41,50 +41,53 @@ CREATE TABLE job (
     expires_at   timestamptz
 );
 
--- Claim index: leading columns serve the dispatcher sweep ORDER BY
--- priority DESC, scheduled_at LIMIT n. Status stays in the partial
--- predicate: an OR over two statuses cannot feed the ordering, so
--- leading with it would force a sort on every batch.
+-- Dispatcher claim index: the worker selects due `new`/`retry` rows,
+-- orders them by priority and scheduled time, and locks the batch with
+-- SKIP LOCKED. The partial predicate keeps terminal rows out; the queue
+-- prefix filter is applied after using this ordering index.
 CREATE INDEX job__dispatcher__idx
     ON job (priority DESC, scheduled_at)
     WHERE status IN ('new', 'retry');
 
+-- Dispatcher orphan sweep: the worker finds `running` rows whose
+-- modified_at is older than the lease and marks them failed.
 CREATE INDEX job__orphan__idx
     ON job (status, modified_at)
     WHERE status = 'running';
 
+-- User-facing job ledger index: it supports filtering by profile and
+-- ordering a user's jobs by newest first. No current production query
+-- uses it yet; it is kept for the user-facing ledger path.
 CREATE INDEX job__profile__idx
     ON job (profile_id, created_at DESC)
     WHERE profile_id IS NOT NULL;
 
--- Partial index for the cron no-overlap precheck: the scheduler counts
--- active jobs with the same name+label before submitting a new instance.
+-- Cron no-overlap check: the scheduler counts active jobs with the same
+-- name and label before submitting another instance of a cron entry.
 CREATE INDEX job__name_label__idx
     ON job (name, label)
     WHERE status IN ('new', 'scheduled', 'running', 'retry');
 
--- Partial index for the storage GC resource check (one EXISTS per
--- candidate object): only rows carrying a resource are indexed, most
--- rows have NULL resource_id. The `= ?` predicate implies NOT NULL,
--- so it matches this index.
+-- Storage GC reference check: it answers whether any job still points
+-- to a candidate storage object. Rows without a resource are excluded.
 CREATE INDEX job__resource__idx
     ON job (resource_id)
     WHERE resource_id IS NOT NULL;
 
--- Sweep-path indexes (squashed here instead of a follow-up migration):
--- the dispatcher reschedule of lost `scheduled` rows, the jobs-GC
--- expiration scan and the jobs-GC retention scan. With a large `job`
--- table those degrade into sequential scans, so each gets its own
--- partial index here.
-
+-- Dispatcher recovery: it finds `scheduled` jobs that were pushed to
+-- Redis but not claimed within the recovery window.
 CREATE INDEX job__scheduled__idx
     ON job (status, scheduled_at)
     WHERE status = 'scheduled';
 
+-- Jobs GC expiration: it scans jobs past expires_at while excluding
+-- running and retry jobs from the expiration delete.
 CREATE INDEX job__expires__idx
     ON job (expires_at)
     WHERE expires_at IS NOT NULL;
 
+-- Jobs GC retention: it finds old internal terminal jobs with no
+-- profile, which are eligible for removal after the retention delay.
 CREATE INDEX job__retention__idx
     ON job (modified_at)
     WHERE status IN ('completed', 'failed', 'cancelled')
