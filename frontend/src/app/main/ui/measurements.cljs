@@ -285,10 +285,6 @@
         text-width   (* (count text) badge-char-width)
         badge-width  (+ text-width (* 2 badge-padding-x))
 
-        ;; badge-width/height and shape-width/height are already in the same
-        ;; canvas-space coordinates, with the badge's constants pre-divided
-        ;; by zoom, so comparing them directly already accounts for zoom —
-        ;; no extra scaling needed.
         hidden?      (or single-line?
                          (< shape-width badge-width)
                          (< shape-height badge-height))]
@@ -299,9 +295,9 @@
               points     (dm/get-prop single-shape :points)
               offset     (+ badge-gap (/ badge-height 2))
 
-              ;; Rotation always follows the naturally-selected edge, so the
-              ;; text stays upright even when the position below is flipped
-              ;; to the opposite edge for lack of visible space.
+              ;; Rotation follows the original edge even if the position
+              ;; flips to the opposite one for lack of space, so the text
+              ;; stays upright.
               badge-rot  (+ rotation (edge-rot-offset edge))
 
               position   (edge-badge-position points edge offset)
