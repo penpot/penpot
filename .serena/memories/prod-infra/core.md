@@ -27,6 +27,10 @@ Two known race patterns survive multi-backend operation:
 
 Penpot in production lives with both: horizontal-scale deployments accept "exactly-once" as "essentially-once for idempotent operations." Devenv parallel instances handle it by running workers only on ws0 (see `mem:devenv/core`).
 
+## Jobs observability
+
+Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery and rescheduling; histograms separate queue wait, handler execution and total job age. A 30-second sampler publishes backlog by status and the oldest pending-job age. All labels are bounded operational values; job IDs, profile IDs, props and error text are excluded. Read-only backends do not start the sampler or the workers.
+
 ## See also
 
 - Devenv composition and the ws0-only worker placement: `mem:devenv/core`.

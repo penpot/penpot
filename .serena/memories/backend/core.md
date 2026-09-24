@@ -54,6 +54,15 @@ Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` i
 
 For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, and queue internals: `mem:backend/subtleties`.
 
+## Jobs metrics
+
+- `app.jobs.metrics` owns the jobs metric names, bounded labels and the periodic backlog sampler.
+- Metrics use only `name`, `queue`, `outcome`, `reason`, `stage` and `kind` labels. Job IDs, profile IDs, props, reply bodies and exception text must never be labels.
+- The durable lifecycle metrics are submitted, dispatched, completed, retries, orphaned and rescheduled counters; queue-wait, execution and total-time histograms; dispatcher and backlog state; GC, cron and ephemeral request metrics.
+- `app.metrics/run!` is safe for recording failures, but metrics components still require a valid metrics instance. Durable submit call sites carry `::mtx/metrics` through RPC or job-def configuration.
+- The backlog sampler runs every 30 seconds on worker-enabled, writable systems. It groups by status and publishes the oldest pending age; it must not query a read-only database.
+- `penpot_tasks_timing` remains exported for compatibility while the jobs-specific histograms are adopted.
+
 
 ## REPL
 

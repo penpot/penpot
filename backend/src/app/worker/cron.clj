@@ -23,6 +23,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.jobs.metrics :as jobs-metrics]
+   [app.metrics :as-alias mtx]
    [app.util.cron :as cron]
    [app.worker :as-alias wrk]
    [integrant.core :as ig]
@@ -102,9 +104,14 @@
                                                             [sql:count-active-jobs task (str id)])
                                               :n)]
                               (if (pos? (or active 0))
-                                (l/dbg :hint "skip scheduling, active instance exists"
-                                       :id id :task task)
+                                (do
+                                  (jobs-metrics/record-cron
+                                   (::mtx/metrics cfg) :skipped :active)
+                                  (l/dbg :hint "skip scheduling, active instance exists"
+                                         :id id :task task))
                                 (let [job-id (submit-cron-job cfg entry)]
+                                  (jobs-metrics/record-cron
+                                   (::mtx/metrics cfg) :submitted :none)
                                   (l/dbg :hint "cron job submitted"
                                          :id id
                                          :task task
@@ -114,10 +121,12 @@
                             (l/dbg :hint "end" :id id :elapsed elapsed))))
 
         (catch InterruptedException _
+          (jobs-metrics/record-cron (::mtx/metrics cfg) :interrupted :interrupted)
           (let [elapsed (ct/format-duration (tpoint))]
             (l/debug :hint "task interrupted" :id id :elapsed elapsed)))
 
         (catch Throwable cause
+          (jobs-metrics/record-cron (::mtx/metrics cfg) :error :failure)
           (let [elapsed (ct/format-duration (tpoint))]
             (binding [l/*context* (assoc (cf/logging-context) :params entry)]
               (l/err :hint "unhandled exception on running task"
@@ -157,7 +166,8 @@
        [:props {:optional true} :map]
        [:id {:optional true} :keyword]]]]]
    ::jobs/defs
-   ::db/pool])
+   ::db/pool
+   ::mtx/metrics])
 
 (defmethod ig/assert-key ::wrk/cron
   [_ params]

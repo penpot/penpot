@@ -26,6 +26,7 @@
    [app.http.websocket :as http.ws]
    [app.jobs :as-alias jobs]
    [app.jobs.gc :as-alias jobs.gc]
+   [app.jobs.metrics :as jobs-metrics]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -220,7 +221,121 @@
    :http-connector-errors-total
    {::mdef/name "penpot_http_connector_errors_total"
     ::mdef/help "Total number of handler errors in the http listener."
-    ::mdef/type :counter}})
+    ::mdef/type :counter}
+
+   :jobs-submitted
+   {::mdef/name "penpot_jobs_submitted_total"
+    ::mdef/help "Total number of durable jobs submitted."
+    ::mdef/labels ["name" "queue"]
+    ::mdef/type :counter}
+
+   :jobs-dispatched
+   {::mdef/name "penpot_jobs_dispatched_total"
+    ::mdef/help "Total number of jobs pushed to a worker queue."
+    ::mdef/labels ["name" "queue"]
+    ::mdef/type :counter}
+
+   :jobs-completed
+   {::mdef/name "penpot_jobs_completed_total"
+    ::mdef/help "Total number of durable jobs reaching a terminal state."
+    ::mdef/labels ["name" "queue" "outcome"]
+    ::mdef/type :counter}
+
+   :jobs-retries
+   {::mdef/name "penpot_jobs_retries_total"
+    ::mdef/help "Total number of durable jobs rescheduled for retry."
+    ::mdef/labels ["name" "queue" "reason"]
+    ::mdef/type :counter}
+
+   :jobs-orphaned
+   {::mdef/name "penpot_jobs_orphaned_total"
+    ::mdef/help "Total number of running jobs marked as orphaned."
+    ::mdef/labels ["queue"]
+    ::mdef/type :counter}
+
+   :jobs-rescheduled
+   {::mdef/name "penpot_jobs_rescheduled_total"
+    ::mdef/help "Total number of scheduled jobs recovered after transit loss."
+    ::mdef/labels ["queue"]
+    ::mdef/type :counter}
+
+   :jobs-queue-wait-timing
+   {::mdef/name "penpot_jobs_queue_wait_ms"
+    ::mdef/help "Time from job scheduling to worker claim (milliseconds)."
+    ::mdef/labels ["name" "queue"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000 600000]}
+
+   :jobs-execution-timing
+   {::mdef/name "penpot_jobs_execution_ms"
+    ::mdef/help "Time spent executing a job handler (milliseconds)."
+    ::mdef/labels ["name" "queue"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000 600000]}
+
+   :jobs-total-timing
+   {::mdef/name "penpot_jobs_total_ms"
+    ::mdef/help "Time from job creation to a terminal state (milliseconds)."
+    ::mdef/labels ["name" "queue" "outcome"]
+    ::mdef/type :histogram
+    ::mdef/buckets [10 50 100 500 1000 5000 10000 30000 60000 300000 600000 3600000]}
+
+   :jobs-dispatcher-timing
+   {::mdef/name "penpot_jobs_dispatcher_ms"
+    ::mdef/help "Dispatcher batch processing time (milliseconds)."
+    ::mdef/labels ["stage" "outcome"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000]}
+
+   :jobs-dispatcher-batch-size
+   {::mdef/name "penpot_jobs_dispatcher_batch_size"
+    ::mdef/help "Number of jobs in a dispatcher queue batch."
+    ::mdef/labels ["queue"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 5 10 25 50 100 250 500 1000]}
+
+   :jobs-backlog
+   {::mdef/name "penpot_jobs_backlog"
+    ::mdef/help "Current number of jobs grouped by status."
+    ::mdef/labels ["status"]
+    ::mdef/type :gauge}
+
+   :jobs-oldest-pending-age
+   {::mdef/name "penpot_jobs_oldest_pending_age_seconds"
+    ::mdef/help "Age in seconds of the oldest pending job."
+    ::mdef/type :gauge}
+
+   :jobs-gc-rows
+   {::mdef/name "penpot_jobs_gc_rows_total"
+    ::mdef/help "Rows removed or resources touched by the jobs garbage collector."
+    ::mdef/labels ["kind" "action"]
+    ::mdef/type :counter}
+
+   :jobs-gc-timing
+   {::mdef/name "penpot_jobs_gc_ms"
+    ::mdef/help "Time spent in each jobs garbage collection pass (milliseconds)."
+    ::mdef/labels ["kind"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}
+
+   :jobs-cron-total
+   {::mdef/name "penpot_jobs_cron_total"
+    ::mdef/help "Total number of cron scheduler events."
+    ::mdef/labels ["outcome" "reason"]
+    ::mdef/type :counter}
+
+   :jobs-requests-total
+   {::mdef/name "penpot_jobs_requests_total"
+    ::mdef/help "Total number of ephemeral job request events."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :counter}
+
+   :jobs-request-timing
+   {::mdef/name "penpot_jobs_request_ms"
+    ::mdef/help "Time spent waiting for an ephemeral job reply (milliseconds)."
+    ::mdef/labels ["outcome"]
+    ::mdef/type :histogram
+    ::mdef/buckets [1 10 50 100 500 1000 5000 10000 30000 60000 300000]}})
 
 (def system-config
   {::db/pool
@@ -473,66 +588,83 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.email/job-def
-   {::email/sendmail (ig/ref ::email/sendmail)}
+   {::email/sendmail (ig/ref ::email/sendmail)
+    ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    :app.tasks.delete-object/job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.demo-purge/demo-purge-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.webhooks/run-webhook-job-def
    {::db/pool     (ig/ref ::db/pool)
-    ::http/client (ig/ref ::http.client/client)}
+    ::http/client (ig/ref ::http.client/client)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.webhooks/process-webhook-event-job-def
    {::db/pool     (ig/ref ::db/pool)
-    ::http/client (ig/ref ::http.client/client)}
+    ::http/client (ig/ref ::http.client/client)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.file-gc/file-gc-job-def
-   {::db/pool   (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.offload-file-data/offload-file-data-job-def
-   {::db/pool (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.objects-gc/objects-gc-job-def
-   {::db/pool    (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.storage.gc-deleted/storage-gc-deleted-job-def
    {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
+    ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.storage.gc-touched/storage-gc-touched-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.storage.pending-gc/storage-pending-gc-job-def
    {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
+    ::sto/storage (ig/ref ::sto/storage)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.jobs.gc/jobs-gc-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.telemetry/telemetry-job-def
    {::db/pool     (ig/ref ::db/pool)
     ::http/client (ig/ref ::http.client/client)
-    ::setup/props (ig/ref ::setup/props)}
+    ::setup/props (ig/ref ::setup/props)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::session/session-gc-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.tasks.file-gc-scheduler/file-gc-scheduler-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.archive-task/audit-log-archive-job-def
-   {::db/pool        (ig/ref ::db/pool)
-    ::http/client    (ig/ref ::http.client/client)
-    ::setup/shared-keys (ig/ref ::setup/shared-keys)}
+   {::db/pool          (ig/ref ::db/pool)
+    ::http/client      (ig/ref ::http.client/client)
+    ::setup/shared-keys (ig/ref ::setup/shared-keys)
+    ::mtx/metrics      (ig/ref ::mtx/metrics)}
 
    :app.loggers.audit.gc-task/audit-log-gc-job-def
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::email/blacklist
    {}
@@ -624,6 +756,7 @@
   {::wrk/cron
    {::jobs/defs               (ig/ref ::jobs/defs)
     ::db/pool                 (ig/ref ::db/pool)
+    ::mtx/metrics             (ig/ref ::mtx/metrics)
     ::wrk/entries
     [{:cron #penpot/cron "0 0 0 * * ?" ;; daily
       :task :session-gc}
@@ -662,6 +795,10 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)
     ::wrk/tenant  (cf/get :tenant)}
+
+   ::jobs-metrics/metrics-sampler
+   {::db/pool     (ig/ref ::db/pool)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    [::default ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-default-parallelism 1)

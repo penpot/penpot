@@ -17,6 +17,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as mtx]
    [app.redis :as rds]
    [app.worker :as-alias wrk]
@@ -93,43 +94,54 @@
              :name (:name job)
              :status (:status job))
 
-      (let [job-def   (jobs/get-job-def defs (:name job))
-            params    (try
-                        (->> (:props job)
-                             (jobs/decode-params job-def)
-                             (jobs/validate-params job-def))
-                        (catch Throwable cause
-                          ;; Decode/validation of stored props is pure: any
-                          ;; failure here is permanent (e.g. schema tightened
-                          ;; after submit), never transient. Tag it so the
-                          ;; generic catch below fails fast instead of
-                          ;; burning max-retries.
-                          (throw (ex-info "job params failed validation"
-                                          {:type :assertion
-                                           :code :data-validation}
-                                          cause))))
-            handler   (::jobs/handler job-def)
-            tpoint    (ct/tpoint)
-            labels    (into-array String [(:name job)])
-            result    (binding [jobs/*job-id* (:id job)]
-                        (try
-                          (handler params)
-                          (finally
-                            (mtx/run! metrics
-                                      {:id :tasks-timing
-                                       :val (inst-ms (tpoint))
-                                       :labels labels}))))]
+      (do
+        (jobs-metrics/record-queue-wait
+         metrics
+         (:name job)
+         queue
+         (- (inst-ms (ct/now)) (inst-ms (:scheduled-at job))))
+        (let [job-def   (jobs/get-job-def defs (:name job))
+              params    (try
+                          (->> (:props job)
+                               (jobs/decode-params job-def)
+                               (jobs/validate-params job-def))
+                          (catch Throwable cause
+                            ;; Decode/validation of stored props is pure: any
+                            ;; failure here is permanent (e.g. schema tightened
+                            ;; after submit), never transient. Tag it so the
+                            ;; generic catch below fails fast instead of
+                            ;; burning max-retries.
+                            (throw (ex-info "job params failed validation"
+                                            {:type :assertion
+                                             :code :data-validation}
+                                            cause))))
+              handler   (::jobs/handler job-def)
+              tpoint    (ct/tpoint)
+              labels    (into-array String [(:name job)])
+              result    (binding [jobs/*job-id* (:id job)]
+                          (try
+                            (handler params)
+                            (finally
+                              (jobs-metrics/record-execution
+                               metrics
+                               (:name job)
+                               queue
+                               (inst-ms (tpoint)))
+                              (mtx/run! metrics
+                                        {:id :tasks-timing
+                                         :val (inst-ms (tpoint))
+                                         :labels labels}))))]
 
-        (l/dbg :hint "end"
-               :name (:name job)
-               :job-id (str (:id job))
-               :queue queue
-               :runner-id id
-               :retry (:retry-num job)
-               :elapsed (ct/format-duration (tpoint)))
+          (l/dbg :hint "end"
+                 :name (:name job)
+                 :job-id (str (:id job))
+                 :queue queue
+                 :runner-id id
+                 :retry (:retry-num job)
+                 :elapsed (ct/format-duration (tpoint)))
 
-        {:status "completed"
-         :result result}))
+          {:status "completed"
+           :result result})))
 
     (catch InterruptedException cause
       (throw cause))
@@ -206,34 +218,47 @@
             (let [job    (-> result meta ::job)
                   nretry (+ (:retry-num job) inc-by)
                   now    (ct/now)
-                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))]
-              (db/exec-one! (db/get-connectable cfg)
-                            [sql:retry-job
-                             now
-                             (-> (ct/plus now (ct/duration {:millis delay}))
-                                 (ct/truncate :millisecond))
-                             nretry
-                             (encode-error error)
-                             (:id job)])
+                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))
+                  n      (-> (db/exec-one! (db/get-connectable cfg)
+                                           [sql:retry-job
+                                            now
+                                            (-> (ct/plus now (ct/duration {:millis delay}))
+                                                (ct/truncate :millisecond))
+                                            nretry
+                                            (encode-error error)
+                                            (:id job)])
+                             (db/get-update-count))]
+              (when (pos? n)
+                (jobs-metrics/record-retry
+                 (::mtx/metrics cfg)
+                 (:name job)
+                 (:queue job)
+                 (if (zero? inc-by) :noop :backoff)))
               nil))
 
           (handle-job-failure [{:keys [error] :as result}]
-            (let [job (-> result meta ::job)]
-              (db/exec-one! (db/get-connectable cfg)
-                            [jobs/sql:fail-job
-                             (ct/now)
-                             (encode-error error)
-                             (:id job)])
+            (let [job (-> result meta ::job)
+                  n   (-> (db/exec-one! (db/get-connectable cfg)
+                                        [jobs/sql:fail-job
+                                         (ct/now)
+                                         (encode-error error)
+                                         (:id job)])
+                          (db/get-update-count))]
+              (when (pos? n)
+                (jobs/record-terminal cfg job :failed))
               nil))
 
           (handle-job-completion [result]
-            (let [job (-> result meta ::job)]
-              (db/exec-one! (db/get-connectable cfg)
-                            [jobs/sql:complete-job
-                             (ct/now)
-                             (ct/now)
-                             (jobs/encode-result (:name job) (:result result))
-                             (:id job)])
+            (let [job (-> result meta ::job)
+                  n   (-> (db/exec-one! (db/get-connectable cfg)
+                                        [jobs/sql:complete-job
+                                         (ct/now)
+                                         (ct/now)
+                                         (jobs/encode-result (:name job) (:result result))
+                                         (:id job)])
+                          (db/get-update-count))]
+              (when (pos? n)
+                (jobs/record-terminal cfg job :completed))
               nil))
 
           (decode-payload [payload]

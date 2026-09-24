@@ -43,6 +43,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as-alias mtx]
    [app.redis :as rds]
    [cuerdas.core :as str]
@@ -230,6 +231,8 @@
     ;; wrapped in their own otherwise (a failed INSERT can never
     ;; orphan a committed DELETE, even on an autocommit caller conn).
     (db/tx-run! cfg (fn [{:keys [::db/conn]}] (insert! conn)))
+    (when-let [metrics (::mtx/metrics cfg)]
+      (jobs-metrics/record-submitted metrics job-name queue))
     id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -266,9 +269,16 @@
   untouched (the conditional claim in the runner/management API will skip
   them)."
   [cfg job-id]
-  (-> (db/exec-one! (db/get-connectable cfg)
-                    [sql:cancel-job (ct/now) job-id])
-      (db/get-update-count)))
+  (let [job (when (::mtx/metrics cfg) (get-job cfg job-id))
+        n   (-> (db/exec-one! (db/get-connectable cfg)
+                              [sql:cancel-job (ct/now) job-id])
+                (db/get-update-count))]
+    (when (pos? n)
+      (jobs-metrics/record-outcome (::mtx/metrics cfg)
+                                   (:name job)
+                                   (:queue job)
+                                   :cancelled))
+    n))
 
 (defn get-user-status
   "Map the internal job status to the user-facing status."
@@ -466,6 +476,19 @@
              :cause cause)
       nil)))
 
+(defn record-terminal
+  [cfg job outcome]
+  (when-let [metrics (::mtx/metrics cfg)]
+    (when job
+      (jobs-metrics/record-outcome metrics (:name job) (:queue job) outcome)
+      (when (ct/inst? (:created-at job))
+        (jobs-metrics/record-total
+         metrics
+         (:name job)
+         (:queue job)
+         outcome
+         (- (inst-ms (ct/now)) (inst-ms (:created-at job))))))))
+
 (defn complete
   "Mark a running job as completed with the (JSON-encodable) result.
   Conditional on the non-terminal running/retry states (first-terminal
@@ -475,11 +498,15 @@
   ([cfg job-id]
    (complete cfg job-id nil))
   ([cfg job-id result]
-   (let [job-name (when (some? result) (:name (get-job cfg job-id)))
-         n (-> (db/exec-one! (db/get-connectable cfg)
-                             [sql:complete-job (ct/now) (ct/now)
-                              (when (some? result) (encode-result job-name result)) job-id])
-               (db/get-update-count))]
+   (let [job      (or (when (some? result) (get-job cfg job-id))
+                      (when (::mtx/metrics cfg) (get-job cfg job-id)))
+         job-name (when (some? result) (:name job))
+         n        (-> (db/exec-one! (db/get-connectable cfg)
+                                    [sql:complete-job (ct/now) (ct/now)
+                                     (when (some? result) (encode-result job-name result)) job-id])
+                      (db/get-update-count))]
+     (when (pos? n)
+       (record-terminal cfg job :completed))
      (cleanup-throttle job-id)
      n)))
 
@@ -488,9 +515,13 @@
   with at least a :code). Conditional on the non-terminal running/retry
   states (first-terminal wins). Returns the number of affected rows."
   [cfg job-id error]
-  (let [n (-> (db/exec-one! (db/get-connectable cfg)
-                            [sql:fail-job (ct/now) (db/json error) job-id])
-              (db/get-update-count))]
+  (let [job (when (::mtx/metrics cfg) (get-job cfg job-id))
+        n   (-> (db/exec-one! (db/get-connectable cfg)
+                              [sql:fail-job (ct/now)
+                               (if (string? error) error (db/json error)) job-id])
+                (db/get-update-count))]
+    (when (pos? n)
+      (record-terminal cfg job :failed))
     (cleanup-throttle job-id)
     n))
 
@@ -505,6 +536,8 @@
 (def ^:private reply-expire-seconds 60)
 
 (def reply-key-prefix "penpot.worker.reply")
+
+(def ^:private request-pool-metrics (atom nil))
 
 (defn get-request-pool
   [cfg]
@@ -537,6 +570,7 @@
   ;; is bounded upstream by the RPC concurrency limits. Connections are
   ;; created with a command timeout above the per-call request timeout;
   ;; the dispose-fn restores it on return to the pool.
+  (reset! request-pool-metrics metrics)
   (rds/pool {::rds/client client
              ::mtx/metrics metrics}
             {:timeout command-timeout}))
@@ -592,7 +626,9 @@
                                  params])]
 
     (with-open [^AutoCloseable pooled (gpool/get pool)]
-      (let [conn @pooled]
+      (let [conn    @pooled
+            tpoint  (ct/tpoint)
+            outcome (volatile! :error)]
         (try
           ;; raise the connection command timeout above the per-call
           ;; blpop timeout; the pool dispose-fn restores the default on
@@ -600,23 +636,33 @@
           (rds/set-timeout conn (ct/plus timeout request-command-timeout-margin))
 
           (rds/rpush conn queue-key [payload])
+          (vreset! outcome :sent)
 
           (let [[_ reply] (rds/blpop conn [reply-key] timeout)]
             (if (nil? reply)
-              (ex/raise :type :timeout
-                        :code :request-timeout
-                        :hint "timeout waiting for the job reply"
-                        :queue queue
-                        :timeout timeout)
+              (do
+                (vreset! outcome :timeout)
+                (ex/raise :type :timeout
+                          :code :request-timeout
+                          :hint "timeout waiting for the job reply"
+                          :queue queue
+                          :timeout timeout))
               (let [response (json/decode reply :key-fn keyword)]
                 (if-let [error (:error response)]
-                  (ex/raise :type :internal
-                            :code (get error :code)
-                            :hint (or (get error :hint) "request failed")
-                            :response response)
-                  (get response :ok)))))
+                  (do
+                    (vreset! outcome :error)
+                    (ex/raise :type :internal
+                              :code (get error :code)
+                              :hint (or (get error :hint) "request failed")
+                              :response response))
+                  (do
+                    (vreset! outcome :replied)
+                    (get response :ok))))))
 
           (finally
+            (jobs-metrics/record-request @request-pool-metrics
+                                         @outcome
+                                         (inst-ms (tpoint)))
             (rds/del conn reply-key)
             (rds/reset-timeout conn)))))))
 

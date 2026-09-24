@@ -35,6 +35,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.jobs.metrics :as jobs-metrics]
+   [app.metrics :as-alias mtx]
    [integrant.core :as ig]))
 
 (def ^:private sql:touch-objects
@@ -118,12 +120,25 @@
   [cfg params]
   (let [min-age (ct/duration (or (:min-age params)
                                  (cf/get-jobs-retention)))
+        expired-tpoint (ct/tpoint)
         [deleted-expired touched-expired]
-        (delete-jobs cfg sql:delete-expired-jobs)
-
+        (try
+          (delete-jobs cfg sql:delete-expired-jobs)
+          (finally
+            (jobs-metrics/record-gc-duration
+             (::mtx/metrics cfg) :expired (inst-ms (expired-tpoint)))))
+        retained-tpoint (ct/tpoint)
         [deleted-retained touched-retained]
-        (delete-jobs cfg sql:delete-retained-jobs
-                     (db/interval min-age))]
+        (try
+          (delete-jobs cfg sql:delete-retained-jobs
+                       (db/interval min-age))
+          (finally
+            (jobs-metrics/record-gc-duration
+             (::mtx/metrics cfg) :retained (inst-ms (retained-tpoint)))))]
+    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :expired :deleted deleted-expired)
+    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :expired :touched touched-expired)
+    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :retained :deleted deleted-retained)
+    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :retained :touched touched-retained)
     (l/dbg :hint "jobs gc finished"
            :deleted-expired deleted-expired
            :touched-expired touched-expired

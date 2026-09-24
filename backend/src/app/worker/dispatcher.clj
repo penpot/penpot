@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as mtx]
    [app.redis :as rds]
    [app.worker :as-alias wrk]
@@ -45,7 +46,7 @@
   (assert (sm/check schema:dispatcher cfg)))
 
 (def ^:private sql:select-next-jobs
-  "SELECT id, queue, scheduled_at from job AS t
+  "SELECT id, name, queue, scheduled_at from job AS t
     WHERE t.scheduled_at <= ?::timestamptz
       AND (t.status = 'new' OR t.status = 'retry')
       AND queue ~~* ?::text
@@ -84,9 +85,10 @@ RETURNING job.id, job.queue")
   (json/encode [(str id) (ct/format-inst scheduled-at)]))
 
 (defn- reschedule-lost-jobs
-  [{:keys [::db/conn ::timestamp]}]
+  [{:keys [::db/conn ::timestamp] :as cfg}]
   (doseq [{:keys [id queue]} (db/exec! conn [sql:reschedule-lost timestamp timestamp]
                                        {:return-keys true})]
+    (jobs-metrics/record-rescheduled (::mtx/metrics cfg) queue)
     (l/wrn :hint "reschedule"
            :id (str id)
            :queue queue)))
@@ -96,6 +98,7 @@ RETURNING job.id, job.queue")
   (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))]
     (doseq [{:keys [id queue]} (db/exec! conn [sql:mark-orphan timestamp cutoff]
                                          {:return-keys true})]
+      (jobs-metrics/record-orphan (::mtx/metrics cfg) queue)
       (l/wrn :hint "marked job as orphan"
              :id (str id)
              :queue queue))))
@@ -125,32 +128,53 @@ RETURNING job.id, job.queue")
 
     (rds/rpush conn key items)
 
-    (doseq [{:keys [id queue]} jobs]
+    (jobs-metrics/record-dispatcher-size (::mtx/metrics cfg) queue (count jobs))
+    (doseq [{:keys [id name queue]} jobs]
+      (jobs-metrics/record-dispatched (::mtx/metrics cfg) name queue 1)
       (l/trc :hist "schedule"
              :id (str id)
              :queue queue))))
 
 (defn- run-batch'
   [cfg]
-  (let [cfg (assoc cfg ::timestamp (ct/now))]
-    ;; Reschedule lost in transit jobs (can happen when
-    ;; redis server is restarted just after job is pushed)
-    (reschedule-lost-jobs cfg)
+  (let [cfg (assoc cfg ::timestamp (ct/now))
+        tpoint (ct/tpoint)]
+    (try
+      ;; Reschedule lost in transit jobs (can happen when
+      ;; redis server is restarted just after job is pushed)
+      (reschedule-lost-jobs cfg)
 
-    ;; Mark as failed all jobs that are still marked as running but
-    ;; their last modification (heartbeat or progress) is older than
-    ;; the configured lease
-    (mark-orphan-jobs cfg)
+      ;; Mark as failed all jobs that are still marked as running but
+      ;; their last modification (heartbeat or progress) is older than
+      ;; the configured lease
+      (mark-orphan-jobs cfg)
 
-    ;; Then, schedule the next jobs in queue
-    (if-let [jobs (get-jobs cfg)]
-      (->> (group-by :queue jobs)
-           (run! (partial push-jobs cfg)))
+      ;; Then, schedule the next jobs in queue
+      (let [result (if-let [jobs (get-jobs cfg)]
+                     (do
+                       (->> (group-by :queue jobs)
+                            (run! (partial push-jobs cfg)))
+                       nil)
 
-      ;; If no jobs found on this batch run, we signal the
-      ;; run-loop to wait for some time before start running
-      ;; the next batch interation
-      ::wait)))
+                     ;; If no jobs found on this batch run, we signal the
+                     ;; run-loop to wait for some time before start running
+                     ;; the next batch iteration
+                     ::wait)]
+        (jobs-metrics/record-dispatcher-batch
+         (::mtx/metrics cfg)
+         :dispatch
+         :completed
+         (inst-ms (tpoint)))
+        result)
+      (catch InterruptedException cause
+        (throw cause))
+      (catch Throwable cause
+        (jobs-metrics/record-dispatcher-batch
+         (::mtx/metrics cfg)
+         :dispatch
+         :failed
+         (inst-ms (tpoint)))
+        (throw cause)))))
 
 (defn- sleep-after-error
   [cfg]
@@ -161,33 +185,40 @@ RETURNING job.id, job.queue")
   (lease-based) and claim pending jobs into their Redis queues. Exposed
   as a function for testability; the dispatcher thread loops on it."
   [cfg]
-  (try
-    (let [rconn (rds/connect cfg)]
-      (try
-        (-> cfg
-            (assoc ::rds/conn rconn)
-            (db/tx-run! run-batch'))
-        (finally
-          (.close ^AutoCloseable rconn))))
-    (catch InterruptedException cause
-      (throw cause))
+  (let [tpoint (ct/tpoint)]
+    (try
+      (let [rconn (rds/connect cfg)]
+        (try
+          (-> cfg
+              (assoc ::rds/conn rconn)
+              (db/tx-run! run-batch'))
+          (finally
+            (.close ^AutoCloseable rconn))))
+      (catch InterruptedException cause
+        (throw cause))
 
-    (catch Exception cause
-      (cond
-        (rds/exception? cause)
-        (do
-          (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
-          (sleep-after-error cfg))
+      (catch Exception cause
+        (cond
+          (rds/exception? cause)
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :redis :failed (inst-ms (tpoint)))
+            (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg))
 
-        (db/sql-exception? cause)
-        (do
-          (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
-          (sleep-after-error cfg))
+          (db/sql-exception? cause)
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :database :failed (inst-ms (tpoint)))
+            (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg))
 
-        :else
-        (do
-          (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
-          (sleep-after-error cfg))))))
+          :else
+          (do
+            (jobs-metrics/record-dispatcher-batch
+             (::mtx/metrics cfg) :execution :failed (inst-ms (tpoint)))
+            (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
+            (sleep-after-error cfg)))))))
 
 (defmethod ig/init-key ::wrk/dispatcher
   [_ {:keys [::db/pool ::wait-duration] :as cfg}]
