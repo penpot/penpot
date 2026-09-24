@@ -20,8 +20,6 @@ const ONLY_FIRST =
   "Design tokens can only be applied to the first fill or stroke in the list.";
 const MIXED = "Mixed";
 
-const PER_SIDE_ON = { "stroke-per-side": true };
-
 function strokeSection(page) {
   return page.getByTestId("right-sidebar").getByRole("region", {
     name: "Stroke section",
@@ -34,6 +32,11 @@ function strokeRow(page, index = 0) {
 
 function perSideOptions(page) {
   return page.getByTestId("stroke.per-side-options");
+}
+
+async function enablePerSide(page) {
+  await page.getByTestId("stroke.per-side-toggle").click();
+  await expect(perSideOptions(page)).toBeVisible();
 }
 
 async function prepareShape(workspace, page) {
@@ -108,31 +111,64 @@ test.describe("Tokens: stroke per side", () => {
     await expect(perSideOptions(page)).toHaveCount(0);
   });
 
-  test("the per-side preference survives a reload", async ({ page }) => {
+  test("the per-side toggle is independent for each stroke", async ({
+    page,
+  }) => {
+    const workspace = await setupStrokePerSideFile(page);
+    await prepareShape(workspace, page);
+    // The add button stays in the section header, so a second stroke is
+    // one more click.
+    await page.getByTestId("add-stroke").click();
+
+    const firstRow = strokeRow(page, 0);
+    const secondRow = strokeRow(page, 1);
+    await expect(firstRow).toBeVisible();
+    await expect(secondRow).toBeVisible();
+
+    await firstRow.getByTestId("stroke.per-side-toggle").click();
+
+    await expect(firstRow.getByTestId("stroke.per-side-options")).toBeVisible();
+    await expect(secondRow.getByTestId("stroke.per-side-options")).toHaveCount(
+      0,
+    );
+  });
+
+  test("the per-side state is not persisted across a reload", async ({
+    page,
+  }) => {
     const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
 
     await page.getByTestId("stroke.per-side-toggle").click();
     await expect(perSideOptions(page)).toBeVisible();
 
-    // update-profile-props triggers a profile refresh; the prop must stick.
     await page.reload();
     await workspace.waitForFirstRender();
     await prepareShape(workspace, page);
 
+    await expect(perSideOptions(page)).toHaveCount(0);
+  });
+
+  test("the per-side state survives switching shapes", async ({ page }) => {
+    const workspace = await setupStrokePerSideFile(page);
+    await prepareShape(workspace, page);
+    await enablePerSide(page);
+
+    // Select another shape; it has no stroke, so nothing is expanded.
+    await workspace.clickLeafLayer("Board");
+    await expect(perSideOptions(page)).toHaveCount(0);
+
+    // Come back to the rectangle: its per-side state is still expanded.
+    await workspace.clickLeafLayer("Rectangle", {}, 0);
     await expect(perSideOptions(page)).toBeVisible();
-    await expect(
-      perSideOptions(page).getByRole("textbox", { name: TOP }),
-    ).toBeVisible();
   });
 
   test("applying a stroke width token from the panel covers every side", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -156,10 +192,9 @@ test.describe("Tokens: stroke per side", () => {
   test("applying the global action from the token menu covers every side", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -175,10 +210,9 @@ test.describe("Tokens: stroke per side", () => {
   test("a dimensions token targets every side through the menu", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await openTokensTab(page);
     await unfoldTokenType(workspace.tokensSidebar, "dimensions");
@@ -204,10 +238,9 @@ test.describe("Tokens: stroke per side", () => {
   test("applying a token to one side leaves the other sides untouched", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -236,10 +269,9 @@ test.describe("Tokens: stroke per side", () => {
   });
 
   test("editing one side does not change the other sides", async ({ page }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     const options = perSideOptions(page);
     const rightInput = options.getByRole("textbox", { name: RIGHT });
@@ -267,10 +299,9 @@ test.describe("Tokens: stroke per side", () => {
   test("detaching a side token leaves the other sides applied", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -297,9 +328,7 @@ test.describe("Tokens: stroke per side", () => {
   test("applying a token to one side creates the stroke when missing", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await workspace.layers.getByTestId("layer-row").nth(0).click();
 
     await unfoldStrokeWidth(page, workspace);
@@ -309,6 +338,7 @@ test.describe("Tokens: stroke per side", () => {
     await workspace.tokenContextMenuForToken.getByText("Top").click();
 
     await expect(strokeSection(page)).toBeVisible();
+    await enablePerSide(page);
     await expect(
       perSideOptions(page).getByRole("button", { name: "width-big" }),
     ).toHaveCount(1);
@@ -320,10 +350,9 @@ test.describe("Tokens: stroke per side", () => {
   test("a token on one side overrides a global token on that side only", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -347,10 +376,9 @@ test.describe("Tokens: stroke per side", () => {
   test("selecting the token again on one side completes it on every side", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     await workspace.tokensSidebar
@@ -379,10 +407,9 @@ test.describe("Tokens: stroke per side", () => {
   test("clicking the token again removes it from every side", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     await unfoldStrokeWidth(page, workspace);
     const chip = workspace.tokensSidebar.getByRole("button", {
@@ -516,10 +543,9 @@ test.describe("Tokens: stroke per side (inspect)", () => {
   test("Inspect styles expose the four per-side border widths", async ({
     page,
   }) => {
-    const workspace = await setupStrokePerSideFile(page, {
-      profileProps: PER_SIDE_ON,
-    });
+    const workspace = await setupStrokePerSideFile(page);
     await prepareShape(workspace, page);
+    await enablePerSide(page);
 
     const options = perSideOptions(page);
     for (const [name, value] of [

@@ -461,6 +461,19 @@
                          (assoc-in [:strokes index] stroke))))
                    options))))))))
 
+;; --- Per-side controls expansion (Design tab UI state)
+
+(defn toggle-stroke-per-side
+  "Toggle the per-side width controls of the stroke at `index` for the shapes
+  in `ids`. Purely ephemeral UI state: it lives in `:workspace-local` keyed by
+  `[ids index]`, so it survives selecting another shape and coming back, but
+  resets on reload."
+  [ids index]
+  (ptk/reify ::toggle-stroke-per-side
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :stroke-per-side [ids index]] not))))
+
 ;; --- Shadows
 
 (defn change-shadow

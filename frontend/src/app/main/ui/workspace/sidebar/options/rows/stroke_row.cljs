@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.types.color :as ctc]
    [app.common.types.token :as ctt]
-   [app.main.data.profile :as du]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.features :as features]
@@ -110,10 +109,10 @@
 
         stroke-width (:stroke-width stroke)
 
-        per-side-enabled (mf/deref refs/stroke-per-side)
-        per-side? (and per-side-available
-                       (not per-side-disabled)
-                       (true? per-side-enabled))
+        stroke-per-side (mf/deref refs/stroke-per-side)
+        per-side?       (and per-side-available
+                             (not per-side-disabled)
+                             (true? (get stroke-per-side [ids index])))
 
         all-sides-equal?
         (mf/with-memo [stroke]
@@ -152,9 +151,8 @@
 
         on-per-side-toggle
         (mf/use-fn
-         (mf/deps per-side?)
-         (fn []
-           (st/emit! (du/update-profile-props {:stroke-per-side (not per-side?)}))))
+         (mf/deps ids index)
+         #(st/emit! (dc/toggle-stroke-per-side ids index)))
 
         on-width-top-change
         (mf/use-fn
