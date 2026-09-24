@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.clipboard
   (:require
@@ -40,6 +40,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.clipboard :as path-cp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -292,45 +293,22 @@
              (rx/mapcat
               (fn [pdata]
                 (case (:type pdata)
-                  :copied-props  (rx/of (paste-transit-props pdata))
-                  :copied-shapes (rx/of (paste-transit-shapes pdata))
+                  :copied-props        (rx/of (paste-transit-props pdata))
+                  :copied-shapes       (rx/of (paste-transit-shapes pdata))
+                  :copied-path-content (rx/of (path-cp/paste-nodes-as-shape (:content pdata)))
                   (rx/empty)))))
 
         :else
         (->> (rx/from (.text blob))
              (rx/map paste-text))))))
 
-(defn- clipboard-permission-error?
-  "Check if the given error is a clipboard permission error
-  (NotAllowedError DOMException)."
-  [cause]
-  (and (instance? js/DOMException cause)
-       (= (.-name cause) "NotAllowedError")))
-
-(defn- clipboard-unavailable-error?
-  "Check if the given error is a clipboard API unavailable error
-  (thrown when navigator.clipboard is undefined, e.g. on insecure
-   origins per the W3C Secure Contexts spec)."
-  [cause]
-  (and (instance? js/Error cause)
-       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
-
 (defn- on-clipboard-permission-error
   [cause]
-  (cond
-    (clipboard-permission-error? cause)
-    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+  (if-let [message (clipboard/error-message cause)]
+    (rx/of (ntf/show {:content message
                       :type :toast
                       :level :warning
                       :timeout 5000}))
-
-    (clipboard-unavailable-error? cause)
-    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
-                      :type :toast
-                      :level :warning
-                      :timeout 5000}))
-
-    :else
     (rx/throw cause)))
 
 (defn paste-from-clipboard
@@ -527,26 +505,16 @@
                   (-> entry t/decode-str paste-transit-props))
 
                 (on-error [cause]
-                  (cond
-                    (clipboard-permission-error? cause)
-                    (rx/of (ntf/show {:content (tr "errors.clipboard-permission-denied")
+                  (if-let [message (clipboard/error-message cause)]
+                    (rx/of (ntf/show {:content message
                                       :type :toast
                                       :level :warning
                                       :timeout 5000}))
-
-                    (clipboard-unavailable-error? cause)
-                    (rx/of (ntf/show {:content (tr "errors.clipboard-api-unavailable")
-                                      :type :toast
-                                      :level :warning
-                                      :timeout 5000}))
-
-                    (:not-implemented (ex-data cause))
-                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-
-                    :else
-                    (do
-                      (js/console.error "Clipboard error:" cause)
-                      (rx/empty))))]
+                    (if (:not-implemented (ex-data cause))
+                      (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+                      (do
+                        (js/console.error "Clipboard error:" cause)
+                        (rx/empty)))))]
 
           (->> (clipboard/from-navigator default-options)
                (rx/mapcat #(.text %))
@@ -885,7 +853,7 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          (process-shape [file-id frame-id parent-id shape]
+          (process-shape [valid-file-ids frame-id parent-id shape]
             (cond-> shape
               :always
               (assoc :frame-id frame-id :parent-id parent-id)
@@ -896,7 +864,7 @@
               (assoc :shapes [])
 
               (cfh/text-shape? shape)
-              (ctt/remove-external-typographies file-id)))]
+              (ctt/remove-external-typographies valid-file-ids)))]
 
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
@@ -947,7 +915,9 @@
                              (into (d/ordered-set) (reverse selected))
                              selected)
 
-              objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
+              valid-file-ids (conj (set (keys libraries)) file-id)
+
+              objects      (update-vals objects (partial process-shape valid-file-ids frame-id parent-id))
 
               all-objects  (merge page-objects objects)
 
@@ -1201,7 +1171,7 @@
 
          ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
          (->> (if (and (features/active-feature? state "render-wasm/v1")
-                       (features/active-feature? state "wasm-export/v1"))
+                       (contains? cf/flags :wasm-export))
                 (rx/of {:uri (wasm.exports/export-image-uri export)})
                 (rp/cmd! :export
                          {:exports [export]

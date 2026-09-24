@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.data
   "A collection of helpers for working with data structures and other
@@ -1190,6 +1190,15 @@
         (str/replace #"[^\w\s\-_()]+" "")
         (str/replace #"\s+" " ")
         str/trim)
+    ""))
+
+(defn escape-markdown
+  "Escapes Markdown special characters by prefixing them with backslash.
+  Intended for user-controlled values embedded in Markdown messages
+  (e.g. Mattermost notifications)."
+  [s]
+  (if s
+    (str/replace (str s) #"([*_~`\[\]()>#+=\-|{}.!@\\])" (fn [[_ c]] (str "\\" c)))
     ""))
 
 (defn get-initials

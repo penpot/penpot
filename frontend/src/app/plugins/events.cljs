@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.events
   (:require
@@ -17,7 +17,7 @@
    [app.util.theme :as theme]
    [goog.functions :as gf]))
 
-(defmulti handle-state-change (fn [type _] type))
+(defmulti handle-state-change (fn [type _ _ _ _] type))
 
 (defmethod handle-state-change "finish"
   [_ _ old-val new-val _]
@@ -65,14 +65,14 @@
       new-theme)))
 
 (defmethod handle-state-change "shapechange"
-  [_ plugin-id old-val new-val props]
-  (if-let [shape-id (-> (obj/get props "shapeId") parser/parse-id)]
+  [_ plugin-id old-val new-val {:keys [shape-id]}]
+  (if (some? shape-id)
     (let [old-shape (dsh/lookup-shape old-val shape-id)
           new-shape (dsh/lookup-shape new-val shape-id)
 
           file-id (:current-file-id new-val)
           page-id (:current-page-id new-val)]
-      (if (and (identical? old-shape new-shape) (some? plugin-id) (some? file-id) (some? page-id) (some? shape-id))
+      (if (and (identical? old-shape new-shape) (some? plugin-id) (some? file-id) (some? page-id))
         ::not-changed
         (shape/shape-proxy plugin-id file-id page-id shape-id)))
     ::not-changed))
@@ -86,12 +86,19 @@
       ::not-changed)))
 
 (defmethod handle-state-change :default
-  [_ _ _ _]
+  [_ _ _ _ _]
   ::not-changed)
+
+(defn- parse-props
+  "Resolves the listener options. Runs at registration, so a malformed
+  value raises where the plugin can see it."
+  [props]
+  {:shape-id (-> (obj/get props "shapeId") parser/parse-id)})
 
 (defn add-listener
   [type plugin-id callback props]
   (let [plugin-id (parser/parse-id plugin-id)
+        props (parse-props props)
         key (js/Symbol)
 
         ;; We wrap the callback in an exception handler so the plugins
@@ -111,9 +118,14 @@
     (add-watch
      st/state key
      (fn [_ _ old-val new-val]
-       (let [result (handle-state-change type plugin-id old-val new-val props)]
-         (when (not= ::not-changed result)
-           (debounced-callback result)))))
+       ;; The store notifies its watches with a plain iteration: a throw
+       ;; here starves the watches registered after this one.
+       (try
+         (let [result (handle-state-change type plugin-id old-val new-val props)]
+           (when (not= ::not-changed result)
+             (debounced-callback result)))
+         (catch :default cause
+           (.error js/console cause)))))
 
     ;; return the generated key
     key))

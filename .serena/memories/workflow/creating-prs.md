@@ -1,6 +1,12 @@
 # Creating Pull Requests
 
-PR only on explicit request. Branch: issue/feature-specific; fallback `<type>/<short-description>` (`fix/...`, `feat/...`, `refactor/...`, `docs/...`, `chore/...`, `perf/...`).
+PR only on explicit request.
+
+## Branch Naming
+
+- Primary: `issue-NNNN` — one branch per GitHub issue (e.g. `issue-11525`).
+- No issue: free-form descriptive name, dash-separated, no slashes (e.g. `fix-ellipse-icon-typo`, `feat-auto-link-libraries`).
+- If the user already created the branch, use it as-is — never rename.
 
 ## Target Branch
 
@@ -30,7 +36,7 @@ See `mem:workflow/creating-commits` for emoji codes. Squash merge uses the PR ti
 
 Include concise sections covering:
 - what changed and why;
-- related GitHub issues or Taiga stories (`Closes #NNNN`, `Relates to #NNNN`, `Taiga #NNNN`);
+- related GitHub issues or Taiga stories (`Closes #NNNN` for issues resolved by the PR, `Relates to #NNNN` for context, `Taiga #NNNN`); use the explicit issue assignment process below for each `Closes` issue;
 - screenshots or recordings for UI-visible changes;
 - testing performed and residual risk;
 - breaking changes or migration notes, if any.
@@ -70,6 +76,12 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 - ❌ Screenshots unless UI-visible
 - ❌ Migration notes unless breaking changes
 - ❌ Regression fixes introduced during the PR (they're part of the development process, not the feature)
+
+## Explicit Issue Assignment
+
+- For each GitHub issue that a PR resolves, run `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` after creating or editing the PR. Do not rely on `Closes #NNNN` in the body; it is only human-readable context.
+- The command calls `addCloseIssueReferences` and trusts the successful mutation: GitHub does not reliably report mutation-created links back through `closedByPullRequestsReferences(userLinkedOnly: true)`, so the command exits non-zero only when a link target is missing or the mutation fails. It is safe to rerun and also works for an already merged PR; it does not close an issue retroactively.
+- Skip this process for `Relates to #NNNN` and Taiga references, which do not represent a closing relationship.
 
 ## Before Opening
 

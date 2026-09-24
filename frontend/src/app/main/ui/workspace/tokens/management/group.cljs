@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 
 (ns app.main.ui.workspace.tokens.management.group
@@ -92,8 +92,8 @@
                           (not (and (some? edition)
                                     (= :text (:type (get objects edition))))))
 
-        can-edit?
-        (mf/use-ctx ctx/can-edit?)
+        can-edit-tokens?
+        (mf/use-ctx ctx/can-edit-tokens?)
 
         is-selected-inside-layout (d/nilv is-selected-inside-layout false)
 
@@ -177,7 +177,7 @@
                         :aria-controls (dm/str "token-tree-" (name type))
                         :on-toggle-expand on-toggle-open-click
                         :icon (token-section-icon type)}
-      (when can-edit?
+      (when can-edit-tokens?
         [:> icon-button* {:id (str "add-token-button-" title)
                           :icon "add"
                           :aria-label (tr "workspace.tokens.add-token" title)

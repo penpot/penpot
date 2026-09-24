@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.utils
   "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.i18n :as i18n :refer [tr]]
    [app.common.schema :as sm]
    [app.common.schema.messages :as csm]
@@ -67,8 +68,18 @@
 
 (defn locate-tokens-lib
   [file-id]
-  (let [file (locate-file file-id)]
-    (->> file :data :tokens-lib)))
+  (let [file-data        (-> (locate-file file-id) (ctf/file-data))
+        tokens-source-id (cfo/get-effective-tokens-source file-data)]
+    (some-> tokens-source-id
+            (locate-file)
+            (ctf/file-data)
+            (cfo/get-tokens-lib))))
+
+(defn locate-tokens-status
+  [file-id]
+  (let [file      (locate-file file-id)
+        file-data (ctf/file-data file)]
+    (cfo/get-tokens-status file-data)))
 
 (defn locate-token-theme
   [file-id id]
@@ -206,6 +217,15 @@
   (when-let [shape (locate-shape file-id page-id shape-id)]
     (get-in shape [:interactions index])))
 
+(defn locate-interaction-index
+  "Position of `interaction` within the shape's current interactions, falling
+  back to `index` while it addresses an existing interaction."
+  [file-id page-id shape-id interaction index]
+  (let [interactions (-> (locate-shape file-id page-id shape-id) :interactions)]
+    (or (d/index-of interactions interaction)
+        (when (and (int? index) (< -1 index (count interactions)))
+          index))))
+
 (defn proxy->interaction
   [proxy]
   (let [file-id (obj/get proxy "$file")
@@ -266,6 +286,12 @@
   (boolean
    (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
 
+(defn check-editable-tokens
+  [file-id]
+  (let [file (locate-file file-id)]
+    (when-not (cfo/editable-tokens? (ctf/file-data file))
+      (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library"))))))
+
 (defn throw-validation-errors?
   [plugin-id]
   (boolean
@@ -282,22 +308,13 @@
   [code value]
   (if (some? value)
     (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
-    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code))))
-  nil)
+    (throw (js/Error. (dm/str "[PENPOT PLUGIN] Value not valid. Code: " code)))))
 
 (defn not-valid
   [plugin-id code value]
   (if (throw-validation-errors? plugin-id)
     (throw-not-valid code value)
     (display-not-valid code value)))
-
-(defn valid-timeout?
-  "A plugin timeout argument: omitted, or a finite positive number of msecs."
-  [value]
-  (or (nil? value)
-      (and (number? value)
-           (pos? value)
-           (js/Number.isFinite value))))
 
 (defn reject-not-valid
   [reject code value]

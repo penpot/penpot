@@ -56,6 +56,7 @@ If your organization is scaling and needs extra support, we’re here to help. [
 
 - [Why Penpot](#why-penpot)
 - [Getting Started](#getting-started)
+- [Penpot Enterprise](#penpot-enterprise)
 - [Community](#community)
 - [Contributing](#contributing)
 - [Resources](#resources)
@@ -92,6 +93,12 @@ Penpot brings [design systems](https://penpot.app/design/design-systems) to code
 Penpot is the only design & prototype platform that is deployment agnostic. You can use it in our [SAAS](https://design.penpot.app) or deploy it anywhere.
 
 Learn how to install it with Docker, Kubernetes, Elestio or other options on [our website](https://penpot.app/self-host).
+
+## Penpot Enterprise ##
+
+[Penpot Enterprise](https://help.penpot.app/user-guide/account-teams/enterprise-plan/) is our paid plan for organizations that need to scale their design work across multiple teams with advanced governance, security, and administration. Manage teams and access from a centralized **Admin Console**, configure advanced permissions, and connect your **identity provider through SSO**. Available for cloud and self-hosted environments, it combines enterprise controls with Penpot’s open-source foundation and open standards.
+
+<img width="100%" height="1010" alt="2" src="https://github.com/user-attachments/assets/243e796e-a140-481a-b68f-b24be6a70e37" />
 
 ## Community ##
 
@@ -160,6 +167,6 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) KALEIDOS INC Sucursal en España SL
+Copyright (c) KALEIDOS SUBSIDIARY SL
 ```
 Penpot is a Kaleidos’ [open source project](https://kaleidos.net/)

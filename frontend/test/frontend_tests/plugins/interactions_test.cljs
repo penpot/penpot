@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.interactions-test
   (:require
@@ -105,3 +105,23 @@
         (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
         (t/is (not (throws? #(set! (.-delay inter) 0))) "delay = 0 must be accepted")
         (t/is (throws? #(set! (.-delay inter) -1)) "negative delay must be rejected")))))
+
+(t/deftest interaction-action-ignores-stale-destination
+  ;; Interactions keep their destination after the action type changes, so a
+  ;; destination that is no longer valid must not block switching to an action
+  ;; that has none.
+  (thw/with-wasm-mocks*
+    (fn []
+      (let [store       (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+            ^js context (api/create-context plugin-id)
+            _           (set! st/state store)
+            ^js board1  (.createBoard context)
+            ^js board2  (.createBoard context)
+            ^js inter   (.addInteraction board1 "click" #js {:type "navigate-to" :destination board2})]
+        (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
+        ;; board2 becomes board1's parent board, an invalid destination for it
+        (.appendChild board2 board1)
+        (t/is (not (throws? #(set! (.-action inter) #js {:type "previous-screen"})))
+              "an action without destination is accepted")
+        (t/is (throws? #(set! (.-action inter) #js {:type "navigate-to" :destination board2}))
+              "navigating to the parent board is still rejected")))))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.binfile.v3
   "A ZIP based binary file exportation"
@@ -12,9 +12,11 @@
    [app.binfile.common :as bfc]
    [app.binfile.migrations :as bfm]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.migrations :as-alias fmg]
+   [app.common.files.tokens :as cfo]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.media :as cmedia]
@@ -28,6 +30,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -42,6 +45,7 @@
    [datoteka.io :as io])
   (:import
    java.io.File
+   java.io.FilterInputStream
    java.io.InputStream
    java.io.OutputStreamWriter
    java.lang.AutoCloseable
@@ -67,7 +71,16 @@
 
    [:relations {:optional true}
     [:vector
-     [:tuple ::sm/uuid ::sm/uuid]]]])
+     [:tuple ::sm/uuid ::sm/uuid]]]
+
+   ;; TODO: rename to :links
+   [:external-libraries {:optional true}
+    [:vector
+     [:map
+      [:id   ::sm/uuid]
+      [:name :string]
+      [:slug :string]
+      [:used-by {:optional true} [:vector ::sm/uuid]]]]]])
 
 (def ^:private schema:storage-object
   [:map {:title "StorageObject"}
@@ -86,9 +99,11 @@
    [:media-id ::sm/uuid]])
 
 (def ^:private schema:file
-  [:merge
+  (sm/merge
    ctf/schema:file
-   [:map [:options {:optional true} ctf/schema:options]]])
+   [:map
+    [:options {:optional true} ctf/schema:options]
+    [:tokens-source {:optional true} ::sm/uuid]]))
 
 ;; --- HELPERS
 
@@ -121,6 +136,9 @@
 
 (def encode-tokens-lib
   (sm/encoder ctob/schema:tokens-lib sm/json-transformer))
+
+(def encode-tokens-status
+  (sm/encoder ctos/schema:tokens-status sm/json-transformer))
 
 (def encode-plugin-data
   (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
@@ -160,6 +178,9 @@
 (def decode-tokens-lib
   (sm/decoder ctob/schema:tokens-lib sm/json-transformer))
 
+(def decode-tokens-status
+  (sm/decoder ctos/schema:tokens-status sm/json-transformer))
+
 (def decode-plugin-data
   (sm/decoder ctpg/schema:plugin-data sm/json-transformer))
 
@@ -198,6 +219,9 @@
 (def validate-tokens-lib
   (sm/check-fn ctob/schema:tokens-lib))
 
+(def validate-tokens-status
+  (sm/check-fn ctos/schema:tokens-status))
+
 (def validate-plugin-data
   (sm/check-fn ctpg/schema:plugin-data))
 
@@ -217,14 +241,12 @@
     (.flush writer))
   (.closeEntry output))
 
+
 (defn- get-file
-  [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
+  [{:keys [::bfc/export-type] :as cfg} file-id]
 
-  (when (and include-libraries embed-assets)
-    (throw (IllegalArgumentException.
-            "the `include-libraries` and `embed-assets` are mutally excluding options")))
-
-  (let [detach? (and (not embed-assets) (not include-libraries))]
+  (let [detach? (= export-type :detach-libraries)
+        embed?  (= export-type :merge-libraries)]
     (db/tx-run! cfg (fn [cfg]
                       (cond-> (bfc/get-file cfg file-id
                                             {:realize? true
@@ -234,7 +256,7 @@
                         (-> (ctf/detach-external-references file-id)
                             (dissoc :libraries))
 
-                        embed-assets
+                        embed?
                         (update :data #(bfc/embed-assets cfg % file-id))
 
                         :always
@@ -264,22 +286,24 @@
 
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
-  (let [file         (get-file cfg file-id)
+  (let [file          (get-file cfg file-id)
 
-        media        (->> (bfc/get-file-media cfg file)
-                          (map (fn [media]
-                                 (dissoc media :file-id))))
+        media         (->> (bfc/get-file-media cfg file)
+                           (map (fn [media]
+                                  (dissoc media :file-id))))
 
-        data         (:data file)
-        typographies (:typographies data)
-        components   (:components data)
-        colors       (:colors data)
-        tokens-lib   (:tokens-lib data)
+        data          (:data file)
+        typographies  (:typographies data)
+        components    (:components data)
+        colors        (:colors data)
+        tokens-lib    (:tokens-lib data)
+        tokens-status (:tokens-status data)
+        tokens-source (:tokens-source data)
 
-        pages        (:pages data)
-        pages-index  (:pages-index data)
+        pages         (:pages data)
+        pages-index   (:pages-index data)
 
-        thumbnails   (bfc/get-file-object-thumbnails cfg file-id)]
+        thumbnails    (bfc/get-file-object-thumbnails cfg file-id)]
 
     (events/tap :progress {:section :file :id file-id :name (:name file)})
 
@@ -290,7 +314,10 @@
 
     (let [file (cond-> (select-keys file bfc/file-attrs)
                  (:options data)
-                 (assoc :options (:options data)))
+                 (assoc :options (:options data))
+
+                 (:tokens-source data)
+                 (assoc :tokens-source (:tokens-source data)))
 
           file (-> file
                    (dissoc :data)
@@ -368,15 +395,53 @@
       (let [path           (str "files/" file-id "/tokens.json")
             encoded-tokens (encode-tokens-lib tokens-lib)]
         (events/tap :progress {:section :tokens-lib :file-id file-id})
-        (write-entry! output path encoded-tokens)))))
+        (write-entry! output path encoded-tokens)))
+
+    (when tokens-status
+      (let [path                  (str "files/" file-id "/tokens-status.json")
+            library               (if (and (some? tokens-source)
+                                           (not= tokens-source (:id data)))
+                                    (get-file cfg tokens-source)
+                                    file)
+
+            effective-tokens-lib  (when library
+                                    (dm/get-in library [:data :tokens-lib]))
+
+            encoded-status        (-> (encode-tokens-status tokens-status)
+                                      (cfo/ids->names effective-tokens-lib))]
+
+        (events/tap :progress {:section :tokens-status :file-id file-id})
+        (write-entry! output path encoded-status)))))
 
 (defn- export-files
-  [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
-  (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
-        rels (if include-libraries
+  [{:keys [::bfc/ids ::bfc/export-type ::output] :as cfg}]
+
+  (let [original-ids ids
+        ids  (into ids (when (= export-type :include-libraries) (bfc/get-libraries cfg ids)))
+        rels (if (= export-type :include-libraries)
                (->> (bfc/get-files-rels cfg ids)
                     (mapv (juxt :file-id :library-file-id)))
-               [])]
+               [])
+
+        ;; Compute external libraries: referenced by original files but
+        ;; not included in the export set. Only relevant for :link-later.
+        external-libs
+        (when (= export-type :link-later)
+          (let [original-rels (bfc/get-files-rels cfg original-ids)
+                lib-ids       (into #{} (map :library-file-id) original-rels)]
+            (when (seq lib-ids)
+              (let [lib-names (bfc/get-files-names cfg lib-ids)]
+                (->> lib-names
+                     (mapv (fn [{:keys [id name]}]
+                             (let [slug (bfc/slugify-name name)]
+                               (when-not (str/blank? slug)
+                                 {:id      id
+                                  :name    name
+                                  :slug    slug
+                                  :used-by (->> original-rels
+                                                (filter #(= (:library-file-id %) id))
+                                                (mapv :file-id))}))))
+                     (filterv some?))))))]
 
     (vswap! bfc/*state* assoc :files (d/ordered-map))
 
@@ -389,12 +454,14 @@
 
     ;; Write manifest file
     (let [files  (:files @bfc/*state*)
-          params {:type "penpot/export-files"
-                  :version 1
-                  :generated-by (str "penpot/" (:full cf/version))
-                  :refer "penpot"
-                  :files (vec (vals files))
-                  :relations rels}]
+          params (cond-> {:type "penpot/export-files"
+                          :version 1
+                          :generated-by (str "penpot/" (:full cf/version))
+                          :referer "penpot"
+                          :files (vec (vals files))
+                          :relations rels}
+                   (seq external-libs)
+                   (assoc :external-libraries external-libs))]
       (write-entry! output "manifest.json" params))))
 
 ;; --- IMPORT IMPL
@@ -430,18 +497,91 @@
   [^ZipFile input ^ZipEntry entry]
   (.getInputStream input entry))
 
+(defn- size-limiting-stream
+  "Wraps an InputStream to enforce a maximum number of decompressed bytes.
+  Raises :validation :max-file-size-reached when the limit is exceeded.
+  `counter` holds the bytes accounted so far: pass a fresh atom for a
+  per-entry cap, or the shared job-wide atom for the cumulative budget.
+  `entry-name` identifies the entry being read and is included in the
+  raised ex-data for triage."
+  ^InputStream
+  [^InputStream input ^long max-size counter entry-name]
+  (let [on-read (fn [n]
+                  (when (pos? n)
+                    (when (> (swap! counter + (long n)) max-size)
+                      (ex/raise :type :validation
+                                :code :max-file-size-reached
+                                :hint (str "stream exceeded max size on entry " entry-name ": " max-size)
+                                :path entry-name
+                                :max max-size)))
+                  n)]
+    (proxy [FilterInputStream] [input]
+      (read
+        ([]
+         (let [b (.read input)]
+           (when (pos? b) (on-read 1))
+           b))
+        ([^bytes buf]
+         (on-read (.read input buf 0 (alength buf))))
+        ([^bytes buf off]
+         (on-read (.read input buf (int off) (- (alength buf) (int off)))))
+        ([^bytes buf off len]
+         (on-read (.read input buf (int off) (int len)))))
+      (skip [n]
+        ;; Skipped bytes were already decompressed, so they count against
+        ;; the budget like read bytes do.
+        (let [skipped (.skip input (long n))]
+          (when (pos? skipped)
+            (on-read skipped))
+          skipped)))))
+
+(defn- setup-limits
+  "Resolve the binfile import limits once per job from cfg, falling back
+  to the namespace defaults when the keys are absent. Returns cfg with
+  `::max-text-entry-size` (per JSON/text entry cap), `::max-text-total-size` (cumulative
+  JSON/text budget), `::accumulated-total-text-size` (shared atom holding the cumulative
+  bytes read so far), `::max-binary-entry-size` (storage blob cap) and
+  `::max-zip-entries` (zip entry count cap)."
+  [cfg]
+  (assoc cfg
+         ::max-text-entry-size (or (::bfc/import-max-text-entry-size cfg) bfc/default-max-text-entry-size)
+         ::max-text-total-size (or (::bfc/import-max-text-total-size cfg) bfc/default-max-text-total-size)
+         ::accumulated-total-text-size (atom 0)
+         ::max-binary-entry-size (or (::bfc/import-max-binary-entry-size cfg) bfc/default-max-binary-entry-size)
+         ::max-zip-entries (or (::bfc/import-max-zip-entries cfg) bfc/default-max-zip-entries)))
+
 (defn- zip-entry-reader
-  [^ZipFile input ^ZipEntry entry]
-  (-> (zip-entry-stream input entry)
-      (io/reader :encoding "UTF-8")))
+  "Opens a UTF-8 reader over a zip entry, enforcing the per-entry
+  decompressed-size cap on the actual bytes streamed through it and
+  accounting the same bytes against the shared job-wide budget.
+  A cheap pre-check on the entry-declared size rejects obvious bombs without
+  opening the stream; the streaming counters remain the authoritative guard
+  because the declared size is attacker-controlled metadata."
+  [cfg ^ZipFile input ^ZipEntry entry]
+  (let [entry-name (zip-entry-name entry)
+        declared   (get-zip-entry-size entry)
+        max-size   (::max-text-entry-size cfg)]
+    (when (and (not (neg? declared)) (> declared (long max-size)))
+      (ex/raise :type :validation
+                :code :max-file-size-reached
+                :hint (str "zip entry exceeds maximum size: " entry-name)
+                :path entry-name
+                :max max-size
+                :found declared))
+    (-> (zip-entry-stream input entry)
+        (size-limiting-stream max-size (atom 0) entry-name)
+        (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg) entry-name)
+        (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content
   "Wraps a ZipFile and ZipEntry into a penpot storage compatible
   object and avoid creating temporal objects"
-  [input entry]
-  (let [hash  (delay (->> entry
-                          (zip-entry-stream input)
-                          (sto.impl/calculate-hash)))]
+  [input entry & {:keys [max-size]}]
+  (let [stream-fn (fn []
+                    (cond-> (zip-entry-stream input entry)
+                      max-size (size-limiting-stream max-size (atom 0) (zip-entry-name entry))))
+        hash      (delay (->> (stream-fn)
+                              (sto.impl/calculate-hash)))]
     (reify
       sto.impl/IContentObject
       (get-size [_]
@@ -458,116 +598,113 @@
         (throw (UnsupportedOperationException. "not implemented")))
 
       (make-input-stream [_ _]
-        (zip-entry-stream input entry))
+        (stream-fn))
       (make-output-stream [_ _]
         (throw (UnsupportedOperationException. "not implemented"))))))
 
 (defn- read-manifest
-  [^ZipFile input]
+  [cfg ^ZipFile input]
   (let [entry (get-zip-entry input "manifest.json")]
-    (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
+    (with-open [^AutoCloseable reader (zip-entry-reader cfg input entry)]
       (let [manifest (json/read reader :key-fn json/read-kebab-key)]
         (decode-manifest manifest)))))
 
-(defn- match-media-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/media/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+(def ^:private file-object-entry-categories
+  "Zip path segments that hold per-file object entries on the
+  `files/<file-id>/<category>/<object-id>.json` shape."
+  #{"media" "colors" "components" "typographies"})
 
-(defn- match-color-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/colors/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+(defn- index-entry-name
+  "Classify a single zip entry by the raw shape of its path and
+  accumulate it on the index.
 
-(defn- match-component-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/components/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+  It replaces the per-file regex matchers with a single
+  classification pass over all entries. The `.json` suffix is matched
+  literally: the previous regexes left the dot unescaped, so crafted
+  paths like `files/<file-id>/tokensXjson` or `objects/x-json` matched
+  by accident; requiring the literal suffix ignores them (legitimate
+  exports always write a literal `.json` suffix). Unknown paths are
+  ignored."
+  [index ^String name entry]
+  (if-not (and name (str/ends-with? name ".json"))
+    index
+    (let [base  (subs name 0 (- (count name) 5))
+          segs  (str/split base "/")
+          seg-n (count segs)
+          seg-1 (nth segs 0 nil)
+          seg-2 (nth segs 1 nil)
+          seg-3 (nth segs 2 nil)]
 
-(defn- match-typography-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/typographies/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+      (if-not (and (pos? seg-n) (every? #(pos? (count %)) segs))
+        index
+        (cond
+          ;; objects/<object-id>.json
+          (and (= seg-n 2) (= seg-1 "objects"))
+          (update index :objects bfc/conj-vec
+                  {:entry entry :id (parse-uuid seg-2)})
 
-(defn- match-tokens-lib-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/tokens.json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry}))))
+          ;; files/<file-id>/tokens.json
+          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens"))
+          (update-in index [:tokens seg-2] bfc/conj-vec {:entry entry})
 
-(defn- match-thumbnail-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/thumbnails/([^/]+)/([^/]+)/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ tag page-id frame-id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :tag tag
-         :page-id (parse-uuid page-id)
-         :frame-id (parse-uuid frame-id)
-         :file-id file-id}))))
+          ;; files/<file-id>/tokens-status.json
+          (and (= seg-n 3) (= seg-1 "files") (= seg-3 "tokens-status"))
+          (update-in index [:tokens-status seg-2] bfc/conj-vec {:entry entry})
 
-(defn- match-page-entry-fn
-  [file-id]
-  (let [pattern (str "^files/" file-id "/pages/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/thumbnails/<tag>/<page-id>/<frame-id>.json
+          (and (= seg-n 6) (= seg-1 "files") (= seg-3 "thumbnails"))
+          (update-in index [:thumbnails seg-2] bfc/conj-vec
+                     {:entry entry
+                      :tag (nth segs 3)
+                      :page-id (parse-uuid (nth segs 4))
+                      :frame-id (parse-uuid (nth segs 5))
+                      :file-id seg-2})
 
-(defn- match-shape-entry-fn
-  [file-id page-id]
-  (let [pattern (str "^files/" file-id "/pages/" page-id "/([^/]+).json$")
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :page-id page-id
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/pages/<page-id>.json
+          (and (= seg-n 4) (= seg-1 "files") (= seg-3 "pages"))
+          (update-in index [:pages seg-2] bfc/conj-vec
+                     {:entry entry :id (parse-uuid (nth segs 3))})
 
-(defn- match-storage-entry-fn
-  []
-  (let [pattern "^objects/([^/]+).json$"
-        pattern (re-pattern pattern)]
-    (fn [entry]
-      (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]
-        {:entry entry
-         :id (parse-uuid id)}))))
+          ;; files/<file-id>/pages/<page-id>/<shape-id>.json
+          (and (= seg-n 5) (= seg-1 "files") (= seg-3 "pages"))
+          (update-in index [:shapes seg-2 (nth segs 3)] bfc/conj-vec
+                     {:entry entry
+                      :page-id (nth segs 3)
+                      :id (parse-uuid (nth segs 4))})
+
+          ;; files/<file-id>/<category>/<object-id>.json
+          (and (= seg-n 4)
+               (= seg-1 "files")
+               (contains? file-object-entry-categories seg-3))
+          (update-in index [(keyword seg-3) seg-2] bfc/conj-vec
+                     {:entry entry :id (parse-uuid (nth segs 3))})
+
+          :else
+          index)))))
+
+(defn- index-entries
+  "Classify all the provided zip entries in a single pass and group
+  them by their path shape, so import consumers can lookup their
+  entries per file (and per page) instead of rescanning the whole
+  entry collection for every file and page."
+  [entries]
+  (reduce (fn [index entry]
+            (index-entry-name index (zip-entry-name entry) entry))
+          {}
+          entries))
 
 (defn- read-entry
-  [^ZipFile input entry]
-  (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
-    (json/read reader :key-fn json/read-kebab-key)))
-
-(defn- read-plain-entry
-  [^ZipFile input entry]
-  (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
-    (json/read reader)))
+  ([cfg ^ZipFile input entry]
+   (read-entry cfg input entry json/read-kebab-key))
+  ([cfg ^ZipFile input entry key-fn]
+   (with-open [^AutoCloseable reader (zip-entry-reader cfg input entry)]
+     (json/read reader :key-fn key-fn))))
 
 (defn- read-file
-  [{:keys [::bfc/input ::bfc/timestamp]} file-id]
+  [{:keys [::bfc/input ::bfc/timestamp] :as cfg} file-id]
   (let [path  (str "files/" file-id ".json")
         entry (get-zip-entry input path)]
-    (-> (read-entry input entry)
+    (-> (read-entry cfg input entry)
         (decode-file)
         (update :revn d/nilv 1)
         (update :created-at d/nilv timestamp)
@@ -575,19 +712,19 @@
         (validate-file))))
 
 (defn- read-file-plugin-data
-  [{:keys [::bfc/input]} file-id]
+  [{:keys [::bfc/input] :as cfg} file-id]
   (let [path  (str "files/" file-id "/plugin-data.json")
         entry (get-zip-entry* input path)]
-    (some->> entry
-             (read-entry input)
-             (decode-plugin-data)
-             (validate-plugin-data))))
+    (when entry
+      (-> (read-entry cfg input entry)
+          (decode-plugin-data)
+          (validate-plugin-data)))))
 
 (defn- read-file-media
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-media-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:media (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-media)
                                    (validate-media))
                        object (-> object
@@ -604,10 +741,10 @@
        (not-empty)))
 
 (defn- read-file-colors
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-color-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:colors (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-color)
                                    (validate-color))]
                    (events/tap :progress {:section :color :id id :file-id file-id})
@@ -618,7 +755,7 @@
        (not-empty)))
 
 (defn- read-file-components
-  [{:keys [::bfc/input ::entries]} file-id]
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
   (let [clean-component-post-decode
         (fn [component]
           (d/update-when component :objects
@@ -636,9 +773,9 @@
                                       objects
                                       objects))))]
 
-    (->> (keep (match-component-entry-fn file-id) entries)
+    (->> (get-in entries-index [:components (str file-id)])
          (reduce (fn [result {:keys [id entry]}]
-                   (let [object (->> (read-entry input entry)
+                   (let [object (->> (read-entry cfg input entry)
                                      (clean-component-pre-decode)
                                      (decode-component)
                                      (clean-component-post-decode))]
@@ -650,10 +787,10 @@
          (not-empty))))
 
 (defn- read-file-typographies
-  [{:keys [::bfc/input ::entries]} file-id]
-  (->> (keep (match-typography-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:typographies (str file-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-typography)
                                    (validate-typography))]
                    (events/tap :progress {:section :typography :id id :file-id file-id})
@@ -664,18 +801,27 @@
        (not-empty)))
 
 (defn- read-file-tokens-lib
-  [{:keys [::bfc/input ::entries]} file-id]
-  (when-let [entry (d/seek (match-tokens-lib-entry-fn file-id) entries)]
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (when-let [{:keys [entry]} (first (get-in entries-index [:tokens (str file-id)]))]
     (events/tap :progress {:section :tokens-lib :file-id file-id})
-    (->> (read-plain-entry input entry)
+    (->> (read-entry cfg input entry nil)
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
+(defn- read-file-tokens-status
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id tokens-lib]
+  (when-let [{:keys [entry]} (first (get-in entries-index [:tokens-status (str file-id)]))]
+    (events/tap :progress {:section :tokens-status :file-id file-id})
+    (->> (read-entry cfg input entry nil)
+         (cfo/names->ids tokens-lib)
+         (decode-tokens-status)
+         (validate-tokens-status))))
+
 (defn- read-file-shapes
-  [{:keys [::bfc/input ::entries] :as cfg} file-id page-id]
-  (->> (keep (match-shape-entry-fn file-id page-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id page-id]
+  (->> (get-in entries-index [:shapes (str file-id) (str page-id)])
        (reduce (fn [result {:keys [id entry]}]
-                 (let [object (->> (read-entry input entry)
+                 (let [object (->> (read-entry cfg input entry)
                                    (bfl/clean-shape-pre-decode)
                                    (decode-shape)
                                    (bfl/clean-shape-post-decode))]
@@ -686,10 +832,10 @@
        (not-empty)))
 
 (defn- read-file-pages
-  [{:keys [::bfc/input ::entries] :as cfg} file-id]
-  (->> (keep (match-page-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:pages (str file-id)])
        (keep (fn [{:keys [id entry]}]
-               (let [page (->> (read-entry input entry)
+               (let [page (->> (read-entry cfg input entry)
                                (decode-page))
                      page (dissoc page :options)]
                  (events/tap :progress {:section :page :id id :file-id file-id})
@@ -702,10 +848,10 @@
                (d/ordered-map))))
 
 (defn- read-file-thumbnails
-  [{:keys [::bfc/input ::entries] :as cfg} file-id]
-  (->> (keep (match-thumbnail-entry-fn file-id) entries)
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
+  (->> (get-in entries-index [:thumbnails (str file-id)])
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
-                 (let [object (->> (read-entry input entry)
+                 (let [object (->> (read-entry cfg input entry)
                                    (decode-file-thumbnail)
                                    (validate-file-thumbnail))]
 
@@ -718,23 +864,29 @@
        (not-empty)))
 
 (defn- read-file-data
-  [cfg file-id]
-  (let [colors       (read-file-colors cfg file-id)
-        typographies (read-file-typographies cfg file-id)
-        tokens-lib   (read-file-tokens-lib cfg file-id)
-        components   (read-file-components cfg file-id)
-        plugin-data  (read-file-plugin-data cfg file-id)
-        pages        (read-file-pages cfg file-id)]
+  [cfg file-id tokens-source]
+  (let [colors               (read-file-colors cfg file-id)
+        typographies         (read-file-typographies cfg file-id)
+        tokens-lib           (read-file-tokens-lib cfg file-id)
+        effective-tokens-lib (if (and (some? tokens-source)
+                                      (not= tokens-source file-id))
+                               (read-file-tokens-lib cfg tokens-source)
+                               tokens-lib)
+        tokens-status        (read-file-tokens-status cfg file-id effective-tokens-lib)
+        components           (read-file-components cfg file-id)
+        plugin-data          (read-file-plugin-data cfg file-id)
+        pages                (read-file-pages cfg file-id)]
     {:pages (-> pages keys vec)
      :pages-index (into {} pages)
      :colors colors
      :typographies typographies
      :tokens-lib tokens-lib
+     :tokens-status tokens-status
      :components components
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::db/conn ::bfc/project-id] :as cfg} {file-id :id file-name :name}]
+  [{:keys [::db/conn ::bfc/project-id ::manifest] :as cfg} {file-id :id file-name :name}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg file-id)
         media      (read-file-media cfg file-id)
@@ -790,19 +942,24 @@
 
     (events/tap :progress {:section :file :file-id file-id})
 
-    (let [data (-> (read-file-data cfg file-id)
+    (let [data (-> (read-file-data cfg file-id (:tokens-source file))
                    (d/without-nils)
                    (assoc :id file-id')
                    (cond-> (:options file)
-                     (assoc :options (:options file))))
+                     (assoc :options (:options file)))
+                   (cond-> (:tokens-source file)
+                     (assoc :tokens-source (bfc/lookup-index (:tokens-source file)))))
 
           file (-> (select-keys file bfc/file-attrs)
                    (assoc :id file-id')
                    (assoc :data data)
                    (assoc :name file-name)
                    (assoc :project-id project-id)
-                   (dissoc :options))
-
+                   (assoc :metadata (d/without-nils
+                                     {:generated-by (get manifest :generated-by)
+                                      :referer (or (get manifest :referer) (get manifest :refer))}))
+                   (dissoc :options)
+                   (dissoc :tokens-source))
           file  (bfc/process-file cfg file)
           file  (ctf/check-file file)]
 
@@ -830,23 +987,30 @@
           (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
 
 (defn- import-storage-objects
-  [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
+  [{:keys [::bfc/input ::entries-index ::bfc/timestamp] :as cfg}]
   (events/tap :progress {:section :storage-objects})
 
+  ;; IMPORTANT: we strongly do not reuse the main connection that can
+  ;; run inside a transaction because the storage upload process can
+  ;; fail in the middle of uploading and leave garbage on the underlying
+  ;; backend, if we participate in the main transaction and it aborts
+  ;; we will lose all registry of the pending to reconcile blobs
+  ;; what the storage subsystem registers in other parallel
+  ;; transaction
   (let [storage (sto/resolve cfg)
-        entries (keep (match-storage-entry-fn) entries)]
+        entries (:objects entries-index)]
 
     (doseq [{:keys [id entry]} entries]
-      (let [object  (-> (read-entry input entry)
+      (let [object  (-> (read-entry cfg input entry)
                         (decode-storage-object)
                         (update :bucket d/nilv sto/default-bucket)
                         (validate-storage-object))
 
             ext     (cmedia/mtype->extension (:content-type object))
             path    (str "objects/" id ext)
-            content (->> path
-                         (get-zip-entry input)
-                         (zip-entry-storage-content input))]
+            content (zip-entry-storage-content input
+                                               (get-zip-entry input path)
+                                               :max-size (::max-binary-entry-size cfg))]
 
         (when (not= (:size object) (sto/get-size content))
           (ex/raise :type :validation
@@ -855,6 +1019,15 @@
                     :path path
                     :expected-size (:size object)
                     :found-size (sto/get-size content)))
+
+        (let [max (::max-binary-entry-size cfg)]
+          (when (> (sto/get-size content) max)
+            (ex/raise :type :validation
+                      :code :max-file-size-reached
+                      :hint (str "storage object exceeds maximum size: " (sto/get-size content))
+                      :path path
+                      :max max
+                      :found (sto/get-size content))))
 
         (when-let [hash (get object :hash)]
           (when (not= hash (sto/get-hash content))
@@ -880,26 +1053,164 @@
 
           (vswap! bfc/*state* update :index assoc id (:id sobject)))))))
 
+(defn- add-to-file
+  "Add a resolved library entry to a file in the file-grouped resolution.
+  `key` is :done (auto-linked) or :pending (needs resolution)."
+  [acc file-id file-name key entry]
+  (update acc file-id (fn [file]
+                        (let [file (or file {:id file-id
+                                             :name file-name
+                                             :done []
+                                             :pending []})]
+                          (update file key conj entry)))))
+
+(defn- compute-link-decisions
+  "Returns a map of {old-lib-id -> {:library-id ... :library ...}} for external
+  libraries that should be auto-linked (single candidate AND importer has edit
+  permission). Libraries with zero or multiple candidates, or where the importer
+  lacks permission, are excluded — their refs should remain dangling."
+  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/profile-id] :as cfg}]
+  (reduce
+   (fn [acc ext-lib]
+     (let [slug (:slug ext-lib)]
+       (if (nil? slug)
+         acc
+         (let [matching (into [] (bfc/find-shared-files-by-slug cfg team-id slug))]
+           (if (not= 1 (count matching))
+             acc
+             (let [library (first matching)
+                   perms (bfc/get-file-permissions conn profile-id (:id library))]
+               (if (:can-edit perms)
+                 (assoc acc (:id ext-lib) {:library-id (:id library)
+                                           :library library})
+                 acc)))))))
+   {}
+   (:external-libraries manifest)))
+
+(defn- resolve-and-link-libraries
+  "For each external library in the manifest, resolve candidates by slug.
+   Auto-links single matches (creating DB rows) and builds a file-grouped
+   resolution map keyed by imported file-id (new UUID)."
+
+  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/timestamp] :as cfg} files-info]
+  (assert (uuid? team-id) "team-id should be provided")
+
+  (let [file-ids (keys files-info)
+        decisions (compute-link-decisions cfg)]
+
+    (reduce
+     (fn [acc ext-lib]
+       (assert (contains? ext-lib :id) "expected `:id` on ext-lib")
+       (assert (contains? ext-lib :name) "expected `:name` on ext-lib")
+       (assert (contains? ext-lib :used-by) "expected `:used-by` on ext-lib")
+       (assert (contains? ext-lib :slug) "expected `:slug` on ext-lib")
+
+       (let [used-by (into #{} (map bfc/lookup-index) (:used-by ext-lib))]
+         (cond
+           ;; No slug → skip
+           (nil? (:slug ext-lib))
+           acc
+
+           ;; Has decision → auto-link (single match + can-edit)
+           (contains? decisions (:id ext-lib))
+           (let [{:keys [library-id]} (get decisions (:id ext-lib))
+                 used-by (filter used-by file-ids)]
+             (doseq [file-id used-by]
+               (let [rel-params {:file-id file-id :library-file-id library-id}]
+                 (db/insert! conn :file-library-rel rel-params
+                             {::db/on-conflict-do-nothing? true})
+                 (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+             (let [entry {:id (:id ext-lib)
+                          :name (:name ext-lib)
+                          :linked-to library-id}]
+               (reduce (fn [acc file-id]
+                         (add-to-file acc file-id (get files-info file-id) :done entry))
+                       acc used-by)))
+
+           ;; Has candidates but no decision → multi-match or no permission → pending
+           :else
+           (let [matching-libraries (into [] (bfc/find-shared-files-by-slug cfg team-id (:slug ext-lib)))]
+             (if (empty? matching-libraries)
+               acc
+               (let [candidates (mapv (fn [lib]
+                                        (let [project-id (:project-id lib)
+                                              project (bfc/get-project cfg project-id)
+                                              project-name (:name project)]
+                                          {:id (:id lib)
+                                           :name (:name lib)
+                                           :project-id project-id
+                                           :project-name project-name}))
+                                      matching-libraries)
+                     entry {:id (:id ext-lib)
+                            :name (:name ext-lib)
+                            :candidates candidates}]
+                 (reduce (fn [acc file-id]
+                           (add-to-file acc file-id (get files-info file-id) :pending entry))
+                         acc used-by)))))))
+
+     {}
+     (:external-libraries manifest))))
+
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-database-timeouts! cfg)
 
   (vswap! bfc/*state* update :index bfc/update-index (:files manifest) :id)
 
   (import-storage-objects cfg)
 
-  (let [files  (get manifest :files)
-        result (reduce (fn [result file]
-                         (let [name' (get file :name)
-                               file (assoc file :name name')]
-                           (conj result (import-file cfg file))))
-                       []
-                       files)]
+  ;; Pre-resolve external libraries and add their id mappings to the index
+  ;; BEFORE importing files. This allows relink-refs (inside process-file)
+  ;; to correctly remap :component-file references to the destination library.
+  ;; Only remap when a link will actually be created (single match + can-edit).
+  (let [decisions (compute-link-decisions cfg)]
+    (doseq [[old-lib-id {:keys [library-id]}] decisions]
+      (l/trc :hint "pre-resolving external library"
+             :old-id (str old-lib-id)
+             :new-id (str library-id))
+      (vswap! bfc/*state* update :index assoc old-lib-id library-id)))
+
+  (let [files    (get manifest :files)
+        file-ids (reduce (fn [result file]
+                           (let [name' (get file :name)
+                                 file (assoc file :name name')]
+                             (conj result (import-file cfg file))))
+                         []
+                         files)
+        ;; Build map of file-id to file-name for resolution
+        files-info (into {} (map (fn [file-id manifest-file]
+                                   [file-id (:name manifest-file)])
+                                 file-ids
+                                 files))]
 
     (import-file-relations cfg)
-    (bfm/apply-pending-migrations! cfg)
 
-    result))
+    (let [resolution (resolve-and-link-libraries cfg files-info)]
+
+      (bfm/apply-pending-migrations! cfg)
+      {:file-ids   file-ids
+       :resolution resolution})))
+
+(defn- invalidate-thumbnails
+  [cfg file-id]
+  (let [storage (sto/resolve cfg ::db/reuse-conn true)
+
+        sql-1
+        (str "update file_tagged_object_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")
+
+        sql-2
+        (str "update file_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")]
+
+    (run! #(sto/touch-object! storage %)
+          (sequence
+           (keep :media-id)
+           (concat
+            (db/exec! cfg [sql-1 file-id])
+            (db/exec! cfg [sql-2 file-id]))))))
 
 (defn- import-file-and-overwrite*
   [{:keys [::manifest ::bfc/file-id] :as cfg}]
@@ -910,7 +1221,7 @@
               :hint "unable to perform in-place update with binfile containing more than 1 file"
               :manifest manifest))
 
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-database-timeouts! cfg)
 
   (let [ref-file (bfc/get-minimal-file cfg file-id ::db/for-update true)
         file     (first (get manifest :files))
@@ -924,10 +1235,11 @@
       (import-storage-objects cfg)
       (import-file cfg file)
 
-      (bfc/invalidate-thumbnails cfg file-id)
+      (invalidate-thumbnails cfg file-id)
       (bfm/apply-pending-migrations! cfg)
 
-      [file-id])))
+      {:file-ids   [file-id]
+       :resolution {}})))
 
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
@@ -935,11 +1247,25 @@
   (assert (instance? ZipFile input) "expected zip file")
   (assert (ct/inst? timestamp) "expected valid instant")
 
-  (let [manifest (-> (read-manifest input)
+  ;; Resolve all import limits once per job (see `setup-limits`); every
+  ;; bounded read below accounts its actual decompressed bytes against the
+  ;; shared job-wide budget, so many entries each under the per-entry cap
+  ;; cannot sum to an unreasonable total.
+  (let [cfg      (setup-limits cfg)
+        manifest (-> (read-manifest cfg input)
                      (validate-manifest))
         entries  (read-zip-entries input)
+
+        max      (::max-zip-entries cfg)
+        _        (when (> (count entries) max)
+                   (ex/raise :type :validation
+                             :code :too-many-zip-entries
+                             :hint (str "zip file has too many entries: " (count entries))
+                             :max max
+                             :found (count entries)))
+
         cfg      (-> cfg
-                     (assoc ::entries entries)
+                     (assoc ::entries-index (index-entries entries))
                      (assoc ::manifest manifest)
                      (assoc ::bfc/timestamp timestamp))]
 
@@ -975,12 +1301,11 @@
   "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::bfc/include-libraries`: additionally to the specified file, all the
-  linked libraries also will be included (including transitive
-  dependencies).
-
-  `::bfc/embed-assets`: instead of including the libraries, embed in the
-  same file library all assets used from external libraries."
+  `::bfc/export-type`: determines how linked libraries are handled.
+  Valid values: `:include-libraries` (include linked libraries),
+  `:merge-libraries` (embed library assets in the file),
+  `:detach-libraries` (treat assets as basic objects),
+  `:link-later` (preserve component metadata for relinking on import)."
 
   [{:keys [::bfc/ids] :as cfg} output]
 
@@ -996,6 +1321,7 @@
         tp (ct/tpoint)
         ab (volatile! false)
         cs (volatile! nil)]
+
     (try
       (l/info :hint "start exportation" :export-id (str id))
       (binding [bfc/*state* (volatile! (bfc/initial-state))]
@@ -1058,7 +1384,13 @@
                 :error? (some? @cs))))))
 
 (defn get-manifest
-  [path]
-  (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
-    (-> (read-manifest input)
-        (validate-manifest))))
+  "Reads and validates the manifest of a `.penpot` file at `path`.
+  Runs synchronously on the RPC request thread (before the background
+  import job exists). Limits are resolved from `cfg` like in the import
+  job itself, so the read is bounded by the same decompressed-size
+  limits."
+  [cfg path]
+  (let [cfg (setup-limits cfg)]
+    (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
+      (-> (read-manifest cfg input)
+          (validate-manifest)))))

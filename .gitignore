@@ -91,6 +91,7 @@ opencode.json
 /playwright/.cache/
 /render-wasm/target/
 /media-processor/dist/
+/media-processor/target/
 /**/node_modules
 /**/.yarn/*
 /.pnpm-store
@@ -98,10 +99,14 @@ opencode.json
 /.idea
 *.iml
 /.claude
+/CLAUDE.md
+/CLAUDE.local.md
 /.playwright-mcp
 /.devenv/mcp/
 /opencode.json
-/.opencode/plans
+/.agents/plans
+/.agents/local/
+/AGENTS.local.md
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs

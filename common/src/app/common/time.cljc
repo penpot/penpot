@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 #_{:clj-kondo/ignore [:unused-namespace]}
 (ns app.common.time
@@ -175,8 +175,14 @@
 
 #?(:clj
    (defn parse-duration
+     "Parse a value into a Duration. Total: returns the input unchanged
+     when it cannot be parsed, so schema decoding never throws and
+     invalid values fail validation with a clean params error instead."
      [s]
-     (duration s)))
+     (try
+       (duration s)
+       (catch Exception _
+         s))))
 
 #?(:clj
    (defn format-duration

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.repo
   (:require
@@ -23,9 +23,12 @@
 
 ;; -- Retry helpers -----------------------------------------------------------
 
-(def ^:private retryable-types
+(def retryable-types
   "Set of error types that are considered transient and safe to retry
-  for idempotent (GET) requests."
+  for idempotent (GET) requests. Also the single source of truth for the
+  transient transport classification consumed by `persistence/transient-error?`
+  and `errors/environment-error-types`: extend this set (never a copy)
+  when a new retryable transport failure appears."
   #{:network              ; js/fetch network-level failure
     :bad-gateway          ; 502
     :service-unavailable  ; 503
@@ -89,6 +92,10 @@
     (and (= 503 status)
          (= :nitrate-unavailable (:type body)))
     (rx/throw (ex-info "http error" {:type :nitrate-unavailable}))
+
+    (and (= 503 status)
+         (= :nitrate-not-configured (:type body)))
+    (rx/throw (ex-info "http error" {:type :nitrate-not-configured}))
 
     (= 503 status)
     (rx/throw (ex-info "http error" {:type :service-unavailable}))
@@ -275,6 +282,28 @@
   [_ params]
   (let [default {:wait false :blob? false}]
     (send-export (merge default params))))
+
+(defmethod cmd! :create-export-job
+  [_ params]
+  (->> (http/send! {:method :post
+                    :uri (u/join cf/public-uri "api/export/jobs")
+                    :body (http/transit-data params)
+                    :headers {"x-external-session-id" (cf/external-session-id)
+                              "x-event-origin" (::ev/origin (meta params))}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defmethod cmd! :cancel-export-job
+  [_ {:keys [job-id]}]
+  (->> (http/send! {:method :delete
+                    :uri (u/join cf/public-uri "api/export/jobs/" (str job-id))
+                    :headers {"x-external-session-id" (cf/external-session-id)}
+                    :credentials "include"
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
 
 (defn- multipart-upload
   [id params]

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams-invitations
   (:require
@@ -75,6 +75,9 @@
   (tokens/generate cfg
                    {:iss :team-invitation
                     :exp valid-until
+                    ;; NOTE: :profile-id is the inviter (the `created-by` of
+                    ;; the invitation row). Callers must pass the row value
+                    ;; so the token stays consistent with the database.
                     :profile-id profile-id
                     :role role
                     :team-id team-id
@@ -218,7 +221,7 @@
               updated?        (not= id (:id invitation))
               profile-id      (:id profile)
               team-organization-id (get-in team [:organization :id])
-              tprops          {:profile-id profile-id
+              tprops          {:profile-id (or (:created-by invitation) profile-id)
                                :invitation-id (:id invitation)
                                :valid-until expire
                                :team-id (:id team)
@@ -235,9 +238,8 @@
                        :organization-name (:name organization)
                        :member-email (:email-to invitation)
                        :member-id (:id member)
-                       :role role}
-                organization
-                (assoc :user-who-send-invitation (str profile-id))
+                       :role role
+                       :user-who-send-invitation (str profile-id)}
 
                 (not organization)
                 (assoc :team-belongs-to-organization (boolean team-organization-id)
@@ -460,6 +462,10 @@
   [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
+        team     (db/get-by-id cfg :team team-id)
+        team-with-org (when (contains? cf/flags :admin-console)
+                        (nitrate/add-organization-info-to-team cfg team {}))
+        organization (:organization team-with-org)
         ;; Determine which format is being used
         using-emails-format? (and emails role)
         ;; Handle both parameter formats
@@ -474,6 +480,24 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    (when (and (contains? cf/flags :admin-console)
+               organization
+               (not (cto/allowed? :send-invitations
+                                  {:organization-perms {:owner-id    (:owner-id organization)
+                                                        :permissions (:permissions organization)}
+                                   :profile-id profile-id
+                                   :team-perms perms})))
+      (ex/raise :type :validation
+                :code :insufficient-permissions
+                :hint "Organization policy does not allow you to send invitations"))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms))
+               (or (= role :owner)
+                   (some #(= :owner (:role %)) (:invitations params))))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
@@ -514,15 +538,15 @@
 ;; --- Mutation: Create Team & Invite Members
 
 (def ^:private schema:create-team-with-invitations
-  [:map {:title "create-team-with-invitations"}
+  [:map {:title "create-team-with-invitations" :closed true}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/uuid]
    [:emails [::sm/set ::sm/email]]
    [:role types.team/schema:role]])
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::doc/module :teams
    ::sm/params schema:create-team-with-invitations
    ::db/transaction true}
@@ -581,7 +605,7 @@
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
-  (teams/check-read-permissions! cfg profile-id team-id)
+  (teams/check-edition-permissions! cfg profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
                           {:team-id team-id
@@ -590,7 +614,11 @@
 
         member (profile/get-profile-by-email pool (:email-to invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
-                                             :profile-id profile-id
+                                             ;; The inviter is the creator of
+                                             ;; the invitation row, not the
+                                             ;; profile requesting the token.
+                                             :profile-id (or (:created-by invit)
+                                                             profile-id)
                                              :valid-until (:valid-until invit)
                                              :role (:role invit)
                                              :member-id (:id member)
@@ -617,6 +645,11 @@
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
+
+    ;; Don't allow promote to owner to admin users.
+    (when (and (not (:is-owner perms)) (= role :owner))
+      (ex/raise :type :validation
+                :code :cant-promote-to-owner))
 
     (db/update! conn :team-invitation
                 {:role (name role) :updated-at (ct/now)}

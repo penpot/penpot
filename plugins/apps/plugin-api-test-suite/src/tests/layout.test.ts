@@ -82,6 +82,34 @@ describe('Layout', () => {
       expect(flex.leftPadding).toBeCloseTo(4.5, 2);
     });
 
+    test('every flex gap and padding setter rejects negative values', (ctx) => {
+      const flex = board(ctx).addFlexLayout();
+      expect(() => {
+        flex.rowGap = -1;
+      }).toThrow();
+      expect(() => {
+        flex.columnGap = -1;
+      }).toThrow();
+      expect(() => {
+        flex.verticalPadding = -1;
+      }).toThrow();
+      expect(() => {
+        flex.horizontalPadding = -1;
+      }).toThrow();
+      expect(() => {
+        flex.topPadding = -1;
+      }).toThrow();
+      expect(() => {
+        flex.rightPadding = -1;
+      }).toThrow();
+      expect(() => {
+        flex.bottomPadding = -1;
+      }).toThrow();
+      expect(() => {
+        flex.leftPadding = -1;
+      }).toThrow();
+    });
+
     // paddingType is "simple" (sides mirrored) or "multiple" (each side independent).
     test('paddingType round-trips', (ctx) => {
       const flex = board(ctx).addFlexLayout();
@@ -185,6 +213,37 @@ describe('Layout', () => {
       expect(grid.columns[0].type).toBe('percent');
     });
 
+    test('grid track creation and replacement reject negative values', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      for (const type of ['fixed', 'percent', 'flex'] as const) {
+        expect(() => grid.addRow(type, -1)).toThrow();
+        expect(() => grid.addColumn(type, -1)).toThrow();
+      }
+      expect(() =>
+        grid.addColumn('fixed', 'bad' as unknown as number),
+      ).toThrow();
+      grid.addRow('flex', 1);
+      grid.addColumn('flex', 1);
+      expect(() => grid.addRowAtIndex(0, 'fixed', -1)).toThrow();
+      expect(() => grid.addColumnAtIndex(0, 'fixed', -1)).toThrow();
+      expect(() => grid.setRow(0, 'flex', -1)).toThrow();
+      expect(() => grid.setColumn(0, 'flex', -1)).toThrow();
+    });
+
+    test('retained grid track proxies reject negative values', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      grid.addRow('fixed', 10);
+      grid.addColumn('fixed', 10);
+      const row = grid.rows[0];
+      const column = grid.columns[0];
+      expect(() => {
+        row.value = -1;
+      }).toThrow();
+      expect(() => {
+        column.value = -1;
+      }).toThrow();
+    });
+
     test('removeRow and removeColumn drop tracks', (ctx) => {
       const grid = board(ctx).addGridLayout();
       grid.addRow('flex', 1);
@@ -236,6 +295,34 @@ describe('Layout', () => {
       expect(grid.rightPadding).toBeCloseTo(2.75, 2);
       expect(grid.bottomPadding).toBeCloseTo(3.25, 2);
       expect(grid.leftPadding).toBeCloseTo(4.5, 2);
+    });
+
+    test('every grid gap and padding setter rejects negative values', (ctx) => {
+      const grid = board(ctx).addGridLayout();
+      expect(() => {
+        grid.rowGap = -1;
+      }).toThrow();
+      expect(() => {
+        grid.columnGap = -1;
+      }).toThrow();
+      expect(() => {
+        grid.verticalPadding = -1;
+      }).toThrow();
+      expect(() => {
+        grid.horizontalPadding = -1;
+      }).toThrow();
+      expect(() => {
+        grid.topPadding = -1;
+      }).toThrow();
+      expect(() => {
+        grid.rightPadding = -1;
+      }).toThrow();
+      expect(() => {
+        grid.bottomPadding = -1;
+      }).toThrow();
+      expect(() => {
+        grid.leftPadding = -1;
+      }).toThrow();
     });
 
     // paddingType behaves the same as on flex layouts (see issue #10278).
@@ -433,6 +520,29 @@ describe('Layout', () => {
       }
     });
 
+    test('every layout child min and max bound rejects negatives', (ctx) => {
+      const b = board(ctx);
+      const flex = b.addFlexLayout();
+      const rect = ctx.penpot.createRectangle();
+      flex.appendChild(rect);
+      const child = rect.layoutChild;
+      expect(child).toBeDefined();
+      if (child) {
+        expect(() => {
+          child.minWidth = -1;
+        }).toThrow();
+        expect(() => {
+          child.maxWidth = -1;
+        }).toThrow();
+        expect(() => {
+          child.minHeight = -1;
+        }).toThrow();
+        expect(() => {
+          child.maxHeight = -1;
+        }).toThrow();
+      }
+    });
+
     // marginType is the child-margin counterpart of a layout's paddingType.
     test('marginType round-trips', (ctx) => {
       const b = board(ctx);
@@ -491,7 +601,7 @@ describe('Layout', () => {
       b.resize(300, 200);
       b.addFlexLayout();
 
-      const found = ctx.penpot.currentPage.getShapeById(b.id) as Board;
+      const found = ctx.penpot.currentPage!.getShapeById(b.id) as Board;
       expect(found).not.toBeNull();
       const child = ctx.penpot.createRectangle();
       found.appendChild(child);

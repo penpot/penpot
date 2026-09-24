@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.viewer
   (:require
@@ -44,8 +44,7 @@
    :selected #{}
    :collapsed #{}
    :hover nil
-   :share-id ""
-   :file-comments-users []})
+   :share-id ""})
 
 (declare fetch-comment-threads)
 (declare fetch-bundle)
@@ -77,7 +76,8 @@
                     (if (nil? lstate)
                       default-local-state
                       lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)))
+          (assoc-in [:viewer-local :share-id] share-id)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -95,14 +95,21 @@
       ;; browser just focus the opened tab instead of creating new
       ;; tab.
       (let [name (str "viewer-" file-id)]
-        (unchecked-set ug/global "name" name)))))
+        (unchecked-set ug/global "name" name))
+      ;; Make every `cf/resolve-file-media` call (inspector, code panel,
+      ;; image previews, ...) share-link aware for the lifetime of this
+      ;; viewer. Cleared by `finalize` below.
+      (cf/set-current-share-id! share-id))))
 
 (defn finalize
   [_]
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer))))
+      (dissoc state :viewer))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (cf/set-current-share-id! nil))))
 
 ;; --- Data Fetching
 
@@ -319,11 +326,12 @@
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [{:keys [type] :as err}]
-            (if (or (= :authentication type)
-                    (= :not-found type))
-              (rx/empty)
-              (rx/throw err)))]
+          (on-error [cause]
+            (let [{:keys [type]} (ex-data cause)]
+              (if (or (= :authentication type)
+                      (= :not-found type))
+                (rx/empty)
+                (rx/throw cause))))]
 
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
@@ -360,9 +368,17 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [zoom-type (get-in state [:viewer-local :zoom-type])
-            params    (rt/get-params state)]
-
-        (rx/of (rt/nav :viewer (assoc params :zoom zoom-type)))))))
+            params    (rt/get-params state)
+            current   (rt/get-query-param params :zoom)
+            expected  (some-> zoom-type name)]
+        ;; Zoom is view state: mirror it into the URL, replacing the history
+        ;; entry, only when the query string does not already describe it.
+        (when (not= current expected)
+          (rx/of (rt/nav :viewer
+                         (if (some? zoom-type)
+                           (assoc params :zoom zoom-type)
+                           (dissoc params :zoom))
+                         {::rt/replace true})))))))
 
 (def increase-zoom
   (ptk/reify ::increase-zoom

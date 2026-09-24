@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.profile
   (:require
@@ -43,28 +43,30 @@
 (defn set-profile
   "Initialize profile state, only logged-in profile data should be
   passed to this event"
-  [{:keys [id] :as profile}]
-  (ptk/reify ::set-profile
-    IDeref
-    (-deref [_] profile)
+  [profile]
+  (let [profile (update profile :theme not-empty)
+        id      (:id profile)]
+    (ptk/reify ::set-profile
+      IDeref
+      (-deref [_] profile)
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :profile-id id)
-          (assoc :profile profile)))
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (assoc :profile-id id)
+            (assoc :profile profile)))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [profile (:profile state)]
-        (->> (rx/from (i18n/set-locale (:lang profile)))
-             (rx/ignore))))
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [profile (:profile state)]
+          (->> (rx/from (i18n/set-locale (:lang profile)))
+               (rx/ignore))))
 
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [profile (:profile state)]
-        (swap! storage/user assoc :profile profile)
-        (plugins.register/init)))))
+      ptk/EffectEvent
+      (effect [_ state _]
+        (let [profile (:profile state)]
+          (swap! storage/user assoc :profile profile)
+          (plugins.register/init))))))
 
 (def profile-fetched?
   (ptk/type? ::profile-fetched))
@@ -75,8 +77,7 @@
   (let [data (ex-data cause)]
     (if (and (= :authorization (:type data))
              (= :challenge-required (:code data)))
-      (let [path (rt/get-current-path)
-            href (->> path
+      (let [href (->> (rt/get-current-href)
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
         (rx/of (rt/nav-raw :href href)))
@@ -120,6 +121,10 @@
 
 ;; --- Update Profile
 
+(defn profile-update-params
+  [profile]
+  (d/without-nils (select-keys profile [:fullname :lang :theme])))
+
 (defn persist-profile
   [& {:as opts}]
   (ptk/reify ::persist-profile
@@ -128,7 +133,7 @@
       (let [on-success (:on-success opts identity)
             on-error   (:on-error opts rx/throw)
             profile    (:profile state)
-            params     (select-keys profile [:fullname :lang :theme])]
+            params     (profile-update-params profile)]
         (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
              (rx/map set-profile)
@@ -141,7 +146,7 @@
   props"
   [profile]
 
-  (let [profile (check-profile profile)]
+  (let [profile (check-profile (d/without-nils profile))]
     (ptk/reify ::update-profile
       ptk/WatchEvent
       (watch [_ state _]
@@ -370,20 +375,6 @@
            (rx/catch (fn [cause]
                        (js/console.error "delete-photo failed" cause)
                        (rx/of (refresh-profile))))))))
-
-(defn fetch-file-comments-users
-  [{:keys [team-id]}]
-  (assert (uuid? team-id) "expected a valid uuid for `team-id`")
-  (letfn [(fetched [users state]
-            (->> users
-                 (d/index-by :id)
-                 (assoc state :file-comments-users)))]
-    (ptk/reify ::fetch-file-comments-users
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
-               (rx/map #(partial fetched %))))))))
 
 ;; --- EVENT: request-account-deletion
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.middleware
   (:require
@@ -24,7 +24,8 @@
   (:import
    io.undertow.server.RequestTooBigException
    java.io.InputStream
-   java.io.OutputStream))
+   java.io.OutputStream
+   java.security.MessageDigest))
 
 (set! *warn-on-reflection* true)
 
@@ -82,18 +83,18 @@
               (instance? IllegalArgumentException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "invalid JSON in request body"
                         :cause cause)
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
                         :code :request-body-too-large
-                        :hint (ex-message cause))
+                        :hint "request body exceeds size limit")
 
               (instance? java.io.EOFException cause)
               (ex/raise :type :validation
                         :code :malformed-json
-                        :hint (ex-message cause)
+                        :hint "unexpected end of request body"
                         :cause cause)
 
               (instance? RuntimeException cause)
@@ -236,7 +237,7 @@
     (-> (assoc "access-control-allow-origin" origin)
         (assoc "access-control-allow-credentials" "true")
         (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
-        (assoc "access-control-expose-headers" "content-type")
+        (assoc "access-control-expose-headers" "content-type, retry-after, x-rate-limit-remaining, x-rate-limit-reset")
         (assoc "access-control-allow-headers" "x-frontend-version, x-client, content-type, accept"))))
 
 (defn wrap-cors
@@ -329,6 +330,11 @@
   {:name ::auth
    :compile (constantly wrap-auth)})
 
+(defn constant-time-eq?
+  "Compare strings in constant time to prevent timing attacks."
+  [^String a ^String b]
+  (MessageDigest/isEqual (.getBytes a "UTF-8") (.getBytes b "UTF-8")))
+
 (defn- wrap-shared-key-auth
   [handler keys]
   (if (seq keys)
@@ -338,13 +344,13 @@
         (let [key-id (-> key-id str/lower keyword)]
           (if (and (string? key)
                    (contains? keys key-id)
-                   (= key (get keys key-id)))
+                   (constant-time-eq? key (get keys key-id)))
             (-> request
                 (assoc ::http/auth-key-id key-id)
                 (handler))
             {::yres/status 403}))
         {::yres/status 403}))
-    (fn [_ _]
+    (fn [_]
       {::yres/status 403})))
 
 (def shared-key-auth

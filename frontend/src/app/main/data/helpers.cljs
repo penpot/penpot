@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.helpers
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -36,6 +37,23 @@
    (lookup-file-data state (:current-file-id state)))
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
+
+;; TODOstatus perhaps this is not necessary, lookup-tokens-lib should be enough
+(defn lookup-tokens-source-data
+  [state]
+  (let [current-file-data (lookup-file-data state)
+        tokens-source-id (cfo/get-effective-tokens-source current-file-data)]
+    (lookup-file-data state tokens-source-id)))
+
+(defn lookup-tokens-lib
+  [state]
+  (let [tokens-source-data (lookup-tokens-source-data state)]
+    (cfo/get-tokens-lib tokens-source-data)))
+
+(defn lookup-tokens-status
+  [state]
+  (let [current-file-data (lookup-file-data state)] ;; Tokens status is always in the current file
+    (cfo/get-tokens-status current-file-data)))
 
 (defn get-page
   [fdata page-id]

@@ -1,0 +1,12 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="388" height="268" viewBox="0 0 388 268"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="388" height="268" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.8980392 0 0 0 0 0.0627451 0 0 0 0 0.13725491 0 0 0 1 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter></defs><g filter="url(#fx0)">
+	<rect fill="#3D7BFF" transform="translate(24 24)" x="-4" y="6" width="228" height="208"/>
+	<rect fill="#00C800" transform="translate(24 24)" x="226" y="46" width="108" height="108"/>
+</g>
+	<rect fill="#3D7BFF" transform="translate(24 24)" x="20" y="30" width="180" height="160"/>
+	<rect fill="#00C800" transform="translate(24 24)" x="250" y="70" width="60" height="60"/>
+</svg>

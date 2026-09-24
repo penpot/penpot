@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.flags
   "Flags parsing algorithm."
@@ -98,8 +98,14 @@
     :exporter-svgo
     ;; TODO: deprecate this flag and consolidate the code
     :backend-svgo
+    ;; Enables account lockout after repeated failed login attempts.
+    :account-lockout
     ;; If enabled, it makes the Google Fonts available.
     :google-fonts-provider
+    ;; Enables the Ladybug graph subsystem: the `/dbg` graph console and its
+    ;; actions. Off by default. With the flag off, `app.graph.*` never loads,
+    ;; so the Ladybug native library never enters the JVM.
+    :graph
     ;; Only for development.
     :nrepl-server
     ;; Interactive repl. Only for development.
@@ -133,6 +139,7 @@
     :token-tokenscript
     :token-import-from-library
     :token-typography-row
+    :token-lib-sync
 
     ;; Only for developtment.
     :transit-readable-response
@@ -147,7 +154,6 @@
     :render-switch
     :hide-release-modal
     :subscriptions
-    :subscriptions-old
     :inspect-styles
     ;; Enable performance logs in devconsole (disabled by default)
     :perf-logs
@@ -182,7 +188,15 @@
     ;; renderer.
     :wasm-export
     :custom-shortcuts
-    :remote-media-processing})
+    :remote-media-processing
+
+    ;; Enables serving link preview (Open Graph) metadata for shared
+    ;; links; exposes file names and dashboard thumbnails to anyone
+    ;; that knows the file id.
+    :link-preview
+
+    ;; Shows the "link later" option on the files export modal.
+    :export-link-later})
 
 (def all-flags
   (set/union email login varia))

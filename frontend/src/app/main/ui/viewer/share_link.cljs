@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.viewer.share-link
   (:require-macros [app.main.style :as stl])
@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -78,8 +77,8 @@
                               (dissoc params :zoom)
                               (assoc params :zoom zoom-type))
 
-                    href    (rt/resolve router :viewer params)]
-                (dm/str (assoc cf/public-uri :fragment href))))))
+                    href    (rt/resolve-uri router :viewer params)]
+                href))))
 
         on-close
         (fn [event]

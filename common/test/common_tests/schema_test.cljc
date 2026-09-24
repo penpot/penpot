@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.schema-test
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 (t/deftest test-set-of-email
@@ -245,3 +246,40 @@
     (t/is (false? (sm/validate ::sm/email "user@")))
     (t/is (false? (sm/validate ::sm/email "userdomain.com")))
     (t/is (false? (sm/validate ::sm/email "user@@domain.com")))))
+
+(t/deftest test-user-provided-uuid
+  (let [v4 (uuid/uuid "550e8400-e29b-41d4-a716-446655440000")
+        v7 (uuid/uuid "0191062e-3f50-7a5e-9f5a-1a2b3c4d5e6f")
+        v8 (uuid/uuid "0227df82-63d7-8016-8005-48d9c0f33011")
+        v1 (uuid/uuid "6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+        v3 (uuid/uuid "6fa459ea-ee8a-3ca4-894e-db77e160355e")
+        v5 (uuid/uuid "886313e1-3b8a-5372-9b90-0c9aee199e5d")]
+
+    (t/testing "accepts v4, v7 and v8 instances"
+      (t/is (true? (sm/validate ::sm/user-provided-uuid v4)))
+      (t/is (true? (sm/validate ::sm/user-provided-uuid v7)))
+      (t/is (true? (sm/validate ::sm/user-provided-uuid v8)))
+      (t/is (true? (sm/validate ::sm/user-provided-uuid (uuid/random))))
+      (t/is (true? (sm/validate ::sm/user-provided-uuid (uuid/next)))))
+
+    (t/testing "rejects reserved and other versions"
+      (t/is (false? (sm/validate ::sm/user-provided-uuid v1)))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid v3)))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid v5)))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid uuid/zero)))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid nil)))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid "not-an-uuid"))))
+
+    (t/testing "decodes strings like the RPC layer does"
+      (let [decode (sm/decoder ::sm/user-provided-uuid sm/json-transformer)]
+        (t/is (= v4 (decode (str v4))))
+        (t/is (= v3 (decode (str v3))))
+        (t/is (true? (sm/validate ::sm/user-provided-uuid (decode (str v4)))))
+        (t/is (false? (sm/validate ::sm/user-provided-uuid (decode (str v3)))))))
+
+    (t/testing "rejects raw strings without decoding, like ::sm/uuid does"
+      (t/is (false? (sm/validate ::sm/user-provided-uuid (str v4))))
+      (t/is (false? (sm/validate ::sm/user-provided-uuid (str v3)))))
+
+    (t/testing "generate"
+      (t/is (true? (sm/validate ::sm/user-provided-uuid (sg/generate ::sm/user-provided-uuid)))))))

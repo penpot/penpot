@@ -90,6 +90,12 @@ test.describe("Tokens Themes", () => {
     ).toBeVisible();
 
     await tokenThemeUpdateCreateModal
+      .getByRole("switch", {
+        name: "Changed",
+      })
+      .click();
+
+    await tokenThemeUpdateCreateModal
       .getByRole("button")
       .getByText("close")
       .click();

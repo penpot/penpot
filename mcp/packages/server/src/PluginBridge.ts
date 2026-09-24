@@ -94,7 +94,7 @@ export class PluginBridge {
         private readonly taskTimeoutSecs: number,
         private readonly redisBridge?: RedisBridge
     ) {
-        this.wsServer = new WebSocketServer({ port: port });
+        this.wsServer = new WebSocketServer({ port: port, host: mcpServer.host });
         this.setupWebSocketHandlers();
     }
 
@@ -466,5 +466,17 @@ export class PluginBridge {
         } catch (error) {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
         }
+    }
+
+    /**
+     * Closes the WebSocket server and all connected client sockets.
+     */
+    public async close(): Promise<void> {
+        return new Promise((resolve) => {
+            this.wsServer.close(() => {
+                this.logger.info("WebSocket server closed");
+                resolve();
+            });
+        });
     }
 }

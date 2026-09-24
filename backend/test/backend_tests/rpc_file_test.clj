@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-file-test
   (:require
@@ -46,25 +46,23 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
-        page-id (uuid/next)]
+        page-id (uuid/next)
+        data    {::th/type :create-file
+                 ::rpc/profile-id (:id prof)
+                 :project-id proj-id
+                 :name "foobar"
+                 :is-shared false}
+        out     (th/command! data)
+        file-id (:id (:result out))]
 
     (t/testing "create file"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
 
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result))))))
+      (let [result (:result out)]
+        (t/is (uuid? file-id))
+        (t/is (= (:name data) (:name result)))
+        (t/is (= proj-id (:project-id result)))))
 
     (t/testing "rename file"
       (let [data {::th/type :rename-file
@@ -140,31 +138,6 @@
 
         (let [result (:result out)]
           (t/is (= 0 (count result))))))))
-
-(t/deftest create-file-with-duplicate-id
-  (let [prof    (th/create-profile* 1 {:is-active true})
-        proj-id (:default-project-id prof)
-        file-id (uuid/next)]
-
-    (t/testing "create file with specific id"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "first-file"}
-            out  (th/command! data)]
-        (t/is (nil? (:error out)))))
-
-    (t/testing "create file with duplicate id returns normalized error"
-      (let [data {::th/type :create-file
-                  ::rpc/profile-id (:id prof)
-                  :project-id proj-id
-                  :id file-id
-                  :name "duplicate-file"}
-            out  (th/command! data)
-            err  (:error out)]
-        (t/is (th/ex-info? err))
-        (t/is (th/ex-of-type? err :not-found))))))
 
 (t/deftest file-gc-with-fragments
   (let [profile (th/create-profile* 1)
@@ -733,7 +706,7 @@
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
-                 (-> rows first :object-id))))
+                 (->> rows (remove (comp some? :deleted-at)) first :object-id))))
 
       ;; Now that file-gc have marked for deletion the object
       ;; thumbnail lets execute the objects-gc task which remove
@@ -797,8 +770,7 @@
                   ::rpc/profile-id (:id profile2)
                   :project-id (:default-project-id profile1)
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
+                  :is-shared false}
         out      (th/command! data)
         error    (:error out)]
 
@@ -2091,127 +2063,121 @@
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
-                  :id file-id
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+                  :is-shared false}
+            out  (th/command! data)
+            _    (t/is (nil? (:error out)))
+            file-id (:id (:result out))]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
         (let [result (:result out)]
           (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result)))))
+          (t/is (= proj-id (:project-id result))))
 
-      (let [data {::th/type :delete-file
-                  :id file-id
-                  ::rpc/profile-id (:id prof)}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out))))
+        (let [data {::th/type :delete-file
+                    :id file-id
+                    ::rpc/profile-id (:id prof)}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (t/is (nil? (:result out))))
 
-      ;; get deleted files
-      (let [data {::th/type :get-team-deleted-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [[row1 :as result] (:result out)]
-          (t/is (= 1 (count result)))
-          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
-          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
-          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
 
-      (let [data {::th/type :permanently-delete-team-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id
-                  :ids #{file-id}}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [result (:result out)]
-          (t/is (fn? result))
+        (let [data {::th/type :permanently-delete-team-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id
+                    :ids #{file-id}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
 
-          (let [[ev1 ev2 :as events] (th/consume-sse result)]
-            (t/is (= 2 (count events)))
-            (t/is (= (:ids data) (val ev2)))))
+            (let [[ev1 ev2 :as events] (th/consume-sse result)]
+              (t/is (= 2 (count events)))
+              (t/is (= (:ids data) (val ev2)))))
 
-        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
-          (t/is (= (:deleted-at row) now)))))))
+          (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+            (t/is (= (:deleted-at row) now))))))))
 
 (t/deftest restore-deleted-files
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
-        file-id (uuid/next)
         now     (ct/inst "2025-10-31T00:00:00Z")]
 
     (binding [ct/*clock* (ct/fixed-clock now)]
       (let [data {::th/type :create-file
                   ::rpc/profile-id (:id prof)
                   :project-id proj-id
-                  :id file-id
                   :name "foobar"
-                  :is-shared false
-                  :components-v2 true}
-            out (th/command! data)]
+                  :is-shared false}
+            out  (th/command! data)
+            _    (t/is (nil? (:error out)))
+            file-id (:id (:result out))]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
         (let [result (:result out)]
           (t/is (= (:name data) (:name result)))
-          (t/is (= proj-id (:project-id result)))))
+          (t/is (= proj-id (:project-id result))))
 
-      (let [data {::th/type :delete-file
-                  :id file-id
-                  ::rpc/profile-id (:id prof)}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out))))
+        (let [data {::th/type :delete-file
+                    :id file-id
+                    ::rpc/profile-id (:id prof)}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (t/is (nil? (:result out))))
 
-      ;; get deleted files
-      (let [data {::th/type :get-team-deleted-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [[row1 :as result] (:result out)]
-          (t/is (= 1 (count result)))
-          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
-          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
-          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+        ;; get deleted files
+        (let [data {::th/type :get-team-deleted-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [[row1 :as result] (:result out)]
+            (t/is (= 1 (count result)))
+            (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+            (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+            (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
 
-      (let [data {::th/type :restore-deleted-team-files
-                  ::rpc/profile-id (:id prof)
-                  :team-id team-id
-                  :ids #{file-id}}
-            out (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (let [result (:result out)]
-          (t/is (fn? result))
+        (let [data {::th/type :restore-deleted-team-files
+                    ::rpc/profile-id (:id prof)
+                    :team-id team-id
+                    :ids #{file-id}}
+              out (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:error out)))
+          (let [result (:result out)]
+            (t/is (fn? result))
 
-          (let [events (th/consume-sse result)]
-            ;; (pp/pprint events)
-            (t/is (= 2 (count events)))
-            (t/is (= :end (first (last events))))
-            (t/is (= (:ids data) (last (last events)))))))
+            (let [events (th/consume-sse result)]
+              ;; (pp/pprint events)
+              (t/is (= 2 (count events)))
+              (t/is (= :end (first (last events))))
+              (t/is (= (:ids data) (last (last events)))))))
 
-      (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
-        (t/is (nil? (:deleted-at row)))))))
+        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+          (t/is (nil? (:deleted-at row))))))))
 
 
 (t/deftest restore-deleted-files-and-projets
@@ -2377,8 +2343,6 @@
     (let [edata (-> out :error ex-data)]
       (t/is (= :not-found (:type edata))))))
 
-;; --- Security Fix Tests ---
-
 (t/deftest link-file-to-library-circular-reference
   (let [profile (th/create-profile* 1)
         file1   (th/create-file* 1 {:profile-id (:id profile)
@@ -2448,3 +2412,263 @@
     (t/is (th/ex-info? (:error out)))
     (let [edata (-> out :error ex-data)]
       (t/is (= :validation (:type edata))))))
+
+(t/deftest get-file-libraries-nonexistent-file
+  (let [prof (th/create-profile* 1 {:is-active true})
+        out  (th/command! {::th/type :get-file-libraries
+                           ::rpc/profile-id (:id prof)
+                           :file-id (uuid/random)})
+        err  (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest get-file-libraries-no-permission
+  (let [owner (th/create-profile* 1 {:is-active true})
+        other (th/create-profile* 2 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})
+        out   (th/command! {::th/type :get-file-libraries
+                            ::rpc/profile-id (:id other)
+                            :file-id (:id file)})
+        err   (:error out)]
+    (t/is (th/ex-info? err))
+    (t/is (th/ex-of-type? err :not-found))))
+
+(t/deftest share-link-deletion-idor
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
+        proj-id (:default-project-id owner)
+        team-id (:default-team-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        ;; Invite editor to the team with edit permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id editor)
+                                       :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})
+
+        ;; Owner creates a share-link
+        slink   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{(get-in file [:data :pages 0])}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        slink-id (get-in slink [:result :id])]
+
+    (t/testing "owner can delete their own share-link"
+      (let [out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id owner)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "editor CANNOT delete owner's share-link (IDOR)"
+      ;; Recreate the share-link for this test
+      (let [slink2 (th/command! {::th/type :create-share-link
+                                 ::rpc/profile-id (:id owner)
+                                 :file-id (:id file)
+                                 :pages #{}
+                                 :who-comment "team"
+                                 :who-inspect "team"})
+            slink2-id (get-in slink2 [:result :id])
+
+            ;; Editor tries to delete owner's share-link
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id editor)
+                              :id slink2-id})
+            err (:error out)
+            edata (ex-data err)]
+
+        ;; Should be denied with authorization error
+        (t/is (th/ex-info? err))
+        (t/is (= :authorization (:type edata)))
+
+        ;; Verify the share-link still exists
+        (let [check (th/command! {::th/type :get-view-only-bundle
+                                  ::rpc/profile-id (:id owner)
+                                  :file-id (:id file)})
+              share-links (:share-links (:result check))]
+          (t/is (some #(= slink2-id (:id %)) share-links)))))))
+
+(t/deftest share-link-page-scope-enforcement
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        viewer  (th/create-profile* 2 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        page-a  (get-in file [:data :pages 0])
+        page-b  (uuid/random)
+
+        ;; Add a second page to the file
+        _       (th/command! {::th/type :update-file
+                              ::rpc/profile-id (:id owner)
+                              :id (:id file)
+                              :session-id (uuid/random)
+                              :revn 0
+                              :vern 0
+                              :changes [{:type :add-page
+                                         :id page-b
+                                         :page {:id page-b
+                                                :name "Page B"
+                                                :options {}
+                                                :objects {}}}]})
+
+        ;; Create share-link scoped to page A only
+        share   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        share-id (get-in share [:result :id])]
+
+    (t/testing "share-link holder can access authorized page"
+      (let [out (th/command! {::th/type :get-page
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :page-id page-a
+                              :share-id share-id})]
+        (t/is (nil? (:error out)))
+        (t/is (some? (:result out)))))
+
+    (t/testing "share-link holder cannot access out-of-scope page"
+      (let [out (th/command! {::th/type :get-page
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :page-id page-b
+                              :share-id share-id})
+            err (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))
+        (t/is (= :object-not-found (:code edata)))))
+
+    (t/testing "team member can access all pages"
+      (let [out-a (th/command! {::th/type :get-page
+                                ::rpc/profile-id (:id owner)
+                                :file-id (:id file)
+                                :page-id page-a})
+            out-b (th/command! {::th/type :get-page
+                                ::rpc/profile-id (:id owner)
+                                :file-id (:id file)
+                                :page-id page-b})]
+        (t/is (nil? (:error out-a)))
+        (t/is (nil? (:error out-b)))))))
+
+(t/deftest share-link-deletion-escape-hatches
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        editor  (th/create-profile* 2 {:is-active true})
+        admin   (th/create-profile* 3 {:is-active true})
+        proj-id (:default-project-id owner)
+        team-id (:default-team-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        ;; Invite editor to the team with edit permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id editor)
+                                       :role :editor})
+
+        ;; Invite admin to the team with admin permissions
+        _       (th/create-team-role* {:team-id team-id
+                                       :profile-id (:id admin)
+                                       :role :admin})]
+
+    (t/testing "editor CAN delete their own share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id editor)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "admin CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id admin)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))
+
+    (t/testing "owner CAN delete editor's share-link"
+      (let [slink (th/command! {::th/type :create-share-link
+                                ::rpc/profile-id (:id editor)
+                                :file-id (:id file)
+                                :pages #{}
+                                :who-comment "team"
+                                :who-inspect "team"})
+            slink-id (get-in slink [:result :id])
+
+            out (th/command! {::th/type :delete-share-link
+                              ::rpc/profile-id (:id owner)
+                              :id slink-id})]
+        (t/is (nil? (:error out)))))))
+
+(t/deftest share-link-fragment-access-denied
+  (let [owner   (th/create-profile* 1 {:is-active true})
+        viewer  (th/create-profile* 2 {:is-active true})
+        proj-id (:default-project-id owner)
+
+        file    (th/create-file* 1 {:profile-id (:id owner)
+                                    :project-id proj-id
+                                    :is-shared false})
+
+        page-a  (get-in file [:data :pages 0])
+
+        ;; Create share-link
+        share   (th/command! {::th/type :create-share-link
+                              ::rpc/profile-id (:id owner)
+                              :file-id (:id file)
+                              :pages #{page-a}
+                              :who-comment "team"
+                              :who-inspect "all"})
+        share-id (get-in share [:result :id])]
+
+    (t/testing "share-link holder cannot access file fragments"
+      (let [out (th/command! {::th/type :get-file-fragment
+                              ::rpc/profile-id (:id viewer)
+                              :file-id (:id file)
+                              :fragment-id (uuid/random)
+                              :share-id share-id})
+            err (:error out)
+            edata (ex-data err)]
+        (t/is (th/ex-info? err))
+        (t/is (= :not-found (:type edata)))
+        (t/is (= :object-not-found (:code edata)))))))
+
+(t/deftest create-file-rejects-client-id
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :create-file
+                              ::rpc/profile-id (:id prof)
+                              :project-id (:default-project-id prof)
+                              :name "file with client id"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

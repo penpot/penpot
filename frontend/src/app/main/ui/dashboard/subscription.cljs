@@ -1,4 +1,4 @@
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.dashboard.subscription
   (:require-macros [app.main.style :as stl])
@@ -20,7 +20,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
-   [lambdaisland.uri :as u]
    [rumext.v2 :as mf]))
 
 (defn get-subscription-type
@@ -77,7 +76,7 @@
   (let [subscription           (:subscription (:props profile))
         subscription-type      (get-subscription-type subscription)
         subscription-is-trial  (= (:status subscription) "trialing")
-        subscription-href      (dm/str (u/join cf/public-uri "#/settings/subscriptions"))]
+        subscription-href      (dm/str cf/public-uri "?screen=settings-subscription")]
 
     (case subscription-type
       "professional"
@@ -341,7 +340,7 @@
   [{:keys [profile]}]
   (let [subscription          (-> profile :props :subscription)
         subscription-type     (get-subscription-type subscription)
-        go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
+        go-to-subscription    (dm/str cf/public-uri "?screen=settings-subscription")
         seats                 (:quantity subscription)
         editors               (count (:editors subscription))
         cta-title

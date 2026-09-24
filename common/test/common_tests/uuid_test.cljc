@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.uuid-test
   (:require
@@ -95,3 +95,46 @@
            (t/is (= (nth expected 1) (aget parts 1)))
            (t/is (= (nth expected 2) (aget parts 2)))
            (t/is (= (nth expected 3) (aget parts 3))))))))
+
+(t/deftest user-provided-test
+  ;; The version is the first nibble of the 3rd group, the variant is
+  ;; the first nibble of the 4th group (8, 9, a or b means RFC 4122).
+  (let [v4              (uuid/uuid "550e8400-e29b-41d4-a716-446655440000") ; v4, variant a: valid
+        v7              (uuid/uuid "0191062e-3f50-7a5e-9f5a-1a2b3c4d5e6f") ; v7, variant 9: valid
+        v8              (uuid/uuid "0227df82-63d7-8016-8005-48d9c0f33011") ; v8, variant 8: valid
+        v4-upper        (uuid/uuid "550E8400-E29B-41D4-A716-446655440000") ; v4 uppercase, variant A: valid
+        v1              (uuid/uuid "6ba7b810-9dad-11d1-80b4-00c04fd430c8") ; v1 time-based: rejected
+        v3              (uuid/uuid "6fa459ea-ee8a-3ca4-894e-db77e160355e") ; v3 MD5 name-based (reserved): rejected
+        v5              (uuid/uuid "886313e1-3b8a-5372-9b90-0c9aee199e5d") ; v5 SHA-1 name-based: rejected
+        v6              (uuid/uuid "1e29effc-7a68-6d2c-9b6f-7f6a5f9b5b5b") ; v6 time-ordered: rejected
+        v4-bad-variant (uuid/uuid "550e8400-e29b-41d4-0716-446655440000")] ; v4 but variant 0 (NCS reserved): rejected
+
+    (t/testing "accepts v4, v7 and v8 instances"
+      (t/is (true? (uuid/user-provided? v4)))
+      (t/is (true? (uuid/user-provided? v7)))
+      (t/is (true? (uuid/user-provided? v8)))
+      (t/is (true? (uuid/user-provided? v4-upper)))
+      (t/is (true? (uuid/user-provided? (uuid/random)))) ; generates v4
+      (t/is (true? (uuid/user-provided? (uuid/next))))) ; generates v8
+
+    (t/testing "rejects strings, they must be decoded first"
+      (t/is (false? (uuid/user-provided? (str v4))))
+      (t/is (false? (uuid/user-provided? (str v7))))
+      (t/is (false? (uuid/user-provided? (str v8))))
+      (t/is (false? (uuid/user-provided? (str v3)))))
+
+    (t/testing "rejects nil uuid and reserved and other versions"
+      (t/is (false? (uuid/user-provided? uuid/zero))) ; version 0, variant 0
+      (t/is (false? (uuid/user-provided? v1)))
+      (t/is (false? (uuid/user-provided? v3)))
+      (t/is (false? (uuid/user-provided? v5)))
+      (t/is (false? (uuid/user-provided? v6)))
+      (t/is (false? (uuid/user-provided? (uuid/custom 1))))) ; version 0, variant 0
+
+    (t/testing "rejects right version with wrong variant"
+      (t/is (false? (uuid/user-provided? v4-bad-variant))))
+
+    (t/testing "rejects non-uuid values"
+      (t/is (false? (uuid/user-provided? nil)))
+      (t/is (false? (uuid/user-provided? 42)))
+      (t/is (false? (uuid/user-provided? "not-an-uuid"))))))

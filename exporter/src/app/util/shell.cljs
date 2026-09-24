@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.shell
   "Shell & FS utilities."
@@ -94,14 +94,14 @@
   (.readFile fs/promises fpath))
 
 (defn run-cmd!
-  [cmd]
+  [cmd & args]
   (p/create
    (fn [resolve reject]
-     (l/trace :fn :run-cmd :cmd cmd)
-     (proc/exec cmd #js {:encoding "buffer"}
-                (fn [error stdout _stderr]
-                  ;; (l/trace :fn :run-cmd :stdout stdout)
-                  (if error
-                    (reject error)
-                    (resolve stdout)))))))
+     (l/trace :fn :run-cmd :cmd cmd :args args)
+     (proc/execFile cmd (clj->js args) #js {:encoding "buffer"}
+                    (fn [error stdout _stderr]
+                      ;; (l/trace :fn :run-cmd :stdout stdout)
+                      (if error
+                        (reject error)
+                        (resolve stdout)))))))
 

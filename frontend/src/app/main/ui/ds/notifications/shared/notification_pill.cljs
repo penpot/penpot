@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.ds.notifications.shared.notification-pill
   (:require-macros
@@ -59,5 +59,7 @@
      (when detail
        [:details {:class (stl/css :error-detail)}
         [:summary {:class (stl/css :error-detail-summary)} (tr "workspace.notification-pill.detail")]
-        [:div {:class (stl/css :error-detail-content)
-               :dangerouslySetInnerHTML #js {:__html detail}}]])]))
+        (if is-html
+          [:div {:class (stl/css :error-detail-content)
+                 :dangerouslySetInnerHTML #js {:__html detail}}]
+          [:div {:class (stl/css :error-detail-content)} detail])])]))

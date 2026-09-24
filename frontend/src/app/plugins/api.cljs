@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.api
   "RPC for plugins runtime."
@@ -14,7 +14,6 @@
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
-   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
@@ -28,7 +27,6 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.pages :as dwpg]
-   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.variants :as dwv]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -47,6 +45,8 @@
    [app.plugins.local-storage :as local-storage]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
+   [app.plugins.reflow :as wrfp]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.system-events :as se]
    [app.plugins.user :as user]
@@ -242,15 +242,18 @@
 
     :getCurrentUser
     (fn []
-      (user/current-user-proxy plugin-id (:session-id @st/state)))
+      (when (r/check-permission plugin-id "user:read")
+        (user/current-user-proxy plugin-id (:session-id @st/state))))
 
     :getActiveUsers
     (fn []
-      (apply array
-             (->> (:workspace-presence @st/state)
-                  (vals)
-                  (remove #(= (:id %) (:session-id @st/state)))
-                  (map #(user/active-user-proxy plugin-id (:id %))))))
+      (if (r/check-permission plugin-id "user:read")
+        (apply array
+               (->> (:workspace-presence @st/state)
+                    (vals)
+                    (remove #(= (:id %) (:session-id @st/state)))
+                    (map #(user/active-user-proxy plugin-id (:id %)))))
+        (array)))
 
     :uploadMediaUrl
     (fn  [name url]
@@ -416,7 +419,10 @@
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
 
-          (st/emit! (ch/commit-changes changes)
+          ;; Track the commit until the renderer starts.
+          (st/emit! (ptk/data-event :text/reflow {:ids [(:id shape)]
+                                                  :page-id (:id page)})
+                    (ch/commit-changes changes)
                     (se/event plugin-id "create-shape" :type :text))
 
           (when (features/active-feature? @st/state "render-wasm/v1")
@@ -698,13 +704,15 @@
     :createVariantFromComponents
     (fn [shapes]
       (cond
-        (or (not (seq shapes))
+        (or (not (array? shapes))
+            (not (seq shapes))
             (not (every? u/is-main-component-proxy? shapes)))
         (u/not-valid plugin-id :shapes shapes)
 
         :else
-        (let [file-id (obj/get (first shapes) "$file")
-              page-id (obj/get (first shapes) "$page")
+        (let [state   @st/state
+              file-id (:current-file-id state)
+              page-id (:current-page-id state)
               ;; Keep the input order: it determines the order of the
               ;; resulting variant components (see combine-as-variants)
               ids (->> shapes
@@ -712,32 +720,21 @@
                        (distinct)
                        (vec))
 
-              ;; Check that every component is:
-              ;; - in the same page
-              ;; - not already a variant
-              valid?
-              (every?
-               (fn [id]
-                 (let [shape     (u/locate-shape file-id page-id id)
-                       component (u/locate-library-component file-id (:component-id shape))]
-                   (not (ctk/is-variant? component))))
-               ids)]
+              valid? (and (every? #(and (= file-id (obj/get % "$file"))
+                                        (= page-id (obj/get % "$page")))
+                                  shapes)
+                          (dwv/valid-components-for-variants? state page-id ids))]
           (if valid?
             (let [variant-id (uuid/next)]
               (st/emit! (-> (dwv/combine-as-variants
                              ids
                              {:trigger "plugin:combine-as-variants" :variant-id variant-id})
                             (se/add-event plugin-id)))
-              (shape/shape-proxy plugin-id variant-id))
+              (shape/shape-proxy plugin-id file-id page-id variant-id))
 
             (u/not-valid plugin-id :shapes "One of the components is not on the same page or is already a variant")))))
 
     :waitForLayoutUpdate
     (fn [timeout]
-      ;; Always a promise, so a bad argument travels as a rejection.
-      (if (u/valid-timeout? timeout)
-        ;; Resolves once every shape with reflow work in flight has settled.
-        (wrf/wait-for-layout-update timeout)
-        (js/Promise.
-         (fn [_ reject]
-           (u/reject-not-valid reject :waitForLayoutUpdate timeout)))))))
+      ;; Resolves once every shape with reflow work in flight has settled.
+      (wrfp/wait-for-layout-update timeout))))

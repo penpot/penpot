@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.logic.shapes
   (:require
@@ -75,7 +75,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -86,9 +86,9 @@
                    (cond-> changes
                      (some? objects) (pcb/with-objects objects))
                    ids)
-        ;; Translation doesn't shift children between grid cells, so
-        ;; cell reassignment + child reorder are no-ops.
-        grid-ids (when-not translation?
+        ;; Translation keeps cell assignments; direction changes reflow them
+        ;; explicitly.
+        grid-ids (when-not (or translation? skip-grid-reassignment?)
                    (->> ids (filter (partial ctl/grid-layout? objects))))
         changes (cond-> changes
                   (seq grid-ids)

@@ -4,9 +4,11 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Focused memories
 
-- RPC, DB helpers, workers, cron: `mem:backend/rpc-db-worker-subtleties`
-- HTTP sessions, config, storage, media, file data persistence: `mem:backend/http-storage-filedata-subtleties`
+- Cross-cutting backend subtleties (RPC, DB, workers, cron, HTTP/sessions, storage, file data): `mem:backend/subtleties`
+- Storage abstraction, logical buckets, object lifecycle, deduplication, access, and garbage collection: `mem:backend/storage`.
+- Embedded Ladybug graph experiment, projection, incremental sync, console, and risks: `mem:backend/graph-experiment`
 - Auth flows, permission model, teams, projects, invitations, comments, webhooks, audit: `mem:backend/auth-permissions-product-domains`
+- Audit-log event collection (RPC wrapper, frontend ingestion), telemetry duality, webhook fan-out, error reporters, Nexus archival and retention: `mem:backend/audit-log`
 - Services, task-queue/Pub-Sub topology constraints -> `mem:prod-infra/core`.
 
 ## Stable namespace map
@@ -42,13 +44,13 @@ Database migrations live in `backend/src/app/migrations/`; pure SQL migrations a
 For interactive PostgreSQL access with correct dev defaults, use `scripts/psql`; to dump
 the current DDL schema, use `scripts/db-schema` (see `mem:scripts/psql`).
 
-For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/rpc-db-worker-subtleties`.
+For deeper details on transaction semantics, advisory locks, Transit vs JSON helpers, and dev/test DB URLs: `mem:backend/subtleties`.
 
 ## Background tasks
 
 A task handler is an Integrant component with `ig/assert-key`, `ig/expand-key`, and `ig/init-key`, returning the function run by the worker. New tasks also need wiring in `app.main`: handler config, worker registry entry, and cron entry if scheduled.
 
-For worker dispatch, cron, retry semantics, deduplication, and queue internals: `mem:backend/rpc-db-worker-subtleties`.
+For worker dispatch, cron, retry semantics, deduplication, and queue internals: `mem:backend/subtleties`.
 
 ## REPL
 
@@ -101,10 +103,5 @@ misleading linter/compiler output. See `mem:scripts/paren-repair`.
 
 ## Testing
 
-IMPORTANT: all CLI commands must be executed from the `backend/` subdirectory. JVM tests are invoked directly via `clojure -M:dev:test` — there is no pnpm wrapper. If you need to filter output, tee to a temp file first: `clojure -M:dev:test 2>&1 | tee /tmp/penpot-test-output.txt`. See `mem:testing` for execution discipline.
-
-* **Coverage:** If code is added or modified in `src/`, corresponding tests in `test/backend_tests/` must be added or updated.
-* **Isolated run:** `clojure -M:dev:test --focus backend-tests.my-ns-test` for a specific test namespace.
-* **Regression run:** `clojure -M:dev:test` to ensure no regressions in related functional areas.
-* **Principles:** Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.
-
+Backend test commands, coverage rules, and conventions: `mem:backend/testing`.
+Cross-cutting testing principles, anti-patterns, and verification checklist: `mem:testing`.

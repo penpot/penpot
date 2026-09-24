@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.srepl.main
   #_:clj-kondo/ignore
@@ -143,6 +143,66 @@
                (-> (db/exec-one! conn ["update profile set password=? where email=?" password email])
                    (db/get-update-count)
                    (pos?)))))))
+
+(defn parse-emails
+  "Parse the emails into a seq of cleaned emails. Accepts a single
+  email, a comma separated list of emails or a coll of emails.
+  Blank entries are skipped."
+  [emails]
+  (->> (cond
+         (string? emails)
+         (str/split emails #",")
+
+         (sequential? emails)
+         emails
+
+         :else
+         (throw (ex-info "expected email or comma separated list of emails"
+                         {:emails emails})))
+       (map str/trim)
+       (remove str/empty?)))
+
+(defn- delete-profile-by-email*
+  [system email deleted-at cause]
+  (when-let [profile (some-> (db/get* system :profile
+                                      {:email (str/lower email)}
+                                      {::db/remove-deleted false})
+                             (profile/decode-row))]
+    (audit/insert system
+                  {:name "delete-profile"
+                   :type "action"
+                   :profile-id (:id profile)
+                   :tracked-at deleted-at
+                   :props (audit/profile->props profile)
+                   :context {:triggered-by "srepl"
+                             :cause cause}})
+
+    (wrk/invoke! (-> system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :profile
+                                          :deleted-at deleted-at
+                                          :id (:id profile)})))
+    (:id profile)))
+
+(defn delete-profiles-by-email!
+  "Mark profiles for deletion by email. Accepts a single email or a
+  comma separated list of emails (or a coll of emails).
+
+  The deletion is immediate: the deleted-at is backdated with the
+  configured deletion-delay so the profiles and their owned teams are
+  purged on the next gc pass."
+  [emails]
+  (let [emails     (parse-emails emails)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-by-email!"]
+    (db/tx-run! sys/system
+                (fn [system]
+                  (reduce (fn [acc email]
+                            (if-let [id (delete-profile-by-email* system email deleted-at cause)]
+                              (update acc :deleted conj id)
+                              (update acc :not-found conj email)))
+                          {:total (count emails) :deleted [] :not-found []}
+                          emails)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
@@ -399,8 +459,51 @@
                         (ex/print-throwable cause))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PROCESSING
+;; GRAPH / LADYBUG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The graph namespaces resolve at call time, never at the top of this
+;; namespace. `app.graph.ladybug` imports `com.ladybugdb.*`, and this namespace
+;; loads with the REPL server on every boot, so a top-level require would link
+;; the Ladybug native library into every backend, graph or not. Calling one of
+;; the functions below loads the library at that point: the operator has asked
+;; for it explicitly. The `:graph` flag gates the request path
+;; (`app.http.debug`), not the REPL.
+
+(defn graph-smoke-test!
+  "Execute a basic Ladybug smoke test (CREATE + count).
+
+  Uses the embedded Ladybug Java API. Use :db-path \":memory:\" (default)
+  or a filesystem path such as /tmp/test.lbug."
+  [& {:keys [db-path] :or {db-path ":memory:"}}]
+  ((requiring-resolve 'app.graph.ladybug/smoke-test!) :db-path db-path))
+
+(defn graph-query-test!
+  "Query Document count for a file's graph db (REPL diagnostic)."
+  [file-id & {:keys [db-path]}]
+  (let [file-id       (h/parse-uuid file-id)
+        db-path       (or db-path ((requiring-resolve 'app.graph.ladybug/db-path-for-file) file-id))
+        query-scalar! (requiring-resolve 'app.graph.ladybug/query-scalar!)
+        stmt          "MATCH (n:Document) RETURN count(n) AS Document_c;"]
+    (query-scalar! db-path stmt)))
+
+(defn ingest-file-to-graph!
+  "Project a Penpot file into a per-file Ladybug database.
+
+  Loads and realizes the file from the database, ensures the slice schema,
+  projects Document/Page/shape nodes, and returns graph stats.
+
+  Options:
+  - `:db-path` path or `:memory:`
+  - `:reset-db?` delete any existing db first (default true)
+  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
+  [file-id & opts]
+  (let [ingest-file!  (requiring-resolve 'app.graph.ingest/ingest-file!)
+        print-ingest! (requiring-resolve 'app.graph.report/print-ingest!)
+        result        (apply ingest-file! sys/system file-id opts)]
+    (print-ingest! result)
+    result))
+
 
 (defn repair-file!
   "Repair the list of errors detected by validation."
@@ -409,6 +512,10 @@
         file-id (h/parse-uuid file-id)
         options (assoc options ::h/with-libraries? true)]
     (db/tx-run! system h/process-file! file-id procs.file-repair/repair-file options)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROCESSING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-file!
   "Apply a function to the file. Optionally save the changes or not.
@@ -745,47 +852,24 @@
 
 (defn delete-profiles-in-bulk!
   [system path]
-  (letfn [(process-data! [system deleted-at emails]
-            (loop [emails  emails
-                   deleted 0
-                   total   0]
-              (if-let [email (first emails)]
-                (if-let [profile (some-> (db/get* system :profile
-                                                  {:email (str/lower email)}
-                                                  {::db/remove-deleted false})
-                                         (profile/decode-row))]
-                  (do
-                    (audit/insert system
-                                  {:name "delete-profile"
-                                   :type "action"
-                                   :profile-id (:id profile)
-                                   :tracked-at deleted-at
-                                   :props (audit/profile->props profile)
-                                   :context {:triggered-by "srepl"
-                                             :cause "explicit call to delete-profiles-in-bulk!"}})
-                    (wrk/invoke! (-> system
-                                     (assoc ::wrk/task :delete-object)
-                                     (assoc ::wrk/params {:object :profile
-                                                          :deleted-at deleted-at
-                                                          :id (:id profile)})))
-                    (recur (rest emails)
-                           (inc deleted)
-                           (inc total)))
-                  (recur (rest emails)
-                         deleted
-                         (inc total)))
-                {:deleted deleted :total total})))]
+  (let [path       (fs/path path)
+        deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-profiles-in-bulk!"]
 
-    (let [path       (fs/path path)
-          deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
+    (when-not (fs/exists? path)
+      (throw (ex-info "path does not exists" {:path path})))
 
-      (when-not (fs/exists? path)
-        (throw (ex-info "path does not exists" {:path path})))
-
-      (db/tx-run! system
-                  (fn [system]
-                    (with-open [reader (io/reader path)]
-                      (process-data! system deleted-at (line-seq reader))))))))
+    (db/tx-run! system
+                (fn [system]
+                  (with-open [reader (io/reader path)]
+                    (loop [emails  (line-seq reader)
+                           deleted 0
+                           total   0]
+                      (if-let [email (first emails)]
+                        (if (delete-profile-by-email* system email deleted-at cause)
+                          (recur (rest emails) (inc deleted) (inc total))
+                          (recur (rest emails) deleted (inc total)))
+                        {:deleted deleted :total total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CASCADE FIXING

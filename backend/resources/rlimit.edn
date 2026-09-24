@@ -1,11 +1,308 @@
-;; Example rlimit.edn file
 ^{:refresh "30s"}
 {:default
  [[:default :window "200000/h"]]
 
- ;; #{:main/get-teams}
- ;; [[:burst :bucket "5/5/5s"]]
+ ;; ═══════════════════════════════════════════════
+ ;; Auth & Identity — public, unauthenticated
+ ;; ═══════════════════════════════════════════════
+ #{:main/login-with-password}
+ [[:auth-password :bucket "100/50/1m"]]
 
- ;; #{:main/get-profile}
- ;; [[:burst :bucket "60/60/1m"]]
- }
+ #{:main/login-with-ldap}
+ [[:auth-ldap :bucket "20/10/5m"]]
+
+ #{:main/register-profile}
+ [[:auth-register :bucket "20/10/15m"]]
+
+ #{:main/request-profile-recovery
+   :main/prepare-register-profile}
+ [[:auth-recovery :bucket "100/50/5m"]]
+
+ #{:main/recover-profile
+   :main/verify-token}
+ [[:auth-token :bucket "100/50/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; SSRF vectors — URL fetch endpoints
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-file-media-object-from-url}
+ [[:url-fetch :bucket "100/50/5m"]]
+
+ #{:main/create-webhook
+   :main/update-webhook}
+ [[:webhook-validation :bucket "20/10/5m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Search — full sequential scan risk
+ ;; ═══════════════════════════════════════════════
+ #{:main/search-files}
+ [[:search :bucket "60/30/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Feedback & Invitations — email-sending
+ ;; ═══════════════════════════════════════════════
+ #{:main/send-user-feedback
+   :main/create-team-invitations}
+ [[:email-send :bucket "30/15/5m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Media & File heavy ops
+ ;; ═══════════════════════════════════════════════
+ #{:main/upload-file-media-object}
+ [[:image-upload :bucket "200/100/1m"]]
+
+ #{:main/create-file-object-thumbnail
+   :main/delete-file-object-thumbnails
+   :main/get-file-object-thumbnails}
+ [[:thumbnail-ops :bucket "5000/3000/1m"]]
+
+ #{:main/get-file-data-for-thumbnail
+   :main/create-file-thumbnail}
+ [[:thumbnail-data :bucket "100/50/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; UI navigation reads — high frequency
+ ;; ═══════════════════════════════════════════════
+ #{:main/get-teams}
+ [[:get-teams :bucket "5000/2500/30s"]]
+
+ #{:main/get-team-members}
+ [[:get-team-members :bucket "4000/2000/30s"]]
+
+ #{:main/get-profile}
+ [[:get-profile :bucket "500/250/30s"]]
+
+ #{:main/get-font-variants}
+ [[:get-font-variants :bucket "250/125/30s"]]
+
+ #{:main/get-comment-threads}
+ [[:get-comment-threads :bucket "500/250/30s"]]
+
+ #{:main/get-profiles-for-file-comments}
+ [[:get-profiles-for-file-comments :bucket "300/150/30s"]]
+
+ #{:main/get-file-libraries}
+ [[:get-file-libraries :bucket "200/100/30s"]]
+
+ #{:main/get-projects}
+ [[:get-projects :bucket "120/60/30s"]]
+
+ #{:main/get-team-recent-files
+   :main/get-unread-comment-threads}
+ [[:get-team-recent :bucket "120/60/30s"]]
+
+ #{:main/get-page}
+ [[:get-page :bucket "150/75/30s"]]
+
+ #{:main/get-access-tokens
+   :main/get-subscription-usage}
+ [[:get-access-tokens :bucket "150/75/30s"]]
+
+ #{:main/get-enabled-flags}
+ [[:get-enabled-flags :bucket "250/125/30s"]]
+
+ #{:main/get-builtin-templates}
+ [[:get-builtin-templates :bucket "200/100/30s"]]
+
+ #{:main/get-project
+   :main/get-project-files}
+ [[:get-project-info :bucket "80/40/30s"]]
+
+ #{:main/get-file}
+ [[:get-file :bucket "180/90/1m"]]
+
+ #{:main/get-team-shared-files
+   :main/get-team-info
+   :main/get-team-users
+   :main/get-team-invitations
+   :main/get-team-deleted-files
+   :main/get-sso-provider}
+ [[:get-team-info :bucket "60/30/30s"]]
+
+ #{:main/get-comments
+   :main/get-file-snapshots
+   :main/get-library-usage
+   :main/has-file-libraries}
+ [[:get-misc-list :bucket "300/150/30s"]]
+
+ #{:main/get-comment-thread
+   :main/get-library-file-references}
+ [[:get-misc-single :bucket "60/30/30s"]]
+
+ #{:main/get-file-info
+   :main/get-view-only-bundle
+   :main/get-all-projects
+   :main/get-owned-teams
+   :main/get-team-stats
+   :main/get-file-summary
+   :main/get-file-stats
+   :main/get-file-fragment}
+ [[:get-light :bucket "60/30/30s"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; File mutations — editing active
+ ;; ═══════════════════════════════════════════════
+ #{:main/update-file}
+ [[:update-file :bucket "1000/500/1m"]]
+
+ #{:main/create-file
+   :main/rename-file
+   :main/duplicate-file
+   :main/move-files}
+ [[:file-create :bucket "60/30/1m"]]
+
+ #{:main/delete-file}
+ [[:file-delete :bucket "80/40/1m"]]
+
+ #{:main/set-file-shared
+   :main/update-file-library-sync-status
+   :main/ignore-file-library-sync-status
+   :main/link-file-to-library
+   :main/unlink-file-from-library
+   :main/create-file-snapshot
+   :main/restore-file-snapshot
+   :main/update-file-snapshot
+   :main/delete-file-snapshot
+   :main/lock-file-snapshot
+   :main/unlock-file-snapshot}
+ [[:file-mutations :bucket "80/40/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Project mutations
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-project}
+ [[:project-create :bucket "100/50/1m"]]
+
+ #{:main/delete-project
+   :main/rename-project
+   :main/duplicate-project
+   :main/move-project
+   :main/update-project-pin}
+ [[:project-mutations :bucket "40/20/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Team mutations
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-team
+   :main/update-team
+   :main/delete-team
+   :main/update-team-photo
+   :main/update-team-member-role
+   :main/delete-team-member
+   :main/leave-team
+   :main/create-team-with-invitations
+   :main/create-team-access-request
+   :main/permanently-delete-team-files
+   :main/restore-deleted-team-files}
+ [[:team-mutations :bucket "60/30/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Comment operations
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-comment-thread
+   :main/create-comment
+   :main/update-comment
+   :main/delete-comment
+   :main/mark-all-threads-as-read}
+ [[:comment-basic :bucket "30/15/1m"]]
+
+ #{:main/update-comment-thread
+   :main/update-comment-thread-status
+   :main/update-comment-thread-position
+   :main/update-comment-thread-frame
+   :main/delete-comment-thread}
+ [[:comment-thread :bucket "80/40/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Profile operations
+ ;; ═══════════════════════════════════════════════
+ #{:main/update-profile
+   :main/update-profile-props
+   :main/update-profile-photo
+   :main/update-profile-password
+   :main/update-profile-notifications
+   :main/delete-profile
+   :main/delete-profile-photo
+   :main/request-email-change}
+ [[:profile-mutations :bucket "30/15/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Font operations
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-font-variant
+   :main/delete-font
+   :main/delete-font-variant
+   :main/update-font
+   :main/download-font
+   :main/download-font-family}
+ [[:font-ops :bucket "100/50/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Access tokens
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-access-token
+   :main/delete-access-token}
+ [[:access-token :bucket "60/30/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Export / Import
+ ;; ═══════════════════════════════════════════════
+ #{:main/export-binfile
+   :main/import-binfile
+   :main/clone-template}
+ [[:export-import :bucket "80/40/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Upload sessions
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-upload-session
+   :main/upload-chunk
+   :main/assemble-file-media-object}
+ [[:upload-session :bucket "100/50/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Webhooks
+ ;; ═══════════════════════════════════════════════
+ #{:main/get-webhooks
+   :main/delete-webhook}
+ [[:webhook-read :bucket "20/10/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Share links
+ ;; ═══════════════════════════════════════════════
+ #{:main/create-share-link
+   :main/delete-share-link}
+ [[:share-link :bucket "10/5/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Organization operations
+ ;; ═══════════════════════════════════════════════
+ #{:main/add-team-to-organization
+   :main/remove-team-from-org
+   :main/all-org-members-in-team
+   :main/all-team-members-in-orgs
+   :main/get-owned-organizations-summary
+   :main/get-leave-org-summary
+   :main/leave-org
+   :main/check-org-members
+   :main/get-team-invitation-token
+   :main/delete-team-invitation
+   :main/check-team-external-invitations}
+ [[:org-ops :bucket "20/10/1m"]]
+
+ ;; ═══════════════════════════════════════════════
+ ;; Audit & stats
+ ;; ═══════════════════════════════════════════════
+ #{:main/push-audit-events}
+ [[:audit-events :bucket "1000/500/1m"]]
+
+ #{:main/logout
+   :main/get-error-report
+   :main/get-error-reports
+   :main/get-current-mcp-token
+   :main/get-nitrate-connectivity
+   :main/check-nitrate-sso
+   :main/redeem-nitrate-activation-code
+   :main/create-demo-profile
+   :main/get-subscription-warning}
+ [[:misc-light :bucket "100/50/1m"]]}

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc
   (:require
@@ -92,12 +92,12 @@
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
-(defn- make-rpc-handler
+(defn make-rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods]
   (let [methods (update-vals methods peek)]
-    (fn [{:keys [params path-params method] :as request}]
+    (fn [{:keys [path-params method] :as request}]
       (let [handler-name (:method-name path-params)
             etag         (yreq/get-header request "if-none-match")
             session-id   (yreq/get-header request "x-session-id")
@@ -111,7 +111,7 @@
 
             ip-addr      (inet/parse-request request)
 
-            data         (-> params
+            data         (-> {}
                              (assoc ::handler-name handler-name)
                              (assoc ::ip-addr ip-addr)
                              (assoc ::request-at (ct/now))
@@ -218,17 +218,6 @@
       f)
     f))
 
-(defn- wrap-spec-conform
-  [_ f mdata]
-  ;; NOTE: skip spec conform operation on rpc methods that already
-  ;; uses malli validation mechanism.
-  (if (contains? mdata ::sm/params)
-    f
-    (if-let [spec (ex/ignoring (s/spec (::sv/spec mdata)))]
-      (fn [cfg params]
-        (f cfg (us/conform spec params)))
-      f)))
-
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
@@ -237,16 +226,15 @@
           decode   (sm/decoder schema sm/json-transformer)
           encode   (sm/encoder schema sm/json-transformer)]
       (fn [cfg params]
-        (let [params (decode params)]
-          (if (validate params)
-            (let [result (f cfg params)]
+        (let [request-params (-> params meta ::http/request :params decode)]
+          (if (validate request-params)
+            (let [result (f cfg (merge params (d/without-qualified request-params)))]
               (if (instance? clojure.lang.IObj result)
                 (vary-meta result assoc :encode/json encode)
                 result))
-            (let [params (d/without-qualified params)]
-              (ex/raise :type :validation
-                        :code :params-validation
-                        ::sm/explain (explain params)))))))
+            (ex/raise :type :validation
+                      :code :params-validation
+                      ::sm/explain (explain request-params))))))
     f))
 
 
@@ -261,23 +249,28 @@
 (defn- wrap-nitrate-sso
   "Enforce Nitrate organization SSO authentication for RPC handlers.
 
-   Resolves the organization/team context from request params using priority order:
-   1. Explicit :organization-id param
-   2. Explicit :team-id param
-   3. Explicit :project-id param -> lookup project.team_id
-   4. Explicit :file-id param -> lookup file's team via join
-   5. :id param dispatched by ::rpc/id-type metadata (:team, :project, or :file)
+   Resolves the organization/team context from request params:
+   1. Explicit :organization-id param identifies the organization directly
+   2. The team comes from the first available of: explicit :team-id, explicit
+      :project-id -> lookup project.team_id, explicit :file-id -> lookup file's
+      team via join, or the :id param dispatched by ::rpc/id-type metadata
+      (:team, :project, or :file)
 
    Once the context is resolved, checks if the user is authorized within that organization's
-   SSO session using nitrate/sso-session-authorized?. Authorized results are cached
-   by [profile-id cache-ref] for 15 minutes to avoid repeated lookups.
+   SSO session using nitrate/sso-session-authorized?, against the organization when it is
+   known and against the team otherwise. The team is resolved either way, so the raised
+   error can carry it. Authorized results are cached by [profile-id cache-ref] for 15
+   minutes to avoid repeated lookups.
 
    Only activates when:
    - Nitrate flag is enabled
    - Endpoint requires authentication (::auth true by default)
    - Endpoint is not marked with ::nitrate/organization-sso false
 
-   Raises :nitrate-sso-required error if user is not authorized in the organization."
+   Raises :nitrate-sso-required error if user is not authorized in the organization.
+   The error carries the resolved :organization-id and :team-id so the client can
+   restart the SSO flow (via :check-nitrate-sso) instead of reporting a plain
+   permission failure."
   [_ f mdata]
   (if (and (contains? cf/flags :admin-console)
            (::auth mdata true) ;; only for endpoints that needs auth
@@ -302,17 +295,22 @@
                 cached     (cache/get organization-sso-auth-cache cache-key)
                 result     (if (some? cached)
                              cached
-                             (let [team-id                  (when-not organization-id
-                                                              (or team-id
-                                                                  (when project-id
-                                                                    (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                             ;; The team is resolved even when the organization is
+                             ;; already known: the client needs it to restart the
+                             ;; SSO flow without sending non-members through the
+                             ;; organization's identity provider.
+                             (let [team-id                  (or team-id
+                                                                (when project-id
+                                                                  (:team-id (db/get-by-id cfg :project project-id {:columns [:id :team-id]})))
+                                                                (when file-id
                                                                   (:id (teams/get-team-for-file cfg file-id))))
                                    request                  (-> (meta params) (get ::http/request))
                                    {:keys [authorized sso]} (if organization-id
                                                               (nitrate/sso-session-authorized? cfg organization-id nil request)
                                                               (nitrate/sso-session-authorized? cfg nil team-id request))
                                    entry                    {:authorized      authorized
-                                                             :organization-id (:organization-id sso)}]
+                                                             :organization-id (or (:organization-id sso) organization-id)
+                                                             :team-id         team-id}]
                                (when authorized
                                  (cache/get organization-sso-auth-cache cache-key (constantly entry)))
                                entry))]
@@ -320,6 +318,8 @@
               (f cfg params)
               (ex/raise :type :authentication
                         :code :nitrate-sso-required
+                        :organization-id (:organization-id result)
+                        :team-id (:team-id result)
                         :hint "organization SSO authentication required")))
           (f cfg params))))
     f))
@@ -334,10 +334,9 @@
     (wrap-metrics cfg $ mdata)
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
-    (wrap-spec-conform cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)
-    (wrap-nitrate-sso cfg $ mdata)))
+    (wrap-authentication cfg $ mdata)))
 
 (defn- wrap-management
   [cfg f mdata]
@@ -347,12 +346,9 @@
     (climit/wrap cfg $ mdata)
     (wrap-metrics cfg $ mdata)
     (wrap-audit cfg $ mdata)
-    (wrap-spec-conform cfg $ mdata)
+    (wrap-nitrate-sso cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
-    (wrap-authentication cfg $ mdata)
-    (wrap-nitrate-sso cfg $ mdata)))
-
-
+    (wrap-authentication cfg $ mdata)))
 
 (defn- process-method
   [cfg wrap-fn [f mdata]]
@@ -388,6 +384,7 @@
           'app.rpc.commands.management
           'app.rpc.commands.media
           'app.rpc.commands.nitrate
+          'app.rpc.commands.plugins
           'app.rpc.commands.profile
           'app.rpc.commands.projects
           'app.rpc.commands.search

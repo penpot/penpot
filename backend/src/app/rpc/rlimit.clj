@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.rlimit
   "Rate limit strategies implementation for RPC services.
@@ -46,6 +46,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as uri]
@@ -180,8 +181,8 @@
         result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)
-        reset     (* (/ (inst-ms interval) rate)
-                     (- capacity remaining))]
+        reset     (long (mth/ceil (double (* (/ (inst-ms interval) rate)
+                                             (- capacity remaining)))))]
     (l/trace :hint "limit processed"
              :method method
              :limit (name (::name limit))
@@ -190,6 +191,7 @@
              :allowed allowed?
              :remaining remaining)
     (-> limit
+        (assoc ::lresult/now now)
         (assoc ::lresult/allowed allowed?)
         (assoc ::lresult/reset (ct/plus now reset))
         (assoc ::lresult/remaining remaining))))
@@ -212,6 +214,7 @@
              :allowed allowed?
              :remaining remaining)
     (-> limit
+        (assoc ::lresult/now now)
         (assoc ::lresult/allowed allowed?)
         (assoc ::lresult/timestamp ts)
         (assoc ::lresult/remaining remaining)
@@ -219,15 +222,22 @@
 
 (defn- process-limits
   [{:keys [::rds/conn] :as cfg} uid limits now]
-  (let [results   (into [] (map (partial process-limit conn uid now)) limits)
-        remaining (->> results
-                       (d/index-by ::name ::lresult/remaining)
-                       (uri/map->query-string))
-        reset     (->> results
-                       (d/index-by ::name (comp ->seconds ::lresult/reset))
-                       (uri/map->query-string))
+  (let [results     (into [] (map (partial process-limit conn uid now)) limits)
+        remaining   (->> results
+                         (d/index-by ::name ::lresult/remaining)
+                         (uri/map->query-string))
+        reset       (->> results
+                         (d/index-by ::name (comp ->seconds ::lresult/reset))
+                         (uri/map->query-string))
 
-        rejected  (d/seek (complement ::lresult/allowed) results)]
+        rejected    (d/seek (complement ::lresult/allowed) results)
+
+        ;; Seconds until the client can retry: the longest reset among the
+        ;; limits that currently reject the request. Only emitted on 429.
+        retry-after (->> results
+                         (remove ::lresult/allowed)
+                         (map #(->seconds (ct/diff now (::lresult/reset %))))
+                         (reduce max 0))]
 
     (when rejected
       (let [event {::id (uuid/next)
@@ -251,8 +261,10 @@
      ::allowed (not (some? rejected))
      ::remaingin remaining
      ::reset reset
-     ::headers  {"x-rate-limit-remaining" remaining
-                 "x-rate-limit-reset" reset}}))
+     ::headers  (cond-> {"x-rate-limit-remaining" remaining
+                         "x-rate-limit-reset" reset}
+                  (some? rejected)
+                  (assoc "retry-after" (str retry-after)))}))
 
 (defn- get-limits
   [state skey sname]

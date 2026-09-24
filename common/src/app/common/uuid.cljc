@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 #_:clj-kondo/ignore
 (ns app.common.uuid
@@ -69,6 +69,20 @@
 (defn zero?
   [v]
   (= zero v))
+
+(def ^:private user-provided-regex
+  #"(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[478][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+
+(defn user-provided?
+  "Returns true when `v` is a UUID instance penpot can accept when
+  it is provided by the user (v4 random, v7 time-ordered or v8 penpot
+  time-ordered). Anything else, including UUID strings, returns false;
+  strings are meant to be decoded into UUID instances first, mirroring
+  how ::sm/uuid behaves."
+  [v]
+  (boolean
+   (and (uuid? v)
+        (re-matches user-provided-regex (str v)))))
 
 (defn get-word-high
   [id]

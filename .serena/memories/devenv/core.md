@@ -1,33 +1,34 @@
 # Devenv startup and configuration
 
-Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + MinIO; each instance has its own `main` container, Valkey, source checkout, tmux session.
+Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + RustFS; each instance has its own `main` container, Valkey, source checkout, tmux session.
 
 ## Compose project layout
 
-- `penpotdev-infra`: shared `postgres`, `minio`, `minio-setup`, `mailer`, `ldap`. File: `docker-compose.infra.yml`.
+- `penpotdev-infra`: shared `postgres`, `rustfs`, `valkey`, `mailer`, `ldap`. File: `docker-compose.infra.yml`.
 - `penpotdev-wsN` (N=0,1,…): per-instance `main` + `redis` (Valkey). File: `docker-compose.main.yml`. ws0 (a.k.a. `main`) binds `$PWD`; ws1+ bind clones at `${PENPOT_WORKSPACES_DIR}/wsN/` (default `~/.penpot/penpot_workspaces/`), maintained by the developer.
+- Optional overlay `docker-compose.opencode.yml`: added by `instance-compose` as an extra `-f` only when `PENPOT_OPENCODE_CONFIG_DIR` is set (i.e. `run-devenv --opencode-config-dir DIR` ran in this process). Bind-mounts the host dir at `/home/penpot/.config/opencode` (`:z`). Flag-only, per-call; not read from ambient env. Parser `parse-opencode-config-dir` absolutizes (`~`, realpath) because compose resolves relative bind sources against the compose file's dir. Only instances brought up with the flag get the mount.
 - All projects join external network `penpot_shared`. Created idempotently by `ensure-devenv-network`, never removed by lifecycle commands.
 
 ## Source-of-truth files
 
 - `docker/devenv/defaults.env`: ws0 baseline — container/volume names, runtime env, published host ports, tmux defaults. `manage.sh` aborts if unreadable.
 - For ws1+, `instance-env-overrides` computes the per-instance overrides (container/volume names, host ports offset `10000·N`, `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_BACKEND_WORKER=false`) and `instance-compose` injects them as env vars at compose time — never written to disk, recomputed each call so they can't drift. ws0 uses `defaults.env` as-is.
-- `backend/scripts/_env`: backend-internal only — secret keys, `PENPOT_FLAGS` (with `enable-backend-worker` gated on `PENPOT_BACKEND_WORKER`), `JAVA_OPTS`, `setup_minio()`. Never duplicates `defaults.env`.
+- `backend/scripts/_env`: backend-internal only — secret keys, `PENPOT_FLAGS` (with `enable-backend-worker` gated on `PENPOT_BACKEND_WORKER`), `JAVA_OPTS`, `setup_s3_bucket()`. Never duplicates `defaults.env`.
 - Compose files use pure `${VAR}` substitution; missing var = compose fails.
 
 ## Invariants
 
 - `infra-compose` / `instance-compose` wrap `docker compose` with `env -i`, then re-inject what compose needs. Stripping is required because `defaults.env` is sourced into manage.sh's shell at startup (stale values would leak); the ws1+ overrides are deliberately re-injected as shell env vars precisely because Compose gives shell precedence over `--env-file`, so they override the `defaults.env` baseline.
-- Volume names pinned via `name:` (PENPOT_*_VOLUME), decoupled from the compose project name. ws1+ inject distinct per-instance volume names; ws0 keeps the historical `penpotdev_*` physical names so project renames never require data migration.
+- Volume names pinned via `name:` (PENPOT_*_VOLUME), decoupled from the compose project name. Replacement services use new volumes and leave old volumes untouched. PostgreSQL 18 mounts `penpotdev_postgres_data_pg18` at `/var/lib/postgresql`; the old PG16 volume is not migrated automatically.
 - Network aliases (`- main`, `- redis`) are not declared in main.yml. Compose's auto-service-alias still registers `redis` on the shared network, so DNS for `redis` is non-deterministic with multiple instances. Backend uses `PENPOT_REDIS_URI=redis://penpot-devenv-wsN-valkey/0` (container_name) instead.
-- No cross-project `depends_on`. `manage.sh ensure-infra-up` `docker wait`s on the `minio-setup` one-shot.
+- No cross-project `depends_on`. `manage.sh ensure-infra-up` uses Compose `--wait`; PostgreSQL, RustFS, and Mailpit expose healthchecks. PostgreSQL checks TCP so its temporary init server cannot report ready.
 - `JAVA_OPTS` in `manage.sh` is shadowed inside the container by `_env`. The `-e JAVA_OPTS=...` flag only matters for processes that don't source `_env`.
 
 ## Worker policy
 
 Backend workers run only on ws0. `_env` gates `enable-backend-worker` on `PENPOT_BACKEND_WORKER`; ws1+ inject it as false. Workers are pure fire-and-forget: `wrk/submit!` inserts a row into the shared Postgres `task` table and returns; RPC handlers never wait on completion and workers never publish to msgbus. The reason for "ws0 only" is avoiding multi-instance worker races (cron dedup is best-effort across instances, `wrk/submit!` `dedupe` is racy across submitters); details in `mem:prod-infra/core`.
 
-Each workspace is independent and can be started/stopped in any order. Shared infra (postgres, minio, etc.) is shut down only when no instances remain running.
+Each workspace is independent and can be started/stopped in any order. Shared infra (Postgres, RustFS, etc.) is shut down only when no instances remain running.
 
 ## Port layout
 
@@ -42,7 +43,7 @@ Container-internal ports fixed; host side offset `10000·N`.
 | 14181 | 24181 | … | 14281 | Serena MCP |
 | 14182 | 24182 | … | 24282 | Serena dashboard |
 
-Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes: mailer 1080, ldap 10389/10636 (singletons, not offset).
+Everything else (frontend dev, backend API, exporter, storybook, REPLs, plugin dev, MCP inspector/WebSocket) is in-process or same-origin via Caddy/nginx. Infra publishes RustFS S3 API 9000, RustFS console 9001, and Mailpit UI 1080 on loopback; ldap 10389/10636 remains a singleton without offsets. Mailpit stores its SQLite database in `penpotdev_mailpit_data`.
 
 ## Tmux + MCP routing
 
@@ -65,7 +66,7 @@ No `--delete` on the working-tree pass: gitignored caches in the workspace survi
 
 ## CLI surface
 
-- `run-devenv --agentic [--ws main|0|wsN|N] [--sync] [--serena-context CTX]`: bring one instance up. Agentic only — MCP and Serena windows are always created. Default target main. Errors out if the target is already running. `--sync` is rejected on main; on ws1+ it's optional (forced only when the workspace dir does not exist yet).
+- `run-devenv --agentic [--ws main|0|wsN|N] [--sync] [--serena-context CTX] [--opencode-config-dir DIR]`: bring one instance up. Agentic only — MCP and Serena windows are always created. Default target main. Errors out if the target is already running. `--sync` is rejected on main; on ws1+ it's optional (forced only when the workspace dir does not exist yet). `--opencode-config-dir DIR` bind-mounts DIR at `~/.config/opencode` in-container via the optional overlay above; mount applies at container creation, so changing it requires stop + re-run.
 - `stop-devenv [--ws main|0|wsN|N] [--all]`: stop instances. Flags mutually exclusive. `--ws N` stops just that workspace. `--ws 0` or no flag stops ws0; shared infra shuts down only if no other instances remain. `--all` stops every ws highest-first then ws0, then infra.
 - `run-devenv`: legacy alias, ws0 non-agentic attached.
 - `attach-devenv [--ws main|0|wsN|N]`: pure attach. Fails fast if instance/session missing.

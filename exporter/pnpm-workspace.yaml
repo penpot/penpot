@@ -1,3 +1,5 @@
+storeDir: ../.pnpm-store
+
 allowBuilds:
   core-js-pure: false
 minimumReleaseAgeExclude:

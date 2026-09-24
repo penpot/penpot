@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.files-create
   (:require
@@ -72,15 +72,15 @@
       (bfc/get-file cfg (:id file)))))
 
 (def ^:private schema:create-file
-  [:map {:title "create-file"}
+  [:map {:title "create-file" :closed true}
    [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
-   [:id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::create-file
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::doc/module :files
    ::webhooks/event? true
    ::sm/params schema:create-file

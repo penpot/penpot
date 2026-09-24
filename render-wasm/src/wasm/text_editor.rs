@@ -1,12 +1,10 @@
 use macros::{wasm_error, ToJs};
 
 use crate::globals::{get_render_state, get_text_editor_state};
-use crate::math::{Matrix, Point, Rect};
+use crate::math::{Matrix, Point};
 use crate::mem;
-use crate::render::text_editor as text_editor_render;
-use crate::render::SurfaceId;
-use crate::shapes::{Shape, TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
-use crate::state::{State, TextEditorEvent, TextSelection};
+use crate::shapes::{TextAlign, TextContent, TextPositionWithAffinity, Type, VerticalAlign};
+use crate::state::{State, TextEditorEvent, TextEditorState};
 use crate::utils::uuid_from_u32_quartet;
 use crate::utils::uuid_to_u32_quartet;
 use crate::uuid::Uuid;
@@ -133,8 +131,10 @@ pub extern "C" fn text_editor_select_all() -> bool {
     })
 }
 
-#[no_mangle]
-pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+fn with_active_text_at_point<F>(x: f32, y: f32, apply: F)
+where
+    F: FnOnce(&mut TextEditorState, &TextContent, &TextPositionWithAffinity),
+{
     with_state!(state, {
         if !get_text_editor_state().has_focus {
             return;
@@ -154,8 +154,30 @@ pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
 
         let point = Point::new(x, y);
         if let Some(position) = text_content.get_caret_position_from_shape_coords(&point) {
-            get_text_editor_state().select_word_boundary(text_content, &position);
+            apply(get_text_editor_state(), text_content, &position);
         }
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_word_boundary(x: f32, y: f32) {
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_word_boundary(text_content, position)
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn text_editor_select_paragraph(x: f32, y: f32) {
+    // A drag that produced a range must survive the trailing click; a jitter
+    // that left the caret collapsed must not suppress the paragraph select.
+    let editor = get_text_editor_state();
+    if editor.is_click_event_skipped && editor.selection.is_selection() {
+        editor.is_click_event_skipped = false;
+        return;
+    }
+
+    with_active_text_at_point(x, y, |editor, text_content, position| {
+        editor.select_paragraph(text_content, position)
     })
 }
 
@@ -396,8 +418,7 @@ pub extern "C" fn text_editor_composition_end() -> Result<()> {
             get_text_editor_state().selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
@@ -448,8 +469,7 @@ pub extern "C" fn text_editor_composition_update() -> Result<()> {
         let cursor = get_text_editor_state().selection.focus;
         text_helpers::insert_text_with_newlines(text_content, &cursor, &text);
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(crate::state::TextEditorEvent::ContentChanged);
@@ -517,8 +537,7 @@ pub extern "C" fn text_editor_insert_text() -> Result<()> {
             get_text_editor_state().selection.set_caret(new_cursor);
         }
 
-        text_content.layout.paragraphs.clear();
-        text_content.layout.paragraph_builders.clear();
+        text_content.layout.clear();
 
         get_text_editor_state().reset_blink();
         get_text_editor_state().push_event(TextEditorEvent::ContentChanged);
@@ -642,40 +661,6 @@ pub extern "C" fn text_editor_move_cursor(
 // ============================================================================
 // RENDERING & EXPORT
 // ============================================================================
-
-#[no_mangle]
-pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
-    with_state!(state, {
-        if !get_text_editor_state().has_focus || !get_text_editor_state().cursor_visible {
-            return std::ptr::null_mut();
-        }
-
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return std::ptr::null_mut();
-        };
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return std::ptr::null_mut();
-        };
-
-        let Type::Text(text_content) = &shape.shape_type else {
-            return std::ptr::null_mut();
-        };
-
-        let cursor = &get_text_editor_state().selection.focus;
-
-        if let Some(rect) = get_cursor_rect(text_content, cursor, shape) {
-            let mut bytes = vec![0u8; 16];
-            bytes[0..4].copy_from_slice(&rect.left().to_le_bytes());
-            bytes[4..8].copy_from_slice(&rect.top().to_le_bytes());
-            bytes[8..12].copy_from_slice(&rect.width().to_le_bytes());
-            bytes[12..16].copy_from_slice(&rect.height().to_le_bytes());
-            return mem::write_bytes(bytes);
-        }
-
-        std::ptr::null_mut()
-    })
-}
 
 #[no_mangle]
 pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
@@ -839,47 +824,6 @@ pub extern "C" fn text_editor_get_current_styles() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn text_editor_get_selection_rects() -> *mut u8 {
-    with_state!(state, {
-        if !get_text_editor_state().has_focus {
-            return std::ptr::null_mut();
-        }
-
-        if get_text_editor_state().selection.is_collapsed() {
-            return std::ptr::null_mut();
-        }
-
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return std::ptr::null_mut();
-        };
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return std::ptr::null_mut();
-        };
-
-        let Type::Text(text_content) = &shape.shape_type else {
-            return std::ptr::null_mut();
-        };
-
-        let selection = &get_text_editor_state().selection;
-        let rects = get_selection_rects(text_content, selection, shape);
-        if rects.is_empty() {
-            return std::ptr::null_mut();
-        }
-
-        let mut bytes = Vec::with_capacity(4 + rects.len() * 16);
-        bytes.extend_from_slice(&(rects.len() as u32).to_le_bytes());
-        for rect in rects {
-            bytes.extend_from_slice(&rect.left().to_le_bytes());
-            bytes.extend_from_slice(&rect.top().to_le_bytes());
-            bytes.extend_from_slice(&rect.width().to_le_bytes());
-            bytes.extend_from_slice(&rect.height().to_le_bytes());
-        }
-        mem::write_bytes(bytes)
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn text_editor_update_blink(timestamp_ms: f32) {
     get_text_editor_state().update_blink(timestamp_ms);
 }
@@ -905,7 +849,7 @@ fn update_text_layout_if_needed(state: &mut State, shape_id: Uuid) {
 /// Repaint the caret/selection over the last fully rendered frame.
 ///
 /// Re-composes Target from the Backbuffer (which still holds the last complete
-/// render) and draws the editor overlay on top, in a single submitted frame.
+/// render); the compose step draws the editor overlay itself.
 ///
 /// This exists because the caret blink must erase the previous caret, which
 /// means restoring the pixels underneath it. Doing that via `render_from_cache`
@@ -921,49 +865,7 @@ pub extern "C" fn text_editor_render_caret() {
         };
 
         update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        get_render_state().compose_frame(&state.shapes);
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn text_editor_render_overlay() {
-    with_state!(state, {
-        let Some(shape_id) = get_text_editor_state().active_shape_id else {
-            return;
-        };
-
-        update_text_layout_if_needed(state, shape_id);
-
-        let Some(shape) = state.shapes.get(&shape_id) else {
-            return;
-        };
-
-        let canvas = get_render_state().surfaces.canvas(SurfaceId::Target);
-        let viewbox = get_render_state().viewbox;
-        text_editor_render::render_overlay(
-            canvas,
-            &viewbox,
-            &get_render_state().options,
-            get_text_editor_state(),
-            shape,
-        );
-        get_render_state().flush_and_submit();
+        get_render_state().present_frame(&state.shapes);
     });
 }
 
@@ -978,11 +880,11 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
             return std::ptr::null_mut();
         };
 
-        let Some(shape) = state.shapes.get(&shape_id) else {
+        let Some(shape) = state.shapes.get_mut(&shape_id) else {
             return std::ptr::null_mut();
         };
 
-        let Type::Text(text_content) = &shape.shape_type else {
+        let Type::Text(text_content) = &mut shape.shape_type else {
             return std::ptr::null_mut();
         };
 
@@ -997,11 +899,18 @@ pub extern "C" fn text_editor_export_content() -> *mut u8 {
                     .replace('\n', "\\n")
                     .replace('\r', "\\r")
                     .replace('\t', "\\t");
-                span_parts.push(format!("\"{}\"", escaped_text));
+                span_parts.push(format!(
+                    "{{\"p\":{},\"s\":{},\"t\":\"{}\"}}",
+                    span.paragraph_position, span.span_position, escaped_text
+                ));
             }
             json_parts.push(format!("[{}]", span_parts.join(",")));
         }
         let json = format!("[{}]", json_parts.join(","));
+
+        // The host rebuilds its content tree out of this JSON, so the current
+        // positions are what the next call has to report against.
+        text_content.reset_span_positions();
 
         let mut bytes = json.into_bytes();
         bytes.push(0);
@@ -1123,140 +1032,4 @@ pub extern "C" fn text_editor_get_selection(buffer_ptr: *mut u32) -> bool {
         }
         true
     })
-}
-
-// ============================================================================
-// HELPERS: Cursor & Selection
-// ============================================================================
-
-fn get_cursor_rect(
-    text_content: &TextContent,
-    cursor: &TextPositionWithAffinity,
-    shape: &Shape,
-) -> Option<Rect> {
-    let paragraphs = text_content.paragraphs();
-    if cursor.paragraph >= paragraphs.len() {
-        return None;
-    }
-
-    let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-
-    let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    let valign_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (shape.selrect().height() - total_height) / 2.0,
-        VerticalAlign::Bottom => shape.selrect().height() - total_height,
-        _ => 0.0,
-    };
-
-    let mut y_offset = valign_offset;
-    for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
-        if idx == cursor.paragraph {
-            let utf16_pos = paragraphs[cursor.paragraph].char_offset_to_utf16(cursor.offset);
-
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let rects = laid_out_para.get_rects_for_range(
-                utf16_pos..utf16_pos,
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            );
-
-            let (x, height) = if !rects.is_empty() {
-                (rects[0].rect.left(), rects[0].rect.height())
-            } else {
-                let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
-                let height = laid_out_para.height();
-                (pos.position as f32, height)
-            };
-
-            let selrect = shape.selrect();
-            let base_x = selrect.x();
-            let base_y = selrect.y() + y_offset;
-
-            return Some(Rect::from_xywh(base_x + x, base_y, 1.0, height));
-        }
-        y_offset += laid_out_para.height();
-    }
-
-    None
-}
-
-/// Get selection rectangles for a given selection.
-fn get_selection_rects(
-    text_content: &TextContent,
-    selection: &TextSelection,
-    shape: &Shape,
-) -> Vec<Rect> {
-    let mut rects = Vec::new();
-
-    let start = selection.start();
-    let end = selection.end();
-
-    let paragraphs = text_content.paragraphs();
-    let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
-
-    let selrect = shape.selrect();
-
-    let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    let valign_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect.height() - total_height) / 2.0,
-        VerticalAlign::Bottom => selrect.height() - total_height,
-        _ => 0.0,
-    };
-
-    let mut y_offset = valign_offset;
-
-    for (para_idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
-        let para_height = laid_out_para.height();
-
-        if para_idx < start.paragraph || para_idx > end.paragraph {
-            y_offset += para_height;
-            continue;
-        }
-
-        if para_idx >= paragraphs.len() {
-            y_offset += para_height;
-            continue;
-        }
-
-        let para = &paragraphs[para_idx];
-        let para_char_count: usize = para
-            .children()
-            .iter()
-            .map(|span| span.text.chars().count())
-            .sum();
-        let range_start = if para_idx == start.paragraph {
-            start.offset
-        } else {
-            0
-        };
-
-        let range_end = if para_idx == end.paragraph {
-            end.offset
-        } else {
-            para_char_count
-        };
-
-        if range_start < range_end {
-            use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            let text_boxes = laid_out_para.get_rects_for_range(
-                para.char_offset_to_utf16(range_start)..para.char_offset_to_utf16(range_end),
-                RectHeightStyle::Tight,
-                RectWidthStyle::Tight,
-            );
-
-            for text_box in text_boxes {
-                let r = text_box.rect;
-                rects.push(Rect::from_xywh(
-                    selrect.x() + r.left(),
-                    selrect.y() + y_offset + r.top(),
-                    r.width(),
-                    r.height(),
-                ));
-            }
-        }
-
-        y_offset += para_height;
-    }
-
-    rects
 }

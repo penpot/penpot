@@ -2,19 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http.assets
   "Assets related handlers."
   (:require
-   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.access-token :as actoken]
    [app.http.session :as session]
+   [app.metrics :as mtx]
+   [app.rpc.permissions :as perms]
    [app.storage :as sto]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
@@ -35,26 +37,74 @@
     "file-data-fragment"
     "organization"})
 
+(defn- public-bucket?
+  [bucket]
+  (or (contains? public-buckets bucket)
+      ;; Dashboard file thumbnails become public when link previews
+      ;; are enabled, so link preview crawlers can fetch them.
+      (and (= "file-thumbnail" bucket)
+           (contains? cf/flags :link-preview))))
+
 (defn get-id
   [{:keys [path-params]}]
   (or (some-> path-params :id d/parse-uuid)
       (ex/raise :type :not-found
                 :hint "object not found")))
 
+(defn- get-share-id
+  "Extract and validate the optional `share-id` query param. Returns a UUID
+  or `nil` for missing/malformed values."
+  [{:keys [query-params]}]
+  (some-> query-params :share-id d/parse-uuid))
+
 (defn- get-file-media-object
   [pool id]
   (db/get* pool :file-media-object {:id id} {::db/remove-deleted false}))
+
+(defn- result-label
+  "Map a response status to the outcome label. A nil or non-number
+  status is an `error`: every serve path must set ::yres/status."
+  [status]
+  (cond
+    (not (number? status))        "error"
+    (< status 400)                "served"
+    (contains? #{401 403} status) "unauthorized"
+    (= status 404)                "not-found"
+    :else                         "error"))
+
+(defn- emit-asset!
+  "Record an asset request. `route` is the handler route, `obj` the resolved
+  storage object (or nil when it could not be resolved). Recording never fails."
+  [cfg route obj status]
+  (mtx/run! (::mtx/metrics cfg)
+            :id :storage-asset-requests :inc 1
+            :labels [route
+                     (mtx/label (some-> obj :backend) "unknown")
+                     (mtx/label (some-> obj meta :bucket) "unknown")
+                     (result-label status)]))
 
 (defn- serve-object-from-s3
   [{:keys [::sto/storage ::signature-max-age ::cache-max-age] :as cfg} obj]
   (let [sig-max-age (or signature-max-age default-signature-max-age)
         cch-max-age (or cache-max-age default-cache-max-age)
-        {:keys [host port] :as url} (sto/get-object-url storage obj {:max-age sig-max-age})]
+        bucket  (-> obj meta :bucket)
+        public? (public-bucket? bucket)
+        ;; The disposition is also signed into the presigned url: this
+        ;; response is a redirect, so the header below applies to the
+        ;; redirect itself and not to the bytes the client then fetches
+        ;; from the object store.
+        {:keys [host port] :as url} (sto/get-object-url storage obj
+                                                        (cond-> {:max-age sig-max-age}
+                                                          (not public?)
+                                                          (assoc :content-disposition "attachment")))
+        headers (cond-> {"location" (str url)
+                         "x-host"   (cond-> host port (str ":" port))
+                         "x-mtype"  (-> obj meta :content-type)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not public?)
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status  307
-     ::yres/headers {"location" (str url)
-                     "x-host"   (cond-> host port (str ":" port))
-                     "x-mtype"  (-> obj meta :content-type)
-                     "cache-control" (str "max-age=" (inst-ms cch-max-age))}}))
+     ::yres/headers headers}))
 
 (defn- serve-object-from-fs
   [{:keys [::path ::cache-max-age]} obj]
@@ -62,9 +112,12 @@
         purl    (u/join (u/uri path)
                         (sto/object->relative-path obj))
         mdata   (meta obj)
-        headers {"x-accel-redirect" (:path purl)
-                 "content-type" (:content-type mdata)
-                 "cache-control" (str "max-age=" (inst-ms cch-max-age))}]
+        bucket  (:bucket mdata)
+        headers (cond-> {"x-accel-redirect" (:path purl)
+                         "content-type" (:content-type mdata)
+                         "cache-control" (str "max-age=" (inst-ms cch-max-age))}
+                  (not (public-bucket? bucket))
+                  (assoc "content-disposition" "attachment"))]
     {::yres/status 204
      ::yres/headers headers}))
 
@@ -74,68 +127,119 @@
   [cfg {:keys [backend] :as obj}]
   (case backend
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
-    (:fs :assets-fs) (serve-object-from-fs cfg obj)))
+    (:fs :assets-fs) (serve-object-from-fs cfg obj)
+    (ex/raise :type :internal
+              :hint "unknown storage backend"
+              :backend backend)))
 
 (defn- requires-auth?
   "Check if the storage object requires authentication based on its bucket."
   [obj]
   (let [bucket (-> obj meta :bucket)]
-    (not (contains? public-buckets bucket))))
+    (not (public-bucket? bucket))))
+
+(defn- request-profile-id
+  "Extract the authenticated profile-id from the request."
+  [request]
+  (or (::session/profile-id request)
+      (::actoken/profile-id request)))
 
 (defn- authenticated?
   "Check if the request has an authenticated profile, either via session
    or access token."
   [request]
-  (or (some? (::session/profile-id request))
-      (some? (::actoken/profile-id request))))
+  (some? (request-profile-id request)))
+
+(defn- tempfile-owner-match?
+  "Check if the request's profile-id matches the tempfile's stored owner.
+   Returns true if no profile-id was stored (legacy objects)."
+  [obj request]
+  (let [stored-profile-id (:profile-id (meta obj))
+        request-profile-id (request-profile-id request)]
+    (or (nil? stored-profile-id)
+        (= stored-profile-id request-profile-id))))
+
+(defn- serve-object-measured
+  "Serve `obj`, recording one asset metric per outcome. A failure is
+  counted and then rethrown: never swallowed, never counted twice."
+  [cfg route obj]
+  (try
+    (let [response (serve-object cfg obj)]
+      (emit-asset! cfg route obj (::yres/status response))
+      response)
+    (catch Throwable cause
+      (emit-asset! cfg route obj 500)
+      (throw cause))))
 
 (defn objects-handler
   "Handler that serves storage objects by id.
    For non-public buckets (e.g. profile), requires authentication
-   via session cookie or access token."
+   via session cookie or access token.
+   For tempfile bucket, also requires ownership (profile-id match)."
   [{:keys [::sto/storage] :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
     (cond
       (nil? obj)
-      {::yres/status 404}
+      (do
+        (emit-asset! cfg "by-id" nil 404)
+        {::yres/status 404})
 
       (and (requires-auth? obj)
            (not (authenticated? request)))
-      {::yres/status 401}
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 401})
+
+      ;; The response stays 404 to avoid leaking existence, but the
+      ;; metric records the internal 401 outcome.
+      (and (= (-> obj meta :bucket) sto/tempfile-bucket)
+           (not (tempfile-owner-match? obj request)))
+      (do
+        (emit-asset! cfg "by-id" obj 401)
+        {::yres/status 404})
 
       :else
-      (serve-object cfg obj))))
+      (serve-object-measured cfg "by-id" obj))))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
-  [{:keys [::sto/storage] :as cfg} request kf]
+  [{:keys [::sto/storage] :as cfg} request route kf]
   (let [pool       (::db/pool storage)
         id         (get-id request)
         mobj       (get-file-media-object pool id)]
     (if (nil? mobj)
-      {::yres/status 404}
+      (do
+        (emit-asset! cfg route nil 404)
+        {::yres/status 404})
       (let [file-id    (:file-id mobj)
             profile-id (or (::session/profile-id request)
                            (::actoken/profile-id request))
-            perms      (bfc/get-file-permissions pool profile-id file-id)]
+            share-id   (get-share-id request)
+            perms      (perms/get-file-read-permissions pool profile-id file-id share-id)]
         (if-not (:can-read perms)
-          {::yres/status 404}
+          ;; The response stays 404 to avoid leaking existence, but the
+          ;; metric records the internal 403 outcome.
+          (do
+            (emit-asset! cfg route nil 403)
+            {::yres/status 404})
           (let [sobj (sto/get-object storage (kf mobj))]
             (if sobj
-              (serve-object cfg sobj)
-              {::yres/status 404})))))))
+              (serve-object-measured cfg route sobj)
+              (do
+                (emit-asset! cfg route nil 404)
+                {::yres/status 404}))))))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."
   [cfg request]
-  (generic-handler cfg request :media-id))
+  (generic-handler cfg request "by-file-media-id" :media-id))
 
 (defn file-thumbnails-handler
   "Handler that serves storage objects by thumbnail-id and quick
   fallback to file-media-id if no thumbnail is available."
   [cfg request]
-  (generic-handler cfg request #(or (:thumbnail-id %) (:media-id %))))
+  (generic-handler cfg request "thumbnail" #(or (:thumbnail-id %) (:media-id %))))
 
 ;; --- Initialization
 

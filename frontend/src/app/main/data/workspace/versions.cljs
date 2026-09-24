@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.versions
   (:require
@@ -72,7 +72,7 @@
          (rx/of ::dwp/force-persist
                 (ev/event {::ev/name "create-version"}))
 
-         (->> (dwp/wait-persisted)
+         (->> (dwp/wait-persisted-or-error)
               (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
@@ -95,6 +95,15 @@
          (->> (rp/cmd! :update-file-snapshot {:id id :label label})
               (rx/map fetch-versions)))))))
 
+(defn- clear-preview-state
+  []
+  (ptk/reify ::clear-preview-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-versions dissoc :backup)
+          (update :workspace-global dissoc :read-only? :preview-id)))))
+
 (defn- initialize-version
   []
   (ptk/reify ::initialize-version
@@ -108,7 +117,10 @@
          (->> stream
               (rx/filter (ptk/type? ::dw/bundle-fetched))
               (rx/take 1)
-              (rx/map #(dwpg/initialize-page file-id page-id)))
+              ;; Keep historical content read-only until the restored file
+              ;; has loaded, including when saving or loading fails.
+              (rx/mapcat #(rx/of (clear-preview-state)
+                                 (dwpg/initialize-page file-id page-id))))
 
          (rx/of (ntf/hide :tag :restore-dialog)
                 (dw/initialize-file team-id file-id)))))
@@ -200,12 +212,6 @@
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Clear preview state if we're restoring from preview mode
-      (-> state
-          (update :workspace-versions dissoc :backup)
-          (update :workspace-global dissoc :read-only? :preview-id)))
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
@@ -213,9 +219,12 @@
          (rx/of ::dwp/force-persist
                 (dw/remove-layout-flag :document-history))
 
-         (->> (dwp/wait-persisted)
+         (->> (dwp/wait-persisted-or-error)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-              (rx/map #(initialize-version))))))))
+              (rx/map #(initialize-version))
+              (rx/catch (fn [cause]
+                          (rx/concat (rx/of (exit-preview))
+                                     (rx/throw cause))))))))))
 
 (defn enter-restore
   [id]
@@ -356,7 +365,7 @@
                 (rx/of ::dwp/force-persist))
 
               (->> (if (= file-id current-file-id)
-                     (dwp/wait-persisted)
+                     (dwp/wait-persisted-or-error)
                      (rx/of :nothing))
                    (rx/mapcat
                     (fn [_]
@@ -386,7 +395,7 @@
                               ::ev/origin "plugins"})
                    ::dwp/force-persist)
 
-            (->> (dwp/wait-persisted)
+            (->> (dwp/wait-persisted-or-error)
                  (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
                  (rx/map #(initialize-version)))
 
@@ -394,10 +403,11 @@
                  (rx/tap resolve)
                  (rx/ignore)))
 
-           ;; On error reject the promise and empty the stream
+           ;; Restore the live file before rejecting the plugin promise.
            (rx/catch (fn [error]
-                       (reject error)
-                       (rx/empty)))))))
-
-
-
+                       (rx/concat
+                        (rx/of (exit-preview))
+                        (->> (rx/of error)
+                             (rx/observe-on :async)
+                             (rx/tap reject)
+                             (rx/ignore)))))))))

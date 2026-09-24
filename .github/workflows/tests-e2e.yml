@@ -1,0 +1,418 @@
+name: "CI: E2E"
+
+# Single entry point for every suite that drives a real frontend bundle.
+# The bundle is built ONCE by `build-bundle` and restored by every consumer,
+# so adding a suite no longer adds another `frontend/scripts/build` run.
+#
+# Suites and what they need from the bundle:
+#
+# - Integration Tests: Playwright specs, backend faked with frontend mocks.
+# - Composable test suite: Plugin runtime, backend faked with Playwright RPC
+#   fixtures. See plugins/apps/composable-test-suite/README.md ("Running in CI").
+# - Plugin API Test Suite (mocked): Plugin runtime, backend faked with
+#   Playwright RPC fixtures and MOCK_BACKEND=1.
+#   See plugins/apps/plugin-api-test-suite/README.md.
+#
+# Hand-off: `build-bundle` restores `actions/cache` keyed by the checked-out
+# SHA, builds only on a miss, and saves it; every consumer restores the same
+# key after `needs: build-bundle` completes. A re-run of the same SHA reuses
+# the cached bundle instead of rebuilding it.
+#
+# NOTE: the job `name:` values are the GitHub check contexts, so they are kept
+# stable on purpose (branch protection may require them by name). Only the
+# workflow file/name changed.
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+
+      shards:
+        description: 'Shard layout (JSON array)'
+        type: choice
+        required: true
+        default: '[1, 2, 3, 4]'
+        options:
+          - '[1, 2, 3, 4]'
+          - '[1, 2, 3, 4, 5, 6]'
+          - '[1, 2]'
+          - '[1]'
+
+      workers:
+        description: 'Playwright workers per shard'
+        type: string
+        required: true
+        default: '2'
+
+      base_url:
+        description: 'Penpot base URL for the (disabled) live Plugin API suite'
+        required: false
+        default: 'https://localhost:3449'
+
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'common/**'
+      - 'render-wasm/**'
+      - 'plugins/**'
+      - '.github/workflows/tests-e2e.yml'
+
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+
+  push:
+    branches:
+      - develop
+      - staging
+
+    paths:
+      - 'frontend/**'
+      - 'common/**'
+      - 'render-wasm/**'
+      - 'plugins/**'
+      - '.github/workflows/tests-e2e.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.gh_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 1. Build the frontend bundle once ──────────────────────────────────
+  build-bundle:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Build Integration Bundle"
+    runs-on: penpot-extended-runner
+    timeout-minutes: 30
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    outputs:
+      bundle_key: ${{ steps.vars.outputs.bundle_key }}
+
+    steps:
+      # An empty `ref` makes checkout fall back to its default (the PR merge
+      # ref on pull_request, the pushed ref on push).
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      # The cache key must come from the SHA actually checked out: on a manual
+      # run `github.sha` points at the dispatching ref, not at `gh_ref`.
+      - name: Extract cache key
+        id: vars
+        run: |
+          echo "bundle_key=frontend-bundle-$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Restore Bundle Cache
+        id: restore
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ steps.vars.outputs.bundle_key }}
+          path: frontend/resources/public
+
+      - name: Build Bundle
+        if: steps.restore.outputs.cache-hit != 'true'
+        working-directory: ./frontend
+        run: |
+          ./scripts/build
+
+      - name: Store Bundle Cache
+        if: steps.restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          key: ${{ steps.vars.outputs.bundle_key }}
+          path: frontend/resources/public
+
+  # ── 2. Consumers: restore the bundle, never rebuild it ─────────────────
+  test-integration:
+    if: ${{ !github.event.pull_request.draft }}
+    name: "Integration Tests (${{ matrix.shard }})"
+    runs-on: penpot-extended-runner
+    timeout-minutes: 40
+
+    needs: build-bundle
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(inputs.shards || '[1, 2, 3, 4]') }}
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+        - /var/cache/github-runner/ms-playwright:/ms-playwright
+      env:
+        PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ needs.build-bundle.outputs.bundle_key }}
+          path: frontend/resources/public
+          fail-on-cache-miss: true
+
+      - name: Install deps
+        working-directory: ./frontend
+        run: |
+          pnpm install --frozen-lockfile;
+
+      # No-op once the shared volume is warm; keeps the first run working.
+      - name: Install Playwright Chromium
+        working-directory: ./frontend
+        run: pnpm exec playwright install chromium
+
+      # `strategy.job-total` is the matrix size, so the shard denominator
+      # follows the `shards` input without being hardcoded.
+      - name: Run Tests
+        working-directory: ./frontend
+        env:
+          WORKERS: ${{ inputs.workers }}
+        run: |
+          WORKERS=${WORKERS:-2}
+          echo "Running shard ${{ matrix.shard }}/${{ strategy.job-total }} with $WORKERS workers"
+          pnpm exec playwright test --project default \
+            --workers="$WORKERS" \
+            --shard=${{ matrix.shard }}/${{ strategy.job-total }} \
+            --reporter=blob
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-blob-report-${{ matrix.shard }}
+          path: frontend/blob-report/
+          overwrite: true
+          retention-days: 3
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-tests-result-${{ matrix.shard }}
+          path: frontend/test-results/
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 3
+
+  composable-test-suite:
+    if: ${{ github.event_name != 'workflow_dispatch' && !github.event.pull_request.draft }}
+    name: "Run composable test suite (mocked backend)"
+    runs-on: penpot-extended-runner
+    timeout-minutes: 30
+
+    needs: build-bundle
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The driver serves the prebuilt bundle from frontend/resources/public.
+      - name: Restore Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ needs.build-bundle.outputs.bundle_key }}
+          path: frontend/resources/public
+          fail-on-cache-miss: true
+
+      - name: Install deps
+        working-directory: ./plugins
+        run: |
+          pnpm install;
+
+      - name: Install Playwright Chromium
+        working-directory: ./plugins
+        run: pnpm --filter composable-test-suite exec playwright install --with-deps chromium
+
+      - name: Run composable test suite (mocked)
+        working-directory: ./plugins
+        run: pnpm --filter composable-test-suite run test:ci
+
+  api-test-suite-mocked:
+    if: ${{ github.event_name != 'workflow_dispatch' && !github.event.pull_request.draft }}
+    name: "Run Plugin API Test Suite (mocked)"
+    runs-on: penpot-extended-runner
+    timeout-minutes: 30
+
+    needs: build-bundle
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Mocked mode serves the prebuilt bundle from frontend/resources/public.
+      - name: Restore Cache
+        uses: actions/cache/restore@v5
+        with:
+          key: ${{ needs.build-bundle.outputs.bundle_key }}
+          path: frontend/resources/public
+          fail-on-cache-miss: true
+
+      - name: Install deps
+        working-directory: ./plugins
+        run: |
+          pnpm install;
+
+      - name: Install Playwright Chromium
+        working-directory: ./plugins
+        run: pnpm --filter plugin-api-test-suite exec playwright install --with-deps chromium
+
+      - name: Generate API surface
+        working-directory: ./plugins
+        run: pnpm --filter plugin-api-test-suite run gen:api
+
+      - name: Run API test suite (mocked)
+        working-directory: ./plugins
+        env:
+          MOCK_BACKEND: "1"
+        run: pnpm --filter plugin-api-test-suite run test:ci
+
+  # ── 3. Merge the per-shard integration reports ─────────────────────────
+  merge-reports:
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.test-integration.result != 'skipped' }}
+    name: "Merge Integration Reports"
+    runs-on: penpot-extended-runner
+    timeout-minutes: 15
+
+    needs: test-integration
+
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        - /var/cache/github-runner/m2:/root/.m2
+        - /var/cache/github-runner/gitlib:/root/.gitlibs
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Install deps
+        working-directory: ./frontend
+        run: |
+          pnpm install --frozen-lockfile;
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v7
+        with:
+          path: frontend/all-blob-reports
+          pattern: integration-blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML report
+        working-directory: ./frontend
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: report.json
+        run: |
+          pnpm exec playwright merge-reports \
+            --reporter=html,json,list ./all-blob-reports
+
+      - name: Test summary
+        if: always()
+        continue-on-error: true
+        working-directory: ./frontend
+        run: |
+          if [ ! -f report.json ]; then
+            echo "No report produced (all shards failed early)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          jq -r -f ../.github/scripts/playwright-summary.jq report.json \
+            >> "$GITHUB_STEP_SUMMARY" \
+            || echo "Summary generation failed; see the HTML report artifact." \
+               >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload JSON report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-json-report
+          path: frontend/report.json
+          overwrite: true
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-html-report
+          path: frontend/playwright-report/
+          overwrite: true
+          retention-days: 7
+
+  # ── 4. Live Plugin API suite (disabled) ────────────────────────────────
+  #
+  # True end-to-end against a LIVE instance: point PENPOT_BASE_URL at a
+  # reachable instance and provide login credentials via repo secrets. Manual
+  # because the CI runner has no Docker to stand up a full stack.
+  #
+  # api-test-suite-live:
+  #   if: ${{ github.event_name == 'workflow_dispatch' }}
+  #   name: Run Plugin API Test Suite (live)
+  #   runs-on: penpot-extended-runner
+  #   container:
+  #     image: penpotapp/devenv:latest
+  #
+  #   env:
+  #     PENPOT_BASE_URL: ${{ inputs.base_url }}
+  #     E2E_LOGIN_EMAIL: ${{ secrets.E2E_LOGIN_EMAIL }}
+  #     E2E_LOGIN_PASSWORD: ${{ secrets.E2E_LOGIN_PASSWORD }}
+  #
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         node-version-file: .nvmrc
+  #
+  #     - name: Install deps
+  #       working-directory: ./plugins
+  #       run: |
+  #         pnpm install;
+  #
+  #     - name: Install Playwright Chromium
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite exec playwright install --with-deps chromium
+  #
+  #     - name: Generate API surface
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite run gen:api
+  #
+  #     # Note: requires a running Penpot instance reachable at PENPOT_BASE_URL.
+  #     - name: Run API test suite
+  #       working-directory: ./plugins
+  #       run: pnpm --filter plugin-api-test-suite run test:ci

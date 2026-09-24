@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.files.migrations
   (:require
@@ -13,6 +13,7 @@
    [app.common.files.comp-processors :as cfcp]
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -35,6 +36,7 @@
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1978,6 +1980,135 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0026-fix-svg-raw-shapes-uuids"
+  ;; Before the svg-raw schema declared :shapes as a vector of uuid,
+  ;; the JSON decoder had no type information for those child ids and
+  ;; left them as plain strings on any round trip, so they got
+  ;; persisted as strings. Once the schema was tightened, such files
+  ;; fail schema validation; this migration parses the strings back
+  ;; into uuid instances.
+  [data _]
+  (letfn [(update-object [object]
+            (cond-> object
+              (cfh/svg-raw-shape? object)
+              (d/update-when :shapes #(mapv uuid/coerce %))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0027-separate-tokens-status"
+  [data _]
+  (if-let [tokens-lib (:tokens-lib data)]
+    (assoc data :tokens-status
+           (cfo/make-tokens-status-from-lib tokens-lib))
+    data))
+
+(defmethod migrate-data "0028-normalize-constrained-values"
+  ;; Existing files can contain values outside the limits now shared by the UI
+  ;; and file schemas. Normalize them before checking the migrated file.
+  [data _]
+  (letfn [(clamp-minimum [value minimum]
+            (if (number? value)
+              (max value minimum)
+              value))
+
+          (positive-or-default [value default]
+            (if (and (number? value) (not (pos? value)))
+              default
+              value))
+
+          (clamp-attrs [value attrs]
+            (reduce #(d/update-when %1 %2 clamp-minimum 0) value attrs))
+
+          (repair-vector [value repair-item]
+            (if (vector? value)
+              (mapv repair-item value)
+              value))
+
+          (repair-grid-params [params type]
+            (cond
+              (= type :square)
+              (d/update-when params :size clamp-minimum 0.01)
+
+              (#{:row :column} type)
+              (d/update-when params :size clamp-minimum 1)
+
+              :else
+              params))
+
+          (repair-grid [grid]
+            (d/update-when grid :params repair-grid-params (:type grid)))
+
+          (repair-default-grids [grids]
+            (-> grids
+                (d/update-when :square repair-grid-params :square)
+                (d/update-when :row repair-grid-params :row)
+                (d/update-when :column repair-grid-params :column)))
+
+          (repair-grid-track [track]
+            (d/update-when track :value clamp-minimum 0))
+
+          (repair-export [export]
+            (d/update-when export :scale positive-or-default 1))
+
+          (repair-stroke [stroke]
+            (clamp-attrs stroke [:stroke-width
+                                 :stroke-width-top
+                                 :stroke-width-right
+                                 :stroke-width-bottom
+                                 :stroke-width-left]))
+
+          (repair-shadow [shadow]
+            (d/update-when shadow :blur clamp-minimum 0))
+
+          (repair-blur [blur]
+            (d/update-when blur :value clamp-minimum 0))
+
+          (repair-shape [shape]
+            (-> shape
+                (clamp-attrs [:r1 :r2 :r3 :r4
+                              :layout-item-min-w :layout-item-max-w
+                              :layout-item-min-h :layout-item-max-h])
+                (d/update-when :layout-gap clamp-attrs [:row-gap :column-gap])
+                (d/update-when :layout-padding clamp-attrs [:p1 :p2 :p3 :p4])
+                (d/update-when :layout-grid-rows repair-vector repair-grid-track)
+                (d/update-when :layout-grid-columns repair-vector repair-grid-track)
+                (d/update-when :strokes repair-vector repair-stroke)
+                (d/update-when :shadow repair-vector repair-shadow)
+                (d/update-when :blur repair-blur)
+                (d/update-when :background-blur repair-blur)
+                (d/update-when :exports repair-vector repair-export)
+                (d/update-when :grids repair-vector repair-grid)))
+
+          (truncate-property-text [value]
+            (if (and (string? value)
+                     (> (count value) ctv/property-max-length))
+              (subs value 0 ctv/property-max-length)
+              value))
+
+          (repair-variant-property [property]
+            (-> property
+                (d/update-when :name truncate-property-text)
+                (d/update-when :value truncate-property-text)))
+
+          (repair-container [container]
+            (-> container
+                (d/update-when :objects d/update-vals repair-shape)
+                (d/update-when :variant-properties repair-vector repair-variant-property)))
+
+          (repair-page [page]
+            (-> page
+                (repair-container)
+                (d/update-when :default-grids repair-default-grids)))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-page)
+        (d/update-when :components d/update-vals repair-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2060,4 +2191,7 @@
          "0022-normalize-component-root-and-resync"
          "0023-repair-token-themes-with-inexistent-sets"
          "0024b-fix-stroke-cap-placement"
-         "0025-repair-empty-text-content"]))
+         "0025-repair-empty-text-content"
+         "0026-fix-svg-raw-shapes-uuids"
+         "0027-separate-tokens-status"
+         "0028-normalize-constrained-values"]))

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.auth
   (:require
@@ -14,9 +14,20 @@
    :iterations 3
    :parallelism 2})
 
+(def ^:private weak-options
+  {:alg :pbkdf2+sha256
+   :iterations 100})
+
 (defn derive-password
   [password]
   (hashers/derive password default-options))
+
+(defn derive-password-weak
+  "Derives a password using a fast algorithm (pbkdf2+sha256, 100 iterations).
+   Intended for demo users only — they are already gated behind the
+   `demo-users` config flag which is disabled in production."
+  [password]
+  (hashers/derive password weak-options))
 
 (defn verify-password
   [attempt password]

@@ -108,7 +108,7 @@ flowchart TB
         FFI_Cursor["_text_editor_set_cursor_from_point<br/>_text_editor_move_cursor<br/>_text_editor_select_all"]
         FFI_Edit["_text_editor_insert_text<br/>_text_editor_delete_backward<br/>_text_editor_insert_paragraph"]
         FFI_Query["_text_editor_export_content<br/>_text_editor_get_selection<br/>_text_editor_poll_event"]
-        FFI_Render["_text_editor_render_overlay<br/>_text_editor_update_blink"]
+        FFI_Render["_text_editor_render_caret<br/>_text_editor_update_blink"]
     end
 
     subgraph Rust["Rust Layer"]

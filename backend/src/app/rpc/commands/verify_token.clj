@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.verify-token
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -174,6 +175,7 @@
    [:map {:title "TeamInvitationClaims"}
     [:iss :keyword]
     [:exp ::ct/inst]
+    ;; The inviter: always the `created-by` of the invitation row.
     [:profile-id ::sm/uuid]
     [:role types.team/schema:role]
     [:team-id {:optional true} ::sm/uuid]
@@ -244,18 +246,6 @@
                          (not (:is-member membership)))
                 (:organization-id membership))
 
-              organization-add-source
-              (when organization-id-on-add
-                (if organization-id
-                  "direct-organization-invitation"
-                  "team-invitation"))
-
-              organization-event-origin
-              (when organization-id-on-add
-                (if organization-id
-                  "organization-invitation-acceptance"
-                  "team-invitation-acceptance"))
-
               organization-member-count-before
               (when organization-id-on-add
                 (count
@@ -308,26 +298,39 @@
                      (assoc :name "accept-organization-invitation")
                      (assoc :props
                             (-> props
-                                (assoc :organization-id organization-id-on-add)
+                                (assoc :organization-id organization-id-on-add
+                                       :user-id (:id profile)
+                                       :user-who-send-invitation (:created-by invitation))
                                 (audit/clean-props))))))
 
-              (cond-> (assoc claims :state :created)
+              (cond-> (assoc claims
+                             :state :created
+                             ;; The invitation row is authoritative for the
+                             ;; inviter: backfill :profile-id so the response
+                             ;; stays consistent even with tokens minted
+                             ;; before :profile-id was aligned with
+                             ;; :created-by (or re-requested by someone else).
+                             :profile-id (or (:created-by invitation)
+                                             (:profile-id claims))
+                             ;; Likewise, the accepting profile is
+                             ;; authoritative for the invitee: backfill
+                             ;; :member-id (nil for invitations sent to an
+                             ;; unregistered email, possibly stale
+                             ;; otherwise).
+                             :member-id (:id profile))
                 ;; when the invitation is to an organization, instead of a team, add the
                 ;; accepted-team-id as :organization-team-id
                 (:organization-id claims)
                 (assoc :organization-team-id accepted-team-id)
 
                 organization-id-on-add
-                (assoc :organization-invitation-audit
-                       {:origin organization-event-origin
-                        :props
-                        (-> props
-                            (assoc :organization-id organization-id-on-add
-                                   :organization-member-add-source organization-add-source
-                                   :belongs-to-team-on-add (boolean team-id)
-                                   :organization-member-count-before
-                                   organization-member-count-before)
-                            (audit/clean-props))}))))))
+                (merge (d/without-nils
+                        {:invitation-id (:id invitation)
+                         :organization-member-count-before
+                         organization-member-count-before}))
+
+                (and organization-id-on-add team-id)
+                (assoc :organization-id organization-id-on-add))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled
