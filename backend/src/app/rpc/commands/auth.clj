@@ -227,21 +227,24 @@
 ;; ---- COMMAND: Prepare Register
 
 (defn- validate-registration-flags!
-  [cfg invitation]
-  (when-not (contains? cf/flags :login-with-password)
-    (ex/raise :type :restriction
-              :code :registration-disabled
-              :hint "registration disabled"))
+  ([cfg invitation]
+   (validate-registration-flags! cfg invitation false))
+  ([cfg invitation lock-invitation?]
+   (when-not (contains? cf/flags :login-with-password)
+     (ex/raise :type :restriction
+               :code :registration-disabled
+               :hint "registration disabled"))
 
-  (when-not (contains? cf/flags :registration)
-    (if (nil? invitation)
-      (ex/raise :type :restriction
-                :code :registration-disabled
-                :hint "registration disabled")
-      (when (nil? (teams-invitations/active-invitation cfg invitation))
-        (ex/raise :type :validation
-                  :code :invalid-token
-                  :hint "no active invitation associated with the token")))))
+   (when-not (contains? cf/flags :registration)
+     (if (nil? invitation)
+       (ex/raise :type :restriction
+                 :code :registration-disabled
+                 :hint "registration disabled")
+       (let [opts (when lock-invitation? {::db/for-update true})]
+         (when (nil? (teams-invitations/active-invitation cfg invitation opts))
+           (ex/raise :type :validation
+                     :code :invalid-token
+                     :hint "no active invitation associated with the token")))))))
 
 (defn- validate-register-attempt!
   [cfg params]
@@ -259,7 +262,8 @@
                 :hint "registration disabled"))
 
     (when (and invitation?
-               (not= (:email params) (:member-email invitation)))
+               (not= (profile/clean-email (:email params))
+                     (profile/clean-email (:member-email invitation))))
       (ex/raise :type :restriction
                 :code :email-does-not-match-invitation
                 :hint "email should match the invitation"))
@@ -494,7 +498,7 @@
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
         invitation (when-let [token (:invitation-token claims)]
                      (tokens/verify cfg {:token token :iss :team-invitation}))
-        _          (validate-registration-flags! cfg invitation)
+        _          (validate-registration-flags! cfg invitation true)
         params     (cond-> claims
                      (:accept-newsletter-updates params)
                      (update :props assoc :newsletter-updates true))

@@ -71,17 +71,22 @@
     (some? (db/exec-one! conn query))))
 
 (defn active-invitation
-  [cfg {:keys [team-id organization-id member-email]}]
-  (let [invitation (cond
-                     organization-id (db/get* cfg :team-invitation
-                                              {:email-to member-email
-                                               :org-id organization-id})
-                     team-id (db/get* cfg :team-invitation
-                                      {:email-to member-email
-                                       :team-id team-id}))]
-    (when (and invitation
-               (ct/is-after? (:valid-until invitation) (ct/now)))
-      invitation)))
+  ([cfg claims]
+   (active-invitation cfg claims {}))
+  ([cfg {:keys [team-id organization-id member-email]} opts]
+   (let [email      (profile/clean-email member-email)
+         invitation (cond
+                      organization-id (db/get* cfg :team-invitation
+                                               {:email-to email
+                                                :org-id organization-id}
+                                               opts)
+                      team-id (db/get* cfg :team-invitation
+                                       {:email-to email
+                                        :team-id team-id}
+                                       opts))]
+     (when (and invitation
+                (ct/is-after? (:valid-until invitation) (ct/now)))
+       invitation))))
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until organization-id organization-name team-id member-id member-email role]}]

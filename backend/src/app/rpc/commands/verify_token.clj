@@ -193,7 +193,12 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation             (teams-invitations/active-invitation cfg claims)
+  (let [member-email           (profile/clean-email member-email)
+        claims                 (assoc claims :member-email member-email)
+        invitation             (teams-invitations/active-invitation
+                                cfg
+                                claims
+                                {::db/for-update true})
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
