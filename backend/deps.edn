@@ -78,7 +78,7 @@
     org.clojure/data.csv {:mvn/version "1.1.1"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "2.0.0-beta1"}
     mockery/mockery {:mvn/version "0.1.4"}}
-   :extra-paths ["test" "dev"]}
+    :extra-paths ["test" "test/resources" "dev"]}
 
   :build
   {:extra-deps

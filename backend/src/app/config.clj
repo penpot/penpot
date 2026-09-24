@@ -264,6 +264,10 @@
     [:smtp-tls {:optional true} ::sm/boolean]
     [:smtp-username {:optional true} [:maybe :string]]
 
+    ;; SNS topics allowed to deliver bounce and complaint notifications
+    ;; to the /webhooks/sns endpoint (PENPOT_AWS_SNS_TOPIC_ARNS).
+    [:aws-sns-topic-arns {:optional true} [::sm/set :string]]
+
     [:urepl-host {:optional true} :string]
     [:urepl-port {:optional true} ::sm/int]
     [:prepl-host {:optional true} :string]
