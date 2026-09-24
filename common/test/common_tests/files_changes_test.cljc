@@ -10,19 +10,246 @@
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
+   [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [clojure.datafy :refer [datafy]]
    [clojure.test :as t]
+   [clojure.walk :as walk]
    [common-tests.types.shape-decode-encode-test :refer [json-roundtrip]]))
 
 (defn- make-file-data
   [file-id page-id]
   (binding [ffeat/*current* #{"components/v2"}]
     (ctf/make-file-data file-id page-id)))
+
+(defn- without-modified-at
+  [data]
+  (walk/prewalk
+   (fn [value]
+     ;; Expose opaque token types so they compare by value and their nested
+     ;; timestamps are excluded too.
+     (let [value (if (or (ctob/tokens-lib? value)
+                         (ctob/token-set? value)
+                         (ctos/tokens-status? value))
+                   (datafy value)
+                   value)]
+       (if (map? value)
+         (dissoc value :modified-at)
+         value)))
+   data))
+
+(defn- assert-idempotent
+  [data changes]
+  ;; Modification timestamps may differ; all other stored data must agree.
+  ;; Exercise validation and the touched second pass at distinct times.
+  (let [once  (with-redefs [ct/now (constantly (ct/inst 1000))]
+                (ch/process-changes data changes))
+        twice (with-redefs [ct/now (constantly (ct/inst 2000))]
+                (ch/process-changes once changes))]
+    (t/is (= (without-modified-at once)
+             (without-modified-at twice))
+          "Replaying changes must preserve file data except modification timestamps")
+    ;; Ordered maps compare equal regardless of iteration order, but set order
+    ;; determines which token wins when active sets contain the same name.
+    (when (:tokens-lib once)
+      (t/is (= (vec (ctob/get-set-names (:tokens-lib once)))
+               (vec (ctob/get-set-names (:tokens-lib twice))))
+            "Replaying changes must preserve token set order"))))
+
+(t/deftest library-changes-are-idempotent
+  (let [file-id      (uuid/custom 10 1)
+        page-id      (uuid/custom 10 2)
+        shape-id     (uuid/custom 10 3)
+        component-id (uuid/custom 10 4)
+        color        {:id (uuid/custom 10 5) :name "Red" :color "#ff0000" :opacity 1}
+        typography   (ctt/make-typography {:id (uuid/custom 10 6)})
+        component    {:type :add-component
+                      :id component-id
+                      :name "Component"
+                      :path ""
+                      :main-instance-id shape-id
+                      :main-instance-page page-id}
+        base         (ch/process-changes
+                      (make-file-data file-id page-id)
+                      [{:type :add-obj
+                        :id shape-id
+                        :page-id page-id
+                        :frame-id uuid/zero
+                        :obj (cts/setup-shape
+                              {:id shape-id :type :frame :name "Main"
+                               :frame-id uuid/zero :parent-id uuid/zero
+                               :component-id component-id :component-file file-id
+                               :main-instance true :component-root true})}])
+        populated    (with-redefs [ct/now (constantly (ct/inst 0))]
+                       (ch/process-changes base
+                                           [component
+                                            {:type :add-color :color color}
+                                            {:type :add-typography :typography typography}]))
+        deleted      (ch/process-changes populated [{:type :del-component :id component-id}])]
+    (doseq [[label data change]
+            [["add color" base {:type :add-color :color color}]
+             ["modify color" populated {:type :mod-color :color (assoc color :name "Renamed")}]
+             ["delete color" populated {:type :del-color :id (:id color)}]
+             ["add typography" base {:type :add-typography :typography typography}]
+             ["modify typography" populated {:type :mod-typography
+                                             :typography (assoc typography :name "Renamed")}]
+             ["delete typography" populated {:type :del-typography :id (:id typography)}]
+             ["add component" base component]
+             ["modify component" populated {:type :mod-component :id component-id :name "Renamed"}]
+             ["delete component" populated {:type :del-component :id component-id}]
+             ["delete component permanently" populated {:type :del-component :id component-id
+                                                        :skip-undelete? true}]
+             ["restore component" deleted {:type :restore-component :id component-id :page-id page-id}]
+             ["purge component" populated {:type :purge-component :id component-id}]
+             ["set main instance attribute" populated
+              {:type :mod-obj :id shape-id :page-id page-id
+               :operations [{:type :set :attr :name :val "Renamed"}]}]
+             ["assign main instance attribute" populated
+              {:type :mod-obj :id shape-id :page-id page-id
+               :operations [{:type :assign :value {:name "Renamed"}}]}]]]
+      (t/testing label
+        (assert-idempotent data [change])))))
+
+(t/deftest token-changes-are-idempotent
+  (let [set-id      (uuid/custom 20 1)
+        other-id    (uuid/custom 20 2)
+        token-id    (uuid/custom 20 3)
+        theme-id    (uuid/custom 20 4)
+        token-attrs {:id token-id :name "spacing" :type :spacing :value "8"
+                     :modified-at (ct/inst 0)}
+        theme-attrs {:id theme-id :name "Light" :sets #{"base"}
+                     :modified-at (ct/inst 0)}
+        lib         (with-redefs [ct/now (constantly (ct/inst 0))]
+                      (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :id set-id :name "base"))
+                          (ctob/add-set (ctob/make-token-set :id other-id :name "group/other"))
+                          (ctob/add-token set-id (ctob/make-token token-attrs))
+                          (ctob/add-theme (ctob/make-token-theme theme-attrs))))
+        data        (assoc (make-file-data (uuid/custom 20 5) (uuid/custom 20 6)) :tokens-lib lib)]
+    (doseq [[label change]
+            [["update token with serialized timestamp"
+              {:type :set-token :set-id set-id :token-id token-id
+               :attrs (assoc token-attrs :value "16")}]
+             ["delete token"
+              {:type :set-token :set-id set-id :token-id token-id :attrs nil}]
+             ["set token set without optional timestamp"
+              {:type :set-token-set :id set-id :attrs {:id set-id :name "base"}}]
+             ["set token set with timestamp"
+              {:type :set-token-set :id set-id
+               :attrs {:id set-id :name "base" :modified-at (ct/inst 0)}}]
+             ["delete token set"
+              {:type :set-token-set :id set-id :attrs nil}]
+             ["update theme with serialized timestamp"
+              {:type :set-token-theme :id theme-id
+               :attrs (assoc theme-attrs :sets #{"group/other"})}]
+             ["delete theme"
+              {:type :set-token-theme :id theme-id :attrs nil}]
+             ["set tokens status"
+              {:type :set-tokens-status :theme-ids #{theme-id} :set-ids #{set-id}}]
+             ["reorder token set"
+              {:type :move-token-set :from-path ["base"] :to-path ["base"]
+               :before-path nil :before-group false}]
+             ["move token set to another group"
+              {:type :move-token-set :from-path ["base"] :to-path ["group" "base"]
+               :before-path nil :before-group false}]
+             ["reorder token set group"
+              {:type :move-token-set-group :from-path ["group"] :to-path ["group"]
+               :before-path ["base"] :before-group false}]
+             ["move token set group"
+              {:type :move-token-set-group :from-path ["group"] :to-path ["renamed"]
+               :before-path nil :before-group false}]
+             ["rename token set group"
+              {:type :rename-token-set-group :set-group-path ["group"] :set-group-fname "renamed"}]
+             ["rename token set group to its current name"
+              {:type :rename-token-set-group :set-group-path ["group"] :set-group-fname "group"}]]]
+      (t/testing label
+        (assert-idempotent data [change])))))
+
+(t/deftest registering-nested-groups-is-idempotent
+  (let [file-id   (uuid/custom 30 1)
+        page-id   (uuid/custom 30 2)
+        outer-id  (uuid/custom 30 3)
+        inner-id  (uuid/custom 30 4)
+        rect-id   (uuid/custom 30 5)
+        data      (ch/process-changes
+                   (make-file-data file-id page-id)
+                   (mapv (fn [[id parent-id type]]
+                           {:type :add-obj :id id :page-id page-id
+                            :frame-id uuid/zero :parent-id parent-id
+                            :obj (cts/setup-shape
+                                  {:id id :type type :name (name type)
+                                   :frame-id uuid/zero :parent-id parent-id
+                                   :x 0 :y 0 :width 10 :height 10})})
+                         [[outer-id uuid/zero :group]
+                          [inner-id outer-id :group]
+                          [rect-id inner-id :rect]]))
+        moved     (gsh/move (get-in data [:pages-index page-id :objects rect-id])
+                            (gpt/point 100 0))
+        data      (ch/process-changes
+                   data
+                   [{:type :mod-obj :id rect-id :page-id page-id
+                     :operations (mapv (fn [[attr val]] {:type :set :attr attr :val val})
+                                       (select-keys moved [:x :y :selrect :points]))}])]
+    (t/testing "child before parent"
+      (assert-idempotent data [{:type :reg-objects :page-id page-id :shapes [inner-id outer-id]}]))
+    (t/testing "parent before child"
+      (let [changes [{:type :reg-objects :page-id page-id :shapes [outer-id inner-id]}]
+            result  (ch/process-changes data changes)]
+        (t/is (= {:x 100.0 :y 0.0 :width 10.0 :height 10.0}
+                 (select-keys (get-in result [:pages-index page-id :objects outer-id])
+                              [:x :y :width :height]))
+              "The first application must update the outer group's bounds")
+        (assert-idempotent data changes)))))
+
+(t/deftest registering-sibling-groups-is-idempotent
+  (let [page-id  (uuid/custom 31 1)
+        outer-id (uuid/custom 31 2)
+        group-a  (uuid/custom 31 3)
+        group-b  (uuid/custom 31 4)
+        rect-a   (uuid/custom 31 5)
+        rect-b   (uuid/custom 31 6)
+        data     (ch/process-changes
+                  (make-file-data (uuid/custom 31 7) page-id)
+                  (mapv (fn [[id parent-id type]]
+                          {:type :add-obj :id id :page-id page-id
+                           :frame-id uuid/zero :parent-id parent-id
+                           :obj (cts/setup-shape
+                                 {:id id :type type :name (name type)
+                                  :frame-id uuid/zero :parent-id parent-id
+                                  :x 0 :y 0 :width 10 :height 10})})
+                        [[outer-id uuid/zero :group]
+                         [group-a outer-id :group]
+                         [group-b outer-id :group]
+                         [rect-a group-a :rect]
+                         [rect-b group-b :rect]]))
+        data     (ch/process-changes
+                  data
+                  (mapv (fn [[id dx]]
+                          (let [shape (get-in data [:pages-index page-id :objects id])
+                                moved (gsh/move shape (gpt/point dx 0))]
+                            {:type :mod-obj :id id :page-id page-id
+                             :operations (mapv (fn [[attr val]] {:type :set :attr attr :val val})
+                                               (select-keys moved [:x :y :selrect :points]))}))
+                        [[rect-a 100] [rect-b 200]]))]
+    (doseq [shapes [[group-a group-b] [group-b group-a]
+                    [outer-id group-a group-b] [group-a outer-id group-b]]]
+      (t/testing (str "Group order " shapes)
+        (let [changes [{:type :reg-objects :page-id page-id :shapes shapes}]
+              result  (ch/process-changes data changes)]
+          (t/is (= {:x 100.0 :y 0.0 :width 110.0 :height 10.0}
+                   (select-keys (get-in result [:pages-index page-id :objects outer-id])
+                                [:x :y :width :height]))
+                "The parent must use the updated bounds of both children")
+          (assert-idempotent data changes))))))
 
 (t/deftest add-obj
   (let [file-id (uuid/custom 2 2)
@@ -912,4 +1139,3 @@
               (nil? (get-in result2 [:pages-index page-id :default-grids])))))
 
      {:num 1000})))
-

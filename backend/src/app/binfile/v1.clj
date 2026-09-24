@@ -174,7 +174,7 @@
     (assert-mark m :obj)
     (let [size (read-long! input)]
       (assert (pos? size) "incorrect header size found on reading header")
-      (when (> size bfc/max-object-size)
+      (when (> size bfc/default-max-binary-entry-size)
         (ex/raise :type :validation
                   :code :max-file-size-reached
                   :hint (dm/str "unable to import object with size " size " bytes")))
@@ -249,7 +249,7 @@
         p (tmp/tempfile :prefix "penpot.binfile.")]
     (assert-mark m :stream)
 
-    (when (> s bfc/max-object-size)
+    (when (> s bfc/default-max-binary-entry-size)
       (ex/raise :type :validation
                 :code :max-file-size-reached
                 :hint (str/ffmt "unable to import storage object with size % bytes" s)))
@@ -305,8 +305,9 @@
 (defn write-export!
   [{:keys [::bfc/include-libraries ::bfc/embed-assets] :as cfg}]
   (when (and include-libraries embed-assets)
-    (throw (IllegalArgumentException.
-            "the `include-libraries` and `embed-assets` are mutally excluding options")))
+    (ex/raise :type :validation
+              :code :incompatible-options
+              :hint "the `include-libraries` and `embed-assets` are mutually exclusive options"))
 
   (write-export cfg))
 
@@ -454,7 +455,7 @@
 (defn- read-import-v1
   [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input] :as cfg}]
 
-  (bfc/disable-database-timeouts! cfg)
+  (bfc/configure-database-timeouts! cfg)
 
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]

@@ -17,6 +17,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
@@ -1806,13 +1807,14 @@
 
 (t/deftest check-organization-sso-returns-valid-true
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid? (constantly true)]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid? (constantly true)]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
 
@@ -1827,18 +1829,35 @@
 
 (t/deftest check-organization-sso-passes-issuer-to-validation
   (let [organization-id (uuid/random)
-        out    (with-redefs [oidc/is-organization-sso-config-valid?
-                             (fn [_cfg sso]
-                               (and (= "test-client" (:client-id sso))
-                                    (= "https://idp.example.com/" (:issuer sso))))]
-                 (th/management-command!
-                  {::th/type :check-organization-sso
-                   :organization-id organization-id
-                   :client-id "test-client"
-                   :client-secret "test-secret"
-                   :issuer "https://idp.example.com/"}))]
+        out             (with-redefs [ssrf/safe-url? (constantly true)
+                                      oidc/is-organization-sso-config-valid?
+                                      (fn [_cfg sso]
+                                        (and (= "test-client" (:client-id sso))
+                                             (= "https://idp.example.com/" (:issuer sso))))]
+                          (th/management-command!
+                           {::th/type :check-organization-sso
+                            :organization-id organization-id
+                            :client-id "test-client"
+                            :client-secret "test-secret"
+                            :issuer "https://idp.example.com/"}))]
     (t/is (th/success? out))
     (t/is (true? (-> out :result :valid)))))
+
+(t/deftest check-organization-sso-returns-valid-false-on-ssrf-blocked-issuer
+  (t/testing "an SSRF-blocked issuer must not reach the OIDC validation flow"
+    (let [called? (atom false)
+          out     (with-redefs [oidc/is-organization-sso-config-valid?
+                                (fn [_cfg _sso] (reset! called? true) true)]
+                    (th/management-command!
+                     {::th/type :check-organization-sso
+                      :organization-id (uuid/random)
+                      :client-id "test-client"
+                      :client-secret "test-secret"
+                      :issuer "http://127.0.0.1/idp"}))]
+      (t/is (th/success? out))
+      (t/is (false? (-> out :result :valid)))
+      (t/is (false? @called?)
+            "OIDC validation should not run when the issuer is SSRF-blocked"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUSH AUDIT EVENTS
@@ -1924,3 +1943,77 @@
           (t/is (= "bar" (get-in event [:context :foo])))
           (t/is (= (:full cf/version) (get-in event [:context :version])))
           (t/is (= "app" (get-in event [:context :initiator]))))))))
+
+(t/deftest push-audit-events-initiator-is-plain-string
+  ;; Shared-key callers (e.g. admin-console) carry :app.http/auth-key-id as a
+  ;; keyword; the stored initiator must be a plain string, and a
+  ;; caller-supplied initiator must never survive (server context wins).
+  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
+    (binding [cf/flags #{:audit-log}]
+      (let [prof   (th/create-profile* 1 {:is-active true})
+            params {::th/type :push-audit-events
+                    :events [{:name "context-test"
+                              :profile-id (:id prof)
+                              :type "action"
+                              :context {:custom-key "custom-val"
+                                        :initiator "spoofed"}}]}
+            params (with-meta params
+                     {::http/request (assoc http-request
+                                            ::http/auth-key-id :admin-console)})
+            out    (th/management-command! params)]
+        (t/is (nil? (:error out)))
+        (let [[_ event] (:call-args @audit-mock)]
+          (t/is (= "custom-val" (get-in event [:context :custom-key])))
+          (t/is (= "admin-console" (get-in event [:context :initiator])))
+          (t/is (string? (get-in event [:context :initiator]))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests: send-renewal-email
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- send-renewal-email-params
+  [profile user-name]
+  {::th/type :send-renewal-email
+   :profile-id (:id profile)
+   :user-email (:email profile)
+   :user-name user-name
+   :renewal-date "2026-01-01"
+   :estimated-amount 42.0
+   :organizations [{:id (uuid/random)
+                    :name "Acme"
+                    :initials "AC"
+                    :logo nil
+                    :avatar-bg-url nil}]})
+
+(t/deftest send-renewal-email-falls-back-to-profile-fullname-when-name-is-nil
+  ;; `nil` user-name means "no override": the RPC must look up the
+  ;; account owner's real name instead of sending a blank greeting.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile nil))]
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "Nitrate User" (:user-name params)))))))
+
+(t/deftest send-renewal-email-keeps-explicit-empty-name
+  ;; An explicit "" means the caller deliberately wants no name shown
+  ;; and must not be replaced by the profile's fullname.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile ""))]
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))
+
+(t/deftest send-renewal-email-treats-blank-name-as-empty
+  ;; A blank name is trimmed and follows the same path as "": no name
+  ;; is shown and the profile's fullname is not used.
+  (with-mocks [email-mock {:target 'app.email/send! :return nil}
+               nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true :fullname "Nitrate User"})
+          out     (th/management-command! (send-renewal-email-params profile "   "))]
+      (t/is (th/success? out))
+      (let [[params] (:call-args @email-mock)]
+        (t/is (= "" (:user-name params)))))))

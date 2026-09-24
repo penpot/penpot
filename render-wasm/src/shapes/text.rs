@@ -1,4 +1,4 @@
-use crate::render::text::calculate_decoration_metrics;
+use crate::render::text::decoration_segments;
 use crate::{
     math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
@@ -320,7 +320,19 @@ pub struct TextDecorationSegment {
     pub width: f32,
 }
 
-fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
+impl TextDecorationSegment {
+    /// The bar to paint, centered on `y`.
+    pub fn rect(&self) -> Rect {
+        Rect::new(
+            self.left,
+            self.y - self.thickness / 2.0,
+            self.left + self.width,
+            self.y + self.thickness / 2.0,
+        )
+    }
+}
+
+pub fn vertical_align_offset(container_h: f32, content_h: f32, valign: VerticalAlign) -> f32 {
     match valign {
         VerticalAlign::Center => (container_h - content_h) / 2.0,
         VerticalAlign::Bottom => container_h - content_h,
@@ -408,6 +420,10 @@ pub struct TextContent {
     content_version: u64,
     layout_version: u64,
     layout_width: Option<f32>,
+    /// Canvas origin used when absolute fill shaders (image/gradient) were baked
+    /// into cached Skia paragraphs. Kept across move clones so paint can
+    /// translate glyphs + shaders together. See `cached_layout_paint_offset`.
+    layout_paint_origin: Option<Point>,
 }
 
 impl PartialEq for TextContent {
@@ -431,6 +447,7 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 
@@ -446,11 +463,37 @@ impl TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 
     pub fn bounds(&self) -> Rect {
         self.bounds
+    }
+
+    /// Anchor used when painting from the layout cache. Absolute image/gradient
+    /// shaders were built in this coordinate space; paint glyphs here and apply
+    /// [`cached_layout_paint_offset`] on the canvas so both move together.
+    pub fn cached_layout_paint_anchor(&self, selrect: &Rect) -> Point {
+        self.layout_paint_origin
+            .unwrap_or_else(|| Point::new(self.selrect_origin_x(selrect), selrect.y()))
+    }
+
+    /// Canvas translation from the baked paint origin to the current selrect.
+    /// Zero when there is no recorded origin (fall back to painting at selrect).
+    pub fn cached_layout_paint_offset(&self, selrect: &Rect) -> Point {
+        match self.layout_paint_origin {
+            Some(origin) => Point::new(
+                self.selrect_origin_x(selrect) - origin.x,
+                selrect.y() - origin.y,
+            ),
+            None => Point::new(0.0, 0.0),
+        }
+    }
+
+    /// [`layout_origin_x`] for this content's own measured width.
+    fn selrect_origin_x(&self, selrect: &Rect) -> f32 {
+        self.layout_origin_x(selrect, self.size.width)
     }
 
     /// Text content for paint when [`Rect`] size may differ from stored bounds
@@ -530,6 +573,26 @@ impl TextContent {
         if self.grow_type != grow_type {
             self.grow_type = grow_type;
             self.content_version = self.content_version.wrapping_add(1);
+        }
+    }
+
+    /// Non-empty and every paragraph RTL. Mixed content counts as LTR, mirroring
+    /// `app.common.types.text/rtl-content?` on the ClojureScript side.
+    pub fn is_rtl(&self) -> bool {
+        !self.paragraphs.is_empty()
+            && self
+                .paragraphs
+                .iter()
+                .all(|paragraph| paragraph.text_direction() == TextDirection::RTL)
+    }
+
+    /// Left edge of the laid-out text of `width` inside `selrect`. RTL auto-width
+    /// text anchors right so the box extends leftward as it grows.
+    pub fn layout_origin_x(&self, selrect: &Rect, width: f32) -> f32 {
+        if self.grow_type() == GrowType::AutoWidth && self.is_rtl() {
+            selrect.right() - width
+        } else {
+            selrect.x()
         }
     }
 
@@ -685,7 +748,6 @@ impl TextContent {
     }
 
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
-        let x = selrect.x();
         let mut y = selrect.y();
 
         let width = if self.grow_type() == GrowType::AutoWidth {
@@ -693,6 +755,8 @@ impl TextContent {
         } else {
             selrect.width()
         };
+
+        let x = self.layout_origin_x(selrect, width);
 
         let height = if self.size.width.round() != width.round() {
             self.get_height(width)
@@ -1118,10 +1182,14 @@ impl TextContent {
         self.layout.set(result.0, result.1);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
+        // Absolute image/gradient shaders are built against `self.bounds()`, so the
+        // origin matches them and `cached_layout_paint_offset` carries any rtl shift.
+        self.layout_paint_origin = Some(Point::new(self.bounds.x(), self.bounds.y()));
     }
 
     pub fn force_next_layout_update(&mut self) {
         self.layout_width = None;
+        self.layout_paint_origin = None;
         self.layout.cached_extrect.set(None);
         // Bump the content version so update_layout can't early-return: auto-width
         // shapes always match their container and clearing the cache above doesn't
@@ -1130,6 +1198,10 @@ impl TextContent {
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        // Keep bounds in sync before building paints so absolute fill shaders
+        // match the container we are laying out for.
+        self.set_xywh(selrect.x(), selrect.y(), selrect.width(), selrect.height());
+
         // Auto-width ignores selrect width so get-text-dimensions can reuse the cached layout.
         let layout_matches_container = self.grow_type() == GrowType::AutoWidth
             || self
@@ -1307,6 +1379,7 @@ impl Default for TextContent {
             content_version: 0,
             layout_version: 0,
             layout_width: None,
+            layout_paint_origin: None,
         }
     }
 }
@@ -1780,7 +1853,7 @@ pub fn calculate_text_layout_data(
     let selrect_width = shape.selrect().width();
     let text_width = text_content.get_width(selrect_width);
     let selrect_height = shape.selrect().height();
-    let x = shape.selrect.x();
+    let x = text_content.layout_origin_x(&shape.selrect, text_width);
     let base_y = shape.selrect.y();
     let mut position_data: Vec<PositionData> = Vec::new();
     let mut previous_line_height = text_content.normalized_line_height();
@@ -1815,78 +1888,19 @@ pub fn calculate_text_layout_data(
 
     // 2. Position each built paragraph using the heights from step 1.
     let total_text_height: f32 = paragraph_heights.iter().sum();
-    let vertical_offset = match shape.vertical_align() {
-        VerticalAlign::Center => (selrect_height - total_text_height) / 2.0,
-        VerticalAlign::Bottom => selrect_height - total_text_height,
-        _ => 0.0,
-    };
+    let vertical_offset =
+        vertical_align_offset(selrect_height, total_text_height, shape.vertical_align());
     let mut paragraph_layouts: Vec<ParagraphLayout> = Vec::new();
     let mut y_accum = base_y + vertical_offset;
     for (i, group_paragraphs) in built_groups.into_iter().enumerate() {
         // For each paragraph in the group (e.g., fill, stroke, etc.)
         for skia_paragraph in group_paragraphs.into_iter() {
-            // Calculate text decorations for this paragraph
-            let mut decorations = Vec::new();
-            let line_metrics = skia_paragraph.get_line_metrics();
-            for line in &line_metrics {
-                let style_metrics: Vec<_> = line
-                    .get_style_metrics(line.start_index..line.end_index)
-                    .into_iter()
-                    .collect();
-                let line_baseline = y_accum + line.baseline as f32;
-                let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
-                    calculate_decoration_metrics(&style_metrics, line_baseline);
-                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = &style_metric.text_style;
-                    let style_end = style_metrics
-                        .get(i + 1)
-                        .map(|(next_i, _)| *next_i)
-                        .unwrap_or(line.end_index);
-                    let seg_start = (*style_start).max(line.start_index);
-                    let seg_end = style_end.min(line.end_index);
-                    if seg_start >= seg_end {
-                        continue;
-                    }
-                    let rects = skia_paragraph.get_rects_for_range(
-                        seg_start..seg_end,
-                        skia::textlayout::RectHeightStyle::Tight,
-                        skia::textlayout::RectWidthStyle::Tight,
-                    );
-                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
-                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
-                        let skia_x_offset = rects
-                            .first()
-                            .map(|r| r.rect.left - line.left as f32)
-                            .unwrap_or(0.0);
-                        (total_width, skia_x_offset)
-                    } else {
-                        (0.0, 0.0)
-                    };
-                    let text_left = x + line.left as f32 + actual_x_offset;
-                    let text_width = segment_width;
-                    use skia::textlayout::TextDecoration;
-                    if text_style.decoration().ty == TextDecoration::UNDERLINE {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::UNDERLINE,
-                            text_style: (*text_style).clone(),
-                            y: underline_y.unwrap_or(line_baseline),
-                            thickness: max_underline_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                    if text_style.decoration().ty == TextDecoration::LINE_THROUGH {
-                        decorations.push(TextDecorationSegment {
-                            kind: TextDecoration::LINE_THROUGH,
-                            text_style: (*text_style).clone(),
-                            y: strike_y.unwrap_or(line_baseline),
-                            thickness: max_strike_thickness,
-                            left: text_left,
-                            width: text_width,
-                        });
-                    }
-                }
-            }
+            let decorations = text_paragraphs
+                .get(i)
+                .map(|text_paragraph| {
+                    decoration_segments(&skia_paragraph, text_paragraph, x, y_accum)
+                })
+                .unwrap_or_default();
             paragraph_layouts.push(ParagraphLayout {
                 paragraph: skia_paragraph,
                 x,
@@ -1982,6 +1996,39 @@ pub fn calculate_position_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vertical_align_top_keeps_the_content_at_the_origin() {
+        assert_eq!(vertical_align_offset(200.0, 60.0, VerticalAlign::Top), 0.0);
+    }
+
+    #[test]
+    fn vertical_align_center_takes_half_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Center),
+            70.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_bottom_takes_all_the_slack() {
+        assert_eq!(
+            vertical_align_offset(200.0, 60.0, VerticalAlign::Bottom),
+            140.0
+        );
+    }
+
+    #[test]
+    fn vertical_align_offset_is_negative_when_content_overflows() {
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Center),
+            -70.0
+        );
+        assert_eq!(
+            vertical_align_offset(60.0, 200.0, VerticalAlign::Bottom),
+            -140.0
+        );
+    }
 
     #[test]
     fn capitalize_basic_words() {
@@ -2270,6 +2317,86 @@ mod tests {
     }
 
     #[test]
+    fn layout_paint_origin_set_when_layout_result_applied() {
+        let mut content = sample_text_content();
+        content.set_xywh(40.0, 60.0, 200.0, 100.0);
+        let empty =
+            TextContentLayoutResult(vec![], vec![], TextContentSize::new_with_size(200.0, 100.0));
+        content.set_layout_from_result(empty, 200.0, 100.0);
+        let selrect = Rect::from_xywh(40.0, 60.0, 200.0, 100.0);
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(40.0, 60.0)
+        );
+        assert_eq!(
+            content.cached_layout_paint_offset(&selrect),
+            Point::new(0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn cached_layout_paint_offset_tracks_selrect_move() {
+        let mut content = sample_text_content();
+        content.layout_paint_origin = Some(Point::new(10.0, 20.0));
+        // Simulate a move clone: bounds follow the new selrect, origin stays.
+        content.set_xywh(110.0, 220.0, 200.0, 100.0);
+        let selrect = Rect::from_xywh(110.0, 220.0, 200.0, 100.0);
+        let offset = content.cached_layout_paint_offset(&selrect);
+        assert_eq!(offset, Point::new(100.0, 200.0));
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(10.0, 20.0)
+        );
+    }
+
+    #[test]
+    fn cached_layout_paint_offset_zero_without_origin() {
+        let content = sample_text_content();
+        let selrect = Rect::from_xywh(50.0, 75.0, 200.0, 100.0);
+        assert_eq!(
+            content.cached_layout_paint_offset(&selrect),
+            Point::new(0.0, 0.0)
+        );
+        assert_eq!(
+            content.cached_layout_paint_anchor(&selrect),
+            Point::new(50.0, 75.0)
+        );
+    }
+
+    #[test]
+    fn layout_paint_origin_survives_bounds_transform_on_clone() {
+        let mut content = sample_text_content();
+        content.set_xywh(10.0, 20.0, 200.0, 100.0);
+        content.layout_paint_origin = Some(Point::new(10.0, 20.0));
+        content.layout.paragraphs = Rc::new(vec![vec![]]);
+        content.layout_width = Some(200.0);
+        content.layout_version = 1;
+        content.content_version = 1;
+
+        let mut moved = content.clone();
+        let mut move_matrix = Matrix::new_identity();
+        move_matrix.set_translate_x(50.0);
+        move_matrix.set_translate_y(30.0);
+        moved.transform(&move_matrix);
+
+        assert_eq!(moved.bounds().x(), 60.0);
+        assert_eq!(moved.bounds().y(), 50.0);
+        assert!(Rc::ptr_eq(
+            &content.layout.paragraphs,
+            &moved.layout.paragraphs
+        ));
+        let selrect = Rect::from_xywh(60.0, 50.0, 200.0, 100.0);
+        assert_eq!(
+            moved.cached_layout_paint_anchor(&selrect),
+            Point::new(10.0, 20.0)
+        );
+        assert_eq!(
+            moved.cached_layout_paint_offset(&selrect),
+            Point::new(50.0, 30.0)
+        );
+    }
+
+    #[test]
     fn layout_clone_shares_skia_paragraphs() {
         let mut layout = TextContentLayout::new();
         layout.paragraphs = Rc::new(vec![vec![]]);
@@ -2284,5 +2411,171 @@ mod tests {
         layout.paragraphs = Rc::new(vec![vec![]]);
         layout.clear();
         assert!(layout.needs_update());
+    }
+
+    // -----------------------------------------------------------------------
+    // RTL auto-width growth anchor
+    // -----------------------------------------------------------------------
+
+    fn directed_paragraph(direction: TextDirection) -> Paragraph {
+        let span = TextSpan::new(
+            "hello".to_string(),
+            FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            direction,
+            400,
+            Uuid::nil(),
+            vec![],
+        );
+        Paragraph::new(TextAlign::Left, direction, None, None, 1.2, 0.0, vec![span])
+    }
+
+    /// Auto-width content measured wider than its stale selrect: mid-edit, where
+    /// the anchor is observable.
+    fn grown_content(directions: &[TextDirection], measured_width: f32) -> TextContent {
+        let bounds = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let mut content = TextContent::new(bounds, GrowType::AutoWidth);
+        for direction in directions {
+            content.add_paragraph(directed_paragraph(*direction));
+        }
+        content.size.width = measured_width;
+        content.size.height = 20.0;
+        content
+    }
+
+    #[test]
+    fn is_rtl_false_when_no_paragraphs() {
+        let content = TextContent::new(Rect::from_xywh(0.0, 0.0, 10.0, 10.0), GrowType::AutoWidth);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_true_when_every_paragraph_is_rtl() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::RTL], 120.0);
+        assert!(content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_false_when_directions_are_mixed() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::LTR], 120.0);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_false_when_every_paragraph_is_ltr() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn layout_origin_x_right_anchors_rtl_auto_width() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        // right edge (160) minus the measured width (120)
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 40.0);
+    }
+
+    #[test]
+    fn layout_origin_x_left_anchors_ltr_auto_width() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+    }
+
+    #[test]
+    fn layout_origin_x_left_anchors_mixed_direction_auto_width() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+    }
+
+    #[test]
+    fn layout_origin_x_ignores_direction_for_fixed_and_auto_height() {
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight] {
+            let mut content = grown_content(&[TextDirection::RTL], 120.0);
+            content.set_grow_type(grow_type);
+            assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+        }
+    }
+
+    #[test]
+    fn layout_origin_x_is_selrect_x_once_the_selrect_is_committed() {
+        let content = grown_content(&[TextDirection::RTL], 60.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 60.0), selrect.x());
+    }
+
+    #[test]
+    fn content_rect_right_anchors_grown_rtl_auto_width() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), 40.0);
+        assert_eq!(rect.right(), selrect.right());
+        assert_eq!(rect.width(), 120.0);
+        assert_eq!(rect.y(), selrect.y());
+    }
+
+    #[test]
+    fn content_rect_left_anchors_grown_ltr_auto_width() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), selrect.x());
+        assert_eq!(rect.width(), 120.0);
+    }
+
+    #[test]
+    fn content_rect_unchanged_for_fixed_rtl_content() {
+        // A mismatch sends `content_rect` into `get_height`, which needs global
+        // font state tests do not have.
+        let mut content = grown_content(&[TextDirection::RTL], 60.0);
+        content.set_grow_type(GrowType::Fixed);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), selrect.x());
+        assert_eq!(rect.width(), selrect.width());
+    }
+
+    #[test]
+    fn cached_paint_anchor_plus_offset_lands_on_the_layout_origin() {
+        let mut content = grown_content(&[TextDirection::RTL], 120.0);
+        content.layout_paint_origin = Some(Point::new(100.0, 50.0));
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let anchor = content.cached_layout_paint_anchor(&selrect);
+        let offset = content.cached_layout_paint_offset(&selrect);
+        assert_eq!(
+            anchor.x + offset.x,
+            content.layout_origin_x(&selrect, 120.0)
+        );
+    }
+
+    #[test]
+    fn cached_paint_offset_stays_a_pure_translation_when_the_shape_moves() {
+        let mut content = grown_content(&[TextDirection::RTL], 120.0);
+        content.layout_paint_origin = Some(Point::new(100.0, 50.0));
+        let before = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let after = Rect::from_xywh(130.0, 70.0, 60.0, 20.0);
+        let moved_by = Point::new(
+            content.cached_layout_paint_offset(&after).x
+                - content.cached_layout_paint_offset(&before).x,
+            content.cached_layout_paint_offset(&after).y
+                - content.cached_layout_paint_offset(&before).y,
+        );
+        assert_eq!(moved_by, Point::new(30.0, 20.0));
+    }
+
+    #[test]
+    fn cached_paint_anchor_right_anchors_when_no_origin_was_baked() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_paint_origin, None);
+        assert_eq!(content.cached_layout_paint_anchor(&selrect).x, 40.0);
+        assert_eq!(content.cached_layout_paint_offset(&selrect).x, 0.0);
     }
 }

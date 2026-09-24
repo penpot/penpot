@@ -136,9 +136,11 @@ void main() {
 
 (defn capture-canvas-snapshot
   "Captures the current viewport canvas as an `ImageBitmap` and stores it in
-  `wasm/canvas-snapshot`. Unlike `canvas.toBlob` (which does a synchronous GPU
-  readback plus PNG encoding on the main thread), `createImageBitmap` resolves
-  asynchronously and stays on the GPU in accelerated browsers.
+  `wasm/canvas-snapshot`. It avoids `canvas.toBlob`'s PNG encoding, but the
+  readback itself is not free: on Firefox, `createImageBitmap` on a WebGL canvas
+  takes a synchronous back-buffer snapshot over IPC before the promise is even
+  created, which blocks the main thread until the queued GL commands drain.
+  Callers must only invoke it when the renderer is idle.
 
   Returns a promise resolving to the ImageBitmap (or nil)."
   []

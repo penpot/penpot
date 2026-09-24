@@ -245,17 +245,13 @@
          (fn [event]
            (let [target      (dom/get-target event)
                  value       (dom/get-value target)
-                 has-prefix? (or (str/starts-with? value "http://")
-                                 (str/starts-with? value "https://"))
-                 value       (if has-prefix?
-                               value
-                               (str "http://" value))]
-             (when-not has-prefix?
-               (dom/set-value! target value))
-             (if (dom/valid? target)
+                 normalized  (ctsi/normalize-url value)]
+             (when (and normalized (not= normalized value))
+               (dom/set-value! target normalized))
+             (if normalized
                (do
                  (dom/remove-class! target "error")
-                 (update-interaction index #(ctsi/set-url % value)))
+                 (update-interaction index #(ctsi/set-url % normalized)))
                (dom/add-class! target "error")))))
 
         change-overlay-pos-type
@@ -714,6 +710,10 @@
   (let [show-content* (mf/use-state true)
         show-content? (deref show-content*)
 
+        interactions
+        (mf/with-memo [interactions]
+          (into [] d/xf:add-index interactions))
+
         toggle-content
         (mf/use-fn
          #(swap! show-content* not))
@@ -749,7 +749,7 @@
 
      (when show-content?
        [:div {:class (stl/css :content :content-interactions)}
-        (for [[index interaction] (d/enumerate interactions)]
+        (for [{:keys [::d/index] :as interaction} interactions]
           [:> interaction-item* {:key (str (:id shape) "-" index)
                                  :index index
                                  :shape shape

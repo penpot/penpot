@@ -24,7 +24,7 @@
 - `get-object` excludes rows with `deleted_at`.
 - Existing object values can remain readable until physical deletion.
 - `:expired-at` blocks reads after the expiration time.
-- `del-object!` sets `deleted_at`. It does not remove backend content.
+- `del-object!` sets `deleted_at` on live rows only (`deleted_at IS NULL`): a repeated call returns `false`. It does not remove backend content.
 - `storage-gc-deleted` removes the database row and backend content after the deletion delay.
 - `storage-gc-touched` finds references before it sets `deleted_at`.
 - `objects-gc` removes deleted domain rows and touches their storage object IDs.
@@ -86,7 +86,8 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `file-thumbnail` | File grid thumbnails in `file_thumbnail.media_id`. | Yes | Authentication required | Reference scan. |
 | `profile` | User and team profile photos. References: `profile.photo_id` and `team.photo_id`. | Yes | Authentication required | Reference scan. |
 | `organization` | Organization logos uploaded by the Nitrate management API. | Yes | Public | No reference scan. A touched object is deleted. |
-| `tempfile` | Export files, chunked-upload chunks, and temporary font downloads. | No | Authentication required | No reference scan. A touched object uses a two-hour deletion delay. |
+| `tempfile` | Export files and temporary font downloads. | No | Authentication required | No reference scan. A touched object uses a two-hour deletion delay. |
+| `upload-session` | Chunked-upload chunks. References: `upload_session_chunk.object_id` and `upload_session_chunk.session_id` (both NO ACTION DEFERRABLE: restrict semantics, procedural deletion). | No | Authentication required | No reference scan. A touched object is deleted after the delay; `gc-deleted` removes mappings before rows. |
 | `file-data` | Encoded file data when `file-data-backend` is `storage`. Reference metadata has `storage-ref-id`, `file-id`, and the `file_data` row ID. | Yes | Authentication required | Reference scan. |
 | `file-data-fragment` | Compatibility value for file-data fragments. The current backend has no dedicated producer for this bucket. | No current write semantics | Public | No touched-object collector case. |
 | `file-change` | Compatibility value for file changes. Current snapshots store data in `file_data`, not this bucket. | No current write semantics | Authentication required | No touched-object collector case. |
@@ -95,7 +96,7 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - `file-media-object` is the default bucket for old rows without bucket metadata.
 - Do not assign a new bucket without adding its access and cleanup behavior.
 - The touched-object collector raises an internal error for an unknown bucket.
-- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, and `organization`.
+- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, `upload-session`, and `organization`.
 - It does not support `file-data-fragment` or `file-change`.
 
 ## Access Rules
@@ -117,3 +118,20 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 - The `file_data.metadata.storage-ref-id` value points to the storage object.
 - `fdata/upsert!` touches a storage object from incoming metadata before it stores the new row.
 - File snapshots use `file_data` for snapshot data and `file_change` for snapshot metadata.
+
+## Metrics
+
+- `bucket` is always the Penpot logical bucket (object metadata), never an S3 bucket. Unknown/absent buckets are labeled `"unknown"`.
+- `target` is the physical S3 destination id. Today it is always `"default"` (hardcoded in `app.storage.s3/build-s3-client`; the `::target-id` config key was removed as unused until the per-bucket routing plan lands).
+- Physical S3 API calls (AWS SDK `MetricPublisher`, `app.storage.s3.metrics`):
+  - `penpot_storage_s3_requests_total{operation,target,result}` — one count per logical SDK call (the published `ApiCall` collection, not per attempt); retries are counted apart in `retries_total`, so total attempts = `requests + retries`. `result` is `"ok"` only when the SDK reports success as exactly `true`; a missing success flag counts as `error`.
+  - `penpot_storage_s3_retries_total{operation,target}` — SDK retry count.
+  - `penpot_storage_s3_timing{operation,target}` — call latency histogram (ms); explicit buckets up to 60000 ms (S3 slow calls exceed the default 7500 ms cap).
+- Logical storage operations (`app.storage`, `::mtx/metrics` required by the schema):
+  - `penpot_storage_operations_total{op,bucket,backend}` — `put`, `repair`, `get-data`, `get-bytes`, `del`, `touch`, `exists`. All ops are success-only: `put`/`repair` emit after the backend write, `get-*` after the backend fetch opens, `touch`/`del` only when a row actually changed. `touch-object!`/`del-object!` take the object id (UUID) only — no object overload. Labels come from the updated row itself via `UPDATE ... RETURNING id, backend, metadata` (no extra `SELECT`); with no row matched they emit nothing. `del-object!` only matches live rows (`deleted_at IS NULL`): a repeated del returns `false` and emits nothing. Post-open stream read errors stay counted as attempts. `del` only marks `deleted_at`; physical deletion is a GC concern. `exists` is emitted per deduplication-hit probe, always paired with a `hit`/`repair` outcome (never on probe failure), not per user-facing existence check.
+  - `penpot_storage_dedup_total{result,bucket}` — `hit`, `miss`, `repair`, `skip`.
+- Asset serving (`app.http.assets`, `::mtx/metrics` required in the handler cfg):
+  - `penpot_storage_asset_requests_total{route,backend,bucket,result}` — `route` is `by-id`, `by-file-media-id`, or `thumbnail`; `result` is `served` (<400), `not-found` (404), `unauthorized` (401/403), or `error` (everything else, including a nil/non-number status: every serve path must set `::yres/status`). Serve-path exceptions are counted by `serve-object-measured` and then rethrown. Permission-denied file-media requests and tempfile ownership mismatches both answer HTTP 404 (to avoid leaking existence) but are counted as `unauthorized`. Malformed UUIDs raise before any emission point and are never counted. Counts backend requests that trigger a browser GET to the object store (one per cache miss), so it is a proxy for object GETs, not an exact count.
+- The physical and logical counters intentionally overlap in coverage but differ in meaning; do not sum them.
+- Metrics is not optional: `::mtx/metrics` is required by the storage and s3-backend schemas, and the assets handler cfg always carries it. Wiring a component without metrics is a bug, not a supported mode.
+- Recording never fails: `app.metrics/run!` is safe by default at every emit point (`emit-op!`, `emit-dedup!`, `emit-asset!`, and the three S3 publisher emissions). The first recording failure per metric id logs at `warn`, later ones at `debug` (no log flood). The `instance` precondition is a plain assert and the collector lookup is outside the recording guard, so a missing instance fails hard (see `mem:backend/subtleties`). The `publish` outer try/catch stays: it is an SDK `MetricPublisher` contract boundary, not a metrics guard.

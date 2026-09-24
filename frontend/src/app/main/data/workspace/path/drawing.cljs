@@ -113,7 +113,9 @@
     (update [_ state]
       (let [id (st/get-path-id state)
             fix-angle? shift?
-            {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
+            {:keys [last-point prev-handler pending-start]}
+            (get-in state [:workspace-local :edit-path id])
+
             position (cond-> (gpt/point x y)
                        fix-angle? (path.helpers/position-fixed-angle last-point))]
         (if-not (= last-point position)
@@ -121,6 +123,9 @@
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
               (update-in [:workspace-local :edit-path id] dissoc :prev-handler)
               (update-in [:workspace-local :edit-path id] dissoc :preview)
+              (update-in [:workspace-local :edit-path id] dissoc :pending-start)
+              (cond-> (some? pending-start)
+                (update-in (st/get-path-location state) helpers/start-subpath pending-start))
               (update-in (st/get-path-location state) helpers/append-node position last-point prev-handler))
           state)))))
 
@@ -398,16 +403,19 @@
                          (cond-> (some? drop-index)
                            (with-meta {:index drop-index})))))))))
 
-(defn- close-drawn-loops
-  "Adds explicit close commands to completed loops."
+(defn- clean-drawn-content
+  "Collapses the nodes drawn on top of each other and closes completed loops.
+
+  Clicking a node already in the path draws its segments again backwards, and
+  only one copy of each line is kept."
   []
-  (ptk/reify ::close-drawn-loops
+  (ptk/reify ::clean-drawn-content
     ptk/UpdateEvent
     (update [_ state]
       (d/update-in-when state [:workspace-drawing :object]
                         (fn [object]
                           (-> object
-                              (update :content path/close-loops)
+                              (update :content path/merge-coincident-nodes)
                               (path/update-geometry)))))))
 
 (defn- handle-drawing-end
@@ -427,13 +435,13 @@
         (cond
           (and (> (count content) 1) restart?)
           (rx/of (common/finish-path)
-                 (close-drawn-loops)
+                 (clean-drawn-content)
                  (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (start-created-path-edition shape-id))
 
           (> (count content) 1)
-          (rx/of (close-drawn-loops)
+          (rx/of (clean-drawn-content)
                  (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/clear-edition-mode))
@@ -529,16 +537,11 @@
             pos      (helpers/node-position content index)
             last-idx (dec (count content))
             tip?     (and (= index last-idx)
-                          (not= :close-path (:command (nth content index nil))))
-            state    (assoc-in state [:workspace-local :edit-path id :last-point] pos)]
-        (if tip?
-          state
-          (update-in state (st/get-path-location state)
-                     (fn [shape]
-                       (-> shape
-                           (update :content path/append-segment
-                                   {:command :move-to :params (select-keys pos [:x :y])})
-                           (path/update-geometry))))))
+                          (not= :close-path (:command (nth content index nil))))]
+        (cond-> (assoc-in state [:workspace-local :edit-path id :last-point] pos)
+          ;; A tip already ends the content; an inner node needs its own start.
+          (not tip?)
+          (assoc-in [:workspace-local :edit-path id :pending-start] pos)))
       state)))
 
 (defn change-edit-mode

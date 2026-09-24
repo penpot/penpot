@@ -1,13 +1,15 @@
 //! GPU-free scene builders and render helpers for SVG export tests.
 
+use std::sync::{Mutex, OnceLock};
+
 use skia_safe as skia;
 
 use crate::globals::TestRenderResourcesGuard;
 use crate::render::{FontStore, RenderResources};
 use crate::shapes::{
-    Fill, FontFamily, FontStyle, Frame, Group, GrowType, ImageFill, Paragraph, Path, Rect, Segment,
-    SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign, TextContent, TextDirection, TextSpan,
-    Type,
+    make_corners, Fill, FontFamily, FontStyle, Frame, Group, GrowType, ImageFill, Paragraph, Path,
+    Rect, Segment, SolidColor, Stroke, StrokeKind, StrokeStyle, TextAlign, TextContent,
+    TextDirection, TextSpan, Type,
 };
 use crate::state::ShapesPool;
 use crate::utils::uuid_from_u32_quartet;
@@ -72,6 +74,21 @@ pub(super) fn add_solid_rect(
         (l, t, r, b),
         vec![Fill::Solid(SolidColor(color))],
     );
+}
+
+/// Adds a solid-filled ellipse/circle to the pool.
+pub(super) fn add_solid_circle(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    color: skia::Color,
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Circle);
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(vec![Fill::Solid(SolidColor(color))]);
 }
 
 /// Adds a rectangle with the given fill stack (bottom → top).
@@ -200,9 +217,31 @@ pub(super) fn add_group(
     (l, t, r, b): (f32, f32, f32, f32),
     children: &[Uuid],
 ) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, false);
+}
+
+/// Masked group: `children[0]` is the mask, the rest are content (Penpot order).
+pub(super) fn add_masked_group(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+) {
+    add_group_inner(pool, id, parent, (l, t, r, b), children, true);
+}
+
+fn add_group_inner(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    children: &[Uuid],
+    masked: bool,
+) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
-    shape.set_shape_type(Type::Group(Group { masked: false }));
+    shape.set_shape_type(Type::Group(Group { masked }));
     shape.set_selrect(l, t, r, b);
     for child in children {
         shape.add_child(*child);
@@ -240,6 +279,52 @@ pub(super) fn add_solid_text(
         font_size,
         vec![Fill::Solid(SolidColor(fill))],
     );
+}
+
+/// Solid text with an optional solid stroke (`kind`, width, color).
+pub(super) fn add_text_with_stroke(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    bounds: (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    fill: skia::Color,
+    stroke: Option<(StrokeKind, f32, skia::Color)>,
+) {
+    add_text_with_fills(
+        pool,
+        id,
+        bounds,
+        text,
+        font_size,
+        vec![Fill::Solid(SolidColor(fill))],
+    );
+    if let Some((kind, width, color)) = stroke {
+        let shape = pool.get_mut(&id).expect("text shape");
+        shape.add_stroke(solid_stroke(kind, width, color));
+    }
+}
+
+/// Solid-filled text with a single image-filled stroke.
+pub(super) fn add_text_with_image_stroke(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    bounds: (f32, f32, f32, f32),
+    text: &str,
+    font_size: f32,
+    fill: skia::Color,
+    stroke: Stroke,
+) {
+    add_text_with_fills(
+        pool,
+        id,
+        bounds,
+        text,
+        font_size,
+        vec![Fill::Solid(SolidColor(fill))],
+    );
+    let shape = pool.get_mut(&id).expect("text shape");
+    shape.add_stroke(stroke);
 }
 
 /// Adds a single-line text shape with the given fill stack (top → bottom).
@@ -283,20 +368,79 @@ pub(super) fn add_text_with_fills(
     shape.set_shape_type(Type::Text(content));
 }
 
-/// Adds a rectangle with a single solid stroke (no fill).
+/// Adds a rectangle with a single stroke and no fill.
 pub(super) fn add_stroked_rect(
     pool: &mut ShapesPool,
     id: Uuid,
     parent: Uuid,
+    bounds: (f32, f32, f32, f32),
+    stroke: Stroke,
+) {
+    add_stroked_rect_with_radius(pool, id, parent, bounds, 0.0, stroke);
+}
+
+/// Adds a rectangle with a single stroke, no fill, and every corner rounded to
+/// `radius`. A radius of zero leaves the corners square.
+pub(super) fn add_stroked_rect_with_radius(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
     (l, t, r, b): (f32, f32, f32, f32),
+    radius: f32,
     stroke: Stroke,
 ) {
     let shape = pool.add_shape(id);
     shape.set_parent(parent);
-    shape.set_shape_type(Type::Rect(Rect::default()));
+    shape.set_shape_type(Type::Rect(Rect {
+        corners: make_corners((radius, radius, radius, radius)),
+    }));
     shape.set_selrect(l, t, r, b);
     shape.set_fills(vec![]);
     shape.add_stroke(stroke);
+}
+
+/// Closed rectangular path with no fills (inherits parent group fills when
+/// nested, matching GPU `nested_fills` for SVG-imported mask groups).
+pub(super) fn add_empty_fill_closed_path(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+) {
+    let segments = vec![
+        Segment::MoveTo((l, t)),
+        Segment::LineTo((r, t)),
+        Segment::LineTo((r, b)),
+        Segment::LineTo((l, b)),
+        Segment::Close,
+    ];
+    add_path_with_fills(pool, id, parent, (l, t, r, b), segments, vec![]);
+}
+
+/// Adds a rectangle carrying one stroke per side, each with its own colour, as
+/// a design gets per-side colours today. `radius` of zero leaves corners square.
+pub(super) fn add_rect_with_per_side_strokes(
+    pool: &mut ShapesPool,
+    id: Uuid,
+    parent: Uuid,
+    (l, t, r, b): (f32, f32, f32, f32),
+    radius: f32,
+    sides: [(f32, skia::Color); 4],
+) {
+    let shape = pool.add_shape(id);
+    shape.set_parent(parent);
+    shape.set_shape_type(Type::Rect(Rect {
+        corners: make_corners((radius, radius, radius, radius)),
+    }));
+    shape.set_selrect(l, t, r, b);
+    shape.set_fills(vec![]);
+    for (index, (width, color)) in sides.into_iter().enumerate() {
+        let mut widths = [0.0; 4];
+        widths[index] = width;
+        let mut stroke = solid_stroke(StrokeKind::Inner, width, color);
+        stroke.widths = Some(widths);
+        shape.add_stroke(stroke);
+    }
 }
 
 /// Adds a closed rectangular path with a single solid stroke (no fill).
@@ -378,6 +522,24 @@ fn stroke_with_style(
     stroke
 }
 
+fn image_stroke(kind: StrokeKind, style: StrokeStyle, width: f32, image_id: Uuid) -> Stroke {
+    let mut stroke = match kind {
+        StrokeKind::Inner => Stroke::new_inner_stroke(width, style, None, None, None, None),
+        StrokeKind::Outer => Stroke::new_outer_stroke(width, style, None, None, None, None),
+        StrokeKind::Center => Stroke::new_center_stroke(width, style, None, None, None, None),
+    };
+    stroke.fill = test_image_fill(image_id);
+    stroke
+}
+
+pub(super) fn image_solid_stroke(kind: StrokeKind, width: f32, image_id: Uuid) -> Stroke {
+    image_stroke(kind, StrokeStyle::Solid, width, image_id)
+}
+
+pub(super) fn image_dotted_stroke(kind: StrokeKind, width: f32, image_id: Uuid) -> Stroke {
+    image_stroke(kind, StrokeStyle::Dotted, width, image_id)
+}
+
 /// Text with a linked image fill (register URL via `render_with`).
 pub(super) fn add_image_text(
     pool: &mut ShapesPool,
@@ -397,8 +559,43 @@ pub(super) fn add_image_text(
     );
 }
 
+/// Clip ids come from a process-wide counter, so a snapshot holding them would
+/// depend on what else ran first. Renumbers them in order of appearance.
+pub(super) fn with_stable_clip_ids(svg: &str) -> String {
+    const PREFIX: &str = "f0_cl_";
+    let mut ids: Vec<String> = Vec::new();
+    let mut rest = svg;
+    while let Some(at) = rest.find(PREFIX) {
+        let tail = &rest[at + PREFIX.len()..];
+        let end = tail
+            .find(|c: char| !c.is_ascii_hexdigit())
+            .unwrap_or(tail.len());
+        let id = format!("{PREFIX}{}", &tail[..end]);
+        if !ids.contains(&id) {
+            ids.push(id);
+        }
+        rest = &tail[end..];
+    }
+    // Longest first, so `f0_cl_3` never eats the head of `f0_cl_3a`.
+    let mut order: Vec<usize> = (0..ids.len()).collect();
+    order.sort_by_key(|&i| std::cmp::Reverse(ids[i].len()));
+
+    let mut out = svg.to_string();
+    for i in order {
+        out = out.replace(&ids[i], &format!("clip{i}"));
+    }
+    out
+}
+
 pub(super) fn render(pool: &ShapesPool, root: Uuid) -> String {
     render_with(pool, root, |_resources| {})
+}
+
+/// SVG export installs a process-wide resources pointer; serialize tests that
+/// call this so parallel rustc threads do not race / SIGSEGV.
+fn svg_export_test_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
 }
 
 /// Like [`render`], but lets the test register extra resources (e.g. image URLs)
@@ -408,6 +605,9 @@ pub(super) fn render_with(
     root: Uuid,
     setup: impl FnOnce(&mut RenderResources),
 ) -> String {
+    let _serial = svg_export_test_lock()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let mut resources = RenderResources::try_new_headless().expect("headless resources");
     register_test_font_urls(&mut resources.fonts);
     setup(&mut resources);

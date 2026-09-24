@@ -47,7 +47,7 @@
 - Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
 - Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
-## 2.18.0 (Unreleased)
+## 2.18.0
 
 ### :rocket: Epics and highlights
 
@@ -134,6 +134,7 @@
 - Normalize string inputs before processing [#11060](https://github.com/penpot/penpot/issues/11060) (PR: [#11061](https://github.com/penpot/penpot/pull/11061))
 - Add cooldown to avoid sending duplicate invitation emails [#11062](https://github.com/penpot/penpot/issues/11062) (PR: [#11063](https://github.com/penpot/penpot/pull/11063))
 - Enable SSRF protection for organization SSO validation [#11064](https://github.com/penpot/penpot/issues/11064) (PR: [#11065](https://github.com/penpot/penpot/pull/11065))
+- Fix LDAP authentication storing client-supplied email instead of directory email and not escaping filter special characters [#11084](https://github.com/penpot/penpot/issues/11084) (PR: [#11085](https://github.com/penpot/penpot/pull/11085))
 - Fix clone-file-media-object allowing to clone media objects from files without read access [#11087](https://github.com/penpot/penpot/issues/11087) (PR: [#11090](https://github.com/penpot/penpot/pull/11090))
 - Fix 404 error page logo not visible in dark mode [#11091](https://github.com/penpot/penpot/issues/11091) (PR: [#11167](https://github.com/penpot/penpot/pull/11167))
 - Fix incorrect permission handling when creating an invitation [#11098](https://github.com/penpot/penpot/issues/11098) (PR: [#11099](https://github.com/penpot/penpot/pull/11099))
@@ -156,6 +157,31 @@
 - Fix incorrect permission handling when managing share links on a file [#11289](https://github.com/penpot/penpot/issues/11289) (PR: [#11290](https://github.com/penpot/penpot/pull/11290))
 - Fix backend session remaining valid after logout when the auth-token cookie is replayed [#11316](https://github.com/penpot/penpot/issues/11316) (PR: [#11317](https://github.com/penpot/penpot/pull/11317))
 - Fix get-team-invitation-token requiring only read permissions [#11358](https://github.com/penpot/penpot/issues/11358) (PR: [#11359](https://github.com/penpot/penpot/pull/11359))
+- Fix missing text in legacy SVG board thumbnails [#10182](https://github.com/penpot/penpot/issues/10182) (PR: [#11552](https://github.com/penpot/penpot/pull/11552))
+- Fix workspace crash when applying transform modifiers in the WASM renderer [#10894](https://github.com/penpot/penpot/issues/10894) (PR: [#10896](https://github.com/penpot/penpot/pull/10896))
+- Fix double-click on text bounding box entering edit mode instead of applying auto-width/auto-height with the WebGL renderer [#10934](https://github.com/penpot/penpot/issues/10934) (PR: [#11068](https://github.com/penpot/penpot/pull/11068))
+- Limit ZIP entry count and object size on V3 binfile import [#11021](https://github.com/penpot/penpot/issues/11021) (PR: [#11022](https://github.com/penpot/penpot/pull/11022))
+- Block plugin UI iframe URLs targeting the Penpot domain [#11271](https://github.com/penpot/penpot/issues/11271) (PR: [#11273](https://github.com/penpot/penpot/pull/11273))
+- Restrict the MCP REPL code execution endpoint to development environments [#11283](https://github.com/penpot/penpot/issues/11283) (PR: [#11282](https://github.com/penpot/penpot/pull/11282))
+- Filter share-link tokens from the get-view-only-bundle response [#11285](https://github.com/penpot/penpot/issues/11285) (PR: [#11286](https://github.com/penpot/penpot/pull/11286))
+- Fix HTTP error responses disclosing internal database and filesystem paths to API clients [#11287](https://github.com/penpot/penpot/issues/11287) (PR: [#11288](https://github.com/penpot/penpot/pull/11288))
+- Disable MCP developer tools in multi-user mode [#11291](https://github.com/penpot/penpot/issues/11291) (PR: [#11310](https://github.com/penpot/penpot/pull/11310))
+- Fix Hide comments setting being ignored after opening the Comments section [#11308](https://github.com/penpot/penpot/issues/11308) (PR: [#11492](https://github.com/penpot/penpot/pull/11492))
+- Block NAT64/6to4/Teredo IPv6 transition addresses in the SSRF guard [#11319](https://github.com/penpot/penpot/issues/11319) (PR: [#11320](https://github.com/penpot/penpot/pull/11320))
+- Prevent team admins from removing the team owner [#11367](https://github.com/penpot/penpot/issues/11367) (PR: [#11368](https://github.com/penpot/penpot/pull/11368))
+- Enforce share-link comment permissions and page scope [#11370](https://github.com/penpot/penpot/issues/11370) (PR: [#11371](https://github.com/penpot/penpot/pull/11371))
+- Clean up orphaned teams, projects and files on profile deletion [#11394](https://github.com/penpot/penpot/issues/11394) (PR: [#11395](https://github.com/penpot/penpot/pull/11395))
+- Use constant-time comparison for Management API shared key authentication [#11426](https://github.com/penpot/penpot/issues/11426) (PR: [#11534](https://github.com/penpot/penpot/pull/11534))
+- Fix crash when pressing Ctrl+D with no shape selected [#11448](https://github.com/penpot/penpot/issues/11448) (PR: [#11491](https://github.com/penpot/penpot/pull/11491))
+- Fix text layout not updating when auto-width is set by double-clicking the bounding box [#11480](https://github.com/penpot/penpot/issues/11480) (PR: [#11541](https://github.com/penpot/penpot/pull/11541))
+- Fix workspace crash with index out of bounds when removing multiple interactions rapidly [#11546](https://github.com/penpot/penpot/issues/11546) (PR: [#11621](https://github.com/penpot/penpot/pull/11621))
+- Fix workspace crash with 'too much recursion' error when editing grid layout [#11562](https://github.com/penpot/penpot/issues/11562) (PR: [#11563](https://github.com/penpot/penpot/pull/11563))
+- Fix plugin API error when removing interactions [#11618](https://github.com/penpot/penpot/issues/11618) (PR: [#11621](https://github.com/penpot/penpot/pull/11621))
+- Fix MCP REPL server starting in multi-user mode and inheriting the main server bind address [#11631](https://github.com/penpot/penpot/issues/11631) (PR: [#11632](https://github.com/penpot/penpot/pull/11632))
+- Fix chunked upload storing duplicate objects when the same chunk index is sent twice [#11634](https://github.com/penpot/penpot/issues/11634) (PR: [#11635](https://github.com/penpot/penpot/pull/11635))
+- Fix access token expiration select always showing Never after picking another option (by @chulgil) [#11663](https://github.com/penpot/penpot/issues/11663) (PR: [#11664](https://github.com/penpot/penpot/pull/11664))
+- Fix workspace dropping unsaved changes when read-only blocks persistence [#11672](https://github.com/penpot/penpot/issues/11672) (PR: [#11699](https://github.com/penpot/penpot/pull/11699))
+- Fix Plugin API failing silently when writing to an interaction the shape no longer has [#11780](https://github.com/penpot/penpot/issues/11780) (PR: [#11781](https://github.com/penpot/penpot/pull/11781))
 
 ### :sparkles: New features & Enhancements
 
@@ -179,6 +205,8 @@
 - Adopt React Aria [#10802](https://github.com/penpot/penpot/issues/10802) (PR: [#10675](https://github.com/penpot/penpot/pull/10675))
 - Add plugin API function for awaiting component updates beyond waitForLayoutUpdate [#10927](https://github.com/penpot/penpot/issues/10927) (PR: [#10964](https://github.com/penpot/penpot/pull/10964))
 - Emit open-workspace-file audit event with file statistics on workspace load [#11106](https://github.com/penpot/penpot/issues/11106) (PR: [#11138](https://github.com/penpot/penpot/pull/11138))
+- Restrict optional ids to v4, v7 and v8 UUIDs in creation RPC endpoints [#11778](https://github.com/penpot/penpot/issues/11778) (PR: [#11777](https://github.com/penpot/penpot/pull/11777))
+
 ## 2.17.2
 
 ### :bug: Bugs fixed
@@ -218,6 +246,10 @@
 ### :rocket: Epics and highlights
 
 - Render prototype viewer with WASM (Skia) engine instead of SVG [#10037](https://github.com/penpot/penpot/issues/10037) (PR: [#10038](https://github.com/penpot/penpot/pull/10038))
+- Add layer blur effect for visual depth and styling [#9844](https://github.com/penpot/penpot/issues/9844) (PR: [#10034](https://github.com/penpot/penpot/pull/10034))
+- Render guides in WebGL for consistent viewer performance [#10068](https://github.com/penpot/penpot/issues/10068) (PR: [#10014](https://github.com/penpot/penpot/pull/10014))
+- Add concurrency limiter and status indicators for MCP server communications [#9493](https://github.com/penpot/penpot/issues/9493) (PR: [#9748](https://github.com/penpot/penpot/pull/9748))
+- Add typography token row to multiselected texts for better token visibility [#9336](https://github.com/penpot/penpot/issues/9336) (PR: [#9128](https://github.com/penpot/penpot/pull/9128))
 
 ### :sparkles: New features & Enhancements
 
@@ -571,6 +603,10 @@
 - Fix "Help & Learning" submenu vertical alignment in account menu (by @juan-flores077) [#9137](https://github.com/penpot/penpot/issues/9137) (PR: [#9138](https://github.com/penpot/penpot/pull/9138))
 
 ## 2.15.0
+
+### :rocket: Epics and highlights
+
+- Add MCP server integration for AI-assisted design workflows [#9174](https://github.com/penpot/penpot/issues/9174) (PR: [#9032](https://github.com/penpot/penpot/pull/9032), [#9321](https://github.com/penpot/penpot/pull/9321))
 
 ### :sparkles: New features & Enhancements
 

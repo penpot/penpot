@@ -41,6 +41,7 @@
    [app.rpc.notifications :as notifications]
    [app.storage :as sto]
    [app.util.services :as sv]
+   [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [cuerdas.core :as str]))
 
@@ -706,7 +707,7 @@ RETURNING id, deleted_at;")
   [:map
    [:profile-id ::sm/uuid]
    [:user-email ::sm/email]
-   [:user-name [:maybe ::sm/text]]
+   [:user-name [:maybe :string]]
    [:renewal-date :string]
    [:estimated-amount :double]
    [:organizations [:vector cto/schema:organization-with-avatar]]])
@@ -718,9 +719,14 @@ RETURNING id, deleted_at;")
    ::rpc/auth false}
   [cfg {:keys [profile-id user-email user-name renewal-date estimated-amount organizations]}]
   (let [amount-str (format "$%.2f" estimated-amount)
-        user-name  (if (str/empty? user-name)
+        ;; `nil` means the caller has no name override (e.g. no distinct
+        ;; billing email was set) and wants the account owner's real name.
+        ;; An explicit "" means the caller deliberately wants no name shown
+        ;; (e.g. a billing email was set but no company name was provided);
+        ;; a blank string is trimmed and treated the same as "".
+        user-name  (if (nil? user-name)
                      (:fullname (profile/get-profile cfg profile-id))
-                     user-name)]
+                     (str/trim user-name))]
     (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                       (eml/send! {::eml/conn    conn
                                   ::eml/factory eml/renewal-notice
@@ -960,13 +966,18 @@ RETURNING id, deleted_at;")
 (sv/defmethod ::check-organization-sso
   "Validate an organization SSO configuration by generating a login redirect URL.
   Nitrate calls this while configuring SSO to verify client credentials and OIDC
-  discovery before saving the settings."
+  discovery before saving the settings. The issuer URL is nitrate-supplied
+  (customer-configured), so it is checked against the SSRF blocklist before
+  any outbound request is attempted."
   {::doc/added "2.18"
    ::sm/params cto/schema:nitrate-sso
    ::sm/result schema:check-organization-sso-result
    ::rpc/auth false}
   [cfg params]
-  {:valid (oidc/is-organization-sso-config-valid? cfg params)})
+  (let [issuer (oidc/organization-sso-discovery-uri params)]
+    {:valid (boolean (and issuer
+                          (ssrf/safe-url? issuer)
+                          (oidc/is-organization-sso-config-valid? cfg params)))}))
 
 ;; ---- API: notify-organization-sso-change
 (sv/defmethod ::notify-organization-sso-change

@@ -51,6 +51,14 @@
   font-weight: 500;
 }
 
+.nitrate-not-configured-message {
+  @include t.use-typography("title-medium");
+
+  color: var(--color-foreground-secondary);
+  max-width: 32rem;
+  text-align: center;
+}
+
 .nitrate-unavailable-footer {
   @include t.use-typography("title-medium");
 

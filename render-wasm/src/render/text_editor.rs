@@ -1,9 +1,25 @@
 use crate::render::options::RenderOptions;
-use crate::shapes::{Shape, TextContent, Type, VerticalAlign};
+use crate::shapes::{vertical_align_offset, Shape, TextContent, Type};
 use crate::state::{TextEditorState, TextSelection};
 use crate::view::Viewbox;
-use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
+use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle, TextBox, TextDirection};
 use skia_safe::{BlendMode, Canvas, Color, Paint, Rect};
+
+/// Caret x where a character typed *before* this glyph would land.
+fn leading_edge(text_box: &TextBox) -> f32 {
+    match text_box.direct {
+        TextDirection::RTL => text_box.rect.right(),
+        _ => text_box.rect.left(),
+    }
+}
+
+/// Caret x where a character typed *after* this glyph would land.
+fn trailing_edge(text_box: &TextBox) -> f32 {
+    match text_box.direct {
+        TextDirection::RTL => text_box.rect.left(),
+        _ => text_box.rect.right(),
+    }
+}
 
 pub fn render_overlay(
     canvas: &Canvas,
@@ -112,16 +128,24 @@ fn render_selection(
     canvas.restore();
 }
 
-fn vertical_align_offset(
+/// Caret and selection rects are drawn through `shape.get_matrix()`, which
+/// translates by the *selrect's* `left_top()`; this shifts them onto the text.
+fn paragraphs_horizontal_offset(shape: &Shape, text_content: &TextContent) -> f32 {
+    let selrect = shape.selrect();
+    let width = text_content.get_width(selrect.width());
+    text_content.layout_origin_x(&selrect, width) - selrect.x()
+}
+
+fn paragraphs_vertical_offset(
     shape: &Shape,
     layout_paragraphs: &[&skia_safe::textlayout::Paragraph],
 ) -> f32 {
     let total_height: f32 = layout_paragraphs.iter().map(|p| p.height()).sum();
-    match shape.vertical_align() {
-        VerticalAlign::Center => (shape.selrect().height() - total_height) / 2.0,
-        VerticalAlign::Bottom => shape.selrect().height() - total_height,
-        _ => 0.0,
-    }
+    vertical_align_offset(
+        shape.selrect().height(),
+        total_height,
+        shape.vertical_align(),
+    )
 }
 
 fn calculate_cursor_rect(
@@ -141,7 +165,8 @@ fn calculate_cursor_rect(
         return None;
     }
 
-    let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
+    let x_offset = paragraphs_horizontal_offset(shape, text_content);
+    let mut y_offset = paragraphs_vertical_offset(shape, &layout_paragraphs);
     for (idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         if idx == cursor.paragraph {
             let char_pos = cursor.offset;
@@ -158,8 +183,13 @@ fn calculate_cursor_rect(
 
             // Skia ranges are UTF-16 code units, not characters.
             let (cursor_x, cursor_y, cursor_width, cursor_height) = if para_char_count == 0 {
-                // Empty paragraph - use default height
-                (0.0, 0.0, 1.0, laid_out_para.height())
+                // No glyph to anchor to: sit where the first character will appear.
+                let empty_x = if para.text_direction() == TextDirection::RTL {
+                    laid_out_para.max_width()
+                } else {
+                    0.0
+                };
+                (empty_x, 0.0, 1.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
                     0..para.char_utf16_len_at(0),
@@ -168,7 +198,7 @@ fn calculate_cursor_rect(
                 );
                 if !rects.is_empty() {
                     let r = &rects[0].rect;
-                    (r.left(), r.top(), r.width(), r.height())
+                    (leading_edge(&rects[0]), r.top(), r.width(), r.height())
                 } else {
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
@@ -182,14 +212,15 @@ fn calculate_cursor_rect(
                 );
                 if !rects.is_empty() {
                     let r = &rects[0].rect;
-                    (r.right(), r.top(), r.width(), r.height())
+                    (trailing_edge(&rects[0]), r.top(), r.width(), r.height())
                 } else if let Some(line) = laid_out_para.get_line_metrics().last() {
-                    (
-                        line.left as f32 + line.width as f32,
-                        0.0,
-                        1.0,
-                        laid_out_para.height(),
-                    )
+                    // No glyph box to measure: use the end of the line.
+                    let line_end = if para.text_direction() == TextDirection::RTL {
+                        line.left as f32
+                    } else {
+                        line.left as f32 + line.width as f32
+                    };
+                    (line_end, 0.0, 1.0, laid_out_para.height())
                 } else {
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
@@ -202,7 +233,7 @@ fn calculate_cursor_rect(
                 );
                 if !rects.is_empty() {
                     let r = &rects[0].rect;
-                    (r.left(), r.top(), r.width(), r.height())
+                    (leading_edge(&rects[0]), r.top(), r.width(), r.height())
                 } else {
                     // Fallback: use glyph position
                     let pos = laid_out_para.get_glyph_position_at_coordinate((0.0, 0.0));
@@ -211,7 +242,7 @@ fn calculate_cursor_rect(
             };
 
             return Some(Rect::from_xywh(
-                cursor_x,
+                x_offset + cursor_x,
                 y_offset + cursor_y,
                 cursor_width, // cursor_width
                 cursor_height,
@@ -236,7 +267,8 @@ fn calculate_selection_rects(
     let paragraphs = text_content.paragraphs();
     let layout_paragraphs: Vec<_> = text_content.layout.paragraphs.iter().flatten().collect();
 
-    let mut y_offset = vertical_align_offset(shape, &layout_paragraphs);
+    let x_offset = paragraphs_horizontal_offset(shape, text_content);
+    let mut y_offset = paragraphs_vertical_offset(shape, &layout_paragraphs);
 
     for (para_idx, laid_out_para) in layout_paragraphs.iter().enumerate() {
         let para_height = laid_out_para.height();
@@ -278,7 +310,7 @@ fn calculate_selection_rects(
             for text_box in text_boxes {
                 let r = text_box.rect;
                 rects.push(Rect::from_xywh(
-                    r.left(),
+                    x_offset + r.left(),
                     y_offset + r.top(),
                     r.width(),
                     r.height(),
@@ -290,4 +322,93 @@ fn calculate_selection_rects(
     }
 
     rects
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{FontFamily, FontStyle, GrowType, Paragraph, TextAlign, TextSpan};
+    use crate::uuid::Uuid;
+
+    fn rtl_span() -> TextSpan {
+        TextSpan::new(
+            "نام".to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            TextDirection::RTL,
+            400,
+            Uuid::nil(),
+            vec![],
+        )
+    }
+
+    /// Auto-width rtl content measured wider than its stale selrect: mid-edit,
+    /// where the overlay origin and the selrect diverge.
+    fn grown_rtl_shape(measured_width: f32) -> Shape {
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let mut content = TextContent::new(selrect, GrowType::AutoWidth);
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Right,
+            TextDirection::RTL,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![rtl_span()],
+        ));
+        content.size.width = measured_width;
+        content.size.height = 20.0;
+
+        let mut shape = Shape::new(Uuid::nil());
+        shape.set_selrect(selrect.left, selrect.top, selrect.right, selrect.bottom);
+        shape.set_shape_type(Type::Text(content));
+        shape
+    }
+
+    fn text_content_of(shape: &Shape) -> &TextContent {
+        match &shape.shape_type {
+            Type::Text(content) => content,
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn horizontal_offset_shifts_the_overlay_onto_grown_rtl_text() {
+        let shape = grown_rtl_shape(120.0);
+        // right edge 160 - measured 120 = 40, i.e. 60 left of selrect.x
+        assert_eq!(
+            paragraphs_horizontal_offset(&shape, text_content_of(&shape)),
+            -60.0
+        );
+    }
+
+    #[test]
+    fn horizontal_offset_is_zero_once_the_selrect_is_committed() {
+        let shape = grown_rtl_shape(60.0);
+        assert_eq!(
+            paragraphs_horizontal_offset(&shape, text_content_of(&shape)),
+            0.0
+        );
+    }
+
+    #[test]
+    fn leading_and_trailing_edges_follow_the_run_direction() {
+        let rect = Rect::from_ltrb(10.0, 0.0, 30.0, 12.0);
+        let ltr = TextBox {
+            rect,
+            direct: TextDirection::LTR,
+        };
+        let rtl = TextBox {
+            rect,
+            direct: TextDirection::RTL,
+        };
+        assert_eq!(leading_edge(&ltr), 10.0);
+        assert_eq!(trailing_edge(&ltr), 30.0);
+        assert_eq!(leading_edge(&rtl), 30.0);
+        assert_eq!(trailing_edge(&rtl), 10.0);
+    }
 }

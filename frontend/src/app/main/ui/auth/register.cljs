@@ -21,7 +21,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; --- PAGE: Register
@@ -79,44 +78,46 @@
 
         on-error
         (mf/use-fn
+         (mf/deps form)
          (fn [cause]
            (reset! submitted? false)
-           (let [{:keys [type code] :as edata} (ex-data cause)]
+           (let [{:keys [type code] :as edata} (ex-data cause)
+
+                 set-field-error!
+                 (fn [field message]
+                   (swap! form assoc-in [:extra-errors field] message)
+                   (swap! form assoc-in [:touched field] true))]
+
              (condp = [type code]
                [:restriction :email-does-not-match-invitation]
-               (st/emit! (ntf/error (tr "errors.email-does-not-match-invitation")))
+               (set-field-error! :email {:message (tr "errors.email-does-not-match-invitation")})
 
                [:restriction :registration-disabled]
-               (st/emit! (ntf/error (tr "errors.registration-disabled")))
+               (set-field-error! :email {:message (tr "errors.registration-disabled")})
 
                [:restriction :email-domain-is-not-allowed]
-               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed")))
+               (set-field-error! :email {:message (tr "errors.email-domain-not-allowed")})
 
                [:restriction :email-has-permanent-bounces]
-               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (set-field-error! :email {:message (tr "errors.email-has-permanent-bounces" (:email edata))})
 
                [:restriction :email-has-complaints]
-               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (set-field-error! :email {:message (tr "errors.email-has-permanent-bounces" (:email edata))})
 
+               ;; Reported on the email input itself, the way the recovery and
+               ;; password forms report server side errors, so the field that
+               ;; needs fixing is the one marked as invalid
                [:validation :email-already-exists]
-               (st/emit! (ntf/error (tr "errors.email-already-exists")))
+               (set-field-error! :email {:message (tr "errors.email-already-exists")})
 
                [:validation :email-as-password]
-               (st/emit! (ntf/error (tr "errors.email-as-password")))
+               (set-field-error! :password {:message (tr "errors.email-as-password")})
 
                [:validation :weak-password]
-               (let [details  (:details edata)
-                     items    (when (seq details)
-                                (->> details
-                                     (map #(str "<li>" (tr %) "</li>"))
-                                     (str/join "")))
-                     detail   (when items
-                                (str "<ul>" items "</ul>"))]
-                 (st/emit! (ntf/show {:content (tr "errors.weak-password")
-                                      :detail detail
-                                      :is-html true
-                                      :type :toast
-                                      :level :error})))
+               (let [options (when (seq (:details edata))
+                               (mapv tr (:details edata)))]
+                 (set-field-error! :password {:message (tr "errors.weak-password")
+                                              :options options}))
 
                (do
                  (when-let [explain (get edata :explain)]
@@ -128,7 +129,7 @@
          (mf/deps on-success-callback)
          (fn [params]
            (if (fn? on-success-callback)
-             (on-success-callback (:email params))
+             (on-success-callback params)
              (cond
                (some? (:invitation-token params))
                (let [token (:invitation-token params)]
@@ -155,14 +156,7 @@
          (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 cdata
-                 (cond-> (:clean-data @form)
-                   create-welcome-file?
-                   (assoc :create-welcome-file true))]
-
+           (let [cdata (:clean-data @form)]
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/subs! on-register-profile on-error #(reset! submitted? false))))))]
 
@@ -321,13 +315,7 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [create-welcome-file?
-                 (cf/external-feature-flag "onboarding-03" "test")
-
-                 params
-                 (cond-> (:clean-data @form)
-                   create-welcome-file? (assoc :create-welcome-file true))]
-
+           (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]

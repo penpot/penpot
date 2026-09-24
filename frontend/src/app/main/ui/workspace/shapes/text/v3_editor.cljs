@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.text :as txt]
+   [app.config :as cf]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -22,10 +23,14 @@
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def caret-blink-interval-ms 250)
+
+;; The open workspace context menu, if any (see the Escape handler below).
+(def ^:private menu-selector "[data-testid='context-menu']")
 
 ;; Elements carrying this attr keep the edit alive when focus moves onto them (see `keep-editing-on-blur?`).
 (def ^:private keep-editing-selector "[data-keep-editing-on-blur]")
@@ -45,17 +50,8 @@
   "Sync WASM text editor content back to the shape via the standard
   commit pipeline. Called after every text-modifying input."
   [& {:keys [finalize?]}]
-  (when-let [{:keys [shape-id content]}
-             (text-editor/text-editor-sync-content)]
-    ;; Derive the layer name from the text so it tracks the content.
-    (let [text (txt/content->text content)
-          name (when (not= text "")
-                 (txt/generate-shape-name text))]
-      (st/emit! (dwt/v2-update-text-shape-content
-                 shape-id content
-                 :update-name? true
-                 :name name
-                 :finalize? finalize?)))))
+  (when-let [event (dwt/v3-sync-editor-content :finalize? finalize?)]
+    (st/emit! event)))
 
 ;; Keys that move/reset the caret (or delete): pressing any abandons the pending
 ;; caret style. Plain character keys instead reach `on-input`, which consumes it.
@@ -159,6 +155,19 @@
     (or (.-isComposing native)
         (= 229 (.-keyCode event)))))
 
+(defn- secondary-button?
+  "True for a secondary click, which opens the context menu: the right button,
+   or the macOS Ctrl+Click that stands in for it and reports button 0."
+  [^js event]
+  (or (= 2 (.-button event))
+      (and (cf/check-platform? :macos) (kbd/ctrl? event))))
+
+(defn- primary-button-pressed?
+  "True while the left button is held. `buttons` is a bitmask: `pos?` would also
+   match the right button."
+  [^js event]
+  (pos? (bit-and (.-buttons event) 1)))
+
 (defn- double-click?
   [^js native-event]
   (= (.-detail native-event) 2))
@@ -205,7 +214,7 @@
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         [{:keys [x y width height]} transform]
-        (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+        (let [{text-x :x :keys [width height]} (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
               [selrect transform] (dsh/get-selrect selrect-transform shape)
@@ -222,13 +231,20 @@
               overlay-width (if (= (:grow-type shape) :auto-width)
                               (+ max-width viewport-width)
                               max-width)
+              ;; `on-pointer-down` feeds offsets within this element to wasm as
+              ;; paragraph-local coords, so this edge must sit on the text's.
+              x (if (and (= (:grow-type shape) :auto-width)
+                         (some? text-x)
+                         (pos? width))
+                  text-x
+                  (:x selrect))
               valign (-> shape :content :vertical-align)
               y (:y selrect)
               y (case valign
                   "bottom" (+ y (- selrect-height height))
                   "center" (+ y (/ (- selrect-height height) 2))
                   y)]
-          [(assoc selrect :y y :width overlay-width :height max-height) transform])
+          [(assoc selrect :x x :y y :width overlay-width :height max-height) transform])
 
         on-composition-start
         (mf/use-fn
@@ -464,26 +480,27 @@
         on-pointer-down
         (mf/use-fn
          (fn [^js event]
-           (let [native-event (dom/event->native-event event)
-                 off-pt       (dom/get-offset-position native-event)]
-             ;; Repositioning the caret abandons the pending caret style (also
-             ;; covers click and double-click, which fire pointer-down first).
-             (text-editor/clear-pending-caret-styles!)
-             (if (.-shiftKey event)
-               (do
-                 (mf/set-ref-val! dragging-ref true)
-                 (wasm.api/text-editor-pointer-down-extend off-pt)
-                 ;; Repaint the caret over the cached tiles instead of a full
-                 ;; render, which flashes at high zoom.
-                 (wasm.api/render-text-editor-overlay!))
-               (mf/set-ref-val! deferred-press-ref off-pt)))))
+           (when-not (secondary-button? event)
+             (let [native-event (dom/event->native-event event)
+                   off-pt       (dom/get-offset-position native-event)]
+               ;; Repositioning the caret abandons the pending caret style (also
+               ;; covers click and double-click, which fire pointer-down first).
+               (text-editor/clear-pending-caret-styles!)
+               (if (.-shiftKey event)
+                 (do
+                   (mf/set-ref-val! dragging-ref true)
+                   (wasm.api/text-editor-pointer-down-extend off-pt)
+                   ;; Repaint the caret over the cached tiles instead of a full
+                   ;; render, which flashes at high zoom.
+                   (wasm.api/render-text-editor-overlay!))
+                 (mf/set-ref-val! deferred-press-ref off-pt))))))
 
         on-pointer-move
         (mf/use-fn
          (fn [^js event]
            (let [native-event (dom/event->native-event event)
                  off-pt       (dom/get-offset-position native-event)]
-             (when-let [pressed-pt (and (pos? (.-buttons native-event))
+             (when-let [pressed-pt (and (primary-button-pressed? native-event)
                                         (mf/ref-val deferred-press-ref))]
                (mf/set-ref-val! deferred-press-ref nil)
                (mf/set-ref-val! dragging-ref true)
@@ -497,38 +514,40 @@
         on-pointer-up
         (mf/use-fn
          (fn [^js event]
-           (let [native-event (dom/event->native-event event)
-                 off-pt       (dom/get-offset-position native-event)
-                 dragging?    (mf/ref-val dragging-ref)]
-             (mf/set-ref-val! dragging-ref false)
-             (mf/set-ref-val! deferred-press-ref nil)
-             (wasm.api/text-editor-pointer-up off-pt)
-             ;; Without a drag there is no pointer selection to close; the
-             ;; caret is placed by `on-click`.
-             (when dragging?
-               (wasm.api/render-text-editor-overlay!)))))
+           (when-not (secondary-button? event)
+             (let [native-event (dom/event->native-event event)
+                   off-pt       (dom/get-offset-position native-event)
+                   dragging?    (mf/ref-val dragging-ref)]
+               (mf/set-ref-val! dragging-ref false)
+               (mf/set-ref-val! deferred-press-ref nil)
+               (wasm.api/text-editor-pointer-up off-pt)
+               ;; Without a drag there is no pointer selection to close; the
+               ;; caret is placed by `on-click`.
+               (when dragging?
+                 (wasm.api/render-text-editor-overlay!))))))
 
         on-click
         (mf/use-fn
          (fn [^js event]
-           (let [native-event (dom/event->native-event event)
-                 off-pt       (dom/get-offset-position native-event)]
-             (cond
-               (triple-click? native-event)
-               (do
-                 (wasm.api/text-editor-select-paragraph off-pt)
-                 (wasm.api/render-text-editor-overlay!))
+           (when-not (secondary-button? event)
+             (let [native-event (dom/event->native-event event)
+                   off-pt       (dom/get-offset-position native-event)]
+               (cond
+                 (triple-click? native-event)
+                 (do
+                   (wasm.api/text-editor-select-paragraph off-pt)
+                   (wasm.api/render-text-editor-overlay!))
 
-               ;; `dblclick` selects the word right after. Shift+click still goes
-               ;; through: WASM consumes its skip-click flag there.
-               (and (double-click? native-event)
-                    (not (.-shiftKey event)))
-               nil
+                 ;; `dblclick` selects the word right after. Shift+click still goes
+                 ;; through: WASM consumes its skip-click flag there.
+                 (and (double-click? native-event)
+                      (not (.-shiftKey event)))
+                 nil
 
-               :else
-               (do
-                 (wasm.api/text-editor-set-cursor-from-offset off-pt)
-                 (wasm.api/render-text-editor-overlay!))))))
+                 :else
+                 (do
+                   (wasm.api/text-editor-set-cursor-from-offset off-pt)
+                   (wasm.api/render-text-editor-overlay!)))))))
 
         on-double-click
         (mf/use-fn
@@ -537,6 +556,32 @@
                  off-pt (dom/get-offset-position native-event)]
              (wasm.api/text-editor-select-word-boundary off-pt)
              (wasm.api/render-text-editor-overlay!))))
+
+        on-context-menu
+        (mf/use-fn
+         (mf/deps shape-id)
+         (fn [^js event]
+           (dom/prevent-default event)
+           ;; Without this the viewport handler opens the shape menu instead.
+           (dom/stop-propagation event)
+           (let [position       (dom/get-client-position event)
+                 has-selection? (boolean (text-editor/text-editor-has-selection?))]
+             ;; With nothing selected the caret goes where the user pointed, so a
+             ;; paste from the menu lands there.
+             (when-not has-selection?
+               (let [off-pt (dom/get-offset-position (dom/event->native-event event))]
+                 ;; Moving the caret abandons the pending caret style, as it does
+                 ;; on every other path that moves it.
+                 (text-editor/clear-pending-caret-styles!)
+                 (wasm.api/text-editor-set-cursor-from-offset off-pt)
+                 (wasm.api/render-text-editor-overlay!)))
+             ;; Deferred: the dropdown closes itself on a document `contextmenu`,
+             ;; which would close the menu this very event is opening.
+             (ts/schedule
+              #(st/emit! (dw/show-text-context-menu
+                          {:position position
+                           :shape-id shape-id
+                           :has-selection? has-selection?}))))))
 
         on-focus
         (mf/use-fn
@@ -566,7 +611,11 @@
        (let [on-key-up (fn [event]
                          (when (kbd/esc? event)
                            (dom/stop-propagation event)
-                           (st/emit! (dw/clear-edition-mode))))]
+                           ;; With the menu open, Escape only closes it (checked
+                           ;; in the DOM: the store may already be cleared).
+                           (if (some? (dom/query menu-selector))
+                             (st/emit! dw/hide-context-menu)
+                             (st/emit! (dw/clear-edition-mode)))))]
          (.addEventListener js/document "keyup" on-key-up)
          #(.removeEventListener js/document "keyup" on-key-up))))
 
@@ -600,7 +649,8 @@
        ;; it was not being reliable (timing issues, Firefox issues…)
        (fn []
          (on-blur)
-         (st/emit! (dwu/commit-undo-transaction shape-id))
+         (st/emit! dw/hide-context-menu
+                   (dwu/commit-undo-transaction shape-id))
          (text-editor/text-editor-dispose)
          (wasm.api/request-render-preserving-target "text-editor-dispose"))))
 
@@ -639,6 +689,7 @@
              :on-pointer-down on-pointer-down
              :on-pointer-move on-pointer-move
              :on-pointer-up on-pointer-up
+             :on-context-menu on-context-menu
              :class (stl/css :text-editor)
              :style style}
        [:div

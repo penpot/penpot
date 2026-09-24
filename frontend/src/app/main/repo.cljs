@@ -23,9 +23,12 @@
 
 ;; -- Retry helpers -----------------------------------------------------------
 
-(def ^:private retryable-types
+(def retryable-types
   "Set of error types that are considered transient and safe to retry
-  for idempotent (GET) requests."
+  for idempotent (GET) requests. Also the single source of truth for the
+  transient transport classification consumed by `persistence/transient-error?`
+  and `errors/environment-error-types`: extend this set (never a copy)
+  when a new retryable transport failure appears."
   #{:network              ; js/fetch network-level failure
     :bad-gateway          ; 502
     :service-unavailable  ; 503
@@ -89,6 +92,10 @@
     (and (= 503 status)
          (= :nitrate-unavailable (:type body)))
     (rx/throw (ex-info "http error" {:type :nitrate-unavailable}))
+
+    (and (= 503 status)
+         (= :nitrate-not-configured (:type body)))
+    (rx/throw (ex-info "http error" {:type :nitrate-not-configured}))
 
     (= 503 status)
     (rx/throw (ex-info "http error" {:type :service-unavailable}))

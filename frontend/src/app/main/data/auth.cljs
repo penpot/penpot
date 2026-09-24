@@ -37,7 +37,7 @@
   "This is the main event that is executed once we have logged in
   profile. The profile can proceed from standard login or from
   accepting invitation, or third party auth signup or singin."
-  [{:keys [props] :as profile}]
+  [profile]
   (letfn [(get-redirect-events [teams]
             (if-let [token (:invitation-token profile)]
               (rx/of (rt/nav :auth-verify-token {:token token}))
@@ -47,22 +47,16 @@
                   (if (= redirect-href (rt/get-current-href))
                     (rx/of (rt/reload true))
                     (rx/of (rt/nav-raw :href redirect-href))))
-                (if-let [file-id (get props :welcome-file-id)]
-                  (rx/of (dcm/go-to-workspace
-                          :file-id file-id
-                          :team-id (:default-team-id profile))
-                         (dp/update-profile-props {:welcome-file-id nil}))
-
-                  (let [default-team-id (:default-team-id profile)
-                        team-ids        (into #{} (map :id) teams)
-                        team-id         (dtm/get-last-team-id)
-                        team-id         (if (and team-id (contains? team-ids team-id))
-                                          team-id
-                                          default-team-id)]
-                    (->> (dtm/resolve-login-team-id {:team-id team-id
-                                                     :default-team-id default-team-id})
-                         (rx/mapcat (fn [team-id]
-                                      (rx/of (dcm/go-to-dashboard-recent {:team-id team-id}))))))))))]
+                (let [default-team-id (:default-team-id profile)
+                      team-ids        (into #{} (map :id) teams)
+                      team-id         (dtm/get-last-team-id)
+                      team-id         (if (and team-id (contains? team-ids team-id))
+                                        team-id
+                                        default-team-id)]
+                  (->> (dtm/resolve-login-team-id {:team-id team-id
+                                                   :default-team-id default-team-id})
+                       (rx/mapcat (fn [team-id]
+                                    (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))))]
 
     (ptk/reify ::logged-in
       ptk/WatchEvent

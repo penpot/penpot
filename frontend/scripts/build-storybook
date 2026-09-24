@@ -12,8 +12,6 @@ export VERSION_TAG="${VERSION}-${BUILD_TS}";
 
 export NODE_ENV=production;
 
-corepack enable;
-corepack install;
 pnpm install;
 
 pnpm run build:storybook;

@@ -435,6 +435,26 @@ pub fn resize_matrix(
     new_width: f32,
     new_height: f32,
 ) -> Matrix {
+    resize_matrix_from(
+        parent_bounds,
+        child_bounds,
+        new_width,
+        new_height,
+        child_bounds.nw,
+    )
+}
+
+/*
+ * Like `resize_matrix`, but scaling about an explicit corner instead of `nw`.
+ * Rtl auto-width text anchors on `ne` so it extends leftward as it grows.
+ */
+pub fn resize_matrix_from(
+    parent_bounds: &Bounds,
+    child_bounds: &Bounds,
+    new_width: f32,
+    new_height: f32,
+    anchor: Point,
+) -> Matrix {
     let mut result = Matrix::default();
 
     let safe_scale = |value: f32, base: f32| -> f32 {
@@ -455,7 +475,7 @@ pub fn resize_matrix(
     parent_transform.pre_translate(-center);
 
     let parent_transform_inv = &parent_transform.invert().unwrap_or_default();
-    let origin = parent_transform_inv.map_point(child_bounds.nw);
+    let origin = parent_transform_inv.map_point(anchor);
 
     let mut scale = Matrix::scale((scale_width, scale_height));
     scale.post_translate(origin);
@@ -596,5 +616,41 @@ mod tests {
         assert!((m.scale_y() - 0.81).abs() <= 0.1);
         assert!((m.translate_x() - 0.0).abs() <= 0.1);
         assert!((m.translate_y() - 0.0).abs() <= 0.1);
+    }
+
+    fn axis_aligned_bounds(x: f32, y: f32, w: f32, h: f32) -> Bounds {
+        Bounds::new(
+            Point::new(x, y),
+            Point::new(x + w, y),
+            Point::new(x + w, y + h),
+            Point::new(x, y + h),
+        )
+    }
+
+    #[test]
+    fn resize_matrix_keeps_the_north_west_corner() {
+        let bounds = axis_aligned_bounds(100.0, 50.0, 60.0, 20.0);
+        let matrix = resize_matrix(&bounds, &bounds, 120.0, 20.0);
+        let resized = bounds.transform(&matrix);
+        assert!(is_close_to(resized.nw.x, 100.0));
+        assert!(is_close_to(resized.ne.x, 220.0));
+    }
+
+    #[test]
+    fn resize_matrix_from_north_east_keeps_the_right_edge() {
+        let bounds = axis_aligned_bounds(100.0, 50.0, 60.0, 20.0);
+        let matrix = resize_matrix_from(&bounds, &bounds, 120.0, 20.0, bounds.ne);
+        let resized = bounds.transform(&matrix);
+        assert!(is_close_to(resized.ne.x, 160.0), "right edge preserved");
+        assert!(is_close_to(resized.nw.x, 40.0), "grew leftward");
+        assert!(is_close_to(resized.nw.y, 50.0), "top edge preserved");
+    }
+
+    #[test]
+    fn resize_matrix_from_north_west_matches_the_default() {
+        let bounds = axis_aligned_bounds(100.0, 50.0, 60.0, 20.0);
+        let default = resize_matrix(&bounds, &bounds, 120.0, 40.0);
+        let explicit = resize_matrix_from(&bounds, &bounds, 120.0, 40.0, bounds.nw);
+        assert_eq!(default, explicit);
     }
 }

@@ -10,13 +10,17 @@
    [app.common.geom.point :as gpt]
    [app.common.json :as json]
    [app.common.types.path :as path]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
 (defn parse-id
+  "Parses an id from the plugin API. A blank value yields nil, since JS
+  callers pass an empty string where there is no id."
   [id]
-  (when id (uuid/parse id)))
+  (when-not (str/blank? id)
+    (uuid/parse id)))
 
 (defn parse-keyword
   [kw]
@@ -506,7 +510,7 @@
 
          :open-url
          {:action-type action-type
-          :url (obj/get action "url")}
+          :url (ctsi/normalize-url (obj/get action "url"))}
 
          nil)))))
 

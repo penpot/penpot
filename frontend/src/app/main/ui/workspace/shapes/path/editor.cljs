@@ -467,6 +467,7 @@
                 drag-handler
                 prev-handler
                 preview
+                last-point
                 content-modifiers
                 selection
                 moving-nodes
@@ -534,9 +535,6 @@
         (mf/with-memo [content selected-segments]
           (dwp.helpers/segment-node-indices content selected-segments))
 
-        last-p
-        (->> content last path.helpers/segment->point)
-
         handlers
         (mf/with-memo [content]
           (path/get-handlers content))
@@ -589,7 +587,7 @@
                                        (and is-hover (some? hover-point))))}]))
      (when (and preview (not drag-handler))
        [:> path-preview* {:segment preview
-                          :from last-p
+                          :from last-point
                           :zoom zoom}])
 
      ;; Let insertion preview clicks reach the segment.
@@ -600,9 +598,9 @@
                          :is-new true
                          :zoom zoom}]])
 
-     (when (and drag-handler last-p)
+     (when (and drag-handler last-point)
        [:g.drag-handler {:pointer-events "none"}
-        [:> path-handler* {:point last-p
+        [:> path-handler* {:point last-point
                            :handler drag-handler
                            :edit-mode edit-mode
                            :zoom zoom}]])
@@ -624,10 +622,10 @@
                        :drag-cursor drag-cursor
                        :any-node-selected any-node-selected?}])
 
-     (when (and prev-handler last-p)
+     (when (and prev-handler last-point)
        [:g.prev-handler
         [:> path-handler*
-         {:point last-p
+         {:point last-point
           :edit-mode edit-mode
           :handler prev-handler
           :zoom zoom
