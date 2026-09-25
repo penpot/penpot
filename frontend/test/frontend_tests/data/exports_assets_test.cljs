@@ -51,7 +51,9 @@
 
 (t/deftest request-simple-export-sends-normalized-export
   (t/async done
-    (let [export (export-with-name "")
+    (let [export (assoc (export-with-name "")
+                        :shape {:id "heavy-shape" :content (vec (range 1000))}
+                        :enabled true)
           observed (atom nil)]
       (mock/with-mocks {repo/cmd! (mock/stub (fn [_ params]
                                                (reset! observed params)
@@ -69,7 +71,7 @@
                        :the/end)))
         done))))
 
-(t/deftest request-multiple-export-sends-normalized-enabled-exports
+(t/deftest request-multiple-export-omits-ui-only-shape-data
   (t/async done
     (let [exports [{:id "enabled-1"
                     :object-id "enabled-1"
@@ -89,11 +91,9 @@
           (let [completed (fn [_state]
                             (t/is (= [{:id "enabled-1"
                                        :object-id "enabled-1"
-                                       :shape {:id "enabled-1"}
                                        :type :png
                                        :suffix ""
                                        :scale 1
-                                       :enabled true
                                        :name "enabled-1"}]
                                      (:exports @observed))))]
             (ptk/emit! (the/prepare-store (test-state) done' completed)
@@ -165,11 +165,10 @@
           (t/is (= :export cmd))
           (t/is (true? (:wait params)))
           (t/is (= [{:type :png :scale 2 :suffix "@2x"
-                     :name "Icon@2x" :enabled true
+                     :name "Icon@2x"
                      :file-id (:current-file-id state)
                      :page-id (:current-page-id state)
-                     :object-id (:id shape)
-                     :shape (dissoc shape :exports)}]
+                     :object-id (:id shape)}]
                    (:exports params))))
         (t/is (true? (get-in @store [:export :in-progress])))
         (t/is (empty? @downloads))
@@ -208,10 +207,13 @@
           (t/is (true? (:force-multiple params)))
           (t/is (= ["Icon" "Icon"] (mapv :name (:exports params))))
           (t/is (= ["" "-vector"] (mapv :suffix (:exports params))))
-          (t/is (= [(:id shape) (:id shape)] (mapv :object-id (:exports params)))))
+          (t/is (= [(:id shape) (:id shape)] (mapv :object-id (:exports params))))
+          (t/is (every? #(not (contains? % :shape)) (:exports params)))
+          (t/is (every? #(not (contains? % :enabled)) (:exports params))))
         (rx/push! response {:id (:id export)})
         (t/is (= (:id export) (get-in @store [:export :resource-id])))
         (t/is (= 2 (count (get-in @store [:export :exports]))))
+        (t/is (every? :enabled (get-in @store [:export :exports])))
         (t/is (true? (get-in @store [:export :widget-visible])))
         (t/is (= (:files state) (:files @store)))
         (t/is (empty? @errors))

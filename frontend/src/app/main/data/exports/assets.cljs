@@ -38,11 +38,16 @@
   [exports]
   (mapv normalize-export exports))
 
+(defn- server-export
+  [export]
+  ;; The editor uses these only for local rendering and selection state.
+  (dissoc (normalize-export export) :shape :enabled))
+
 (defn- normalize-export-shapes-params
   [{:keys [exports] :as params}]
   (cond-> params
     (seq exports)
-    (assoc :exports (normalize-exports exports))))
+    (assoc :exports (mapv server-export exports))))
 
 (defn toggle-detail-visibililty
   []
@@ -321,14 +326,15 @@
         (let [resource-id (volatile! nil)
               profile-id  (:profile-id state)
               ws-conn     (:ws-conn state)
-              params      (cond->
-                           {:exports exports
-                            :cmd cmd
-                            :profile-id profile-id
-                            :force-multiple true
-                            :is-wasm (wasm-export-enabled? state)}
-                            (some? name)
-                            (assoc :name name))
+              params      (normalize-export-shapes-params
+                           (cond->
+                            {:exports exports
+                             :cmd cmd
+                             :profile-id profile-id
+                             :force-multiple true
+                             :is-wasm (wasm-export-enabled? state)}
+                             (some? name)
+                             (assoc :name name)))
 
               progress-stream
               (->> (ws/get-rcv-stream ws-conn)
