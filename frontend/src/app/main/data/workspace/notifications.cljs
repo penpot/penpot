@@ -52,12 +52,16 @@
     (watch [_ state stream]
       (let [stopper     (rx/filter (ptk/type? ::finalize) stream)
             profile-id (:profile-id state)
+            current-team (dm/get-in state [:teams team-id])
+            organization-id (dm/get-in current-team [:organization :id])
 
-            initmsg    [{:type :subscribe-file
-                         :file-id file-id
-                         :version (obj/get global "penpotVersion")}
-                        {:type :subscribe-team
-                         :team-id team-id}]
+            initmsg    (cond-> [{:type :subscribe-file
+                                 :file-id file-id
+                                 :version (obj/get global "penpotVersion")}
+                                {:type :subscribe-team
+                                 :team-id team-id}]
+                         (some? organization-id)
+                         (conj {:type :subscribe-organization :organization-id organization-id}))
 
             endmsg     {:type :unsubscribe-file
                         :file-id file-id}
@@ -75,7 +79,9 @@
                                                (or (= topic uuid/zero)
                                                    (= topic profile-id)
                                                    (= topic team-id)
-                                                   (= topic file-id))))
+                                                   (= topic file-id)
+                                                   (when (some? organization-id)
+                                                     (= topic organization-id)))))
                                   (rx/map process-message))
 
                              ;; On reconnect, send again the subscription messages

@@ -9,6 +9,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
+   [app.main.data.dashboard :as dd]
+   [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
@@ -80,5 +82,51 @@
                   (t/is false (str "unexpected error: " error))
                   (done'))
                 (fn []
+                  (done')))))
+        done))))
+
+(t/deftest dashboard-initializes-with-team-and-organization-subscriptions
+  (t/async done
+    (let [team-id (uuid/next)
+          org-id  (uuid/next)
+          state   {:profile-id (uuid/next)
+                   :current-team-id team-id
+                   :teams {team-id {:id team-id :organization {:id org-id}}}}
+          events  (atom [])
+          event   (dd/initialize team-id)]
+      (mock/with-mocks
+        {dws/send (mock/stub (fn [msg] (swap! events conj msg)))}
+        (fn [done']
+          (->> (ptk/watch event state (rx/empty))
+               (rx/reduce conj [])
+               (rx/subs!
+                (fn [_])
+                (fn [error] (t/is false (str error)) (done'))
+                (fn []
+                  (t/is (some #(= :subscribe-team (:type %)) @events))
+                  (t/is (some #(and (= :subscribe-organization (:type %))
+                                    (= org-id (:organization-id %))) @events))
+                  (done')))))
+        done))))
+
+(t/deftest dashboard-without-organization-only-subscribes-to-team
+  (t/async done
+    (let [team-id (uuid/next)
+          state   {:profile-id (uuid/next)
+                   :current-team-id team-id
+                   :teams {team-id {:id team-id}}}
+          events  (atom [])
+          event   (dd/initialize team-id)]
+      (mock/with-mocks
+        {dws/send (mock/stub (fn [msg] (swap! events conj msg)))}
+        (fn [done']
+          (->> (ptk/watch event state (rx/empty))
+               (rx/reduce conj [])
+               (rx/subs!
+                (fn [_])
+                (fn [error] (t/is false (str error)) (done'))
+                (fn []
+                  (t/is (some #(= :subscribe-team (:type %)) @events))
+                  (t/is (not (some #(= :subscribe-organization (:type %))) @events))
                   (done')))))
         done))))
