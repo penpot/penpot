@@ -10,7 +10,7 @@ import { randomUUID } from "crypto";
 
 /**
  * Abstract base for plugin tasks, defining the parts that the plugin dispatch and
- * response-correlation machinery (`PluginBridge.sendPluginTask` /
+ * response-correlation machinery (`PluginBridge.sendLocalTask` /
  * `PluginBridge.handlePluginTaskResponse`) depend upon.
  *
  * The dispatch path only needs to serialize a task to a request and, upon receiving

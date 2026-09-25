@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
@@ -28,6 +29,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -298,8 +300,10 @@
 (mf/defc mcp-tool*
   {::mf/private true
    ::mf/wrap [mf/memo]}
-  [{:keys [is-mcp-connected]}]
-  (let [menu-open*   (mf/use-state false)
+  [{:keys [is-mcp-connected is-connection-requested session-id]}]
+  (let [copied-text (tr "workspace.toolbar.mcp-session-copied")
+        copy-error (tr "errors.clipboard-api-unavailable")
+        menu-open*   (mf/use-state false)
         menu-open?   (deref menu-open*)
 
         on-toggle-menu
@@ -316,7 +320,19 @@
         (mf/use-fn
          #(st/emit! (mcp/connect-mcp)
                     (ev/event {::ev/name "connect-mcp-plugin"
-                               ::ev/origin "workspace:toolbar"})))]
+                               ::ev/origin "workspace:toolbar"})))
+
+        on-disconnect
+        (mf/use-fn
+         #(st/emit! (mcp/user-disconnect-mcp)))
+
+        on-copy-session
+        (mf/use-fn
+         (mf/deps session-id copied-text copy-error)
+         (fn []
+           (-> (clipboard/to-clipboard session-id)
+               (.then #(st/emit! (ntf/info copied-text)))
+               (.catch #(st/emit! (ntf/error copy-error))))))]
 
     [:*
      [:> button* {:variant "ghost"
@@ -336,13 +352,22 @@
       [:> dropdown-menu* {:show menu-open?
                           :on-close on-close-menu
                           :class (stl/css :toolbar-mcp-dropdown)}
-       (if is-mcp-connected
+       (when (or is-mcp-connected session-id)
          [:li {:class (stl/css :toolbar-mcp-dropdown-info)
                :role "presentation"}
-          (tr "workspace.toolbar.mcp-connected")]
+          (when is-mcp-connected
+            [:span (tr "workspace.toolbar.mcp-connected")])
+          (when session-id
+            [:span (tr "workspace.toolbar.mcp-session-id" session-id)])])
+       (when session-id
          [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
-                                  :on-click on-connect}
-          (tr "workspace.toolbar.mcp-connect-here")])]]]))
+                                  :on-click on-copy-session}
+          (tr "workspace.toolbar.mcp-copy-session-id")])
+       [:> dropdown-menu-item* {:class (stl/css :toolbar-mcp-dropdown-item)
+                                :on-click (if is-connection-requested on-disconnect on-connect)}
+        (if is-connection-requested
+          (tr "workspace.header.menu.mcp.plugin.status.disconnect")
+          (tr "workspace.header.menu.mcp.plugin.status.connect"))]]]]))
 
 (mf/defc top-toolbar*
   {::mf/wrap [mf/memo]}
@@ -480,7 +505,9 @@
 
         (when mcp-show?
           [:li {:class (stl/css :toolbar-option)}
-           [:> mcp-tool* {:is-mcp-connected mcp-connected?}]])]
+           [:> mcp-tool* {:is-mcp-connected mcp-connected?
+                          :is-connection-requested (:connection-requested mcp)
+                          :session-id (:session-id mcp)}]])]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")
