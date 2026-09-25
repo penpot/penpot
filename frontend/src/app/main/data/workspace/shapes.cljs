@@ -390,7 +390,8 @@
              selected  (dsh/lookup-selected state)
              base      (cfh/get-base-shape objects selected)
 
-             parent-id (if (or (and (= 1 (count selected))
+             parent-id (if (or (nil? base)
+                               (and (= 1 (count selected))
                                     (cfh/frame-shape? (get objects (first selected))))
                                (empty? selected))
                          frame-id
