@@ -8,9 +8,12 @@
   (:require
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
    [app.main.data.workspace.mcp :as mcp]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as a]
    [potok.v2.core :as ptk]))
 
 (t/deftest test-update-mcp-status
@@ -28,12 +31,12 @@
 
 (t/deftest test-update-mcp-connection-status
   (t/testing "sets connection status to connected"
-    (let [state  {:mcp {:connection-status "disconnected"}}
+    (let [state  {:mcp {:connection-requested true :connection-status "disconnected"}}
           result (ptk/update (mcp/update-mcp-connection-status "connected") state)]
       (t/is (= "connected" (get-in result [:mcp :connection-status])))))
 
   (t/testing "sets connection status to disconnected"
-    (let [state  {:mcp {:connection-status "connected"}}
+    (let [state  {:mcp {:connection-requested true :connection-status "connected"}}
           result (ptk/update (mcp/update-mcp-connection-status "disconnected") state)]
       (t/is (= "disconnected" (get-in result [:mcp :connection-status]))))))
 
@@ -123,3 +126,63 @@
             event  (du/delete-access-token {:id (uuid/next)})
             result (ptk/update event state)]
         (t/is (= 2 (count (:access-tokens result))))))))
+
+(t/deftest ^:async test-enable-does-not-connect
+  (let [events (atom [])]
+    (await (a/observe (ptk/watch (mcp/update-mcp-status true) {} (rx/empty))
+                      :on-next #(swap! events conj %)))
+    (t/is (empty? @events))))
+
+(t/deftest ^:async test-connect-is-local
+  (let [event  (mcp/connect-mcp)
+        state  (ptk/update event {:mcp {:enabled true :token-valid true}})
+        events (atom [])]
+    (t/is (true? (get-in state [:mcp :connection-requested])))
+    (await (a/observe (ptk/watch event state (rx/empty))
+                      :on-next #(swap! events conj (ptk/type %))))
+    (t/is (= [:app.main.data.workspace.mcp/connect] @events))))
+
+(t/deftest test-disconnect-clears-connection-intent
+  (let [state  {:mcp {:connection-requested true
+                      :connection-status "connecting"
+                      :session-id "pq3gxqddgj"}}
+        result (ptk/update (mcp/user-disconnect-mcp) state)]
+    (t/is (false? (get-in result [:mcp :connection-requested])))
+    (t/is (= "disconnected" (get-in result [:mcp :connection-status])))
+    (t/is (nil? (get-in result [:mcp :session-id])))))
+
+(t/deftest test-init-clears-previous-file-connection
+  (let [state  {:profile {:props {:mcp-enabled true}}
+                :mcp {:connection-requested true
+                      :connection-status "connected"
+                      :session-id "pq3gxqddgj"}}
+        result (ptk/update (mcp/init) state)]
+    (t/is (false? (get-in result [:mcp :connection-requested])))
+    (t/is (= "disconnected" (get-in result [:mcp :connection-status])))
+    (t/is (nil? (get-in result [:mcp :session-id])))))
+
+(t/deftest test-late-status-cannot-reconnect
+  (let [state {:mcp {:connection-requested false :connection-status "disconnected"}}]
+    (t/is (= state (ptk/update (mcp/update-mcp-connection-status "connected") state)))))
+
+(t/deftest test-plugin-callbacks-stop-with-workspace
+  (doseq [stop-event [:app.main.data.workspace/finalize-workspace
+                      :app.main.data.workspace.mcp/init]]
+    (let [stream    (rx/subject)
+          extension (atom nil)
+          calls     (atom 0)
+          closed    (atom 0)]
+      (with-redefs [dp/start-plugin! (fn [_ extensions]
+                                       (reset! extension (.-mcp extensions)))
+                    dp/close-plugin! (fn [_] (swap! closed inc))]
+        (ptk/effect (#'mcp/init-mcp-plugin {:token "test-token"}) nil stream)
+        (.on @extension "connect" #(swap! calls inc))
+        (rx/push! stream (ptk/data-event :app.main.data.workspace.mcp/connect))
+        (t/is (= 1 @calls))
+        (rx/push! stream (ptk/data-event stop-event))
+        (t/is (= 1 @closed))
+        (t/is (false? (.isConnectionRequested @extension)))
+        (.on @extension "connect" #(swap! calls inc))
+        (rx/push! stream (ptk/data-event :app.main.data.workspace.mcp/connect))
+        (t/is (= 1 @calls))
+        (rx/end! stream)))))

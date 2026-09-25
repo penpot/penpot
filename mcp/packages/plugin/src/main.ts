@@ -1,5 +1,7 @@
 import "./style.css";
 import { shouldReconnectAfterClose } from "./ReconnectPolicy";
+import { SessionId } from "./SessionId";
+import { SessionIdDisplay } from "./SessionIdDisplay";
 import type { PluginConnectionInit } from "../../common/src";
 
 /**
@@ -19,6 +21,7 @@ document.body.dataset.theme = searchParams.get("theme") ?? "light";
 // WebSocket connection to the MCP server
 let ws: WebSocket | null = null;
 let connectionSessionId: string | null = null;
+let connectionRequestId: string | null = null;
 let connectionReady = false;
 
 const HEARTBEAT_INTERVAL_MS = 10_000;
@@ -49,6 +52,8 @@ const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const disconnectBtn = document.getElementById("disconnect-btn") as HTMLButtonElement;
 const versionWarningEl = document.getElementById("version-warning") as HTMLElement;
 const versionWarningTextEl = document.getElementById("version-warning-text") as HTMLElement;
+const sessionIdEl = document.getElementById("session-id");
+const sessionIdDisplay = sessionIdEl ? new SessionIdDisplay(sessionIdEl, navigator.clipboard) : null;
 
 /**
  * Updates the status pill and button visibility based on connection state.
@@ -65,6 +70,7 @@ function updateConnectionStatus(code: string, label: string): void {
     }
 
     const isConnected = code === "connected";
+    sessionIdDisplay?.setSessionId(isConnected ? connectionSessionId : null);
     if (connectBtn) connectBtn.hidden = isConnected;
     if (disconnectBtn) disconnectBtn.hidden = !isConnected;
 
@@ -72,6 +78,7 @@ function updateConnectionStatus(code: string, label: string): void {
         {
             type: "update-connection-status",
             status: code,
+            sessionId: connectionSessionId,
         },
         "*"
     );
@@ -221,13 +228,14 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
 
         ws = new WebSocket(wsUrl);
         const socket = ws;
-        connectionSessionId = crypto.randomUUID();
+        connectionRequestId = crypto.randomUUID();
+        connectionSessionId = null;
         connectionReady = false;
         updateConnectionStatus("connecting", "Connecting...");
 
         ws.onopen = () => {
             if (ws !== socket) return;
-            parent.postMessage({ type: "connection-metadata-request", sessionId: connectionSessionId }, "*");
+            parent.postMessage({ type: "connection-metadata-request", sessionId: connectionRequestId }, "*");
         };
 
         ws.onmessage = (event) => {
@@ -296,7 +304,14 @@ function disconnectFromMcpServer(): void {
     shouldReconnect = false;
     cancelReconnect();
     stopHeartbeat();
-    ws?.close();
+    const socket = ws;
+    ws = null;
+    connectionRequestId = null;
+    connectionSessionId = null;
+    connectionReady = false;
+    socket?.close();
+    updateConnectionStatus("disconnected", "Disconnected");
+    updateCurrentTask(null);
 }
 
 copyCodeBtn?.addEventListener("click", () => {
@@ -318,11 +333,44 @@ disconnectBtn?.addEventListener("click", () => {
 });
 
 // Listen plugin.ts messages
-window.addEventListener("message", (event) => {
+window.addEventListener("message", async (event) => {
     if (event.data.type === "initialize") {
-        const initialization = event.data as PluginConnectionInit;
-        if (ws?.readyState === WebSocket.OPEN && initialization.session.sessionId === connectionSessionId) {
-            ws.send(JSON.stringify(initialization));
+        const initialization = event.data as PluginConnectionInit & { tabId?: string };
+        const socket = ws;
+        const requestId = connectionRequestId;
+        if (
+            !shouldReconnect ||
+            socket?.readyState !== WebSocket.OPEN ||
+            initialization.session.sessionId !== requestId
+        ) {
+            return;
+        }
+        try {
+            if (!initialization.tabId) {
+                throw new Error("Missing Penpot tab ID");
+            }
+            const sessionId = await SessionId.forFile(initialization.tabId, initialization.session.fileId);
+            if (
+                !shouldReconnect ||
+                ws !== socket ||
+                connectionRequestId !== requestId ||
+                socket.readyState !== WebSocket.OPEN
+            ) {
+                return;
+            }
+            connectionSessionId = sessionId;
+            socket.send(
+                JSON.stringify({
+                    type: "initialize",
+                    session: { ...initialization.session, sessionId },
+                })
+            );
+        } catch (error) {
+            console.error("Failed to initialize MCP session:", error);
+            if (ws === socket) {
+                disconnectFromMcpServer();
+                updateConnectionStatus("error", "Failed to initialize MCP session");
+            }
         }
         return;
     }

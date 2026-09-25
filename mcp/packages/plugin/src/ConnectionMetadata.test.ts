@@ -5,6 +5,8 @@ import test from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { shouldReconnectAfterClose } from "./ReconnectPolicy.ts";
+import { SessionId } from "./SessionId.ts";
+import { SessionIdDisplay } from "./SessionIdDisplay.ts";
 
 /** Compiles the actual plugin entry point for a simulated browser boundary. */
 function compile(name: string) {
@@ -51,6 +53,8 @@ function pluginUi() {
         require: (name: string) => {
             if (name === "./style.css") return {};
             if (name === "./ReconnectPolicy") return { shouldReconnectAfterClose };
+            if (name === "./SessionId") return { SessionId };
+            if (name === "./SessionIdDisplay") return { SessionIdDisplay };
             throw new Error(`Unexpected import: ${name}`);
         },
         console: { log() {}, error() {}, warn() {} },
@@ -78,12 +82,19 @@ function pluginUi() {
     return { messages, sockets, events, timers, message, connect };
 }
 
-test("sends file metadata before marking a plugin connection ready", () => {
+test("sends file metadata before marking a plugin connection ready", async () => {
     const ui = pluginUi();
     const sessionId = ui.connect();
-    const initialization = { type: "initialize", session: { sessionId, fileId: "file-1", fileName: "Design" } };
-    ui.message(initialization);
-    assert.deepEqual(ui.sockets[0].sent, [initialization]);
+    const initialization = {
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId, fileId: "file-1", fileName: "Design" },
+    };
+    await ui.message(initialization);
+    const registeredSession = ui.sockets[0].sent[0].session;
+    assert.equal(registeredSession.sessionId, "pq3gxqddgj");
+    assert.notEqual(registeredSession.sessionId, sessionId);
+    assert.deepEqual(registeredSession, { ...initialization.session, sessionId: registeredSession.sessionId });
     assert.equal(
         ui.messages.some((message) => message.status === "connected"),
         false
@@ -92,19 +103,34 @@ test("sends file metadata before marking a plugin connection ready", () => {
     assert.equal(ui.messages.at(-1).status, "connected");
 });
 
-test("reconnects with a fresh session ID and ignores metadata for the old socket", () => {
+test("reconnects with the same session ID and ignores metadata for the old socket", async () => {
     const ui = pluginUi();
     const firstId = ui.connect();
+    await ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: firstId, fileId: "file-1", fileName: "Design" },
+    });
+    const sessionId = ui.sockets[0].sent[0].session.sessionId;
     ui.sockets[0].close();
     const reconnect = [...ui.timers.values()][0];
     reconnect();
     ui.sockets[1].open();
     const secondId = ui.messages.filter((message) => message.type === "connection-metadata-request").at(-1).sessionId;
     assert.notEqual(firstId, secondId);
-    ui.message({ type: "initialize", session: { sessionId: firstId, fileId: "old", fileName: "Old file" } });
+    await ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: firstId, fileId: "old", fileName: "Old file" },
+    });
     assert.deepEqual(ui.sockets[1].sent, []);
-    ui.message({ type: "initialize", session: { sessionId: secondId, fileId: "new", fileName: "New file" } });
-    assert.equal(ui.sockets[1].sent[0].session.sessionId, secondId);
+    await ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: secondId, fileId: "file-1", fileName: "Design" },
+    });
+    assert.equal(ui.sockets[1].sent[0].session.sessionId, sessionId);
+    assert.notEqual(ui.sockets[1].sent[0].session.sessionId, secondId);
 });
 
 test("resume and freeze events cannot send liveness messages before initialization", () => {
@@ -123,6 +149,7 @@ test("plugin reads the current file for each connection metadata request", () =>
     const messages: any[] = [];
     const penpot = {
         currentFile: { id: "file-1", name: "First design" },
+        currentUser: { sessionId: "tab-1" },
         theme: "dark",
         ui: {
             open() {},
@@ -143,7 +170,124 @@ test("plugin reads the current file for each connection metadata request", () =>
     penpot.currentFile = { id: "file-2", name: "Second design" };
     onMessage({ type: "connection-metadata-request", sessionId: "second" });
     assert.deepEqual(messages, [
-        { type: "initialize", session: { sessionId: "first", fileId: "file-1", fileName: "First design" } },
-        { type: "initialize", session: { sessionId: "second", fileId: "file-2", fileName: "Second design" } },
+        {
+            type: "initialize",
+            tabId: "tab-1",
+            session: { sessionId: "first", fileId: "file-1", fileName: "First design" },
+        },
+        {
+            type: "initialize",
+            tabId: "tab-1",
+            session: { sessionId: "second", fileId: "file-2", fileName: "Second design" },
+        },
     ]);
+});
+
+test("integrated connections reuse the short ID across reconnects", async () => {
+    const ui = pluginUi();
+    ui.message({ type: "mcp-mode", integratedRemoteMcp: true });
+    const initialize = async (requestId: string) => {
+        await ui.message({
+            type: "initialize",
+            tabId: "tab-1",
+            session: { sessionId: requestId, fileId: "file-1", fileName: "Design" },
+        });
+    };
+    await initialize(ui.connect());
+    assert.equal(ui.sockets[0].sent[0].session.sessionId, "pq3gxqddgj");
+    ui.sockets[0].receive({ type: "initialized" });
+    assert.equal(ui.messages.at(-1).sessionId, "pq3gxqddgj");
+    ui.sockets[0].close();
+    [...ui.timers.values()][0]();
+    ui.sockets[1].open();
+    const requestId = ui.messages.filter((message) => message.type === "connection-metadata-request").at(-1).sessionId;
+    await initialize(requestId);
+    assert.equal(ui.sockets[1].sent[0].session.sessionId, "pq3gxqddgj");
+});
+
+test("disconnect cancels metadata initialization and ignores a late acknowledgement", async () => {
+    const ui = pluginUi();
+    ui.message({ type: "mcp-mode", integratedRemoteMcp: true });
+    const requestId = ui.connect();
+    const pending = ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: requestId, fileId: "file-1", fileName: "Design" },
+    });
+    ui.message({ type: "stop-server" });
+    await pending;
+    ui.sockets[0].receive({ type: "initialized" });
+    assert.deepEqual(ui.sockets[0].sent, []);
+    assert.equal(ui.messages.at(-1).status, "disconnected");
+    assert.equal(ui.timers.size, 0);
+});
+
+test("integrated plugin stays idle until explicitly connected, including while the UI loads", () => {
+    let onMessage!: (message: any) => void;
+    const events = new Map<string, () => void>();
+    const messages: any[] = [];
+    const statuses: string[] = [];
+    runInNewContext(compile("plugin.ts"), {
+        exports: {},
+        console: { log() {} },
+        PENPOT_MCP_VERSION: "0.0.0",
+        penpot: {
+            theme: "dark",
+            version: "0.0.0",
+            ui: {
+                open() {},
+                onMessage: (handler: (message: any) => void) => {
+                    onMessage = handler;
+                },
+                sendMessage: (message: any) => messages.push(message),
+            },
+            on() {},
+        },
+        mcp: {
+            getToken: () => "test-token",
+            getServerUrl: () => "ws://localhost:4402",
+            isConnectionRequested: () => false,
+            setMcpStatus: (status: string) => statuses.push(status),
+            on: (event: string, callback: () => void) => events.set(event, callback),
+        },
+        require: () => ({ ExecuteCodeTaskHandler: class {} }),
+    });
+    assert.ok(!statuses.includes("connecting"));
+    events.get("connect")!();
+    events.get("disconnect")!();
+    onMessage({ type: "ui-initialized" });
+    assert.ok(!messages.some((message) => message.type === "start-server"));
+    events.get("connect")!();
+    assert.equal(messages.at(-1).type, "start-server");
+});
+
+test("standalone session ID survives reconnects and plugin restarts in the same app instance", async () => {
+    const ui = pluginUi();
+    const firstRequestId = ui.connect();
+    await ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: firstRequestId, fileId: "file-1", fileName: "Design" },
+    });
+    const sessionId = ui.sockets[0].sent[0].session.sessionId;
+    ui.message({ type: "stop-server" });
+    assert.equal(ui.messages.at(-1).sessionId, null);
+    const secondRequestId = ui.connect();
+    await ui.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: secondRequestId, fileId: "file-1", fileName: "Design" },
+    });
+    assert.equal(ui.sockets[1].sent[0].session.sessionId, sessionId);
+    ui.sockets[1].receive({ type: "initialized" });
+    assert.equal(ui.messages.at(-1).sessionId, sessionId);
+
+    const next = pluginUi();
+    const nextRequestId = next.connect();
+    await next.message({
+        type: "initialize",
+        tabId: "tab-1",
+        session: { sessionId: nextRequestId, fileId: "file-1", fileName: "Design" },
+    });
+    assert.equal(next.sockets[0].sent[0].session.sessionId, sessionId);
 });
