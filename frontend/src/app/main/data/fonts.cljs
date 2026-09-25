@@ -115,6 +115,40 @@
                               :font-style  font-style
                               :uploads     uploads})))))
 
+(def ^:private font-variant-tokens-re
+  ;; Strip known weight/style tokens and separators to derive the family name.
+  ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" must not
+  ;; match "bold").
+  #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)")
+
+(defn- font-family-from-name
+  "Derive a font family name from a font filename, stripping the known
+  weight/style tokens and separators."
+  [name]
+  (let [base-name       (str/replace name #"\.[^.]+$" "")
+        raw-family-name (-> base-name
+                            (str/replace font-variant-tokens-re "$1$3")
+                            (str/replace #"[-_\s]+" " ")
+                            (str/trim))]
+    (if (str/blank? raw-family-name) base-name raw-family-name)))
+
+(defn resolve-font-metadata
+  "Resolve the upload metadata for a font file.
+
+  `names` holds the family and variant names read by opentype.js; each
+  may be nil when the font has no usable name records. `filename` is the
+  original file name. The opentype.js values win per field; any missing
+  value is derived from the filename instead."
+  [{:keys [family variant]} filename]
+  (let [base-name      (str/replace filename #"\.[^.]+$" "")
+        variant        (not-empty (str/trim (or variant "")))
+        family         (not-empty (str/trim (or family "")))
+        variant-source (or variant base-name)]
+    {:font-family  (or family (font-family-from-name filename))
+     :font-weight  (cm/parse-font-weight variant-source)
+     :font-style   (cm/parse-font-style variant-source)
+     :variant-name variant}))
+
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
   map with temporal ID's associated to each font entry.
@@ -159,32 +193,21 @@
                                         (and f-selection (or
                                                           (not= hhea-ascender os2-ascent)
                                                           (not= hhea-descender os2-descent))))
-                    data            (js/Uint8Array. data)]
-                {:content {:data data
-                           :name name
-                           :type type}
-                 :font-family (or family "")
-                 :font-weight (cm/parse-font-weight variant)
-                 :font-style  (cm/parse-font-style variant)
-                 :variant-name variant
-                 :height-warning? height-warning?})
+                    data            (js/Uint8Array. data)
+                    metadata        (resolve-font-metadata {:family family :variant variant} name)]
+                (assoc metadata
+                       :content {:data data
+                                 :name name
+                                 :type type}
+                       :height-warning? height-warning?))
               ;; Font could not be parsed (woff2), extract metadata from filename
-              (let [base-name       (str/replace name #"\.[^.]+$" "")
-                    ;; Strip known weight/style tokens and separators to derive family name
-                    ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
-                    raw-family-name (-> base-name
-                                        (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
-                                        (str/replace #"[-_\s]+" " ")
-                                        (str/trim))
-                    family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
-                    data            (js/Uint8Array. data)]
-                {:content {:data data
-                           :name name
-                           :type type}
-                 :font-family family-name
-                 :font-weight (cm/parse-font-weight base-name)
-                 :font-style  (cm/parse-font-style base-name)
-                 :height-warning? false})))
+              (let [data     (js/Uint8Array. data)
+                    metadata (resolve-font-metadata {} name)]
+                (assoc metadata
+                       :content {:data data
+                                 :name name
+                                 :type type}
+                       :height-warning? false))))
 
           (join [res {:keys [content] :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
