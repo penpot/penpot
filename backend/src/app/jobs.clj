@@ -106,6 +106,13 @@
   (reset! defs-registry {})
   (l/inf :hint "job definitions halted" :jobs (count defs)))
 
+(defn- require-metrics
+  [cfg]
+  (or (::mtx/metrics cfg)
+      (ex/raise :type :assertion
+                :code :missing-metrics
+                :hint "missing ::mtx/metrics on jobs cfg")))
+
 (defn get-job-def
   "Resolve the job-def for the provided job name; raises if missing."
   [defs name]
@@ -182,58 +189,62 @@
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
 
-  (check-options! options)
+  (let [metrics (require-metrics cfg)]
+    (check-options! options)
 
-  (let [job-def      (get-job-def (get-defs cfg) name)
-        params       (validate-params job-def params)
-        delay        (ct/duration delay)
-        now          (ct/now)
-        scheduled-at (-> (ct/plus now delay)
-                         (ct/truncate :millisecond))
-        ;; The :rollback? testing escape hatch must never persist on a
-        ;; durable row (the runner would roll everything back yet mark
-        ;; the job completed); it stays available in-process via
-        ;; invoke/run-task!. Validation above is untouched.
-        ;; Duration values are normalized to millis: a Duration object
-        ;; does not survive JSON encoding (schemas still accept it for
-        ;; in-process callers).
-        props        (db/json (-> (dissoc params :rollback?)
-                                  (update-vals #(if (ct/duration? %)
-                                                  (.toMillis ^java.time.Duration %)
-                                                  %))))
-        id           (uuid/next)
-        tenant       (cf/get :tenant)
-        job-name     (d/name name)
-        queue        (str/ffmt "%:%" tenant (d/name queue))
-        ;; Dedupe is best-effort: we delete not-started jobs with the
-        ;; same name/queue/label, then insert. A race between backends
-        ;; could create duplicates, but this is acceptable:
-        ;; cross-backend races are rare, jobs are idempotent, and
-        ;; dedupe is best-effort.
-        insert!      (fn [conn]
-                       (let [deleted (when dedupe
-                                       (-> (db/exec-one! conn [sql:remove-not-started-jobs
-                                                               job-name queue label now])
-                                           (db/get-update-count)))]
-                         (l/trc :hint "submit job"
-                                :name job-name
-                                :job-id (str id)
-                                :queue queue
-                                :label label
-                                :dedupe (boolean dedupe)
-                                :delay (ct/format-duration delay)
-                                :replace (or deleted 0))
-                         (db/exec-one! conn [sql:insert-new-job id job-name props queue
-                                             label priority max-retries
-                                             now now scheduled-at])))]
-    ;; Both statements always run inside db/tx-run!: joined to the
-    ;; caller's transaction when the cfg provides a connection,
-    ;; wrapped in their own otherwise (a failed INSERT can never
-    ;; orphan a committed DELETE, even on an autocommit caller conn).
-    (db/tx-run! cfg (fn [{:keys [::db/conn]}] (insert! conn)))
-    (when-let [metrics (::mtx/metrics cfg)]
-      (jobs-metrics/record-submitted metrics job-name queue))
-    id))
+    (let [job-def      (get-job-def (get-defs cfg) name)
+          params       (validate-params job-def params)
+          delay        (ct/duration delay)
+          now          (ct/now)
+          scheduled-at (-> (ct/plus now delay)
+                           (ct/truncate :millisecond))
+          ;; The :rollback? testing escape hatch must never persist on a
+          ;; durable row (the runner would roll everything back yet mark
+          ;; the job completed); it stays available in-process via
+          ;; invoke/run-task!. Validation above is untouched.
+          ;; Duration values are normalized to millis: a Duration object
+          ;; does not survive JSON encoding (schemas still accept it for
+          ;; in-process callers).
+          props        (db/json (-> (dissoc params :rollback?)
+                                    (update-vals #(if (ct/duration? %)
+                                                    (.toMillis ^java.time.Duration %)
+                                                    %))))
+          id           (uuid/next)
+          tenant       (cf/get :tenant)
+          job-name     (d/name name)
+          queue        (str/ffmt "%:%" tenant (d/name queue))
+          ;; Dedupe is best-effort: we delete not-started jobs with the
+          ;; same name/queue/label, then insert. A race between backends
+          ;; could create duplicates, but this is acceptable:
+          ;; cross-backend races are rare, jobs are idempotent, and
+          ;; dedupe is best-effort.
+          insert!      (fn [conn]
+                         (let [deleted (when dedupe
+                                         (-> (db/exec-one! conn [sql:remove-not-started-jobs
+                                                                 job-name queue label now])
+                                             (db/get-update-count)))]
+                           (l/trc :hint "submit job"
+                                  :name job-name
+                                  :job-id (str id)
+                                  :queue queue
+                                  :label label
+                                  :dedupe (boolean dedupe)
+                                  :delay (ct/format-duration delay)
+                                  :replace (or deleted 0))
+                           (db/exec-one! conn [sql:insert-new-job id job-name props queue
+                                               label priority max-retries
+                                               now now scheduled-at])))]
+      ;; Both statements always run inside db/tx-run!: joined to the
+      ;; caller's transaction when the cfg provides a connection,
+      ;; wrapped in their own otherwise (a failed INSERT can never
+      ;; orphan a committed DELETE, even on an autocommit caller conn).
+      (db/tx-run! cfg
+                  (fn [{:keys [::db/conn]}]
+                    (let [result (insert! conn)]
+                      (db/after-commit!
+                       #(jobs-metrics/record-submitted metrics job-name queue))
+                      result)))
+      id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB API
@@ -269,15 +280,17 @@
   untouched (the conditional claim in the runner/management API will skip
   them)."
   [cfg job-id]
-  (let [job (when (::mtx/metrics cfg) (get-job cfg job-id))
-        n   (-> (db/exec-one! (db/get-connectable cfg)
-                              [sql:cancel-job (ct/now) job-id])
-                (db/get-update-count))]
+  (let [metrics (require-metrics cfg)
+        job     (get-job cfg job-id)
+        n       (-> (db/exec-one! (db/get-connectable cfg)
+                                  [sql:cancel-job (ct/now) job-id])
+                    (db/get-update-count))]
     (when (pos? n)
-      (jobs-metrics/record-outcome (::mtx/metrics cfg)
-                                   (:name job)
-                                   (:queue job)
-                                   :cancelled))
+      (db/after-commit!
+       #(jobs-metrics/record-outcome metrics
+                                     (:name job)
+                                     (:queue job)
+                                     :cancelled)))
     n))
 
 (defn get-user-status
@@ -477,17 +490,16 @@
       nil)))
 
 (defn record-terminal
-  [cfg job outcome]
-  (when-let [metrics (::mtx/metrics cfg)]
-    (when job
-      (jobs-metrics/record-outcome metrics (:name job) (:queue job) outcome)
-      (when (ct/inst? (:created-at job))
-        (jobs-metrics/record-total
-         metrics
-         (:name job)
-         (:queue job)
-         outcome
-         (- (inst-ms (ct/now)) (inst-ms (:created-at job))))))))
+  [metrics job outcome]
+  (when job
+    (jobs-metrics/record-outcome metrics (:name job) (:queue job) outcome)
+    (when (ct/inst? (:created-at job))
+      (jobs-metrics/record-total
+       metrics
+       (:name job)
+       (:queue job)
+       outcome
+       (- (inst-ms (ct/now)) (inst-ms (:created-at job)))))))
 
 (defn complete
   "Mark a running job as completed with the (JSON-encodable) result.
@@ -498,15 +510,15 @@
   ([cfg job-id]
    (complete cfg job-id nil))
   ([cfg job-id result]
-   (let [job      (or (when (some? result) (get-job cfg job-id))
-                      (when (::mtx/metrics cfg) (get-job cfg job-id)))
-         job-name (when (some? result) (:name job))
+   (let [metrics  (require-metrics cfg)
+         job      (get-job cfg job-id)
+         job-name (:name job)
          n        (-> (db/exec-one! (db/get-connectable cfg)
                                     [sql:complete-job (ct/now) (ct/now)
                                      (when (some? result) (encode-result job-name result)) job-id])
                       (db/get-update-count))]
      (when (pos? n)
-       (record-terminal cfg job :completed))
+       (db/after-commit! #(record-terminal metrics job :completed)))
      (cleanup-throttle job-id)
      n)))
 
@@ -515,13 +527,14 @@
   with at least a :code). Conditional on the non-terminal running/retry
   states (first-terminal wins). Returns the number of affected rows."
   [cfg job-id error]
-  (let [job (when (::mtx/metrics cfg) (get-job cfg job-id))
-        n   (-> (db/exec-one! (db/get-connectable cfg)
-                              [sql:fail-job (ct/now)
-                               (if (string? error) error (db/json error)) job-id])
-                (db/get-update-count))]
+  (let [metrics (require-metrics cfg)
+        job     (get-job cfg job-id)
+        n       (-> (db/exec-one! (db/get-connectable cfg)
+                                  [sql:fail-job (ct/now)
+                                   (if (string? error) error (db/json error)) job-id])
+                    (db/get-update-count))]
     (when (pos? n)
-      (record-terminal cfg job :failed))
+      (db/after-commit! #(record-terminal metrics job :failed)))
     (cleanup-throttle job-id)
     n))
 
@@ -537,9 +550,7 @@
 
 (def reply-key-prefix "penpot.worker.reply")
 
-(def ^:private request-pool-metrics (atom nil))
-
-(defn get-request-pool
+(defn get-request-context
   [cfg]
   (or (::request-pool cfg)
       (ex/raise :type :assertion
@@ -570,10 +581,10 @@
   ;; is bounded upstream by the RPC concurrency limits. Connections are
   ;; created with a command timeout above the per-call request timeout;
   ;; the dispose-fn restores it on return to the pool.
-  (reset! request-pool-metrics metrics)
-  (rds/pool {::rds/client client
-             ::mtx/metrics metrics}
-            {:timeout command-timeout}))
+  {::pool     (rds/pool {::rds/client client
+                         ::mtx/metrics metrics}
+                        {:timeout command-timeout})
+   ::mtx/metrics metrics})
 
 (def ^:private schema:request-options
   [:map {:title "request-options"}
@@ -614,7 +625,9 @@
 
   (check-request-options! options)
 
-  (let [pool       (get-request-pool cfg)
+  (let [context    (get-request-context cfg)
+        pool       (::pool context)
+        metrics    (::mtx/metrics context)
         tenant     (cf/get :tenant)
         timeout    (or timeout (cf/get-jobs-request-timeout))
         request-id (uuid/next)
@@ -636,7 +649,6 @@
           (rds/set-timeout conn (ct/plus timeout request-command-timeout-margin))
 
           (rds/rpush conn queue-key [payload])
-          (vreset! outcome :sent)
 
           (let [[_ reply] (rds/blpop conn [reply-key] timeout)]
             (if (nil? reply)
@@ -660,7 +672,7 @@
                     (get response :ok))))))
 
           (finally
-            (jobs-metrics/record-request @request-pool-metrics
+            (jobs-metrics/record-request metrics
                                          @outcome
                                          (inst-ms (tpoint)))
             (rds/del conn reply-key)

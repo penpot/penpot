@@ -86,22 +86,28 @@ RETURNING job.id, job.queue")
 
 (defn- reschedule-lost-jobs
   [{:keys [::db/conn ::timestamp] :as cfg}]
-  (doseq [{:keys [id queue]} (db/exec! conn [sql:reschedule-lost timestamp timestamp]
-                                       {:return-keys true})]
-    (jobs-metrics/record-rescheduled (::mtx/metrics cfg) queue)
-    (l/wrn :hint "reschedule"
-           :id (str id)
-           :queue queue)))
+  (let [rows (db/exec! conn [sql:reschedule-lost timestamp timestamp]
+                       {:return-keys true})]
+    (db/after-commit!
+     (fn []
+       (doseq [{:keys [id queue]} rows]
+         (jobs-metrics/record-rescheduled (::mtx/metrics cfg) queue)
+         (l/wrn :hint "reschedule"
+                :id (str id)
+                :queue queue))))))
 
 (defn- mark-orphan-jobs
   [{:keys [::db/conn ::timestamp ::lease] :as cfg}]
-  (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))]
-    (doseq [{:keys [id queue]} (db/exec! conn [sql:mark-orphan timestamp cutoff]
-                                         {:return-keys true})]
-      (jobs-metrics/record-orphan (::mtx/metrics cfg) queue)
-      (l/wrn :hint "marked job as orphan"
-             :id (str id)
-             :queue queue))))
+  (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))
+        rows    (db/exec! conn [sql:mark-orphan timestamp cutoff]
+                          {:return-keys true})]
+    (db/after-commit!
+     (fn []
+       (doseq [{:keys [id queue]} rows]
+         (jobs-metrics/record-orphan (::mtx/metrics cfg) queue)
+         (l/wrn :hint "marked job as orphan"
+                :id (str id)
+                :queue queue))))))
 
 (defn- get-jobs
   [{:keys [::db/conn ::timestamp ::batch-size ::wrk/tenant]}]
@@ -128,53 +134,45 @@ RETURNING job.id, job.queue")
 
     (rds/rpush conn key items)
 
-    (jobs-metrics/record-dispatcher-size (::mtx/metrics cfg) queue (count jobs))
-    (doseq [{:keys [id name queue]} jobs]
-      (jobs-metrics/record-dispatched (::mtx/metrics cfg) name queue 1)
-      (l/trc :hist "schedule"
-             :id (str id)
-             :queue queue))))
+    (db/after-commit!
+     (fn []
+       (jobs-metrics/record-dispatcher-size
+        (::mtx/metrics cfg) queue (count jobs))
+       (doseq [{:keys [id name queue]} jobs]
+         (jobs-metrics/record-dispatched
+          (::mtx/metrics cfg) name queue 1)
+         (l/trc :hist "schedule"
+                :id (str id)
+                :queue queue))))))
 
 (defn- run-batch'
   [cfg]
-  (let [cfg (assoc cfg ::timestamp (ct/now))
+  (let [cfg    (assoc cfg ::timestamp (ct/now))
         tpoint (ct/tpoint)]
-    (try
-      ;; Reschedule lost in transit jobs (can happen when
-      ;; redis server is restarted just after job is pushed)
-      (reschedule-lost-jobs cfg)
+    ;; Reschedule lost in transit jobs (can happen when
+    ;; redis server is restarted just after job is pushed)
+    (reschedule-lost-jobs cfg)
 
-      ;; Mark as failed all jobs that are still marked as running but
-      ;; their last modification (heartbeat or progress) is older than
-      ;; the configured lease
-      (mark-orphan-jobs cfg)
+    ;; Mark as failed all jobs that are still marked as running but
+    ;; their last modification (heartbeat or progress) is older than
+    ;; the configured lease
+    (mark-orphan-jobs cfg)
 
-      ;; Then, schedule the next jobs in queue
-      (let [result (if-let [jobs (get-jobs cfg)]
-                     (do
-                       (->> (group-by :queue jobs)
-                            (run! (partial push-jobs cfg)))
-                       nil)
+    ;; Then, schedule the next jobs in queue
+    (let [result (if-let [jobs (get-jobs cfg)]
+                   (do
+                     (->> (group-by :queue jobs)
+                          (run! (partial push-jobs cfg)))
+                     nil)
 
-                     ;; If no jobs found on this batch run, we signal the
-                     ;; run-loop to wait for some time before start running
-                     ;; the next batch iteration
-                     ::wait)]
-        (jobs-metrics/record-dispatcher-batch
-         (::mtx/metrics cfg)
-         :dispatch
-         :completed
-         (inst-ms (tpoint)))
-        result)
-      (catch InterruptedException cause
-        (throw cause))
-      (catch Throwable cause
-        (jobs-metrics/record-dispatcher-batch
-         (::mtx/metrics cfg)
-         :dispatch
-         :failed
-         (inst-ms (tpoint)))
-        (throw cause)))))
+                   ;; If no jobs found on this batch run, we signal the
+                   ;; run-loop to wait for some time before start running
+                   ;; the next batch iteration
+                   ::wait)]
+      (db/after-commit!
+       #(jobs-metrics/record-dispatcher-batch
+         (::mtx/metrics cfg) :dispatch :completed (inst-ms (tpoint))))
+      result)))
 
 (defn- sleep-after-error
   [cfg]

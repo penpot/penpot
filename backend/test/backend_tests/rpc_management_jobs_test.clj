@@ -11,10 +11,15 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.metrics :as-alias mtx]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
+
+(defn- make-cfg []
+  {::db/pool     th/*pool*
+   ::mtx/metrics (get th/*system* :app.metrics/metrics)})
 
 (defn- test-fixture [next]
   (th/database-reset next))
@@ -110,7 +115,7 @@
 
 (t/deftest report-job-progress-persists-progress
   (let [job-id (mk-job {})
-        _      (jobs/claim {::db/pool th/*pool*} job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+        _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         _      (mgmt :report-job-progress {:job-id  job-id
                                            :progress {:total 100 :current 50}})
         row    (get-row job-id)]
@@ -125,7 +130,7 @@
 
 (t/deftest report-job-progress-persists-rapid-reports
   (let [job-id (mk-job {})
-        _      (jobs/claim {::db/pool th/*pool*} job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+        _      (jobs/claim (make-cfg) job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         _      (mgmt :report-job-progress {:job-id  job-id
                                            :progress {:total 10 :current 3}})
         _      (mgmt :report-job-progress {:job-id  job-id
@@ -135,7 +140,7 @@
       (t/is (= {:total 10 :current 4} (:progress row))))))
 
 (t/deftest complete-job-marks-completed-with-result
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         out    (mgmt :complete-job {:job-id job-id
@@ -148,7 +153,7 @@
       (t/is (some? (:completed-at row))))))
 
 (t/deftest complete-job-accepts-nested-result
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         result {:value 42 :nested {:items [1 2 {:three 3}] :ok true}}
@@ -159,7 +164,7 @@
       (t/is (= result (:result row))))))
 
 (t/deftest complete-job-without-result-stores-null
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         out    (mgmt :complete-job {:job-id job-id :result nil})]
@@ -169,7 +174,7 @@
       (t/is (nil? (:result row))))))
 
 (t/deftest complete-job-with-unserializable-result-stores-null
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
     (jobs/complete cfg job-id (Object.))
@@ -178,7 +183,7 @@
       (t/is (nil? (:result row))))))
 
 (t/deftest complete-job-with-unserializable-result-logs-job-name
-  (let [cfg      {::db/pool th/*pool*}
+  (let [cfg      (make-cfg)
         job-id   (mk-job {:name "media-process"})
         _        (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         captured (atom nil)]
@@ -192,7 +197,7 @@
         (t/is (= "media-process" (:job-name @captured)))))))
 
 (t/deftest complete-and-fail-clean-throttle-state
-  (let [cfg     {::db/pool th/*pool*}
+  (let [cfg     (make-cfg)
         job-id1 (mk-job {})
         job-id2 (mk-job {})]
     (jobs/claim cfg job-id1 (:scheduled-at (th/db-get :job {:id job-id1} :id :scheduled-at)))
@@ -205,7 +210,7 @@
     (t/is (not (contains? @@#'jobs/progresses job-id2)))))
 
 (t/deftest complete-and-fail-respect-first-terminal-wins
-  (let [cfg        {::db/pool th/*pool*}
+  (let [cfg        (make-cfg)
         running-id (mk-job {})
         orphan-id  (mk-job {:status "failed"})
         _          (jobs/claim cfg running-id
@@ -221,7 +226,7 @@
     (t/is (= 0 (jobs/fail cfg orphan-id {:code "late"})))))
 
 (t/deftest fail-job-marks-failed-with-error
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
         out    (mgmt :fail-job {:job-id job-id
@@ -258,7 +263,7 @@
                                             :progress {:total 10 :current 4}})]
         (t/is (nil? (:error out)))
         (t/is (= {:action :skip} (:result out))))))
-  (let [cfg    {::db/pool th/*pool*}
+  (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
     (t/testing "live paths report run"

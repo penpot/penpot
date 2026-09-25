@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.email :as emails]
    [app.jobs :as jobs]
+   [app.metrics :as-alias mtx]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -135,7 +136,9 @@
         email   {:to "a@example.com" :subject "hi" :body "hello"}
         job-id  (db/tx-run! {::db/pool th/*pool*}
                             (fn [cfg]
-                              (emails/send (assoc cfg ::jobs/defs defs)
+                              (emails/send (assoc cfg
+                                                  ::jobs/defs defs
+                                                  ::mtx/metrics (get th/*system* :app.metrics/metrics))
                                            (assoc email ::emails/reuse-conn true))))]
     (t/testing "the email job is submitted through the caller conn"
       (t/is (= "sendmail" (:name (th/db-get :job {:id job-id})))))))

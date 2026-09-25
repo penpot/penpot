@@ -11,12 +11,19 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.main :as main]
    [app.metrics :as-alias mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.redis :as rds]
    [app.worker :as-alias wrk]
    [app.worker.dispatcher :as wdisp]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.string :as str]
+   [clojure.test :as t]
+   [integrant.core :as ig])
+  (:import
+   io.prometheus.client.Collector$MetricFamilySamples
+   io.prometheus.client.Collector$MetricFamilySamples$Sample))
 
 (t/use-fixtures :once th/state-init)
 
@@ -33,6 +40,24 @@
    ::batch-size  100
    ::lease       (cf/get-jobs-lease)
    ::timeout     (ct/duration "10s")})
+
+(defn- make-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-dispatcher-timing])}))
+
+(defn- histogram-sample-count [metrics labels]
+  (->> (enumeration-seq
+        (.metricFamilySamples ^io.prometheus.client.CollectorRegistry
+         (mtx/get-registry metrics)))
+       (mapcat (fn [^Collector$MetricFamilySamples family]
+                 (.samples family)))
+       (filter (fn [^Collector$MetricFamilySamples$Sample sample]
+                 (and (str/ends-with? (.-name sample) "_count")
+                      (= labels (vec (.-labelValues sample))))))
+       (map (fn [^Collector$MetricFamilySamples$Sample sample]
+              (long (.-value sample))))
+       (reduce + 0)))
 
 (defn- mk-job
   [{:keys [name queue status scheduled-at modified-at]
@@ -191,6 +216,16 @@
       (wdisp/run-batch cfg)
       (t/is (= "scheduled" (:status (get-row id))))
       (t/is (= 1 (count (drain-queue "test")))))))
+
+(t/deftest dispatcher-records-one-redis-failure
+  (let [metrics (make-metrics)
+        cfg     (assoc (mk-cfg) ::mtx/metrics metrics
+                       ::wdisp/timeout (ct/duration {:millis 10}))
+        _       (mk-job {})]
+    (with-redefs [rds/rpush (fn [& _] (throw (ex-info "redis down" {})))]
+      (wdisp/run-batch cfg))
+    (t/is (= 1 (histogram-sample-count metrics ["execution" "failed"])))
+    (t/is (= 0 (histogram-sample-count metrics ["dispatch" "failed"])))))
 
 (t/deftest dispatcher-push-failure-rolls-back-without-throwing
   (let [cfg  (assoc (mk-cfg) ::wdisp/timeout (ct/duration {:millis 10}))

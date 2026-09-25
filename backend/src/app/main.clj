@@ -796,7 +796,7 @@
     ::db/pool     (ig/ref ::db/pool)
     ::wrk/tenant  (cf/get :tenant)}
 
-   ::jobs-metrics/metrics-sampler
+   ::jobs-metrics/sampler
    {::db/pool     (ig/ref ::db/pool)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 

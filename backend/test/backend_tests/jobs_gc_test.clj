@@ -12,11 +12,17 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.jobs.gc :as gc]
+   [app.main :as main]
+   [app.metrics :as-alias mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [clojure.test :as t]
-   [integrant.core :as ig]))
+   [integrant.core :as ig])
+  (:import
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial
@@ -26,6 +32,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- make-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-gc-rows])}))
+
+(defn- counter-value [metrics labels]
+  (let [collector (mtx/get-collector metrics :jobs-gc-rows)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
 
 (defn- mk-storage-object
   []
@@ -53,6 +70,25 @@
                          :created-at   (ct/now)
                          :modified-at  (or modified-at (ct/now))})
     id))
+
+(t/deftest gc-records-deleted-rows
+  (let [metrics (make-metrics)
+        cfg     {::db/pool     th/*pool*
+                 ::mtx/metrics metrics}]
+    (th/db-insert! :job {:id           (uuid/next)
+                         :name         "test-job"
+                         :queue        "test:default"
+                         :props        (db/json {})
+                         :priority     100
+                         :max-retries  3
+                         :retry-num    0
+                         :status       "completed"
+                         :expires-at   (ct/in-past {:minutes 5})
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+    (gc/execute-jobs-gc cfg {})
+    (t/is (= 1.0 (counter-value metrics ["expired" "deleted"])))))
 
 (t/deftest gc-deletes-expired-jobs-and-touches-their-resources
   (let [old-object   (mk-storage-object)
@@ -122,8 +158,9 @@
 
 (t/deftest submit-normalizes-durations-to-millis
   (let [defs   {:jobs-gc (ig/init-key ::gc/jobs-gc-job-def {})}
-        cfg    {::jobs/defs defs
-                ::db/pool   th/*pool*}
+        cfg    {::jobs/defs   defs
+                ::db/pool     th/*pool*
+                ::mtx/metrics (get th/*system* :app.metrics/metrics)}
         job-id (jobs/submit cfg {::jobs/name   :jobs-gc
                                  ::jobs/params {:min-age (ct/duration {:hours 1})}})]
     (t/testing "a Duration object does not reach JSON encoding"

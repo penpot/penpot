@@ -47,7 +47,8 @@
 
 ## Metrics recording
 
-- `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, and db-pool schemas; `app.db` wires the prometheus `MetricsTrackerFactory` unconditionally. Storage-specific metric contracts: `mem:backend/storage`.
+- `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, db-pool and jobs APIs; jobs helpers never silently skip a missing metrics instance.
+- `app.db/after-commit!` is the boundary for SQL-backed metrics: callbacks registered in nested transactions are drained only by the outermost successful commit and are discarded on rollback.
 
 ## Storage and media
 

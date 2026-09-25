@@ -29,7 +29,7 @@ Penpot in production lives with both: horizontal-scale deployments accept "exact
 
 ## Jobs observability
 
-Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery and rescheduling; histograms separate queue wait, handler execution and total job age. A 30-second sampler publishes backlog by status and the oldest pending-job age. All labels are bounded operational values; job IDs, profile IDs, props and error text are excluded. Read-only backends do not start the sampler or the workers.
+Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery and rescheduling; histograms separate queue wait, handler execution and total job age. SQL-backed events are recorded after the outer PostgreSQL transaction commits. The `::jobs-metrics/sampler` component publishes backlog by status and the oldest pending-job age every 30 seconds. All labels are bounded operational values; job IDs, profile IDs, props and error text are excluded. Read-only backends do not start the sampler or the workers.
 
 ## See also
 

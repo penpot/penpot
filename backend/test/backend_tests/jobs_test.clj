@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.metrics :as-alias mtx]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -66,8 +67,9 @@
 
 (defn- make-cfg
   [defs]
-  {::jobs/defs defs
-   ::db/pool   th/*pool*})
+  {::jobs/defs   defs
+   ::db/pool     th/*pool*
+   ::mtx/metrics (get th/*system* :app.metrics/metrics)})
 
 (defn- make-params
   []
@@ -252,17 +254,14 @@
         (finally
           (alter-var-root #'db/exec-one! (constantly orig)))))))
 
-(t/deftest submit-accepts-bare-connectable-cfg
-  ;; callers like file-snapshots pass a raw connection/pool instead of a
-  ;; cfg map (regression: contains? on a connection object throws)
+(t/deftest submit-requires-metrics-on-bare-connectable
   (let [defs (get-job-defs)
         prev @@#'jobs/defs-registry]
     (try
       (reset! @#'jobs/defs-registry defs)
-      (let [job-id (jobs/submit th/*pool* {::jobs/name   :echo
-                                           ::jobs/params (make-params)})]
-        (t/is (uuid? job-id))
-        (t/is (some? (jobs/get-job th/*pool* job-id))))
+      (t/is (thrown-with-msg? Exception #"missing ::mtx/metrics"
+                              (jobs/submit th/*pool* {::jobs/name   :echo
+                                                      ::jobs/params (make-params)})))
       (finally
         (reset! @#'jobs/defs-registry prev)))))
 
@@ -276,6 +275,17 @@
                                  ::jobs/params params})]
     (t/testing "handler receives cfg with job-id context for heartbeats"
       (t/is (= params (echo-handler (assoc cfg ::jobs/job-id job-id) params))))))
+
+(t/deftest terminal-writers-require-metrics
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+    (t/is (thrown-with-msg? Exception #"missing ::mtx/metrics"
+                            (jobs/complete (dissoc cfg ::mtx/metrics) job-id)))
+    (t/is (thrown-with-msg? Exception #"missing ::mtx/metrics"
+                            (jobs/fail (dissoc cfg ::mtx/metrics) job-id {:code "x"})))
+    (t/is (thrown-with-msg? Exception #"missing ::mtx/metrics"
+                            (jobs/cancel (dissoc cfg ::mtx/metrics) job-id)))))
 
 (t/deftest submit-strips-rollback-testing-flag-from-props
   (let [cfg    (make-cfg (get-job-defs))

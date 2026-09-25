@@ -583,12 +583,43 @@
      (l/trc :hint "explicit rollback requested (savepoint)")
      (.rollback conn sp))))
 
+(def ^:dynamic *after-commit-context* nil)
+
+(defn- run-after-commit-callbacks
+  [callbacks]
+  (doseq [callback callbacks]
+    (try
+      (callback)
+      (catch Throwable cause
+        (l/wrn :hint "after-commit callback failed" :cause cause)))))
+
+(defn after-commit!
+  "Run a callback after the current transaction commits.
+
+  The callback runs immediately when called outside a transaction. Nested
+  transactions share the outermost context, so callbacks are never drained
+  before the transaction that owns the connection commits."
+  [f]
+  (if *after-commit-context*
+    (swap! *after-commit-context* conj f)
+    (f)))
+
 (defn transact!
   "A lower-level function for executing function in a transaction"
   ([transactable f] (transact! transactable f {}))
   ([transactable f opts]
-   (binding [next.jdbc.transaction/*nested-tx* :ignore]
-     (jdbc/transact transactable f opts))))
+   (if *after-commit-context*
+     (binding [next.jdbc.transaction/*nested-tx* :ignore]
+       (jdbc/transact transactable f opts))
+     (let [context (atom [])]
+       (try
+         (let [result (binding [*after-commit-context* context]
+                        (binding [next.jdbc.transaction/*nested-tx* :ignore]
+                          (jdbc/transact transactable f opts)))]
+           (run-after-commit-callbacks @context)
+           result)
+         (finally
+           (reset! context [])))))))
 
 (defn tx-run!
   "Run a function in a transaction."

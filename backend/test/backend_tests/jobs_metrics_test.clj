@@ -72,6 +72,25 @@
   (t/is (= ["status"]
            (::mdef/labels (:jobs-backlog main/default-metrics)))))
 
+(t/deftest submit-metric-is-not-recorded-when-the-outer-transaction-rolls-back
+  (let [metrics (make-metrics)
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   identity
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs   defs
+                 ::db/pool     th/*pool*
+                 ::mtx/metrics metrics}]
+    (t/is (thrown? Exception
+                   (db/tx-run! cfg
+                               (fn [tx-cfg]
+                                 (jobs/submit tx-cfg
+                                              {::jobs/name :echo
+                                               ::jobs/params {}})
+                                 (throw (ex-info "rollback" {}))))))
+    (t/is (= 0.0 (counter-value metrics :jobs-submitted ["other" "default"])))))
+
 (t/deftest submit-and-terminal-writers-record-production-events
   (let [metrics (make-metrics)
         defs    {:echo {::jobs/name      :echo
@@ -85,25 +104,25 @@
         job-id  (jobs/submit cfg {::jobs/name :echo ::jobs/params {}})]
     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
     (jobs/complete cfg job-id {:ok true})
-    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["other" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "default" "completed"])))))
 
 (t/deftest lifecycle-helpers-use-bounded-labels
   (let [metrics (make-metrics)]
-    (jobs-metrics/record-submitted metrics "echo" "tenant:default")
-    (jobs-metrics/record-dispatched metrics "echo" "tenant:default" 2)
-    (jobs-metrics/record-outcome metrics "echo" "tenant:default" :completed)
-    (jobs-metrics/record-retry metrics "echo" "tenant:default" :backoff)
+    (jobs-metrics/record-submitted metrics "delete-object" "tenant:default")
+    (jobs-metrics/record-dispatched metrics "delete-object" "tenant:default" 2)
+    (jobs-metrics/record-outcome metrics "delete-object" "tenant:default" :completed)
+    (jobs-metrics/record-retry metrics "delete-object" "tenant:default" :backoff)
     (jobs-metrics/record-orphan metrics "tenant:webhooks")
     (jobs-metrics/record-rescheduled metrics "tenant:custom")
     (jobs-metrics/record-gc-rows metrics :expired :deleted 3)
     (jobs-metrics/record-cron metrics :submitted :none)
     (jobs-metrics/record-request metrics :replied 12)
 
-    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"])))
-    (t/is (= 2.0 (counter-value metrics :jobs-dispatched ["echo" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-retries ["echo" "default" "backoff"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["delete-object" "default"])))
+    (t/is (= 2.0 (counter-value metrics :jobs-dispatched ["delete-object" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["delete-object" "default" "completed"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-retries ["delete-object" "default" "backoff"])))
     (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["webhooks"])))
     (t/is (= 1.0 (counter-value metrics :jobs-rescheduled ["other"])))
     (t/is (= 3.0 (counter-value metrics :jobs-gc-rows ["expired" "deleted"])))
@@ -115,7 +134,27 @@
   (t/is (= "default" (jobs-metrics/queue-label :default)))
   (let [metrics (make-metrics)]
     (jobs-metrics/record-outcome metrics "echo" "tenant:unexpected" :unexpected)
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "other" "failed"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "other" "failed"])))))
+
+(t/deftest sampler-is-wired-and-does-not-start-on-read-only
+  (t/is (contains? main/worker-config :app.jobs.metrics/sampler))
+  (let [metrics (make-metrics)
+        cfg     {::db/pool th/*pool*
+                 ::mtx/metrics metrics}]
+    (with-redefs [db/read-only? (constantly true)]
+      (t/is (nil? (ig/init-key :app.jobs.metrics/sampler cfg))))
+    (let [sampler (ig/init-key :app.jobs.metrics/sampler cfg)]
+      (try
+        (t/is (some? sampler))
+        (finally
+          (ig/halt-key! :app.jobs.metrics/sampler sampler))))))
+
+(t/deftest unknown-job-names-and-gc-kinds-are-bounded
+  (let [metrics (make-metrics)]
+    (jobs-metrics/record-submitted metrics "unknown-job" "tenant:default")
+    (jobs-metrics/record-gc-rows metrics :unknown :deleted 1)
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["other" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-gc-rows ["other" "deleted"])))))
 
 (t/deftest backlog-sampler-updates-status-and-age-gauges
   (let [metrics (make-metrics)

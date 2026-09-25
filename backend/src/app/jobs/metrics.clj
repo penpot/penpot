@@ -34,6 +34,28 @@
 (def ^:private known-stages
   #{"claim" "redis" "database" "dispatch" "execution" "terminal"})
 
+(def ^:private known-job-names
+  #{"sendmail"
+    "delete-object"
+    "demo-purge"
+    "run-webhook"
+    "process-webhook-event"
+    "file-gc"
+    "offload-file-data"
+    "objects-gc"
+    "storage-gc-deleted"
+    "storage-gc-touched"
+    "storage-pending-gc"
+    "jobs-gc"
+    "telemetry"
+    "session-gc"
+    "file-gc-scheduler"
+    "audit-log-archive"
+    "audit-log-gc"})
+
+(def ^:private known-gc-kinds
+  #{"expired" "retained"})
+
 (def ^:private known-gc-actions
   #{"deleted" "touched"})
 
@@ -44,7 +66,7 @@
   #{"none" "active" "failure" "interrupted"})
 
 (def ^:private known-request-outcomes
-  #{"sent" "replied" "error" "timeout"})
+  #{"replied" "error" "timeout"})
 
 (defn queue-label
   "Return a bounded queue label. The database stores tenant-prefixed queues."
@@ -55,7 +77,12 @@
     (if (contains? known-queues queue) queue "other")))
 
 (defn- name-label [name]
-  (mtx/label name "unknown"))
+  (let [name (mtx/label name "other")]
+    (if (contains? known-job-names name) name "other")))
+
+(defn- gc-kind-label [kind]
+  (let [kind (str/lower (or (some-> kind d/name) "other"))]
+    (if (contains? known-gc-kinds kind) kind "other")))
 
 (defn- outcome-label [outcome]
   (let [outcome (str/lower (or (some-> outcome d/name) "failed"))]
@@ -70,12 +97,10 @@
     (if (contains? known-stages stage) stage "execution")))
 
 (defn- record! [metrics id labels value]
-  (when metrics
-    (mtx/run! metrics :id id :labels labels :val value)))
+  (mtx/run! metrics :id id :labels labels :val value))
 
 (defn- record-count! [metrics id labels amount]
-  (when metrics
-    (mtx/run! metrics :id id :labels labels :inc amount)))
+  (mtx/run! metrics :id id :labels labels :inc amount))
 
 (defn record-submitted
   [metrics name queue]
@@ -148,37 +173,34 @@
 
 (defn record-gc-rows
   [metrics kind action amount]
-  (when metrics
-    (let [kind   (str/lower (or (some-> kind d/name) "unknown"))
-          action (str/lower (or (some-> action d/name) "deleted"))]
-      (when (contains? known-gc-actions action)
-        (record-count! metrics :jobs-gc-rows [kind action] amount)))))
+  (let [kind   (gc-kind-label kind)
+        action (str/lower (or (some-> action d/name) "deleted"))]
+    (when (contains? known-gc-actions action)
+      (record-count! metrics :jobs-gc-rows [kind action] amount))))
 
 (defn record-gc-duration
   [metrics kind millis]
   (record! metrics :jobs-gc-timing
-           [(str/lower (or (some-> kind d/name) "unknown"))]
+           [(gc-kind-label kind)]
            (max 0 (long millis))))
 
 (defn record-cron
   [metrics outcome reason]
-  (when metrics
-    (let [outcome (str/lower (or (some-> outcome d/name) "error"))
-          reason  (str/lower (or (some-> reason d/name) "none"))]
-      (when (contains? known-cron-outcomes outcome)
-        (record-count! metrics :jobs-cron-total
-                       [(if (contains? known-cron-outcomes outcome) outcome "error")
-                        (if (contains? known-cron-reasons reason) reason "failure")]
-                       1)))))
+  (let [outcome (str/lower (or (some-> outcome d/name) "error"))
+        reason  (str/lower (or (some-> reason d/name) "none"))]
+    (when (contains? known-cron-outcomes outcome)
+      (record-count! metrics :jobs-cron-total
+                     [outcome
+                      (if (contains? known-cron-reasons reason) reason "failure")]
+                     1))))
 
 (defn record-request
   [metrics outcome millis]
-  (when metrics
-    (let [outcome (str/lower (or (some-> outcome d/name) "error"))]
-      (when (contains? known-request-outcomes outcome)
-        (record-count! metrics :jobs-requests-total [outcome] 1)
-        (record! metrics :jobs-request-timing [outcome]
-                 (max 0 (long millis)))))))
+  (let [outcome (str/lower (or (some-> outcome d/name) "error"))]
+    (when (contains? known-request-outcomes outcome)
+      (record-count! metrics :jobs-requests-total [outcome] 1)
+      (record! metrics :jobs-request-timing [outcome]
+               (max 0 (long millis))))))
 
 (def ^:private backlog-statuses
   ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled"])

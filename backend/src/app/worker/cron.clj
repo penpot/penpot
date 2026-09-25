@@ -105,13 +105,15 @@
                                               :n)]
                               (if (pos? (or active 0))
                                 (do
-                                  (jobs-metrics/record-cron
-                                   (::mtx/metrics cfg) :skipped :active)
+                                  (db/after-commit!
+                                   #(jobs-metrics/record-cron
+                                     (::mtx/metrics cfg) :skipped :active))
                                   (l/dbg :hint "skip scheduling, active instance exists"
                                          :id id :task task))
                                 (let [job-id (submit-cron-job cfg entry)]
-                                  (jobs-metrics/record-cron
-                                   (::mtx/metrics cfg) :submitted :none)
+                                  (db/after-commit!
+                                   #(jobs-metrics/record-cron
+                                     (::mtx/metrics cfg) :submitted :none))
                                   (l/dbg :hint "cron job submitted"
                                          :id id
                                          :task task

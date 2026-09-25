@@ -74,7 +74,7 @@
     0))
 
 (defn- delete-jobs
-  [cfg sql & params]
+  [cfg kind sql & params]
   (loop [deleted 0
          touched 0]
     (let [[rows touched-now]
@@ -82,8 +82,15 @@
                       (fn [{:keys [::db/conn]}]
                         (let [rows         (db/exec! conn (conj (into [sql] params)
                                                                 gc-batch-size))
-                              resource-ids (into [] (keep :resource-id) rows)]
-                          [rows (touch-resources conn resource-ids)])))
+                              resource-ids (into [] (keep :resource-id) rows)
+                              touched      (touch-resources conn resource-ids)]
+                          (db/after-commit!
+                           #(do
+                              (jobs-metrics/record-gc-rows
+                               (::mtx/metrics cfg) kind :deleted (count rows))
+                              (jobs-metrics/record-gc-rows
+                               (::mtx/metrics cfg) kind :touched touched)))
+                          [rows touched])))
           deleted' (+ deleted (count rows))
           touched' (+ touched touched-now)]
       (if (< (count rows) gc-batch-size)
@@ -122,23 +129,17 @@
                                  (cf/get-jobs-retention)))
         expired-tpoint (ct/tpoint)
         [deleted-expired touched-expired]
-        (try
-          (delete-jobs cfg sql:delete-expired-jobs)
-          (finally
-            (jobs-metrics/record-gc-duration
-             (::mtx/metrics cfg) :expired (inst-ms (expired-tpoint)))))
+        (delete-jobs cfg :expired sql:delete-expired-jobs)
         retained-tpoint (ct/tpoint)
         [deleted-retained touched-retained]
-        (try
-          (delete-jobs cfg sql:delete-retained-jobs
-                       (db/interval min-age))
-          (finally
-            (jobs-metrics/record-gc-duration
-             (::mtx/metrics cfg) :retained (inst-ms (retained-tpoint)))))]
-    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :expired :deleted deleted-expired)
-    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :expired :touched touched-expired)
-    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :retained :deleted deleted-retained)
-    (jobs-metrics/record-gc-rows (::mtx/metrics cfg) :retained :touched touched-retained)
+        (delete-jobs cfg :retained sql:delete-retained-jobs
+                     (db/interval min-age))]
+    (db/after-commit!
+     #(jobs-metrics/record-gc-duration
+       (::mtx/metrics cfg) :expired (inst-ms (expired-tpoint))))
+    (db/after-commit!
+     #(jobs-metrics/record-gc-duration
+       (::mtx/metrics cfg) :retained (inst-ms (retained-tpoint))))
     (l/dbg :hint "jobs gc finished"
            :deleted-expired deleted-expired
            :touched-expired touched-expired

@@ -95,12 +95,12 @@
              :status (:status job))
 
       (do
-        (jobs-metrics/record-queue-wait
-         metrics
-         (:name job)
-         queue
-         (- (inst-ms (ct/now)) (inst-ms (:scheduled-at job))))
         (let [job-def   (jobs/get-job-def defs (:name job))
+              _         (jobs-metrics/record-queue-wait
+                         metrics
+                         (::jobs/name job-def)
+                         queue
+                         (- (inst-ms (ct/now)) (inst-ms (:scheduled-at job))))
               params    (try
                           (->> (:props job)
                                (jobs/decode-params job-def)
@@ -229,11 +229,12 @@
                                             (:id job)])
                              (db/get-update-count))]
               (when (pos? n)
-                (jobs-metrics/record-retry
-                 (::mtx/metrics cfg)
-                 (:name job)
-                 (:queue job)
-                 (if (zero? inc-by) :noop :backoff)))
+                (db/after-commit!
+                 #(jobs-metrics/record-retry
+                   (::mtx/metrics cfg)
+                   (:name job)
+                   (:queue job)
+                   (if (zero? inc-by) :noop :backoff))))
               nil))
 
           (handle-job-failure [{:keys [error] :as result}]
@@ -245,7 +246,8 @@
                                          (:id job)])
                           (db/get-update-count))]
               (when (pos? n)
-                (jobs/record-terminal cfg job :failed))
+                (db/after-commit!
+                 #(jobs/record-terminal (::mtx/metrics cfg) job :failed)))
               nil))
 
           (handle-job-completion [result]
@@ -258,7 +260,8 @@
                                          (:id job)])
                           (db/get-update-count))]
               (when (pos? n)
-                (jobs/record-terminal cfg job :completed))
+                (db/after-commit!
+                 #(jobs/record-terminal (::mtx/metrics cfg) job :completed)))
               nil))
 
           (decode-payload [payload]

@@ -13,12 +13,19 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.main :as main]
    [app.metrics :as-alias mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.redis :as rds]
    [app.worker :as wrk]
    [app.worker.runner :as wrkr]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.string :as str]
+   [clojure.test :as t]
+   [integrant.core :as ig])
+  (:import
+   io.prometheus.client.Collector$MetricFamilySamples
+   io.prometheus.client.Collector$MetricFamilySamples$Sample))
 
 (t/use-fixtures :once th/state-init)
 
@@ -62,6 +69,29 @@
    ::wrkr/id     "test-runner"
    ::wrkr/queue  (str (cf/get :tenant) ":test")
    ::wrkr/timeout (ct/duration "5s")})
+
+(defn- make-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-queue-wait-timing
+                                       :jobs-execution-timing
+                                       :jobs-total-timing
+                                       :tasks-timing])}))
+
+(defn- histogram-sample-count [metrics id labels]
+  (->> (enumeration-seq
+        (.metricFamilySamples ^io.prometheus.client.CollectorRegistry
+         (mtx/get-registry metrics)))
+       (filter (fn [^Collector$MetricFamilySamples family]
+                 (= (.-name family) (::mdef/name (main/default-metrics id)))))
+       (mapcat (fn [^Collector$MetricFamilySamples family]
+                 (.samples family)))
+       (filter (fn [^Collector$MetricFamilySamples$Sample sample]
+                 (and (str/ends-with? (.-name sample) "_count")
+                      (= labels (vec (.-labelValues sample))))))
+       (map (fn [^Collector$MetricFamilySamples$Sample sample]
+              (long (.-value sample))))
+       (reduce + 0)))
 
 (defn- queue-key
   []
@@ -159,6 +189,23 @@
         (t/is (some? (:started-at row)))
         (t/is (some? (:completed-at row)))
         (t/is (nil? (:error row)))))))
+
+(t/deftest runner-records-queue-wait-execution-and-total
+  (let [metrics (make-metrics)
+        cfg     (assoc (mk-cfg {}) ::mtx/metrics metrics)
+        at      (ct/truncate (ct/now) :millisecond)
+        job-id  (mk-job {:scheduled-at at})]
+    (push-payload job-id at)
+    (run-one cfg)
+    (t/is (= 1 (histogram-sample-count metrics
+                                       :jobs-queue-wait-timing
+                                       ["other" "other"])))
+    (t/is (= 1 (histogram-sample-count metrics
+                                       :jobs-execution-timing
+                                       ["other" "other"])))
+    (t/is (= 1 (histogram-sample-count metrics
+                                       :jobs-total-timing
+                                       ["other" "other" "completed"])))))
 
 (t/deftest runner-skips-cancelled-jobs
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)

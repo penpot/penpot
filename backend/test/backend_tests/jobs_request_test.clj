@@ -12,7 +12,9 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.metrics :as-alias mtx]
+   [app.main :as main]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.redis :as rds]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -20,6 +22,8 @@
    [integrant.core :as ig])
   (:import
    io.lettuce.core.api.sync.RedisCommands
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child
    java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
@@ -28,13 +32,20 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- make-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-requests-total
+                                       :jobs-request-timing])}))
+
 (defn- make-pool
-  []
-  (-> {::jobs/request-pool {::rds/client  (get th/*system* :app.redis/client)
-                            ::mtx/metrics (get th/*system* :app.metrics/metrics)}}
-      (ig/expand)
-      (ig/init)
-      (get ::jobs/request-pool)))
+  ([] (make-pool (get th/*system* :app.metrics/metrics)))
+  ([metrics]
+   (-> {::jobs/request-pool {::rds/client  (get th/*system* :app.redis/client)
+                             ::mtx/metrics metrics}}
+       (ig/expand)
+       (ig/init)
+       (get ::jobs/request-pool))))
 
 (defn- queue-key
   [queue]
@@ -86,7 +97,10 @@
                         (deliver out ::no-request)
                         (let [[request-id reply-key cmd params :as decoded] (json/decode payload)]
                           (deliver out decoded)
-                          (jobs/reply {::rds/pool pool} reply-key (response-fn params)))))
+                          (jobs/reply {::rds/pool     (::jobs/pool pool)
+                                       ::mtx/metrics (::mtx/metrics pool)}
+                                      reply-key
+                                      (response-fn params)))))
                     (finally
                       (rds/close conn)))))]
       {:future fut
@@ -115,6 +129,38 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- counter-value [metrics id labels]
+  (let [collector (mtx/get-collector metrics id)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
+
+(t/deftest request-pool-keeps-its-own-metrics
+  (let [metrics-a (make-metrics)
+        metrics-b (make-metrics)
+        pool-a    (make-pool metrics-a)
+        pool-b    (make-pool metrics-b)]
+    (t/is (identical? metrics-a (::mtx/metrics pool-a)))
+    (t/is (identical? metrics-b (::mtx/metrics pool-b)))))
+
+(t/deftest request-metrics-use-the-final-outcome
+  (let [metrics (make-metrics)
+        pool    (make-pool metrics)
+        cfg     (make-cfg pool)]
+    (with-responder pool (fn [_params] {:ok {:value 1}}))
+    (t/is (= {:value 1}
+             (jobs/request cfg {::jobs/queue :media
+                                ::jobs/cmd :process
+                                ::jobs/params {}})))
+    (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["replied"])))
+    (t/is (thrown-with-msg? Exception #"timeout waiting for the job reply"
+                            (jobs/request cfg {::jobs/queue :media
+                                               ::jobs/cmd :process
+                                               ::jobs/params {}
+                                               ::jobs/timeout (ct/duration {:millis 100})})))
+    (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["timeout"])))
+    (t/is (= 0.0 (counter-value metrics :jobs-requests-total ["sent"])))))
 
 (t/deftest request-returns-the-ok-reply
   (let [pool    (make-pool)
@@ -188,7 +234,7 @@
                                            ::jobs/params {:x 2}})))
 
         (t/testing "connection command timeout is restored after use"
-          (with-open [^AutoCloseable pooled (gpool/get pool)]
+          (with-open [^AutoCloseable pooled (gpool/get (::jobs/pool pool))]
             (let [conn @pooled]
               (t/is (= (.toMillis ^java.time.Duration default-timeout)
                        (.toMillis ^java.time.Duration (rds/get-timeout conn)))))))))))
