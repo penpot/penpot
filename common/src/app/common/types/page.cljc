@@ -14,6 +14,7 @@
    [app.common.types.grid :as ctg]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -60,6 +61,8 @@
    [:guides {:optional true} schema:guides]
    [:plugin-data {:optional true} ctpg/schema:plugin-data]
    [:background {:optional true} ctc/schema:hex-color]
+   ;; Name of the color token applied to the background, if any.
+   [:background-token {:optional true} [:maybe cto/schema:token-name]]
    ;; Per-page pixel grid color. Falls back to a hardcoded default when
    ;; unset so existing files render identically to before.
    [:pixel-grid-color {:optional true} ctc/schema:hex-color]
