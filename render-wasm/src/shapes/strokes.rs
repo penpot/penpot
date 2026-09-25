@@ -358,7 +358,9 @@ impl Stroke {
 
         let mut outer = *corners;
         for corner in outer.iter_mut() {
-            corner.offset((offset, offset))
+            if corner.x > 0.0 {
+                corner.offset((offset, offset))
+            }
         }
         outer
     }
