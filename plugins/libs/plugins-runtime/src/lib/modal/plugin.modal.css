@@ -29,6 +29,13 @@
   display: none;
 }
 
+/* Firefox cannot hide its native resize grip, so show only that one. */
+@supports (-moz-appearance: none) {
+  .wrapper:after {
+    display: none;
+  }
+}
+
 .wrapper {
   position: absolute;
   inset-block-start: var(--modal-block-start);
