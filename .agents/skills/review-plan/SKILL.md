@@ -50,7 +50,11 @@ agent again.
    format.
 2. Read `AGENTS.md` (if present) and follow its instructions for finding and
    reading all related documentation and testing memories before reviewing.
-3. Return in your final message the COMPLETE review, verbatim, exactly as the
+3. Cada hallazgo debe tener un identificador único y estable, con el formato
+   `F-001`, `F-002`, etc. El identificador debe aparecer en el título del
+   hallazgo y no debe reutilizarse dentro de la misma revisión. Esto permite
+   que el usuario pueda responder sobre un hallazgo concreto.
+4. Return in your final message the COMPLETE review, verbatim, exactly as the
    skill instructs it to be produced. Do not summarize it — include the full
    structured review.
 
