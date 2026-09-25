@@ -57,7 +57,6 @@
     "text-editor/v2"
     "text-editor-wasm/v1"
     "render-wasm/v1"
-    "wasm-export/v1"
     "variants/v1"})
 
 ;; A set of features enabled by default
@@ -83,8 +82,7 @@
     "text-editor/v2"
     "text-editor-wasm/v1"
     "tokens/numeric-input"
-    "render-wasm/v1"
-    "wasm-export/v1"})
+    "render-wasm/v1"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it

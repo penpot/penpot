@@ -9,7 +9,6 @@
   (:require
    [app.common.logging :as l]
    [app.common.spec :as us]
-   [app.config :as cf]
    [app.renderer.bitmap :as rb]
    [app.renderer.pdf :as rp]
    [app.renderer.svg :as rs]
@@ -42,7 +41,7 @@
 (defn headless?
   "Whether `params` renders with render-wasm rather than a browser."
   [{:keys [is-wasm]}]
-  (and is-wasm (contains? cf/flags :wasm-export)))
+  (boolean is-wasm))
 
 (defn render
   [{:keys [type is-wasm] :as params} on-object]
@@ -52,7 +51,6 @@
     (when is-wasm
       (l/info :hint "render"
               :type type
-              :wasm-export (contains? cf/flags :wasm-export)
               :backend (if headless? "wasm" "browser")))
     (if headless?
       (rw/render params on-object)
