@@ -9194,6 +9194,18 @@ msgstr "Connect here"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP connected"
 
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.toolbar.mcp-copy-session-id"
+msgstr "Copy session ID"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.toolbar.mcp-session-copied"
+msgstr "Session ID copied"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs
+msgid "workspace.toolbar.mcp-session-id"
+msgstr "Session ID: %s"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:65, src/app/main/ui/workspace/top_toolbar.cljs:425
 msgid "workspace.toolbar.move"
 msgstr "Move (%s)"

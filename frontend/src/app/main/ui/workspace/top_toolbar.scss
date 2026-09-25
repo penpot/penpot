@@ -171,8 +171,15 @@
 .toolbar-mcp-dropdown-info {
   @include t.use-typography("body-small");
 
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-block-end: var(--sp-xs);
   padding: var(--sp-s) var(--sp-m);
+  border: $b-1 solid var(--panel-border-color);
+  border-radius: $br-4;
   color: var(--color-foreground-secondary);
+  font-size: px2rem(11);
   white-space: nowrap;
 }
 
