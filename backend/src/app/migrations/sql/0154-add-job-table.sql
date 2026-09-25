@@ -10,6 +10,10 @@
 -- NULL`. There is no `modified_at` trigger: the application code updates it on
 -- every UPDATE (used for the unified lease/orphan detection).
 --
+-- `params` carries the business payload (plain JSON) of the job. Progress is
+-- not a column: it is an append-only `job_event` row, so a job keeps its whole
+-- progress history instead of only the last value.
+--
 -- The legacy `task` table stays in place (dormant). Its cleanup remains
 -- the responsibility of the parallel legacy version during migration.
 
@@ -29,12 +33,10 @@ CREATE TABLE job (
     modified_at  timestamptz NOT NULL DEFAULT now(),
     started_at   timestamptz,
     completed_at timestamptz,
-    props        jsonb NOT NULL DEFAULT '{}',
+    params       jsonb NOT NULL DEFAULT '{}',
 
     -- optional ledger columns (user-facing jobs)
     profile_id   uuid NULL REFERENCES profile(id) ON DELETE NO ACTION DEFERRABLE,
-    target       jsonb,
-    progress     jsonb,
     error        jsonb,
     result       jsonb,
     resource_id  uuid NULL REFERENCES storage_object(id) ON DELETE SET NULL DEFERRABLE,
@@ -92,3 +94,22 @@ CREATE INDEX job__retention__idx
     ON job (modified_at)
     WHERE status IN ('completed', 'failed', 'cancelled')
       AND profile_id IS NULL;
+
+-- Append-only job event log: `start`, `progress`, `retry` and `end` rows in
+-- insertion order. This is the only source of truth for progress; there is no
+-- Redis key and no mutable progress column. The foreign key cascades so
+-- deleting a job removes its whole history, and it is DEFERRABLE like every
+-- other new reference of the substrate.
+CREATE TABLE job_event (
+    id         bigserial PRIMARY KEY,
+    job_id     uuid NOT NULL REFERENCES job(id) ON DELETE CASCADE DEFERRABLE,
+    kind       text NOT NULL
+               CHECK (kind IN ('start', 'progress', 'retry', 'end')),
+    payload    jsonb NOT NULL DEFAULT '{}',
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Event history read: all events of a job, and the last progress report
+-- (`WHERE job_id = ? AND kind = 'progress' ORDER BY created_at DESC LIMIT 1`).
+CREATE INDEX job_event__job_kind_created_idx
+    ON job_event (job_id, kind, created_at DESC, id DESC);

@@ -116,12 +116,12 @@
 (t/use-fixtures :each test-fixture)
 
 (defn- mk-job
-  [{:keys [name status scheduled-at props max-retries]
+  [{:keys [name status scheduled-at params max-retries]
     :or   {name        "echo-runner"
            status      "new"
            ;; Valid echo params by default: direct inserts bypass the
            ;; submit! contract, and the runner validates decoded params.
-           props       {:object     :snapshot
+           params      {:object     :snapshot
                         :deleted-at (ct/now)
                         :id         (uuid/next)}
            max-retries 3}}]
@@ -129,7 +129,7 @@
     (th/db-insert! :job {:id           id
                          :name         name
                          :queue        (str (cf/get :tenant) ":test")
-                         :props        (db/json props)
+                         :params       (db/json params)
                          :priority     100
                          :max-retries  max-retries
                          :retry-num    0
@@ -159,7 +159,7 @@
 
 (defn- run-one
   [cfg]
-  (@#'wrkr/run-worker-loop! cfg))
+  (@#'wrkr/run-worker-loop cfg))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
@@ -170,7 +170,7 @@
                       :deleted-at (ct/now)
                       :id        (uuid/next)}
         scheduled-at (ct/truncate (ct/now) :millisecond)
-        job-id       (mk-job {:scheduled-at scheduled-at :props params})]
+        job-id       (mk-job {:scheduled-at scheduled-at :params params})]
 
     (push-payload job-id scheduled-at)
     (run-one (mk-cfg {}))
@@ -383,9 +383,9 @@
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
         job-id       (mk-job {:scheduled-at scheduled-at
                               :max-retries 3
-                              :props {:object :snapshot
-                                      :deleted-at (ct/now)
-                                      :id "not-a-uuid"}})]
+                              :params {:object :snapshot
+                                       :deleted-at (ct/now)
+                                       :id "not-a-uuid"}})]
     (push-payload job-id scheduled-at)
     (run-one (mk-cfg {}))
     (let [row (get-row job-id)]

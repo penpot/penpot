@@ -35,7 +35,7 @@
    [:action [:enum :run :skip]]
    [:name {:optional true} ::sm/text]
    ;; Opaque per-job params blob; intentionally untyped.
-   [:props {:optional true} :any]])
+   [:params {:optional true} :any]])
 
 (sv/defmethod ::claim-job
   {::doc/added "2.19"
@@ -50,18 +50,18 @@
     (if (and row (pos? (jobs/claim cfg job-id scheduled-at)))
       {:action :run
        :name   (:name row)
-       :props  (:props row)}
+       :params (:params row)}
       {:action :skip})))
 
 ;; ---- RPC METHOD: REPORT-JOB-PROGRESS
 
 (def ^:private schema:report-job-progress-params
   [:map {:title "report-job-progress-params"}
+   ;; The progress schema is the same one the jobs substrate validates:
+   ;; `current` is mandatory, `total` and `stage` are optional, and no
+   ;; other key is accepted.
    [:job-id ::sm/uuid]
-   [:progress [:map
-               [:total :int]
-               [:current :int]
-               [:stage {:optional true} ::sm/text]]]])
+   [:progress jobs/schema:progress]])
 
 (def ^:private schema:report-job-progress-result
   [:map {:title "report-job-progress-result"}
@@ -75,7 +75,12 @@
   [cfg {:keys [job-id progress]}]
   ;; A lost race (row already terminal) reports :skip so the worker
   ;; stops retrying a report that can never land, mirroring claim-job.
-  (if (pos? (jobs/progress cfg job-id progress {::jobs/force? true}))
+  ;; The forced route propagates database errors: the external worker
+  ;; must be able to retry a report it was not sure about.
+  (if (pos? (jobs/heartbeat cfg
+                            :job-id job-id
+                            :progress progress
+                            ::jobs/force? true))
     {:action :run}
     {:action :skip}))
 

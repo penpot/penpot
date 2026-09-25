@@ -807,7 +807,8 @@
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::db/pool         (ig/ref ::db/pool)}
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
 
    [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-webhook-parallelism 1)
@@ -816,7 +817,8 @@
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::db/pool         (ig/ref ::db/pool)}
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
 
    [::cron ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
@@ -825,7 +827,8 @@
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::db/pool         (ig/ref ::db/pool)}})
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}})
 
 
 (defn start

@@ -20,18 +20,23 @@
     queues with a reply-key and a dedicated, unbounded connection pool;
     external workers answer with `reply`.
 
-  Params payloads are stored as plain JSON (not transit) in the `props` jsonb
+  Params payloads are stored as plain JSON (not transit) in the `params` jsonb
   column and decoded back to typed Clojure values using the job-def decoder.
 
   Any job that can run longer than `:jobs-lease` must call `heartbeat`
   on its loop, otherwise the dispatcher marks it orphaned while its side
-  effects continue.
+  effects continue. `heartbeat` also accepts an optional `progress` report,
+  which is stored as a `progress` row of `job_event`: progress is durable
+  history, not a mutable column, and needs no Redis.
 
-  Reserved ledger columns (`profile_id`, `target`, `progress`, `error`,
-  `result`, `resource_id`, `expires_at`) have no producers yet: `submit`
-  only inserts dispatch columns. The expiration branch, the retention
-  carve-out and the resource touch already account for them; user-facing
-  jobs (phase B) will define their semantics."
+  Events of a job with a `profile_id` publish a `:job-event` message on the
+  topic of that profile after the transaction commits, so a client can
+  follow the job without polling the database.
+
+  Reserved ledger columns (`profile_id`, `error`, `result`, `resource_id`,
+  `expires_at`) are only written by `submit` (profile and resource
+  references) and by the terminal writers; `submit` never infers them from
+  `params`."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -45,6 +50,7 @@
    [app.db :as db]
    [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as-alias mtx]
+   [app.msgbus :as mbus]
    [app.redis :as rds]
    [cuerdas.core :as str]
    [integrant.core :as ig])
@@ -123,11 +129,11 @@
                 :name (d/name name))))
 
 (defn decode-params
-  "Decode the raw JSON props (pgobject or decoded map) into typed params
+  "Decode the raw JSON params (pgobject or decoded map) into typed params
   using the precompiled decoder of the job-def."
-  [job-def props]
-  (-> (cond-> props
-        (db/pgobject? props)
+  [job-def params]
+  (-> (cond-> params
+        (db/pgobject? params)
         db/decode-json-pgobject)
       ((::decoder job-def))))
 
@@ -136,9 +142,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private sql:insert-new-job
-  "insert into job (id, name, props, queue, label, priority, max_retries,
-                    created_at, modified_at, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  "insert into job (id, name, params, queue, label, priority, max_retries,
+                    profile_id, resource_id, created_at, modified_at,
+                    scheduled_at)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 (def ^:private sql:remove-not-started-jobs
@@ -158,9 +165,15 @@
    [::queue {:optional true} [:or ::sm/text :keyword]]
    [::priority {:optional true} ::sm/int]
    [::max-retries {:optional true} ::sm/int]
-   [::dedupe {:optional true} ::sm/boolean]])
+   [::dedupe {:optional true} ::sm/boolean]
+   ;; Owner of a user-facing job. Its events are published on the msgbus
+   ;; topic of this profile; internal jobs omit it.
+   [::profile-id {:optional true} ::sm/uuid]
+   ;; Technical reference (storage object) kept for garbage collection. It
+   ;; is a column, never part of `params`, and it is never inferred from it.
+   [::resource-id {:optional true} ::sm/uuid]])
 
-(def check-options!
+(def check-options
   (sm/check-fn schema:options))
 
 (defn validate-params
@@ -185,12 +198,12 @@
   submissions can, in rare race conditions, produce duplicated 'new'
   rows (accepted risk, see prod-infra documentation)."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
-               ::dedupe ::label]
+               ::dedupe ::label ::profile-id ::resource-id]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
 
   (let [metrics (require-metrics cfg)]
-    (check-options! options)
+    (check-options options)
 
     (let [job-def      (get-job-def (get-defs cfg) name)
           params       (validate-params job-def params)
@@ -205,7 +218,7 @@
           ;; Duration values are normalized to millis: a Duration object
           ;; does not survive JSON encoding (schemas still accept it for
           ;; in-process callers).
-          props        (db/json (-> (dissoc params :rollback?)
+          payload      (db/json (-> (dissoc params :rollback?)
                                     (update-vals #(if (ct/duration? %)
                                                     (.toMillis ^java.time.Duration %)
                                                     %))))
@@ -231,8 +244,9 @@
                                   :dedupe (boolean dedupe)
                                   :delay (ct/format-duration delay)
                                   :replace (or deleted 0))
-                           (db/exec-one! conn [sql:insert-new-job id job-name props queue
+                           (db/exec-one! conn [sql:insert-new-job id job-name payload queue
                                                label priority max-retries
+                                               profile-id resource-id
                                                now now scheduled-at])))]
       ;; Both statements always run inside db/tx-run!: joined to the
       ;; caller's transaction when the cfg provides a connection,
@@ -264,12 +278,10 @@
 
 (defn- decode-row
   [row]
-  (-> row
-      (decode-json-col :props)
-      (decode-json-col :progress)))
+  (decode-json-col row :params))
 
 (defn get-job
-  "Retrieve the job row (with raw JSON props decoded to a plain map)."
+  "Retrieve the job row (with the raw JSON params decoded to a plain map)."
   [cfg job-id]
   (some-> (db/get* cfg :job {:id job-id})
           (decode-row)))
@@ -304,11 +316,157 @@
       ("failed" "cancelled")      "failed")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JOB EVENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; `job_event` is an append-only log: it is the only durable place for
+;; progress, and the place where the lifecycle of a job is recorded. There
+;; is no Redis key and no mutable column to keep in sync.
+
+;; mirrors the `job_event.kind` CHECK constraint of migration 0154
+(def ^:private known-event-kinds
+  #{"start" "progress" "retry" "end"})
+
+(def ^:private known-outcomes
+  #{"completed" "failed" "cancelled"})
+
+(def ^:private known-retry-reasons
+  #{"backoff" "noop"})
+
+(def ^:private max-stage-length 250)
+
+(def schema:progress
+  "Progress report of a job: `current` is mandatory, `total` and `stage` are
+  optional, and no other key is accepted. `stage` is a short human label,
+  not a place for exception messages or params."
+  [:map {:closed true
+         :title "job-progress"}
+   [:current ::sm/int]
+   [:total {:optional true} ::sm/int]
+   [:stage {:optional true} ::sm/text]])
+
+(def check-progress
+  "Validate a progress report against its schema."
+  (sm/check-fn schema:progress))
+
+(defn validate-progress
+  "Check the range rules a schema cannot express: non-negative `current`,
+  positive `total`, `current` never greater than `total` and a short
+  `stage`."
+  [progress]
+  (let [progress (check-progress progress)]
+    (when (neg? (:current progress))
+      (ex/raise :type :validation
+                :code :invalid-progress
+                :hint "progress current must not be negative"
+                :progress progress))
+    (when-let [total (:total progress)]
+      (when (or (not (pos? total))
+                (> (:current progress) total))
+        (ex/raise :type :validation
+                  :code :invalid-progress
+                  :hint "progress total must be positive and not lower than current"
+                  :progress progress)))
+    (when (and (:stage progress)
+               (> (count (:stage progress)) max-stage-length))
+      (ex/raise :type :validation
+                :code :invalid-progress
+                :hint (str "progress stage must not be longer than "
+                           max-stage-length " characters")
+                :progress progress))
+    progress))
+
+(def ^:private event-payload-keys
+  {"start"    #{:attempt}
+   "progress" #{:current :total :stage}
+   "retry"    #{:attempt :reason}
+   "end"      #{:outcome}})
+
+(defn- validate-event-payload
+  "Reject anything the durable log must never store: unknown kinds, unknown
+  outcomes or retry reasons, extra keys, params or exception text."
+  [kind payload]
+  (let [reject (fn [hint details]
+                 (ex/raise :type :validation
+                           :code :invalid-job-event
+                           :hint hint
+                           :kind kind
+                           :details details))
+        reject-attempt #(reject "job event attempt must be a non negative integer"
+                                payload)
+        allowed (get event-payload-keys kind)]
+    (when-not (contains? known-event-kinds kind)
+      (reject "unknown job event kind" kind))
+    (when (seq (remove allowed (keys payload)))
+      (reject "job event payload has unexpected keys" (keys payload)))
+    (case kind
+      "start" (when-not (nat-int? (:attempt payload)) (reject-attempt))
+      "retry" (do (when-not (nat-int? (:attempt payload)) (reject-attempt))
+                  (when-not (contains? known-retry-reasons (:reason payload))
+                    (reject "unknown job event retry reason" (:reason payload))))
+      "end"   (when-not (contains? known-outcomes (:outcome payload))
+                (reject "unknown job event outcome" (:outcome payload)))
+      "progress" (validate-progress payload))
+    payload))
+
+(def ^:private sql:insert-job-event
+  "INSERT INTO job_event (job_id, kind, payload)
+   VALUES (?, ?, ?)
+   RETURNING id, created_at")
+
+(def ^:private sql:job-event-owner
+  "SELECT profile_id FROM job WHERE id = ?")
+
+(defn- notify-event
+  "Publish a `:job-event` message on the topic of the job profile. Runs
+  after the commit that inserted the event: a listener that is not
+  connected never rolls back durable history."
+  [msgbus {:keys [profile-id job-id event-id kind payload created-at]}]
+  (mbus/pub! msgbus
+             :topic profile-id
+             :message {:type       :job-event
+                       :profile-id profile-id
+                       :job-id     job-id
+                       :event-id   event-id
+                       :kind       kind
+                       :payload    payload
+                       :created-at created-at}))
+
+(defn insert-event
+  "Insert a `job_event` row and schedule its post-commit notification.
+
+  Must be called inside a transaction that owns the job row. When the job
+  has a `profile_id` the cfg must carry a msgbus: the check happens
+  before the insert, so a profile job never loses its notification
+  silently. Jobs without profile store the event and publish nothing."
+  [{:keys [::mbus/msgbus] :as cfg} job-id kind payload]
+  (let [payload    (validate-event-payload kind payload)
+        connectable (db/get-connectable cfg)
+        profile-id (:profile-id (db/exec-one! connectable [sql:job-event-owner job-id]))]
+    (when (and profile-id
+               (not (mbus/msgbus? msgbus)))
+      (ex/raise :type :assertion
+                :code :missing-msgbus
+                :hint "job events of a profile job require ::mbus/msgbus on the cfg"
+                :job-id job-id
+                :profile-id profile-id))
+    (let [{:keys [id created-at]}
+          (db/exec-one! connectable [sql:insert-job-event job-id kind (db/json payload)])]
+      (when profile-id
+        (db/after-commit!
+         #(notify-event msgbus {:profile-id profile-id
+                                :job-id     job-id
+                                :event-id   id
+                                :kind       kind
+                                :payload    payload
+                                :created-at created-at})))
+      {:event-id id :created-at created-at :kind kind :payload payload})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HEARTBEAT / PROGRESS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private heartbeat-interval (ct/duration {:seconds 60}))
-(def ^:private progress-interval (ct/duration {:millis 250}))
+(def ^:private progress-interval (ct/duration {:seconds 1}))
 
 (def ^:private prune-threshold 10000)
 (def ^:private prune-window (ct/duration {:hours 1}))
@@ -318,29 +476,22 @@
 (def progresses (atom {}))
 
 (defn- assert-connectable
-  "Heartbeat/progress writes always go through the connection pool, so
-  the cfg must carry ::db/pool (or be a pool/connection itself).
-  Fails fast with a clear error instead of the opaque deep failure
-  inside app.db."
+  "Heartbeat writes always go through the connection pool, so the cfg must
+  carry ::db/pool (or be a pool/connection itself). Fails fast with a clear
+  error instead of the opaque deep failure inside app.db."
   [cfg]
   (let [connectable (if (map? cfg) (::db/pool cfg) cfg)]
     (when-not (db/connectable? connectable)
       (ex/raise :type :validation
                 :code :missing-pool
-                :hint "heartbeat/progress require ::db/pool on the cfg (or a pool/connection directly)"))))
+                :hint "heartbeat requires ::db/pool on the cfg (or a pool/connection directly)"))))
 
 (def ^:dynamic *job-id*
   "Job id of the job being executed on the current thread. The runner
-  binds it around handler invocations; handlers call `heartbeat`/`progress`
-  without knowing the id. Nil means no job context (in-process `invoke`
-  without a row), in which case the throttled writes become no-ops."
+  binds it around handler invocations; handlers call `heartbeat` without
+  knowing the id. Nil means no job context (in-process `invoke` without a
+  row), in which case the throttled writes become no-ops."
   nil)
-
-(def ^:private sql:persist-progress
-  "UPDATE job
-      SET progress=?, modified_at=?
-    WHERE id=?
-      AND status = ANY(?)")
 
 (defn- should-write?
   "Throttle gate: true when the last recorded write for `job-id` is older
@@ -385,61 +536,83 @@
     WHERE id = ?
       AND status IN ('new', 'scheduled', 'running', 'retry')")
 
+(def ^:private sql:lock-active-job
+  "SELECT id FROM job
+    WHERE id = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')
+    FOR UPDATE")
+
+(defn- touch-job
+  [connectable job-id now]
+  (-> (db/exec-one! connectable [sql:touch-heartbeat now job-id])
+      (db/get-update-count)))
+
+(defn- report-progress
+  "Insert a progress event on an active job.
+
+  The row is locked first: a concurrent complete, fail or cancel blocks
+  here, so a progress event can never land on an already terminal job.
+  Returns 1 when the event was stored."
+  [cfg job-id progress]
+  (db/tx-run! (or (::db/pool cfg) cfg)
+              (fn [{:keys [::db/conn]}]
+                (if (db/exec-one! conn [sql:lock-active-job job-id])
+                  (do
+                    (insert-event (assoc cfg ::db/conn conn) job-id "progress" progress)
+                    1)
+                  0))))
+
 (defn heartbeat
-  "Touch `modified_at` on the running job (throttled: does not write when
-  the last beat is more recent than ~60s). Handlers call it on every
-  iteration without thinking. The job id comes from the `::job-id` key on
-  the cfg, the thread-bound `*job-id*` (set by the runner), or can be
-  passed explicitly. No-op when there is no job context.
+  "Keep a running job alive and, optionally, report its progress.
 
-  Never touches terminal rows: beating a completed/failed/cancelled job
-  would silently extend its retention window.
+  Named options:
 
-  Always writes through the connection pool (`::db/pool` on the cfg),
-  never through the caller's transaction: the beat must stay visible
-  even if the surrounding work rolls back. Without a pool on the cfg
-  it falls back to the given connectable."
-  ([cfg]
-   (let [job-id (or (get cfg ::job-id) *job-id*)]
-     (when (uuid? job-id)
-       (heartbeat cfg job-id))))
-  ([cfg job-id]
-   (when (uuid? job-id)
-     (assert-connectable cfg)
-     (when (should-write? heartbeats job-id (ct/now) heartbeat-interval)
-       (db/exec-one! (or (::db/pool cfg) cfg)
-                     [sql:touch-heartbeat (ct/now) job-id])
-       nil))))
+  - `:job-id`   explicit job id; defaults to `::jobs/job-id` on the cfg
+                and then to the runner-bound `*job-id*`.
+  - `:progress` optional progress report (see `schema:progress`).
+  - `:force?`   internal: skips only the progress throttle.
 
-(defn progress
-  "Persist the `progress` payload and touch `modified_at` (throttled at
-  ~250ms; only writes on non-terminal job states). The job id comes from
-  the `::job-id` key on the cfg, the thread-bound `*job-id*` (set by the
-  runner), or can be passed explicitly. No-op when there is no job
-  context.
+  Returns the number of durable writes performed, so 0 means the job is
+  terminal, has no job context, or the throttle did not allow a write.
 
-  Like `heartbeat`, always writes through the connection pool, never
-  through the caller's transaction.
+  The `modified_at` touch is throttled to ~60s and the progress event to
+  ~1s: external workers report progress as sparse milestones, while
+  handlers may beat on every iteration. Both writes go through the
+  connection pool (`::db/pool` on the cfg), never the caller transaction,
+  so a beat survives a rollback of the surrounding work.
 
-  The `::force?` option bypasses the throttle: coarse external callers
-  (e.g. the management API) report sparse significant milestones where
-  every report counts, unlike hot in-runner loops where intermediate
-  beats are redundant."
-  ([cfg progress-map]
-   (let [job-id (or (get cfg ::job-id) *job-id*)]
-     (when (uuid? job-id)
-       (progress cfg job-id progress-map))))
-  ([cfg job-id progress-map] (progress cfg job-id progress-map nil))
-  ([cfg job-id progress-map {:keys [::force?]}]
-   (when (uuid? job-id)
-     (assert-connectable cfg)
-     (when (or force? (should-write? progresses job-id (ct/now) progress-interval))
-       (db/tx-run! (or (::db/pool cfg) cfg)
-                   (fn [{:keys [::db/conn]}]
-                     (let [now (ct/now)]
-                       (-> (db/exec-one! conn [sql:persist-progress (db/json progress-map) now job-id
-                                               (db/create-array conn "text" ["new" "scheduled" "running" "retry"])])
-                           (db/get-update-count)))))))))
+  A progress report never touches a terminal row (beating one would
+  silently extend its retention window). The payload itself is validated
+  before any write, on every route: a malformed report is a caller bug,
+  not a transient failure, so it always raises. Only the insert itself is
+  forgiving on the handler path, where it is logged and ignored; the
+  forced path used by the management API propagates it so the external
+  worker can retry."
+  [cfg & {:keys [job-id progress] :as options}]
+  (let [job-id  (or job-id (get cfg ::job-id) *job-id*)
+        ;; a malformed report is a caller bug: never swallow it
+        progress (some-> progress validate-progress)]
+    (when (uuid? job-id)
+      (assert-connectable cfg)
+      (let [connectable (or (::db/pool cfg) cfg)
+            now         (ct/now)
+            force?      (boolean (::force? options))
+            writes      (volatile! 0)]
+        (when (should-write? heartbeats job-id now heartbeat-interval)
+          (vswap! writes + (touch-job connectable job-id now)))
+        (when (and (some? progress)
+                   (or force?
+                       (should-write? progresses job-id now progress-interval)))
+          (let [store #(report-progress cfg job-id progress)]
+            (if force?
+              (vswap! writes + (store))
+              (try
+                (vswap! writes + (store))
+                (catch Throwable cause
+                  (l/err :hint "unable to persist job progress"
+                         :job-id (str job-id)
+                         :cause cause))))))
+        (int @writes)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MANAGEMENT API SUPPORT (external workers)
@@ -593,7 +766,7 @@
    [::params any?]
    [::timeout {:optional true} [:or ::sm/int ::ct/duration]]])
 
-(def check-request-options!
+(def check-request-options
   (sm/check-fn schema:request-options))
 
 (defn reply
@@ -623,7 +796,7 @@
   [cfg
    {:keys [::queue ::cmd ::params ::timeout] :as options}]
 
-  (check-request-options! options)
+  (check-request-options options)
 
   (let [context    (get-request-context cfg)
         pool       (::pool context)

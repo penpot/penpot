@@ -19,6 +19,7 @@
    [app.jobs :as jobs]
    [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as mtx]
+   [app.msgbus :as-alias mbus]
    [app.redis :as rds]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
@@ -72,7 +73,7 @@
                          (str error))}))
 
 (defn- get-job
-  "Fetch the job row (props kept as raw pgobject; decoded later with the
+  "Fetch the job row (params kept as raw pgobject; decoded later with the
   job-def decoder)."
   [cfg job-id]
   (ex/try!
@@ -102,11 +103,11 @@
                          queue
                          (- (inst-ms (ct/now)) (inst-ms (:scheduled-at job))))
               params    (try
-                          (->> (:props job)
+                          (->> (:params job)
                                (jobs/decode-params job-def)
                                (jobs/validate-params job-def))
                           (catch Throwable cause
-                            ;; Decode/validation of stored props is pure: any
+                            ;; Decode/validation of stored params is pure: any
                             ;; failure here is permanent (e.g. schema tightened
                             ;; after submit), never transient. Tag it so the
                             ;; generic catch below fails fast instead of
@@ -212,7 +213,7 @@
         (with-meta result
           {::job job})))))
 
-(defn- run-worker-loop!
+(defn- run-worker-loop
   [{:keys [::rds/conn ::timeout ::queue] :as cfg}]
   (letfn [(handle-job-retry [{:keys [error delay-ms inc-by] :or {inc-by 1 delay-ms 1000} :as result}]
             (let [job    (-> result meta ::job)
@@ -329,7 +330,7 @@
                  ::l/context (cf/logging-context)
                  :cause cause))))))
 
-(defn- start-thread!
+(defn- start-thread
   [{:keys [::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
     {:name (str "penpot/job-runner/" id)}
@@ -344,7 +345,7 @@
           (when (px/interrupted?)
             (throw (InterruptedException. "interrupted")))
 
-          (run-worker-loop! cfg)
+          (run-worker-loop cfg)
           (recur cfg))
 
         (catch InterruptedException _
@@ -371,7 +372,9 @@
    ::jobs/defs
    ::mtx/metrics
    ::db/pool
-   ::rds/client])
+   ::rds/client
+   ;; job events of a profile job are published on the profile topic
+   ::mbus/msgbus])
 
 (defmethod ig/assert-key ::wrk/runner
   [_ params]
@@ -390,7 +393,7 @@
       (doall
        (->> (range parallelism)
             (map #(assoc cfg ::id (str queue "/" %)))
-            (map start-thread!))))))
+            (map start-thread))))))
 
 (defmethod ig/halt-key! ::wrk/runner
   [_ threads]

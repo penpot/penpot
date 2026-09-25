@@ -93,7 +93,7 @@
         (t/is (nil? (:profile-id row)))
 
         ;; Props should be empty map after decoding
-        (let [props (db/decode-json-pgobject (:props row))]
+        (let [props (db/decode-json-pgobject (:params row))]
           (t/is (= {} props)))))))
 
 (t/deftest cron-submits-job-with-props-when-entry-declares-them
@@ -112,7 +112,7 @@
         (t/is (= "jobs-gc" (:name row)))
         (t/is (= "jobs-gc-with-props" (:label row)))
         ;; Props should be decoded to the original map
-        (let [props (db/decode-json-pgobject (:props row))]
+        (let [props (db/decode-json-pgobject (:params row))]
           (t/is (= {:min-age 3600000} props)))))))
 
 (t/deftest cron-tick-submits-only-when-no-active-instance

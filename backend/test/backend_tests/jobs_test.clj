@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
+   [app.msgbus :as mbus]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -38,7 +39,7 @@
   [cfg params]
   (when (::jobs/job-id cfg)
     (jobs/heartbeat cfg)
-    (jobs/progress cfg {:step "half"}))
+    (jobs/heartbeat cfg :progress {:current 1 :stage "half"}))
   params)
 
 (def schema:echo-params
@@ -79,9 +80,168 @@
    :id        (uuid/next)
    :file-id   (uuid/next)})
 
+(defn- get-progresss
+  "Progress events of a job, oldest first, with decoded payloads."
+  [job-id]
+  (->> (th/db-exec! ["SELECT payload FROM job_event
+                      WHERE job_id = ? AND kind = 'progress'
+                      ORDER BY created_at ASC, id ASC"
+                     job-id])
+       (mapv #(db/decode-json-pgobject (:payload %)))))
+
+(defn- fake-msgbus
+  "A minimal msgbus that records every publication on the atom."
+  [messages]
+  (reify mbus/IMsgBus
+    (-sub [_ _ _] nil)
+    (-pub [_ topic message]
+      (swap! messages conj {:topic topic :message message})
+      nil)
+    (-purge [_ _] nil)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest submit-persists-optional-profile-and-resource-references
+  (let [cfg          (make-cfg (get-job-defs))
+        profile-id   (:id (th/create-profile* 1))
+        resource-id  (uuid/next)]
+    ;; the resource reference points to a real storage object: the column
+    ;; is a foreign key kept for garbage collection
+    (th/db-insert! :storage-object {:id resource-id :backend "test"})
+    (let [internal-id  (jobs/submit cfg {::jobs/name   :echo
+                                         ::jobs/params (make-params)})
+          owned-id     (jobs/submit cfg {::jobs/name        :echo
+                                         ::jobs/params      (make-params)
+                                         ::jobs/profile-id  profile-id
+                                         ::jobs/resource-id resource-id})
+          internal-row (jobs/get-job cfg internal-id)
+          owned-row    (jobs/get-job cfg owned-id)]
+
+      (t/testing "profile_id stays nullable for internal jobs"
+        (t/is (nil? (:profile-id internal-row)))
+        (t/is (nil? (:resource-id internal-row))))
+
+      (t/testing "an explicit profile is persisted as the owner of the job"
+        (t/is (= profile-id (:profile-id owned-row))))
+
+      (t/testing "the resource reference is a column, not part of params"
+        (t/is (= resource-id (:resource-id owned-row)))
+        (t/is (not (contains? (:params owned-row) :resource-id)))))))
+
+(t/deftest submit-rejects-invalid-profile-and-resource-references
+  (let [cfg (make-cfg (get-job-defs))]
+    (t/testing "a non uuid profile-id is rejected before the insert"
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name       :echo
+                                       ::jobs/params     (make-params)
+                                       ::jobs/profile-id "not-a-uuid"}))))
+    (t/testing "a non uuid resource-id is rejected before the insert"
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name        :echo
+                                       ::jobs/params      (make-params)
+                                       ::jobs/resource-id "not-a-uuid"}))))
+    (t/testing "no job row was created by the rejected submits"
+      (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"])))))))
+
+(t/deftest progress-report-validates-its-payload
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+
+    (t/testing "current is mandatory"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id :progress {:total 10}))))
+
+    (t/testing "unknown keys are rejected"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:current 1 :step 1}))))
+
+    (t/testing "current must not be negative"
+      (t/is (thrown-with-msg? Exception #"negative"
+                              (jobs/heartbeat cfg :job-id job-id
+                                              :progress {:current -1}))))
+
+    (t/testing "total must be positive"
+      (t/is (thrown-with-msg? Exception #"positive"
+                              (jobs/heartbeat cfg :job-id job-id
+                                              :progress {:current 0 :total 0}))))
+
+    (t/testing "current must not be greater than total"
+      (t/is (thrown-with-msg? Exception #"not lower than current"
+                              (jobs/heartbeat cfg :job-id job-id
+                                              :progress {:current 5 :total 4}))))
+
+    (t/testing "stage is limited to 250 characters"
+      (t/is (thrown-with-msg? Exception #"250"
+                              (jobs/heartbeat cfg :job-id job-id
+                                              :progress {:current 1
+                                                         :stage (apply str (repeat 251 "x"))})))
+      (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
+                                 :progress {:current 1
+                                            :stage (apply str (repeat 250 "x"))})))
+      (t/is (= [{:current 1 :stage (apply str (repeat 250 "x"))}]
+               (get-progresss job-id))))
+
+    (t/testing "a rejected report never reaches the durable log"
+      (t/is (= 1 (count (get-progresss job-id)))))))
+
+(t/deftest progress-event-publishes-msgbus-for-profile-jobs
+  (let [cfg        (make-cfg (get-job-defs))
+        profile-id (:id (th/create-profile* 1))
+        messages   (atom [])
+        job-cfg    (assoc cfg ::mbus/msgbus (fake-msgbus messages))
+        job-id     (jobs/submit job-cfg {::jobs/name       :echo
+                                         ::jobs/params     (make-params)
+                                         ::jobs/profile-id profile-id})]
+    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
+                                :progress {:current 3 :total 7})))
+    (t/testing "the event is published on the topic of the job profile"
+      (t/is (= 1 (count @messages)))
+      (let [{:keys [topic message]} (first @messages)]
+        (t/is (= profile-id topic))
+        (t/is (= :job-event (:type message)))
+        (t/is (= job-id (:job-id message)))
+        (t/is (= profile-id (:profile-id message)))
+        (t/is (= "progress" (:kind message)))
+        (t/is (= {:current 3 :total 7} (:payload message)))
+        (t/is (some? (:event-id message)))
+        (t/is (some? (:created-at message)))))))
+
+(t/deftest progress-event-of-internal-job-is-not-published
+  (let [cfg      (make-cfg (get-job-defs))
+        messages (atom [])
+        job-cfg  (assoc cfg ::mbus/msgbus (fake-msgbus messages))
+        job-id   (jobs/submit job-cfg {::jobs/name   :echo
+                                       ::jobs/params (make-params)})]
+    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id :progress {:current 1})))
+    (t/testing "the event is stored but nothing is published"
+      (t/is (= 1 (count (get-progresss job-id))))
+      (t/is (= [] @messages)))))
+
+(t/deftest progress-event-of-profile-job-requires-msgbus
+  (let [cfg        (make-cfg (get-job-defs))
+        profile-id (:id (th/create-profile* 1))
+        job-id     (jobs/submit cfg {::jobs/name       :echo
+                                     ::jobs/params     (make-params)
+                                     ::jobs/profile-id profile-id})]
+    (t/testing "the forced route propagates the missing msgbus"
+      (t/is (thrown-with-msg? Exception #"require ::mbus/msgbus"
+                              (jobs/heartbeat cfg
+                                              :job-id job-id
+                                              :progress {:current 1}
+                                              ::jobs/force? true)))
+      (t/is (= [] (get-progresss job-id))
+            "the event must not be stored without its notification"))
+
+    (t/testing "the handler route logs the failure and keeps the job alive"
+      (th/db-update! :job {:modified-at (ct/in-past {:minutes 5})} {:id job-id})
+      (swap! jobs/heartbeats dissoc job-id)
+      (t/is (= 1 (jobs/heartbeat cfg :job-id job-id
+                                 :progress {:current 1})))
+      (t/is (= [] (get-progresss job-id))))))
 
 (t/deftest submit-validates-params-with-job-schema
   (let [cfg (make-cfg (get-job-defs))]
@@ -99,7 +259,7 @@
                               (jobs/submit cfg {::jobs/name   :unknown
                                                 ::jobs/params {}}))))))
 
-(t/deftest submit-persists-row-with-json-props
+(t/deftest submit-persists-row-with-json-params
   (let [cfg   (make-cfg (get-job-defs))
         params (make-params)
         job-id (jobs/submit cfg {::jobs/name   :echo
@@ -125,17 +285,23 @@
               (str "scheduled-at should be in the future: "
                    (pr-str (:scheduled-at row))))))
 
-    (t/testing "props are stored as plain JSON (no transit tags) and decoded"
-      (let [props (:props row)]
-        (t/is (map? props))
-        (t/is (nil? (some-> (th/db-exec-one! ["SELECT props::text FROM job WHERE id = ?"
+    (t/testing "the row exposes params and no legacy columns"
+      (t/is (some? (:params row)))
+      (t/is (not (contains? row :props)))
+      (t/is (not (contains? row :progress)))
+      (t/is (not (contains? row :target))))
+
+    (t/testing "params are stored as plain JSON (no transit tags) and decoded"
+      (let [params (:params row)]
+        (t/is (map? params))
+        (t/is (nil? (some-> (th/db-exec-one! ["SELECT params::text FROM job WHERE id = ?"
                                               job-id])
-                            :props
+                            :params
                             (str/index-of "~#"))))
 
         (t/testing "round-trip: decoded values have proper clojure types"
           (let [decoded (jobs/decode-params (jobs/get-job-def (get cfg ::jobs/defs) :echo)
-                                            (:props row))]
+                                            (:params row))]
             (t/is (keyword? (:object decoded)))
             (t/is (= :snapshot (:object decoded)))
             (t/is (uuid? (:id decoded)))
@@ -287,13 +453,13 @@
     (t/is (thrown-with-msg? Exception #"missing ::mtx/metrics"
                             (jobs/cancel (dissoc cfg ::mtx/metrics) job-id)))))
 
-(t/deftest submit-strips-rollback-testing-flag-from-props
+(t/deftest submit-strips-rollback-testing-flag-from-params
   (let [cfg    (make-cfg (get-job-defs))
         params (assoc (make-params) :rollback? true)
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params params})]
     (t/testing "durable rows never carry the in-process escape hatch"
-      (t/is (nil? (:rollback? (:props (jobs/get-job cfg job-id))))))))
+      (t/is (nil? (:rollback? (:params (jobs/get-job cfg job-id))))))))
 
 (t/deftest heartbeat-respects-throttle
   (let [cfg   (make-cfg (get-job-defs))
@@ -305,13 +471,13 @@
       ;; millisecond, which would make a strict > assertion flaky.
       (th/db-update! :job {:modified-at (ct/in-past {:seconds 5})}
                      {:id job-id})
-      (jobs/heartbeat cfg job-id)
+      (jobs/heartbeat cfg :job-id job-id)
       (let [row (jobs/get-job cfg job-id)]
         (t/is (> (inst-ms (:modified-at row)) (inst-ms (:created-at row))))))
 
     (t/testing "immediate second heartbeat does not write (throttled)"
       (let [row1 (jobs/get-job cfg job-id)
-            _    (jobs/heartbeat cfg job-id)
+            _    (jobs/heartbeat cfg :job-id job-id)
             row2 (jobs/get-job cfg job-id)]
         (t/is (= (inst-ms (:modified-at row1))
                  (inst-ms (:modified-at row2))))))))
@@ -326,41 +492,45 @@
                      {:id job-id})
       (swap! @#'jobs/heartbeats dissoc job-id)
       (let [before (jobs/get-job cfg job-id)]
-        (jobs/heartbeat cfg job-id)
+        (jobs/heartbeat cfg :job-id job-id)
         (t/is (= (inst-ms (:modified-at before))
                  (inst-ms (:modified-at (jobs/get-job cfg job-id)))))))))
 
-(t/deftest progress-respects-throttle-and-skips-terminal-states
+(t/deftest progress-events-respect-throttle-and-skip-terminal-states
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
 
-    (t/testing "first progress write persists the payload"
-      (jobs/progress cfg job-id {:step 1})
-      (let [row (jobs/get-job cfg job-id)]
-        (t/is (= {:step 1} (:progress row)))))
+    (t/testing "first progress report appends a progress event"
+      (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
+                                 :progress {:current 1 :total 10})))
+      (t/is (= [{:current 1 :total 10}] (get-progresss job-id))))
 
-    (t/testing "immediate second progress write is throttled"
-      (jobs/progress cfg job-id {:step 2})
-      (t/is (= {:step 1} (:progress (jobs/get-job cfg job-id))))
+    (t/testing "immediate second progress report is throttled"
+      (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
+                                 :progress {:current 2 :total 10})))
+      (t/is (= [{:current 1 :total 10}] (get-progresss job-id)))
 
-      (t/testing "after the throttle window elapses it writes again"
+      (t/testing "after the throttle window elapses it appends again"
         (swap! @#'jobs/progresses
                (fn [m]
                  (update-in m [job-id]
                             #(ct/minus %
-                                       (ct/duration {:millis 500})))))
-        (jobs/progress cfg job-id {:step 3})
-        (t/is (= {:step 3} (:progress (jobs/get-job cfg job-id)))))))
+                                       (ct/duration {:seconds 2})))))
+        (jobs/heartbeat cfg :job-id job-id :progress {:current 3 :total 10})
+        (t/is (= [{:current 1 :total 10}
+                  {:current 3 :total 10}]
+                 (get-progresss job-id))))))
 
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
-    (t/testing "terminal states are never updated by progress"
+    (t/testing "terminal states never get a progress event"
       (th/db-update! :job {:status "completed"} {:id job-id})
       (swap! @#'jobs/progresses dissoc job-id)
-      (jobs/progress cfg job-id {:step 9})
-      (t/is (nil? (:progress (jobs/get-job cfg job-id)))))))
+      (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
+                                 :progress {:current 9})))
+      (t/is (= [] (get-progresss job-id))))))
 
 (t/deftest throttle-prune-removes-stale-entries-keeps-fresh
   "When the throttle map exceeds prune-threshold, stale entries (older than
@@ -383,7 +553,7 @@
       ;; Trigger a heartbeat for a new job (should trigger prune)
       (let [job-id-3 (jobs/submit cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
-        (jobs/heartbeat cfg job-id-3)
+        (jobs/heartbeat cfg :job-id job-id-3)
 
         ;; After prune: stale entry (job-id-1) should be gone, fresh (job-id-2) should remain
         (let [state @jobs/heartbeats]
@@ -519,35 +689,28 @@
                    (inst-ms (:modified-at row-after)))
                 "modified-at should not change"))))
 
-    (t/testing "progress! is a no-op when *job-id* is nil"
-      (let [row-before (jobs/get-job cfg job-id)]
-        (binding [jobs/*job-id* nil]
-          (jobs/progress cfg {:step "should-not-write"}))
-        (let [row-after (jobs/get-job cfg job-id)]
-          (t/is (nil? (:progress row-after))
-                "progress should remain nil"))))))
+    (t/testing "progress reporting is a no-op when *job-id* is nil"
+      (binding [jobs/*job-id* nil]
+        (t/is (nil? (jobs/heartbeat cfg :progress {:current 1}))))
+      (t/is (= [] (get-progresss job-id))
+            "no progress event should be stored"))))
 
 (t/deftest progress-noop-on-terminal-states
-  "progress! should not update the job row when the job is in a terminal
-  state (failed, cancelled). The existing test covers 'completed'; this
-  test covers the other two terminal states."
-  (let [cfg    (make-cfg (get-job-defs))
-        job-id (jobs/submit cfg {::jobs/name   :echo
-                                 ::jobs/params (make-params)})]
-
-    (doseq [status ["failed" "cancelled"]]
-      (t/testing (str "progress! is no-op on " status " status")
-        ;; Mark job as terminal
-        (th/db-update! :job {:status status} {:id job-id})
-        ;; Reset throttle state so should-write? would allow the write
-        (swap! jobs/progresses dissoc job-id)
-        ;; Call progress — should be a no-op
-        (binding [jobs/*job-id* job-id]
-          (jobs/progress cfg {:step 1}))
-        ;; Verify progress was NOT updated
-        (let [row (jobs/get-job cfg job-id)]
-          (t/is (nil? (:progress row))
-                (str "progress should be nil on " status " status")))))))
+  "A progress report never stores an event when the job is already in a
+  terminal state (completed, failed, cancelled): the row is locked and
+  checked before the insert, so a report can never race a terminal
+  transition."
+  (let [cfg (make-cfg (get-job-defs))]
+    (doseq [status ["completed" "failed" "cancelled"]]
+      (t/testing (str "progress is a no-op on " status " status")
+        (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                       ::jobs/params (make-params)})]
+          (th/db-update! :job {:status status} {:id job-id})
+          ;; reset the throttle so should-write? would allow the write
+          (swap! jobs/progresses dissoc job-id)
+          (binding [jobs/*job-id* job-id]
+            (t/is (= 0 (jobs/heartbeat cfg :progress {:current 1}))))
+          (t/is (= [] (get-progresss job-id))))))))
 
 (t/deftest defs-halt-clears-module-registry
   (let [prev @@#'jobs/defs-registry]
@@ -570,7 +733,7 @@
     ;; still be visible (it went through the pool, not the tx)
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [{:keys [::db/conn]}]
-                  (jobs/heartbeat (assoc cfg ::db/conn conn) job-id)))
+                  (jobs/heartbeat (assoc cfg ::db/conn conn) :job-id job-id)))
     (let [row (jobs/get-job cfg job-id)]
       (t/is (> (inst-ms (:modified-at row))
                (inst-ms (ct/in-past {:minutes 5})))))))
@@ -581,6 +744,8 @@
                                  ::jobs/params (make-params)})]
     (db/tx-run! (assoc cfg ::db/rollback true)
                 (fn [{:keys [::db/conn]}]
-                  (jobs/progress (assoc cfg ::db/conn conn) job-id {:step 1})))
-    (t/is (= {:step 1} (:progress (jobs/get-job cfg job-id))))))
+                  (jobs/heartbeat (assoc cfg ::db/conn conn)
+                                  :job-id job-id
+                                  :progress {:current 1})))
+    (t/is (= [{:current 1}] (get-progresss job-id)))))
 

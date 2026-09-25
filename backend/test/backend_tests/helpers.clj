@@ -514,7 +514,7 @@
                   (doseq [row jobs-rows]
                     (jobs/invoke (-> *system*
                                      (assoc ::jobs/name (:name row))
-                                     (assoc ::jobs/params (:props row)))))))))
+                                     (assoc ::jobs/params (:params row)))))))))
 
 ;; --- UTILS
 

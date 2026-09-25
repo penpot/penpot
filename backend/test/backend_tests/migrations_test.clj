@@ -43,15 +43,67 @@
               [conname confdeltype]))
        set))
 
+(defn- deferrable-foreign-keys
+  "Names of the deferrable foreign keys of a table."
+  [table]
+  (->> (th/db-exec! ["SELECT conname FROM pg_constraint
+                      WHERE contype='f' AND condeferrable AND conrelid = ?::regclass" table])
+       (map :conname)
+       set))
+
 (t/deftest job-table-exists-with-expected-columns
   (t/is (= #{; dispatch/lifecycle columns
              "id" "name" "queue" "label" "priority" "scheduled_at"
              "retry_num" "max_retries" "status" "created_at" "modified_at"
-             "started_at" "completed_at" "props"
+             "started_at" "completed_at" "params"
              ; optional ledger columns
-             "profile_id" "target" "progress" "error" "result"
+             "profile_id" "error" "result"
              "resource_id" "expires_at"}
            (table-columns "job"))))
+
+(t/deftest job-table-has-no-target-nor-progress-columns
+  (t/testing "target and job.progress are gone: progress lives in job_event"
+    (t/is (empty? (filter #{"target" "progress"} (table-columns "job"))))))
+
+(t/deftest job-event-table-exists-with-expected-columns
+  (t/is (= #{"id" "job_id" "kind" "payload" "created_at"}
+           (table-columns "job_event"))))
+
+(t/deftest job-event-kind-check-rejects-unknown-kinds
+  (let [job-id (th/mk-uuid "job-event-check")]
+    (th/db-insert! :job {:id    job-id
+                         :name  "test"
+                         :queue "test:default"})
+    (try
+      (t/testing "the four lifecycle kinds are accepted"
+        (doseq [kind ["start" "progress" "retry" "end"]]
+          (t/is (some? (th/db-insert! :job-event {:job-id job-id
+                                                  :kind   kind})))))
+      (t/testing "any other kind is rejected"
+        (t/is (thrown? Exception
+                       (th/db-insert! :job-event {:job-id job-id
+                                                  :kind   "unknown"}))))
+      (finally
+        (th/db-delete! :job {:id job-id})))))
+
+(t/deftest job-event-index-serves-the-history-read
+  (let [indexdef (:indexdef (th/db-exec-one! ["SELECT indexdef FROM pg_indexes
+                                              WHERE schemaname = 'public'
+                                                AND tablename = 'job_event'
+                                                AND indexname = 'job_event__job_kind_created_idx'"]))]
+    (t/is (str/includes? indexdef "(job_id, kind, created_at DESC, id DESC)"))))
+
+(t/deftest job-event-cascades-on-job-deletion
+  (let [job-id (th/mk-uuid "job-event-cascade")]
+    (th/db-insert! :job {:id job-id :name "test" :queue "test:default"})
+    (th/db-insert! :job-event {:job-id job-id :kind "progress"})
+    (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event WHERE job_id = ?" job-id]))))
+    (th/db-delete! :job {:id job-id})
+    (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event WHERE job_id = ?" job-id]))))))
+
+(t/deftest job-event-foreign-key-is-deferrable
+  (t/testing "every new job reference is DEFERRABLE"
+    (t/is (contains? (deferrable-foreign-keys "job_event") "job_event_job_id_fkey"))))
 
 (t/deftest job-table-has-expected-indexes
   (t/is (contains? (table-indexes "job") "job__dispatcher__idx"))
@@ -77,9 +129,9 @@
     (t/is (contains? (table-indexes "job") "job__retention__idx"))))
 
 (t/deftest job-table-has-expected-foreign-keys
-  (t/testing "profile_id cascades on profile deletion"
+  (t/testing "profile_id keeps profile deletion explicit (no action)"
     (t/is (contains? (table-foreign-keys "job")
-                     ["job_profile_id_fkey" "c"])))
+                     ["job_profile_id_fkey" "a"])))
 
   (t/testing "resource_id is set to null when the storage object is deleted"
     (t/is (contains? (table-foreign-keys "job")
@@ -99,17 +151,17 @@
                          :name "test"
                          :queue "test:default"
                          :status status})
-    (let [{:keys [status priority retry-num max-retries props scheduled-at
+    (let [{:keys [status priority retry-num max-retries params scheduled-at
                   created-at modified-at]}
           (-> (th/db-get :job {:id (th/mk-uuid "job-status" status)} :status
-                         :priority :retry-num :max-retries :props :scheduled-at
+                         :priority :retry-num :max-retries :params :scheduled-at
                          :created-at :modified-at)
-              (update :props db/decode-json-pgobject))]
+              (update :params db/decode-json-pgobject))]
       (t/is (= status status))
       (t/is (= 100 priority))
       (t/is (= 0 retry-num))
       (t/is (= 3 max-retries))
-      (t/is (= {} props))
+      (t/is (= {} params))
       (t/is (some? scheduled-at))
       (t/is (some? created-at))
       (t/is (some? modified-at))

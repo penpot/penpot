@@ -70,7 +70,7 @@
     (th/db-insert! :job {:id            id
                          :name          name
                          :queue         queue
-                         :props         (db/json {})
+                         :params        (db/json {})
                          :priority      100
                          :max-retries   3
                          :retry-num     0

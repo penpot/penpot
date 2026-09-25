@@ -96,111 +96,111 @@
   (let [stage (str/lower (or (some-> stage d/name) "execution"))]
     (if (contains? known-stages stage) stage "execution")))
 
-(defn- record! [metrics id labels value]
+(defn- record-value [metrics id labels value]
   (mtx/run! metrics :id id :labels labels :val value))
 
-(defn- record-count! [metrics id labels amount]
+(defn- record-count [metrics id labels amount]
   (mtx/run! metrics :id id :labels labels :inc amount))
 
 (defn record-submitted
   [metrics name queue]
-  (record-count! metrics :jobs-submitted
-                 [(name-label name) (queue-label queue)]
-                 1))
+  (record-count metrics :jobs-submitted
+                [(name-label name) (queue-label queue)]
+                1))
 
 (defn record-dispatched
   [metrics name queue amount]
-  (record-count! metrics :jobs-dispatched
-                 [(name-label name) (queue-label queue)]
-                 amount))
+  (record-count metrics :jobs-dispatched
+                [(name-label name) (queue-label queue)]
+                amount))
 
 (defn record-outcome
   [metrics name queue outcome]
-  (record-count! metrics :jobs-completed
-                 [(name-label name) (queue-label queue)
-                  (outcome-label outcome)]
-                 1))
+  (record-count metrics :jobs-completed
+                [(name-label name) (queue-label queue)
+                 (outcome-label outcome)]
+                1))
 
 (defn record-retry
   [metrics name queue reason]
-  (record-count! metrics :jobs-retries
-                 [(name-label name) (queue-label queue)
-                  (retry-reason-label reason)]
-                 1))
+  (record-count metrics :jobs-retries
+                [(name-label name) (queue-label queue)
+                 (retry-reason-label reason)]
+                1))
 
 (defn record-orphan
   [metrics queue]
-  (record-count! metrics :jobs-orphaned
-                 [(queue-label queue)]
-                 1))
+  (record-count metrics :jobs-orphaned
+                [(queue-label queue)]
+                1))
 
 (defn record-rescheduled
   [metrics queue]
-  (record-count! metrics :jobs-rescheduled
-                 [(queue-label queue)]
-                 1))
+  (record-count metrics :jobs-rescheduled
+                [(queue-label queue)]
+                1))
 
 (defn record-queue-wait
   [metrics name queue millis]
-  (record! metrics :jobs-queue-wait-timing
-           [(name-label name) (queue-label queue)]
-           (max 0 (long millis))))
+  (record-value metrics :jobs-queue-wait-timing
+                [(name-label name) (queue-label queue)]
+                (max 0 (long millis))))
 
 (defn record-execution
   [metrics name queue millis]
-  (record! metrics :jobs-execution-timing
-           [(name-label name) (queue-label queue)]
-           (max 0 (long millis))))
+  (record-value metrics :jobs-execution-timing
+                [(name-label name) (queue-label queue)]
+                (max 0 (long millis))))
 
 (defn record-total
   [metrics name queue outcome millis]
-  (record! metrics :jobs-total-timing
-           [(name-label name) (queue-label queue)
-            (outcome-label outcome)]
-           (max 0 (long millis))))
+  (record-value metrics :jobs-total-timing
+                [(name-label name) (queue-label queue)
+                 (outcome-label outcome)]
+                (max 0 (long millis))))
 
 (defn record-dispatcher-batch
   [metrics stage outcome millis]
-  (record! metrics :jobs-dispatcher-timing
-           [(stage-label stage) (outcome-label outcome)]
-           (max 0 (long millis))))
+  (record-value metrics :jobs-dispatcher-timing
+                [(stage-label stage) (outcome-label outcome)]
+                (max 0 (long millis))))
 
 (defn record-dispatcher-size
   [metrics queue size]
-  (record! metrics :jobs-dispatcher-batch-size
-           [(queue-label queue)]
-           size))
+  (record-value metrics :jobs-dispatcher-batch-size
+                [(queue-label queue)]
+                size))
 
 (defn record-gc-rows
   [metrics kind action amount]
   (let [kind   (gc-kind-label kind)
         action (str/lower (or (some-> action d/name) "deleted"))]
     (when (contains? known-gc-actions action)
-      (record-count! metrics :jobs-gc-rows [kind action] amount))))
+      (record-count metrics :jobs-gc-rows [kind action] amount))))
 
 (defn record-gc-duration
   [metrics kind millis]
-  (record! metrics :jobs-gc-timing
-           [(gc-kind-label kind)]
-           (max 0 (long millis))))
+  (record-value metrics :jobs-gc-timing
+                [(gc-kind-label kind)]
+                (max 0 (long millis))))
 
 (defn record-cron
   [metrics outcome reason]
   (let [outcome (str/lower (or (some-> outcome d/name) "error"))
         reason  (str/lower (or (some-> reason d/name) "none"))]
     (when (contains? known-cron-outcomes outcome)
-      (record-count! metrics :jobs-cron-total
-                     [outcome
-                      (if (contains? known-cron-reasons reason) reason "failure")]
-                     1))))
+      (record-count metrics :jobs-cron-total
+                    [outcome
+                     (if (contains? known-cron-reasons reason) reason "failure")]
+                    1))))
 
 (defn record-request
   [metrics outcome millis]
   (let [outcome (str/lower (or (some-> outcome d/name) "error"))]
     (when (contains? known-request-outcomes outcome)
-      (record-count! metrics :jobs-requests-total [outcome] 1)
-      (record! metrics :jobs-request-timing [outcome]
-               (max 0 (long millis))))))
+      (record-count metrics :jobs-requests-total [outcome] 1)
+      (record-value metrics :jobs-request-timing [outcome]
+                    (max 0 (long millis))))))
 
 (def ^:private backlog-statuses
   ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled"])
@@ -215,7 +215,7 @@
      FROM job
     WHERE status IN ('new', 'scheduled', 'retry')")
 
-(defn sample-backlog!
+(defn sample-backlog
   "Update the current job backlog gauges. The query is intentionally small
   and runs periodically rather than from the worker hot path."
   [{:keys [::db/pool ::mtx/metrics] :as cfg}]
@@ -226,13 +226,13 @@
                   (max 0)
                   (double))]
     (doseq [status backlog-statuses]
-      (record! metrics :jobs-backlog [status] (get by-id status 0)))
-    (record! metrics :jobs-oldest-pending-age [] age)
+      (record-value metrics :jobs-backlog [status] (get by-id status 0)))
+    (record-value metrics :jobs-oldest-pending-age [] age)
     age))
 
-(defn- sample-jobs-metrics! [cfg]
+(defn- sample-jobs-metrics [cfg]
   (try
-    (sample-backlog! cfg)
+    (sample-backlog cfg)
     (catch Throwable cause
       (l/warn :hint "unable to sample jobs metrics" :cause cause))))
 
@@ -247,7 +247,7 @@
                                                :daemon true))
         sample    (fn sample []
                     (try
-                      (sample-jobs-metrics! cfg)
+                      (sample-jobs-metrics cfg)
                       (finally
                         (px/schedule scheduler sample-interval-ms sample))))]
     (px/schedule scheduler 0 sample)

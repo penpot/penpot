@@ -164,7 +164,7 @@
     (th/db-insert! :job {:id           (uuid/next)
                          :name         "echo"
                          :queue        "tenant:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -172,7 +172,7 @@
                          :scheduled-at now
                          :created-at   (ct/in-past {:minutes 2})
                          :modified-at  now})
-    (jobs-metrics/sample-backlog! cfg)
+    (jobs-metrics/sample-backlog cfg)
     (t/is (= 1.0 (gauge-value metrics :jobs-backlog ["new"])))
     (t/is (= 0.0 (gauge-value metrics :jobs-backlog ["completed"])))
     (t/is (>= (gauge-value metrics :jobs-oldest-pending-age []) 120.0))))

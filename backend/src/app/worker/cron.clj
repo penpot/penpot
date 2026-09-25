@@ -48,7 +48,7 @@
       AND label = ?
       AND status IN ('new','scheduled','running','retry')")
 
-(defn- synchronize-cron-entries!
+(defn- synchronize-cron-entries
   [{:keys [::db/conn ::entries]}]
   (doseq [{:keys [id cron]} entries]
     (let [result   (db/exec-one! conn [sql:upsert-cron-task id (str cron)])
@@ -56,7 +56,7 @@
       (l/dbg :hint "register task" :id id :cron (str cron)
              :status (if updated? "created" "exists")))))
 
-(defn- lock-scheduled-task!
+(defn- lock-scheduled-task
   [conn id]
   (let [sql (str "SELECT id FROM scheduled_task "
                  " WHERE id=? FOR UPDATE SKIP LOCKED")]
@@ -87,7 +87,7 @@
         (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                           (db/exec-one! conn ["SET LOCAL statement_timeout=0;"])
                           (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout=0;"])
-                          (when (lock-scheduled-task! conn id)
+                          (when (lock-scheduled-task conn id)
                             (db/update! conn :scheduled-task
                                         {:cron-expr (str cron)
                                          :modified-at (ct/now)}
@@ -203,7 +203,7 @@
       (l/inf :hint "started" :tasks (count entries))
 
       (let [cfg (assoc cfg ::entries entries ::running running)]
-        (db/tx-run! cfg synchronize-cron-entries!)
+        (db/tx-run! cfg synchronize-cron-entries)
 
         (->> (filter some? entries)
              (run! (partial schedule-cron-task cfg))))

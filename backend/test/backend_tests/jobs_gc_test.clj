@@ -58,7 +58,7 @@
     (th/db-insert! :job {:id           id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -78,7 +78,7 @@
     (th/db-insert! :job {:id           (uuid/next)
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -98,7 +98,7 @@
     (th/db-insert! :job {:id           expired-id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -111,7 +111,7 @@
     (th/db-insert! :job {:id           live-id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -136,7 +136,7 @@
     (th/db-insert! :job {:id           expired-id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -164,7 +164,7 @@
         job-id (jobs/submit cfg {::jobs/name   :jobs-gc
                                  ::jobs/params {:min-age (ct/duration {:hours 1})}})]
     (t/testing "a Duration object does not reach JSON encoding"
-      (t/is (= 3600000 (:min-age (:props (jobs/get-job cfg job-id))))))))
+      (t/is (= 3600000 (:min-age (:params (jobs/get-job cfg job-id))))))))
 
 (t/deftest gc-retention-deletes-old-internal-terminal-rows
   (let [profile (th/create-profile* 1 {})
@@ -173,7 +173,7 @@
     (th/db-insert! :job {:id           old-id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -186,7 +186,7 @@
       (th/db-insert! :job {:id           recent-id
                            :name         "test-job"
                            :queue        "test:default"
-                           :props        (db/json {})
+                           :params       (db/json {})
                            :priority     100
                            :max-retries  3
                            :retry-num    0
@@ -199,7 +199,7 @@
         (th/db-insert! :job {:id           running-id
                              :name         "test-job"
                              :queue        "test:default"
-                             :props        (db/json {})
+                             :params       (db/json {})
                              :priority     100
                              :max-retries  3
                              :retry-num    0
@@ -213,7 +213,7 @@
           (th/db-insert! :job {:id           user-id
                                :name         "test-job"
                                :queue        "test:default"
-                               :props        (db/json {})
+                               :params       (db/json {})
                                :priority     100
                                :max-retries  3
                                :retry-num    0
@@ -236,7 +236,7 @@
     (th/db-insert! :job {:id           job-id
                          :name         "test-job"
                          :queue        "test:default"
-                         :props        (db/json {})
+                         :params       (db/json {})
                          :priority     100
                          :max-retries  3
                          :retry-num    0
@@ -301,7 +301,7 @@
       (th/db-insert! :job {:id           id
                            :name         "test-job"
                            :queue        "test:default"
-                           :props        (db/json {})
+                           :params       (db/json {})
                            :priority     100
                            :max-retries  3
                            :retry-num    0
