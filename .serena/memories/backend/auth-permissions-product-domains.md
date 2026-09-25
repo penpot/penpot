@@ -12,7 +12,7 @@
 - Lockout and RPC rate limits share the `app.http.errors/handle-error :rate-limit` HTTP path: status 429, body `{:type :rate-limit :code ... :hint ... :ttl ...}`, and any supplied `::http/headers` preserved. Account lockout raises `:code :account-locked` and, when it carries a non-nil `:ttl` (seconds), the handler adds `retry-after`. The RPC limiter (`app.rpc.rlimit`) raises `:code :request-blocked` and sets `retry-after` itself in `::http/headers` (seconds until the longest rejecting limit resets), alongside `x-rate-limit-remaining`/`x-rate-limit-reset`. CORS (`app.http.middleware/with-cors-headers`) exposes `content-type`, `retry-after`, and both `x-rate-limit-*` headers. External flags: `enable-account-lockout`, `enable-rpc-rlimit`.
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
-- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.
+- HTTP/session parsing details such as cookie/header precedence and SameSite behavior are in `mem:backend/subtleties`.
 
 ## Permission model
 
