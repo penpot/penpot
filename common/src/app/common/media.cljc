@@ -107,7 +107,7 @@
   "Derive font metadata from a font filename using the historical
   WOFF2 filename fallback semantics.
 
-  Returns a map with :base-name, :font-family, :font-weight and
+  Returns a map with :font-family, :font-weight and
   :font-style. Weight and style are parsed from the extension
   stripped base-name with the standard parse-font-weight and
   parse-font-style rules; no new filename rules are added here."
@@ -120,10 +120,9 @@
                             (str/replace #"[-_\s]+" " ")
                             (str/trim))
         family-name     (if (str/blank? raw-family-name) base-name raw-family-name)]
-    {:base-name   base-name
-     :font-family family-name
-    :font-weight (parse-font-weight base-name)
-    :font-style  (parse-font-style base-name)}))
+    {:font-family family-name
+     :font-weight (parse-font-weight base-name)
+     :font-style  (parse-font-style base-name)}))
 
 (defn pick-font-variant
   "Return the first nonblank string from the given subfamily candidates,
