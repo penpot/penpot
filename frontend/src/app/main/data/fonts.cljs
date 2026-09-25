@@ -129,8 +129,11 @@
               ;; Font was parsed with opentype.js (ttf, otf, woff)
               (let [family          (or (.getEnglishName ^js font "preferredFamily")
                                         (.getEnglishName ^js font "fontFamily"))
-                    variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                                        (.getEnglishName ^js font "fontSubfamily"))
+                    ;; Select the first nonblank subfamily: a blank first
+                    ;; candidate must not shadow a valid second one.
+                    variant         (cm/pick-font-variant
+                                     (.getEnglishName ^js font "preferredSubfamily")
+                                     (.getEnglishName ^js font "fontSubfamily"))
                     ;; A successfully parsed binary does not guarantee usable
                     ;; subfamily metadata; missing/blank variants resolve
                     ;; through the filename fallback (same decision covered

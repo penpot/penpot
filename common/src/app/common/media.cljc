@@ -125,6 +125,13 @@
     :font-weight (parse-font-weight base-name)
     :font-style  (parse-font-style base-name)}))
 
+(defn pick-font-variant
+  "Return the first nonblank string from the given subfamily candidates,
+  or nil when none is usable. opentype.js may return blank strings that
+  plain `or` would wrongly select over a valid later candidate."
+  [& candidates]
+  (first (filter #(and (string? %) (not (str/blank? %))) candidates)))
+
 (defn resolve-parsed-font-metadata
   "Resolve upload metadata for a font successfully parsed by opentype.js.
   This is the decision used by the parsed-font upload path.

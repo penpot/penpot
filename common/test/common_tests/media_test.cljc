@@ -173,3 +173,23 @@
       (t/is (= 500 (:font-weight m)))
       (t/is (= "normal" (:font-style m)))
       (t/is (not (contains? m :variant-name))))))
+
+(t/deftest test-pick-font-variant
+  ;; The parsed-upload path selects the variant through this helper, so a
+  ;; blank preferredSubfamily must not shadow a valid fontSubfamily.
+  (t/testing "first nonblank candidate wins"
+    (t/is (= "Bold" (media/pick-font-variant "  " "Bold")))
+    (t/is (= "Bold" (media/pick-font-variant "Bold" "Light")))
+    (t/is (= "Bold" (media/pick-font-variant nil "Bold")))
+    (t/is (nil? (media/pick-font-variant nil "  ")))
+    (t/is (nil? (media/pick-font-variant nil nil))))
+
+  (t/testing "blank first candidate keeps valid second variant over conflicting filename"
+    (let [m (media/resolve-parsed-font-metadata
+             "Roboto"
+             (media/pick-font-variant "  " "Bold")
+             "Roboto-Light.ttf")]
+      (t/is (= "Roboto" (:font-family m)))
+      (t/is (= 700 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (= "Bold" (:variant-name m))))))
