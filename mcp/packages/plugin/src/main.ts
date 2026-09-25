@@ -1,5 +1,6 @@
 import "./style.css";
 import { shouldReconnectAfterClose } from "./ReconnectPolicy";
+import type { PluginConnectionInit } from "../../common/src";
 
 /**
  * the maximum allowed size for task responses sent back to the MCP server in the integrated remote MCP mode.
@@ -17,6 +18,8 @@ document.body.dataset.theme = searchParams.get("theme") ?? "light";
 
 // WebSocket connection to the MCP server
 let ws: WebSocket | null = null;
+let connectionSessionId: string | null = null;
+let connectionReady = false;
 
 const HEARTBEAT_INTERVAL_MS = 10_000;
 const RECONNECT_BASE_DELAY_MS = 1_000;
@@ -138,7 +141,7 @@ function sendTaskResponse(response: any): void {
  * page JavaScript is frozen and unable to run MCP tasks.
  */
 function sendHeartbeat(): boolean {
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (connectionReady && ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "heartbeat" }));
         return true;
     }
@@ -201,7 +204,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
     lastConnectionToken = token;
 
     if (ws?.readyState === WebSocket.OPEN) {
-        updateConnectionStatus("connected", "Connected");
+        if (connectionReady) updateConnectionStatus("connected", "Connected");
         return;
     }
     if (ws?.readyState === WebSocket.CONNECTING) {
@@ -217,23 +220,29 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         }
 
         ws = new WebSocket(wsUrl);
+        const socket = ws;
+        connectionSessionId = crypto.randomUUID();
+        connectionReady = false;
         updateConnectionStatus("connecting", "Connecting...");
 
         ws.onopen = () => {
-            cancelReconnect();
-            startHeartbeat();
-            setTimeout(() => {
-                if (ws) {
-                    console.log("Connected to MCP server");
-                    updateConnectionStatus("connected", "Connected");
-                }
-            }, 100);
+            if (ws !== socket) return;
+            parent.postMessage({ type: "connection-metadata-request", sessionId: connectionSessionId }, "*");
         };
 
         ws.onmessage = (event) => {
+            if (ws !== socket) return;
             try {
                 console.log("Received from MCP server:", event.data);
                 const request = JSON.parse(event.data);
+                if (request.type === "initialized") {
+                    if (ws !== socket) return;
+                    connectionReady = true;
+                    cancelReconnect();
+                    startHeartbeat();
+                    updateConnectionStatus("connected", "Connected");
+                    return;
+                }
                 // Track the current task received from the MCP server
                 if (request.task) {
                     updateCurrentTask(request.task);
@@ -247,6 +256,7 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         };
 
         ws.onclose = (event: CloseEvent) => {
+            if (ws !== socket) return;
             stopHeartbeat();
             // keep the explicit error state if one was already shown
             if (!wsError) {
@@ -256,11 +266,10 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 updateCurrentTask(null);
             }
             ws = null;
+            connectionSessionId = null;
+            connectionReady = false;
             if (!shouldReconnectAfterClose(event.code)) {
-                // Policy violation (e.g. duplicate connection for the same user
-                // token - another tab already holds the connection). Retrying
-                // would be refused again immediately, so stay disconnected
-                // until the user explicitly reconnects.
+                // a policy violation requires the user to correct the connection settings
                 shouldReconnect = false;
                 cancelReconnect();
                 return;
@@ -310,6 +319,13 @@ disconnectBtn?.addEventListener("click", () => {
 
 // Listen plugin.ts messages
 window.addEventListener("message", (event) => {
+    if (event.data.type === "initialize") {
+        const initialization = event.data as PluginConnectionInit;
+        if (ws?.readyState === WebSocket.OPEN && initialization.session.sessionId === connectionSessionId) {
+            ws.send(JSON.stringify(initialization));
+        }
+        return;
+    }
     if (event.data.type === "mcp-mode") {
         isIntegratedRemoteMcp = event.data.integratedRemoteMcp;
     }
@@ -354,7 +370,7 @@ function handleTabResumed(): void {
 
 // Chrome: about to pause page JavaScript.
 document.addEventListener("freeze", () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (connectionReady && ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "freeze" }));
     }
 });
