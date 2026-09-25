@@ -337,3 +337,38 @@ test("User can see an error on token pill and token modal form when token has an
   });
   await expect(submitButton).toBeEnabled();
 });
+
+test("User sees a formatted tooltip when hovering a token pill", async ({
+  page,
+}) => {
+  const { tokensSidebar } = await setupTokensFileRender(page);
+
+  await unfoldTokenType(tokensSidebar, "color");
+
+  const colorToken = tokensSidebar.getByRole("button", {
+    name: "colors.blue.100",
+  });
+  await expect(colorToken).toBeVisible();
+
+  // No tooltip should be rendered before hovering the pill
+  await expect(page.getByRole("tooltip")).not.toBeVisible();
+
+  await colorToken.hover();
+
+  const tooltip = page.getByRole("tooltip");
+  await expect(tooltip).toBeVisible();
+
+  // The token name is shown next to a "Name:" label, and is bold
+  await expect(tooltip).toContainText("Name:");
+  const tokenNameEl = tooltip.getByText("colors.blue.100", { exact: true });
+  await expect(tokenNameEl).toBeVisible();
+  await expect(tokenNameEl).toHaveCSS("font-weight", "700");
+
+  // The original and resolved values are shown on their own lines
+  await expect(tooltip).toContainText("Original value:");
+  await expect(tooltip).toContainText("Resolved value:");
+
+  // Moving away hides the tooltip again
+  await page.mouse.move(0, 0);
+  await expect(page.getByRole("tooltip")).not.toBeVisible();
+});

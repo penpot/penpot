@@ -95,6 +95,9 @@
         can-edit-tokens?
         (mf/use-ctx ctx/can-edit-tokens?)
 
+        can-edit-file?
+        (mf/use-ctx ctx/can-edit?)
+
         is-selected-inside-layout (d/nilv is-selected-inside-layout false)
 
         tokens
@@ -195,4 +198,6 @@
                         :tokens-lib tokens-lib
                         :on-token-pill-click on-token-pill-click
                         :on-pill-context-menu on-pill-context-menu
-                        :on-node-context-menu on-node-context-menu}])]))
+                        :on-node-context-menu on-node-context-menu
+                        :can-edit can-edit-file?
+                        :can-edit-tokens can-edit-tokens?}])]))
