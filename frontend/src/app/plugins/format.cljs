@@ -202,7 +202,6 @@
 ;;   strokeOpacity?: number;
 ;;   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
 ;;   strokeWidth?: number;
-;;   strokePerSide?: boolean;
 ;;   strokeWidthTop?: number;
 ;;   strokeWidthRight?: number;
 ;;   strokeWidthBottom?: number;
@@ -217,7 +216,7 @@
   [{:keys [stroke-color stroke-color-ref-file stroke-color-ref-id
            stroke-opacity stroke-style stroke-width stroke-alignment
            stroke-cap-start stroke-cap-end stroke-color-gradient
-           stroke-image stroke-per-side stroke-width-top
+           stroke-image stroke-width-top
            stroke-width-right stroke-width-bottom stroke-width-left]
     :as stroke}]
 
@@ -229,7 +228,6 @@
           :strokeOpacity stroke-opacity
           :strokeStyle (format-key stroke-style)
           :strokeWidth stroke-width
-          :strokePerSide stroke-per-side
           :strokeWidthTop stroke-width-top
           :strokeWidthRight stroke-width-right
           :strokeWidthBottom stroke-width-bottom

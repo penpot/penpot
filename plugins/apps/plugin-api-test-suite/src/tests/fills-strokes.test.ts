@@ -309,7 +309,6 @@ describe('Fills & strokes', () => {
         {
           strokeColor: '#000000',
           strokeWidth: 1,
-          strokePerSide: true,
           strokeWidthTop: 2,
           strokeWidthRight: 3,
           strokeWidthBottom: 4,
@@ -319,25 +318,19 @@ describe('Fills & strokes', () => {
 
       expect(r.strokes).toHaveLength(1);
       const stroke = r.strokes[0];
-      expect(stroke.strokePerSide).toBe(true);
       expect(stroke.strokeWidthTop).toBe(2);
       expect(stroke.strokeWidthRight).toBe(3);
       expect(stroke.strokeWidthBottom).toBe(4);
       expect(stroke.strokeWidthLeft).toBe(5);
     });
 
-    test('per-side mode and widths survive unrelated stroke mutation', (ctx) => {
-      // Primary regression for penpot/penpot#11804: reading a stroke in
-      // per-side mode and committing an unrelated change must preserve
-      // both the mode flag and the side values at the Plugin API
-      // boundary. The mode is explicit state: it stays active even when
-      // all four sides hold the same value (penpot/penpot#9854).
+    test('per-side widths survive unrelated stroke mutation', (ctx) => {
+      // Side widths must survive a Plugin API stroke commit.
       const r = rect(ctx);
       r.strokes = [
         {
           strokeColor: '#000000',
           strokeWidth: 1,
-          strokePerSide: true,
           strokeWidthTop: 4,
           strokeWidthRight: 4,
           strokeWidthBottom: 4,
@@ -350,7 +343,6 @@ describe('Fills & strokes', () => {
 
       const reread = r.strokes[0];
       expect(reread.strokeColor).toBe('#ff0000');
-      expect(reread.strokePerSide).toBe(true);
       expect(reread.strokeWidthTop).toBe(4);
       expect(reread.strokeWidthRight).toBe(4);
       expect(reread.strokeWidthBottom).toBe(4);
@@ -362,14 +354,12 @@ describe('Fills & strokes', () => {
       r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
 
       const stroke = r.strokes[0];
-      stroke.strokePerSide = true;
       stroke.strokeWidthTop = 6;
       stroke.strokeWidthRight = 7;
       stroke.strokeWidthBottom = 8;
       stroke.strokeWidthLeft = 9;
 
       const reread = r.strokes[0];
-      expect(reread.strokePerSide).toBe(true);
       expect(reread.strokeWidthTop).toBe(6);
       expect(reread.strokeWidthRight).toBe(7);
       expect(reread.strokeWidthBottom).toBe(8);
@@ -382,7 +372,6 @@ describe('Fills & strokes', () => {
 
       const stroke = r.strokes[0];
       expect(stroke.strokeWidth).toBeCloseTo(4, 0);
-      expect(stroke.strokePerSide).toBeUndefined();
       expect(stroke.strokeWidthTop).toBeUndefined();
       expect(stroke.strokeWidthRight).toBeUndefined();
       expect(stroke.strokeWidthBottom).toBeUndefined();

@@ -210,7 +210,6 @@
 ;;   strokeOpacity?: number;
 ;;   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
 ;;   strokeWidth?: number;
-;;   strokePerSide?: boolean;
 ;;   strokeWidthTop?: number;
 ;;   strokeWidthRight?: number;
 ;;   strokeWidthBottom?: number;
@@ -231,7 +230,6 @@
       :stroke-opacity (obj/get stroke "strokeOpacity")
       :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
       :stroke-width (obj/get stroke "strokeWidth")
-      :stroke-per-side (obj/get stroke "strokePerSide")
       :stroke-width-top (obj/get stroke "strokeWidthTop")
       :stroke-width-right (obj/get stroke "strokeWidthRight")
       :stroke-width-bottom (obj/get stroke "strokeWidthBottom")
