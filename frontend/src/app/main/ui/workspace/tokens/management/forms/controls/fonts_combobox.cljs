@@ -78,7 +78,7 @@
             (fn [resolved-tokens]
               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))
                     resolved-value (if (contains? cf/flags :tokenscript)
-                                     (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                     (ts/resolved-value->penpot-unit (:type token) resolved-value)
                                      resolved-value)]
                 (if resolved-value
                   (rx/of {:value resolved-value})

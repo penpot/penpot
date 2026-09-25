@@ -701,7 +701,7 @@
 
                             resolved-value (get-in resolved-tokens [(:name token) :resolved-value])
                             resolved-value (if (contains? cf/flags :tokenscript)
-                                             (ts/tokenscript-symbols->penpot-unit resolved-value)
+                                             (ts/resolved-value->penpot-unit (:type token) resolved-value)
                                              resolved-value)
                             tokenized-attributes (cfo/attributes-map attributes token)
                             type (:type token)]

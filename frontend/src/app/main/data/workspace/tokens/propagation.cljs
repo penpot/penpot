@@ -194,7 +194,8 @@
           (when-let [tokens-tree (cfo/get-tokens-in-active-sets tokens-status tokens-lib)]
             (->> (if (contains? cf/flags :tokenscript)
                    (rx/of (-> (ts/resolve-tokens tokens-tree)
-                              (d/update-vals #(update % :resolved-value ts/tokenscript-symbols->penpot-unit))))
+                              (d/update-vals #(update % :resolved-value
+                                                      (partial ts/resolved-value->penpot-unit (:type %))))))
                    (sd/resolve-tokens tokens-tree))
                  (rx/mapcat
                   (fn [sd-tokens]

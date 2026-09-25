@@ -385,6 +385,31 @@ describe('Tokens', () => {
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
+    // The target is a text shape because the attribute set of a board excludes
+    // the font-family property, so the application is filtered out there and
+    // the assertions pass vacuously.
+    // The family comes from the bundled Google fonts catalog, available in every
+    // run. `Red` in its name reads as a color if the resolver parses the words.
+    test('applyToken binds a fontFamilies token to a text shape', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const font = ctx.penpot.fonts.findByName('Red Hat Display');
+      if (!font) throw new Error('Red Hat Display font not found');
+      const token = set.addToken({
+        type: 'fontFamilies',
+        name: unique('fontFamilies.'),
+        value: [font.fontFamily],
+      });
+
+      const t = ctx.penpot.createText('Hello Penpot');
+      if (!t) throw new Error('createText returned null');
+      ctx.board.appendChild(t);
+
+      t.applyToken(token, ['fontFamilies']);
+      await waitFor(() => t.fontFamily === font.fontFamily);
+      expect(Object.keys(t.tokens)).toContain('fontFamilies');
+      expect(t.fontFamily).toBe(font.fontFamily);
+    });
+
     test('duplicate and remove a token', (ctx) => {
       const set = activeSet(ctx, unique('set'));
       const token = set.addToken({
@@ -599,6 +624,39 @@ describe('Token types', () => {
     const resolved = token.resolvedValue;
     expect(Array.isArray(resolved)).toBe(true);
     expect(resolved as unknown as string[]).toContain('Arial');
+  });
+
+  // The resolver parses a family whose name has several words as a list of
+  // word symbols, so each family name must survive as a single entry. A
+  // single-word family takes the simpler path the test above covers.
+  test('fontFamilies token resolvedValue keeps multi-word families whole', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: ['Hanken Grotesk'],
+    });
+    // The stored value keeps the family whole, isolating resolution below.
+    expect(token.value).toEqual(['Hanken Grotesk']);
+
+    const resolved = token.resolvedValue as unknown as string[];
+    expect(Array.isArray(resolved)).toBe(true);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]).toBe('Hanken Grotesk');
+  });
+
+  // Words like `Red` or `Black` read as colors and `2P` as a number and a word
+  // when the resolver parses the family name.
+  test('fontFamilies token resolvedValue keeps names with expression words', (ctx) => {
+    const set = activeSet(ctx, unique('set'));
+    const families = ['Red Hat Display', 'Archivo Black', 'Press Start 2P'];
+    const token = set.addToken({
+      type: 'fontFamilies',
+      name: unique('fontFamilies.'),
+      value: families,
+    });
+
+    expect(token.resolvedValue as unknown as string[]).toEqual(families);
   });
 
   test('shadow token exposes its composite value', (ctx) => {
