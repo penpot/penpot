@@ -1,6 +1,7 @@
 import { Task, TaskHandler } from "../TaskHandler";
 import { ExecuteCodeTaskParams, ExecuteCodeTaskResultData } from "../../../common/src";
 import { PenpotUtils } from "../PenpotUtils.ts";
+import { formatLogArgument } from "../ConsoleUtils.ts";
 
 /**
  * Console implementation that captures all log output for code execution.
@@ -36,9 +37,7 @@ class ExecuteCodeTaskConsole {
      * @param args - Arguments to log, will be stringified and joined
      */
     private appendToLog(level: string, ...args: any[]): void {
-        const message = args
-            .map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)))
-            .join(" ");
+        const message = args.map(formatLogArgument).join(" ");
         this.logOutput += `[${level}] ${message}\n`;
     }
 
