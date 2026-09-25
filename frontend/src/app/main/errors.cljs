@@ -588,13 +588,58 @@
     (and (string? stack)
          (str/includes? stack "posthog"))))
 
+;; Captures the script location of a stack frame: the part preceding
+;; ":line:column", in both the V8 ("at fn (location:1:2)") and the
+;; SpiderMonkey/JSC ("fn@location:1:2") formats.
+(def ^:private frame-location-rx
+  #"(?:at |[@(])([^\s()]+):\d+:\d+")
+
+(defn- stack-frames
+  "The frame lines of a stack trace, without the leading message line
+  that V8 puts before them."
+  [stack]
+  (into []
+        (comp (map str/trim)
+              (filter (fn [line]
+                        (or (str/starts-with? line "at ")
+                            (str/includes? line "@")))))
+        (str/lines stack)))
+
+(defn- located-frame?
+  "True when a stack frame names the script it belongs to. Code injected
+  into the page carries no script to name and reports `<anonymous>`."
+  [frame]
+  (when-let [location (second (re-find frame-location-rx frame))]
+    (not (str/starts-with? location "<"))))
+
+(defn- from-injected-code?
+  "True when the stack is blank, or has frames but none of them names a
+  script. Either way the error was raised by third-party code injected
+  into the page (an extension content script, a desktop wrapper, a
+  bookmarklet) rather than by application code. Firefox, for instance,
+  raises \"can't access dead object\" with a blank stack when an unloaded
+  extension's code runs.
+
+  Anything our own code calls keeps our frames further down the stack, so
+  a stack without a single named script never belongs to us and there is
+  nothing actionable on our side."
+  [cause]
+  (let [stack (.-stack cause)]
+    (and (string? stack)
+         (or (str/blank? stack)
+             (let [frames (stack-frames stack)]
+               (and (some? (seq frames))
+                    (not (some located-frame? frames))))))))
+
 (defn is-ignorable-exception?
-  "True when the error is known to be harmless (browser extensions, analytics,
-   React/extension DOM conflicts, etc.) and should NOT be surfaced to the user."
+  "True when the error is known to be harmless (browser extensions, injected
+   third-party code, analytics, React/extension DOM conflicts, etc.) and
+   should NOT be surfaced to the user."
   [cause]
   (let [message (ex-message cause)]
     (or (from-extension? cause)
         (from-posthog? cause)
+        (from-injected-code? cause)
         (= message "Possible side-effect in debug-evaluate")
         (= message "Unexpected end of input")
         (str/starts-with? message "invalid props on component")
