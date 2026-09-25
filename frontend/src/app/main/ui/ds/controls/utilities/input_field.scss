@@ -36,7 +36,7 @@
     --input-outline-color: var(--color-accent-primary);
   }
 
-  &:has(*:disabled) {
+  &:has(input:disabled) {
     --input-bg-color: var(--color-background-primary);
     --input-outline-color: var(--color-background-quaternary);
     --input-fg-color: var(--color-foreground-secondary);

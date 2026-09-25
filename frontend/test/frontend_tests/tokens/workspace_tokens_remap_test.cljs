@@ -172,7 +172,7 @@
 
    {:case :stroke-width
     :token {:name "stroke-width-token" :type :stroke-width :value "2"}
-    :attribute :stroke-width
+    :attribute :stroke-width-top
     :shape :rect-shape}
 
    {:case :text-case

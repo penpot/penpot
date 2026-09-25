@@ -151,6 +151,12 @@
 (def workspace-local
   (l/derived :workspace-local st/state))
 
+(def stroke-per-side
+  "Per-stroke expansion state of the design tab per-side controls, keyed by
+  `[ids index]`. This is ephemeral UI state: it survives shape and page
+  switches during the session but resets on reload."
+  (l/derived (fn [state] (get-in state [:workspace-local :stroke-per-side])) st/state))
+
 (def workspace-global
   (l/derived :workspace-global st/state))
 

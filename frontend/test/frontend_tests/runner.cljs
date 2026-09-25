@@ -85,6 +85,7 @@
    [frontend-tests.svg-fills-test]
    [frontend-tests.svg-filters-test]
    [frontend-tests.text-editor-paste-guard-test]
+   [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -95,6 +96,7 @@
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
+   [frontend-tests.ui.color-token-position-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
    [frontend-tests.ui.comment-input-ime-test]
    [frontend-tests.ui.comments-clustering-test]
@@ -110,6 +112,7 @@
    [frontend-tests.ui.settings-shortcuts-test]
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
+   [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
@@ -214,6 +217,7 @@
    'frontend-tests.svg-fills-test
    'frontend-tests.svg-filters-test
    'frontend-tests.tokens.copy-paste-props-test
+   'frontend-tests.tokens.context-menu-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
@@ -223,6 +227,7 @@
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test
+   'frontend-tests.ui.color-token-position-test
    'frontend-tests.ui.colorpicker-token-set-order-test
    'frontend-tests.ui.comment-input-ime-test
    'frontend-tests.ui.comments-clustering-test
@@ -240,6 +245,7 @@
    'frontend-tests.ui.settings-shortcuts-test
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
+   'frontend-tests.ui.stroke-menu-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test

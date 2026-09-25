@@ -100,6 +100,17 @@
   [options]
   (some #(when (focusable-option? %) (:id %)) options))
 
+(defn token-shortcut
+  "Returns the token shortcut triggered by `event`: `:open` for `{` and
+  `:apply` for `}`. Returns nil when tokens are disabled for the input
+  (for example, strokes after the first one), so the shortcuts are inert
+  there."
+  [event token-disabled?]
+  (when-not token-disabled?
+    (cond
+      (kbd/is-key? event "{") :open
+      (kbd/is-key? event "}") :apply)))
+
 (defn next-focus-index
   [options focused-id direction]
   (let [options (if (delay? options) @options options)
@@ -145,7 +156,9 @@
    [:step {:optional true} [:maybe [:or :int :float]]]
    [:is-selected-on-focus {:optional true} :boolean]
    [:nillable {:optional true} :boolean]
-   [:applied-token {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:applied-token-name {:optional true} [:maybe [:or :string [:= :multiple]]]]
+   [:token-disabled {:optional true} [:maybe :boolean]]
+   [:token-tooltip {:optional true} [:maybe :string]]
    [:empty-to-end {:optional true} :boolean]
    [:on-change {:optional true} fn?]
    [:on-change-start {:optional true} fn?]
@@ -165,6 +178,7 @@
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token-name empty-to-end
+           token-disabled token-tooltip
            on-change on-change-start on-change-end
            on-blur on-focus on-detach
            property align ref name
@@ -199,6 +213,8 @@
         ;; Default props
         nillable        (d/nilv nillable false)
         disabled        (d/nilv disabled false)
+        token-disabled? (d/nilv token-disabled false)
+        token-tooltip   (d/nilv token-tooltip (tr "ds.inputs.numeric-input.open-token-list-dropdown"))
         select-on-focus (d/nilv is-selected-on-focus true)
 
         default         (mf/with-memo [default nillable]
@@ -429,7 +445,7 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change)
+         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change token-disabled?)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?          (kbd/up-arrow? event)
@@ -437,8 +453,9 @@
                  enter?       (kbd/enter? event)
                  esc?         (kbd/esc? event)
                  node         (mf/ref-val ref)
-                 open-tokens  (kbd/is-key? event "{")
-                 close-tokens (kbd/is-key? event "}")
+                 shortcut     (token-shortcut event token-disabled?)
+                 open-tokens  (= :open shortcut)
+                 close-tokens (= :apply shortcut)
                  options      (mf/ref-val options-ref)
                  options      (if (delay? options) @options options)]
 
@@ -743,10 +760,11 @@
                                                                          :icon i/tokens
                                                                          :tooltip-class (stl/css :button-tooltip)
                                                                          :class (stl/css :invisible-button)
-                                                                         :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
+                                                                         :aria-label token-tooltip
                                                                          :ref open-dropdown-ref
                                                                          :tooltip-placement tooltip-placement
-                                                                         :on-click open-dropdown}])))
+                                                                         :on-click open-dropdown
+                                                                         :disabled token-disabled?}])))
                                 :max-length max-length})
 
         token-props

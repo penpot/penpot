@@ -26,6 +26,7 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
+   [app.main.ui.workspace.sidebar.options.common :as soc]
    [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -179,11 +180,14 @@
 
 (mf/defc color-row*
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
+           tokens-first-only
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
 
   (let [token-color      (contains? cfg/flags :token-color)
         libraries        (mf/deref refs/files)
+
+        tokens-disabled? (not (soc/tokens-allowed-position? tokens-first-only index))
 
         color-without-hash (mf/use-memo
                             (mf/deps color)
@@ -280,6 +284,7 @@
                   on-open
                   tokens
                   index
+                  tokens-disabled?
                   applied-token)
          (fn [color pos tab]
            (let [color (cond
@@ -306,6 +311,7 @@
                         :active-tokens tokens
                         :applied-token applied-token
                         :color-origin origin
+                        :token-disabled tokens-disabled?
                         :tab tab
                         :origin :sidebar
                         :data color}]

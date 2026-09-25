@@ -2,6 +2,30 @@ import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../../pages/WorkspacePage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
 
+/**
+ * Sets up the workspace with a file that contains stroke width and dimensions
+ * tokens, and the per-side stroke feature flag enabled.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {{flags?: string[]}} [options]
+ */
+const setupStrokePerSideFile = async (page, options = {}) => {
+  const { flags = [] } = options;
+
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.mockConfigFlags([...flags, "enable-stroke-per-side"]);
+
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile(
+    "workspace/get-file-layout-stroke-token-json",
+  );
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.waitForFirstRender();
+
+  return workspacePage;
+};
+
 const setupEmptyTokensFile = async (page, options = {}) => {
   const { flags = [] } = options;
 
@@ -398,6 +422,7 @@ const createSet = async (sidebar, setName, finalKey = "Enter") => {
 export {
   setupEmptyTokensFile,
   setupEmptyTokensFileRender,
+  setupStrokePerSideFile,
   setupTokensFile,
   setupTokensFileRender,
   setupTypographyTokensFile,
