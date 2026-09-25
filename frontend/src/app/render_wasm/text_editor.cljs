@@ -550,32 +550,37 @@
   exported-texts  vector of vectors  [[\"span1\" \"span2\"] [\"p2s1\"]]
   content         existing Penpot content map (root -> paragraph-set -> …)"
   [content exported-texts]
-  (let [para-set       (first (get content :children))
-        orig-paras     (get para-set :children)
-        num-orig       (count orig-paras)
-        last-orig-para (when (seq orig-paras) (last orig-paras))
-        template-span  (when last-orig-para
-                         (-> last-orig-para :children last))
-        new-paras
-        (mapv (fn [para-idx exported-span-texts]
-                (let [orig-para (if (< para-idx num-orig)
-                                  (nth orig-paras para-idx)
-                                  (dissoc last-orig-para :children))
-                      orig-spans     (get orig-para :children)
-                      num-orig-spans (count orig-spans)
-                      last-orig-span (when (seq orig-spans) (last orig-spans))]
-                  (assoc orig-para :children
-                         (mapv (fn [span-idx new-text]
-                                 (let [orig-span (if (< span-idx num-orig-spans)
-                                                   (nth orig-spans span-idx)
-                                                   (or last-orig-span template-span))]
-                                   (assoc orig-span :text new-text)))
-                               (range (count exported-span-texts))
-                               exported-span-texts))))
-              (range (count exported-texts))
-              exported-texts)
-        new-para-set (assoc para-set :children new-paras)]
-    (assoc content :children [new-para-set])))
+  (if (empty? exported-texts)
+    content
+    (let [para-set       (first (get content :children))
+          orig-paras     (get para-set :children)
+          num-orig       (count orig-paras)
+          last-orig-para (when (seq orig-paras) (last orig-paras))
+          template-span  (when last-orig-para
+                           (-> last-orig-para :children last))
+          exported-texts (mapv (fn [span-texts]
+                                 (if (empty? span-texts) [""] span-texts))
+                               exported-texts)
+          new-paras
+          (mapv (fn [para-idx exported-span-texts]
+                  (let [orig-para (if (< para-idx num-orig)
+                                    (nth orig-paras para-idx)
+                                    (dissoc last-orig-para :children))
+                        orig-spans     (get orig-para :children)
+                        num-orig-spans (count orig-spans)
+                        last-orig-span (when (seq orig-spans) (last orig-spans))]
+                    (assoc orig-para :children
+                           (mapv (fn [span-idx new-text]
+                                   (let [orig-span (if (< span-idx num-orig-spans)
+                                                     (nth orig-spans span-idx)
+                                                     (or last-orig-span template-span))]
+                                     (assoc orig-span :text new-text)))
+                                 (range (count exported-span-texts))
+                                 exported-span-texts))))
+                (range (count exported-texts))
+                exported-texts)
+          new-para-set (assoc para-set :children new-paras)]
+      (assoc content :children [new-para-set]))))
 
 (defn- default-empty-text-content
   "Build a default, empty text content tree used as a merge template.
@@ -687,7 +692,7 @@
                   paragraphs      (:children paragraph-set)
 
                   new-paragraphs
-                  (when (not collapsed?)
+                  (when (and (not collapsed?) (seq paragraphs))
                     (mapv (fn [idx para]
                             (cond
                               ;; paragraph outside the range of paragraphs.
