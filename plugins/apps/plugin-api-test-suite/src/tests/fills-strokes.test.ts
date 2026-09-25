@@ -304,5 +304,80 @@ describe('Fills & strokes', () => {
         ];
       }).toThrow();
     });
+
+    test('per-side stroke widths round-trip', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        {
+          strokeColor: '#000000',
+          strokeWidth: 1,
+          strokeWidthTop: 2,
+          strokeWidthRight: 3,
+          strokeWidthBottom: 4,
+          strokeWidthLeft: 5,
+        },
+      ];
+
+      expect(r.strokes).toHaveLength(1);
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthTop).toBe(2);
+      expect(stroke.strokeWidthRight).toBe(3);
+      expect(stroke.strokeWidthBottom).toBe(4);
+      expect(stroke.strokeWidthLeft).toBe(5);
+    });
+
+    test('per-side widths survive unrelated stroke mutation', (ctx) => {
+      // Side widths must survive a Plugin API stroke commit.
+      const r = rect(ctx);
+      r.strokes = [
+        {
+          strokeColor: '#000000',
+          strokeWidth: 1,
+          strokeWidthTop: 4,
+          strokeWidthRight: 4,
+          strokeWidthBottom: 4,
+          strokeWidthLeft: 4,
+        },
+      ];
+
+      const stroke = r.strokes[0];
+      stroke.strokeColor = '#ff0000';
+
+      const reread = r.strokes[0];
+      expect(reread.strokeColor).toBe('#ff0000');
+      expect(reread.strokeWidthTop).toBe(4);
+      expect(reread.strokeWidthRight).toBe(4);
+      expect(reread.strokeWidthBottom).toBe(4);
+      expect(reread.strokeWidthLeft).toBe(4);
+    });
+
+    test('per-side widths are directly settable', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+
+      const stroke = r.strokes[0];
+      stroke.strokeWidthTop = 6;
+      stroke.strokeWidthRight = 7;
+      stroke.strokeWidthBottom = 8;
+      stroke.strokeWidthLeft = 9;
+
+      const reread = r.strokes[0];
+      expect(reread.strokeWidthTop).toBe(6);
+      expect(reread.strokeWidthRight).toBe(7);
+      expect(reread.strokeWidthBottom).toBe(8);
+      expect(reread.strokeWidthLeft).toBe(9);
+    });
+
+    test('uniform strokeWidth still works without per-side widths', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 4 }];
+
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidth).toBeCloseTo(4, 0);
+      expect(stroke.strokeWidthTop).toBeUndefined();
+      expect(stroke.strokeWidthRight).toBeUndefined();
+      expect(stroke.strokeWidthBottom).toBeUndefined();
+      expect(stroke.strokeWidthLeft).toBeUndefined();
+    });
   });
 });

@@ -214,6 +214,10 @@
 ;;   strokeOpacity?: number;
 ;;   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
 ;;   strokeWidth?: number;
+;;   strokeWidthTop?: number;
+;;   strokeWidthRight?: number;
+;;   strokeWidthBottom?: number;
+;;   strokeWidthLeft?: number;
 ;;   strokeAlignment?: 'center' | 'inner' | 'outer';
 ;;   strokeCapStart?: StrokeCap;
 ;;   strokeCapEnd?: StrokeCap;
@@ -230,6 +234,10 @@
       :stroke-opacity (obj/get stroke "strokeOpacity")
       :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
       :stroke-width (obj/get stroke "strokeWidth")
+      :stroke-width-top (obj/get stroke "strokeWidthTop")
+      :stroke-width-right (obj/get stroke "strokeWidthRight")
+      :stroke-width-bottom (obj/get stroke "strokeWidthBottom")
+      :stroke-width-left (obj/get stroke "strokeWidthLeft")
       :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
       :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
       :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)

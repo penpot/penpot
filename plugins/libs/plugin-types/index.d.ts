@@ -4194,6 +4194,26 @@ export interface Stroke {
    */
   strokeWidth?: number;
   /**
+   * The optional width of the top side of the stroke.
+   * Only applies to boards and rectangles with per-side widths.
+   */
+  strokeWidthTop?: number;
+  /**
+   * The optional width of the right side of the stroke.
+   * Only applies to boards and rectangles with per-side widths.
+   */
+  strokeWidthRight?: number;
+  /**
+   * The optional width of the bottom side of the stroke.
+   * Only applies to boards and rectangles with per-side widths.
+   */
+  strokeWidthBottom?: number;
+  /**
+   * The optional width of the left side of the stroke.
+   * Only applies to boards and rectangles with per-side widths.
+   */
+  strokeWidthLeft?: number;
+  /**
    * The optional alignment of the stroke relative to the shape's boundary.
    */
   strokeAlignment?: 'center' | 'inner' | 'outer';
