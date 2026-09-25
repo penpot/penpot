@@ -27,7 +27,8 @@
   schema:create-demo-profile
   [:map
    [:skip-onboarding {:optional true} ::sm/boolean]
-   [:expires-in {:optional true} ::ct/duration]])
+   [:expires-in {:optional true} ::ct/duration]
+   [:renderer {:optional true} [::sm/one-of #{:svg :wasm}]]])
 
 (def ^:private min-expires-in
   (ct/duration "5m"))
@@ -64,9 +65,10 @@
    ::doc/added "1.15"
    ::doc/changes [["1.15" "This method is migrated from mutations to commands."]
                   ["2.18" "Add optional `skip-onboarding` param. When true, the profile is created with `onboarding-viewed` and `release-notes-viewed` (current version) set, skipping the onboarding flow."]
-                  ["2.18" "Add optional `expires-in` param. When set, the demo purge is scheduled that long after creation instead of the global deletion delay. Only values between 5 minutes and the global delay are accepted."]]
+                  ["2.18" "Add optional `expires-in` param. When set, the demo purge is scheduled that long after creation instead of the global deletion delay. Only values between 5 minutes and the global delay are accepted."]
+                  ["2.18.1" "Add optional `renderer` param. When set to `wasm` or `svg`, the profile is created with that `renderer` in props. When omitted, no renderer is stored and the Penpot default applies."]]
    ::sm/params schema:create-demo-profile}
-  [cfg {:keys [skip-onboarding expires-in]}]
+  [cfg {:keys [skip-onboarding expires-in renderer]}]
 
   (when-not (contains? cf/flags :demo-users)
     (ex/raise :type :validation
@@ -93,7 +95,8 @@
                                                         ;; overwrites this with the current
                                                         ;; version, kept so the skip does not
                                                         ;; depend on that default.
-                                                        :release-notes-viewed (:main cf/version)))}
+                                                        :release-notes-viewed (:main cf/version))
+                                 renderer (assoc :renderer renderer))}
         profile        (db/tx-run! cfg (fn [cfg]
                                          (->> (auth/create-profile cfg params)
                                               (auth/create-profile-rels cfg))))]
