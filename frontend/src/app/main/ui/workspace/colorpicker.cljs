@@ -374,7 +374,8 @@
             :icon i/hsva
             :id "hsva"}])
 
-        show-tokens? (contains? #{:fill :stroke-color :color-selection} color-origin)]
+        show-tokens? (or (contains? #{:fill :stroke-color :color-selection} color-origin)
+                         (and (= color-origin :canvas) (seq combined-tokens)))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
