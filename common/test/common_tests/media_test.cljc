@@ -92,3 +92,84 @@
 
   (t/testing "stored variant survives even when its derived weight disagrees"
     (t/is (= "Ultra" (media/font-display-variant "Ultra" 400 "normal")))))
+
+(t/deftest test-parse-font-file-metadata
+  ;; Regression coverage for https://github.com/penpot/penpot/issues/10436:
+  ;; when opentype.js parses a font binary but exposes no usable
+  ;; preferredSubfamily/fontSubfamily, the upload resolves weight/style
+  ;; from the filename through parse-font-file-metadata instead of
+  ;; crashing on nil.
+  (t/testing "usable opentype.js variant keeps current behavior"
+    (t/is (= 700 (media/parse-font-weight "Bold")))
+    (t/is (= "normal" (media/parse-font-style "Bold"))))
+
+  (t/testing "missing variant recovers family, weight and style from filename"
+    (let [{:keys [font-family font-weight font-style]}
+          (media/parse-font-file-metadata "Pretendard-Medium.otf")]
+      (t/is (= "Pretendard" font-family))
+      (t/is (= 500 font-weight))
+      (t/is (= "normal" font-style))))
+
+  (t/testing "missing variant recovers weight and italic style from filename"
+    (let [{:keys [font-weight font-style]}
+          (media/parse-font-file-metadata "Pretendard-Bold-Italic.otf")]
+      (t/is (= 700 font-weight))
+      (t/is (= "italic" font-style))))
+
+  (t/testing "filename fallback semantics are unchanged"
+    (let [{:keys [font-family font-weight font-style]}
+          (media/parse-font-file-metadata "Roboto-Bold.woff2")]
+      (t/is (= "Roboto" font-family))
+      (t/is (= 700 font-weight))
+      (t/is (= "normal" font-style)))
+    (let [{:keys [font-family font-weight font-style]}
+          (media/parse-font-file-metadata "Pretendard.woff2")]
+      (t/is (= "Pretendard" font-family))
+      (t/is (= 400 font-weight))
+      (t/is (= "normal" font-style)))))
+
+(t/deftest test-resolve-parsed-font-metadata
+  ;; Exercises the same decision the parsed-font upload path calls:
+  ;; usable variant wins, missing/blank variants fall back to filename
+  ;; metadata and leave :variant-name absent.
+  (t/testing "usable variant keeps parsed family, weight, style and variant name"
+    (let [m (media/resolve-parsed-font-metadata "Roboto" "Bold" "Roboto-Bold.ttf")]
+      (t/is (= "Roboto" (:font-family m)))
+      (t/is (= 700 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (= "Bold" (:variant-name m)))))
+
+  (t/testing "usable variant takes precedence over filename metadata"
+    (let [m (media/resolve-parsed-font-metadata "Roboto" "Bold" "Roboto-Light.ttf")]
+      (t/is (= "Roboto" (:font-family m)))
+      (t/is (= 700 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (= "Bold" (:variant-name m)))))
+
+  (t/testing "missing variant recovers family, weight and style without variant name"
+    (let [m (media/resolve-parsed-font-metadata "Pretendard" nil "Pretendard-Medium.otf")]
+      (t/is (= "Pretendard" (:font-family m)))
+      (t/is (= 500 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (not (contains? m :variant-name)))))
+
+  (t/testing "blank variant falls back to filename metadata without variant name"
+    (let [m (media/resolve-parsed-font-metadata "Pretendard" "  " "Pretendard-Medium.otf")]
+      (t/is (= "Pretendard" (:font-family m)))
+      (t/is (= 500 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (not (contains? m :variant-name)))))
+
+  (t/testing "missing variant recovers italic style without variant name"
+    (let [m (media/resolve-parsed-font-metadata "Pretendard" nil "Pretendard-Bold-Italic.otf")]
+      (t/is (= "Pretendard" (:font-family m)))
+      (t/is (= 700 (:font-weight m)))
+      (t/is (= "italic" (:font-style m)))
+      (t/is (not (contains? m :variant-name)))))
+
+  (t/testing "missing parsed family falls back to filename family"
+    (let [m (media/resolve-parsed-font-metadata nil nil "Pretendard-Medium.otf")]
+      (t/is (= "Pretendard" (:font-family m)))
+      (t/is (= 500 (:font-weight m)))
+      (t/is (= "normal" (:font-style m)))
+      (t/is (not (contains? m :variant-name))))))

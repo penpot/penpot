@@ -131,6 +131,11 @@
                                         (.getEnglishName ^js font "fontFamily"))
                     variant         (or (.getEnglishName ^js font "preferredSubfamily")
                                         (.getEnglishName ^js font "fontSubfamily"))
+                    ;; A successfully parsed binary does not guarantee usable
+                    ;; subfamily metadata; missing/blank variants resolve
+                    ;; through the filename fallback (same decision covered
+                    ;; by cm/resolve-parsed-font-metadata tests).
+                    font-meta       (cm/resolve-parsed-font-metadata family variant name)
 
                     ;; Vertical metrics determine the baseline in a text and the space between lines of
                     ;; text. For historical reasons, there are three pairs of ascender/descender
@@ -160,30 +165,21 @@
                                                           (not= hhea-ascender os2-ascent)
                                                           (not= hhea-descender os2-descent))))
                     data            (js/Uint8Array. data)]
-                {:content {:data data
-                           :name name
-                           :type type}
-                 :font-family (or family "")
-                 :font-weight (cm/parse-font-weight variant)
-                 :font-style  (cm/parse-font-style variant)
-                 :variant-name variant
-                 :height-warning? height-warning?})
+                (assoc font-meta
+                       :content {:data data
+                                 :name name
+                                 :type type}
+                       :height-warning? height-warning?))
               ;; Font could not be parsed (woff2), extract metadata from filename
-              (let [base-name       (str/replace name #"\.[^.]+$" "")
-                    ;; Strip known weight/style tokens and separators to derive family name
-                    ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
-                    raw-family-name (-> base-name
-                                        (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
-                                        (str/replace #"[-_\s]+" " ")
-                                        (str/trim))
-                    family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
-                    data            (js/Uint8Array. data)]
+              (let [{:keys [font-family font-weight font-style]}
+                    (cm/parse-font-file-metadata name)
+                    data (js/Uint8Array. data)]
                 {:content {:data data
                            :name name
                            :type type}
-                 :font-family family-name
-                 :font-weight (cm/parse-font-weight base-name)
-                 :font-style  (cm/parse-font-style base-name)
+                 :font-family font-family
+                 :font-weight font-weight
+                 :font-style font-style
                  :height-warning? false})))
 
           (join [res {:keys [content] :as font}]
