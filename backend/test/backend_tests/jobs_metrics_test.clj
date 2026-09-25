@@ -44,7 +44,8 @@
    :jobs-gc-timing
    :jobs-cron-total
    :jobs-requests-total
-   :jobs-request-timing])
+   :jobs-request-timing
+   :jobs-events-total])
 
 (defn- make-metrics []
   (ig/init-key :app.metrics/metrics
@@ -103,7 +104,7 @@
                  ::mtx/metrics metrics}
         job-id  (jobs/submit cfg {::jobs/name :echo ::jobs/params {}})]
     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
-    (jobs/complete cfg job-id {:ok true})
+    (jobs/complete cfg :job-id job-id :result {:ok true})
     (t/is (= 1.0 (counter-value metrics :jobs-submitted ["other" "default"])))
     (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "default" "completed"])))))
 
@@ -176,3 +177,71 @@
     (t/is (= 1.0 (gauge-value metrics :jobs-backlog ["new"])))
     (t/is (= 0.0 (gauge-value metrics :jobs-backlog ["completed"])))
     (t/is (>= (gauge-value metrics :jobs-oldest-pending-age []) 120.0))))
+
+(t/deftest event-counter-has-no-labels-and-follows-the-events
+  (let [metrics (make-metrics)
+        cfg     {::db/pool th/*pool*
+                 ::mtx/metrics metrics}
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   (fn [_context params] params)
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg2    (assoc cfg ::jobs/defs defs)
+        job-id  (jobs/submit cfg2 {::jobs/name :echo ::jobs/params {}})]
+    (jobs/claim cfg2 job-id (:scheduled-at (jobs/get-job cfg2 job-id)))
+    (jobs/complete cfg2 :job-id job-id :result {:ok true})
+    (t/testing "one start and one end, counted together with no labels"
+      (t/is (= 2.0 (counter-value metrics :jobs-events-total []))))
+
+    (t/testing "a transition that affects no row adds no event and no count"
+      (t/is (= 0 (jobs/complete cfg2 :job-id job-id :result {:ok true})))
+      (t/is (= 2.0 (counter-value metrics :jobs-events-total []))))))
+
+(t/deftest event-counter-ignores-a-rolled-back-transition
+  (let [metrics (make-metrics)
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   (fn [_context params] params)
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs   defs
+                 ::db/pool     th/*pool*
+                 ::mtx/metrics metrics}]
+    ;; the whole lifecycle inside a transaction that rolls back: the
+    ;; events are discarded with it, so neither history nor count move
+    (t/is (thrown? Exception
+                   (db/tx-run! cfg
+                               (fn [tx-cfg]
+                                 (let [job-id (jobs/submit tx-cfg
+                                                           {::jobs/name   :echo
+                                                            ::jobs/params {}})]
+                                   (jobs/claim tx-cfg job-id
+                                               (:scheduled-at (jobs/get-job tx-cfg job-id)))
+                                   (jobs/complete tx-cfg :job-id job-id :result {:ok true})
+                                   (throw (ex-info "rollback" {})))))))
+    (t/is (= 0.0 (counter-value metrics :jobs-events-total [])))
+    (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event"]))))))
+
+(t/deftest terminal-metrics-ignore-a-rolled-back-transition
+  (let [metrics (make-metrics)
+        defs    {:echo {::jobs/name      :echo
+                        ::jobs/schema    [:map]
+                        ::jobs/handler   (fn [_context params] params)
+                        ::jobs/decoder   identity
+                        ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs   defs
+                 ::db/pool     th/*pool*
+                 ::mtx/metrics metrics}]
+    (t/is (thrown? Exception
+                   (db/tx-run! cfg
+                               (fn [tx-cfg]
+                                 (let [job-id (jobs/submit tx-cfg
+                                                           {::jobs/name   :echo
+                                                            ::jobs/params {}})]
+                                   (jobs/claim tx-cfg job-id
+                                               (:scheduled-at (jobs/get-job tx-cfg job-id)))
+                                   (jobs/complete tx-cfg :job-id job-id :result {:ok true})
+                                   (throw (ex-info "rollback" {})))))))
+    (t/testing "the terminal counter is registered inside the transaction, so the rollback drops it"
+      (t/is (= 0.0 (counter-value metrics :jobs-completed ["other" "default" "completed"]))))))

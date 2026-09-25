@@ -164,8 +164,15 @@
   (-> (th/db-get :job {:id id})
       (as-> row
             (-> row
-                (update :error #(cond-> % (db/pgobject? %) db/decode-json-pgobject))
+                (update :error jobs/decode-job-error)
                 (update :result #(cond-> % (db/pgobject? %) db/decode-json-pgobject))))))
+
+(defn- get-events
+  [id]
+  (->> (th/db-exec! ["SELECT kind, payload FROM job_event
+                      WHERE job_id = ? ORDER BY id ASC" id])
+       (mapv (fn [{:keys [kind payload]}]
+               {:kind kind :payload (db/decode-json-pgobject payload)}))))
 
 (defn- run-one
   [cfg]
@@ -281,7 +288,10 @@
       (let [row (get-row job-id)]
         (t/is (= "retry" (:status row)))
         (t/is (= 1 (:retry-num row)))
-        (t/is (= {:code "failed" :ex-type "retry" :message "transient failure"} (:error row)))
+        (t/is (= {:type    :retry
+                  :code    :failed
+                  :hint    "transient failure"
+                  :ex-type "retry"} (:error row)))
         (t/testing "scheduled_at respects the backoff delay"
           (t/is (> (inst-ms (:scheduled-at row)) (inst-ms (ct/now)))))))
 
@@ -291,7 +301,10 @@
       (let [row (get-row job-id)]
         (t/is (= "failed" (:status row)))
         (t/is (= 1 (:retry-num row)))
-        (t/is (= {:code "failed" :ex-type "retry" :message "transient failure"} (:error row)))))))
+        (t/is (= {:type    :retry
+                  :code    :failed
+                  :hint    "transient failure"
+                  :ex-type "retry"} (:error row)))))))
 
 (t/deftest runner-retry-with-millis-delay-schedules-backoff
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
@@ -348,7 +361,10 @@
     (run-one (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
       (t/is (= "failed" (:status row)))
-      (t/is (= {:code "failed" :ex-type "ex-info" :message "fatal"} (:error row))))))
+      (t/is (= {:type    :internal
+                :code    :failed
+                :hint    "fatal"
+                :ex-type "ex-info"} (:error row))))))
 
 (t/deftest runner-terminal-write-does-not-overwrite-orphan-failure
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
@@ -362,7 +378,7 @@
                                ;; is executing
                                (th/db-update! :job
                                               {:status "failed"
-                                               :error  (db/json {:code "orphan"})}
+                                               :error  (db/json jobs/orphan-error)}
                                               {:id jobs/*job-id*})
                                :ok))}]
     (push-payload job-id scheduled-at)
@@ -371,7 +387,7 @@
     (let [row (get-row job-id)]
       (t/testing "the orphan failure is preserved (first-terminal-wins)"
         (t/is (= "failed" (:status row)))
-        (t/is (= {:code "orphan"} (:error row)))
+        (t/is (= jobs/orphan-error (:error row)))
         (t/is (nil? (:completed-at row)))))))
 
 (t/deftest runner-claim-requires-current-scheduled-at
@@ -467,3 +483,78 @@
   (t/testing "JSON payload with wrong shape is skipped too"
     (run-one (mk-cfg {}))
     (t/is (empty? @received))))
+
+(t/deftest runner-reads-the-reserved-completion-envelope
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        resource-id (uuid/next)
+        defs {:echo-runner
+              (assoc (echo-job-def)
+                     ::jobs/handler
+                     (fn [_context _params]
+                       {:result {:business 1}
+                        :resource-id resource-id}))}]
+    (th/db-insert! :storage-object {:id resource-id :backend "test"})
+    (let [job-id (mk-job {:scheduled-at scheduled-at})]
+      (push-payload job-id scheduled-at)
+      (run-one (mk-cfg {:defs defs}))
+
+      (let [row (get-row job-id)]
+        (t/testing "the envelope splits: business result in result, resource on the row"
+          (t/is (= "completed" (:status row)))
+          (t/is (= {:business 1} (:result row)))
+          (t/is (= resource-id (:resource-id row))))
+
+        (t/testing "and the end event is still a plain outcome"
+          (t/is (= [{:kind "end" :payload {:outcome "completed"}}]
+                   (drop 1 (get-events job-id)))))))))
+
+(t/deftest runner-records-the-lifecycle-events-of-a-successful-job
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at})]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
+    (t/is (= [{:kind "start" :payload {:attempt 1}}
+              {:kind "end" :payload {:outcome "completed"}}]
+             (get-events job-id)))))
+
+(t/deftest runner-records-a-retry-event-before-the-next-attempt
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at :max-retries 3})
+        defs {:echo-runner
+              (assoc (echo-job-def)
+                     ::jobs/handler
+                     (fn [_context _params]
+                       (throw (ex-info "transient" {:type ::wrk/retry
+                                                    :delay (ct/duration {:millis 1})}))))}]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
+    (t/is (= [{:kind "start" :payload {:attempt 1}}
+              {:kind "retry" :payload {:attempt 2 :reason "backoff"}}]
+             (get-events job-id)))))
+
+(t/deftest runner-records-a-noop-retry-as-the-same-attempt
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at :max-retries 3})
+        defs {:echo-runner
+              (assoc (echo-job-def)
+                     ::jobs/handler
+                     (fn [_context _params]
+                       (throw (ex-info "transient" {:type    ::wrk/retry
+                                                    :delay   (ct/duration {:millis 1})
+                                                    :strategy ::wrk/noop}))))}]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
+    (t/testing "a noop consumed no budget, so the attempt does not move"
+      (t/is (= [{:kind "start" :payload {:attempt 1}}
+                {:kind "retry" :payload {:attempt 1 :reason "noop"}}]
+               (get-events job-id)))
+      (t/is (= 0 (:retry-num (get-row job-id)))))))
+
+(t/deftest deleting-a-job-deletes-its-events
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at})]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
+    (t/is (= 2 (count (get-events job-id))))
+    (th/db-delete! :job {:id job-id})
+    (t/is (= [] (get-events job-id)))))

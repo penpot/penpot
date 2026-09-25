@@ -92,7 +92,10 @@
    ;; Per-job result: any JSON-encodable value, nil when the job returns
    ;; nothing. Nested maps and vectors are allowed; unserializable
    ;; values are dropped to nil by jobs/encode-result with a warning.
-   [:result [:maybe :any]]])
+   [:result [:maybe :any]]
+   ;; Storage object the worker produced for this job. A resource is only
+   ;; set, never replaced: a job that already has one is rejected.
+   [:resource-id {:optional true} ::sm/uuid]])
 
 (def ^:private schema:complete-job-result
   [:map {:title "complete-job-result"}
@@ -103,8 +106,11 @@
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
-  [cfg {:keys [job-id result]}]
-  (if (pos? (jobs/complete cfg job-id result))
+  [cfg {:keys [job-id result resource-id]}]
+  (if (pos? (jobs/complete cfg
+                           :job-id job-id
+                           :result result
+                           :resource-id resource-id))
     {:action :run}
     {:action :skip}))
 
@@ -115,10 +121,7 @@
    [:job-id ::sm/uuid]
    ;; Rich error report: type/code/hint are required, the map stays
    ;; open to worker-defined details (see jobs/fail).
-   [:error [:map
-            [:type :keyword]
-            [:code ::sm/text]
-            [:hint ::sm/text]]]])
+   [:error jobs/schema:job-error]])
 
 (def ^:private schema:fail-job-result
   [:map {:title "fail-job-result"}

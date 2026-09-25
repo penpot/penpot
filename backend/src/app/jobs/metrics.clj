@@ -128,6 +128,13 @@
                  (retry-reason-label reason)]
                 1))
 
+(defn record-event
+  "Total number of job events stored. No labels: the interesting split is
+  `kind`, and grouping a growing append-only table to build a metric is not
+  worth the query on the write path."
+  [metrics]
+  (record-count metrics :jobs-events-total [] 1))
+
 (defn record-orphan
   [metrics queue]
   (record-count metrics :jobs-orphaned

@@ -42,12 +42,6 @@
   [cfg job-id scheduled-at]
   (jobs/claim cfg job-id scheduled-at))
 
-(def ^:private sql:retry-job
-  "UPDATE job
-      SET status='retry', modified_at=?, scheduled_at=?, retry_num=?, error=?
-    WHERE id=?
-      AND status IN ('running','retry')")
-
 (defn- get-exception-type
   "Extract a human-readable exception type for observability."
   [error]
@@ -64,13 +58,29 @@
     :else
     (keyword (str/lower (.getSimpleName (class error))))))
 
-(defn- encode-error
+(defn- error-report
+  "Build the error stored in `job.error` out of an exception, conforming to
+  `app.jobs/schema:job-error`. The exception type and its own type/code are
+  kept as extra details for triage, on top of the three contract keys."
   [error]
-  (db/json {:code    "failed"
-            :ex-type (get-exception-type error)
-            :message (or (when (ex/exception? error)
-                           (ex-message error))
-                         (str error))}))
+  (let [data  (ex-data error)
+        as-keyword (fn [v]
+                     (cond (keyword? v) v
+                           (string? v) (keyword v)))]
+    (jobs/check-job-error
+     {:type    (or (as-keyword (:type data)) :internal)
+      :code    (or (as-keyword (:code data)) :failed)
+      :hint    (or (:hint data)
+                   (when (ex/exception? error) (ex-message error))
+                   (str error))
+      :ex-type (get-exception-type error)})))
+
+;; A handler result may be the reserved completion envelope, which carries
+;; the storage object the job produced. The key is reserved: a handler that
+;; wants to return a business map with :resource-id in it cannot.
+(defn- completion-envelope?
+  [result]
+  (and (map? result) (contains? result :resource-id)))
 
 (defn- get-job
   "Fetch the job row (params kept as raw pgobject; decoded later with the
@@ -220,50 +230,29 @@
             (let [job    (-> result meta ::job)
                   nretry (+ (:retry-num job) inc-by)
                   now    (ct/now)
-                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))
-                  n      (-> (db/exec-one! (db/get-connectable cfg)
-                                           [sql:retry-job
-                                            now
-                                            (-> (ct/plus now (ct/duration {:millis delay}))
-                                                (ct/truncate :millisecond))
-                                            nretry
-                                            (encode-error error)
-                                            (:id job)])
-                             (db/get-update-count))]
-              (when (pos? n)
-                (db/after-commit!
-                 #(jobs-metrics/record-retry
-                   (::mtx/metrics cfg)
-                   (:name job)
-                   (:queue job)
-                   (if (zero? inc-by) :noop :backoff))))
+                  delay  (->> (iterate #(* 2 %) delay-ms) (take (max 1 nretry)) (last))]
+              (jobs/retry-job cfg
+                              (:id job)
+                              nretry
+                              (-> (ct/plus now (ct/duration {:millis delay}))
+                                  (ct/truncate :millisecond))
+                              (error-report error)
+                              (if (zero? inc-by) :noop :backoff))
               nil))
 
           (handle-job-failure [{:keys [error] :as result}]
-            (let [job (-> result meta ::job)
-                  n   (-> (db/exec-one! (db/get-connectable cfg)
-                                        [jobs/sql:fail-job
-                                         (ct/now)
-                                         (encode-error error)
-                                         (:id job)])
-                          (db/get-update-count))]
-              (when (pos? n)
-                (db/after-commit!
-                 #(jobs/record-terminal (::mtx/metrics cfg) job :failed)))
+            (let [job (-> result meta ::job)]
+              (jobs/fail cfg (:id job) (error-report error))
               nil))
 
           (handle-job-completion [result]
-            (let [job (-> result meta ::job)
-                  n   (-> (db/exec-one! (db/get-connectable cfg)
-                                        [jobs/sql:complete-job
-                                         (ct/now)
-                                         (ct/now)
-                                         (jobs/encode-result (:name job) (:result result))
-                                         (:id job)])
-                          (db/get-update-count))]
-              (when (pos? n)
-                (db/after-commit!
-                 #(jobs/record-terminal (::mtx/metrics cfg) job :completed)))
+            (let [job       (-> result meta ::job)
+                  returned  (:result result)
+                  envelope? (completion-envelope? returned)]
+              (jobs/complete cfg
+                             :job-id (:id job)
+                             :result (if envelope? (:result returned) returned)
+                             :resource-id (when envelope? (:resource-id returned)))
               nil))
 
           (decode-payload [payload]

@@ -247,6 +247,11 @@
     ::mdef/labels ["name" "queue" "reason"]
     ::mdef/type :counter}
 
+   :jobs-events-total
+   {::mdef/name "penpot_jobs_events_total"
+    ::mdef/help "Total number of job events stored."
+    ::mdef/type :counter}
+
    :jobs-orphaned
    {::mdef/name "penpot_jobs_orphaned_total"
     ::mdef/help "Total number of running jobs marked as orphaned."

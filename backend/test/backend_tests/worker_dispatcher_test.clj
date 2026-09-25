@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.main :as main]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -83,7 +84,12 @@
 (defn- get-row
   [id]
   (-> (th/db-get :job {:id id} :status :modified-at :scheduled-at :error)
-      (update :error #(cond-> % (db/pgobject? %) db/decode-json-pgobject))))
+      (update :error jobs/decode-job-error)
+      (assoc :events (->> (th/db-exec! ["SELECT kind, payload FROM job_event
+                                         WHERE job_id = ? ORDER BY id" id])
+                          (mapv (fn [{:keys [kind payload]}]
+                                  {:kind kind
+                                   :payload (db/decode-json-pgobject payload)}))))))
 
 (defn- queue-key
   [queue-name]
@@ -184,7 +190,10 @@
     (wdisp/run-batch cfg)
     (let [stale-row (get-row stale)]
       (t/is (= "failed" (:status stale-row)))
-      (t/is (= {:code "orphan"} (:error stale-row))))
+      (t/testing "the error is the structured one, decoded back to keywords"
+        (t/is (= jobs/orphan-error (:error stale-row))))
+      (t/testing "an orphan writes no event: nobody is alive to report it"
+        (t/is (= [] (:events stale-row)))))
 
     (t/testing "recent running job is not touched"
       (t/is (= "running" (:status (get-row fresh)))))))

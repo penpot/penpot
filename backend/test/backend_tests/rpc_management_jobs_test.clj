@@ -60,6 +60,11 @@
             row
             [:result :error])))
 
+(def ^:private test-error
+  {:type :internal
+   :code :boom
+   :hint "boom"})
+
 (defn- get-progresss
   "Progress events of a job, oldest first, with decoded payloads."
   [id]
@@ -205,7 +210,7 @@
   (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
-    (jobs/complete cfg job-id (Object.))
+    (jobs/complete cfg :job-id job-id :result (Object.))
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
       (t/is (nil? (:result row))))))
@@ -217,7 +222,7 @@
         captured (atom nil)]
     (with-redefs [l/emit-log (fn [props _cause _ctx _logger _level _sync?]
                                (reset! captured (into {} @props)))]
-      (jobs/complete cfg job-id (Object.)))
+      (jobs/complete cfg :job-id job-id :result (Object.)))
     (let [row (get-row job-id)]
       (t/is (= "completed" (:status row)))
       (t/is (nil? (:result row)))
@@ -232,8 +237,8 @@
     (jobs/claim cfg job-id2 (:scheduled-at (th/db-get :job {:id job-id2} :id :scheduled-at)))
     (jobs/heartbeat cfg :job-id job-id1)
     (jobs/heartbeat cfg :job-id job-id2 :progress {:current 1})
-    (jobs/complete cfg job-id1)
-    (jobs/fail cfg job-id2 {:code "x"})
+    (jobs/complete cfg :job-id job-id1)
+    (jobs/fail cfg job-id2 test-error)
     (t/is (not (contains? @@#'jobs/heartbeats job-id1)))
     (t/is (not (contains? @@#'jobs/progresses job-id2)))))
 
@@ -244,14 +249,14 @@
         _          (jobs/claim cfg running-id
                                (:scheduled-at (th/db-get :job {:id running-id} :id :scheduled-at)))]
     ;; a running job completes; a later complete/fail on the same row is a no-op
-    (t/is (= 1 (jobs/complete cfg running-id {:value 1})))
-    (t/is (= 0 (jobs/complete cfg running-id {:value 2})))
-    (t/is (= 0 (jobs/fail cfg running-id {:code "boom"})))
+    (t/is (= 1 (jobs/complete cfg :job-id running-id :result {:value 1})))
+    (t/is (= 0 (jobs/complete cfg :job-id running-id :result {:value 2})))
+    (t/is (= 0 (jobs/fail cfg running-id test-error)))
     (t/is (= {:value 1} (:result (get-row running-id))))
 
     ;; an orphan (failed by the dispatcher) is never overwritten
-    (t/is (= 0 (jobs/complete cfg orphan-id {:value 3})))
-    (t/is (= 0 (jobs/fail cfg orphan-id {:code "late"})))))
+    (t/is (= 0 (jobs/complete cfg :job-id orphan-id :result {:value 3})))
+    (t/is (= 0 (jobs/fail cfg orphan-id test-error)))))
 
 (t/deftest fail-job-marks-failed-with-error
   (let [cfg    (make-cfg)
@@ -301,3 +306,78 @@
       (t/is (= {:action :run}
                (:result (mgmt :complete-job {:job-id job-id
                                              :result {:x 1}})))))))
+
+(t/deftest complete-job-associates-a-resource-id
+  (let [cfg         (make-cfg)
+        resource-id (uuid/next)]
+    (th/db-insert! :storage-object {:id resource-id :backend "test"})
+    (let [job-id (mk-job {})]
+      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+      (t/is (nil? (:error (mgmt :complete-job {:job-id job-id
+                                               :result {:v 1}
+                                               :resource-id resource-id}))))
+      (t/is (= resource-id (:resource-id (get-row job-id)))))))
+
+(t/deftest complete-job-refuses-a-second-resource-id
+  (let [cfg    (make-cfg)
+        first  (uuid/next)
+        second (uuid/next)]
+    (doseq [id [first second]]
+      (th/db-insert! :storage-object {:id id :backend "test"}))
+    (let [job-id (mk-job {})]
+      (th/db-update! :job {:resource-id first} {:id job-id})
+      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+      (let [out (mgmt :complete-job {:job-id job-id
+                                     :result {:v 1}
+                                     :resource-id second})]
+        (t/is (= :validation (th/ex-type (:error out)))))
+      (t/testing "the job keeps the resource it had and is still running"
+        (let [row (get-row job-id)]
+          (t/is (= first (:resource-id row)))
+          (t/is (= "running" (:status row))))))))
+
+(t/deftest complete-job-validates-the-resource-id
+  (let [cfg    (make-cfg)
+        job-id (mk-job {})]
+    (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+    (t/is (= :validation
+             (th/ex-type (:error (mgmt :complete-job {:job-id job-id
+                                                      :result {:v 1}
+                                                      :resource-id "not-a-uuid"})))))))
+
+(t/deftest fail-job-validates-the-error-shape
+  (let [cfg (make-cfg)
+        run (fn [error]
+              (let [job-id (mk-job {})]
+                (jobs/claim cfg job-id
+                            (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))
+                [(mgmt :fail-job {:job-id job-id :error error}) job-id]))]
+
+    (t/testing "hint is required"
+      (t/is (= :validation
+               (th/ex-type (:error (first (run {:type :internal
+                                                :code :processing-error})))))))
+
+    (t/testing "a string code over the wire decodes into the keyword"
+      (let [[out job-id] (run {:type    :internal
+                               :code    "processing-error"
+                               :hint    "bad image"})]
+        (t/is (nil? (:error out)))
+        (t/is (= {:type :internal :code :processing-error :hint "bad image"}
+                 (jobs/decode-job-error (:error (get-row job-id)))))))
+
+    (t/testing "a keyword error is stored and decodes back untouched"
+      (let [[out job-id] (run {:type :internal
+                               :code :processing-error
+                               :hint "bad image"})]
+        (t/is (nil? (:error out)))
+        (t/is (= {:type :internal :code :processing-error :hint "bad image"}
+                 (jobs/decode-job-error (:error (get-row job-id)))))))
+
+    (t/testing "worker-defined extra details are kept"
+      (let [[out job-id] (run {:type    :internal
+                               :code    :processing-error
+                               :hint    "bad image"
+                               :attempt 3})]
+        (t/is (nil? (:error out)))
+        (t/is (= 3 (:attempt (jobs/decode-job-error (:error (get-row job-id))))))))))

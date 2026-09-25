@@ -313,15 +313,9 @@
                       result)))
       id)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JOB API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private sql:cancel-job
-  "UPDATE job
-      SET status='cancelled', modified_at=?
-    WHERE id=?
-      AND status IN ('new','scheduled','retry')")
+;; JOB API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- decode-json-col
   [row key]
@@ -338,25 +332,6 @@
   [cfg job-id]
   (some-> (db/get* cfg :job {:id job-id})
           (decode-row)))
-
-(defn cancel
-  "Cancel a pending job (new/scheduled/retry). Returns the number of
-  affected rows; jobs already running or in a terminal state are left
-  untouched (the conditional claim in the runner/management API will skip
-  them)."
-  [cfg job-id]
-  (let [metrics (require-metrics cfg)
-        job     (get-job cfg job-id)
-        n       (-> (db/exec-one! (db/get-connectable cfg)
-                                  [sql:cancel-job (ct/now) job-id])
-                    (db/get-update-count))]
-    (when (pos? n)
-      (db/after-commit!
-       #(jobs-metrics/record-outcome metrics
-                                     (:name job)
-                                     (:queue job)
-                                     :cancelled)))
-    n))
 
 (defn get-user-status
   "Map the internal job status to the user-facing status."
@@ -485,13 +460,16 @@
                        :created-at created-at}))
 
 (defn insert-event
-  "Insert a `job_event` row and schedule its post-commit notification.
+  "Insert a `job_event` row, then count it and notify after the commit.
 
   Must be called inside a transaction that owns the job row. When the job
   has a `profile_id` the cfg must carry a msgbus: the check happens
   before the insert, so a profile job never loses its notification
-  silently. Jobs without profile store the event and publish nothing."
-  [{:keys [::mbus/msgbus] :as cfg} job-id kind payload]
+  silently. Jobs without profile store the event and publish nothing.
+
+  The counter also runs after the commit, so a rolled back transaction
+  never inflates it."
+  [{:keys [::mbus/msgbus ::mtx/metrics] :as cfg} job-id kind payload]
   (let [payload    (validate-event-payload kind payload)
         connectable (db/get-connectable cfg)
         profile-id (:profile-id (db/exec-one! connectable [sql:job-event-owner job-id]))]
@@ -504,6 +482,7 @@
                 :profile-id profile-id))
     (let [{:keys [id created-at]}
           (db/exec-one! connectable [sql:insert-job-event job-id kind (db/json payload)])]
+      (db/after-commit! #(jobs-metrics/record-event metrics))
       (when profile-id
         (db/after-commit!
          #(notify-event msgbus {:profile-id profile-id
@@ -605,13 +584,19 @@
 
   The row is locked first: a concurrent complete, fail or cancel blocks
   here, so a progress event can never land on an already terminal job.
-  Returns 1 when the event was stored."
+  Returns 1 when the event was stored.
+
+  The caller's connection is dropped on purpose: a beat must survive the
+  rollback of the work around it, so the write always opens its own
+  transaction on the pool. The rest of the cfg is kept, because the event
+  needs the msgbus and the metrics from it, and the map the callback
+  receives already carries the connection it must use."
   [cfg job-id progress]
-  (db/tx-run! (or (::db/pool cfg) cfg)
-              (fn [{:keys [::db/conn]}]
+  (db/tx-run! (dissoc cfg ::db/conn)
+              (fn [{:keys [::db/conn] :as tx-cfg}]
                 (if (db/exec-one! conn [sql:lock-active-job job-id])
                   (do
-                    (insert-event (assoc cfg ::db/conn conn) job-id "progress" progress)
+                    (insert-event tx-cfg job-id "progress" progress)
                     1)
                   0))))
 
@@ -667,45 +652,24 @@
                          :cause cause))))))
         (int @writes)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MANAGEMENT API SUPPORT (external workers)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private sql:claim-external-job
-  "UPDATE job
-      SET status='running', started_at=now(), modified_at=now()
-    WHERE id=?
-      AND scheduled_at=?
-      AND status IN ('new','scheduled','retry')")
-
-(def sql:complete-job
-  "UPDATE job
-      SET status='completed', completed_at=?, modified_at=?, result=?, error=NULL
-    WHERE id=?
-      AND status IN ('running','retry')")
-
-(def sql:fail-job
-  "UPDATE job
-      SET status='failed', modified_at=?, error=?
-    WHERE id=?
-      AND status IN ('running','retry')")
-
-(defn claim
-  "Claim a job on behalf of an external worker: only transitions a
-  pending row (new/scheduled/retry) to `running` and requires an exact
-  `scheduled-at` match with the value advertised in the queue payload, so
-  a stale payload (row rescheduled or claimed in the meantime) affects 0
-  rows and must be skipped. Returns the number of affected rows."
-  [cfg job-id scheduled-at]
-  (-> (db/exec-one! (db/get-connectable cfg)
-                    [sql:claim-external-job job-id scheduled-at])
-      (db/get-update-count)))
+;; JOB WRITERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; The only path that changes the status of a job. Every writer changes
+;; the row and stores its event in the same transaction, so the durable
+;; history can never contradict the row: if the event cannot be stored,
+;; the transition is rolled back. A writer that affects no row writes no
+;; event and no metric, which is what makes concurrent transitions safe:
+;; the first one wins and the losers see zero.
+;;
+;; Every metric is registered with `db/after-commit!` from inside the
+;; transaction, next to the event, so it lands on the outermost commit
+;; whatever that is: a rolled back transition is never counted.
 
 (defn encode-result
   "Serialize a job result to JSON, dropping unserializable values to nil
   with a warning instead of throwing (a throw here would leave the row
-  stuck in `running` until the orphan lease fires). Shared by the runner
-  and the management API."
+  stuck in `running` until the orphan lease fires)."
   [job-name result]
   (try
     (db/json result)
@@ -715,7 +679,10 @@
              :cause cause)
       nil)))
 
-(defn record-terminal
+(defn- record-terminal
+  "Record the terminal outcome and the total time. Runs after the commit
+  that made the job terminal, so a rolled back transition is never
+  counted."
   [metrics job outcome]
   (when job
     (jobs-metrics/record-outcome metrics (:name job) (:queue job) outcome)
@@ -727,41 +694,241 @@
        outcome
        (- (inst-ms (ct/now)) (inst-ms (:created-at job)))))))
 
+(def schema:job-error
+  "Structured error of a job that did not complete. `type` and `code` are
+  keywords so they decode back from the stored JSON, `hint` is the human
+  message. The map stays open: these three keys are the contract, and
+  anything else is a detail the failing component adds for triage."
+  [:map {:title "job-error"}
+   [:type ::sm/keyword]
+   [:code ::sm/keyword]
+   [:hint ::sm/text]])
+
+(def check-job-error
+  "Validate a job error against its schema; raises with the malli
+  explanation when it does not match."
+  (sm/check-fn schema:job-error))
+
+(def orphan-error
+  "Error of a job whose execution process died. Nothing is alive to report
+  it, so the dispatcher stores this and writes no event: the durable state
+  of the job is the whole story."
+  (check-job-error {:type :internal
+                    :code :orphan
+                    :hint "job execution lease expired"}))
+
+(def ^:private decode-job-error-value
+  (sm/decoder schema:job-error sm/json-transformer))
+
+(defn decode-job-error
+  "Read back a stored `job.error` as a Clojure map, applying the
+  transformation of `schema:job-error` so `type` and `code` come back as
+  keywords instead of the strings the database holds."
+  [error]
+  (when (some? error)
+    (decode-job-error-value (cond-> error
+                              (db/pgobject? error)
+                              (db/decode-json-pgobject)))))
+
+;; --- CLAIM
+
+(def ^:private sql:claim-job
+  "UPDATE job
+      SET status='running', started_at=now(), modified_at=now()
+    WHERE id=?
+      AND scheduled_at=?
+      AND status IN ('new','scheduled','retry')
+    RETURNING retry_num")
+
+(defn claim
+  "Claim a job on behalf of a worker, internal or external, and record the
+  `start` event.
+
+  Only transitions a pending row (new/scheduled/retry) to `running`, and
+  requires an exact `scheduled-at` match with the value advertised in the
+  queue payload, so a stale payload (row rescheduled or claimed in the
+  meantime) affects 0 rows and must be skipped. Returns the number of
+  affected rows.
+
+  The event carries `attempt` = `retry_num + 1`: the number of the
+  attempt this run consumes from the retry budget."
+  [cfg job-id scheduled-at]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as tx-cfg}]
+                (if-let [{:keys [retry-num]}
+                         (db/exec-one! conn [sql:claim-job job-id scheduled-at])]
+                  (do
+                    (insert-event tx-cfg
+                                  job-id "start" {:attempt (inc (long retry-num))})
+                    1)
+                  0))))
+
+;; --- RETRY
+
+(def ^:private sql:retry-job
+  "UPDATE job
+      SET status='retry', modified_at=?, scheduled_at=?, retry_num=?, error=?
+    WHERE id=?
+      AND status IN ('running','retry')
+    RETURNING retry_num")
+
+(defn retry-job
+  "Schedule the next attempt of a running job and record the `retry` event.
+
+  `next-retry-num` is the counter after the transition and `reason` says
+  how we got there, one of `:backoff` or `:noop`. A backoff increments the
+  counter, a noop keeps it, so the event always reports the attempt that
+  counts against `max-retries`: a noop retry re-reports the same number,
+  because it consumed no budget. Returns the number of affected rows; a
+  terminal job is left untouched and writes no event."
+  [cfg job-id next-retry-num scheduled-at error reason]
+  (let [metrics (require-metrics cfg)
+        job     (get-job cfg job-id)
+        encoded (db/json (check-job-error error))]
+    (db/tx-run! cfg
+                (fn [{:keys [::db/conn] :as tx-cfg}]
+                  (if-let [{:keys [retry-num]}
+                           (db/exec-one! conn [sql:retry-job (ct/now) scheduled-at
+                                               next-retry-num encoded job-id])]
+                    (do
+                      (insert-event tx-cfg
+                                    job-id "retry" {:attempt (inc (long retry-num))
+                                                    :reason   (name reason)})
+                      (db/after-commit!
+                       #(jobs-metrics/record-retry metrics
+                                                   (:name job)
+                                                   (:queue job)
+                                                   reason))
+                      1)
+                    0)))))
+
+;; --- COMPLETE
+
+(def ^:private sql:complete-job
+  "UPDATE job
+      SET status='completed', completed_at=?, modified_at=?, result=?,
+          error=NULL, resource_id=coalesce(resource_id, ?)
+    WHERE id=?
+      AND status IN ('running','retry')
+    RETURNING id")
+
 (defn complete
-  "Mark a running job as completed with the (JSON-encodable) result.
+  "Mark a running job as completed and record the `end` event.
+
+  Named options:
+
+  - `:job-id`      the job to complete.
+  - `:result`      the JSON-encodable result, nil when the job returns
+                   nothing.
+  - `:resource-id` optional storage object to associate with the job. A
+                   resource is only ever set, never replaced: passing one
+                   for a job that already has a resource is a validation
+                   error, and a nil value leaves the column untouched.
+
+  The result, the resource, the status and the event share one
+  transaction, so a job never ends up completed with a resource that was
+  not stored or an event that is missing.
+
   Conditional on the non-terminal running/retry states (first-terminal
   wins: a row already marked failed/cancelled — e.g. an orphan detected
-  by the dispatcher — is never overwritten). Returns the number of
-  affected rows."
-  ([cfg job-id]
-   (complete cfg job-id nil))
-  ([cfg job-id result]
-   (let [metrics  (require-metrics cfg)
-         job      (get-job cfg job-id)
-         job-name (:name job)
-         n        (-> (db/exec-one! (db/get-connectable cfg)
-                                    [sql:complete-job (ct/now) (ct/now)
-                                     (when (some? result) (encode-result job-name result)) job-id])
-                      (db/get-update-count))]
-     (when (pos? n)
-       (db/after-commit! #(record-terminal metrics job :completed)))
-     (cleanup-throttle job-id)
-     n)))
+  by the dispatcher — is never overwritten) and writes no event. Returns
+  the number of affected rows."
+  [cfg & {:keys [job-id result resource-id]}]
+  (let [metrics (require-metrics cfg)
+        job     (get-job cfg job-id)]
+    (when (some? resource-id)
+      (when-not (uuid? resource-id)
+        (ex/raise :type :validation
+                  :code :invalid-resource-id
+                  :hint "resource-id must be a uuid"
+                  :resource-id resource-id))
+      (when (:resource-id job)
+        (ex/raise :type :validation
+                  :code :resource-already-associated
+                  :hint "the job already has a resource, it cannot be replaced"
+                  :job-id job-id
+                  :resource-id (:resource-id job))))
+    (let [encoded (when (some? result) (encode-result (:name job) result))
+          n       (db/tx-run! cfg
+                              (fn [{:keys [::db/conn] :as tx-cfg}]
+                                (if (db/exec-one! conn [sql:complete-job (ct/now) (ct/now)
+                                                        encoded resource-id job-id])
+                                  (do
+                                    (insert-event tx-cfg
+                                                  job-id "end" {:outcome "completed"})
+                                    (db/after-commit!
+                                     #(record-terminal metrics job :completed))
+                                    1)
+                                  0)))]
+      (cleanup-throttle job-id)
+      n)))
+
+;; --- FAIL
+
+(def ^:private sql:fail-job
+  "UPDATE job
+      SET status='failed', modified_at=?, error=?
+    WHERE id=?
+      AND status IN ('running','retry')
+    RETURNING id")
 
 (defn fail
-  "Mark a running job as failed with the error payload (a JSON object
-  with at least a :code). Conditional on the non-terminal running/retry
-  states (first-terminal wins). Returns the number of affected rows."
+  "Mark a running job as failed and record the `end` event.
+
+  The error must conform to `schema:job-error`; it is validated here, not
+  only at the RPC boundary, so every path writes the same shape. The
+  error never reaches the event: `job.error` is where the whole thing
+  lives, and the event only says the job failed.
+
+  Conditional on the non-terminal running/retry states (first-terminal
+  wins) and writes no event when it affects no row. Returns the number of
+  affected rows."
   [cfg job-id error]
   (let [metrics (require-metrics cfg)
         job     (get-job cfg job-id)
-        n       (-> (db/exec-one! (db/get-connectable cfg)
-                                  [sql:fail-job (ct/now)
-                                   (if (string? error) error (db/json error)) job-id])
-                    (db/get-update-count))]
-    (when (pos? n)
-      (db/after-commit! #(record-terminal metrics job :failed)))
+        encoded (db/json (check-job-error error))
+        n       (db/tx-run! cfg
+                            (fn [{:keys [::db/conn] :as tx-cfg}]
+                              (if (db/exec-one! conn [sql:fail-job (ct/now) encoded job-id])
+                                (do
+                                  (insert-event tx-cfg
+                                                job-id "end" {:outcome "failed"})
+                                  (db/after-commit!
+                                   #(record-terminal metrics job :failed))
+                                  1)
+                                0)))]
     (cleanup-throttle job-id)
+    n))
+
+;; --- CANCEL
+
+(def ^:private sql:cancel-job
+  "UPDATE job
+      SET status='cancelled', modified_at=?
+    WHERE id=?
+      AND status IN ('new','scheduled','retry')
+    RETURNING id")
+
+(defn cancel
+  "Cancel a pending job (new/scheduled/retry) and record the `end` event.
+
+  A running or terminal job is left untouched and writes no event. Returns
+  the number of affected rows."
+  [cfg job-id]
+  (let [metrics (require-metrics cfg)
+        job     (get-job cfg job-id)
+        n       (db/tx-run! cfg
+                            (fn [{:keys [::db/conn] :as tx-cfg}]
+                              (if (db/exec-one! conn [sql:cancel-job (ct/now) job-id])
+                                (do
+                                  (insert-event tx-cfg
+                                                job-id "end" {:outcome "cancelled"})
+                                  (db/after-commit!
+                                   #(record-terminal metrics job :cancelled))
+                                  1)
+                                0)))]
+    (when (pos? n)
+      (cleanup-throttle job-id))
     n))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

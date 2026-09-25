@@ -81,6 +81,11 @@
    :id        (uuid/next)
    :file-id   (uuid/next)})
 
+(def ^:private test-error
+  {:type :internal
+   :code :boom
+   :hint "boom"})
+
 (defn- get-progresss
   "Progress events of a job, oldest first, with decoded payloads."
   [job-id]
@@ -469,13 +474,14 @@
                                  ::jobs/params (make-params)})]
 
     (t/testing "first heartbeat writes"
-      ;; Backdate modified-at: submit and heartbeat can land in the same
-      ;; millisecond, which would make a strict > assertion flaky.
-      (th/db-update! :job {:modified-at (ct/in-past {:seconds 5})}
-                     {:id job-id})
-      (jobs/heartbeat cfg :job-id job-id)
-      (let [row (jobs/get-job cfg job-id)]
-        (t/is (> (inst-ms (:modified-at row)) (inst-ms (:created-at row))))))
+      ;; Backdate modified-at so the beat is unambiguous: the assertion
+      ;; compares against the value we set, not against created-at, which
+      ;; can land on the same millisecond.
+      (let [backdated (ct/in-past {:seconds 5})]
+        (th/db-update! :job {:modified-at backdated} {:id job-id})
+        (t/is (= 1 (jobs/heartbeat cfg :job-id job-id)))
+        (let [row (jobs/get-job cfg job-id)]
+          (t/is (> (inst-ms (:modified-at row)) (inst-ms backdated))))))
 
     (t/testing "immediate second heartbeat does not write (throttled)"
       (let [row1 (jobs/get-job cfg job-id)
@@ -875,4 +881,202 @@
     (t/testing "the job-id is what makes the durable writes reach the row"
       (t/is (pos? (jobs/heartbeat cfg :job-id job-id
                                   :progress {:current 1})))
+      (t/is (= [{:current 1}] (get-progresss job-id))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LIFECYCLE EVENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-events
+  "Every event of a job, in insertion order."
+  [job-id]
+  (->> (th/db-exec! ["SELECT kind, payload FROM job_event
+                      WHERE job_id = ? ORDER BY id ASC" job-id])
+       (mapv (fn [{:keys [kind payload]}]
+               {:kind kind :payload (db/decode-json-pgobject payload)}))))
+
+(defn- get-kinds
+  [job-id]
+  (mapv :kind (get-events job-id)))
+
+(defn- get-outcomes
+  [job-id]
+  (mapv (comp :outcome :payload) (filter #(= "end" (:kind %)) (get-events job-id))))
+
+(defn- mk-running
+  "A job already claimed by a worker, ready for a terminal transition."
+  [cfg]
+  (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+    (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+    job-id))
+
+(t/deftest claim-records-a-start-event-with-the-attempt
+  (let [cfg (make-cfg (get-job-defs))]
+    (t/testing "the first attempt is 1"
+      (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})]
+        (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+        (t/is (= [{:kind "start" :payload {:attempt 1}}] (get-events job-id)))))
+
+    (t/testing "a retried job claims attempt retry-num + 1"
+      (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})]
+        (th/db-update! :job {:retry-num 2} {:id job-id})
+        (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
+        (t/is (= [{:kind "start" :payload {:attempt 3}}] (get-events job-id)))))))
+
+(t/deftest claim-that-affects-no-row-writes-no-event
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/is (= 0 (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))))
+    (t/testing "only the first claim left a start event"
+      (t/is (= ["start"] (get-kinds job-id))))))
+
+(t/deftest retry-job-records-a-retry-event-per-reason
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/testing "a backoff increments the counter and reports the new attempt"
+      (jobs/retry-job cfg job-id 1 (ct/now) test-error :backoff)
+      (t/is (= {:attempt 2 :reason "backoff"}
+               (:payload (last (get-events job-id))))))
+
+    (t/testing "a noop keeps the counter and re-reports the same attempt"
+      (jobs/retry-job cfg job-id 1 (ct/now) test-error :noop)
+      (t/is (= {:attempt 2 :reason "noop"}
+               (:payload (last (get-events job-id))))))
+
+    (t/testing "the counter on the row is the one we asked for"
+      (t/is (= 1 (:retry-num (jobs/get-job cfg job-id)))))
+
+    (t/testing "a terminal job gets no retry and no event"
+      (th/db-update! :job {:status "failed"} {:id job-id})
+      (t/is (= 0 (jobs/retry-job cfg job-id 2 (ct/now) test-error :backoff)))
+      (t/is (= ["start" "retry" "retry"] (get-kinds job-id))))))
+
+(t/deftest complete-records-an-end-event
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:value 1})))
+    (t/is (= ["start" "end"] (get-kinds job-id)))
+    (t/is (= ["completed"] (get-outcomes job-id)))
+    (t/testing "a terminal job gets no second end event"
+      (t/is (= 0 (jobs/complete cfg :job-id job-id :result {:value 2})))
+      (t/is (= ["completed"] (get-outcomes job-id))))))
+
+(t/deftest fail-records-an-end-event-and-a-structured-error
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    (t/is (= 1 (jobs/fail cfg job-id test-error)))
+    (t/is (= ["failed"] (get-outcomes job-id)))
+    (t/testing "the error decodes back to the map we passed"
+      (t/is (= test-error (jobs/decode-job-error (:error (jobs/get-job cfg job-id))))))
+    (t/testing "the event carries no error, only the outcome"
+      (t/is (= {:outcome "failed"} (:payload (last (get-events job-id))))))
+    (t/testing "a terminal job gets no second end event"
+      (t/is (= 0 (jobs/fail cfg job-id test-error)))
+      (t/is (= ["failed"] (get-outcomes job-id))))))
+
+(t/deftest cancel-records-an-end-event
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params (make-params)})]
+    (t/is (= 1 (jobs/cancel cfg job-id)))
+    (t/is (= ["cancelled"] (get-outcomes job-id)))
+    (t/testing "a terminal job gets no second end event"
+      (t/is (= 0 (jobs/cancel cfg job-id)))
+      (t/is (= ["cancelled"] (get-outcomes job-id))))))
+
+(t/deftest a-failing-event-write-rolls-back-the-transition
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)]
+    ;; an event kind outside the CHECK constraint cannot be inserted
+    (with-redefs [jobs/insert-event (fn [& _]
+                                      (th/db-insert! :job_event {:job-id job-id
+                                                                 :kind   "unknown"}))]
+      (t/is (thrown? Exception (jobs/complete cfg :job-id job-id :result {:v 1}))))
+    (t/testing "the job is still running and no event was left behind"
+      (t/is (= "running" (:status (jobs/get-job cfg job-id))))
+      (t/is (= ["start"] (get-kinds job-id))))))
+
+(t/deftest complete-associates-a-resource-id-once
+  (let [cfg         (make-cfg (get-job-defs))
+        resource-id (uuid/next)]
+    (th/db-insert! :storage-object {:id resource-id :backend "test"})
+
+    (t/testing "a job without resource gets one at completion"
+      (let [job-id (mk-running cfg)]
+        (t/is (= 1 (jobs/complete cfg :job-id job-id
+                                  :result {:v 1}
+                                  :resource-id resource-id)))
+        (t/is (= resource-id (:resource-id (jobs/get-job cfg job-id))))))
+
+    (t/testing "completing without a resource leaves the column untouched"
+      (let [job-id (mk-running cfg)]
+        (t/is (= 1 (jobs/complete cfg :job-id job-id :result {:v 1})))
+        (t/is (nil? (:resource-id (jobs/get-job cfg job-id))))))
+
+    (t/testing "a job that already has a resource refuses a second one"
+      (let [job-id (mk-running cfg)]
+        ;; a job that already carries a resource, as submit left it
+        (th/db-update! :job {:resource-id resource-id} {:id job-id})
+        (t/is (thrown-with-msg? Exception #"already has a resource"
+                                (jobs/complete cfg
+                                               :job-id job-id
+                                               :result {:v 1}
+                                               :resource-id (uuid/next))))
+        (t/testing "and the job is still running"
+          (t/is (= "running" (:status (jobs/get-job cfg job-id)))))))
+
+    (t/testing "a resource that is not a uuid is rejected before any write"
+      (let [job-id (mk-running cfg)]
+        (t/is (thrown-with-msg? Exception #"must be a uuid"
+                                (jobs/complete cfg
+                                               :job-id job-id
+                                               :result {:v 1}
+                                               :resource-id "nope")))
+        (t/is (= "running" (:status (jobs/get-job cfg job-id))))))))
+
+(t/deftest job-error-schema-is-shared-and-validated
+  (t/testing "type and code are keywords so they decode back from JSON"
+    (t/is (= {:type :internal :code :orphan :hint "gone"}
+             (jobs/check-job-error {:type :internal :code :orphan :hint "gone"}))))
+
+  (t/testing "a missing key is rejected"
+    (t/is (thrown? Exception (jobs/check-job-error {:type :internal :code :orphan})))
+    (t/is (thrown? Exception (jobs/check-job-error {:type :internal
+                                                    :code    "orphan"
+                                                    :hint    "gone"}))))
+
+  (t/testing "extra details are allowed"
+    (t/is (= {:type :internal :code :orphan :hint "gone" :attempt 3}
+             (jobs/check-job-error {:type    :internal
+                                    :code    :orphan
+                                    :hint    "gone"
+                                    :attempt 3}))))
+
+  (t/testing "fail validates before writing"
+    (let [cfg    (make-cfg (get-job-defs))
+          job-id (mk-running cfg)]
+      (t/is (thrown? Exception (jobs/fail cfg job-id {:code :orphan})))
+      (t/is (= "running" (:status (jobs/get-job cfg job-id))))
+      (t/is (= ["start"] (get-kinds job-id)))))
+
+  (t/testing "the orphan error is a valid job error"
+    (t/is (= jobs/orphan-error (jobs/check-job-error jobs/orphan-error)))))
+
+(t/deftest progress-event-reaches-the-cfg-of-its-own-callback
+  "The event helper needs the msgbus and the metrics from the cfg, and it
+  must find them on the map that `db/tx-run!` hands to the callback: the
+  writers pass the whole cfg, not a rebuilt one."
+  (reset! received-contexts [])
+  (let [cfg        (make-cfg (capture-defs))
+        profile-id (:id (th/create-profile* 1))
+        job-cfg    (assoc cfg ::mbus/msgbus (fake-msgbus (atom [])))
+        job-id     (jobs/submit job-cfg {::jobs/name       :echo
+                                         ::jobs/params     (make-params)
+                                         ::jobs/profile-id profile-id})]
+    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
+                                :progress {:current 1})))
+    (t/testing "the event was stored, so the profile msgbus was reachable"
       (t/is (= [{:current 1}] (get-progresss job-id))))))

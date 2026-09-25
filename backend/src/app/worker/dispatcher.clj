@@ -13,6 +13,7 @@
    [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.jobs.metrics :as jobs-metrics]
    [app.metrics :as mtx]
    [app.redis :as rds]
@@ -71,14 +72,18 @@ RETURNING job.id, job.queue")
 
 (def ^:private sql:mark-orphan
   "UPDATE job
-      SET status='failed', modified_at=?::timestamptz,
-          error='{\"code\":\"orphan\"}'::jsonb
+      SET status='failed', modified_at=?::timestamptz, error=?::jsonb
      FROM (SELECT t.id
              FROM job AS t
             WHERE status = 'running'
               AND t.modified_at < ?::timestamptz) AS subquery
     WHERE job.id=subquery.id
 RETURNING job.id, job.queue")
+
+;; the error travels as text and PostgreSQL casts it: a PGobject parameter
+;; on a `::jsonb` placeholder is not what the driver expects here.
+(def ^:private orphan-error-json
+  (json/encode jobs/orphan-error))
 
 (defn- encode-payload
   [{:keys [id scheduled-at]}]
@@ -99,7 +104,7 @@ RETURNING job.id, job.queue")
 (defn- mark-orphan-jobs
   [{:keys [::db/conn ::timestamp ::lease] :as cfg}]
   (let [cutoff (ct/minus timestamp (or lease (cf/get-jobs-lease)))
-        rows    (db/exec! conn [sql:mark-orphan timestamp cutoff]
+        rows    (db/exec! conn [sql:mark-orphan timestamp orphan-error-json cutoff]
                           {:return-keys true})]
     (db/after-commit!
      (fn []
