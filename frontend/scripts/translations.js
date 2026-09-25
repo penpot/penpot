@@ -486,7 +486,25 @@ function cleanContext(frag) {
   return !/https?:|www\.|@|\|target:|\.mcp\.json/.test(frag);
 }
 
-function checkPunctuation(text, brands) {
+// Latin identifier (e.g. `tokenName`) that contains the char at `index`.
+function latinWordAt(text, index) {
+  const isWord = (c) => /[A-Za-zÀ-ÿ0-9_]/u.test(c);
+  let start = index;
+  let end = index;
+  while (start > 0 && isWord(text[start - 1])) start--;
+  while (end < text.length && isWord(text[end])) end++;
+  return text.slice(start, end);
+}
+
+// Number of plural forms declared by a PO `Plural-Forms` header.
+function parseNplurals(header) {
+  const m = /nplurals\s*=\s*(\d+)/.exec(header ?? "");
+  return m ? Number(m[1]) : 2;
+}
+
+// `source` is the English text: camelCase identifiers copied verbatim
+// from it (code names, not words glued together) are not reported.
+function checkPunctuation(text, brands, source = "") {
   const found = [];
   for (const m of text.matchAll(PUNCT_RE)) {
     const punct = m[0][0];
@@ -502,6 +520,8 @@ function checkPunctuation(text, brands) {
   for (const m of text.matchAll(CAMEL_RE)) {
     const frag = text.slice(Math.max(0, m.index - 30), m.index + 32);
     if (brands.some((mk) => frag.includes(mk))) continue;
+    const word = latinWordAt(text, m.index);
+    if (source && new RegExp(`\\b${word}\\b`, "u").test(source)) continue;
     found.push({ what: m[0], frag });
   }
   for (const m of text.matchAll(PH_GLUED_RE)) {
@@ -581,6 +601,8 @@ async function check(locale, words) {
   const entriesEn = dataEn.translations[""];
   const entriesEs = dataEs ? dataEs.translations[""] : {};
   const brands = [...GENERIC_BRANDS, ...(words?.brands ?? [])];
+  // Single-form locales (ja, ko, zh…) render every count with msgstr[0].
+  const singleForm = parseNplurals(data.headers?.["Plural-Forms"]) === 1;
   const errors = [];
   const warnings = [];
 
@@ -609,8 +631,11 @@ async function check(locale, words) {
 
     texts.forEach((text, i) => {
       if (!text) return;
-      const textEn = textsEn[i] ?? "";
-      const textEs = textsEs[i] ?? "";
+      // A single-form locale's only string must match the source's plural
+      // form (it carries the count placeholder), not the singular one.
+      const j = singleForm && eEn?.msgid_plural ? textsEn.length - 1 : i;
+      const textEn = textsEn[j] ?? "";
+      const textEs = textsEs[j] ?? "";
       const refs = refToks(textEn, textEs);
       if (textEn) {
         const unused = (e.comments?.flag ?? "")
@@ -629,7 +654,7 @@ async function check(locale, words) {
           }
         }
       }
-      for (const t of checkPunctuation(text, brands)) {
+      for (const t of checkPunctuation(text, brands, textEn)) {
         errors.push(
           `${msgid}: glued punctuation ${JSON.stringify(t.what)} ...${t.frag}...`,
         );
