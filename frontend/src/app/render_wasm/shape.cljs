@@ -9,12 +9,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
-   [app.render-wasm.svg-filters :as svg-filters]
    [beicon.v2.core :as rx]
    [cljs.core :as c]
    [cuerdas.core :as str]))
@@ -130,8 +130,8 @@
   [shape k]
   (when (api/initialized?)
     (let [shape (case k
-                  :svg-attrs (svg-filters/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
-                  (:fills :blur :shadow) (svg-filters/apply-svg-derived shape)
+                  :svg-attrs (svg-derived/apply-svg-derived (assoc shape :svg-attrs (get shape :svg-attrs)))
+                  (:fills :blur :shadow) (svg-derived/apply-svg-derived shape)
                   shape)
           v  (get shape k)
           id (get shape :id)]

@@ -78,10 +78,12 @@
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
+   [frontend-tests.render-wasm.serialization-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.router-test]
    [frontend-tests.svg-fills-test]
+   [frontend-tests.svg-filters-test]
    [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
@@ -205,10 +207,12 @@
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
+   'frontend-tests.svg-filters-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
