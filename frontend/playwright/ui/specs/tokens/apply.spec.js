@@ -58,7 +58,7 @@ test.describe("Tokens: Apply token", () => {
     const colorPicker = page.getByTestId("colorpicker");
     await expect(colorPicker).toBeVisible();
 
-    await colorPicker.getByRole("radio", { name: "Color tokens" }).click();
+    await colorPicker.getByTestId('opt-token-color').click();
     await colorPicker.getByRole("button", { name: "black" }).click();
 
     // The applied token badge replaces the plain color swatch/input in
