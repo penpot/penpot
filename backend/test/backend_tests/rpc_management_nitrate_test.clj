@@ -255,6 +255,26 @@
       (t/is (= (:owner-id organization) (-> msg :team :organization :owner-id)))
       (t/is (= (:avatar-bg-url organization) (str (-> msg :team :organization :avatar-bg-url)))))))
 
+(t/deftest notify-team-removal-publishes-event
+  (let [team-id           (uuid/random)
+        organization-name "OrgA"
+        calls             (atom [])
+        out               (with-redefs [mbus/pub! (fn [_cfg & {:keys [topic message]}]
+                                                    (swap! calls conj {:topic topic
+                                                                       :message message}))]
+                            (th/management-command! {::th/type :notify-team-change
+                                                     :id team-id
+                                                     :organization {:name organization-name}}))]
+    (t/is (th/success? out))
+    (t/is (= 1 (count @calls)))
+    (t/is (= uuid/zero (-> @calls first :topic)))
+    (let [msg (-> @calls first :message)]
+      (t/is (= :team-organization-change (:type msg)))
+      (t/is (= "dashboard.team-no-longer-belong-organization" (:notification msg)))
+      (t/is (= team-id (-> msg :team :id)))
+      (t/is (= organization-name (-> msg :team :organization :name)))
+      (t/is (nil? (-> msg :team :organization :id))))))
+
 (t/deftest notify-user-added-to-organization-creates-default-organization-team
   (with-mocks [nitrate-mock {:target 'app.nitrate/call
                              :return (fn [_ m _]

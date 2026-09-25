@@ -153,13 +153,25 @@
 
 ;; ---- API: notify-team-change
 
+(def ^:private schema:notify-team-change
+  [:or
+   cto/schema:team-with-organization
+   [:map
+    [:id ::sm/uuid]
+    [:organization
+     [:map
+      [:name ::sm/text]]]]])
+
 (sv/defmethod ::notify-team-change
   "Notify to Penpot a team change from nitrate"
   {::doc/added "2.18"
-   ::sm/params cto/schema:team-with-organization
+   ::sm/params schema:notify-team-change
    ::rpc/auth false}
   [cfg team]
-  (notifications/notify-team-change cfg (select-keys team [:id :is-your-penpot :organization]) nil)
+  (let [team         (select-keys team [:id :is-your-penpot :organization])
+        notification (when-not (get-in team [:organization :id])
+                       "dashboard.team-no-longer-belong-organization")]
+    (notifications/notify-team-change cfg team notification))
   nil)
 
 ;; ---- API: notify-user-added-to-organization
