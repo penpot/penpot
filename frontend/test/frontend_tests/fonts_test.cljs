@@ -281,28 +281,28 @@
   (t/is (nil? (#'df/parse-font-mtype nil)))
   (t/is (nil? (#'df/parse-font-mtype (bytes->buffer [0 1])))))
 
-(t/deftest prepare-font-defaults-missing-subfamily
+(t/deftest prepare-font-entry-defaults-missing-subfamily
   (let [font (fake-ot-font {:family "Satoshi"
                             :variant nil
                             :hhea #js {:ascender 1000 :descender 300}
                             :os2 #js {:usWinAscent 1000 :usWinDescent 300
                                       :sTypoAscender 800 :sTypoDescender 200
                                       :fsSelection 0}})
-        entry (#'df/prepare-font {:font font
-                                  :type "font/otf"
-                                  :name "Satoshi-Regular.otf"
-                                  :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
+        entry (df/prepare-font-entry {:font font
+                                      :type "font/otf"
+                                      :name "Satoshi-Regular.otf"
+                                      :data (bytes->buffer [79 84 84 79 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (= 400 (:font-weight entry)))
     (t/is (= "normal" (:font-style entry)))
     (t/is (false? (:height-warning? entry)))))
 
-(t/deftest prepare-font-tolerates-missing-tables
+(t/deftest prepare-font-entry-tolerates-missing-tables
   (let [font  (fake-ot-font {:family "Satoshi" :variant "Regular" :hhea nil :os2 nil})
-        entry (#'df/prepare-font {:font font
-                                  :type "font/ttf"
-                                  :name "Satoshi-Regular.ttf"
-                                  :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
+        entry (df/prepare-font-entry {:font font
+                                      :type "font/ttf"
+                                      :name "Satoshi-Regular.ttf"
+                                      :data (bytes->buffer [0 1 0 0 0 0 0 0])})]
     (t/is (= "Satoshi" (:font-family entry)))
     (t/is (false? (:height-warning? entry)))))
 

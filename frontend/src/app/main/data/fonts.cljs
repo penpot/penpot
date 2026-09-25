@@ -94,7 +94,7 @@
   can assemble the chunks and materialise the final font-variant record.
 
   Returns an observable that emits the created font-variant."
-  [{:keys [data team-id font-id font-family font-weight font-style] :as _item}]
+  [{:keys [data team-id font-id font-family font-weight font-style variant-name] :as _item}]
   ;; Upload each mtype as a separate chunked session in parallel, collect
   ;; all [mtype session-id] pairs, then call create-font-variant with :uploads.
   (->> (rx/from (seq data))
@@ -108,12 +108,100 @@
                   {})
        (rx/mapcat (fn [uploads]
                     (rp/cmd! :create-font-variant
-                             {:team-id     team-id
-                              :font-id     font-id
-                              :font-family font-family
-                              :font-weight font-weight
-                              :font-style  font-style
-                              :uploads     uploads})))))
+                             {:team-id      team-id
+                              :font-id      font-id
+                              :font-family  font-family
+                              :font-weight  font-weight
+                              :font-style   font-style
+                              :variant-name variant-name
+                              :uploads      uploads})))))
+
+(defn resolve-font-metadata
+  "Resolve the upload metadata for a font file.
+
+  `names` is a map carrying the `:family` and `:variant` values read by
+  opentype.js; each may be nil when the font has no usable name records.
+  `filename` is the original file name. The opentype.js values win per
+  field; any missing value is derived from the filename instead."
+  [names filename]
+  (let [{:keys [family variant]} names
+        base-name      (str/replace filename #"\.[^.]+$" "")
+        variant        (not-empty (str/trim (or variant "")))
+        family         (not-empty (str/trim (or family "")))
+        variant-source (or variant base-name)]
+    {:font-family  (or family (cm/parse-font-family base-name))
+     :font-weight  (cm/parse-font-weight variant-source)
+     :font-style   (cm/parse-font-style variant-source)
+     :variant-name variant}))
+
+(defn prepare-font-entry
+  "Prepare a single read font entry for upload.
+
+  `:font` is the object parsed by opentype.js (nil for woff2, which cannot
+  be parsed); `:name`, `:type` and `:data` come from reading the file.
+  Returns the entry metadata, the `:content` to upload and, for parsed
+  fonts, the `:height-warning?` flag. A font with missing vertical-metric
+  tables uploads with `:height-warning? false` instead of failing."
+  [{:keys [font type name data] :as _params}]
+  (if font
+    ;; Font was parsed with opentype.js (ttf, otf, woff)
+    (let [;; Select the first nonblank name candidate: a blank
+          ;; preferredFamily/preferredSubfamily must not shadow a valid
+          ;; fontFamily/fontSubfamily.
+          family          (cm/first-nonblank-string
+                           (.getEnglishName ^js font "preferredFamily")
+                           (.getEnglishName ^js font "fontFamily"))
+          variant         (cm/first-nonblank-string
+                           (.getEnglishName ^js font "preferredSubfamily")
+                           (.getEnglishName ^js font "fontSubfamily"))
+
+          ;; Vertical metrics determine the baseline in a text and the space between lines of
+          ;; text. For historical reasons, there are three pairs of ascender/descender
+          ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+          ;; system and application a different set will be used to render text on the
+          ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+          ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+          ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+          ;; table. On Windows, all browsers use the usWin metrics, but respect the
+          ;; useTypoMetrics setting and if set will use the OS/2 values.
+
+          hhea            (some-> ^js font .-tables .-hhea)
+          os2             (some-> ^js font .-tables .-os2)
+
+          hhea-ascender   (some-> ^js hhea .-ascender abs)
+          hhea-descender  (some-> ^js hhea .-descender abs)
+
+          win-ascent      (some-> ^js os2 .-usWinAscent abs)
+          win-descent     (some-> ^js os2 .-usWinDescent abs)
+
+          os2-ascent      (some-> ^js os2 .-sTypoAscender abs)
+          os2-descent     (some-> ^js os2 .-sTypoDescender abs)
+
+          ;; useTypoMetrics can be read from the 7th bit
+          f-selection     (some-> ^js os2 .-fsSelection (bit-test 7))
+
+          height-warning? (boolean
+                           (and hhea-ascender hhea-descender win-ascent win-descent
+                                (or (not= hhea-ascender win-ascent)
+                                    (not= hhea-descender win-descent)
+                                    (and f-selection os2-ascent os2-descent
+                                         (or (not= hhea-ascender os2-ascent)
+                                             (not= hhea-descender os2-descent))))))
+          data            (js/Uint8Array. data)
+          metadata        (resolve-font-metadata {:family family :variant variant} name)]
+      (assoc metadata
+             :content {:data data
+                       :name name
+                       :type type}
+             :height-warning? height-warning?))
+    ;; Font could not be parsed (woff2), extract metadata from filename
+    (let [data     (js/Uint8Array. data)
+          metadata (resolve-font-metadata {} name)]
+      (assoc metadata
+             :content {:data data
+                       :name name
+                       :type type}
+             :height-warning? false))))
 
 (defn- parse-font-mtype
   "Detects a font mime-type from the first four bytes of an ArrayBuffer.
@@ -158,84 +246,6 @@
       (catch :default _e
         (log/warn :msg (str/fmt "skipping file %s, unsupported format" name))
         {:error name}))))
-
-(defn- prepare-font
-  "Builds a ready-to-upload font entry from a parsed blob.
-
-  Never throws for missing font metadata: a nil subfamily (opentype.js
-  returns nil when the font carries no English preferred/subfamily
-  names, as seen with some Fontshare families) defaults to regular
-  weight/style, and missing vertical-metric tables default to no
-  height warning."
-  [{:keys [font type name data] :as _params}]
-  (let [name (or name "")]
-    (if (some? font)
-      ;; Font was parsed with opentype.js (ttf, otf, woff)
-      (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                                (.getEnglishName ^js font "fontFamily")
-                                "")
-            variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                                (.getEnglishName ^js font "fontSubfamily")
-                                "")
-
-            ;; Vertical metrics determine the baseline in a text and the space between lines of
-            ;; text. For historical reasons, there are three pairs of ascender/descender
-            ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
-            ;; system and application a different set will be used to render text on the
-            ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
-            ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
-            ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
-            ;; table. On Windows, all browsers use the usWin metrics, but respect the
-            ;; useTypoMetrics setting and if set will use the OS/2 values.
-
-            hhea            (some-> ^js font .-tables .-hhea)
-            os2             (some-> ^js font .-tables .-os2)
-
-            hhea-ascender   (some-> ^js hhea .-ascender abs)
-            hhea-descender  (some-> ^js hhea .-descender abs)
-
-            win-ascent      (some-> ^js os2 .-usWinAscent abs)
-            win-descent     (some-> ^js os2 .-usWinDescent abs)
-
-            os2-ascent      (some-> ^js os2 .-sTypoAscender abs)
-            os2-descent     (some-> ^js os2 .-sTypoDescender abs)
-
-            ;; useTypoMetrics can be read from the 7th bit
-            f-selection     (some-> ^js os2 .-fsSelection (bit-test 7))
-
-            height-warning? (boolean
-                             (and hhea-ascender hhea-descender win-ascent win-descent
-                                  (or (not= hhea-ascender win-ascent)
-                                      (not= hhea-descender win-descent)
-                                      (and f-selection os2-ascent os2-descent
-                                           (or (not= hhea-ascender os2-ascent)
-                                               (not= hhea-descender os2-descent))))))
-            data            (js/Uint8Array. data)]
-        {:content {:data data
-                   :name name
-                   :type type}
-         :font-family (or family "")
-         :font-weight (cm/parse-font-weight variant)
-         :font-style  (cm/parse-font-style variant)
-         :variant-name variant
-         :height-warning? height-warning?})
-      ;; Font could not be parsed (woff2), extract metadata from filename
-      (let [base-name       (str/replace name #"\.[^.]+$" "")
-            ;; Strip known weight/style tokens and separators to derive family name
-            ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
-            raw-family-name (-> base-name
-                                (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
-                                (str/replace #"[-_\s]+" " ")
-                                (str/trim))
-            family-name     (if (str/blank? raw-family-name) base-name raw-family-name)
-            data            (js/Uint8Array. data)]
-        {:content {:data data
-                   :name name
-                   :type type}
-         :font-family family-name
-         :font-weight (cm/parse-font-weight base-name)
-         :font-style  (cm/parse-font-style base-name)
-         :height-warning? false}))))
 
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
@@ -296,7 +306,7 @@
                       (if (:error item)
                         (update acc :errors conj (str "'" (:error item) "'"))
                         (try
-                          (update acc :fonts #(join % (prepare-font item)))
+                          (update acc :fonts #(join % (prepare-font-entry item)))
                           (catch :default cause
                             (log/warn :msg "skipping font file" :cause cause :name (:name item))
                             (update acc :errors conj (str "'" (:name item) "'"))))))
