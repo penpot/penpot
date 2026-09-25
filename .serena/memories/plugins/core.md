@@ -26,7 +26,7 @@
 
 ## Lifecycle
 
-- Loading a plugin closes existing non-background plugins and resets the runtime registry. Be careful around `allowBackground` semantics when changing load/close behavior.
+- Loading a plugin closes existing non-background plugins and removes them from the runtime registry. Background plugins (`allowBackground`) keep running and must stay registered: the registry routes their UI `postMessage` traffic by sender iframe and is what `ɵunloadPlugin` searches.
 - If sandbox evaluation fails, the runtime marks the error as plugin-originated, closes the plugin, and rethrows.
 - `plugin-manager` removes event listeners, timers, intervals, and modal state on close, and marks the plugin destroyed. Listener callbacks check that flag because Penpot events can fire after close.
 
