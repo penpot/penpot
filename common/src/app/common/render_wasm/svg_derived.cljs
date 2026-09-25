@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
+   [app.common.math :as mth]
    [app.common.svg :as csvg]
    [app.common.types.color :as clr]
    [app.common.uuid :as uuid]
@@ -382,9 +383,6 @@
       [{:fill-color "#000000" :fill-opacity 1}]
       :else [])))
 
-(def ^:private drop-shadow-tags
-  #{:feOffset :feGaussianBlur :feColorMatrix})
-
 (defn- find-filter-element
   "Finds a filter element by tag in filter content."
   [filter-content tag]
@@ -409,29 +407,80 @@
                 (d/parse-double 0))
      :hidden false}))
 
+(defn- filter-attr
+  "Attr of a filter primitive, whatever its case or hyphenation."
+  [elem & ks]
+  (let [attrs (normalize-attrs (:attrs elem))]
+    (some #(get attrs %) ks)))
+
+(defn- clamp-unit
+  [v]
+  (-> v (max 0) (min 1)))
+
+(defn- matrix-values
+  "The 20 values of an feColorMatrix of type matrix, else nil."
+  [elem]
+  (let [type (filter-attr elem :type)]
+    (when (or (nil? type) (= "matrix" type))
+      (let [values (some->> (filter-attr elem :values)
+                            (re-seq #"[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?")
+                            (mapv #(d/parse-double % 0)))]
+        (when (= 20 (count values))
+          values)))))
+
+(defn- matrix->shadow-color
+  "The input is SourceAlpha, so only the constant RGB terms and alpha row count."
+  [values]
+  {:color   (clr/rgb->hex (mapv #(mth/round (* 255 (clamp-unit (nth values %)))) [4 9 14]))
+   :opacity (clamp-unit (+ (nth values 18) (nth values 19)))})
+
+(defn- flood->shadow-color
+  [elem]
+  (let [color   (trim-fill-value (filter-attr elem :flood-color :floodcolor))
+        opacity (filter-attr elem :flood-opacity :floodopacity)]
+    {:color   (if (clr/color-string? color) (clr/parse color) clr/black)
+     :opacity (if (some? opacity) (clamp-unit (parse-opacity opacity)) 1)}))
+
+(defn- shadow-color
+  "Last color matrix or flood after the feOffset; earlier ones shape the silhouette."
+  [filter-content]
+  (let [source (->> filter-content
+                    (drop-while #(not= :feOffset (:tag %)))
+                    (filter #(contains? #{:feColorMatrix :feFlood} (:tag %)))
+                    (last))]
+    (case (:tag source)
+      :feFlood       (flood->shadow-color source)
+      :feColorMatrix (some-> (matrix-values source) matrix->shadow-color)
+      nil)))
+
+(defn- drop-shadow
+  [dx dy std-deviation color]
+  [{:id (uuid/next)
+    :style :drop-shadow
+    :offset-x dx
+    :offset-y dy
+    :blur (* 2 std-deviation)
+    :spread 0
+    :hidden false
+    :color color}])
+
 (defn- build-drop-shadow
-  [filter-content drop-shadow-elements]
-  (let [offset-elem (find-filter-element filter-content :feOffset)]
-    (when (and offset-elem (seq drop-shadow-elements))
-      (let [blur-elem  (find-filter-element drop-shadow-elements :feGaussianBlur)
-            dx         (-> (dm/get-in offset-elem [:attrs :dx])
-                           (d/parse-double 0))
-            dy         (-> (dm/get-in offset-elem [:attrs :dy])
-                           (d/parse-double 0))
-            blur-value (if blur-elem
-                         (-> (dm/get-in blur-elem [:attrs :stdDeviation])
-                             (d/parse-double 0)
-                             (* 2))
-                         0)]
-        [{:id (uuid/next)
-          :style :drop-shadow
-          :offset-x dx
-          :offset-y dy
-          :blur blur-value
-          :spread 0
-          :hidden false
-          ;; TODO: parse feColorMatrix to extract color/opacity
-          :color {:color "#000000" :opacity 1}}]))))
+  [filter-content]
+  (when-let [offset-elem (find-filter-element filter-content :feOffset)]
+    (let [blur-elem (find-filter-element filter-content :feGaussianBlur)]
+      (drop-shadow (d/parse-double (filter-attr offset-elem :dx) 0)
+                   (d/parse-double (filter-attr offset-elem :dy) 0)
+                   (d/parse-double (filter-attr blur-elem :stddeviation) 0)
+                   (or (shadow-color filter-content)
+                       {:color clr/black :opacity 1})))))
+
+(defn- build-fe-drop-shadow
+  "dx, dy and stdDeviation default to 2."
+  [elem]
+  (drop-shadow (d/parse-double (filter-attr elem :dx) 2)
+               (d/parse-double (filter-attr elem :dy) 2)
+               (d/parse-double (filter-attr elem :stddeviation) 2)
+               (flood->shadow-color elem)))
 
 (defn apply-svg-filters
   "Derives native blur/shadow from SVG filter definitions when the shape does
@@ -442,12 +491,17 @@
         existing-shadow (:shadow shape)]
     (if-let [filter-def (find-filter-def shape)]
       (let [content              (:content filter-def)
-            gaussian-blur        (find-filter-element content :feGaussianBlur)
-            drop-shadow-elements (filter #(contains? drop-shadow-tags (:tag %)) content)
+            fe-drop-shadow       (find-filter-element content :feDropShadow)
+            ;; In a shadow chain the blur belongs to the shadow, not the shape.
+            shadow-chain?        (or (some? fe-drop-shadow)
+                                     (some? (find-filter-element content :feOffset)))
+            gaussian-blur        (when-not shadow-chain?
+                                   (find-filter-element content :feGaussianBlur))
             blur                 (or existing-blur (build-blur gaussian-blur))
-            shadow               (if (seq existing-shadow)
-                                   existing-shadow
-                                   (build-drop-shadow content drop-shadow-elements))]
+            shadow               (cond
+                                   (seq existing-shadow) existing-shadow
+                                   (some? fe-drop-shadow) (build-fe-drop-shadow fe-drop-shadow)
+                                   :else (build-drop-shadow content))]
         (cond-> shape
           blur (assoc :blur blur)
           (seq shadow) (assoc :shadow shadow)))
