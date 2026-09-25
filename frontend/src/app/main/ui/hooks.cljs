@@ -310,6 +310,17 @@
       (update-fn value))
     state))
 
+(defn use-throttle
+  "Like `use-debounce`, but updates at most once per `ms` instead of only
+  after the value stops changing: the first and the last value of each burst
+  are both applied, so it stays live during continuous updates (e.g. a drag)."
+  [ms value]
+  (let [[state update-state-fn] (mf/useState value)
+        update-fn (mf/use-memo (mf/deps ms) #(f/throttle update-state-fn ms))]
+    (mf/with-effect [value]
+      (update-fn value))
+    state))
+
 (defn use-shared-state
   "A specialized hook that adds persistence and inter-context reactivity
   to the default mf/use-state hook.

@@ -201,9 +201,10 @@
           [base-objects wasm-modifiers]
           (apply-modifiers-to-selected selected base-objects wasm-modifiers))
 
-        selected-shapes   (->> selected
-                               (into [] (keep (d/getf objects-modified)))
-                               (not-empty))
+        selected-shapes   (mf/with-memo [selected objects-modified]
+                            (->> selected
+                                 (into [] (keep (d/getf objects-modified)))
+                                 (not-empty)))
 
         ;; True when at least one selected shape can be alt-duplicated.
         ;; Inner shapes of component copies are excluded by ctk/allow-duplicate?
@@ -211,6 +212,10 @@
                              (some #(ctk/allow-duplicate? base-objects %)
                                    (map (d/getf base-objects) selected)))
 
+        selected-shapes'  (ui-hooks/use-throttle 100 selected-shapes)
+        badge-shapes      (if (= transform :resize)
+                            selected-shapes'
+                            selected-shapes)
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -813,15 +818,16 @@
            :zoom zoom}])
 
        (when (and (seq selected-shapes)
-                  (not transform)
+                  (or (not transform) (contains? #{:resize :move} transform))
                   (not text-editing?)
                   (not edition)
                   (not read-only?)
                   (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:shapes selected-shapes
-           :zoom zoom}])
+          {:shapes badge-shapes
+           :zoom zoom
+           :vbox vbox}])
 
        (when show-measures?
          [:> msr/measurement*
