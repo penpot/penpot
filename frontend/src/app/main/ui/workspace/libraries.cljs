@@ -1064,7 +1064,8 @@
                    [:div {:class (stl/css :libraries-updates-item)
                           :key (dm/str (:id typography))}
                     [:*
-                     [:div {:style {:font-family (:font-family typography)
+                     [:div {:class (stl/css :typography-sample)
+                            :style {:font-family (:font-family typography)
                                     :font-weight (:font-weight typography)
                                     :font-style (:font-style typography)}}
                       (tr "workspace.assets.typography.sample")]
