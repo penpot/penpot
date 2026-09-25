@@ -159,6 +159,9 @@ fn render_body(
     ty: f32,
 ) -> Result<(String, String)> {
     let mut builder = SvgLayerCanvas::new(scale, page_rect, tx, ty);
+    if let Some(shape) = tree.get(id) {
+        builder.nested_fills.push(shape.inherited_fills(tree));
+    }
     render_tree(&mut builder, shared, id, tree, scale)?;
     builder.flush();
     Ok((builder.defs, builder.out))

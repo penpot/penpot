@@ -2073,14 +2073,7 @@ impl RenderState {
 
                 let shape = &shape;
 
-                if shape.fills.is_empty()
-                    && !matches!(shape.shape_type, Type::Group(_))
-                    && !matches!(shape.shape_type, Type::Frame(_))
-                    && !shape
-                        .svg_attrs
-                        .as_ref()
-                        .is_some_and(|attrs| attrs.fill_none)
-                {
+                if shape.inherits_fills() {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         fills::render(
@@ -2754,6 +2747,7 @@ impl RenderState {
                 // FIXME
                 return Ok((Vec::new(), 0, 0));
             };
+            self.nested_fills.push(shape.inherited_fills(tree));
             let mut extrect = shape.extrect(tree, scale);
             self.export_context = Some((extrect, scale));
             let margins = self.surfaces.margins;
