@@ -331,6 +331,32 @@
             res (ch/process-changes data [chg])]
         (t/is (= res data))))))
 
+(t/deftest mod-page
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (t/testing "sets background and background-token together"
+      (let [chg  {:type :mod-page
+                  :id page-id
+                  :background "#ffffff"
+                  :background-token "brand.bg"}
+            res  (ch/process-changes data [chg])
+            page (get-in res [:pages-index page-id])]
+        (t/is (= "#ffffff" (:background page)))
+        (t/is (= "brand.bg" (:background-token page)))))
+
+    (t/testing "clears background-token while leaving background untouched"
+      (let [data' (-> data
+                      (assoc-in [:pages-index page-id :background] "#ffffff")
+                      (assoc-in [:pages-index page-id :background-token] "brand.bg"))
+            chg   {:type :mod-page
+                   :id page-id
+                   :background-token nil}
+            res   (ch/process-changes data' [chg])
+            page  (get-in res [:pages-index page-id])]
+        (t/is (= "#ffffff" (:background page)))
+        (t/is (not (contains? page :background-token)))))))
 
 (t/deftest del-obj
   (let [file-id (uuid/custom 2 2)

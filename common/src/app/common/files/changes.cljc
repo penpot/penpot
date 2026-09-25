@@ -264,6 +264,7 @@
      ;; All props are optional, background can be nil because is the
      ;; way to remove already set background
      [:background {:optional true} [:maybe ctc/schema:hex-color]]
+     [:background-token {:optional true} [:maybe cto/schema:token-name]]
      [:name {:optional true} :string]
      ;; Pixel grid display controls — nil removes the per-page override
      ;; and falls back to the default hardcoded grid color/opacity.
@@ -878,6 +879,7 @@
                     (fn [page]
                       (let [name       (get params :name)
                             bg         (get params :background :not-found)
+                            bg-token   (get params :background-token :not-found)
                             grid-color (get params :pixel-grid-color :not-found)
                             grid-op    (get params :pixel-grid-opacity :not-found)]
                         (cond-> page
@@ -889,6 +891,12 @@
 
                           (nil? bg)
                           (dissoc :background)
+
+                          (string? bg-token)
+                          (assoc :background-token bg-token)
+
+                          (and (not= bg-token :not-found) (nil? bg-token))
+                          (dissoc :background-token)
 
                           (string? grid-color)
                           (assoc :pixel-grid-color grid-color)

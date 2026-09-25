@@ -40,6 +40,32 @@ test.describe("Tokens: Apply token", () => {
     ).toBeVisible();
   });
 
+  test("User applies color token to the canvas background", async ({
+    page,
+  }) => {
+    await setupTokensFileRender(page);
+
+    // No shape is selected, so the right sidebar shows the page/canvas
+    // options by default.
+    const canvasSection = page.getByRole("region", {
+      name: "Canvas background section",
+    });
+    await expect(canvasSection).toBeVisible();
+
+    // Open the color picker popover from the canvas background swatch.
+    await canvasSection.getByRole("button").first().click();
+
+    const colorPicker = page.getByTestId("colorpicker");
+    await expect(colorPicker).toBeVisible();
+
+    await colorPicker.getByRole("radio", { name: "Color tokens" }).click();
+    await colorPicker.getByRole("button", { name: "black" }).click();
+
+    // The applied token badge replaces the plain color swatch/input in
+    // the canvas background row.
+    await expect(canvasSection.getByText("black")).toBeVisible();
+  });
+
   test("User applies border-radius token to a shape from sidebar", async ({
     page,
   }) => {
