@@ -206,3 +206,114 @@
     (t/is (contains? (:migrations file') migration-id) "migration id persisted")
     (t/is (zero? (get-in file' [:data :pages-index page-id :objects shape-id :r1]))
           "migration repaired file data before schema validation")))
+
+(t/deftest migration-0029-moves-background-blur-out-of-blur
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        file-id      (uuid/next)
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        blur-id      (uuid/next)
+        blur         {:id blur-id
+                      :type :background-blur
+                      :value 10
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         (-> (ctf/make-file-data file-id page-id)
+                         (assoc-in [:pages-index page-id :objects shape-id] shape))]
+
+    (t/is (thrown? #?(:clj Exception :cljs js/Error)
+                   (ctf/check-file-data data))
+          "new schema rejects a background blur stored in :blur")
+
+    (let [data'  (cfm/migrate-data data migration-id)
+          shape' (get-in data' [:pages-index page-id :objects shape-id])]
+      (t/is (nil? (:blur shape')) "mis-typed :blur removed")
+      (t/is (= blur (:background-blur shape'))
+            "background blur moved to its own attribute")
+      (t/is (= data' (ctf/check-file-data data'))
+            "migrated file data passes the schema")
+      (t/is (= data' (cfm/migrate-data data' migration-id))
+            "migration is idempotent"))))
+
+(t/deftest migration-0029-keeps-existing-background-blur
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        existing-bg  {:id (uuid/next)
+                      :type :background-blur
+                      :value 5
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur {:id (uuid/next)
+                                       :type :background-blur
+                                       :value 10
+                                       :hidden false}
+                                :background-blur existing-bg))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:pages-index page-id :objects shape-id])]
+
+    (t/is (nil? (:blur shape')) "mis-typed :blur dropped")
+    (t/is (= existing-bg (:background-blur shape'))
+          "existing background blur preserved")))
+
+(t/deftest migration-0029-leaves-layer-blur-untouched
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        blur         {:id (uuid/next)
+                      :type :layer-blur
+                      :value 8
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:pages-index page-id :objects shape-id])]
+
+    (t/is (= blur (:blur shape')) "layer blur untouched")
+    (t/is (nil? (:background-blur shape')) "no background blur created")))
+
+(t/deftest migration-0029-migrates-component-blurs
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        blur         {:id (uuid/next)
+                      :type :background-blur
+                      :value 12
+                      :hidden false}
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        data'        (cfm/migrate-data data migration-id)
+        shape'       (get-in data' [:components component-id :objects shape-id])]
+
+    (t/is (nil? (:blur shape')) "component mis-typed :blur removed")
+    (t/is (= blur (:background-blur shape'))
+          "component background blur moved to its own attribute")))
+
+(t/deftest migration-0029-runs-through-file-migration
+  (let [migration-id "0029-move-background-blur-out-of-blur"
+        shape-id     (uuid/next)
+        blur-id      (uuid/next)
+        blur         {:id blur-id
+                      :type :background-blur
+                      :value 10
+                      :hidden false}
+        file         (ctf/make-file {:name "Legacy background blur"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :blur blur))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= blur (get-in file' [:data :pages-index page-id :objects shape-id :background-blur]))
+          "background blur moved before schema validation")
+    (t/is (nil? (get-in file' [:data :pages-index page-id :objects shape-id :blur]))
+          "mis-typed :blur removed")))
