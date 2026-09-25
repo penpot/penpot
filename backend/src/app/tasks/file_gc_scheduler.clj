@@ -68,7 +68,9 @@
   [_ cfg]
   {::jobs/name      :file-gc-scheduler
    ::jobs/schema    schema:file-gc-scheduler-params
-   ::jobs/handler   (partial execute-file-gc-scheduler cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-file-gc-scheduler cfg params))
    ::jobs/decoder   (sm/decoder schema:file-gc-scheduler-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:file-gc-scheduler-params)})
 

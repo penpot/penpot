@@ -59,6 +59,51 @@
 
 (set! *warn-on-reflection* true)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HANDLER CONTEXT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:context
+  "What a handler is allowed to know about the job it is running. The
+  schema is closed on purpose: a handler must not be able to reach the
+  whole row, and adding a key here is a decision, not an accident.
+
+  `queue` is deliberately absent: the column stores a tenant-prefixed
+  queue, which is a routing detail of the dispatcher, not a property of
+  the job. `name` already says which job this is.
+
+  The retry keys are absent too. Retry policy belongs to the runner: it
+  is the one comparing `retry-num` with `max-retries` and deciding
+  whether to schedule again. A handler has no use for the counter, and
+  the attempt number would lie anyway: the `noop` retry strategy runs
+  again without incrementing it, so a durable \"which execution is this\"
+  number would need a second counter that nothing bounds."
+  [:map {:closed true
+         :title "job-context"}
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:label [:maybe ::sm/text]]
+   ;; technical reference kept for garbage collection
+   [:resource-id [:maybe ::sm/uuid]]])
+
+(def check-context
+  "Validate a handler context; raises with the malli explanation when it
+  does not match the closed schema."
+  (sm/check-fn schema:context))
+
+(defn make-context
+  "Build the handler context from a job row: exactly the four keys a
+  handler may see, and nothing else. The result is a plain map, not the
+  database row, and it is not modified afterwards.
+
+  The empty label is the `submit` default for \"no label\", so it becomes
+  nil here: a handler sees either a label or nothing."
+  [job]
+  (check-context {:id          (:id job)
+                  :name        (:name job)
+                  :label       (if (str/blank? (:label job)) nil (:label job))
+                  :resource-id (:resource-id job)}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB DEFINITIONS (registry)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,6 +112,14 @@
   [:map {:title "job-def"}
    [::name [:or ::sm/text :keyword]]
    [::schema any?]
+   ;; every handler is [context params]. A job-def already closes over its
+   ;; own dependencies, so nothing else is handed to it: a handler cannot
+   ;; reach the runner cfg, the pool or any other component.
+   ;;
+   ;; A wrapper forwards the context to its implementation only when that
+   ;; implementation takes it. Most jobs have no use for it, so most
+   ;; wrappers are (fn [_context params] (execute-X cfg params)) and their
+   ;; implementation stays [cfg params].
    [::handler ::sm/fn]
    [::decoder ::sm/fn]
    [::validator ::sm/fn]])
@@ -864,11 +917,18 @@
   {::name    :delete-object
    ::params  {...}     ;; raw (JSON-shaped) params
    ::defs    {...}     ;; the ::jobs/defs registry
+   ::context {...}}    ;; optional, validated and delivered as is
    ::job-id  <uuid>}   ;; optional, only when the row already exists
+
+  Without ::context the handler receives a nil context: there is no row
+  to describe. ::context and ::job-id are independent, and providing a
+  context does not turn this into a durable execution: only the job-id
+  makes heartbeat and progress reach a row.
 
   Returns the handler result."
   [cfg]
   (let [job-def (get-job-def (get-defs cfg) (get cfg ::name))
+        context (some-> (get cfg ::context) check-context)
         decoded (decode-params job-def (get cfg ::params))]
     (binding [*job-id* (get cfg ::job-id)]
-      ((::handler job-def) decoded))))
+      ((::handler job-def) context decoded))))

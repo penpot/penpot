@@ -33,7 +33,9 @@
   [_ cfg]
   {::jobs/name      :audit-log-gc
    ::jobs/schema    schema:audit-log-gc-params
-   ::jobs/handler   (partial execute-audit-log-gc cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-audit-log-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:audit-log-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-gc-params)})
 

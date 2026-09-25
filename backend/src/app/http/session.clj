@@ -389,7 +389,9 @@
   [_ cfg]
   {::jobs/name      :session-gc
    ::jobs/schema    schema:session-gc-params
-   ::jobs/handler   (fn [_] (execute-session-gc cfg))
+   ::jobs/handler
+   (fn [_context params]
+     (execute-session-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:session-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:session-gc-params)})
 

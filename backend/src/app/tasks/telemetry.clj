@@ -319,7 +319,9 @@
   [_ cfg]
   {::jobs/name      :telemetry
    ::jobs/schema    schema:telemetry-params
-   ::jobs/handler   (partial execute-telemetry cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-telemetry cfg params))
    ::jobs/decoder   (sm/decoder schema:telemetry-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:telemetry-params)})
 

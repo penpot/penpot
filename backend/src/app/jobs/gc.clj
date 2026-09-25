@@ -112,7 +112,9 @@
   [_ cfg]
   {::jobs/name      :jobs-gc
    ::jobs/schema    schema:jobs-gc-params
-   ::jobs/handler   (partial execute-jobs-gc cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-jobs-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:jobs-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:jobs-gc-params)})
 

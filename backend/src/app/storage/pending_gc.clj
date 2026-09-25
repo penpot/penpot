@@ -92,7 +92,9 @@
   [_ cfg]
   {::jobs/name      :storage-pending-gc
    ::jobs/schema    schema:storage-pending-gc-params
-   ::jobs/handler   (partial execute-storage-pending-gc cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-pending-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:storage-pending-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:storage-pending-gc-params)})
 

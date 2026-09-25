@@ -104,7 +104,9 @@
   [_ cfg]
   {::jobs/name      :process-webhook-event
    ::jobs/schema    schema:process-webhook-event-params
-   ::jobs/handler   (partial process-event-impl cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (process-event-impl cfg params))
    ::jobs/decoder   (sm/decoder schema:process-webhook-event-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:process-webhook-event-params)})
 ;; --- RUN
@@ -212,7 +214,9 @@
   [_ cfg]
   {::jobs/name      :run-webhook
    ::jobs/schema    schema:run-webhook-params
-   ::jobs/handler   (partial run-webhook-impl cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (run-webhook-impl cfg params))
    ::jobs/decoder   (sm/decoder schema:run-webhook-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:run-webhook-params)})
 

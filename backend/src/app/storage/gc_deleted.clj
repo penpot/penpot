@@ -196,7 +196,9 @@
   [_ cfg]
   {::jobs/name      :storage-gc-deleted
    ::jobs/schema    schema:storage-gc-deleted-params
-   ::jobs/handler   (partial execute-storage-gc-deleted cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-gc-deleted cfg params))
    ::jobs/decoder   (sm/decoder schema:storage-gc-deleted-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:storage-gc-deleted-params)})
 

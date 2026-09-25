@@ -76,7 +76,7 @@
   (let [metrics (make-metrics)
         defs    {:echo {::jobs/name      :echo
                         ::jobs/schema    [:map]
-                        ::jobs/handler   identity
+                        ::jobs/handler   (fn [_context params] params)
                         ::jobs/decoder   identity
                         ::jobs/validator (constantly true)}}
         cfg     {::jobs/defs   defs
@@ -95,7 +95,7 @@
   (let [metrics (make-metrics)
         defs    {:echo {::jobs/name      :echo
                         ::jobs/schema    [:map]
-                        ::jobs/handler   identity
+                        ::jobs/handler   (fn [_context params] params)
                         ::jobs/decoder   identity
                         ::jobs/validator (constantly true)}}
         cfg     {::jobs/defs  defs

@@ -173,6 +173,8 @@
   [_ cfg]
   {::jobs/name      :delete-object
    ::jobs/schema    schema:delete-object-params
-   ::jobs/handler   (partial execute-delete-object cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-delete-object cfg params))
    ::jobs/decoder   (sm/decoder schema:delete-object-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:delete-object-params)})

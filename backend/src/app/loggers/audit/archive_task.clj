@@ -116,7 +116,9 @@
   [_ cfg]
   {::jobs/name      :audit-log-archive
    ::jobs/schema    schema:audit-log-archive-params
-   ::jobs/handler   (partial execute-audit-log-archive cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-audit-log-archive cfg params))
    ::jobs/decoder   (sm/decoder schema:audit-log-archive-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:audit-log-archive-params)})
 

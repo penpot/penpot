@@ -490,7 +490,8 @@
       (try-on! (method-fn params)))))
 
 (defn run-task!
-  "Execute a job handler directly (in-process, no row)."
+  "Execute a job handler directly (in-process, no row): the handler gets a
+  nil context, because there is no job to describe."
   ([name]
    (run-task! name {}))
   ([name params]
@@ -505,8 +506,9 @@
 
 (defn run-pending-jobs
   "Execute the pending (status='new') `job` rows in-process (simulating
-  the dispatcher + runner for the tests). Does not touch the row
-  status; only the handler side effects matter."
+  the dispatcher + runner for the tests). Each row gets its context and its
+  job-id, so heartbeats and progress reach it exactly like in the runner.
+  Does not touch the row status; only the handler side effects matter."
   []
   (db/tx-run! *system*
               (fn [{:keys [::db/conn]}]
@@ -514,7 +516,9 @@
                   (doseq [row jobs-rows]
                     (jobs/invoke (-> *system*
                                      (assoc ::jobs/name (:name row))
-                                     (assoc ::jobs/params (:params row)))))))))
+                                     (assoc ::jobs/params (:params row))
+                                     (assoc ::jobs/context (jobs/make-context row))
+                                     (assoc ::jobs/job-id (:id row)))))))))
 
 ;; --- UTILS
 

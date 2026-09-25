@@ -54,7 +54,8 @@
   [_ cfg]
   {::jobs/name      :echo
    ::jobs/schema    schema:echo-params
-   ::jobs/handler   (partial echo-handler cfg)
+   ::jobs/handler   (fn [_context params]
+                      (echo-handler cfg params))
    ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:echo-params)})
 
@@ -440,7 +441,8 @@
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params params})]
     (t/testing "handler receives cfg with job-id context for heartbeats"
-      (t/is (= params (echo-handler (assoc cfg ::jobs/job-id job-id) params))))))
+      (t/is (= params (echo-handler (assoc cfg ::jobs/job-id job-id)
+                                    params))))))
 
 (t/deftest terminal-writers-require-metrics
   (let [cfg    (make-cfg (get-job-defs))
@@ -611,7 +613,8 @@
                    (ig/init {::jobs/defs {::echo-job
                                           {::jobs/name      :other
                                            ::jobs/schema    schema:echo-params
-                                           ::jobs/handler   echo-handler
+                                           ::jobs/handler   (fn [_context params]
+                                                              (echo-handler nil params))
                                            ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
                                            ::jobs/validator (sm/validator schema:echo-params)}}}))))
 
@@ -620,7 +623,8 @@
                    (ig/init {::jobs/defs {::echo-job
                                           {::jobs/name    :echo
                                            ::jobs/schema  schema:echo-params
-                                           ::jobs/handler echo-handler}}})))))
+                                           ::jobs/handler (fn [_context params]
+                                                            params)}}})))))
 
 (t/deftest generic-schema-round-trip-preserves-type-sensitive-fields
   "For each registered job-def, verify that type-sensitive fields (uuids, insts)
@@ -749,3 +753,126 @@
                                   :progress {:current 1})))
     (t/is (= [{:current 1}] (get-progresss job-id)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HANDLER CONTEXT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- mk-row
+  "A job row as the runner and make-context see it."
+  [overrides]
+  (merge {:id          (uuid/next)
+          :name        "echo"
+          :queue       "test:default"
+          :label       nil
+          :resource-id nil
+          :retry-num   0
+          :max-retries 3}
+         overrides))
+
+(t/deftest make-context-selects-exactly-the-agreed-keys
+  (let [context (jobs/make-context (mk-row {}))]
+    (t/is (= #{:id :name :label :resource-id} (set (keys context))))
+    (t/testing "the tenant-prefixed queue is a routing detail, not context"
+      (t/is (not (contains? context :queue))))
+    (t/testing "the retry keys belong to the runner, not to a handler"
+      (t/is (not (contains? context :retry-num)))
+      (t/is (not (contains? context :max-retries)))
+      (t/is (not (contains? context :attempt))))
+    (t/testing "the context is a plain map, not the row"
+      (t/is (not= (set (keys (mk-row {}))) (set (keys context)))))))
+
+(t/deftest make-context-normalizes-an-empty-label
+  (t/testing "the empty label is the submit default for no label"
+    (t/is (nil? (:label (jobs/make-context (mk-row {:label ""})))))
+    (t/is (nil? (:label (jobs/make-context (mk-row {:label nil}))))))
+  (t/testing "a real label is carried as is"
+    (t/is (= "my-label" (:label (jobs/make-context (mk-row {:label "my-label"})))))))
+
+(t/deftest make-context-always-carries-the-resource-reference
+  (t/testing "the key exists even when there is no resource"
+    (let [context (jobs/make-context (mk-row {}))]
+      (t/is (contains? context :resource-id))
+      (t/is (nil? (:resource-id context)))))
+  (t/testing "a resource reference is carried as is"
+    (let [resource-id (uuid/next)]
+      (t/is (= resource-id
+               (:resource-id (jobs/make-context (mk-row {:resource-id resource-id}))))))))
+
+(t/deftest make-context-rejects-invalid-rows
+  (t/testing "a missing id is rejected"
+    (t/is (thrown? Exception (jobs/make-context (mk-row {:id nil})))))
+  (t/testing "a missing name is rejected"
+    (t/is (thrown? Exception (jobs/make-context (mk-row {:name nil})))))
+  (t/testing "a non uuid resource reference is rejected"
+    (t/is (thrown? Exception (jobs/make-context (mk-row {:resource-id "nope"}))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IN-PROCESS INVOCATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def received-contexts (atom []))
+
+(defn- capture-defs
+  "Job-defs whose handler records the context it receives."
+  []
+  {:echo {::jobs/name      :echo
+          ::jobs/schema    schema:echo-params
+          ::jobs/handler   (fn [context params]
+                             (swap! received-contexts conj context)
+                             params)
+          ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
+          ::jobs/validator (sm/validator schema:echo-params)}})
+
+(t/deftest invoke-delivers-a-nil-context-without-a-row
+  (reset! received-contexts [])
+  (let [cfg    (make-cfg (capture-defs))
+        params (make-params)]
+    (t/is (= params (jobs/invoke (assoc cfg ::jobs/name :echo
+                                        ::jobs/params params))))
+    (t/is (= [nil] @received-contexts))))
+
+(t/deftest invoke-delivers-an-explicit-context
+  (reset! received-contexts [])
+  (let [cfg     (make-cfg (capture-defs))
+        params  (make-params)
+        context (jobs/make-context (mk-row {}))]
+    (jobs/invoke (assoc cfg ::jobs/name :echo
+                        ::jobs/params params
+                        ::jobs/context context))
+    (t/is (= [context] @received-contexts))
+    (t/testing "an explicit context does not enable heartbeat by itself"
+      (t/is (= [] (get-progresss (:id context)))))))
+
+(t/deftest invoke-validates-an-explicit-context
+  (let [cfg (make-cfg (capture-defs))]
+    (t/testing "a partial context is rejected"
+      (t/is (thrown? Exception
+                     (jobs/invoke (assoc cfg
+                                         ::jobs/name :echo
+                                         ::jobs/params (make-params)
+                                         ::jobs/context {:id (uuid/next)})))))
+    (t/testing "an extra key is rejected: the schema is closed"
+      (t/is (thrown? Exception
+                     (jobs/invoke (assoc cfg
+                                         ::jobs/name :echo
+                                         ::jobs/params (make-params)
+                                         ::jobs/context
+                                         (assoc (jobs/make-context (mk-row {}))
+                                                :params {}))))))))
+
+(t/deftest invoke-job-id-is-independent-from-the-context
+  (reset! received-contexts [])
+  (let [cfg    (make-cfg (capture-defs))
+        params (make-params)
+        job-id (jobs/submit cfg {::jobs/name   :echo
+                                 ::jobs/params params})]
+    (jobs/invoke (assoc cfg ::jobs/name :echo
+                        ::jobs/params params
+                        ::jobs/job-id job-id))
+    (t/is (= [nil] @received-contexts)
+          "a job-id without a context still delivers a nil context")
+    (t/testing "the job-id is what makes the durable writes reach the row"
+      (t/is (pos? (jobs/heartbeat cfg :job-id job-id
+                                  :progress {:current 1})))
+      (t/is (= [{:current 1}] (get-progresss job-id))))))

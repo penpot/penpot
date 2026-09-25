@@ -356,7 +356,9 @@
 
 (defmethod ig/init-key ::sendmail
   [_ cfg]
-  (fn [params]
+  ;; the job handler: [context params]. The smtp deps are closed over
+  ;; here, and this job has no use for the context.
+  (fn [_context params]
     (sendmail-impl cfg params)))
 
 (defmethod ig/init-key ::job-def

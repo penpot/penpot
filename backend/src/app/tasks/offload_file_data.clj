@@ -58,6 +58,8 @@
   [_ cfg]
   {::jobs/name      :offload-file-data
    ::jobs/schema    schema:offload-file-data-params
-   ::jobs/handler   (partial execute-offload-file-data cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-offload-file-data cfg params))
    ::jobs/decoder   (sm/decoder schema:offload-file-data-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:offload-file-data-params)})

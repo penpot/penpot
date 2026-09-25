@@ -117,11 +117,12 @@
                                              :code :data-validation}
                                             cause))))
               handler   (::jobs/handler job-def)
+              context   (jobs/make-context job)
               tpoint    (ct/tpoint)
               labels    (into-array String [(:name job)])
               result    (binding [jobs/*job-id* (:id job)]
                           (try
-                            (handler params)
+                            (handler context params)
                             (finally
                               (jobs-metrics/record-execution
                                metrics

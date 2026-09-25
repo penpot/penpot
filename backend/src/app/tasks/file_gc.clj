@@ -278,6 +278,8 @@
   [_ cfg]
   {::jobs/name      :file-gc
    ::jobs/schema    schema:file-gc-params
-   ::jobs/handler   (partial execute-file-gc cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-file-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:file-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:file-gc-params)})

@@ -35,9 +35,14 @@
 
 (def received (atom []))
 
+(def received-contexts (atom []))
+
 (defn echo-handler
-  [cfg params]
+  "Handler implementation: the context comes from the job-def wrapper and
+  the params are what the runner decoded from the row."
+  [cfg context params]
   (swap! received conj params)
+  (swap! received-contexts conj context)
   params)
 
 (def schema:echo-params
@@ -47,10 +52,13 @@
    [:id ::sm/uuid]])
 
 (defn- echo-job-def
+  "Job-def with the standard wrapper: [context params], with the component
+  deps closed over at init time."
   []
   {::jobs/name      :echo-runner
    ::jobs/schema    schema:echo-params
-   ::jobs/handler   (partial echo-handler nil)
+   ::jobs/handler   (fn [context params]
+                      (echo-handler nil context params))
    ::jobs/decoder   (sm/decoder schema:echo-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:echo-params)})
 
@@ -110,13 +118,14 @@
   (th/database-reset
    (fn []
      (reset! received [])
+     (reset! received-contexts [])
      (clear-queue)
      (next))))
 
 (t/use-fixtures :each test-fixture)
 
 (defn- mk-job
-  [{:keys [name status scheduled-at params max-retries]
+  [{:keys [name status scheduled-at params max-retries label]
     :or   {name        "echo-runner"
            status      "new"
            ;; Valid echo params by default: direct inserts bypass the
@@ -128,6 +137,7 @@
   (let [id (uuid/next)]
     (th/db-insert! :job {:id           id
                          :name         name
+                         :label        label
                          :queue        (str (cf/get :tenant) ":test")
                          :params       (db/json params)
                          :priority     100
@@ -190,6 +200,37 @@
         (t/is (some? (:completed-at row)))
         (t/is (nil? (:error row)))))))
 
+(t/deftest runner-builds-the-handler-context-from-the-row
+  (let [params       {:object    :snapshot
+                      :deleted-at (ct/now)
+                      :id         (uuid/next)}
+        scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at
+                              :params      params
+                              :label       "runner-label"})]
+
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {}))
+
+    (t/testing "the handler receives exactly the four context keys"
+      (t/is (= 1 (count @received-contexts)))
+      (let [context (first @received-contexts)]
+        (t/is (= #{:id :name :label :resource-id} (set (keys context))))
+        (t/is (= job-id (:id context)))
+        (t/is (= "echo-runner" (:name context)))
+        (t/is (= "runner-label" (:label context)))
+        (t/is (nil? (:resource-id context)))
+
+        (t/testing "and nothing of the row leaks into it"
+          (t/is (not (contains? context :params)))
+          (t/is (not (contains? context :status)))
+          (t/is (not (contains? context :result)))
+          (t/is (not (contains? context :retry-num)))
+          (t/is (not (contains? context :max-retries)))
+          (t/is (not (contains? context :attempt)))
+          (t/is (not (contains? context :queue))
+                "the tenant-prefixed queue is a routing detail, not context"))))))
+
 (t/deftest runner-records-queue-wait-execution-and-total
   (let [metrics (make-metrics)
         cfg     (assoc (mk-cfg {}) ::mtx/metrics metrics)
@@ -229,7 +270,7 @@
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
-                             (fn [_params]
+                             (fn [_context _params]
                                (throw (ex-info "transient failure"
                                                {:type ::wrk/retry
                                                 :delay (ct/duration {:millis 1000})}))))}]
@@ -258,7 +299,7 @@
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
-                             (fn [_params]
+                             (fn [_context _params]
                                (throw (ex-info "transient failure"
                                                {:type ::wrk/retry
                                                 ;; plain Long literal, not a Duration
@@ -280,7 +321,7 @@
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
-                             (fn [_params]
+                             (fn [_context _params]
                                (throw (ex-info "noop"
                                                {:type ::wrk/retry
                                                 :strategy ::wrk/noop
@@ -302,7 +343,7 @@
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
-                             (fn [_params] (throw (ex-info "fatal" {}))))}]
+                             (fn [_context _params] (throw (ex-info "fatal" {}))))}]
     (push-payload job-id scheduled-at)
     (run-one (mk-cfg {:defs defs}))
     (let [row (get-row job-id)]
@@ -315,7 +356,7 @@
         defs         {:echo-runner
                       (assoc (echo-job-def)
                              ::jobs/handler
-                             (fn [_params]
+                             (fn [_context _params]
                                ;; simulate the dispatcher marking the
                                ;; running job as orphan while the handler
                                ;; is executing

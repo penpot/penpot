@@ -28,7 +28,9 @@
   [_ cfg]
   {::jobs/name      :demo-purge
    ::jobs/schema    schema:demo-purge-params
-   ::jobs/handler   (partial execute-demo-purge cfg)
+   ::jobs/handler
+   (fn [_context params]
+     (execute-demo-purge cfg params))
    ::jobs/decoder   (sm/decoder schema:demo-purge-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:demo-purge-params)})
 
