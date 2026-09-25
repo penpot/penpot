@@ -35,7 +35,7 @@ high-coverage support reference, never the base.
   plus a `#_{:clj-kondo/ignore [:penpot/tr-dynamic]}` on the call site.
 - New entries take `#:` refs from `en`; copy `#, unused`, never `#, fuzzy`.
 - `en` keys with empty `msgstr` (or `#, fuzzy` + empty): translate from `es`/source context, never leave empty.
-- Entries whose `en` uses `msgid_plural` need `msgstr[0]`/`msgstr[1]` (header: `nplurals=2; plural=n != 1`). Keep the `msgid_plural` line: a singular `msgstr` on a plural key silently breaks count selection at runtime (the app build reads 1-elem `msgstr` as singular).
+- Entries whose `en` uses `msgid_plural` need `msgstr[0]`/`msgstr[1]` (header: `nplurals=2; plural=n != 1`). Keep the `msgid_plural` line: a singular `msgstr` on a plural key silently breaks count selection at runtime (the app build reads 1-elem `msgstr` as singular). Exception: single-form locales (`nplurals=1`, e.g. `jpn_JP`, `ko`) keep ONE `msgstr[0]` that includes the count `%s` (build emits a plain string, runtime formats it with the count for every n); `check` compares it against the `en` plural form.
 - `sync` re-adds `#, fuzzy` on EVERY run for entries fuzzy in `en`; re-strip after the last sync, never before it.
 - Preserve verbatim: `%s`/`%d`, `{var}`/`{{...}}`, markdown `[text](%s)`, HTML tags, `\n` positions, brand names (Penpot), key names (Ctrl/Shift/Alt), technical terms (SVG, CSS, HSV, RGB).
 
