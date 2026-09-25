@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-file-test
   (:require
    [app.common.features :as cfeat]
+   [app.common.generic-pool :as gpool]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
@@ -17,12 +18,15 @@
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http :as http]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str])
+  (:import
+   java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -2782,3 +2786,278 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest update-file-applies-a-repeated-commit-only-once
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        commit-id (uuid/random)
+
+        params  {::th/type :update-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :session-id (uuid/random)
+                 :revn 0
+                 :vern 0
+                 :commit-id commit-id
+                 :features cfeat/supported-features
+                 :changes [{:type :add-page
+                            :name "page to add once"
+                            :id (uuid/random)}]}
+
+        ;; The client never learns the outcome of the first call and sends
+        ;; the same commit again.
+        out1    (th/command! params)
+        out2    (th/command! params)]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    (t/testing "the page is added once"
+      (let [out (th/command! {::th/type :get-file
+                              ::rpc/profile-id (:id profile)
+                              :id (:id file)})]
+        (t/is (nil? (:error out)))
+        (t/is (= 2 (count (get-in out [:result :data :pages]))))))
+
+    (t/testing "the file advances a single revision"
+      (let [row (th/db-get :file {:id (:id file)})]
+        (t/is (= 1 (:revn row)))))
+
+    (t/testing "the repeated call answers exactly what the first one did"
+      (t/is (= (:revn (:result out1))
+               (:revn (:result out2)))))
+
+    (t/testing "the repeated call skips the lagged changes nobody reads"
+      (t/is (not (contains? (:result out2) :lagged))))
+
+    (t/testing "a replay is audited like the call it repeats"
+      (let [props1 (-> out1 :result meta :app.loggers.audit/replace-props)
+            props2 (-> out2 :result meta :app.loggers.audit/replace-props)]
+        (t/is (= (set (keys props1)) (set (keys props2))))
+        (t/is (= (:id props1) (:id props2)))
+        (t/is (= (:team-id props1) (:team-id props2)))))))
+
+(defn- save-params
+  "Params for one update-file call, adding a page. A nil commit-id is what a
+  client that knows nothing about commit ids sends.
+
+  Call this once and reuse the result to repeat a save: a retry carries the
+  same changes, page id included, as the call it repeats."
+  [profile file commit-id page-name]
+  (cond-> {::th/type :update-file
+           ::rpc/profile-id (:id profile)
+           :id (:id file)
+           :session-id (uuid/random)
+           :revn 0
+           :vern 0
+           :features cfeat/supported-features
+           :changes [{:type :add-page
+                      :name page-name
+                      :id (uuid/random)}]}
+    (some? commit-id)
+    (assoc :commit-id commit-id)))
+
+(defn- count-pages
+  [profile file]
+  (let [out (th/command! {::th/type :get-file
+                          ::rpc/profile-id (:id profile)
+                          :id (:id file)})]
+    (t/is (nil? (:error out)))
+    (count (get-in out [:result :data :pages]))))
+
+(defn- file-revn
+  "How many times changes were applied to a file. Repeating a save carries
+  the same page id, so the pages look the same whether the changes were
+  applied once or twice; the revision is what tells them apart."
+  [file]
+  (:revn (th/db-get :file {:id (:id file)})))
+
+(defn- commit-key
+  [file-id commit-id]
+  (str "penpot.file-commit." (cf/get :tenant) "." file-id "." commit-id))
+
+(defn- with-redis
+  [f]
+  (let [conn (gpool/get (get-in th/*system* [:app.redis/pool]))]
+    (try
+      (f @conn)
+      (finally
+        (.close ^AutoCloseable conn)))))
+
+(defn- get-commit-record
+  [file-id commit-id]
+  (with-redis #(rds/get % (commit-key file-id commit-id))))
+
+(t/deftest a-saved-commit-is-recorded-with-its-revision
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        commit-id (uuid/random)
+        out       (th/command! (save-params profile file commit-id "page"))]
+
+    (t/is (nil? (:error out)))
+    (t/is (= "0" (get-commit-record (:id file) commit-id))
+          "the record holds the revision the save answered with")))
+
+(t/deftest a-failed-save-releases-its-commit-id
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        commit-id (uuid/random)
+        params    (save-params profile file commit-id "page")
+        ;; A revision ahead of the file makes the save fail after it has
+        ;; claimed its commit id.
+        out1      (th/command! (assoc params :revn 10))]
+
+    (t/is (th/ex-of-code? (:error out1) :revn-conflict))
+    (t/is (nil? (get-commit-record (:id file) commit-id))
+          "nothing vouches for changes that were not applied")
+
+    (t/testing "the corrected save applies"
+      (let [out2 (th/command! params)]
+        (t/is (nil? (:error out2)))
+        (t/is (= 1 (file-revn file)))))))
+
+(t/deftest a-repeat-of-a-save-in-progress-is-turned-away
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        file      (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+        commit-id (uuid/random)]
+
+    ;; A save that holds the commit id and never records its outcome.
+    (with-redis #(rds/set % (commit-key (:id file) commit-id) "pending"
+                          {:ex (ct/duration {:minutes 1})}))
+
+    (let [out (th/command! (save-params profile file commit-id "page"))]
+      (t/is (th/ex-of-type? (:error out) :validation))
+      (t/is (th/ex-of-code? (:error out) :commit-in-progress))
+      (t/is (= 0 (file-revn file)) "nothing is applied"))))
+
+(t/deftest update-file-refuses-a-repeated-commit-after-a-version-restore
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        commit-id (uuid/random)
+
+        params  {::th/type :update-file
+                 ::rpc/profile-id (:id profile)
+                 :id (:id file)
+                 :session-id (uuid/random)
+                 :revn 0
+                 :vern 0
+                 :commit-id commit-id
+                 :features cfeat/supported-features
+                 :changes [{:type :add-page
+                            :name "page to add once"
+                            :id (uuid/random)}]}
+
+        out1    (th/command! params)]
+
+    (t/is (nil? (:error out1)))
+
+    ;; Restoring a version assigns the file a fresh vern and rolls its data
+    ;; back, so the effect of the commit is gone even though its id remains.
+    (th/db-update! :file {:vern 7} {:id (:id file)})
+
+    (let [out2  (th/command! params)
+          edata (-> out2 :error ex-data)]
+      (t/testing "a version conflict is raised"
+        (t/is (some? (:error out2)))
+        (t/is (= :validation (:type edata)))
+        (t/is (= :vern-conflict (:code edata)))))))
+
+(t/deftest a-save-without-a-commit-id-is-never-deduplicated
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        params  (save-params profile file nil "page")
+
+        out1    (th/command! params)
+        out2    (th/command! params)]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    ;; The dedup must not reach a client that sends no commit id.
+    (t/testing "both calls apply"
+      (t/is (= 2 (file-revn file))))))
+
+(t/deftest two-commits-carrying-the-same-changes-both-apply
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        params  (save-params profile file (uuid/random) "page")
+
+        out1    (th/command! params)
+        out2    (th/command! (assoc params :commit-id (uuid/random)))]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    ;; The dedup keys on the commit id, not on what the changes look like.
+    (t/testing "both calls apply"
+      (t/is (= 2 (file-revn file))))))
+
+(t/deftest one-commit-id-used-against-two-files-applies-to-both
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        commit-id (uuid/random)
+
+        out1    (th/command! (save-params profile file1 commit-id "page"))
+        out2    (th/command! (save-params profile file2 commit-id "page"))]
+
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    ;; A commit id is only ever unique within one file.
+    (t/testing "neither file is deduplicated against the other"
+      (t/is (= 2 (count-pages profile file1)))
+      (t/is (= 2 (count-pages profile file2))))))
+
+(t/deftest concurrent-repeats-of-one-commit-apply-once
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        params  (save-params profile file (uuid/random) "page")
+
+        ;; A client that retries before the first answer arrives has two
+        ;; identical requests in flight at once. The file advisory lock
+        ;; serialises them, and the second one waits for the outcome the
+        ;; first records. The latch holds both threads until they can start
+        ;; together.
+        start   (java.util.concurrent.CountDownLatch. 1)
+        pending (doall [(future (.await start) (th/command! params))
+                        (future (.await start) (th/command! params))])
+        _       (.countDown start)
+        outs    (mapv #(deref % 30000 ::timeout) pending)]
+
+    (t/is (not-any? #{::timeout} outs) "both requests finished")
+    (t/is (every? (comp nil? :error) outs))
+
+    (t/testing "the changes are applied once"
+      (t/is (= 2 (count-pages profile file)))
+      (t/is (= 1 (file-revn file))))
+
+    (t/testing "both callers get the same answer"
+      (t/is (= 0 (:revn (:result (first outs)))))
+      (t/is (= 0 (:revn (:result (second outs))))))))

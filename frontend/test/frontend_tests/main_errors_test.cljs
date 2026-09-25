@@ -141,7 +141,7 @@
 (t/deftest environment-error-classification
   (t/testing "environment failures are recognised"
     (doseq [type [:network :offline :bad-gateway :service-unavailable
-                  :nitrate-unavailable :nitrate-not-configured]]
+                  :gateway-error :nitrate-unavailable :nitrate-not-configured]]
       (t/is (true? (errors/environment-error? (error-cause :type type)))
             (str "expected environment error: " type))))
   (t/testing "application defects are not environment failures"
@@ -192,7 +192,7 @@
   ;; handler. Each is reported as a governed compact audit event plus its
   ;; connection toast. Proves: per type, report first and toast right after,
   ;; with no stack in the report and the dedicated toast message.
-  (doseq [type [:network :offline]]
+  (doseq [type [:network :offline :gateway-error]]
     (errors/reset-report-governor!)
     (let [events (atom [])
           cause  (ex-info "http error" {:type type :hint "http error"})]
@@ -618,6 +618,16 @@
           (t/is (= timeout (get-in state [:notification :timeout])))
           (t/is (= :visible (get-in state [:notification :status]))))))))
 
+(t/deftest persistence-notifications-carry-a-tag-to-hide-them
+  (let [scheduled (atom [])
+        events    (atom [])]
+    (with-redefs [tm/schedule (mock/stub #(swap! scheduled conj %))
+                  st/emit! (mock/stub (fn [& emitted] (swap! events into emitted)))]
+      (errors/flash-persistence nil)
+      (doseq [callback @scheduled] (callback))
+      (let [state (ptk/update (first @events) {})]
+        (t/is (= errors/persistence-failed-tag (get-in state [:notification :tag])))))))
+
 (t/deftest ^:async persistence-notifications-include-an-error-report-download
   (let [scheduled      (atom [])
         idle-callbacks (atom [])
@@ -786,3 +796,35 @@
          (let [state (ptk/update (last @events) {})]
            (t/is (nil? (get-in state [:notification :timeout])))
            (t/is (some? (get-in state [:notification :links 0])))))))))
+;; ---------------------------------------------------------------------------
+;; transport errors
+;; ---------------------------------------------------------------------------
+
+(t/deftest ^:async transport-errors-are-handled-without-replacing-the-page
+  ;; Scenario: a rate limit and an error page the backend did not write,
+  ;; through the global handler. Proves: neither replaces the page, each is
+  ;; a handled report followed by one toast.
+  (doseq [type [:rate-limit :unexpected-response]]
+    (errors/reset-report-governor!)
+    (let [events   (atom [])
+          assigned (atom [])
+          cause    (ex-info "http error"
+                            {:type type
+                             :hint "http error"
+                             :status 429
+                             :uri "https://design.penpot.app/api/main/methods/get-teams"})]
+      (await
+       (mock/with-mocks*
+         {st/emit!              (mock/stub (fn [& emitted] (swap! events into emitted)))
+          rt/get-current-href   (constantly "https://penpot.example.com/#/workspace")
+          rt/assign-exception   (fn [error] (swap! assigned conj error) error)
+          tm/schedule           (mock/stub (fn [f] (f)))
+          st/format-last-events (mock/stub (fn [& _] "(stub last events)"))}
+         (errors/on-error cause)
+         (await (async/settle))
+         (t/is (empty? @assigned)
+               (str type " must not replace the page with an error screen"))
+         (t/is (= ["handled-exception"]
+                  (map (comp ::ev/name deref) (report-events @events)))
+               (str type " is reported as handled, not unhandled"))
+         (t/is (= 2 (count @events)) (str type " must show one notification")))))))
