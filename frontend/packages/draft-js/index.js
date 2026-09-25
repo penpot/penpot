@@ -29,6 +29,31 @@ function isDefined(v) {
   return v !== undefined && v !== null;
 }
 
+// A selection can outlive the content it points to: blurring the editor
+// rebuilds the EditorState with fresh block keys while a delayed on-change
+// still carries the old keys. Applying an entity with such a stale selection
+// crashes inside Draft.js (`getCharacterList` of undefined), taking down the
+// whole workspace. Validate before every `Modifier.applyEntity` call and
+// skip silently: the blur highlight is cosmetic.
+function isSelectionInContent(content, selection) {
+  if (!content || !selection) return false;
+  const blockMap = content.getBlockMap();
+  if (!blockMap || blockMap.isEmpty()) return false;
+
+  const startKey = selection.getStartKey();
+  const endKey = selection.getEndKey();
+  const startBlock = blockMap.get(startKey);
+  const endBlock = blockMap.get(endKey);
+  if (!startBlock || !endBlock) return false;
+
+  const startOffset = selection.getStartOffset();
+  const endOffset = selection.getEndOffset();
+  if (startOffset < 0 || endOffset < 0) return false;
+  if (startOffset > startBlock.getLength()) return false;
+  if (endOffset > endBlock.getLength()) return false;
+  return true;
+}
+
 function mergeBlockData(block, newData) {
   if (!block) return undefined;
   let data = block.getData();
@@ -70,8 +95,10 @@ export function createDecorator(type, component) {
 
 function getSelectAllSelection(state) {
   const content = state.getCurrentContent();
-  const firstBlock = content.getBlockMap().first();
-  const lastBlock = content.getBlockMap().last();
+  const blockMap = content.getBlockMap();
+  if (!blockMap || blockMap.isEmpty()) return null;
+  const firstBlock = blockMap.first();
+  const lastBlock = blockMap.last();
 
   return new SelectionState({
     "anchorKey": firstBlock.getKey(),
@@ -83,7 +110,9 @@ function getSelectAllSelection(state) {
 
 function getCursorInEndPosition(state) {
   const content = state.getCurrentContent();
-  const lastBlock = content.getBlockMap().last();
+  const blockMap = content.getBlockMap();
+  if (!blockMap || blockMap.isEmpty()) return null;
+  const lastBlock = blockMap.last();
 
   return new SelectionState({
     "anchorKey": lastBlock.getKey(),
@@ -94,7 +123,9 @@ function getCursorInEndPosition(state) {
 }
 
 export function selectAll(state) {
-  return EditorState.forceSelection(state, getSelectAllSelection(state));
+  const selection = getSelectAllSelection(state);
+  if (!selection) return state;
+  return EditorState.forceSelection(state, selection);
 }
 
 function modifySelectedBlocks(contentState, selectionState, operation) {
@@ -192,22 +223,35 @@ export function splitBlockPreservingData(state) {
 }
 
 export function addBlurSelectionEntity(state) {
-  let content = state.getCurrentContent(state);
   const selection = state.getSelection();
+  if (selection.isCollapsed()) return state;
 
-  content = content.createEntity("PENPOT_SELECTION", "MUTABLE");
-  const entityKey = content.getLastCreatedEntityKey();
+  let content = state.getCurrentContent();
+  if (!isSelectionInContent(content, selection)) return state;
 
-  content = Modifier.applyEntity(content, selection, entityKey);
+  try {
+    content = content.createEntity("PENPOT_SELECTION", "MUTABLE");
+    const entityKey = content.getLastCreatedEntityKey();
+    content = Modifier.applyEntity(content, selection, entityKey);
+  } catch (_) {
+    return state;
+  }
   return EditorState.push(state, content, "apply-entity");
 }
 
 export function removeBlurSelectionEntity(state) {
   const selectionAll = getSelectAllSelection(state);
+  if (!selectionAll) return state;
   const selection = state.getSelection();
 
   let content = state.getCurrentContent();
-  content = Modifier.applyEntity(content, selectionAll, null);
+  if (!isSelectionInContent(content, selection)) return state;
+
+  try {
+    content = Modifier.applyEntity(content, selectionAll, null);
+  } catch (_) {
+    return state;
+  }
 
   state = EditorState.push(state, content, "apply-entity");
   state = EditorState.forceSelection(state, selection);
@@ -264,10 +308,16 @@ export function removeInlineStylePrefix(contentState, selectionState, stylePrefi
 
 export function cursorToEnd(state) {
   const newSelection = getCursorInEndPosition(state);
-  const selection = state.getSelection();
+  if (!newSelection) return state;
 
   let content = state.getCurrentContent();
-  content = Modifier.applyEntity(content, newSelection, null);
+  if (!isSelectionInContent(content, newSelection)) return state;
+
+  try {
+    content = Modifier.applyEntity(content, newSelection, null);
+  } catch (_) {
+    return state;
+  }
 
   state = EditorState.forceSelection(state, newSelection);
   state = EditorState.push(state, content, "apply-entity");
