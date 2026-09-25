@@ -133,7 +133,7 @@ This bootstrap command will:
 4. Load the plugin using the development URL (`http://localhost:4400/manifest.json` by default)
 5. Open the plugin UI
 6. In the plugin UI, click "Connect to MCP server".
-   The connection status should change from "Not connected" to "Connected to MCP server".
+   The connection status should change from "Not connected" to "Connected".
    (Check the browser's developer console for WebSocket connection logs.
    Check the MCP server terminal for WebSocket connection messages.)
 
@@ -227,6 +227,24 @@ After updating the configuration file, restart Claude Desktop completely for the
 
 After the restart, you should see the MCP server listed when clicking on the "Search and tools" icon at the bottom
 of the prompt input area.
+
+### Working with Multiple Files
+
+Connect the files you want to use:
+
+* Open each file in a separate Penpot tab, run the plugin, and connect it to the same MCP server.
+* Each connection has its own short session ID, shown in the plugin UI with a **Copy** button.
+* Multiple tabs can connect to the same file. Connecting or disconnecting one tab does not disconnect the others.
+
+Choose a session for your agent:
+
+* With exactly one connected session, the server selects it automatically when the agent omits the session ID.
+* With several connected sessions, the server lists them and asks the agent to have you select one.
+* You can also copy an ID from the plugin and include it in your prompt, for example:
+  "Use Penpot session `o37vgcqsvt` and list the pages in that file."
+
+For integrated remote MCP connection controls and session behavior, see the
+[Help Center guide](../docs/mcp/index.md#working-with-multiple-files).
 
 ## Repository Structure
 
