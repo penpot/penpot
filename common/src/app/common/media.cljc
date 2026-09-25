@@ -103,6 +103,54 @@
     "italic"
     "normal"))
 
+(defn parse-font-file-metadata
+  "Derive font metadata from a font filename using the historical
+  WOFF2 filename fallback semantics.
+
+  Returns a map with :font-family, :font-weight and
+  :font-style. Weight and style are parsed from the extension
+  stripped base-name with the standard parse-font-weight and
+  parse-font-style rules; no new filename rules are added here."
+  [filename]
+  (let [base-name       (str/replace filename #"\.[^.]+$" "")
+        ;; Strip known weight/style tokens and separators to derive family name
+        ;; Use word boundaries to avoid matching substrings (e.g. "Boldini" should not match "bold")
+        raw-family-name (-> base-name
+                            (str/replace #"(?i)(^|[-_\s])(extra\s*black|ultra\s*black|extra\s*bold|ultra\s*bold|semi\s*bold|demi\s*bold|extra\s*light|ultra\s*light|hairline|thin|light|normal|regular|medium|bold|black|heavy|solid|italic)([-_\s]|$)" "$1$3")
+                            (str/replace #"[-_\s]+" " ")
+                            (str/trim))
+        family-name     (if (str/blank? raw-family-name) base-name raw-family-name)]
+    {:font-family family-name
+     :font-weight (parse-font-weight base-name)
+     :font-style  (parse-font-style base-name)}))
+
+(defn first-nonblank-string
+  "Return the first nonblank string from the candidates, or nil."
+  [& candidates]
+  (first (filter #(and (string? %) (not (str/blank? %))) candidates)))
+
+(defn resolve-parsed-font-metadata
+  "Resolve upload metadata for a font successfully parsed by opentype.js.
+  This is the decision used by the parsed-font upload path.
+
+  `variant` is usable only when it is a nonblank string; then weight
+  and style are parsed from it and it is kept as `:variant-name`.
+  Otherwise weight and style fall back to the filename metadata, and
+  `:variant-name` stays absent so the
+  display label derives from weight/style."
+  [parsed-family variant filename]
+  (let [{:keys [font-family font-weight font-style]}
+        (parse-font-file-metadata filename)
+        family (or (first-nonblank-string parsed-family font-family) "")]
+    (if (first-nonblank-string variant)
+      {:font-family  family
+       :font-weight  (parse-font-weight variant)
+       :font-style   (parse-font-style variant)
+       :variant-name variant}
+      {:font-family family
+       :font-weight font-weight
+       :font-style  font-style})))
+
 (defn font-weight->name
   [weight]
   (case (long weight)
