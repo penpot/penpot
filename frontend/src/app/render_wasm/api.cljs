@@ -1108,7 +1108,7 @@
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
 (defn clear-shape-fills!
-  "Clear the fills of the currently-selected shape (call `use-shape` first).
+  "Clear the fills of the currently-selected shape (call `use-shape!` first).
   Equivalent to `set-shape-fills` with an empty collection."
   []
   (when (initialized?)
@@ -1566,7 +1566,7 @@
    `skip-fills-strokes?` is true, fill/stroke records were already in the batch;
    only image fetches remain.
 
-   Always `use-shape` first: after a multi-shape batch the WASM current shape is
+   Always `use-shape!` first: after a multi-shape batch the WASM current shape is
    the last record in the chunk, not this shape."
   [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
   (let [id      (dm/get-prop shape :id)
