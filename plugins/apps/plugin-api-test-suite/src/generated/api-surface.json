@@ -471,7 +471,6 @@
       "strokeColorRefId",
       "strokeImage",
       "strokeOpacity",
-      "strokePerSide",
       "strokeStyle",
       "strokeWidth",
       "strokeWidthBottom",
@@ -7819,12 +7818,6 @@
         "array": false
       },
       "strokeOpacity": {
-        "decl": "Stroke",
-        "kind": "getset",
-        "type": null,
-        "array": false
-      },
-      "strokePerSide": {
         "decl": "Stroke",
         "kind": "getset",
         "type": null,

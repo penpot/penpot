@@ -4194,12 +4194,6 @@ export interface Stroke {
    */
   strokeWidth?: number;
   /**
-   * Whether per-side stroke widths apply. Only boards and rectangles
-   * support per-side widths; the mode stays active even when all four
-   * sides hold the same value.
-   */
-  strokePerSide?: boolean;
-  /**
    * The optional width of the top side of the stroke.
    * Only applies to boards and rectangles with per-side widths.
    */
