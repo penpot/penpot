@@ -765,6 +765,44 @@
                (t/is (= (:stroke-width-top (:applied-tokens rect')) "stroke-width.sm"))
                (t/is (= (:stroke-color (:applied-tokens rect')) "color.sm"))))))))))
 
+(t/deftest test-reorder-later-strokes-keeps-first-token
+  (t/testing "reordering later strokes does not unapply tokens on the first stroke"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens
+                  {:rect-1 {:strokes [{:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#000000"
+                                       :stroke-opacity 1
+                                       :stroke-width 5
+                                       :stroke-width-top 2}
+                                      {:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#111111"
+                                       :stroke-opacity 1
+                                       :stroke-width 3}
+                                      {:stroke-alignment :inner
+                                       :stroke-style :solid
+                                       :stroke-color "#222222"
+                                       :stroke-opacity 1
+                                       :stroke-width 4}]
+                            :applied-tokens {:stroke-width-top "stroke-width.sm"}}})
+            store (ths/setup-store file)
+            rect (cths/get-shape file :rect-1)
+            events [(dc/reorder-strokes [(:id rect)] 1 3)]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect' (cths/get-shape file' :rect-1)]
+             (t/testing "the token on the first stroke is kept"
+               (t/is (= (:stroke-width-top (:applied-tokens rect')) "stroke-width.sm")))
+             (t/testing "the first stroke is still the first one"
+               (t/is (= "#000000" (get-in rect' [:strokes 0 :stroke-color]))))
+             (t/testing "the second and third strokes are swapped"
+               (t/is (= "#222222" (get-in rect' [:strokes 1 :stroke-color])))
+               (t/is (= "#111111" (get-in rect' [:strokes 2 :stroke-color])))))))))))
+
 (t/deftest test-change-stroke-width-side-new-shape
   (t/testing "editing a side of a shape without strokes creates a stroke and zeroes the other sides"
     (t/async

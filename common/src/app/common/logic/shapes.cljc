@@ -54,11 +54,13 @@
           (let [shape-id    (dm/get-prop shape :id)
                 tokens      (get shape :applied-tokens {})
                 ;; Fill and stroke tokens only ever live on the first item of
-                ;; the collection, so editing a later item must not unapply
-                ;; them.
+                ;; the collection, so editing a later item or reordering items
+                ;; while the first one stays in place must not unapply them.
                 later-item? (and (contains? #{:fills :strokes} attr)
-                                 (some? changed-item-index)
-                                 (not (zero? changed-item-index)))
+                                 (if (some? changed-item-index)
+                                   (not (zero? changed-item-index))
+                                   (= (first (get shape attr))
+                                      (first (get (get new-objects shape-id) attr)))))
                 token-attrs (when-not later-item?
                               (if (and (cfh/text-shape? shape) (= attr :content))
                                 (text-changed-attrs shape)

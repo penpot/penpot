@@ -459,6 +459,79 @@
     (t/testing "editing the first stroke does unapply its token"
       (t/is (nil? (:stroke-width-top (:applied-tokens frame1')))))))
 
+(t/deftest unapply-not-triggered-when-reordering-later-strokes
+  (let [;; Apply a token to the first stroke, then add two more.
+        file    (-> (setup-file)
+                    (tht/apply-token-to-shape :frame1 "token-stroke-width"
+                                              [:stroke-width-top] [:stroke-width] 2))
+        strokes (:strokes (ths/get-shape file :frame1))
+        file    (ths/update-shape file :frame1 :strokes
+                                  (into strokes
+                                        [{:stroke-alignment :inner
+                                          :stroke-style :solid
+                                          :stroke-color "#111111"
+                                          :stroke-opacity 1
+                                          :stroke-width 3}
+                                         {:stroke-alignment :inner
+                                          :stroke-style :solid
+                                          :stroke-color "#222222"
+                                          :stroke-opacity 1
+                                          :stroke-width 4}]))
+        page    (thf/current-page file)
+        frame1  (ths/get-shape file :frame1)
+
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    (cls/generate-update-shapes [(:id frame1)]
+                                                (fn [shape]
+                                                  (-> shape
+                                                      (ctn/set-shape-attr :strokes
+                                                                          (d/reorder (:strokes shape) 1 3))))
+                                                (:objects page)
+                                                {:attrs [:strokes]}))
+
+        file'   (thf/apply-changes file changes)
+        frame1' (ths/get-shape file' :frame1)]
+
+    (t/testing "the token on the first stroke is preserved"
+      (t/is (= (:stroke-width-top (:applied-tokens frame1')) "token-stroke-width")))
+
+    (t/testing "the second and third strokes are swapped"
+      (t/is (= "#222222" (get-in frame1' [:strokes 1 :stroke-color])))
+      (t/is (= "#111111" (get-in frame1' [:strokes 2 :stroke-color]))))))
+
+(t/deftest unapply-triggered-when-reordering-first-stroke
+  (let [file    (-> (setup-file)
+                    (tht/apply-token-to-shape :frame1 "token-stroke-width"
+                                              [:stroke-width-top] [:stroke-width] 2))
+        strokes (:strokes (ths/get-shape file :frame1))
+        file    (ths/update-shape file :frame1 :strokes
+                                  (conj strokes {:stroke-alignment :inner
+                                                 :stroke-style :solid
+                                                 :stroke-color "#111111"
+                                                 :stroke-opacity 1
+                                                 :stroke-width 3}))
+        page    (thf/current-page file)
+        frame1  (ths/get-shape file :frame1)
+
+        changes (-> (-> (pcb/empty-changes nil)
+                        (pcb/with-page page)
+                        (pcb/with-objects (:objects page)))
+                    (cls/generate-update-shapes [(:id frame1)]
+                                                (fn [shape]
+                                                  (-> shape
+                                                      (ctn/set-shape-attr :strokes
+                                                                          (d/reorder (:strokes shape) 0 2))))
+                                                (:objects page)
+                                                {:attrs [:strokes]}))
+
+        file'   (thf/apply-changes file changes)
+        frame1' (ths/get-shape file' :frame1)]
+
+    (t/testing "moving the first stroke away unapplies its token"
+      (t/is (nil? (:stroke-width-top (:applied-tokens frame1')))))))
+
 (t/deftest dont-unapply-automatic-when-null-change
   (let [;; ==== Setup
         file    (-> (setup-file)
