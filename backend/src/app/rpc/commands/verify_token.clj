@@ -21,6 +21,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.teams-invitations :as teams-invitations]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
@@ -101,12 +102,6 @@
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
-
-(def ^:private sql:get-organization-invitation
-  "SELECT *
-     FROM team_invitation
-    WHERE email_to = ?
-      AND org_id = ?")
 
 (def ^:private sql:delete-organization-invitation
   "DELETE FROM team_invitation
@@ -198,17 +193,16 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation             (if organization-id
-                                 (db/exec-one! conn [sql:get-organization-invitation member-email organization-id])
-                                 (db/get* conn :team-invitation
-                                          {:email-to member-email
-                                           :team-id team-id}))
+  (let [member-email           (profile/clean-email member-email)
+        claims                 (assoc claims :member-email member-email)
+        invitation             (teams-invitations/active-invitation
+                                cfg
+                                claims
+                                {::db/for-update true})
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email :default-team-id]})
-        registration-disabled? (not (contains? cf/flags :registration))
-
-        organization-invitation?        (and (contains? cf/flags :admin-console) organization-id)]
+        organization-invitation? (and (contains? cf/flags :admin-console) organization-id)]
 
     (if profile
       (do
@@ -346,11 +340,12 @@
                             "no invitation associated with the token")))
 
         ;; If we have not logged-in user, and invitation comes with member-id we
-        ;; redirect user to login, if no member-id is present and  in the invitation
-        ;; token and registration is enabled, we redirect user the the register page.
+        ;; redirect user to login. If no member-id is present this is an invitation
+        ;; for a new user — send them to the register page. Invitations bypass
+        ;; the disable-registration flag per documentation.
         {:invitation-token token
          :iss :team-invitation
-         :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
+         :redirect-to (if member-id :auth-login :auth-register)
          :state :pending}))))
 
 ;; --- Default
