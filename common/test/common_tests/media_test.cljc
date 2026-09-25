@@ -172,22 +172,34 @@
       (t/is (= "Pretendard" (:font-family m)))
       (t/is (= 500 (:font-weight m)))
       (t/is (= "normal" (:font-style m)))
-      (t/is (not (contains? m :variant-name))))))
+      (t/is (not (contains? m :variant-name)))))
 
-(t/deftest test-pick-font-variant
+  (t/testing "blank parsed family falls back to filename family"
+    (t/is (= "Inter" (:font-family
+                       (media/resolve-parsed-font-metadata "  " nil "Inter-Bold.ttf")))))
+
+  (t/testing "blank parsed family does not hide filename family with a valid variant"
+    (t/is (= "Inter" (:font-family
+                       (media/resolve-parsed-font-metadata "" "Bold" "Inter-Bold.ttf"))))))
+
+(t/deftest test-first-nonblank-string
   ;; The parsed-upload path selects the variant through this helper, so a
   ;; blank preferredSubfamily must not shadow a valid fontSubfamily.
   (t/testing "first nonblank candidate wins"
-    (t/is (= "Bold" (media/pick-font-variant "  " "Bold")))
-    (t/is (= "Bold" (media/pick-font-variant "Bold" "Light")))
-    (t/is (= "Bold" (media/pick-font-variant nil "Bold")))
-    (t/is (nil? (media/pick-font-variant nil "  ")))
-    (t/is (nil? (media/pick-font-variant nil nil))))
+    (t/is (= "Bold" (media/first-nonblank-string "  " "Bold")))
+    (t/is (= "Bold" (media/first-nonblank-string "Bold" "Light")))
+    (t/is (= "Bold" (media/first-nonblank-string nil "Bold")))
+    (t/is (nil? (media/first-nonblank-string nil "  ")))
+    (t/is (nil? (media/first-nonblank-string nil nil))))
+
+  (t/testing "blank preferred family does not hide the metadata family"
+    (t/is (= "Inter" (media/first-nonblank-string "" "Inter")))
+    (t/is (= "Inter" (media/first-nonblank-string "   " "Inter"))))
 
   (t/testing "blank first candidate keeps valid second variant over conflicting filename"
     (let [m (media/resolve-parsed-font-metadata
              "Roboto"
-             (media/pick-font-variant "  " "Bold")
+             (media/first-nonblank-string "  " "Bold")
              "Roboto-Light.ttf")]
       (t/is (= "Roboto" (:font-family m)))
       (t/is (= 700 (:font-weight m)))

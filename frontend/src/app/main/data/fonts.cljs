@@ -127,11 +127,12 @@
   (letfn [(prepare [{:keys [font type name data] :as params}]
             (if font
               ;; Font was parsed with opentype.js (ttf, otf, woff)
-              (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                                        (.getEnglishName ^js font "fontFamily"))
+              (let [family          (cm/first-nonblank-string
+                                     (.getEnglishName ^js font "preferredFamily")
+                                     (.getEnglishName ^js font "fontFamily"))
                     ;; Select the first nonblank subfamily: a blank first
                     ;; candidate must not shadow a valid second one.
-                    variant         (cm/pick-font-variant
+                    variant         (cm/first-nonblank-string
                                      (.getEnglishName ^js font "preferredSubfamily")
                                      (.getEnglishName ^js font "fontSubfamily"))
                     ;; A successfully parsed binary does not guarantee usable

@@ -124,10 +124,8 @@
      :font-weight (parse-font-weight base-name)
      :font-style  (parse-font-style base-name)}))
 
-(defn pick-font-variant
-  "Return the first nonblank string from the given subfamily candidates,
-  or nil when none is usable. opentype.js may return blank strings that
-  plain `or` would wrongly select over a valid later candidate."
+(defn first-nonblank-string
+  "Return the first nonblank string from the candidates, or nil."
   [& candidates]
   (first (filter #(and (string? %) (not (str/blank? %))) candidates)))
 
@@ -137,19 +135,19 @@
 
   `variant` is usable only when it is a nonblank string; then weight
   and style are parsed from it and it is kept as `:variant-name`.
-  Otherwise weight and style fall back to the filename metadata, the
-  parsed family is preferred (filename family only when parsed family
-  is unavailable, else \"\"), and `:variant-name` stays absent so the
+  Otherwise weight and style fall back to the filename metadata, and
+  `:variant-name` stays absent so the
   display label derives from weight/style."
   [parsed-family variant filename]
-  (if (and (string? variant) (not (str/blank? variant)))
-    {:font-family  (or parsed-family "")
-     :font-weight  (parse-font-weight variant)
-     :font-style   (parse-font-style variant)
-     :variant-name variant}
-    (let [{:keys [font-family font-weight font-style]}
-          (parse-font-file-metadata filename)]
-      {:font-family (or parsed-family font-family "")
+  (let [{:keys [font-family font-weight font-style]}
+        (parse-font-file-metadata filename)
+        family (or (first-nonblank-string parsed-family font-family) "")]
+    (if (first-nonblank-string variant)
+      {:font-family  family
+       :font-weight  (parse-font-weight variant)
+       :font-style   (parse-font-style variant)
+       :variant-name variant}
+      {:font-family family
        :font-weight font-weight
        :font-style  font-style})))
 
