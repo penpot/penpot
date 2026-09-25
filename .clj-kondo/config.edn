@@ -22,6 +22,8 @@
    rumext.v2/defc hooks.export/rumext-defc
    rumext.v2/lazy-component hooks.export/rumext-lazycomponent
    shadow.lazy/loadable hooks.export/rumext-lazycomponent
+   app.util.i18n/tr hooks.i18n/tr-dynamic
+   app.common.i18n/tr hooks.i18n/tr-dynamic
    }}
 
  :output
@@ -44,6 +46,9 @@
 
   :potok/reify-type
   {:level :error}
+
+  :penpot/tr-dynamic
+  {:level :warning}
 
   :redundant-primitive-coercion
   {:level :off}

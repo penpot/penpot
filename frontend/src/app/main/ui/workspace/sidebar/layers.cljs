@@ -653,7 +653,10 @@
                             :text      (tr "workspace.sidebar.layers.texts")
                             :image     (tr "workspace.sidebar.layers.images")
                             :shape     (tr "workspace.sidebar.layers.shapes")
-                            (tr fkey))
+                            ;; Unreachable from the UI (the menu only emits the
+                            ;; above); fall back to the raw name, which is what
+                            ;; tr would render for an unknown key anyway.
+                            fname)
                     filter-icon (usi/get-shape-icon-by-type fkey)]
 
                 [:button {:class (stl/css :layer-filter)

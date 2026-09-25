@@ -64,7 +64,7 @@
 
 (def ^:private schema:login-form
   [:map {:title "LoginForm"}
-   [:email [::sm/email {:error/code "errors.invalid-email"}]]
+   [:email [::sm/email {:error/fn #(tr "errors.invalid-email")}]]
    [:password {:optional true} [:string {:min 1}]]
    [:invitation-token {:optional true}
     [:string {:min 1}]]])

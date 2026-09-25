@@ -20,7 +20,7 @@
     "ws": "^8.21.1"
   },
   "scripts": {
-    "lint:clj": "clj-kondo --config-dir ../.clj-kondo --lint ../common/src src/",
+    "lint:clj": "clj-kondo --fail-level error --config-dir ../.clj-kondo --lint ../common/src src/",
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "test:e2e": "node --test --test-concurrency=1 test/e2e/*.test.mjs"

@@ -230,6 +230,7 @@ ayudarnos
 ayudarte
 borradores
 borrarlo
+bloquearla
 cambiada
 caracteres
 como
@@ -251,11 +252,13 @@ contexto
 danos
 demás
 desactivarlos
+desbloquearla
 deseleccionar
 desuscripción
 durante
 editores
 eje
+eliminarla
 eliminarlo
 eliminarlos
 ella

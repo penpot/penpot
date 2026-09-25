@@ -21,7 +21,7 @@
     "date-fns": "^4.4.0"
   },
   "scripts": {
-    "lint:clj": "clj-kondo --config-dir ../.clj-kondo --lint src/",
+    "lint:clj": "clj-kondo --fail-level error --config-dir ../.clj-kondo --lint src/",
     "lint:js": "exit 0",
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
     "check-fmt:js": "prettier -c src/**/*.js",

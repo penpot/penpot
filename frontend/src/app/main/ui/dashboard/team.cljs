@@ -400,10 +400,10 @@
                              (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
 
         role             (cond
-                           member-is-owner  "labels.owner"
-                           member-is-admin  "labels.admin"
-                           member-is-editor "labels.editor"
-                           :else            "labels.viewer")
+                           member-is-owner  (tr "labels.owner")
+                           member-is-admin  (tr "labels.admin")
+                           member-is-editor (tr "labels.editor")
+                           :else            (tr "labels.viewer"))
 
         on-show          (mf/use-fn #(reset! show? true))
         on-hide          (mf/use-fn #(reset! show? false))]
@@ -414,10 +414,10 @@
               :aria-labelledby "role-label-id"
               :on-click on-show}
         [:span {:class (stl/css :rol-label)
-                :id "role-label-id"} (tr role)]
+                :id "role-label-id"} role]
         arrow-icon]
        [:div {:class (stl/css :rol-selector)}
-        [:span {:class (stl/css :rol-label)} (tr role)]])
+        [:span {:class (stl/css :rol-label)} role]])
 
      [:& dropdown {:show @show? :on-close on-hide :dropdown-id (str "member-role-" (:id member))}
       [:ul {:class (stl/css :roles-dropdown)
@@ -883,7 +883,13 @@
      [:div {:class (stl/css :invitation-list)}
       (for [{:keys [email role]} selected]
         [:p {:key email}
-         (str "- " email " (" (tr (str "labels." (name role))) ")")])]]
+         (str "- " email " ("
+              (cond
+                (= role :owner)  (tr "labels.owner")
+                (= role :admin)  (tr "labels.admin")
+                (= role :editor) (tr "labels.editor")
+                :else            (tr "labels.viewer"))
+              ")")])]]
 
     [:div {:class (stl/css :modal-footer)}
      [:div {:class (stl/css :action-buttons :modal-invitation-action-buttons)}
@@ -915,7 +921,7 @@
 (mf/defc select-organization-modal
   {::mf/register modal/components
    ::mf/register-as :select-organization-modal}
-  [{:keys [organizations organizations-allowed current-organization on-confirm title-key text-key choose-key placeholder-key accept-key cancel-key info-message-key description-key team-id]}]
+  [{:keys [organizations organizations-allowed current-organization on-confirm title text choose placeholder accept cancel info-message description team-id]}]
   (let [current-organization-id (:id current-organization)
         has-current-org?        (some? current-organization)
         valid-organizations     (mf/with-memo [organizations current-organization-id]
@@ -992,30 +998,30 @@
      [:div {:class (stl/css :modal-select-organization-container :modal-container)}
       [:div {:class (stl/css :modal-select-organization-header)}
        [:h2 {:class (stl/css :modal-select-organization-title)}
-        (tr title-key)]
+        title]
 
        [:button {:class (stl/css :modal-close-btn)
                  :on-click modal/hide!} deprecated-icon/close]]
 
-      (when text-key
-        [:div {:class (stl/css :modal-content :modal-select-organization-text)} (tr text-key)])
+      (when text
+        [:div {:class (stl/css :modal-content :modal-select-organization-text)} text])
 
       [:div {:class (stl/css :modal-select-organization-body)}
-       (when (or description-key info-message-key)
+       (when (or description info-message)
          [:div {:class (stl/css :modal-select-organization-info)}
-          (when description-key
+          (when description
             [:div
-             (tr description-key)])
-          (when info-message-key
+             description])
+          (when info-message
             [:div
-             (tr info-message-key)])])
+             info-message])])
        [:div {:class (stl/css :modal-select-organization-content)}
-        (tr choose-key)]
+        choose]
        [:> combobox* {:id "selected-id"
                       :class (stl/css :team-member)
                       :options options
                       :select-only true
-                      :placeholder (tr placeholder-key)
+                      :placeholder placeholder
                       :on-change on-change
                       :default-selected (if has-current-org?
                                           (str current-organization-id)
@@ -1042,14 +1048,14 @@
           :variant "secondary"
           :type "button"
           :on-click modal/hide!}
-         (tr cancel-key)]
+         cancel]
         [:> button*
          {:class (stl/css :accept-btn)
           :variant "primary"
           :type "button"
           :disabled disabled?
           :on-click on-confirm'}
-         (tr accept-key)]]]]]))
+         accept]]]]]))
 
 (mf/defc invitation-section*
   {::mf/private true}
@@ -1114,7 +1120,7 @@
 
               (and (= :restriction type)
                    (= :max-quote-reached code))
-              (st/emit! (ntf/error (tr "errors.max-quote-reached" (:target error))))
+              (st/emit! (ntf/error (tr "errors.max-quota-reached" (:target error))))
 
               (or (= :member-is-muted code)
                   (= :email-has-permanent-bounces code)

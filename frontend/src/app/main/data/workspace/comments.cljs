@@ -45,9 +45,9 @@
       (let [visible? (contains? (:workspace-layout state) :display-comments)]
         (rx/of (vary-meta (dwlo/toggle-layout-flag :display-comments)
                           assoc ::ev/origin (or origin "workspace"))
-               (ntf/success (tr (if visible?
-                                  "workspace.toast.comments-hidden"
-                                  "workspace.toast.comments-visible"))))))))
+               (ntf/success (if visible?
+                              (tr "workspace.toast.comments-hidden")
+                              (tr "workspace.toast.comments-visible"))))))))
 
 (defn initialize-comments
   [file-id]

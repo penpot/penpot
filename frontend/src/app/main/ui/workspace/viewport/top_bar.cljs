@@ -35,9 +35,9 @@
       [:div {:class (stl/css :viewport-actions-title)}
        [:> i18n/tr-html*
         {:tag-name "span"
-         :content (tr (if render-context-lost?
-                        "workspace.top-bar.webgl-context-lost"
-                        "workspace.top-bar.view-only"))}]]
+         :content (if render-context-lost?
+                    (tr "workspace.top-bar.webgl-context-lost")
+                    (tr "workspace.top-bar.view-only"))}]]
       (if render-context-lost?
         [:> button* {:variant "primary" :on-click (fn [] (js/location.reload))}
          (tr "workspace.top-bar.webgl-context-lost.reload")]

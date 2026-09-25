@@ -98,12 +98,14 @@
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.gradient-handlers-test]
+   [frontend-tests.ui.history-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.ui.organization-team-switch-test]
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
+   [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
@@ -221,6 +223,7 @@
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.gradient-handlers-test
+   'frontend-tests.ui.history-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.ui.organization-team-switch-test
@@ -229,6 +232,7 @@
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
+   'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
