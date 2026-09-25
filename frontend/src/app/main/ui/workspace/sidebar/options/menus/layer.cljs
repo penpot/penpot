@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.render-wasm.api.select :as wselect]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -116,7 +117,7 @@
 
            (when wasm-renderer-enabled?
              (doseq [id ids]
-               (wasm.api/use-shape id)
+               (wselect/use-shape! id)
                (wasm.api/set-shape-blend-mode value)
                (wasm.api/request-render "preview-blend-mode")))
 
@@ -130,7 +131,7 @@
            (swap! state* assoc :preview-complete? true)
            (when wasm-renderer-enabled?
              (doseq [id ids]
-               (wasm.api/use-shape id)
+               (wselect/use-shape! id)
                (wasm.api/set-shape-blend-mode current-blend-mode)
                (wasm.api/request-render "preview-blend-mode")))
            (st/emit! (dw/unset-preview-blend-mode ids))))

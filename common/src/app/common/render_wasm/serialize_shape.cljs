@@ -25,6 +25,7 @@
   dispatching per changed key through the same underlying `props` setters."
   (:require
    [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.svg-derived :as svg-derived]))
 
@@ -62,15 +63,15 @@
   "Structural batch upload plus per-shape svg-attrs/path tail.
 
   Derives via svg-derived, uploads one `_set_shapes_batch` with `opts`,
-  then selects each shape needing svg-attrs/path content and applies it.
-  Host text/grid/image sequencing stays in callers. Returns the prepared
-  vector for the downstream host-attrs loop."
-  [shapes opts select-fn]
+  then selects each shape needing svg-attrs/path content via `use-shape!`
+  and applies the tail. Host text/grid/image sequencing stays in callers.
+  Returns the prepared vector for the downstream host-attrs loop."
+  [shapes opts]
   (let [prepared (mapv svg-derived/apply-svg-derived shapes)]
     (when (seq prepared)
       (upload/flush-shapes-batch! prepared opts)
       (doseq [shape prepared]
         (when (needs-shape-tail? shape)
-          (select-fn (:id shape))
+          (wselect/use-shape! (:id shape))
           (write-shape-tail! shape))))
     prepared))

@@ -20,6 +20,7 @@
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
@@ -791,7 +792,7 @@
   [target-frame objects position]
   (if (features/active-feature? @st/state "render-wasm/v1")
     (do
-      (wasm.api/use-shape target-frame)
+      (wselect/use-shape! target-frame)
       (let [cell (wasm.api/get-grid-coords position)]
         (when (not= cell [-1 -1]) cell)))
     (gslg/get-drop-cell target-frame objects position)))

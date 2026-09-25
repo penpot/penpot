@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -83,14 +84,14 @@
   (when (seq include-ids)
     (wasm.api/set-render-include-filter! include-ids))
   (doseq [id clear-fills-ids]
-    (wasm.api/use-shape id)
+    (wselect/use-shape! id)
     (wasm.api/clear-shape-fills!)))
 
 (defn- viewer-restore-layer-mask!
   [page-objects clear-fills-ids]
   (wasm.api/clear-render-include-filter!)
   (doseq [id clear-fills-ids]
-    (wasm.api/use-shape id)
+    (wselect/use-shape! id)
     (wasm.api/set-shape-fills id (get-in page-objects [id :fills] []) false)))
 
 (defn- viewer-do-render!

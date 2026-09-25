@@ -20,6 +20,7 @@
    verify the WASM code path was exercised."
   (:require
    [app.common.data :as d]
+   [app.common.render-wasm.api.select :as wselect]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]))
 
@@ -198,7 +199,7 @@
   ;; Save originals
   (reset! originals
           {:initialized?            wasm.api/initialized?
-           :use-shape               wasm.api/use-shape
+           :use-shape                wselect/use-shape!
            :calculate-position-data wasm.api/calculate-position-data
            :request-render          wasm.api/request-render
            :clean-modifiers         wasm.api/clean-modifiers
@@ -217,7 +218,7 @@
            :get-content-fonts       wasm.fonts/get-content-fonts})
   ;; Install mocks
   (set! wasm.api/initialized?            mock-initialized?)
-  (set! wasm.api/use-shape               mock-use-shape)
+  (set! wselect/use-shape!               mock-use-shape)
   (set! wasm.api/calculate-position-data mock-calculate-position-data)
   (set! wasm.api/request-render          mock-request-render)
   (set! wasm.api/clean-modifiers         mock-clean-modifiers)
@@ -248,7 +249,7 @@
   []
   (when-let [orig (not-empty @originals)]
     (set! wasm.api/initialized?            (:initialized? orig))
-    (set! wasm.api/use-shape               (:use-shape orig))
+    (set! wselect/use-shape!               (:use-shape orig))
     (set! wasm.api/calculate-position-data (:calculate-position-data orig))
     (set! wasm.api/request-render          (:request-render orig))
     (set! wasm.api/clean-modifiers         (:clean-modifiers orig))
