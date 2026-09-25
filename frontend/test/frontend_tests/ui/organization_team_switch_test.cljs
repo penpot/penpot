@@ -57,16 +57,16 @@
   (t/testing "profile with no organizations at all: line absent"
     (t/is (nil? (dts/closed-control-line-2 false nil)))))
 
-(t/deftest create-team-targets-the-current-organization
+(t/deftest create-team-targets-the-previewed-organization
   (let [organizations {"org-a" {:id "org-a" :name "Org A" :default-team-id "team-a-default"}
                        "org-b" {:id "org-b" :name "Org B" :default-team-id "team-b-default"}
                        nil nil}
         other-teams-id (dts/organization-bucket-id nil)]
-    (t/testing "target is the open dashboard organization's default team"
+    (t/testing "target is the previewed organization's default team"
       (t/is (= "team-a-default" (dts/create-team-target-id organizations "org-a")))
       (t/is (= "team-b-default" (dts/create-team-target-id organizations "org-b"))))
 
-    (t/testing "current destination is Other teams: no organization target"
+    (t/testing "previewed group is Other teams: no organization target"
       (t/is (nil? (dts/create-team-target-id organizations other-teams-id))))))
 
 (t/deftest teams-for-organization-filters-and-sorts-per-organization
@@ -116,6 +116,22 @@
 
   (t/testing "flag absent: fallback action hidden"
     (t/is (false? (dts/show-create-organization-in-teams-column? #{})))))
+
+(t/deftest show-subscription-badge-matrix
+  (t/testing "default team: never, regardless of its own subscription"
+    (t/is (false? (dts/show-subscription-badge? {:is-default true
+                                                 :subscription {:type "unlimited"}}))))
+
+  (t/testing "team in an organization: never, regardless of its own subscription"
+    (t/is (false? (dts/show-subscription-badge? {:organization {:id "org-a"}
+                                                 :subscription {:type "unlimited"}}))))
+
+  (t/testing "standalone team outside every organization: shown for unlimited/enterprise"
+    (t/is (true? (dts/show-subscription-badge? {:subscription {:type "unlimited"}})))
+    (t/is (true? (dts/show-subscription-badge? {:subscription {:type "enterprise"}}))))
+
+  (t/testing "standalone team with a professional plan: not shown"
+    (t/is (false? (dts/show-subscription-badge? {:subscription {:type "professional"}})))))
 
 (t/deftest admin-console-href-resolution-matrix
   (t/testing "owner of the previewed organization: organization-specific href"

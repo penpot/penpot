@@ -24,33 +24,10 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(defn- fetch-missing-team-members!
-  "Fetches member lists for any `owned-teams` that do not have them
-  loaded yet; shared by the team-options menu and the organization
-  context menu, both of which need `:members` to decide how a team
-  leave/delete should behave."
-  [owned-teams]
-  (doseq [owned-team owned-teams
-          :when (not (contains? owned-team :members))]
-    (st/emit! (dtm/fetch-members (:id owned-team)))))
-
 (defn- use-organization-leave
-  "Data needed to leave `organization`, out of its `teams`: the
-  organization's own default team id, the teams owned by the current
-  user (`:owned-teams`) split from the ones they don't own
-  (`:not-owned-teams`), which owned teams can be offered for transfer
-  (`:teams-to-transfer`), and the ready-to-call `:leave-fn` that
-  `show-leave-organization-modal` expects as its accept callback.
-  Shared by `options-dropdown*` and `organization-context-menu*`, the
-  two places that offer a \"leave organization\" action. Also fetches
-  member lists for any owned team that doesn't have them loaded yet,
-  since leaving needs `:members` to decide delete vs. transfer.
-
-  `enabled?` must stay false whenever leaving isn't actually offered
-  (e.g. `options-dropdown*` when the profile can't leave the
-  organization): called unconditionally like any hook, but it skips
-  the teams/members lookup and the member-fetching effect, so no
-  RPC calls are made for an action that's not on offer."
+  "The default team id and `:leave-fn` needed to leave `organization`.
+  Fetches nothing: fetching team members would hit the SSO gate. Pass
+  `enabled?` false when leaving isn't offered."
   [organization teams ^boolean enabled?]
   (let [org-teams
         (mf/with-memo [teams organization enabled?]
@@ -58,36 +35,20 @@
             (dnt/organization-teams teams (:id organization))))
 
         {default-team-id :default-team-id
-         owned-teams :owned-teams
          not-owned-teams :not-owned-teams}
         (mf/with-memo [org-teams]
           (when org-teams
             (dnt/organization-leave-info org-teams)))
 
-        teams-to-transfer
-        (mf/with-memo [owned-teams]
-          (when owned-teams
-            (dnt/transferable-teams owned-teams)))
-
         leave-fn
         (mf/use-fn
-         (mf/deps organization default-team-id owned-teams not-owned-teams)
+         (mf/deps organization default-team-id not-owned-teams)
          (dnt/leave-organization-fn {:organization organization
                                      :default-team-id default-team-id
-                                     :owned-teams owned-teams
                                      :not-owned-teams not-owned-teams
                                      :on-error dnt/org-leave-on-error}))]
 
-    (mf/use-effect
-     (mf/deps owned-teams)
-     (fn []
-       (when (seq owned-teams)
-         (fetch-missing-team-members! owned-teams))))
-
     {:default-team-id default-team-id
-     :owned-teams owned-teams
-     :not-owned-teams not-owned-teams
-     :teams-to-transfer teams-to-transfer
      :leave-fn leave-fn}))
 
 (mf/defc options-dropdown*
@@ -108,13 +69,8 @@
         (not (:is-default team))
 
         {org-default-team-id :default-team-id
-         org-owned-teams     :owned-teams
-         teams-to-transfer   :teams-to-transfer
          org-leave-fn        :leave-fn}
         (use-organization-leave current-organization teams can-leave-organization)
-
-        owned-teams-members-loaded?
-        (every? #(contains? % :members) org-owned-teams)
 
         on-success
         (fn []
@@ -203,18 +159,15 @@
 
         on-leave-organization-clicked
         (mf/use-fn
-         (mf/deps profile current-organization org-default-team-id teams-to-transfer
-                  org-leave-fn owned-teams-members-loaded?)
+         (mf/deps profile current-organization org-default-team-id org-leave-fn)
          (fn []
-           (when owned-teams-members-loaded?
-             (on-close)
-             (st/emit! (dnt/show-leave-organization-modal
-                        {:organization current-organization
-                         :profile profile
-                         :default-team-id org-default-team-id
-                         :leave-fn org-leave-fn
-                         :teams-to-transfer teams-to-transfer
-                         :on-error dnt/org-leave-on-error})))))]
+           (on-close)
+           (st/emit! (dnt/show-leave-organization-modal
+                      {:organization current-organization
+                       :profile profile
+                       :default-team-id org-default-team-id
+                       :leave-fn org-leave-fn
+                       :on-error dnt/org-leave-on-error}))))]
 
     [:> dropdown-menu* {:show show
                         :on-close on-close
@@ -284,37 +237,23 @@
 (mf/defc organization-context-menu*
   "Right-click menu on an organization in `organizations-column*`,
   currently offering just \"leave organization\". Split out of
-  `organization-team-switch*` so its leave-organization data (owned
-  teams, transfer candidates, member loading) stays local instead of
-  being computed unconditionally on every render of the switcher."
+  `organization-team-switch*` so its leave-organization data stays
+  local instead of being computed on every render of the switcher."
   [{:keys [organization teams profile x y on-close on-leave-requested]}]
   (let [{default-team-id :default-team-id
-         owned-teams :owned-teams
-         teams-to-transfer :teams-to-transfer
          leave-fn :leave-fn}
         (use-organization-leave organization teams true)
 
-        owned-teams-members-loaded?
-        (every? #(contains? % :members) owned-teams)
-
         on-leave-clicked
         (mf/use-fn
-         (mf/deps leave-fn
-                  profile
-                  organization
-                  default-team-id
-                  teams-to-transfer
-                  owned-teams-members-loaded?
-                  on-leave-requested)
+         (mf/deps leave-fn profile organization default-team-id on-leave-requested)
          (fn []
-           (when owned-teams-members-loaded?
-             (on-leave-requested)
-             (st/emit! (dnt/show-leave-organization-modal {:organization organization
-                                                           :profile profile
-                                                           :default-team-id default-team-id
-                                                           :leave-fn leave-fn
-                                                           :teams-to-transfer teams-to-transfer
-                                                           :on-error dnt/org-leave-on-error})))))]
+           (on-leave-requested)
+           (st/emit! (dnt/show-leave-organization-modal {:organization organization
+                                                         :profile profile
+                                                         :default-team-id default-team-id
+                                                         :leave-fn leave-fn
+                                                         :on-error dnt/org-leave-on-error}))))]
 
     [:> dropdown-menu* {:show true
                         :on-close on-close

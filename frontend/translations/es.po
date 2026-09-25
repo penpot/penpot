@@ -10563,4 +10563,4 @@ msgid "labels.team-management"
 msgstr "Gestión de equipos"
 
 msgid "dashboard.no-organizations-yet"
-msgstr "Todavía no perteneces a ninguna organización"
+msgstr "Todavía no hay organizaciones."

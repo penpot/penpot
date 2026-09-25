@@ -14,10 +14,12 @@
    [app.main.data.nitrate-audit :as nitrate-audit]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.auth.verify-token :as verify-token]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (t/deftest account-age-days-test
@@ -270,31 +272,20 @@
     (t/is (= ["t1" "t4"] (map :id (dnt/organization-teams teams "org-a"))))
     (t/is (= [] (dnt/organization-teams teams "org-c")))))
 
-(t/deftest organization-leave-info-splits-owned-and-not-owned-teams
+(t/deftest organization-leave-info-keeps-default-and-not-owned-teams
   (let [org-teams [{:id "default" :is-default true}
                    {:id "owned-1" :permissions {:is-owner true}}
-                   {:id "owned-2" :permissions {:is-owner true}}
                    {:id "member-1" :permissions {:is-owner false}}]
         info (dnt/organization-leave-info org-teams)]
     (t/is (= "default" (:default-team-id info)))
-    (t/is (= ["owned-1" "owned-2"] (map :id (:owned-teams info))))
     (t/is (= ["member-1"] (map :id (:not-owned-teams info))))))
-
-(t/deftest transferable-teams-boundary-at-one-member
-  (let [owned-teams [{:id "solo" :members [{:id "m1"}]}
-                     {:id "pair" :members [{:id "m1"} {:id "m2"}]}
-                     {:id "empty" :members []}]]
-    (t/is (= ["pair"] (map :id (dnt/transferable-teams owned-teams))))))
 
 (t/deftest leave-organization-fn-builds-delete-and-leave-lists
   (let [captured (atom nil)
         emitted  (atom [])
-        owned-teams [{:id "solo" :members [{:id "m1"}]}
-                     {:id "pair" :members [{:id "m1"} {:id "m2"}]}]
         not-owned-teams [{:id "member-1" :name "extra"}]
         leave-fn (dnt/leave-organization-fn {:organization {:id "org-1" :name "Acme"}
                                              :default-team-id "default"
-                                             :owned-teams owned-teams
                                              :not-owned-teams not-owned-teams
                                              :on-error :on-error-fn})]
     (with-redefs [dnt/leave-organization (fn [params] (reset! captured params) ::leave-event)
@@ -304,6 +295,7 @@
 
       (t/testing "with no teams offered for transfer"
         (leave-fn {:teams-to-transfer nil
+                   :teams-to-delete ["solo"]
                    :member-added-at "2026-07-17T00:00:00Z"
                    :organization-member-count-before 3})
 
@@ -326,6 +318,45 @@
         (t/is (= [{:id "pair" :reassign-to "new-owner"}
                   {:id "member-1"}]
                  (:teams-to-leave @captured)))))))
+
+(t/deftest show-leave-organization-modal-takes-owned-teams-from-the-summary
+  (let [requests    (atom [])
+        accepted    (atom nil)
+        transferable [{:id "pair" :name "Pair" :members [{:id "m2" :name "Other"}]}]
+        summary     {:teams-to-delete 1
+                     :teams-to-transfer 1
+                     :teams-to-exit 0
+                     :teams-to-detach 0
+                     :team-ids-to-delete ["solo"]
+                     :transferable-teams transferable
+                     :member-added-at "2026-07-17T00:00:00Z"
+                     :organization-member-count-before 3}
+        event       (dnt/show-leave-organization-modal
+                     {:organization {:id "org-1" :name "Acme"}
+                      :profile {:id "me"}
+                      :default-team-id "default"
+                      :leave-fn #(reset! accepted %)
+                      :on-error identity})]
+    (with-redefs [rp/cmd! (mock/stub
+                           (fn [cmd params]
+                             (swap! requests conj cmd)
+                             (t/is (= {:id "org-1" :default-team-id "default"} params))
+                             (rx/of summary)))
+                  modal/show (mock/stub (fn [params] params))]
+      (let [modal-params (atom nil)]
+        (rx/sub! (ptk/watch event nil nil) #(reset! modal-params %))
+
+        ;; The summary is the only request: no SSO gated member fetch
+        (t/is (= [::dnt/get-leave-organization-summary] @requests))
+        (t/is (= :leave-and-reassign-organization (:type @modal-params)))
+        (t/is (= transferable (:teams-to-transfer @modal-params)))
+
+        ((:accept @modal-params) {:teams-to-transfer [{:id "pair" :reassign-to "m2"}]})
+        (t/is (= {:teams-to-transfer [{:id "pair" :reassign-to "m2"}]
+                  :teams-to-delete ["solo"]
+                  :member-added-at "2026-07-17T00:00:00Z"
+                  :organization-member-count-before 3}
+                 @accepted))))))
 
 (t/deftest team-leave-on-error-matrix
   (t/testing "known error code shows a translated notification"
