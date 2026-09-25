@@ -8,8 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.flex-layout :as flex]
+   [app.common.geom.shapes.grid-layout :as grid]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
@@ -19,6 +22,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
@@ -331,6 +335,158 @@
     (t/is (= (second (:shapes copy-root')) (:id copy-child1')))
     (t/is (= (first (:shapes copy-root')) (:id copy-child2')))
     (t/is (= (nth (:shapes copy-root') 2) (:id copy-child3')))))
+
+(t/deftest test-sync-grid-cells-when-converting-main-to-grid
+  (let [;; ==== Setup
+        file (-> (thf/sample-file :file1)
+                 (tho/add-component-with-many-children-and-copy
+                  :component1
+                  :main-root
+                  [:main-child1 :main-child2 :main-child3]
+                  :copy-root
+                  :main-root-params {:width 400 :height 100}
+                  :main-child-params-list [{:x 0   :y 0 :width 50 :height 50}
+                                           {:x 100 :y 0 :width 50 :height 50}
+                                           {:x 200 :y 0 :width 50 :height 50}]
+                  :copy-root-params {:children-labels [:copy-child1 :copy-child2 :copy-child3]}))
+
+        page      (thf/current-page file)
+        main-root (ths/get-shape file :main-root)
+
+        ;; ==== Action
+        ;; Convert the main frame into a grid, mirroring the editor's
+        ;; `get-layout-initializer` path (merge layout attrs + calculate-params
+        ;; + assign-cells + reorder-grid-children).
+        changes1 (cls/generate-update-shapes
+                  (pcb/empty-changes nil (:id page))
+                  #{(:id main-root)}
+                  (fn [shape objects]
+                    (let [children (cfh/get-immediate-children objects (:id shape))
+                          shape    (merge shape
+                                          {:layout                 :grid
+                                           :layout-grid-dir        :row
+                                           :layout-grid-rows       []
+                                           :layout-grid-columns    []
+                                           :layout-grid-cells      {}
+                                           :layout-gap             {:row-gap 0 :column-gap 0}
+                                           :layout-align-items     :start
+                                           :layout-justify-items   :start
+                                           :layout-align-content   :stretch
+                                           :layout-justify-content :stretch
+                                           :layout-padding-type    :simple
+                                           :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
+                          shape    (merge shape (grid/calculate-params objects children shape))]
+                      (-> shape
+                          (ctl/assign-cells objects)
+                          ctl/reorder-grid-children)))
+                  (:objects page)
+                  {:with-objects? true})
+
+        updated-file      (thf/apply-changes file changes1)
+        updated-main-root (ths/get-shape updated-file :main-root)
+
+        changes2 (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                 nil
+                                                 :components
+                                                 (:id updated-file)
+                                                 (thi/id :component1)
+                                                 (:id updated-file)
+                                                 {(:id updated-file) updated-file}
+                                                 (:id updated-file))
+
+        file' (thf/apply-changes updated-file changes2)
+
+        ;; ==== Get
+        copy-root'   (ths/get-shape file' :copy-root)
+        copy-child1' (ths/get-shape file' :copy-child1)
+        copy-child2' (ths/get-shape file' :copy-child2)
+        copy-child3' (ths/get-shape file' :copy-child3)
+
+        ids-map (into {}
+                      (map (juxt :shape-ref :id))
+                      [copy-child1' copy-child2' copy-child3'])
+
+        main-cells-remapped (ctl/remap-grid-cells updated-main-root ids-map)
+
+        cell-signature
+        (fn [cells]
+          (->> cells
+               vals
+               (map (fn [cell] [(:row cell) (:column cell) (vec (:shapes cell))]))
+               set))]
+
+    ;; ==== Check
+    (t/is (ctl/grid-layout? copy-root'))
+    (t/is (= (count (:layout-grid-cells updated-main-root))
+             (count (:layout-grid-cells copy-root'))))
+    (t/is (= (cell-signature (:layout-grid-cells main-cells-remapped))
+             (cell-signature (:layout-grid-cells copy-root'))))
+    (t/is (= (mapv ids-map (:shapes updated-main-root))
+             (:shapes copy-root')))))
+
+(t/deftest test-sync-flex-layout-when-converting-main-to-flex
+  (let [;; ==== Setup
+        file (-> (thf/sample-file :file1)
+                 (tho/add-component-with-many-children-and-copy
+                  :component1
+                  :main-root
+                  [:main-child1 :main-child2 :main-child3]
+                  :copy-root
+                  :main-root-params {:width 400 :height 100}
+                  :main-child-params-list [{:x 0   :y 0 :width 50 :height 50}
+                                           {:x 100 :y 0 :width 50 :height 50}
+                                           {:x 200 :y 0 :width 50 :height 50}]
+                  :copy-root-params {:children-labels [:copy-child1 :copy-child2 :copy-child3]}))
+
+        page      (thf/current-page file)
+        main-root (ths/get-shape file :main-root)
+
+        ;; ==== Action
+        ;; Convert the main frame into a flex layout, mirroring the editor's
+        ;; `get-layout-initializer` path.
+        changes1 (cls/generate-update-shapes
+                  (pcb/empty-changes nil (:id page))
+                  #{(:id main-root)}
+                  (fn [shape objects]
+                    (let [children (cfh/get-immediate-children objects (:id shape))
+                          shape    (merge shape
+                                          {:layout                 :flex
+                                           :layout-flex-dir        :row
+                                           :layout-gap-type        :multiple
+                                           :layout-gap             {:row-gap 0 :column-gap 0}
+                                           :layout-align-items     :start
+                                           :layout-justify-content :start
+                                           :layout-align-content   :stretch
+                                           :layout-wrap-type       :nowrap
+                                           :layout-padding-type    :simple
+                                           :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})]
+                      (merge shape (flex/calculate-params objects children shape))))
+                  (:objects page)
+                  {:with-objects? true})
+
+        updated-file      (thf/apply-changes file changes1)
+        updated-main-root (ths/get-shape updated-file :main-root)
+
+        changes2 (cll/generate-sync-file-changes (pcb/empty-changes)
+                                                 nil
+                                                 :components
+                                                 (:id updated-file)
+                                                 (thi/id :component1)
+                                                 (:id updated-file)
+                                                 {(:id updated-file) updated-file}
+                                                 (:id updated-file))
+
+        file' (thf/apply-changes updated-file changes2)
+
+        ;; ==== Get
+        copy-root' (ths/get-shape file' :copy-root)]
+
+    ;; ==== Check
+    (t/is (ctl/flex-layout? copy-root'))
+    (t/is (= (:layout-flex-dir updated-main-root)
+             (:layout-flex-dir copy-root')))
+    (t/is (= (:layout-gap updated-main-root)
+             (:layout-gap copy-root')))))
 
 (t/deftest test-sync-when-changing-upper
   (let [;; ==== Setup
