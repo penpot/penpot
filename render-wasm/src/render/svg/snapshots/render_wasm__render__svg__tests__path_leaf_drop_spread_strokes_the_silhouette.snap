@@ -1,0 +1,11 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="260" height="260" viewBox="0 0 260 260"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="260" height="260" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter></defs><g filter="url(#fx0)">
+	<path fill="#3D7BFF" transform="translate(80 80)" d="M0 0L100 0L100 100L0 100L0 0Z"/>
+	<path fill="none" stroke="black" stroke-width="40" stroke-miterlimit="4" transform="translate(80 80)" d="M0 0L100 0L100 100L0 100L0 0Z"/>
+</g>
+	<path fill="#3D7BFF" transform="translate(80 80)" d="M0 0L100 0L100 100L0 100L0 0Z"/>
+</svg>
