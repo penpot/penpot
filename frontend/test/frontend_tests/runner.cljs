@@ -10,6 +10,7 @@
    [frontend-tests.benches.containers-test]
    [frontend-tests.benches.contracts-test]
    [frontend-tests.benches.scene-snapshot-test]
+   [frontend-tests.benches.upload-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -157,6 +158,7 @@
    'frontend-tests.benches.containers-test
    'frontend-tests.benches.contracts-test
    'frontend-tests.benches.scene-snapshot-test
+   'frontend-tests.benches.upload-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
