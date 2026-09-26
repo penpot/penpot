@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
@@ -502,7 +503,7 @@
           (let [content (-> active-editor-state
                             (ted/get-editor-current-content)
                             (ted/export-content))]
-            (wasm.api/use-shape edition)
+            (wselect/use-shape! edition)
             (wasm.api/set-shape-text-content edition content)
             (let [dimension (wasm.api/get-text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
@@ -651,12 +652,12 @@
 
     (mf/with-effect [path-editing? edition @initialized?]
       (when (and path-editing? edition @initialized?)
-        (wasm.api/use-shape edition)
+        (wselect/use-shape! edition)
         (wasm.api/set-shape-hidden true)
         (wasm.api/request-render "start-path-edition")
         (fn []
           (when (wasm.api/initialized?)
-            (wasm.api/use-shape edition)
+            (wselect/use-shape! edition)
             (wasm.api/set-shape-hidden false)
             (wasm.api/request-render "stop-path-edition")))))
 

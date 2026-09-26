@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
@@ -321,7 +322,7 @@
   (let [shape-id (dm/get-prop shape :id)]
     (if (shape-in-current-page? shape-id)
       (do
-        (api/use-shape shape-id)
+        (wselect/use-shape! shape-id)
         (->> properties
              (mapcat #(set-wasm-attr! shape %))
              (d/index-by :key :callback)

@@ -17,6 +17,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.math :as mth]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
@@ -813,7 +814,7 @@
           ;; propagating geometry, so propagate_modifiers sees the updated state.
           (doseq [[id {:keys [property value]}] (extract-property-changes modif-tree)]
             (when (= property :grow-type)
-              (wasm.api/use-shape id)
+              (wselect/use-shape! id)
               (wasm.api/set-shape-grow-type value)))
 
           (let [objects (dsh/lookup-page-objects state)

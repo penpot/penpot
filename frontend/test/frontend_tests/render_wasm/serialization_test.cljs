@@ -15,6 +15,7 @@
    render output below the FFI line needs headed or exporter pixel runs."
   (:require
    [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
    [app.common.render-wasm.svg-derived :as svg-derived]
@@ -22,22 +23,26 @@
 
 (defn- with-ffi-stubs*
   "Stubs the single-arity FFI boundary fns (`flush-shapes-batch!`,
-  `set-shape-svg-attrs`, `set-shape-path-content`). `set-shape-upload!` is
-  deliberately left real: it is a trivial one-liner over the stubbed flush,
-  so the single test exercises its actual delegation and default opts. A
-  plain fn `set!` onto a multi-arity var breaks under the `:esm` test build
-  (call sites dispatch via `cljs$core$IFn$_invoke$arity$N`; see `mock/stub`)."
+  `use-shape!`, `set-shape-svg-attrs`, `set-shape-path-content`).
+  `set-shape-upload!` is deliberately left real: it is a trivial one-liner
+  over the stubbed flush, so the single test exercises its actual delegation
+  and default opts. A plain fn `set!` onto a multi-arity var breaks under
+  the `:esm` test build (call sites dispatch via
+  `cljs$core$IFn$_invoke$arity$N`; see `mock/stub`)."
   [stubs thunk]
   (let [orig-flush     upload/flush-shapes-batch!
+        orig-select    wselect/use-shape!
         orig-svg-attrs props/set-shape-svg-attrs
         orig-path      props/set-shape-path-content]
     (set! upload/flush-shapes-batch! (:flush stubs))
+    (set! wselect/use-shape! (or (:select stubs) (fn [_] nil)))
     (set! props/set-shape-svg-attrs (:svg-attrs stubs))
     (set! props/set-shape-path-content (:path stubs))
     (try
       (thunk)
       (finally
         (set! upload/flush-shapes-batch! orig-flush)
+        (set! wselect/use-shape! orig-select)
         (set! props/set-shape-svg-attrs orig-svg-attrs)
         (set! props/set-shape-path-content orig-path)))))
 
@@ -109,14 +114,14 @@
         flush-calls (atom [])
         events (atom [])
         current (atom nil)
-        select-fn (fn [id]
-                    (reset! current id)
-                    (swap! events conj [:select id]))
         stubs {:flush (fn [s o] (swap! flush-calls conj {:shapes s :opts o}) nil)
+               :select (fn [id]
+                         (reset! current id)
+                         (swap! events conj [:select id]))
                :svg-attrs (fn [attrs] (swap! events conj [:svg-attrs @current attrs]) nil)
                :path (fn [content] (swap! events conj [:path @current content]) nil)}
         result (with-ffi-stubs* stubs
-                 #(serialize-shape/serialize-shapes-batch! shapes opts select-fn))
+                 #(serialize-shape/serialize-shapes-batch! shapes opts))
         flushed (first @flush-calls)]
     (t/is (= 1 (count @flush-calls)) "exactly one flush")
     (t/is (= opts (:opts flushed)) "flush carries passed opts")
@@ -152,13 +157,11 @@
         flush-calls (atom [])
         selected (atom [])
         stubs {:flush (fn [s o] (swap! flush-calls conj {:shapes s :opts o}) nil)
+               :select (fn [id] (swap! selected conj id))
                :svg-attrs (fn [_] (t/is false "no svg-attrs write on empty batch") nil)
                :path (fn [_] (t/is false "no path write on empty batch") nil)}
         result (with-ffi-stubs* stubs
-                 #(serialize-shape/serialize-shapes-batch!
-                   []
-                   opts
-                   (fn [id] (swap! selected conj id))))]
+                 #(serialize-shape/serialize-shapes-batch! [] opts))]
     (t/is (= [] result) "returns empty prepared")
     (t/is (empty? @flush-calls) "no flush on empty batch")
     (t/is (empty? @selected) "no select on empty batch")))
