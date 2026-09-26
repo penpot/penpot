@@ -15,14 +15,17 @@
 - Most `app.db` helpers accept a pool, connection, or map containing `::db/pool` / `::db/conn`; preserve that convention in shared code.
 - `db/tx-run!` uses `next.jdbc.transaction/*nested-tx* :ignore`: nested transaction calls reuse the outer transaction, not a savepoint. Use explicit savepoints when nested rollback semantics matter.
 - `db/run!` opens/reuses one connection but does not create a transaction.
-- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Job params (`job.props`) are plain JSON, decoded with the job-def decoder (`app.jobs/decode-params`); only the legacy `task` props were Transit (`decode-transit-pgobject`).
+- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Job params (`job.params`) are plain JSON, decoded with the job-def decoder (`app.jobs/decode-params`); only the legacy `task` props were Transit (`decode-transit-pgobject`).
 - Advisory transaction locks accept UUIDs or ints. UUID locks are hashed using a zero-UUID seeded siphash.
 
 ## Workers and cron
 
-- Job queues are tenant-prefixed (`<tenant>:<queue>`). Submit dedupe only removes not-yet-due `new` jobs with the same name/queue/label; it does not dedupe due, scheduled, retry, running, or completed work.
+- Job queues are tenant-prefixed (`<tenant>:<queue>`) in the `job.queue` column, and the dispatcher filters them with `queue ~~* '<tenant>:%'`. That prefix is load-bearing: several instances share one database and the tenant is what keeps an instance from claiming another environment's jobs. Every consumer that shows a queue to anything but the dispatcher strips it (`app.jobs.metrics/queue-label`); a separate `tenant` column is an open item in the board.
+- Submit dedupe only removes not-yet-due `new` jobs with the same name/queue/label; it does not dedupe due, scheduled, retry, running, or completed work.
 - The dispatcher selects `new`/`retry` jobs with `FOR UPDATE SKIP LOCKED`, marks them `scheduled`, and publishes the JSON payload `[id scheduled-at]` to the `penpot.worker.queue:<tenant>:<queue>` Redis list. The runner skips Redis messages whose scheduled timestamp no longer matches DB state.
-- Lost `scheduled` jobs are rescheduled after 5 minutes; `running` jobs untouched longer than `:jobs-lease` (default 30 min) are marked failed with `{"code":"orphan"}`. Long jobs must `heartbeat`/`progress`.
+- Lost `scheduled` jobs are rescheduled after 5 minutes; `running` jobs untouched longer than `:jobs-lease` (default 30 min) are marked failed with `app.jobs/orphan-error` (`type :internal`, `code :orphan`). Long jobs must `heartbeat` with a `:progress` report.
+- An orphan writes NO `job_event`: the process that could report it is dead, so the dispatcher's bulk UPDATE is the whole story and turning it into a per-row loop would only cost a query per orphan.
+- `job_event` is append-only and deleted by cascade with the job. `progress` is a row there, not a column: no Redis and no mutable column to keep in sync.
 - A missing job-def raises (`:no-job-definition`) instead of completing. Throwing with `ex-data :type ::retry` still controls retry behavior; `:strategy ::noop` retries without incrementing retry count.
 - Cron entries claim their `scheduled_task` row with `FOR UPDATE SKIP LOCKED`, disable statement/idle-in-transaction timeouts locally, submit one `job` row per entry when no active instance exists (no-overlap), and reschedule themselves in `finally` unless interrupted. Worker, dispatcher, and cron components do not start when the DB pool is read-only.
 

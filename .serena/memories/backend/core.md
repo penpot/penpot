@@ -40,7 +40,8 @@ Backend RPC command areas without focused memories include access tokens, binfil
 - Next.js/JDBC caveat: where-maps don't support value vectors (no `IN`); use `status = ANY(?)` with `db/create-array` inside `db/tx-run!`.
 - Use `db/run!` for multiple operations on one connection.
 - Use `db/tx-run!` for transactions.
-- `job`-substrate specifics (unified jobs): claims and terminal writers are conditional updates (see `app.jobs`); GC deletes return resource ids via `RETURNING` inside one transaction.
+- `job`-substrate specifics (unified jobs): the only writers of a job status are `claim`, `retry-job`, `complete`, `fail` and `cancel` in `app.jobs`; each one is a conditional update plus its `job_event` row in the same transaction, so history can never contradict the row. A writer that affects no row writes no event and no metric. GC deletes return resource ids via `RETURNING` inside one transaction.
+- Every new foreign key of the substrate is `DEFERRABLE`, `job_event.job_id` included.
 
 Database migrations live in `backend/src/app/migrations/`; pure SQL migrations are under `backend/src/app/migrations/sql/`. SQL filenames conventionally start with a sequence and verb/table description, e.g. `0026-mod-profile-table-add-is-active-field`. Applied migrations are tracked in the `migrations` table.
 
@@ -52,15 +53,23 @@ For deeper details on transaction semantics, advisory locks, Transit vs JSON hel
 
 Every background job is a job-def: a plain `(defn execute-X [cfg params] ...)` in its namespace + a malli params schema + an `ig/init-key` that returns the job-def map `{::jobs/name, ::jobs/schema, ::jobs/handler, ::jobs/decoder, ::jobs/validator}` (decoder/validator precompiled at init). The registry is the `::jobs/defs` wiring in `app.main`, which also populates a module-level registry used by `jobs/submit` as fallback — job-def components cannot ig/ref `::jobs/defs` (wiring cycle). Submit from RPC code passes its RPC cfg (it carries `::jobs/defs` via ig/ref).
 
-For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, and queue internals: `mem:backend/subtleties`.
+- `::jobs/handler` is `(fn [context params] ...)`. It is NOT given the runner cfg: a job-def closes over its own dependencies, and handing it the runner cfg would let a handler reach the pool or any other component. A wrapper passes the context to its implementation only when the implementation takes it; most do not, and their implementation stays `[cfg params]`.
+- The context is built by `jobs/make-context` and has exactly four keys: `id`, `name`, `label`, `resource-id`, behind a closed schema. `queue` is absent on purpose (the column stores a tenant-prefixed queue, a routing detail of the dispatcher) and so are `retry-num`/`max-retries`/`attempt` (retry policy belongs to the runner, and an attempt number cannot be durable because the `noop` strategy re-runs without incrementing the counter).
+- `jobs/invoke` is the in-process escape hatch: it delivers a nil context without a row, validates and delivers `::jobs/context` when given, and keeps `::jobs/job-id` independent. `::jobs/context` and `::jobs/job-id` are cfg options, not params.
+- Business params live in the `params` column (plain JSON, decoded with the job-def decoder). `submit` takes an optional `::jobs/profile-id` and `::jobs/resource-id`, both validated as UUIDs and stored as columns; nothing is inferred from `params`. No caller passes a profile-id yet.
+- `heartbeat` uses named options `[cfg & {:keys [job-id progress] :as options}]` and returns the number of durable writes. The job id falls back to `::jobs/job-id` on the cfg and then to the runner-bound `*job-id*`. A progress report needs `current`, allows optional `total` and `stage` (max 250 chars) and takes no other key.
+- `job.error` conforms to `app.jobs/schema:job-error` (`type` and `code` keywords, `hint` text, extra details allowed). Read it back with `jobs/decode-job-error`; a plain `db/decode-json-pgobject` leaves the keywords as strings. `complete` takes named options and an optional `resource-id`, which is only ever set, never replaced.
+
+For worker dispatch, cron, retry semantics (`ex/raise :type ::wrk/retry` with `:delay`/`:strategy`), deduplication, job events, and queue internals: `mem:backend/subtleties`.
 
 ## Jobs metrics
 
 - `app.jobs.metrics` owns the jobs metric names, bounded labels and the periodic backlog sampler.
-- Metrics use only `name`, `queue`, `outcome`, `reason`, `stage` and `kind` labels. Job IDs, profile IDs, props, reply bodies and exception text must never be labels.
+- Metrics use only `name`, `queue`, `outcome`, `reason`, `stage` and `kind` labels. Job IDs, profile IDs, params, reply bodies and exception text must never be labels.
 - The durable lifecycle metrics are submitted, dispatched, completed, retries, orphaned and rescheduled counters; queue-wait, execution and total-time histograms; dispatcher and backlog state; GC, cron and ephemeral request metrics.
-- `app.metrics/run!` is safe for recording failures, but metrics components still require a valid metrics instance. Durable submit call sites carry `::mtx/metrics` through RPC or job-def configuration; helpers do not silently skip a missing instance.
-- SQL-backed job events are registered with `app.db/after-commit!`, so a transaction rollback cannot inflate submitted, terminal or dispatcher counters. The outermost `db/transact!` owns the callback context.
+- `app.metrics/run!` is safe for recording failures, but metrics components still require a valid metrics instance. Durable submit call sites carry `::mtx/metrics` through RPC or job-def configuration; helpers do not silently skip a missing instance. A job that calls `heartbeat` from a component cfg must carry `::mtx/metrics` on it: the event helper records the event counter from the cfg the transaction hands it.
+- SQL-backed job metrics are registered with `app.db/after-commit!` from INSIDE the transaction that changed the row, so a rollback cannot inflate submitted, terminal, retry, event or dispatcher counters. The outermost `db/transact!` owns the callback context; `after-commit!` runs the callback immediately when there is no transaction, which is why a metric registered after `tx-run!` returned still never escapes a caller rollback.
+- `penpot_jobs_events_total` counts stored job events with no labels: the interesting split is `kind`, and grouping a growing append-only table to build a metric is not worth the query on the write path.
 - The backlog sampler is `::jobs-metrics/sampler`; it runs every 30 seconds on worker-enabled, writable systems, groups by status and publishes the oldest pending age, and does not start on a read-only database.
 - `penpot_tasks_timing` remains exported for compatibility while the jobs-specific histograms are adopted.
 

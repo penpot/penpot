@@ -12,7 +12,7 @@ Backend (`app.config`, `PENPOT_*` env vars) is parameterized; deployments choose
 
 ## Task queue and worker model
 
-Async jobs are enqueued via `jobs/submit` (`app.jobs`), which inserts a row into the shared Postgres `job` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll, never wait, and workers never publish to msgbus. The only completion signal is the `job` row's `status` / `completed_at` columns, which nothing in `rpc/` reads. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
+Async jobs are enqueued via `jobs/submit` (`app.jobs`), which inserts a row into the shared Postgres `job` table tagged with `queue = "<tenant>:<queue-name>"`. Submission is **fire-and-forget** — RPC handlers never poll and never wait. The completion signal is the `job` row's `status` / `completed_at` columns, which nothing in `rpc/` reads today. A job submitted with `::jobs/profile-id` also publishes a `:job-event` message on that profile's msgbus topic after each transaction commits, but no caller passes a profile-id yet, so nothing reaches msgbus in production. Soft-delete RPCs return immediately after marking the top-level row, leaving the cascade and reaping to workers.
 
 Workers run on backends with `enable-backend-worker` in `PENPOT_FLAGS`. Each worker-enabled backend has a `dispatcher` (polls `job` with `FOR UPDATE SKIP LOCKED`, marks status='scheduled', RPUSHes the JSON `[id scheduled-at]` payloads into **its own** Redis list) and one or more `runner`s per queue (BLPOP from that same local list, execute, update the Postgres row). The Redis hand-off list is purely intra-backend — cross-backend coordination happens at the Postgres row level.
 
@@ -29,7 +29,7 @@ Penpot in production lives with both: horizontal-scale deployments accept "exact
 
 ## Jobs observability
 
-Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery and rescheduling; histograms separate queue wait, handler execution and total job age. SQL-backed events are recorded after the outer PostgreSQL transaction commits. The `::jobs-metrics/sampler` component publishes backlog by status and the oldest pending-job age every 30 seconds. All labels are bounded operational values; job IDs, profile IDs, props and error text are excluded. Read-only backends do not start the sampler or the workers.
+Worker-enabled, writable backends publish unified jobs metrics through the normal Prometheus registry. Counters describe submit, dispatch, terminal outcomes, retries, orphan recovery, rescheduling and total stored job events (unlabelled); histograms separate queue wait, handler execution and total job age. SQL-backed events are recorded after the outer PostgreSQL transaction commits. The `::jobs-metrics/sampler` component publishes backlog by status and the oldest pending-job age every 30 seconds. All labels are bounded operational values; job IDs, profile IDs, params and error text are excluded. Read-only backends do not start the sampler or the workers.
 
 ## See also
 
