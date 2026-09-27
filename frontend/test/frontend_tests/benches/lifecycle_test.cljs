@@ -357,6 +357,23 @@
                        (cleanup)
                        (done)))))))
 
+(defn- assert-wasm-cause
+  "Shared cause assertions for WASM failures through `load-rects`: plain-data
+  vector, wire contract, failing fn name, fake message and WASM code."
+  [cause fn-name message-pattern]
+  (t/is (vector? cause) "cause is plain-data vector")
+  (t/is (core/serializable? cause) "cause satisfies wire contract")
+  (t/is (some #(= fn-name (:fn %)) cause) "cause names the failing WASM fn")
+  (t/is (some #(and (string? (:message %))
+                    (re-find message-pattern (:message %)))
+              cause)
+        "fake message preserved")
+  (t/is (some #(let [code (:code %)]
+                 (and (some? code)
+                      (re-find #"wasm-critical" (str code))))
+              cause)
+        "WASM code preserved"))
+
 (t/deftest set-browser-failure-releases-registered-context
   (t/async done
     (with-entry-env
@@ -368,6 +385,11 @@
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "graphics-init" (:phase m)))
+                       (t/is (= "graphics init failed" (:message m))
+                             "top message stays phase-labeled")
+                       (assert-wasm-cause (:cause m)
+                                          "_set_browser"
+                                          #"fake _set_browser failure")
                        (let [calls (read-calls)]
                          (t/is (= 1 (effect-count calls "register")))
                          (t/is (= 1 (effect-count calls "clean")) "renderer state is released")
@@ -377,6 +399,103 @@
                        (t/is (nil? @@#'browser/canvas*) "no owner left behind")
                        (cleanup)
                        (done)))))))
+
+(t/deftest upload-failure-keeps-wasm-cause
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (unchecked-set js/globalThis "__benchThrowIn" "_set_view")
+        (load-result #js {"seed" 7
+                          "module-url" (factory-url)
+                          "wasm-url" "./fake.wasm"}
+                     (fn [m]
+                       (t/is (= "failed" (:status m)))
+                       (t/is (= "upload" (:phase m)))
+                       (t/is (= "upload failed" (:message m))
+                             "top message stays phase-labeled")
+                       (assert-wasm-cause (:cause m)
+                                          "_set_view"
+                                          #"fake _set_view failure")
+                       (cleanup)
+                       (done)))))))
+
+(t/deftest hostile-cause-renders-plain-data
+  (let [terminate @#'browser/terminal-failure
+        current   @@#'browser/owner-epoch*
+        hostile   (ex-info "boom"
+                           {:fn   (fn [] 1)
+                            :code #js {:evil 1}
+                            :type :wasm-error
+                            :hint (apply str (repeat 1000 "x"))}
+                           (js/Error. "inner boom"))
+        result    (terminate current hostile "aborted")
+        m         (js->clj result :keywordize-keys true)
+        cause     (:cause m)]
+    (t/is (= "failed" (:status m)))
+    (t/is (= "aborted" (:phase m)))
+    (t/is (= "boom" (:message m)) "top message stays as-is")
+    (t/is (vector? cause) "cause is plain-data vector")
+    (t/is (core/serializable? cause) "hostile values become strings")
+    (t/is (every? (fn [entry]
+                    (every? (fn [[_ v]]
+                              (or (not (string? v)) (<= (count v) 500)))
+                            entry))
+                  cause)
+          "strings truncated to the hard cap")
+    (let [outer (first cause)]
+      (t/is (string? (:fn outer)) "function value stringified")
+      (t/is (string? (:code outer)) "host object value stringified")
+      (t/is (= 500 (count (:hint outer))) "long hint truncated"))
+    (t/is (some #(and (string? (:message %))
+                      (re-find #"inner boom" (:message %)))
+                cause)
+          "inner message preserved"))
+  (t/testing "values pr-str cannot render fall back to plain strings"
+    (let [evil      (js-obj)
+          _         (js/Object.defineProperty
+                     evil "evil"
+                     #js {:enumerable true
+                          :get (fn [] (throw (js/Error. "evil")))})
+          terminate @#'browser/terminal-failure
+          current   @@#'browser/owner-epoch*
+          hostile   (ex-info "evil boom" {:fn evil} (js/Error. "inner"))
+          result    (terminate current hostile "aborted")
+          m         (js->clj result :keywordize-keys true)
+          cause     (:cause m)
+          outer     (first cause)]
+      (t/is (= "failed" (:status m)))
+      (t/is (core/serializable? cause) "throwing value still plain data")
+      (t/is (= "unrenderable value" (:fn outer))
+            "stringification failure falls back")))
+  (t/testing "causes pr-str cannot render fall back to plain strings"
+    (let [evil      (js-obj)
+          _         (js/Object.defineProperty
+                     evil "evil"
+                     #js {:enumerable true
+                          :get (fn [] (throw (js/Error. "evil")))})
+          terminate @#'browser/terminal-failure
+          current   @@#'browser/owner-epoch*
+          result    (terminate current evil "aborted")
+          m         (js->clj result :keywordize-keys true)
+          cause     (:cause m)]
+      (t/is (= "failed" (:status m)))
+      (t/is (core/serializable? cause) "throwing cause still plain data")
+      (t/is (= "unrenderable cause" (:message (first cause)))
+            "level fallback holds"))))
+
+(t/deftest nested-stale-marker-does-not-resolve-stale
+  (let [terminate @#'browser/terminal-failure
+        current   @@#'browser/owner-epoch*
+        nested    (ex-info "upload failed"
+                           {:phase "upload"}
+                           (ex-info "superseded"
+                                    {:benches.render-wasm.browser/stale true
+                                     :phase "upload"}))
+        result    (terminate current nested "aborted")
+        m         (js->clj result :keywordize-keys true)]
+    (t/is (= "failed" (:status m)) "only the top level decides staleness")
+    (t/is (= "upload" (:phase m)))
+    (t/is (vector? (:cause m)) "cause still rendered")))
 
 (t/deftest overlapping-load-keeps-the-newer-owner
   (t/async done

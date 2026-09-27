@@ -315,19 +315,137 @@
   (when-not (= epoch @owner-epoch*)
     (throw (ex-info "superseded" {::stale true :phase phase}))))
 
+(def ^:private max-cause-depth
+  "How many cause levels the failure cause keeps: the phase wrapper, the
+  WASM-error mapping and the original failure."
+  3)
+
+(def ^:private max-cause-chars
+  "Hard cap for any string in the failure cause, so a hostile value never
+  bloats the bridge payload."
+  500)
+
+(def ^:private unrenderable-value
+  "Fallback for a cause value `pr-str` cannot render."
+  "unrenderable value")
+
+(def ^:private unrenderable-cause-text
+  "Fallback message when a cause level cannot be rendered."
+  "unrenderable cause")
+
+(defn- truncate-cause-str
+  "Truncates `s` to `max-cause-chars` without splitting a surrogate pair.
+  Never throws."
+  [s]
+  (try
+    (let [text (str s)]
+      (if (<= (count text) max-cause-chars)
+        text
+        (let [cut  (subs text 0 max-cause-chars)
+              last (.charCodeAt cut (dec max-cause-chars))]
+          (if (and (>= last 0xD800)
+                   (<= last 0xDBFF)
+                   (let [nxt (.charCodeAt text max-cause-chars)]
+                     (and (>= nxt 0xDC00) (<= nxt 0xDFFF))))
+            (subs cut 0 (dec max-cause-chars))
+            cut))))
+    (catch :default _
+      unrenderable-value)))
+
+(defn- finite-cause-number?
+  "True for numbers the bridge can carry. Mirrors `serializable?`: NaN and
+  infinities travel as truncated strings, never as numbers."
+  [value]
+  (and (number? value)
+       (js/isFinite value)))
+
+(defn- sanitize-cause-value
+  "Keeps plain-data leaves as-is, stringifies anything else with `pr-str`
+  truncation. Never throws."
+  [value]
+  (try
+    (cond
+      (or (nil? value) (boolean? value) (keyword? value))
+      value
+
+      (string? value)
+      (truncate-cause-str value)
+
+      (finite-cause-number? value)
+      value
+
+      :else
+      (truncate-cause-str (pr-str value)))
+    (catch :default _
+      unrenderable-value)))
+
+(defn- describe-cause-level
+  "Plain-data projection of one `ex-cause` link. Keeps `:message` plus the
+  allowlisted WASM details, sanitized. Never throws."
+  [cause]
+  (try
+    (let [message (try (ex-message cause) (catch :default _ nil))
+          data    (try (ex-data cause) (catch :default _ nil))
+          text    (cond
+                    (string? message) message
+                    (string? cause)   cause
+                    (nil? cause)      "unknown failure"
+                    :else             (pr-str cause))
+          out     {:message (sanitize-cause-value text)}]
+      (if (map? data)
+        (reduce (fn [m k]
+                  (if (contains? data k)
+                    (assoc m k (sanitize-cause-value (get data k)))
+                    m))
+                out
+                [:fn :code :type :hint])
+        out))
+    (catch :default _
+      {:message unrenderable-cause-text})))
+
+(defn- describe-cause
+  "Walks at most `max-cause-depth` cause levels, projecting each with
+  `describe-cause-level`. Always returns plain data, never throws."
+  [cause]
+  (try
+    (loop [current cause
+           depth   0
+           acc     []]
+      (if (or (nil? current) (>= depth max-cause-depth))
+        (if (seq acc)
+          acc
+          [{:message "unknown failure"}])
+        (let [level (describe-cause-level current)
+              next  (try (ex-cause current) (catch :default _ nil))]
+          (recur next (inc depth) (conj acc level)))))
+    (catch :default _
+      [{:message unrenderable-cause-text}])))
+
 (defn- terminal-failure
   "Maps a chain rejection to the bridge value. Stale work resolves to the
   stale marker without touching the newer owner; any other failure releases
   the owner when it still owns the realm and resolves to a failure map, so
-  the bridge promise never rejects."
+  the bridge promise never rejects. The top message stays phase-labeled for
+  accounting; the original failure lives under `:cause` as plain data. Only
+  the top-level cause decides staleness."
   [epoch cause fallback-phase]
   (if (stale? cause)
     #js {"status" "stale"}
-    (let [phase (or (:phase (ex-data cause))
-                    fallback-phase
-                    "aborted")]
+    (let [phase   (try (or (:phase (ex-data cause))
+                           fallback-phase
+                           "aborted")
+                       (catch :default _
+                         (or fallback-phase "aborted")))
+          message (try (or (ex-message cause) "unknown failure")
+                       (catch :default _
+                         "unknown failure"))
+          detail  (try (describe-cause cause)
+                       (catch :default _
+                         [{:message unrenderable-cause-text}]))]
       (dispose-if-current! epoch)
-      (fail-data {:phase phase :message (or (ex-message cause) "unknown failure")}))))
+      (fail-data {:phase   phase
+                  :message message
+                  :cause   detail}))))
 
 (defn- build-canvas!
   "Creates the bench canvas with a `width*dpr` backing buffer and an explicit
