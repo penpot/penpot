@@ -27,6 +27,7 @@
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:wasm": "../render-wasm/build frontend",
     "build:renderer-benchmarks:runner": "clojure -M:dev:renderer-bench release bench-render-wasm-runner",
+    "build:renderer-benchmarks:pilot": "clojure -M:dev:renderer-bench release bench-render-wasm-pilot",
     "build:app:libs": "node ./scripts/build-libs.js",
     "build:app:main": "clojure -M:dev:shadow-cljs release main worker",
     "build:app:worker": "clojure -M:dev:shadow-cljs release worker",
