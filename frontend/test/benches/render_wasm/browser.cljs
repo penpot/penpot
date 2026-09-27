@@ -119,6 +119,49 @@
   [s]
   (boolean (re-find #"(?i)swiftshader|llvmpipe|software|basic render" (or s ""))))
 
+(defn- teardown-canvas!
+  "Releases the context after successful initialization, then removes its
+  canvas. The initializer owns cleanup until it returns a context."
+  [canvas]
+  (when (some? canvas)
+    (when-let [context wasm/gl-context]
+      (webgl/release-context! wasm/internal-module context wasm/gl-context-handle))
+    (try
+      (.remove ^js canvas)
+      (catch :default _))))
+
+(defn- release-owner-resources!
+  "Drops the current owner's canvas, GL handles and WASM module binding
+  without touching the owner epoch. Callers own the epoch: `dispose!` bumps
+  first, superseding loads already bumped for the new owner."
+  []
+  (teardown-canvas! @canvas*)
+  (wasm/reset-context-state!)
+  ;; reset-context-state! deliberately preserves loss state for the editor
+  ;; reload path; bench disposal owns it explicitly.
+  (reset! wasm/context-lost? false)
+  (set! wasm/internal-module nil)
+  (reset! canvas* nil))
+
+(defn dispose!
+  "Closes the current owner: bumps the epoch (running continuations go
+  stale), releases renderer resources and drops the cached module promise so
+  a later load re-imports cleanly. Idempotent. Stale callers must not clean
+  up a newer owner; use `dispose-if-current!` from async continuations."
+  []
+  (swap! owner-epoch* inc)
+  (release-owner-resources!)
+  (reset! module-promise* nil)
+  #js {"status" "disposed"})
+
+(defn- dispose-if-current!
+  "Disposes only when `epoch` is still current. Stale work returns false
+  without modifying the newer owner's canvas, GL context or module cache."
+  [epoch]
+  (when (= epoch @owner-epoch*)
+    (dispose!)
+    true))
+
 (defn- poll-full
   "TODO(mem:render-wasm/performance/cljs-rewrite/06-render-and-interaction-protocol):
   interim inline drain. Ticket 06 replaces this with `protocol.cljs`; do not
@@ -158,39 +201,58 @@
        (.requestAnimationFrame js/window (fn [] (step (inc started-frames))))))))
 
 (defn- read-graphics
-  "Records effective graphics settings from the declared helper authority
-  plus the observed renderer string."
-  [width height dpr renderer]
-  (let [opts webgl/default-context-options]
-    {"width" width
-     "height" height
+  "Records effective graphics settings: requested CSS size and DPR
+  separately from the observed drawing-buffer size and the context's actual
+  attributes. Requested defaults live in `webgl/default-context-options`;
+  what the browser granted comes from `getContextAttributes`."
+  [canvas ctx width height dpr renderer]
+  (let [attrs (try
+                (.getContextAttributes ^js ctx)
+                (catch :default _ nil))
+        attr  (fn [k]
+                (when (some? attrs)
+                  (unchecked-get attrs k)))]
+    {"cssWidth" width
+     "cssHeight" height
+     "drawingBufferWidth" (.-width ^js canvas)
+     "drawingBufferHeight" (.-height ^js canvas)
      "dpr" dpr
      "webgl2" true
-     "antialias" (unchecked-get opts "antialias")
-     "depth" (unchecked-get opts "depth")
-     "stencil" (unchecked-get opts "stencil")
-     "alpha" (unchecked-get opts "alpha")
-     "preserveDrawingBuffer" (unchecked-get opts "preserveDrawingBuffer")
+     "antialias" (attr "antialias")
+     "depth" (attr "depth")
+     "stencil" (attr "stencil")
+     "alpha" (attr "alpha")
+     "preserveDrawingBuffer" (attr "preserveDrawingBuffer")
      "renderer" renderer
      "software" (software-renderer? renderer)}))
 
 (defn- render-ok
-  [module-ms graphics-ms upload-ms alive? poll snapshot seed width height dpr renderer]
+  "Maps one poll result to the bridge value. Success keeps the owner live
+  for explicit disposal. Every failure path releases the owner when it still
+  owns the realm, so budget exhaustion and context loss never leave a live
+  canvas behind. Stale results never dispose: a newer owner is live."
+  [epoch module-ms graphics-ms upload-ms alive? poll snapshot seed canvas ctx width height dpr renderer]
   (let [pm (js->clj poll :keywordize-keys true)]
     (cond
       (:stale pm)
       ;; dispose! resets loss state, so stale-plus-lost means genuine
-      ;; context loss, not disposal.
+      ;; context loss, not disposal. The loss listener already released the
+      ;; canvas; the dispose call below only matters when loss was recorded
+      ;; without an epoch bump.
       (if @wasm/context-lost?
-        (fail-data {:phase "context-lost"
-                    :message "WebGL context lost during render"})
+        (do
+          (dispose-if-current! epoch)
+          (fail-data {:phase "context-lost"
+                      :message "WebGL context lost during render"}))
         #js {"status" "stale"})
 
       ;; Safety net: every loss writer bumps the epoch, so staleness
       ;; normally fires first.
       (not alive?)
-      (fail-data {:phase "first-render"
-                  :message "disposed or context lost during render"})
+      (do
+        (dispose-if-current! epoch)
+        (fail-data {:phase "first-render"
+                    :message "disposed or context lost during render"}))
 
       (:full pm)
       (clj->js
@@ -202,16 +264,21 @@
         "renderFrames" (:frames pm)
         "scene" {"shapes" (count (:objects snapshot))
                  "seed" seed}
-        "effectiveGraphics" (read-graphics width height dpr renderer)})
+        "effectiveGraphics" (read-graphics canvas ctx width height dpr renderer)})
 
       :else
-      (fail-data {:phase "first-render"
-                  :message "Full not reached in budget"
-                  :detail pm}))))
+      (do
+        (dispose-if-current! epoch)
+        (fail-data {:phase "first-render"
+                    :message "Full not reached in budget"
+                    :detail pm})))))
 
 (defn- install-listeners!
   "Wires context lost/restored handling for `canvas`, epoch-guarded: a stale
-  canvas (removed but not yet GC'd) must not kill the live owner."
+  canvas (removed but not yet GC'd) must not kill the live owner. On loss the
+  current owner releases its canvas and GL resources itself: the poll loop
+  only observes staleness afterwards, so a `render-ok` cleanup there would
+  always miss."
   [canvas epoch]
   (.addEventListener
    canvas "webglcontextlost"
@@ -219,6 +286,8 @@
      (fn [e]
        (.preventDefault ^js e)
        (when (= installed @owner-epoch*)
+         (release-owner-resources!)
+         (reset! module-promise* nil)
          (reset! wasm/context-lost? true)
          (swap! owner-epoch* inc)))))
   (.addEventListener
@@ -232,28 +301,54 @@
 ;; Public interface
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn dispose!
-  "Closes the current owner: bumps the epoch (in-flight continuations go
-  stale), tears down WASM context state and drops the module handle so a
-  later load re-imports cleanly. Idempotent."
-  []
-  (swap! owner-epoch* inc)
-  (wasm/reset-context-state!)
-  ;; reset-context-state! deliberately preserves loss state for the editor
-  ;; reload path; bench disposal owns it explicitly.
-  (reset! wasm/context-lost? false)
-  (set! wasm/internal-module nil)
-  (reset! module-promise* nil)
-  (when-let [canvas @canvas*]
-    (.remove ^js canvas)
-    (reset! canvas* nil))
-  #js {"status" "disposed"})
+(defn- stale?
+  "True when `cause` is the superseded-owner marker from `guard-current!`."
+  [cause]
+  (true? (::stale (ex-data cause))))
+
+(defn- guard-current!
+  "Throws the stale marker when `epoch` no longer owns the realm. Every
+  async step calls it first with its own phase so the terminal handler can
+  tell superseded work from genuine failures. The marker lives in `ex-data`,
+  never in the message: message text is not a protocol."
+  [epoch phase]
+  (when-not (= epoch @owner-epoch*)
+    (throw (ex-info "superseded" {::stale true :phase phase}))))
+
+(defn- terminal-failure
+  "Maps a chain rejection to the bridge value. Stale work resolves to the
+  stale marker without touching the newer owner; any other failure releases
+  the owner when it still owns the realm and resolves to a failure map, so
+  the bridge promise never rejects."
+  [epoch cause fallback-phase]
+  (if (stale? cause)
+    #js {"status" "stale"}
+    (let [phase (or (:phase (ex-data cause))
+                    fallback-phase
+                    "aborted")]
+      (dispose-if-current! epoch)
+      (fail-data {:phase phase :message (or (ex-message cause) "unknown failure")}))))
+
+(defn- build-canvas!
+  "Creates the bench canvas with a `width*dpr` backing buffer and an explicit
+  CSS size, so the drawn scene fills exactly the reported viewport."
+  [width height dpr]
+  (let [canvas (.createElement js/document "canvas")]
+    (aset canvas "width" (* width dpr))
+    (aset canvas "height" (* height dpr))
+    (aset (.-style ^js canvas) "width" (str width "px"))
+    (aset (.-style ^js canvas) "height" (str height "px"))
+    canvas))
 
 ;; TODO: remove in Ticket 06
 (defn load-rects
   "Loads the `:rects/load` scene and renders it to Full. Takes plain data:
   `{\"seed\" int, \"view\" {scale x y viewport?}?, \"module-url\"?, \"wasm-url\"?}`.
-  Viewport defaults to 1920x1080@2. Always resolves (failure maps included)."
+  Viewport defaults to 1920x1080@2. Always resolves (failure maps included).
+
+  The chain is flat: one `.then` per phase (module, graphics, scene, upload,
+  drain) plus a terminal `.catch`, so every rejection carries its phase to a
+  single ownership-aware handler."
   [args]
   (try
     (let [params (js->clj (or args #js {}) :keywordize-keys true)
@@ -268,105 +363,119 @@
          (fail-data {:phase "invalid-args"
                      :message "load-rects needs {seed int, view?}"}))
         (let [epoch (swap! owner-epoch* inc)]
-          ;; Supersede: drop the previous owner's canvas now; its
-          ;; continuations go stale through the epoch bump above.
-          ;; The old GL context frees with the removed canvas.
-          (when-let [old @canvas*]
-            (.remove ^js old))
+          ;; Supersede: the epoch bump above already retired the previous
+          ;; owner's continuations. Release its canvas and GL resources now
+          ;; with the production teardown path, and drop the cached module
+          ;; promise so this owner measures a fresh instantiation.
+          (release-owner-resources!)
+          (reset! module-promise* nil)
           (let [viewport (core/resolve-viewport view)
                 width    (:width viewport)
                 height   (:height viewport)
                 dpr      (:dpr viewport)
-                ;; Epoch-only until mark-live!: liveness requires an
-                ;; initialized context, which does not exist yet.
-                current? (fn [] (= epoch @owner-epoch*))
                 live?    (fn [] (and (= epoch @owner-epoch*) (wasm/live?)))]
             (-> (ensure-module! (or (:module-url params) "./render-wasm.js")
                                 (or (:wasm-url params) "./render-wasm.wasm"))
-                (.then
-                 (fn [{:keys [module factory-ms]}]
-                   (when-not (current?)
-                     (throw (ex-info "stale" {})))
-                   (set! wasm/internal-module module)
-                   (let [module-ms factory-ms
-                         canvas    (doto (.createElement js/document "canvas")
-                                     (aset "width" (* width dpr))
-                                     (aset "height" (* height dpr)))
-                         _         (.appendChild (.-body js/document) canvas)
-                         _         (reset! canvas* canvas)
-                         g0        (now)
-                         ctx       (webgl/init-context!
-                                    canvas
-                                    {:module module
-                                     :context-id "webgl2"
-                                     :css-width width
-                                     :css-height height
-                                     :dpr dpr
-                                     :flags 0
-                                     :browser (sr/translate-browser :chrome)
-                                     :params {}})]
-                     (if (nil? ctx)
-                       (do
-                         (dispose!)
-                         (fail-data {:phase "graphics-init"
-                                     :message "WebGL2 context unavailable"}))
-                       (do
-                         (set! wasm/gl-context-handle (:handle ctx))
-                         (set! wasm/gl-context (:context ctx))
-                         (set! wasm/canvas canvas)
-                         (mark-live!)
-                         ;; Mirror the editor DOM sizing choice.
-                         (h/call wasm/internal-module "_resize_viewbox" width height)
-                         (install-listeners! canvas epoch)
-                         (let [graphics-ms (- (now) g0)
-                               renderer    (renderer-string (:context ctx))
-                               ;; Generation, validation and order derivation
-                               ;; stay outside timers. rects/build fills
-                               ;; workload defaults; only the seed varies per
-                               ;; attempt.
-                               snapshot    (-> (rects/build {:seed seed})
-                                               (scenes/validate!))
-                               ordered     (upload/prepare-scene snapshot)]
-                           (when-not (current?)
-                             (throw (ex-info "stale" {})))
-                           ;; Editor order: view before pool. The timed window
-                           ;; covers view, pool, loading lifecycle, batch and
-                           ;; tile preparation.
+                (.catch (fn [cause]
+                          (throw (ex-info (str "module init failed: "
+                                               (or (ex-message cause) cause))
+                                          {:phase "module-init"}
+                                          cause))))
+                (.then (fn [installed]
+                         (guard-current! epoch "module-init")
+                         installed))
+                (.then (fn [{:keys [module factory-ms]}]
+                         (guard-current! epoch "graphics-init")
+                         (set! wasm/internal-module module)
+                         (let [canvas (build-canvas! width height dpr)]
+                           (.appendChild (.-body js/document) canvas)
+                           (reset! canvas* canvas)
+                           (let [g0  (now)
+                                 ctx (try
+                                       (webgl/init-context!
+                                        canvas
+                                        {:module module
+                                         :context-id "webgl2"
+                                         :css-width width
+                                         :css-height height
+                                         :dpr dpr
+                                         :flags 0
+                                         :browser (sr/translate-browser :chrome)
+                                         :params {}})
+                                       (catch :default cause
+                                         (throw (ex-info "graphics init failed"
+                                                         {:phase "graphics-init"}
+                                                         cause))))]
+                             (if (nil? ctx)
+                               (throw (ex-info "WebGL2 context unavailable"
+                                               {:phase "graphics-init"}))
+                               (do
+                                 (set! wasm/gl-context-handle (:handle ctx))
+                                 (set! wasm/gl-context (:context ctx))
+                                 (set! wasm/canvas canvas)
+                                 (mark-live!)
+                                 (try
+                                   (h/call wasm/internal-module "_resize_viewbox" width height)
+                                   (catch :default cause
+                                     (throw (ex-info "resize viewbox failed"
+                                                     {:phase "graphics-init"}
+                                                     cause))))
+                                 (install-listeners! canvas epoch)
+                                 {:module-ms factory-ms
+                                  :graphics-ms (- (now) g0)
+                                  :renderer (renderer-string (:context ctx))
+                                  :canvas canvas
+                                  :ctx ctx}))))))
+                (.then (fn [g]
+                         (guard-current! epoch "scene-build")
+                         (try
+                           (let [snapshot (-> (rects/build {:seed seed})
+                                              (scenes/validate!))]
+                             (assoc g
+                                    :snapshot snapshot
+                                    :ordered (upload/prepare-scene snapshot)))
+                           (catch :default cause
+                             (throw (ex-info "scene build failed"
+                                             {:phase "scene-build"}
+                                             cause))))))
+                (.then (fn [g]
+                         (guard-current! epoch "upload")
+                         (try
                            (let [u0 (now)]
                              (h/call wasm/internal-module "_set_view"
                                      (:scale view) (- (:x view)) (- (:y view)))
                              (h/call wasm/internal-module "_init_shapes_pool"
-                                     (count (:objects snapshot)))
+                                     (count (:objects (:snapshot g))))
                              (h/call wasm/internal-module "_begin_loading")
                              (try
                                (serialize-shape/serialize-shapes-batch!
-                                ordered
+                                (:ordered g)
                                 {:include-layout? false
                                  :include-fills-strokes? true})
                                (finally
                                  (h/call wasm/internal-module "_end_loading")))
                              (h/call wasm/internal-module "_set_view_end")
-                             (let [upload-ms (- (now) u0)
-                                   r0        (now)]
-                               (-> (poll-full epoch 0 r0)
-                                   (.then
-                                    (fn [poll]
-                                      (render-ok module-ms graphics-ms upload-ms
-                                                 (live?) poll snapshot seed
-                                                 width height dpr renderer))
-                                    (fn [_]
-                                      (dispose!)
-                                      (fail-data {:phase "first-render"
-                                                  :message "render threw"})))))))))))
-                 (fn [result]
-                   result)
-                 (fn [cause]
-                   (if (= "stale" (ex-message cause))
-                     #js {"status" "stale"}
-                     (do
-                       (dispose!)
-                       (fail-data {:phase "aborted"
-                                   :message (ex-message cause)}))))))))))
+                             (assoc g :upload-ms (- (now) u0)))
+                           (catch :default cause
+                             (if (stale? cause)
+                               (throw cause)
+                               (throw (ex-info "upload failed"
+                                               {:phase "upload"}
+                                               cause)))))))
+                (.then (fn [g]
+                         (guard-current! epoch "first-render")
+                         (let [{:keys [module-ms graphics-ms renderer canvas ctx snapshot upload-ms]} g
+                               r0 (now)]
+                           (-> (poll-full epoch 0 r0)
+                               (.then (fn [poll]
+                                        (render-ok epoch module-ms graphics-ms upload-ms
+                                                   (live?) poll snapshot seed
+                                                   canvas (:context ctx)
+                                                   width height dpr renderer)))
+                               (.catch (fn [cause]
+                                         (terminal-failure epoch cause "first-render")))))))
+                (.catch (fn [cause]
+                          (terminal-failure epoch cause "aborted"))))))))
     (catch :default cause
       (js/Promise.resolve
        (fail-data {:phase "setup" :message (ex-message cause)})))))
