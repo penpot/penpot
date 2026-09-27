@@ -51,11 +51,30 @@
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def default-viewport
+  "Viewport used when a case declares no `:viewport`: 1920x1080 at DPR 2.
+  Per-case config; run-level CLI overrides belong to ticket 11."
+  {:width 1920 :height 1080 :dpr 2})
+
+(def schema:viewport
+  [:map {:closed true}
+   [:width {:optional true} ::sm/positive-safe-number]
+   [:height {:optional true} ::sm/positive-safe-number]
+   [:dpr {:optional true} ::sm/positive-safe-number]])
+
 (def schema:view
   [:map {:closed true}
    [:scale [:and number? pos?]]
    [:x number?]
-   [:y number?]])
+   [:y number?]
+   [:viewport {:optional true} schema:viewport]])
+
+(defn resolve-viewport
+  "Merges `default-viewport` under a case view's declared `:viewport`.
+  Collected descriptors keep the declared view; callers resolve at use so
+  existing cases need no edits."
+  [view]
+  (merge default-viewport (:viewport view)))
 
 (def schema:scene
   [:map {:closed true}
