@@ -195,10 +195,31 @@
      :elide-asserts true
      :anon-fn-naming-policy :off}}}
 
+  :bench-render-wasm-pilot
+  {:target :node-script
+   :output-to "target/renderer-benchmarks/pilot.cjs"
+   :output-dir "target/renderer-benchmarks/pilot/"
+   :main benches.render-wasm.pilot/-main
+   :devtools {:autoload false}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
   :bench-render-wasm-browser
   {:target :esm
    :output-dir "target/renderer-benchmarks/browser/"
-   :js-options {:js-provider :import}
+   ;; Bundle npm deps (date-fns via app.common): the pilot serves plain
+   ;; static files with no import-map resolver. TODO(10): revisit when
+   ;; ticket 10 owns staging; artifacts must stay self-contained.
+   :js-options {:js-provider :shadow}
 
    :modules
    {:browser
