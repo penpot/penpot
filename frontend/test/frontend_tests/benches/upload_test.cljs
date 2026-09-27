@@ -37,6 +37,11 @@
     {:objects {uuid/zero root, r1-id r1, r2-id r2}
      :refs    {:r1 r1-id :r2 r2-id}}))
 
+(t/deftest prepare-scene-derives-upload-order
+  (let [snapshot (common/validate! (sample-snapshot))]
+    (t/is (= (common/upload-order snapshot)
+             (bench-upload/prepare-scene snapshot)))))
+
 (t/deftest upload-scene-uses-snapshot-order-and-caller-opts
   (let [snapshot    (common/validate! (sample-snapshot))
         opts        {:include-layout? false :include-fills-strokes? true}
