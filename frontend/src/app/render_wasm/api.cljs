@@ -2538,19 +2538,18 @@
 
      ;; Ensure the WebGL context is properly disposed so browsers do not keep
      ;; accumulating active contexts between page switches.
-     (when-let [gl (unchecked-get wasm/internal-module "GL")]
-       (when-let [handle wasm/gl-context-handle]
-         (try
-           ;; For hard teardown we can explicitly lose browser context.
-           ;; For reload->reinit flows we skip this because immediate context
-           ;; recreation may fail on some browsers/GPUs while context is lost.
-           (when lose-browser-context?
-             (when-let [ctx wasm/gl-context]
-               (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
-                 (.loseContext ^js lose-ext))))
-           (.deleteContext ^js gl handle)
-           (catch :default dispose-error
-             (.error js/console dispose-error)))))
+     (when-let [handle wasm/gl-context-handle]
+       (try
+         ;; For hard teardown we can explicitly lose browser context.
+         ;; For reload->reinit flows we skip this because immediate context
+         ;; recreation may fail on some browsers/GPUs while context is lost.
+         (when lose-browser-context?
+           (when-let [ctx wasm/gl-context]
+             (when-let [lose-ext (.getExtension ^js ctx "WEBGL_lose_context")]
+               (.loseContext ^js lose-ext))))
+         (webgl/delete-context! wasm/internal-module handle)
+         (catch :default dispose-error
+           (.error js/console dispose-error))))
 
      (wasm-gesture/reset-after-wasm-reload!)
      (wasm/reset-context-state!)
