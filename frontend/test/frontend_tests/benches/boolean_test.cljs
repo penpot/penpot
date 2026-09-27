@@ -6,7 +6,10 @@
 
 (ns frontend-tests.benches.boolean-test
   (:require
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.intersect :as gint]
    [app.common.types.path :as path]
+   [app.common.types.path.segment :as segm]
    [app.common.uuid :as uuid]
    [benches.render-wasm.scenes.builder :as b :include-macros true]
    [benches.render-wasm.scenes.common :as common]
@@ -32,6 +35,18 @@
     (t/is (= [uuid/zero uuid/zero]
              [(:frame-id (first children)) (:frame-id (second children))]))
     (t/is (= [0 0 100 100] (helpers/selrect bool)))))
+
+(t/deftest difference-excludes-points-in-removed-overlap
+  (let [instance (b/scene {:seed 1}
+                          (b/bool {:bool-type :difference}
+                                  (b/rect {:x 0 :y 0 :width 100 :height 100})
+                                  (b/rect {:x 50 :y 50 :width 100 :height 100})))
+        bool     (first (helpers/children-of instance uuid/zero))
+        lines    (segm/path->lines bool)]
+    (t/is (true? (gint/is-point-inside-nonzero? (gpt/point 25 25) lines))
+          "a point in the kept region stays inside the content")
+    (t/is (false? (gint/is-point-inside-nonzero? (gpt/point 75 75) lines))
+          "a point in the subtracted overlap is excluded from the content")))
 
 (t/deftest union-derives-canonical-bounds
   (let [instance (b/scene {:seed 1}
