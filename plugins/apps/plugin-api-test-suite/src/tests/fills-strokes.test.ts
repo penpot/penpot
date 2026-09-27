@@ -326,6 +326,37 @@ describe('Fills & strokes', () => {
       expect(stroke.strokeWidthLeft).toBe(5);
     });
 
+    test('a board accepts per-side stroke widths', (ctx) => {
+      const board = ctx.penpot.createBoard();
+      ctx.board.appendChild(board);
+      board.strokes = [
+        { strokeColor: '#000000', strokeWidth: 1, strokeWidthTop: 2 },
+      ];
+      expect(board.strokes[0].strokeWidthTop).toBe(2);
+    });
+
+    test('an ellipse rejects per-side stroke writes', (ctx) => {
+      const ellipse = ctx.penpot.createEllipse();
+      ctx.board.appendChild(ellipse);
+      ellipse.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+
+      expect(() => {
+        ellipse.strokes = [
+          { strokeColor: '#ff0000', strokeWidth: 1, strokeWidthTop: 2 },
+        ];
+      }).toThrow();
+      expect(() => {
+        ellipse.strokes[0].strokeWidthTop = 2;
+      }).toThrow();
+
+      const stroke = ellipse.strokes[0];
+      expect(stroke.strokeColor).toBe('#000000');
+      expect(stroke.strokeWidth).toBe(1);
+      expect(stroke.strokeWidthTop).toBeUndefined();
+      stroke.strokeWidth = 3;
+      expect(ellipse.strokes[0].strokeWidth).toBe(3);
+    });
+
     test('per-side widths survive unrelated stroke mutation', (ctx) => {
       // Side widths must survive a Plugin API stroke commit.
       const r = rect(ctx);

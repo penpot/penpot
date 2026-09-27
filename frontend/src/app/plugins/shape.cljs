@@ -31,6 +31,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.token :as ctt]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
@@ -274,10 +275,16 @@
 
 (defn commit-strokes!
   [plugin-id ^js self value]
-  (let [id    (obj/get self "$id")
+  (let [shape (u/proxy->shape self)
+        id    (:id shape)
         value (parser/parse-strokes value)]
     (cond
       (not (sm/validate [:vector cts/schema:stroke] value))
+      (u/not-valid plugin-id :strokes value)
+
+      (and (not (ctt/per-side-stroke-shape? (:type shape)))
+           (some #(some % [:stroke-width-top :stroke-width-right
+                           :stroke-width-bottom :stroke-width-left]) value))
       (u/not-valid plugin-id :strokes value)
 
       (not (r/check-permission plugin-id "content:write"))
