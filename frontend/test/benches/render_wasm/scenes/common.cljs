@@ -135,6 +135,15 @@
         (fail! "object is not reachable from the root"
                {:id id})))))
 
+;; Captured-page policy (tickets 02/26; implementation pending): extraction
+;; maps canonical component/detach-shape over every selected-page shape,
+;; without resolving component libraries, then rejects remaining unsupported
+;; references/resources before validation. Warn and record when detachment
+;; changes shapes; do not carry document context or use editor detach flows.
+;; Thus the empty file/libraries below describe a standalone snapshot, not
+;; support for arbitrary component-bearing pages. Move reusable checks to
+;; shared .cljc code for JVM extraction and CLJS loading; do not copy them.
+
 (defn- check-referential-integrity!
   "Run the production referential validation over the reachable graph.
 
