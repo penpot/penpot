@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>renderer benchmark pilot</title>
+  </head>
+  <body>
+    <!-- Same one-liner as frontend/resources/polyfills/dynamicImport.js:
+         the bench bundle is plain ESM and must not depend on app boot. -->
+    <script>globalThis.dynamicImport = function (u) { return import(u); };</script>
+    <script type="module">
+      import bridge from "/bench/browser.js";
+      window.__benchBridge = bridge;
+      window.__benchReady = true;
+    </script>
+  </body>
+</html>
