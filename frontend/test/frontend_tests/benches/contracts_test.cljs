@@ -147,6 +147,43 @@
         (t/is (= ::cases/invalid-case (:type data)))
         (t/is (some? (::sm/explain data)))))))
 
+(t/deftest rects-workload-ranges-are-rejected
+  (let [schema (:params-schema (core/registered-scene :rects))
+        good   {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}]
+    (t/is (true? (sm/validate schema good)))
+    (t/testing "reversed size range"
+      (t/is (false? (sm/validate schema (assoc good :min-size 100 :max-size 20)))))
+    (t/testing "non-finite sizes"
+      (doseq [bad [(assoc good :width js/Infinity)
+                   (assoc good :height js/NaN)
+                   (assoc good :min-size js/Infinity)
+                   (assoc good :max-size js/NaN)]]
+        (t/is (false? (sm/validate schema bad)) (pr-str bad))))))
+
+(t/deftest view-coordinates-are-finite
+  (let [good {:scale 1 :x 0 :y 0}]
+    (t/is (true? (sm/validate core/schema:view good)))
+    (doseq [bad [(assoc good :scale js/Infinity)
+                 (assoc good :x js/NaN)
+                 (assoc good :y js/Infinity)
+                 (assoc good :viewport {:width js/NaN})]]
+      (t/is (false? (sm/validate core/schema:view bad)) (pr-str bad)))))
+
+(t/deftest serializable-rejects-json-lossy-values
+  (t/is (true? (core/serializable? {:id :rects/load :seed 42 :tags ["a" 1]})))
+  (t/is (false? (core/serializable? {:v js/NaN})))
+  (t/is (false? (core/serializable? {:v js/Infinity})))
+  (t/is (false? (core/serializable? {:v js/-Infinity})))
+  (t/is (false? (core/serializable? {[1 2] "k"})))
+  (t/is (false? (core/serializable? {{:a 1} "k"}))))
+
+(t/deftest wire-ids-round-trip-through-json
+  (doseq [id [:rects/load :rects :fresh :render-full]]
+    (let [encoded (core/encode-id id)
+          wire    (.stringify js/JSON #js {:id encoded})
+          through (unchecked-get (.parse js/JSON wire) "id")]
+      (t/is (= id (core/decode-id through)) (str id)))))
+
 (t/deftest duplicate-scene-id-from-another-namespace-is-rejected
   (t/is (= ::core/duplicate-scene
            (:type (failure-data
