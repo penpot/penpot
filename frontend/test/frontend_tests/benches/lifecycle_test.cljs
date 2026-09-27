@@ -7,18 +7,26 @@
 (ns frontend-tests.benches.lifecycle-test
   "Boundary-fake coverage for the ticket-05 browser lifecycle.
 
-  Full load/render runs headless in the pilot (real WASM + DOM). Here every
-   DOM/FFI boundary is faked or avoided: bridge arg validation (seeds, views,
-   viewports), viewport resolution, disposal state reset, epoch bumps,
-   context-loss flags and bridge shape. No canvas, rAF or module import is
-   exercised: partial-init rendering, live context loss and stale-callback
-   races run headless in the pilot; exhaustive stale-callback unit coverage
-   belongs to ticket 06's protocol-test with its injected clock."
+  Full load/render runs headless in the pilot (real WASM + DOM). Here the
+  DOM/FFI boundary is faked: bridge arg validation (seeds, views, viewports,
+  non-finite numbers), viewport resolution, disposal state reset, epoch
+  bumps, owner-guard and terminal-failure mapping, context-loss flags, bridge
+  shape, and through-entry `load-rects` scenarios (happy path, rejected
+  import, post-registration failure, overlapping loads) against fake canvases
+  and a fake Emscripten factory. GL init/release unit behavior lives in
+  `frontend-tests.render-wasm.webgl-test`; live context loss and
+  blocked-page cancellation belong to ticket 15's failure verification;
+  exhaustive stale-callback coverage belongs to ticket 06's protocol-test
+  with its injected clock."
   (:require
    [app.common.render-wasm.wasm :as wasm]
    [benches.render-wasm.browser :as browser]
    [benches.render-wasm.scenes.core :as core]
    [cljs.test :as t :include-macros true]))
+
+;; Partial-init unwinding of `init-context!` is covered in
+;; `frontend-tests.render-wasm.webgl-test`, which also pins the success,
+;; nil-context and registration-failure cases.
 
 (defn- expect-failed-args
   "Calls `load-rects` with `args` (never touching DOM/FFI: validation runs
@@ -60,6 +68,21 @@
      true
      done)))
 
+(t/deftest non-finite-view-values-fail-before-timers
+  (t/async done
+    (expect-failed-args #js {"seed" 42
+                             "view" #js {"scale" js/Infinity "x" 0 "y" 0}}
+                        true
+                        (fn []
+                          (expect-failed-args #js {"seed" 42
+                                                   "view" #js {"scale" 1 "x" js/NaN "y" 0}}
+                                              true
+                                              (fn []
+                                                (expect-failed-args #js {"seed" 42
+                                                                         "view" #js {"scale" 1 "x" 0 "y" js/Infinity}}
+                                                                    true
+                                                                    done)))))))
+
 (t/deftest viewport-defaults-apply-at-use
   (t/is (= {:width 1920 :height 1080 :dpr 2}
            (core/resolve-viewport {:scale 1 :x 0 :y 0})))
@@ -71,11 +94,22 @@
   (set! wasm/internal-module #js {})
   (set! wasm/context-initialized? true)
   (reset! wasm/context-lost? true)
-  (let [result (browser/dispose!)]
-    (t/is (= "disposed" (unchecked-get result "status")))
-    (t/is (nil? wasm/internal-module))
-    (t/is (false? wasm/context-initialized?))
-    (t/is (false? @wasm/context-lost?)))
+  (set! wasm/gl-context-handle 7)
+  (set! wasm/gl-context #js {})
+  (set! wasm/canvas #js {})
+  (let [removed (atom false)
+        fake    #js {:remove (fn [] (reset! removed true))}]
+    (reset! @#'browser/canvas* fake)
+    (let [result (browser/dispose!)]
+      (t/is (= "disposed" (unchecked-get result "status")))
+      (t/is (nil? wasm/internal-module))
+      (t/is (false? wasm/context-initialized?))
+      (t/is (false? @wasm/context-lost?))
+      (t/is (nil? wasm/gl-context-handle))
+      (t/is (nil? wasm/gl-context))
+      (t/is (nil? wasm/canvas))
+      (t/is (nil? @@#'browser/canvas*))
+      (t/is (true? @removed) "canvas is removed from the DOM")))
   (t/testing "double dispose is idempotent"
     (let [result (browser/dispose!)]
       (t/is (= "disposed" (unchecked-get result "status")))
@@ -85,8 +119,306 @@
       (browser/dispose!)
       (t/is (< before @@#'browser/owner-epoch*)))))
 
+(t/deftest stale-work-never-disposes-the-newer-owner
+  (let [guard     @#'browser/guard-current!
+        terminate @#'browser/terminal-failure
+        epoch     @@#'browser/owner-epoch*]
+    (t/testing "guard passes for the current owner"
+      (t/is (nil? (guard epoch "module-init"))))
+    (t/testing "guard throws stale once superseded"
+      (browser/dispose!)
+      (let [thrown (try
+                     (guard epoch "module-init")
+                     nil
+                     (catch :default cause
+                       cause))]
+        (t/is (true? (:benches.render-wasm.browser/stale (ex-data thrown)))
+              "the marker lives in ex-data, never in message text")))
+    (t/testing "terminal stale resolves without disposal"
+      (let [before @@#'browser/owner-epoch*
+            result (terminate epoch
+                              (ex-info "superseded"
+                                       {:benches.render-wasm.browser/stale true
+                                        :phase "upload"})
+                              "upload")
+            after  @@#'browser/owner-epoch*]
+        (t/is (= "stale" (unchecked-get result "status")))
+        (t/is (= before after) "no epoch bump: the newer owner is untouched")))
+    (t/testing "terminal failure keeps its phase and disposes the current owner"
+      (let [current @@#'browser/owner-epoch*
+            result  (terminate current (ex-info "upload failed" {:phase "upload"}) "aborted")]
+        (t/is (= "failed" (unchecked-get result "status")))
+        (t/is (= "upload" (unchecked-get result "phase")))
+        (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))
+    (t/testing "phaseless failures use the fallback phase"
+      (set! wasm/internal-module nil)
+      (let [current @@#'browser/owner-epoch*
+            result  (terminate current (ex-info "boom" {}) "aborted")]
+        (t/is (= "failed" (unchecked-get result "status")))
+        (t/is (= "aborted" (unchecked-get result "phase")))
+        (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))))
+
 (t/deftest bridge-exposes-pilot-entries
   (let [keys (js/Object.keys browser/bridge)]
     (t/is (some #{"ping"} keys))
     (t/is (some #{"loadRects"} keys))
     (t/is (some #{"dispose"} keys))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Through-entry fake harness.
+;;
+;; TODO(mem:render-wasm/performance/cljs-rewrite/06-render-and-interaction-protocol):
+;; shared entry-test harness. Ticket 06 replaces `load-rects` with the generic
+;; case-descriptor entry: keep this section (fake DOM, fake Emscripten factory,
+;; call recording) and repoint the bridge calls below; only call shapes and
+;; result assertions change. The DOM/module boundary the fakes cover does not
+;; change with the entry.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- record!
+  "Appends `event` (a vector) to the shared call log."
+  [event]
+  (.push (unchecked-get js/globalThis "__benchCalls") (clj->js event)))
+
+(defn- fake-canvas
+  "Numbered fake canvas identified by `id`. Removal and context loss are
+  recorded in the shared call log."
+  [id]
+  (let [lose-ext #js {:loseContext (fn [] (record! ["lose" id]) nil)}
+        context  #js {:getExtension (fn [name]
+                                      (when (= name "WEBGL_lose_context")
+                                        lose-ext))}]
+    #js {:id id
+         :width 0
+         :height 0
+         :style #js {}
+         :getContext (fn [_ _] context)
+         :getContextAttributes (fn [] nil)
+         :addEventListener (fn [_ _] nil)
+         :remove (fn [] (record! ["remove" id]) nil)}))
+
+(defn- install-fake-dom!
+  "Installs fake `document`/`window`/`dynamicImport` globals and returns a
+  `:restore!` thunk that puts the previous values back. Created canvases are
+  numbered from 1 per installation. The import polyfill mirrors
+  `resources/polyfills/dynamicImport.js`, which ships with the app HTML but
+  not with the unit-test bundle."
+  []
+  (let [prev-document (unchecked-get js/globalThis "document")
+        prev-window   (unchecked-get js/globalThis "window")
+        prev-import   (unchecked-get js/globalThis "dynamicImport")
+        next-id       (atom 0)
+        document      #js {:createElement (fn [_]
+                                            (let [id (swap! next-id inc)]
+                                              (record! ["create" id])
+                                              (fake-canvas id)))
+                           :body #js {:appendChild (fn [canvas]
+                                                     (record! ["append" (unchecked-get canvas "id")])
+                                                     canvas)}
+                           :querySelectorAll (fn [_] #js [])}
+        window        #js {:requestAnimationFrame
+                           (fn [cb]
+                             ;; Park the first frame while `__benchGateRaf`
+                             ;; is set so a second load can supersede a live,
+                             ;; polling owner; later frames run synchronously.
+                             (if (and (unchecked-get js/globalThis "__benchGateRaf")
+                                      (nil? (unchecked-get js/globalThis "__benchRafCb")))
+                               (unchecked-set js/globalThis "__benchRafCb" cb)
+                               (cb 0))
+                             nil)}
+        dynamic-import (fn [url] (js/eval (str "import(" (pr-str url) ")")))]
+    (unchecked-set js/globalThis "document" document)
+    (unchecked-set js/globalThis "window" window)
+    (unchecked-set js/globalThis "dynamicImport" dynamic-import)
+    (fn restore! []
+      (unchecked-set js/globalThis "document" prev-document)
+      (unchecked-set js/globalThis "window" prev-window)
+      (unchecked-set js/globalThis "dynamicImport" prev-import))))
+
+(def ^:private factory-source
+  "ES module stubbing the Emscripten factory for entry tests. Records every
+  renderer call in `globalThis.__benchCalls`; `globalThis.__benchThrowIn`
+  names one module fn that throws. The instance trap answers `undefined` for
+  `then` and non-strings: promise assimilation would otherwise treat the
+  instance as a never-settling thenable and hang the load. A real 16 MiB
+  heap with bump allocation backs `_alloc_bytes`/`HEAPU8`, so the real batch
+  upload assembles bytes instead of throwing on stub returns."
+  (str "export default function (opts) {"
+       "globalThis.__benchFactoryCalls.push(opts || null);"
+       "var rec = globalThis.__benchCalls;"
+       "function push(e) { rec.push(e); }"
+       "var GL = {"
+       "registerContext: function () { push(['register']); return 7; },"
+       "makeContextCurrent: function () {},"
+       "deleteContext: function (h) { push(['delete', h]); }"
+       "};"
+       "var heapBuf = new ArrayBuffer(16777216);"
+       "var heapNext = 1024;"
+       "var base = {"
+       "GL: GL,"
+       "HEAPU8: new Uint8Array(heapBuf),"
+       "HEAPU32: new Uint32Array(heapBuf),"
+       "HEAP32: new Int32Array(heapBuf),"
+       "HEAPF32: new Float32Array(heapBuf),"
+       "_alloc_bytes: function (size) { var p = heapNext; heapNext += ((size + 3) & ~3); return p; },"
+       "_free_bytes: function () {},"
+       "_read_error_code: function () { return 0; },"
+       "_render: function () { push(['render']); return 2; },"
+       "_clean_up: function () { push(['clean']); return 0; }"
+       "};"
+       "var inst = new Proxy(base, {"
+       "get: function (t, p) {"
+       "if (typeof p !== 'string') return undefined;"
+       "if (p === 'then') return undefined;"
+       "if (p in t) return t[p];"
+       "return function () {"
+       "push(['call', p]);"
+       "if (globalThis.__benchThrowIn === p) throw new Error('fake ' + p + ' failure');"
+       "return 0;"
+       "};"
+       "}"
+       "});"
+       "return Promise.resolve(inst);"
+       "}"))
+
+(defn- factory-url
+  "Data-URL Emscripten factory for entry tests. Fully hermetic: no
+  filesystem or network access."
+  []
+  (str "data:text/javascript," (js/encodeURIComponent factory-source)))
+
+(defn- reset-bench-globals!
+  "Resets the recording and scenario flags the fake factory reads."
+  []
+  (unchecked-set js/globalThis "__benchCalls" #js [])
+  (unchecked-set js/globalThis "__benchFactoryCalls" #js [])
+  (unchecked-set js/globalThis "__benchThrowIn" nil)
+  (unchecked-set js/globalThis "__benchGateRaf" false)
+  (unchecked-set js/globalThis "__benchRafCb" nil))
+
+(defn- read-calls
+  "Call log as Clojure data."
+  []
+  (js->clj (unchecked-get js/globalThis "__benchCalls")))
+
+(defn- effect-count
+  [calls effect]
+  (count (filter #(= effect (first %)) calls)))
+
+(defn- load-result
+  "Calls `browser/load-rects` with `args` and delivers the plain-data result
+  to `k`. A rejected bridge (a broken always-resolve contract) arrives as a
+  `threw` map so the test fails with the cause attached."
+  [args k]
+  (-> (browser/load-rects args)
+      (.then (fn [result] (k (js->clj result :keywordize-keys true))))
+      (.catch (fn [cause] (k {:status "threw" :cause (str cause)})))))
+
+(defn- with-entry-env
+  "Installs the fake DOM, resets bench globals, then calls `f` with a
+  `cleanup` thunk that disposes the owner, clears the recording and restores
+  the globals. Call `cleanup` after asserting, before `done`."
+  [f]
+  (let [restore-dom! (install-fake-dom!)]
+    (reset-bench-globals!)
+    (f (fn []
+         (browser/dispose!)
+         (reset-bench-globals!)
+         (restore-dom!)))))
+
+(t/deftest successful-load-reaches-full
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (load-result #js {"seed" 7
+                          "module-url" (factory-url)
+                          "wasm-url" "./fake.wasm"}
+                     (fn [m]
+                       (t/is (= "ok" (:status m)))
+                       (t/is (= 1 (:renderFrames m)))
+                       (t/is (= 1001 (:shapes (:scene m))) "the canonical scene uploads whole")
+                       (let [calls (read-calls)]
+                         (t/is (= 1 (effect-count calls "create")) "one canvas per load")
+                         (t/is (zero? (effect-count calls "remove")) "success keeps the owner live"))
+                       (cleanup)
+                       (done)))))))
+
+(t/deftest rejected-import-resolves-module-init-failure
+  (t/async done
+    ;; Needs the entry env for the import polyfill, even though the import
+    ;; itself fails before touching the DOM.
+    (with-entry-env
+      (fn [cleanup]
+        (load-result #js {"seed" 7
+                          "module-url" "data:text/javascript,this is not valid javascript((("}
+                     (fn [m]
+                       (t/is (= "failed" (:status m)))
+                       (t/is (= "module-init" (:phase m)))
+                       (cleanup)
+                       (done)))))))
+
+(t/deftest set-browser-failure-releases-registered-context
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (unchecked-set js/globalThis "__benchThrowIn" "_set_browser")
+        (load-result #js {"seed" 7
+                          "module-url" (factory-url)
+                          "wasm-url" "./fake.wasm"}
+                     (fn [m]
+                       (t/is (= "failed" (:status m)))
+                       (t/is (= "graphics-init" (:phase m)))
+                       (let [calls (read-calls)]
+                         (t/is (= 1 (effect-count calls "register")))
+                         (t/is (= 1 (effect-count calls "clean")) "renderer state is released")
+                         (t/is (some #{["delete" 7]} calls) "the registered handle is deleted")
+                         (t/is (= 1 (effect-count calls "lose")) "the browser context is released")
+                         (t/is (= 1 (effect-count calls "remove")) "the canvas is removed"))
+                       (t/is (nil? @@#'browser/canvas*) "no owner left behind")
+                       (cleanup)
+                       (done)))))))
+
+(t/deftest overlapping-load-keeps-the-newer-owner
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (unchecked-set js/globalThis "__benchGateRaf" true)
+        (let [args       (fn [seed] #js {"seed" seed
+                                         "module-url" (factory-url)
+                                         "wasm-url" "./fake.wasm"})
+              first-load (browser/load-rects (args 7))]
+          ;; Microtasks drain before this macrotask: the first load parked on
+          ;; its first poll frame with a live canvas. Macrotask ordering
+          ;; (never wall timing) sequences the assertions.
+          (js/setTimeout
+           (fn []
+             (t/is (some? (unchecked-get js/globalThis "__benchRafCb"))
+                   "first load is polling")
+             (let [second-load (browser/load-rects (args 8))]
+               (js/setTimeout
+                (fn []
+                  ;; The second load completed; release the parked frame so
+                  ;; the first load observes its superseded epoch.
+                  (if-some [parked (unchecked-get js/globalThis "__benchRafCb")]
+                    (parked 0)
+                    (t/is false "first load never parked on a poll frame"))
+                  (-> (js/Promise.all #js [first-load second-load])
+                      (.then (fn [results]
+                               (let [[stale ok] (js->clj results :keywordize-keys true)]
+                                 (t/is (= "stale" (:status stale)) "superseded load resolves stale")
+                                 (t/is (= "ok" (:status ok)) "newer owner completes")
+                                 (t/is (= 8 (:seed (:scene ok))) "the completer is the second load")
+                                 (let [calls (read-calls)]
+                                   (t/is (= 1 (effect-count calls "remove")) "superseded canvas is removed")
+                                   (t/is (some #{["remove" 1]} calls))
+                                   (t/is (nil? (some #{["remove" 2]} calls)) "newer canvas survives"))
+                                 (t/is (some? @@#'browser/canvas*) "the newer owner stays live")
+                                 (t/is (true? wasm/context-initialized?)))
+                               (cleanup)
+                               (done)))
+                      (.catch (fn [cause]
+                                (t/is false (str "must resolve, threw: " cause))
+                                (cleanup)
+                                (done)))))
+                0)))
+           0))))))
