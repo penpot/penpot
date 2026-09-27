@@ -49,6 +49,9 @@
 
    :host "localhost"
    :tenant "default"
+   ;; The SaaS host also sets penpotIsSaas in the browser. Keep this server
+   ;; value in sync so Admin Console can query the same deployment type.
+   :is-saas false
 
    :redis-uri "redis://redis/0"
 
@@ -109,6 +112,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
+    [:is-saas ::sm/boolean]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 

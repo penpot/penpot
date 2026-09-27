@@ -710,6 +710,10 @@
   (let [show-content* (mf/use-state true)
         show-content? (deref show-content*)
 
+        interactions
+        (mf/with-memo [interactions]
+          (into [] d/xf:add-index interactions))
+
         toggle-content
         (mf/use-fn
          #(swap! show-content* not))
@@ -745,7 +749,7 @@
 
      (when show-content?
        [:div {:class (stl/css :content :content-interactions)}
-        (for [[index interaction] (d/enumerate interactions)]
+        (for [{:keys [::d/index] :as interaction} interactions]
           [:> interaction-item* {:key (str (:id shape) "-" index)
                                  :index index
                                  :shape shape

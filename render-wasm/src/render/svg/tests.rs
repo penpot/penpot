@@ -1424,6 +1424,33 @@ fn exports_masked_group_as_alpha_mask() {
 }
 
 #[test]
+fn path_leaf_drop_spread_strokes_the_silhouette() {
+    // Paths had no spread at all: the selrect outset is a no-op for them.
+    let mut pool = ShapesPool::new();
+    let id = uid(1);
+    add_empty_fill_closed_path(&mut pool, id, Uuid::nil(), (0.0, 0.0, 100.0, 100.0));
+    let shape = pool.get_mut(&id).unwrap();
+    shape.set_fills(vec![Fill::Solid(SolidColor(skia::Color::from_rgb(
+        61, 123, 255,
+    )))]);
+    shape.add_shadow(Shadow::new(
+        skia::Color::from_rgb(255, 0, 0),
+        0.0,
+        20.0,
+        (0.0, 0.0),
+        ShadowStyle::Drop,
+        false,
+    ));
+
+    let svg = render(&pool, id);
+    assert!(
+        !svg.contains("feMorphology"),
+        "leaf drop spread must stay geometric: {svg}"
+    );
+    insta::assert_snapshot!(svg);
+}
+
+#[test]
 fn masked_leaf_drop_spread_uses_geometric_silhouette() {
     // Case 11 style: masked group + circle content with drop spread 16 blur 0.
     // GPU paints geometric outset (not feMorphology); the ring must stay circular.
@@ -1474,7 +1501,7 @@ fn masked_leaf_drop_spread_uses_geometric_silhouette() {
         !svg.contains("feMorphology"),
         "leaf drop spread must not use feMorphology: {svg}"
     );
-    // 100×100 circle + 2×16 spread → 132×132 silhouette ellipse.
+    // 100×100 circle + 32px center stroke → 132×132 silhouette.
     let filter_open = svg.find("filter=\"url(#fx").expect("drop filter");
     let filter_close = svg[filter_open..]
         .find("</g>")
@@ -1482,9 +1509,8 @@ fn masked_leaf_drop_spread_uses_geometric_silhouette() {
         .expect("silhouette group close");
     let silhouette = &svg[filter_open..=filter_close];
     assert!(
-        silhouette.contains("<ellipse")
-            && (silhouette.contains(r#"rx="66""#) || silhouette.contains(r#"rx=\"66\""#)),
-        "drop silhouette must be a geometrically outset ellipse (rx=66): {silhouette}"
+        silhouette.contains(r#"rx="50""#) && silhouette.contains(r#"stroke-width="32""#),
+        "drop silhouette must be the rx=50 ellipse stroked by 2×spread: {silhouette}"
     );
     // True-size content ellipse remains under the mask.
     assert!(

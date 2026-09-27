@@ -101,20 +101,55 @@
                                    :no-wasm? true})))))))
 
 (defn update-stroke-width
-  ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
-  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
+  ([value shape-ids attributes]
+   (update-stroke-width value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
    (when (number? value)
      (let [value (max 0 value)]
        (dwsh/update-shapes shape-ids
                            (fn [shape]
                              (if (seq (:strokes shape))
-                               (assoc-in shape [:strokes 0 :stroke-width] value)
-                               (let [stroke (assoc cts/default-stroke :stroke-width value)]
+                               (let [stroke (get-in shape [:strokes 0])]
+                                 (assoc-in shape [:strokes 0]
+                                           (merge stroke
+                                                  {:stroke-width value
+                                                   :stroke-width-top value
+                                                   :stroke-width-right value
+                                                   :stroke-width-bottom value
+                                                   :stroke-width-left value})))
+                               (let [stroke (assoc cts/default-stroke
+                                                   :stroke-width value
+                                                   :stroke-width-top value
+                                                   :stroke-width-right value
+                                                   :stroke-width-bottom value
+                                                   :stroke-width-left value)]
                                  (assoc shape :strokes [stroke]))))
                            {:reg-objects? true
                             :ignore-touched true
                             :page-id page-id
                             :attrs [:strokes]})))))
+
+(defn update-stroke-width-side
+  "Updates the width of the sides in `attributes` on the first stroke of each
+  shape. Sides not in `attributes` keep their current width (0 when the shape
+  had no stroke yet) and all side keys are materialized so consumers never
+  fall back to `:stroke-width`. `:stroke-width` keeps acting as the top-side
+  alias."
+  ([value shape-ids attributes]
+   (update-stroke-width-side value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (when (number? value)
+     (dwsh/update-shapes shape-ids
+                         (fn [shape]
+                           (let [stroke (cts/materialize-stroke-side-widths
+                                         (first (:strokes shape)) attributes value)]
+                             (if (seq (:strokes shape))
+                               (update shape :strokes #(into [stroke] (rest %)))
+                               (assoc shape :strokes [stroke]))))
+                         {:reg-objects? true
+                          :ignore-touched true
+                          :page-id page-id
+                          :attrs [:strokes]}))))
 
 (defn update-color [f value shape-ids page-id]
   (when-let [tc (tinycolor/valid-color value)]
@@ -540,10 +575,10 @@
               (set (filter attributes #{:r1 :r2 :r3 :r4}))
               page-id)))
 
-    (some attributes #{:stroke-width})
-    (conj #(update-stroke-width
+    (some attributes ctt/stroke-width-keys)
+    (conj #(update-stroke-width-side
             value shape-ids
-            #{:stroke-width}
+            (set/intersection attributes ctt/stroke-width-keys)
             page-id))
 
     (some attributes #{:max-width :max-height :layout-item-max-h :layout-item-max-w :layout-item-min-h :layout-item-min-w})
@@ -618,7 +653,7 @@
   passed to toggle-token) and in propagation.cljs (re-exported from there)."
   {ctt/border-radius-keys  update-shape-radius-for-corners
    ctt/color-keys          update-fill-stroke
-   ctt/stroke-width-keys   update-stroke-width
+   ctt/stroke-width-keys   update-stroke-width-side
    ctt/sizing-keys         apply-dimensions-token
    ctt/opacity-keys        update-opacity
    ctt/rotation-keys       update-rotation
@@ -819,15 +854,30 @@
               (or (get attr->shape-update (first attrs)) on-update-shape)
               on-update-shape)
 
+            target-attrs
+            (or attrs all-attributes attributes)
+
             unapply-tokens?
-            (cfo/shapes-token-applied? token shapes (or attrs all-attributes attributes))
+            (if (seq attrs)
+              ;; Explicit attributes come from an input or a plugin apply
+              ;; call. Only toggle off when the token already covers every
+              ;; target attribute on every selected shape; a partial
+              ;; application is completed instead of removed.
+              (and (seq target-attrs)
+                   (cfo/shapes-applied-all?
+                    (cfo/shapes-ids-by-applied-attributes token shapes target-attrs)
+                    (into #{} (map :id) shapes)
+                    target-attrs))
+              ;; No explicit attributes (token pill): toggle off when any
+              ;; selected shape has the token on any attribute.
+              (cfo/shapes-token-applied? token shapes target-attrs))
 
             shape-ids
             (map :id shapes)]
 
         (if unapply-tokens?
           (rx/of
-           (unapply-token {:attributes (or attrs all-attributes attributes)
+           (unapply-token {:attributes target-attrs
                            :token-name (:name token)
                            :shape-ids shape-ids}))
           (rx/of

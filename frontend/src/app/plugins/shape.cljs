@@ -33,7 +33,6 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
    [app.main.data.persistence :as dwp]
@@ -49,6 +48,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.exports :as exports]
@@ -1603,65 +1603,67 @@
                  (u/not-valid plugin-id :export "Plugin doesn't have 'content:read' permission")
 
                  :else
-                 (if (and (contains? cf/flags :wasm-export)
-                          (contains? #{:jpeg :webp :png} (:type value :png)))
-                   ;; New export with wasm
-                   (let [uri (wasm.exports/export-image-uri
-                              {:file-id   file-id
-                               :page-id   page-id
-                               :object-id id
-                               :type      (:type value :png)
-                               :scale     (:scale value 1)})]
-                     (js/Promise.
-                      (fn [resolve reject]
-                        (->> (http/send!
-                              {:method :get
-                               :uri uri
-                               :response-type :blob
-                               :omit-default-headers true})
-                             (rx/map :body)
-                             (rx/mapcat #(.arrayBuffer %))
-                             (rx/map #(js/Uint8Array. %))
-                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
-                             (rx/subs! resolve reject)))))
+                 (let [export-type (:type value :png)
+                       wasm-enabled? (features/active-feature? @st/state "render-wasm/v1")]
+                   (if (and wasm-enabled?
+                            (contains? #{:jpeg :webp :png :pdf :svg} export-type))
+                     ;; Render in the browser with render-wasm.
+                     (let [export {:file-id   file-id
+                                   :page-id   page-id
+                                   :object-id id
+                                   :type      export-type
+                                   :scale     (:scale value 1)}
+                           uri (case export-type
+                                 :pdf (wasm.exports/export-pdf-uri export)
+                                 :svg (wasm.exports/export-svg-uri export)
+                                 (wasm.exports/export-image-uri export))]
+                       (js/Promise.
+                        (fn [resolve reject]
+                          (->> (http/send!
+                                {:method :get
+                                 :uri uri
+                                 :response-type :blob
+                                 :omit-default-headers true})
+                               (rx/map :body)
+                               (rx/mapcat #(.arrayBuffer %))
+                               (rx/map #(js/Uint8Array. %))
+                               (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "wasm")))
+                               (rx/subs! resolve reject)))))
 
-                   ;; Old export through exporter
-                   (let [shape (u/locate-shape file-id page-id id)
-                         payload
-                         {:cmd :export-shapes
-                          :profile-id (:profile-id @st/state)
-                          :wait true
-                          :is-wasm false
-                          :exports [(de/normalize-export {:file-id   file-id
-                                                          :page-id   page-id
-                                                          :object-id id
-                                                          :name      (:name shape)
-                                                          :type      (:type value :png)
-                                                          :suffix    (:suffix value "")
-                                                          :scale     (:scale value 1)})]}]
-                     (js/Promise.
-                      (fn [resolve reject]
-                        ;; The exporter renders the file from its persisted
-                        ;; state, so flush pending local changes and wait until
-                        ;; they are saved before invoking it. Otherwise it may
-                        ;; export a stale/empty shape. (The wasm export above
-                        ;; renders locally and does not need this.)
-                        (st/emit! ::dwp/force-persist)
-                        (->> (rx/concat
-                              (->> (dwp/wait-persisted 5000)
-                                   (rx/ignore))
-                              (rp/cmd! :export payload))
-                             (rx/mapcat (fn [{:keys [uri]}]
-                                          (->> (http/send! {:method :get
-                                                            :uri uri
-                                                            :response-type :blob
-                                                            :omit-default-headers true})
-                                               (rx/map :body))))
-                             (rx/mapcat #(.arrayBuffer %))
-                             (rx/map #(js/Uint8Array. %))
-                             (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "exporter")))
-                             (rx/subs! resolve reject)))))))))
-
+                     ;; Render via the exporter service.
+                     (let [shape (u/locate-shape file-id page-id id)
+                           payload
+                           {:cmd :export-shapes
+                            :profile-id (:profile-id @st/state)
+                            :wait true
+                            :is-wasm wasm-enabled?
+                            :exports [(de/normalize-export {:file-id   file-id
+                                                            :page-id   page-id
+                                                            :object-id id
+                                                            :name      (:name shape)
+                                                            :type      export-type
+                                                            :suffix    (:suffix value "")
+                                                            :scale     (:scale value 1)})]}]
+                       (js/Promise.
+                        (fn [resolve reject]
+                          ;; Exporter reads persisted file state; flush first
+                          ;; so the export is not stale. Browser WASM above
+                          ;; renders from local state and needs no flush.
+                          (st/emit! ::dwp/force-persist)
+                          (->> (rx/concat
+                                (->> (dwp/wait-persisted 5000)
+                                     (rx/ignore))
+                                (rp/cmd! :export payload))
+                               (rx/mapcat (fn [{:keys [uri]}]
+                                            (->> (http/send! {:method :get
+                                                              :uri uri
+                                                              :response-type :blob
+                                                              :omit-default-headers true})
+                                                 (rx/map :body))))
+                               (rx/mapcat #(.arrayBuffer %))
+                               (rx/map #(js/Uint8Array. %))
+                               (rx/tap #(st/emit! (se/event plugin-id "export-shapes" :method "exporter")))
+                               (rx/subs! resolve reject))))))))))
 
            ;; Interactions
            :addInteraction

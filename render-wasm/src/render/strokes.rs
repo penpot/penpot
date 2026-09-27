@@ -40,9 +40,12 @@ pub(super) fn draw_stroke_on_rect(
         return;
     }
 
+    // Radii as Skia fits them to the shape, so the stroke follows the fill.
+    let shape_radii = corners.map(|radii| *RRect::new_rect_radii(*rect, &radii).radii_ref());
+
     // By default just draw the rect. Only dotted inner/outer strokes need
     // clipping to prevent the dotted pattern from appearing in wrong areas.
-    let draw_stroke = || match corners {
+    let draw_stroke = || match &shape_radii {
         Some(radii) => {
             let radii = stroke.outer_corners(radii);
             let rrect = RRect::new_rect_radii(stroke_rect, &radii);
@@ -73,10 +76,13 @@ pub(super) fn draw_stroke_on_rect(
         draw_stroke();
         canvas.restore();
     } else if stroke.kind == StrokeKind::Inner
-        && (stroke.width >= rect.width() || stroke.width >= rect.height())
+        && (stroke.width >= rect.width()
+            || stroke.width >= rect.height()
+            || inner_corners_collapse(stroke, rect, &shape_radii))
     {
         // When the inner stroke width exceeds a shape dimension, the inset
         // rect goes negative and the stroke overflows outside the shape.
+        // Same when the inset radii can't follow the shape corners.
         // Fall back to the same approach as the SVG renderer: draw with
         // doubled width centered on the original shape and clip to it.
         canvas.save();
@@ -104,6 +110,22 @@ pub(super) fn draw_stroke_on_rect(
     } else {
         draw_stroke();
     }
+}
+
+/// Whether the inset radii clamp to zero or get rescaled by Skia to fit.
+fn inner_corners_collapse(stroke: &Stroke, rect: &Rect, radii: &Option<Corners>) -> bool {
+    let Some(radii) = radii else {
+        return false;
+    };
+    if matches!(stroke.style, StrokeStyle::Dotted | StrokeStyle::Dashed) {
+        return false;
+    }
+    let wanted = stroke.outer_corners(radii);
+    let inset = RRect::new_rect_radii(stroke.outer_rect(rect), &wanted);
+    radii
+        .iter()
+        .zip(wanted.iter().zip(inset.radii_ref()))
+        .any(|(shape, (want, got))| shape.x > 0.0 && (want.x <= 0.0 || want != got))
 }
 
 /// Draws a rect/frame stroke whose sides have different widths as the area

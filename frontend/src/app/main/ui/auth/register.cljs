@@ -114,6 +114,12 @@
                (set-field-error! :password {:message (tr "errors.email-as-password")})
 
                [:validation :weak-password]
+               ;; Execution time translation strings (keys sent by the backend):
+               ;;   (tr "errors.weak-password.too-short")
+               ;;   (tr "errors.weak-password.insufficient-digits")
+               ;;   (tr "errors.weak-password.insufficient-lowercase")
+               ;;   (tr "errors.weak-password.insufficient-uppercase")
+               ;;   (tr "errors.weak-password.insufficient-special")
                (let [options (when (seq (:details edata))
                                (mapv tr (:details edata)))]
                  (set-field-error! :password {:message (tr "errors.weak-password")

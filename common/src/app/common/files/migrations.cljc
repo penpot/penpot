@@ -2109,6 +2109,29 @@
         (update :pages-index d/update-vals repair-page)
         (d/update-when :components d/update-vals repair-container))))
 
+(defmethod migrate-data "0029-move-background-blur-out-of-blur"
+  ;; Before background blur got its own attribute, `:blur` accepted a
+  ;; `:background-blur` type, so the editor and the plugin API saved those maps
+  ;; under `:blur`. Once the shape schema was tightened, such files fail
+  ;; validation; move the map to the `:background-blur` attribute. When the
+  ;; shape already has a `:background-blur`, keep it and drop the mis-typed one.
+  [data _]
+  (letfn [(repair-shape [shape]
+            (if (= :background-blur (get-in shape [:blur :type]))
+              (if (contains? shape :background-blur)
+                (dissoc shape :blur)
+                (-> shape
+                    (dissoc :blur)
+                    (assoc :background-blur (:blur shape))))
+              shape))
+
+          (repair-container [container]
+            (d/update-when container :objects d/update-vals repair-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-container)
+        (d/update-when :components d/update-vals repair-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2194,4 +2217,5 @@
          "0025-repair-empty-text-content"
          "0026-fix-svg-raw-shapes-uuids"
          "0027-separate-tokens-status"
-         "0028-normalize-constrained-values"]))
+         "0028-normalize-constrained-values"
+         "0029-move-background-blur-out-of-blur"]))

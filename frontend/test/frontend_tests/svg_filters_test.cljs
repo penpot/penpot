@@ -6,7 +6,7 @@
 
 (ns frontend-tests.svg-filters-test
   (:require
-   [app.render-wasm.svg-filters :as svg-filters]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [cljs.test :refer [deftest is testing]]))
 
 (def sample-filter-shape
@@ -17,7 +17,7 @@
                          {:tag :feGaussianBlur :attrs {:stdDeviation "4"}}]}}})
 
 (deftest derives-blur-and-shadow-from-svg-filter
-  (let [shape  (svg-filters/apply-svg-filters sample-filter-shape)
+  (let [shape  (svg-derived/apply-svg-filters sample-filter-shape)
         blur   (:blur shape)
         shadow (:shadow shape)]
     (testing "layer blur derived from feGaussianBlur"
@@ -38,12 +38,12 @@
 (deftest keeps-existing-native-filters
   (let [existing {:blur {:id :existing :type :layer-blur :value 1.0}
                   :shadow [{:id :shadow :style :drop-shadow}]}
-        shape    (svg-filters/apply-svg-filters (merge sample-filter-shape existing))]
+        shape    (svg-derived/apply-svg-filters (merge sample-filter-shape existing))]
     (is (= (:blur existing) (:blur shape)))
     (is (= (:shadow existing) (:shadow shape)))))
 
 (deftest skips-when-no-filter-definition
   (let [shape {:svg-attrs {:fill "#fff"}}
-        result (svg-filters/apply-svg-filters shape)]
+        result (svg-derived/apply-svg-filters shape)]
     (is (= shape result))))
 

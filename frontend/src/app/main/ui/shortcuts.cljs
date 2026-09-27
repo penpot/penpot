@@ -15,6 +15,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer.shortcuts :as vsc]
+   [app.main.data.workspace.grid-layout.shortcuts :as gsc]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
@@ -117,13 +118,60 @@
        :final-key (normalize-key event)
        :finalized? true})))
 
+;; Shortcut labels live on the command definitions themselves as :label
+;; fns (see the app.main.data.*.shortcuts namespaces), so every key stays
+;; a static tr string literal visible to rehash with no declaration needed.
+
+(def ^:private section-labels
+  {:basics    (fn [] (tr "shortcuts.section.basics"))
+   :workspace (fn [] (tr "shortcuts.section.workspace"))
+   :dashboard (fn [] (tr "shortcuts.section.dashboard"))
+   :viewer    (fn [] (tr "shortcuts.section.viewer"))})
+
+(def ^:private subsection-labels
+  {:alignment            (fn [] (tr "shortcuts.subsection.alignment"))
+   :edit                 (fn [] (tr "shortcuts.subsection.edit"))
+   :generic              (fn [] (tr "shortcuts.subsection.generic"))
+   :main-menu            (fn [] (tr "shortcuts.subsection.main-menu"))
+   :modify-layers        (fn [] (tr "shortcuts.subsection.modify-layers"))
+   :navigation-dashboard (fn [] (tr "shortcuts.subsection.navigation-dashboard"))
+   :navigation-viewer    (fn [] (tr "shortcuts.subsection.navigation-viewer"))
+   :navigation-workspace (fn [] (tr "shortcuts.subsection.navigation-workspace"))
+   :panels               (fn [] (tr "shortcuts.subsection.panels"))
+   :path-editor          (fn [] (tr "shortcuts.subsection.path-editor"))
+   :shape                (fn [] (tr "shortcuts.subsection.shape"))
+   :text-editor          (fn [] (tr "shortcuts.subsection.text-editor"))
+   :tools                (fn [] (tr "shortcuts.subsection.tools"))
+   :zoom-viewer          (fn [] (tr "shortcuts.subsection.zoom-viewer"))
+   :zoom-workspace       (fn [] (tr "shortcuts.subsection.zoom-workspace"))})
+
+(def ^:private command-labels
+  "id -> :label fn index over every command definition map. Labels are
+  defined once on the definitions; this is only an index."
+  (into {}
+        (map (fn [[k v]] [k (:label v)]))
+        (concat wsc/shortcuts
+                psc/shortcuts
+                dsc/shortcuts
+                dsc/shortcuts-sidebar-navigation
+                dsc/shortcut-search
+                dsc/shortcut-create-new-project
+                vsc/shortcuts
+                gsc/shortcuts)))
+
 (defn translation-keyname
   [type keyname]
-  (let [translat-pre (case type
-                       :sc      "shortcuts."
-                       :sec     "shortcut-section."
-                       :sub-sec "shortcut-subsection.")]
-    (tr (str translat-pre (d/name keyname)))))
+  (let [label-fn (case type
+                   :sc (get command-labels keyname)
+                   :sec (get section-labels keyname)
+                   :sub-sec (get subsection-labels keyname))]
+    (if (fn? label-fn)
+      (label-fn)
+      (str (case type
+             :sc "shortcuts."
+             :sec "shortcuts.section."
+             :sub-sec "shortcuts.subsection.")
+           (d/name keyname)))))
 
 (defn- find-conflict
   [new-command all-shortcuts current-key]
@@ -247,13 +295,13 @@
         db-subs (dissoc db-subs :basics)
         vw-subs (dissoc vw-subs :basics)
         all     {:basics    {:children {:none {:children basics}}
-                             :translation (tr "shortcut-section.basics")}
+                             :translation (tr "shortcuts.section.basics")}
                  :workspace {:children ws-subs
-                             :translation (tr "shortcut-section.workspace")}
+                             :translation (tr "shortcuts.section.workspace")}
                  :dashboard {:children db-subs
-                             :translation (tr "shortcut-section.dashboard")}
+                             :translation (tr "shortcuts.section.dashboard")}
                  :viewer    {:children vw-subs
-                             :translation (tr "shortcut-section.viewer")}}
+                             :translation (tr "shortcuts.section.viewer")}}
         all     (walk all nil)
         all-sc-names (map #(translation-keyname :sc %)
                           (concat (keys workspace-sc)
@@ -316,11 +364,11 @@
         vw-subs  (dissoc vw-subs :basics)
         ws-subs  (merge ws-subs pt-subs)
         all      {:workspace {:children ws-subs
-                              :translation (tr "shortcut-section.workspace")}
+                              :translation (tr "shortcuts.section.workspace")}
                   :dashboard {:children db-subs
-                              :translation (tr "shortcut-section.dashboard")}
+                              :translation (tr "shortcuts.section.dashboard")}
                   :viewer    {:children vw-subs
-                              :translation (tr "shortcut-section.viewer")}}
+                              :translation (tr "shortcuts.section.viewer")}}
         all      (walk all nil)
         all-sc-names (map #(translation-keyname :sc %)
                           (concat (keys workspace-sc)

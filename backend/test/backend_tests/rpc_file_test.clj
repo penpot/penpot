@@ -2059,6 +2059,116 @@
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
 
+(t/deftest delete-shared-library-with-storage-file-data
+  (binding [cf/config (assoc cf/config :file-data-backend "storage")]
+    ;; Keep this test focused on the storage-backed file-data fix: create
+    ;; the files without the fdata/pointer-map optimization so the data is
+    ;; stored as a single object and no separate fragments are involved.
+    (with-redefs [cfeat/get-enabled-features
+                  (fn [& _] (disj cfeat/supported-features "fdata/pointer-map"))]
+      (let [profile (th/create-profile* 1)
+            params  {:profile-id (:id profile)
+                     :project-id (:default-project-id profile)}
+            library (th/create-file* 1 (assoc params :is-shared true))
+            file    (th/create-file* 2 params)
+            c-id    (uuid/random)
+            main-id (uuid/random)
+            inst-id (uuid/random)
+            l-page  (first (get-in library [:data :pages]))
+            f-page  (first (get-in file [:data :pages]))]
+        (th/link-file-to-library* {:file-id (:id file)
+                                   :library-id (:id library)})
+
+        ;; Add a component to the library and an instance of it to the
+        ;; referencing file, so absorption has something to move.
+        (update-file!
+         :file-id (:id library)
+         :profile-id (:id profile)
+         :revn 0
+         :vern 0
+         :changes
+         [{:type :add-obj
+           :page-id l-page
+           :id main-id
+           :parent-id uuid/zero
+           :frame-id uuid/zero
+           :components-v2 true
+           :obj (cts/setup-shape
+                 {:id main-id
+                  :name "Board"
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :type :frame
+                  :main-instance true
+                  :component-root true
+                  :component-file (:id library)
+                  :component-id c-id})}
+          {:type :add-component
+           :path ""
+           :name "Board"
+           :main-instance-id main-id
+           :main-instance-page l-page
+           :id c-id
+           :anotation nil}])
+
+        (update-file!
+         :file-id (:id file)
+         :profile-id (:id profile)
+         :revn 0
+         :vern 0
+         :changes
+         [{:type :add-obj
+           :page-id f-page
+           :id inst-id
+           :parent-id uuid/zero
+           :frame-id uuid/zero
+           :components-v2 true
+           :obj (cts/setup-shape
+                 {:id inst-id
+                  :name "Board"
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :type :frame
+                  :main-instance false
+                  :component-root true
+                  :component-file (:id library)
+                  :component-id c-id})}])
+
+        ;; Ensure the test exercises storage reads for both files.
+        (let [rows (th/db-exec! ["SELECT backend, data FROM file_data WHERE type = 'main'"])]
+          (t/is (= 2 (count rows)))
+          (t/is (every? #(= "storage" (:backend %)) rows))
+          (t/is (every? (comp nil? :data) rows)))
+
+        ;; Baseline revn after adding the instance to the file.
+        (let [baseline (get-in (th/command! {::th/type :get-file
+                                             ::rpc/profile-id (:id profile)
+                                             :id (:id file)})
+                               [:result :revn])]
+          (th/run-task! :delete-object
+                        {:object :file
+                         :deleted-at (ct/now)
+                         :id (:id library)})
+
+          ;; The task swallows absorption errors, so verify the persisted result.
+          (let [deleted (db/get* th/*pool* :file {:id (:id library)}
+                                 {::db/remove-deleted false})
+                out     (th/command! {::th/type :get-file
+                                      ::rpc/profile-id (:id profile)
+                                      :id (:id file)})]
+            (t/is (some? (:deleted-at deleted)))
+            (t/is (false? (:is-shared deleted)))
+            (t/is (th/success? out))
+            (t/is (= (inc baseline) (get-in out [:result :revn])))
+            (t/is (= (:id file) (get-in out [:result :data :id])))
+
+            ;; The component must be absorbed into the file local library
+            ;; and the instance must point to the local copy.
+            (t/is (some? (get-in out [:result :data :components c-id])))
+            (t/is (= (:id file)
+                     (get-in out [:result :data :pages-index f-page
+                                  :objects inst-id :component-file])))))))))
+
 (t/deftest deleted-files-permanently-delete
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)

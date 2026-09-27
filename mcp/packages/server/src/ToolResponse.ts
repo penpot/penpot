@@ -10,12 +10,19 @@ export class TextContent implements TextItem {
     constructor(public text: string) {}
 
     /**
-     * @param data - Text data as string or as object (from JSON representation where indices are mapped to character codes)
+     * @param data - Text data as string or as object (wrapped base64 data or JSON representation of array where
+     * indices are mapped to character codes)
      */
     public static textData(data: string | object): string {
         if (typeof data === "object") {
-            // convert object containing character codes (as obtained from JSON conversion of string) back to string
-            return String.fromCharCode(...(Object.values(data) as number[]));
+            // check for wrapped base64 data
+            if ("__type" in data && data["__type"] === "base64" && "data" in data && typeof data["data"] === "string") {
+                return Buffer.from(data["data"], "base64").toString("utf-8");
+            }
+            // legacy fallback: assume object containing character codes (as obtained from direct JSON conversion)
+            else {
+                return String.fromCharCode(...(Object.values(data) as number[]));
+            }
         } else {
             return data;
         }
@@ -84,8 +91,8 @@ export class TextResponse extends ToolResponse {
     }
 
     /**
-     * Creates a TextResponse from text data given as string or as object (from JSON representation where indices are mapped to
-     * character codes).
+     * Creates a TextResponse from text data given as string or as object (wrapped base64 data or JSON representation
+     * of array where indices are mapped to character codes).
      *
      * @param data - Text data as string or as object (from JSON representation where indices are mapped to character codes)
      */

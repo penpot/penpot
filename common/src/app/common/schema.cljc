@@ -11,6 +11,7 @@
    #?(:clj [malli.dev.pretty :as mdp])
    #?(:clj [malli.dev.virhe :as v])
    [app.common.data :as d]
+   [app.common.i18n :as i18n :refer [tr]]
    [app.common.json :as json]
    [app.common.math :as mth]
    [app.common.pprint :as pp]
@@ -493,7 +494,7 @@
   :type-properties
   {:title "email"
    :description "string with valid email address"
-   :error/code "errors.invalid-email"
+   :error/fn #(tr "errors.invalid-email")
    :gen/gen (sg/email)
    :decode/string (fn [v] (or (parse-email v) v))
    :decode/json (fn [v] (or (parse-email v) v))
@@ -1059,23 +1060,23 @@
          (and (string? value)
               (number? max)
               (> (count value) max))
-         {:code ["errors.field-max-length" max]}
+         (tr "errors.field-max-length" (i18n/c max))
 
          (and (string? value)
               (number? min)
               (< (count value) min))
-         {:code ["errors.field-min-length" min]}
+         (tr "errors.field-min-length" (i18n/c min))
 
          (and (string? value)
               (str/empty? value))
-         {:code "errors.field-missing"}
+         (tr "errors.field-missing")
 
          (and (string? value)
               (str/blank? value))
-         {:code "errors.field-not-all-whitespace"}
+         (tr "errors.field-not-all-whitespace")
 
          :else
-         {:code "errors.invalid-text"})))}})
+         (tr "errors.invalid-text"))))}})
 
 (register!
  {:type ::password
@@ -1088,7 +1089,7 @@
   {:title "password"
    :gen/gen (->> (sg/word-string)
                  (sg/filter #(>= (count %) 8)))
-   :error/code "errors.password-too-short"
+   :error/fn #(tr "errors.password-too-short")
    ::oapi/type "string"
    ::oapi/format "password"}})
 

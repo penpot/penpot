@@ -60,7 +60,12 @@ async function* scanLocales() {
 async function processLocale(options, f) {
   let locales = options.locale;
   if (typeof locales === "string") {
-    locales = locales.split(/,/);
+    // getopts yields "" (not undefined) when -l is absent: an empty
+    // list must mean "all locales", never "no locale".
+    locales = locales.split(/,/).filter((s) => s !== "");
+    if (locales.length === 0) {
+      locales = undefined;
+    }
   } else if (Array.isArray(locales)) {
   } else if (locales === undefined) {
   } else {
@@ -185,20 +190,24 @@ async function rehash(options, ...other) {
   const used = await (async function () {
     const result = {};
 
-    for await (const f of getFiles("src")) {
-      if (!fileRe.test(f)) continue;
+    // Both frontend and shared sources: common holds schemas and
+    // helpers whose translation keys must stay alive as well.
+    for (const dir of ["src", "../common/src"]) {
+      for await (const f of getFiles(dir)) {
+        if (!fileRe.test(f)) continue;
 
-      for await (const [n, line] of readLines(f)) {
-        const strings = getTranslationStrings(line);
+        for await (const [n, line] of readLines(f)) {
+          const strings = getTranslationStrings(line);
 
-        strings.forEach((key) => {
-          const entry = `${f}:${n}`;
-          if (result[key] !== undefined) {
-            result[key].push(entry);
-          } else {
-            result[key] = [entry];
-          }
-        });
+          strings.forEach((key) => {
+            const entry = `${f}:${n}`;
+            if (result[key] !== undefined) {
+              result[key].push(entry);
+            } else {
+              result[key] = [entry];
+            }
+          });
+        }
       }
     }
 
@@ -477,7 +486,25 @@ function cleanContext(frag) {
   return !/https?:|www\.|@|\|target:|\.mcp\.json/.test(frag);
 }
 
-function checkPunctuation(text, brands) {
+// Latin identifier (e.g. `tokenName`) that contains the char at `index`.
+function latinWordAt(text, index) {
+  const isWord = (c) => /[A-Za-zÀ-ÿ0-9_]/u.test(c);
+  let start = index;
+  let end = index;
+  while (start > 0 && isWord(text[start - 1])) start--;
+  while (end < text.length && isWord(text[end])) end++;
+  return text.slice(start, end);
+}
+
+// Number of plural forms declared by a PO `Plural-Forms` header.
+function parseNplurals(header) {
+  const m = /nplurals\s*=\s*(\d+)/.exec(header ?? "");
+  return m ? Number(m[1]) : 2;
+}
+
+// `source` is the English text: camelCase identifiers copied verbatim
+// from it (code names, not words glued together) are not reported.
+function checkPunctuation(text, brands, source = "") {
   const found = [];
   for (const m of text.matchAll(PUNCT_RE)) {
     const punct = m[0][0];
@@ -493,6 +520,8 @@ function checkPunctuation(text, brands) {
   for (const m of text.matchAll(CAMEL_RE)) {
     const frag = text.slice(Math.max(0, m.index - 30), m.index + 32);
     if (brands.some((mk) => frag.includes(mk))) continue;
+    const word = latinWordAt(text, m.index);
+    if (source && new RegExp(`\\b${word}\\b`, "u").test(source)) continue;
     found.push({ what: m[0], frag });
   }
   for (const m of text.matchAll(PH_GLUED_RE)) {
@@ -572,6 +601,8 @@ async function check(locale, words) {
   const entriesEn = dataEn.translations[""];
   const entriesEs = dataEs ? dataEs.translations[""] : {};
   const brands = [...GENERIC_BRANDS, ...(words?.brands ?? [])];
+  // Single-form locales (ja, ko, zh…) render every count with msgstr[0].
+  const singleForm = parseNplurals(data.headers?.["Plural-Forms"]) === 1;
   const errors = [];
   const warnings = [];
 
@@ -600,8 +631,11 @@ async function check(locale, words) {
 
     texts.forEach((text, i) => {
       if (!text) return;
-      const textEn = textsEn[i] ?? "";
-      const textEs = textsEs[i] ?? "";
+      // A single-form locale's only string must match the source's plural
+      // form (it carries the count placeholder), not the singular one.
+      const j = singleForm && eEn?.msgid_plural ? textsEn.length - 1 : i;
+      const textEn = textsEn[j] ?? "";
+      const textEs = textsEs[j] ?? "";
       const refs = refToks(textEn, textEs);
       if (textEn) {
         const unused = (e.comments?.flag ?? "")
@@ -620,7 +654,7 @@ async function check(locale, words) {
           }
         }
       }
-      for (const t of checkPunctuation(text, brands)) {
+      for (const t of checkPunctuation(text, brands, textEn)) {
         errors.push(
           `${msgid}: glued punctuation ${JSON.stringify(t.what)} ...${t.frag}...`,
         );
@@ -720,7 +754,7 @@ Available subcommands (run from \`frontend/\`):
 const COMMANDS = {
   rehash: {
     args: "",
-    help: 'Scan ./src for (tr "key") usages and update en.po references.',
+    help: 'Scan ./src and ../common/src for (tr "key") usages and update en.po references.',
     run: (options, params) => rehash(options, ...params),
   },
   sync: {

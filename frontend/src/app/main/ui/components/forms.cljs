@@ -198,6 +198,8 @@
           [:div {:id (dm/str "error-" input-name)
                  :class (stl/css :error)
                  :data-testid (dm/str data-testid "-error")}
+           ;; legacy deprecated errors, dynamic codes by design
+           #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
            (if (vector? code)
              (tr (nth code 0) (i18n/c (nth code 1)))
              (tr code))])
@@ -257,6 +259,8 @@
        [:span {:class (stl/css :error)} (:message error)]
 
        (and touched? (:code error))
+       ;; legacy errors, dynamic codes by design
+       #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
        [:span {:class (stl/css :error)} (tr (:code error))]
 
        (string? hint)

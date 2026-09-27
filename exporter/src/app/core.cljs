@@ -34,11 +34,10 @@
               :public-uri (str (cf/get :public-uri))
               :internal-uri (str (cf/get-internal-uri))
               :version (:full cf/version))
-      (when (contains? cf/flags :wasm-export)
-        (l/info :msg "headless wasm export enabled (experimental)"
-                :wasm-dir wasm/artifact-dir
-                :workers (cf/get :wasm-worker-pool-max)
-                :image-cache-size (cf/get :wasm-worker-image-cache-size)))
+      (l/info :msg "headless wasm export available"
+              :wasm-dir wasm/artifact-dir
+              :workers (cf/get :wasm-worker-pool-max)
+              :image-cache-size (cf/get :wasm-worker-image-cache-size))
       (p/do
         (bwr/init)
         (redis/init)

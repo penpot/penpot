@@ -8,7 +8,9 @@
    [rumext.v2 :as mf]))
 
 (mf/defc numeric-input-wrapper*
-  [{:keys [value attr applied-token align on-detach placeholder input-type class] :rest props}]
+  [{:keys [value attr applied-token align on-detach placeholder input-type class
+           token-disabled token-tooltip]
+    :rest props}]
   (let [tokens (mf/use-ctx muc/active-tokens-by-type)
 
         tokens (mf/with-memo [tokens input-type attr]
@@ -27,6 +29,8 @@
                                  :class [class (stl/css :numeric-input-wrapper)]
                                  :applied-token-name applied-token
                                  :tokens (if (delay? tokens) @tokens tokens)
+                                 :token-disabled token-disabled
+                                 :token-tooltip token-tooltip
                                  :align align
                                  :on-detach on-detach-attr
                                  :name attr

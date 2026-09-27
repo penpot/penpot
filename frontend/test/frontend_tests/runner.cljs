@@ -10,6 +10,7 @@
    [frontend-tests.copy-as-svg-test]
    [frontend-tests.data.comments-filters-test]
    [frontend-tests.data.dashboard-test]
+   [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.exports-selection-test]
    [frontend-tests.data.nitrate-test]
@@ -78,11 +79,14 @@
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.render-dimensions-test]
    [frontend-tests.render-wasm.process-objects-test]
+   [frontend-tests.render-wasm.serialization-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
    [frontend-tests.render-wasm.text-editor-caret-color-test]
    [frontend-tests.router-test]
    [frontend-tests.svg-fills-test]
+   [frontend-tests.svg-filters-test]
    [frontend-tests.text-editor-paste-guard-test]
+   [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -93,19 +97,23 @@
    [frontend-tests.tokens.token-errors-test]
    [frontend-tests.tokens.workspace-tokens-remap-test]
    [frontend-tests.ui.check-updates-test]
+   [frontend-tests.ui.color-token-position-test]
    [frontend-tests.ui.colorpicker-token-set-order-test]
    [frontend-tests.ui.comment-input-ime-test]
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.gradient-handlers-test]
+   [frontend-tests.ui.history-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measures-menu-props-test]
    [frontend-tests.ui.organization-team-switch-test]
    [frontend-tests.ui.routes-test]
    [frontend-tests.ui.settings-password-schema-test]
    [frontend-tests.ui.settings-shortcuts-test]
+   [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
+   [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
@@ -136,6 +144,7 @@
    'frontend-tests.copy-as-svg-test
    'frontend-tests.data.comments-filters-test
    'frontend-tests.data.dashboard-test
+   'frontend-tests.data.event-test
    'frontend-tests.data.nitrate-test
    'frontend-tests.data.persistence-retry-test
    'frontend-tests.data.persistence-test
@@ -203,11 +212,14 @@
    'frontend-tests.plugins.utils-test
    'frontend-tests.plugins.value-objects-test
    'frontend-tests.render-wasm.process-objects-test
+   'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
+   'frontend-tests.svg-filters-test
    'frontend-tests.tokens.copy-paste-props-test
+   'frontend-tests.tokens.context-menu-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
@@ -217,12 +229,14 @@
    'frontend-tests.tokens.logic.tokens-status-test
    'frontend-tests.tokens.workspace-tokens-remap-test
    'frontend-tests.ui.check-updates-test
+   'frontend-tests.ui.color-token-position-test
    'frontend-tests.ui.colorpicker-token-set-order-test
    'frontend-tests.ui.comment-input-ime-test
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.gradient-handlers-test
+   'frontend-tests.ui.history-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measures-menu-props-test
    'frontend-tests.ui.organization-team-switch-test
@@ -231,7 +245,9 @@
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test
+   'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
+   'frontend-tests.ui.stroke-menu-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test

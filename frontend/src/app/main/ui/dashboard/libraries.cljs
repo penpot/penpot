@@ -37,12 +37,15 @@
         can-edit
         (-> team :permissions :can-edit)
 
+        ;; Keep nil until the shared files are fetched, so the grid can
+        ;; tell "still loading" apart from "there are no libraries".
         files
         (mf/with-memo [files team-id]
-          (->> (vals files)
-               (filter #(= team-id (:team-id %)))
-               (sort-by :modified-at)
-               (reverse)))
+          (when (some? files)
+            (->> (vals files)
+                 (filter #(= team-id (:team-id %)))
+                 (sort-by :modified-at)
+                 (reverse))))
 
         selected-files
         (mf/deref ref:selected-files)

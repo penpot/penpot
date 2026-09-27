@@ -139,8 +139,6 @@
    [:stroke-style {:optional true}
     [::sm/one-of #{:solid :dotted :dashed :mixed}]]
    [:stroke-width {:optional true} ::sm/non-negative-safe-number]
-   ;; wasm-render only, backwards compatible
-   [:stroke-per-side {:optional true} :boolean]
    [:stroke-width-top {:optional true} ::sm/non-negative-safe-number]
    [:stroke-width-right {:optional true} ::sm/non-negative-safe-number]
    [:stroke-width-bottom {:optional true} ::sm/non-negative-safe-number]

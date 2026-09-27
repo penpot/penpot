@@ -11,78 +11,61 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 2026.10.dev0\n"
 
-#: src/app/main/ui/auth/register.cljs:232, src/app/main/ui/static.cljs:182, src/app/main/ui/viewer/login.cljs:109
+#: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
 msgstr "Reeds 'n rekening?"
 
-#: src/app/main/ui/auth/register.cljs:277
-#, unused
-msgid "auth.check-your-email"
-msgstr ""
-"Gaan jou e-pos na en klik op die skakel om te verifieer en Penpot te begin "
-"gebruik."
-
-#: src/app/main/ui/auth/recovery.cljs:77
+#: src/app/main/ui/auth/recovery.cljs:83
 msgid "auth.confirm-password"
 msgstr "Bevestig wagwoord"
 
-#: src/app/main/ui/auth/register.cljs:244
+#: src/app/main/ui/auth/register.cljs:239
 msgid "auth.create-demo-account"
 msgstr "Skep demo rekening"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-#, unused
-msgid "auth.create-demo-profile"
-msgstr "Wil jy dit net probeer?"
-
-#: src/app/main/ui/auth/login.cljs:40
+#: src/app/main/ui/auth/login.cljs:41
 msgid "auth.demo-warning"
 msgstr ""
 "Dit is 'n DEMO-diens, MOENIE vir werklike werk gebruik nie, die projekte "
 "sal periodiek uitgevee word."
 
-#: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:95
+#: src/app/main/ui/auth/login.cljs:203, src/app/main/ui/viewer/login.cljs:105
 msgid "auth.forgot-password"
 msgstr "Wagwoord vergeet?"
 
-#: src/app/main/ui/auth/register.cljs:180, src/app/main/ui/auth/register.cljs:346
+#: src/app/main/ui/auth/register.cljs:175, src/app/main/ui/auth/register.cljs:335
 msgid "auth.fullname"
 msgstr "Volle naam"
 
-#: src/app/main/ui/auth/register.cljs:236, src/app/main/ui/static.cljs:185, src/app/main/ui/viewer/login.cljs:112
+#: src/app/main/ui/auth/register.cljs:231, src/app/main/ui/static.cljs:194, src/app/main/ui/viewer/login.cljs:122
 msgid "auth.login-here"
 msgstr "Meld hier aan"
 
-#: src/app/main/ui/auth/login.cljs:195
-#, unused
-msgid "auth.login-submit"
-msgstr "Meld aan"
-
-#: src/app/main/ui/auth/login.cljs:248
+#: src/app/main/ui/auth/login.cljs:254
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
-#: src/app/main/ui/auth/login.cljs:254
+#: src/app/main/ui/auth/login.cljs:260
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
-#: src/app/main/ui/auth/login.cljs:242
+#: src/app/main/ui/auth/login.cljs:248
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
-#: src/app/main/ui/auth/login.cljs:207
+#: src/app/main/ui/auth/login.cljs:213
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:260
+#: src/app/main/ui/auth/login.cljs:266
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/auth/recovery.cljs:70
+#: src/app/main/ui/auth/recovery.cljs:76
 msgid "auth.new-password"
 msgstr "Tik 'n nuwe wagwoord in"
 
-#: src/app/main/ui/auth/recovery.cljs:46
+#: src/app/main/ui/auth/recovery.cljs:52
 msgid "auth.notifications.password-changed-successfully"
 msgstr "Wagwoord suksesvol verander"
 
@@ -96,19 +79,19 @@ msgstr ""
 msgid "auth.notifications.recovery-token-sent"
 msgstr "Wagwoordherwinningskakel na jou inkassie gestuur."
 
-#: src/app/main/ui/auth/verify_token.cljs:65
+#: src/app/main/ui/auth/verify_token.cljs:85
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Het suksesvol by die span aangesluit"
 
-#: src/app/main/ui/auth/login.cljs:187, src/app/main/ui/auth/register.cljs:194
+#: src/app/main/ui/auth/login.cljs:193, src/app/main/ui/auth/register.cljs:189
 msgid "auth.password"
 msgstr "Wagwoord"
 
-#: src/app/main/ui/auth/register.cljs:193
+#: src/app/main/ui/auth/register.cljs:188
 msgid "auth.password-length-hint"
 msgstr "Ten minste 8 karakters"
 
-#: src/app/main/ui/auth/register.cljs:277
+#: src/app/main/ui/auth/register.cljs:272
 msgid "auth.privacy-policy"
 msgstr "Privaatheidsbeleid"
 
@@ -116,56 +99,35 @@ msgstr "Privaatheidsbeleid"
 msgid "auth.recovery-request-submit"
 msgstr "Herstel Wagwoord"
 
-#: src/app/main/ui/auth/recovery.cljs:89, src/app/main/ui/auth/recovery_request.cljs:94
+#: src/app/main/ui/auth/recovery.cljs:95, src/app/main/ui/auth/recovery_request.cljs:94
 msgid "auth.recovery-request-subtitle"
 msgstr "Ons sal vir jou 'n e-pos stuur met instruksies"
 
-#: src/app/main/ui/auth/recovery.cljs:88, src/app/main/ui/auth/recovery_request.cljs:93
+#: src/app/main/ui/auth/recovery.cljs:94, src/app/main/ui/auth/recovery_request.cljs:93
 msgid "auth.recovery-request-title"
 msgstr "Wagwoord vergeet?"
 
-#: src/app/main/ui/auth/recovery.cljs:80
+#: src/app/main/ui/auth/recovery.cljs:86
 msgid "auth.recovery-submit"
 msgstr "Verander jou wagwoord"
 
-#: src/app/main/ui/auth/login.cljs:304, src/app/main/ui/static.cljs:168, src/app/main/ui/viewer/login.cljs:99
+#: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/static.cljs:177, src/app/main/ui/viewer/login.cljs:109
 msgid "auth.register"
 msgstr "Nog nie 'n rekening nie?"
 
-#: src/app/main/ui/auth/login.cljs:308, src/app/main/ui/auth/register.cljs:204, src/app/main/ui/auth/register.cljs:356, src/app/main/ui/static.cljs:172, src/app/main/ui/viewer/login.cljs:102
+#: src/app/main/ui/auth/login.cljs:314, src/app/main/ui/auth/register.cljs:199, src/app/main/ui/auth/register.cljs:345, src/app/main/ui/static.cljs:181, src/app/main/ui/viewer/login.cljs:112
 msgid "auth.register-submit"
 msgstr "Skep 'n rekening"
 
-#: src/app/main/ui/auth/register.cljs:223
+#: src/app/main/ui/auth/register.cljs:218
 msgid "auth.register-title"
 msgstr "Skep 'n rekening"
 
-#: src/app/main/ui/auth.cljs
-#, unused
-msgid "auth.sidebar-tagline"
-msgstr "Die oopbron-oplossing vir ontwerp en prototipering."
-
-#: src/app/main/ui/auth/register.cljs:269, src/app/main/ui/dashboard/sidebar.cljs:1319, src/app/main/ui/workspace/main_menu.cljs:210
+#: src/app/main/ui/auth/register.cljs:264, src/app/main/ui/dashboard/sidebar.cljs:542, src/app/main/ui/workspace/main_menu.cljs:210
 msgid "auth.terms-of-service"
 msgstr "Diensbepalings"
 
-#, unused
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Wanneer jy 'n nuwe rekening skep, stem jy in tot ons diensbepalings en "
-"privaatheidsbeleid."
-
-#: src/app/main/ui/auth/register.cljs:238
-#, unused
-msgid "auth.verification-email-sent"
-msgstr "Ons het 'n verifikasie-e-pos aan gestuur"
-
-#: src/app/main/ui/onboarding/questions.cljs
-#, unused
-msgid "branding-illustrations-marketing-pieces"
-msgstr "...handelsmerk, illustrasies, bemarkingsstukke, ens."
-
-#: src/app/main/ui/workspace/libraries.cljs:349
+#: src/app/main/ui/workspace/libraries.cljs:437, src/app/main/ui/workspace/libraries.cljs:838
 msgid "common.publish"
 msgstr "Publiseer"
 
@@ -237,50 +199,23 @@ msgstr "Deel prototipes"
 msgid "common.share-link.view-all"
 msgstr "Kies Alles"
 
-#: src/app/main/ui/workspace/libraries.cljs:344
+#: src/app/main/ui/workspace/libraries.cljs:432, src/app/main/ui/workspace/libraries.cljs:833
 msgid "common.unpublish"
 msgstr "Depubliseer"
 
-#: src/app/main/ui/dashboard/projects.cljs:96
+#: src/app/main/ui/dashboard/projects.cljs:90
 msgid "dasboard.team-hero.management"
 msgstr "Spanbestuur"
 
-#: src/app/main/ui/dashboard/projects.cljs:95
+#: src/app/main/ui/dashboard/projects.cljs:89
 msgid "dasboard.team-hero.text"
 msgstr "Penpot is bedoel vir spanne. Nooi lede om saam te werk aan projekte en lêers"
 
-#: src/app/main/ui/dashboard/projects.cljs:93
+#: src/app/main/ui/dashboard/projects.cljs:87
 msgid "dasboard.team-hero.title"
 msgstr "Span saam!"
 
-#: src/app/main/ui/dashboard/projects.cljs
-#, unused
-msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"Leer die basiese beginsels by Penpot terwyl jy pret het met hierdie "
-"praktiese tutoriaal."
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, unused
-msgid "dasboard.tutorial-hero.start"
-msgstr "Begin die tutoriaal"
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, unused
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Gaan stap deur Penpot en leer sy hoofkenmerke ken."
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, unused
-msgid "dasboard.walkthrough-hero.start"
-msgstr "Begin die toer"
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, unused
-msgid "dasboard.walkthrough-hero.title"
-msgstr "Koppelvlak Deurloop"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:700
+#: src/app/main/ui/dashboard/file_menu.cljs:324, src/app/main/ui/workspace/main_menu.cljs:700
 msgid "dashboard.add-shared"
 msgstr "Voeg by as Gedeelde Biblioteek"
 
@@ -288,11 +223,11 @@ msgstr "Voeg by as Gedeelde Biblioteek"
 msgid "dashboard.change-email"
 msgstr "Verander e-pos"
 
-#: src/app/main/data/dashboard.cljs:331, src/app/main/data/dashboard.cljs:566, src/app/main/data/workspace/pages.cljs:200
+#: src/app/main/data/dashboard.cljs:300, src/app/main/data/dashboard.cljs:535, src/app/main/data/workspace/pages.cljs:201
 msgid "dashboard.copy-suffix"
 msgstr "(kopieer)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:477
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
 msgid "dashboard.create-new-team"
 msgstr "Skep 'n nuwe span"
 
@@ -300,7 +235,7 @@ msgstr "Skep 'n nuwe span"
 msgid "dashboard.default-team-name"
 msgstr "Jou Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:626, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "Verwyder span"
 
@@ -308,20 +243,15 @@ msgstr "Verwyder span"
 msgid "dashboard.download-binary-file"
 msgstr "Laai Penpot-lêer (.penpot) af"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:712
-#, unused
-msgid "dashboard.download-standard-file"
-msgstr "Laai standaardlêer af (.svg + .json)"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:305, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:302, src/app/main/ui/dashboard/project_menu.cljs:94
 msgid "dashboard.duplicate"
 msgstr "Dupliseer"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:272
+#: src/app/main/ui/dashboard/file_menu.cljs:269
 msgid "dashboard.duplicate-multi"
 msgstr "Dupliseer %s lêers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:281
+#: src/app/main/ui/dashboard/file_menu.cljs:279
 msgid "dashboard.export-binary-multi"
 msgstr "Laai %s Penpot lêers (.penpot) af"
 
@@ -333,10 +263,6 @@ msgstr "Voer borde as PDF uit"
 msgid "dashboard.export-frames.title"
 msgstr "Voer as PDF uit"
 
-#, unused
-msgid "dashboard.export-multi"
-msgstr "Voer %s Penpot lêers uit"
-
-#: src/app/main/ui/auth/recovery.cljs:41
+#: src/app/main/ui/auth/recovery.cljs:47
 msgid "errors.invalid-recovery-token"
 msgstr "Die hersteltoken is ongeldig."

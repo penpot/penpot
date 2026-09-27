@@ -75,14 +75,14 @@
      [:div {:class (stl/css :element-set)}
       [:div {:class (stl/css :element-title)}
        [:> title-bar* {:collapsable false
-                       :title       (tr "workspace.options.pixel grid-color")
+                       :title       (tr "workspace.options.pixel-grid-color")
                        :class       (stl/css :title-spacing-page)}]]
       [:div {:class (stl/css :element-content)}
 
        [:> color-row*
         {:disable-gradient true
          :disable-image true
-         :title (tr "workspace.options.pixel grid-color")
+         :title (tr "workspace.options.pixel-grid-color")
          :color grid-color
          :on-change on-grid-change
          :origin :pixel-grid

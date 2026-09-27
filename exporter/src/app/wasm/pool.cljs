@@ -16,9 +16,8 @@
   the idle watchdog guarantees a wedged worker gives its slot back.
 
   Workers run the same bundle as the main thread; `app.core/start` branches on
-  `isMainThread`. Without the `wasm-export` flag no worker is spawned at all;
-  with it there is always at least one, since a headless render has nowhere
-  else to go."
+  `isMainThread`. There is always at least one worker, since a headless render
+  has nowhere else to go."
   (:require
    ["generic-pool" :as gp]
    ["node:path" :as path]
@@ -104,32 +103,27 @@
 
 (defn capacity
   "How many renders can run at once, and so how many headless jobs the
-  scheduler may admit. Zero exactly when headless export is off, which is also
-  when no job is headless, so a headless job always has a worker to wait for."
+  scheduler may admit."
   []
-  (if (contains? cf/flags :wasm-export)
-    ;; Clamped rather than rejected: a bad value should not stop the exporter
-    ;; from booting, and a headless render has no other backend to fall back to.
-    (max 1 (cf/get :wasm-worker-pool-max 2))
-    0))
+  ;; Clamped rather than rejected: a bad value should not stop the exporter
+  ;; from booting, and a headless render has no other backend to fall back to.
+  (max 1 (cf/get :wasm-worker-pool-max 2)))
 
 (defn init
   []
   (let [configured  (cf/get :wasm-worker-pool-max 2)
-        max-workers (capacity)]
-    (when (and (pos? max-workers) (not= configured max-workers))
+        max-workers (capacity)
+        opts #js {:max max-workers
+                  :min (min max-workers (cf/get :wasm-worker-pool-min 1))
+                  :testOnBorrow true
+                  :evictionRunIntervalMillis 30000
+                  :numTestsPerEvictionRun 2
+                  :idleTimeoutMillis 300000}]
+    (when (not= configured max-workers)
       (l/warn :hint "wasm-worker-pool-max raised to the minimum of one"
               :configured configured))
-    (if (pos? max-workers)
-      (let [opts #js {:max max-workers
-                      :min (min max-workers (cf/get :wasm-worker-pool-min 1))
-                      :testOnBorrow true
-                      :evictionRunIntervalMillis 30000
-                      :numTestsPerEvictionRun 2
-                      :idleTimeoutMillis 300000}]
-        (l/info :hint "initializing render worker pool" :opts opts)
-        (reset! pool (gp/createPool worker-pool-factory opts)))
-      (l/info :hint "render worker pool disabled, wasm export is off"))
+    (l/info :hint "initializing render worker pool" :opts opts)
+    (reset! pool (gp/createPool worker-pool-factory opts))
     (p/resolved nil)))
 
 (defn stop

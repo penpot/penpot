@@ -16,9 +16,11 @@
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.teams-invitations :as teams-invitations]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.java.io :as io]
+   [clojure.string :as cstring]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -664,6 +666,172 @@
           (let [profile (th/db-get :profile {:email "hello@example.com"})]
             (t/is (false? (:is-active profile)))))))))
 
+(defn- create-invitation-fixture
+  [email valid-until]
+  (let [owner (th/create-profile* 1 {:is-active true})
+        team  (th/create-team* 1 {:profile-id (:id owner)})
+        invitation (th/db-insert! :team-invitation
+                                  {:id (uuid/random)
+                                   :team-id (:id team)
+                                   :email-to email
+                                   :created-by (:id owner)
+                                   :role "editor"
+                                   :valid-until valid-until})]
+    {:owner owner
+     :team team
+     :invitation invitation}))
+
+(defn- create-test-invitation-token
+  ([{:keys [owner team]} email]
+   (create-test-invitation-token {:owner owner
+                                  :team team}
+                                 email
+                                 {}))
+  ([{:keys [owner team]} email claims]
+   (tokens/generate th/*system*
+                    (merge {:iss :team-invitation
+                            :exp (ct/in-future "48h")
+                            :profile-id (:id owner)
+                            :role :editor
+                            :team-id (:id team)
+                            :member-email email}
+                           claims))))
+
+(t/deftest prepare-register-with-invitation-and-disabled-registration
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (with-mocks [mock {:target 'app.email/send! :return nil}]
+      (let [email   "invited@example.com"
+            fixture (create-invitation-fixture email (ct/in-future "48h"))
+            itoken  (create-test-invitation-token fixture email)
+            data    {::th/type :prepare-register-profile
+                     :invitation-token itoken
+                     :fullname "foobar"
+                     :email email
+                     :password "Foobar12!"}
+            out     (th/command! data)]
+
+        (t/is (th/success? out))
+        (t/is (string? (get-in out [:result :token])))
+
+        (let [register-out (th/command! {::th/type :register-profile
+                                         :token (get-in out [:result :token])})]
+          (t/is (th/success? register-out))
+          (t/is (= 1 (:call-count @mock))))))))
+
+(t/deftest prepare-register-normalizes-invitation-email
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (let [email   "mixed-case@example.com"
+          fixture (create-invitation-fixture email (ct/in-future "48h"))
+          itoken  (create-test-invitation-token
+                   fixture
+                   email
+                   {:member-email (cstring/upper-case email)})
+          out     (th/command! {::th/type :prepare-register-profile
+                                :invitation-token itoken
+                                :fullname "foobar"
+                                :email email
+                                :password "Foobar12!"})]
+      (t/is (th/success? out)))))
+
+(t/deftest prepare-register-with-canceled-invitation-is-rejected
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (let [email   "canceled@example.com"
+          fixture (create-invitation-fixture email (ct/in-future "48h"))
+          itoken  (create-test-invitation-token fixture email)
+          data    {::th/type :prepare-register-profile
+                   :invitation-token itoken
+                   :fullname "foobar"
+                   :email email
+                   :password "Foobar12!"}]
+      (t/is (th/success? (th/command! data)))
+      (th/db-delete! :team-invitation
+                     {:team-id (:id (:team fixture))
+                      :email-to email})
+      (let [out (th/command! data)]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (-> out :error ex-data :type)))
+        (t/is (= :invalid-token (-> out :error ex-data :code)))
+        (t/is (nil? (th/db-get :profile {:email email})))))))
+
+(t/deftest prepare-register-with-expired-invitation-is-rejected
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (let [email   "expired@example.com"
+          fixture (create-invitation-fixture email (ct/in-past "48h"))
+          itoken  (create-test-invitation-token fixture email)
+          out     (th/command! {::th/type :prepare-register-profile
+                                :invitation-token itoken
+                                :fullname "foobar"
+                                :email email
+                                :password "Foobar12!"})]
+      (t/is (not (th/success? out)))
+      (t/is (= :validation (-> out :error ex-data :type)))
+      (t/is (= :invalid-token (-> out :error ex-data :code)))
+      (t/is (nil? (th/db-get :profile {:email email}))))))
+
+(t/deftest active-invitation-locks-row-during-transaction
+  (let [email   "locked@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))
+        claims  {:team-id (:id (:team fixture))
+                 :member-email email}
+        locked  (promise)
+        release (promise)
+        holder  (future
+                  (db/tx-run! th/*system*
+                              (fn [cfg]
+                                (let [invitation (teams-invitations/active-invitation
+                                                  cfg
+                                                  claims
+                                                  {::db/for-update true})]
+                                  (deliver locked invitation)
+                                  (deref release 10000 ::timeout)
+                                  invitation))))
+        invitation (deref locked 10000 nil)
+        cancellation (when invitation
+                       (future
+                         (try
+                           {:result
+                            (db/tx-run! th/*system*
+                                        (fn [cfg]
+                                          (let [conn (::db/conn cfg)]
+                                            (db/exec-one! conn ["SET LOCAL lock_timeout = '100ms'"])
+                                            (db/delete! conn :team-invitation
+                                                        {:team-id (:id (:team fixture))
+                                                         :email-to email}))))}
+                           (catch Throwable cause
+                             {:error cause}))))
+        cancellation-result (when cancellation
+                              (deref cancellation 10000 nil))
+        _ (deliver release true)
+        holder-result (deref holder 10000 nil)
+        _ (when cancellation
+            (deref cancellation 10000 nil))]
+
+    (t/is (some? invitation))
+    (t/is (contains? cancellation-result :error))
+    (t/is (some? holder-result))))
+
+(t/deftest register-profile-revalidates-invitation-before-creating-profile
+  (with-redefs [app.config/flags #{:login-with-password :email-verification}]
+    (let [email   "canceled-between@example.com"
+          fixture (create-invitation-fixture email (ct/in-future "48h"))
+          itoken  (create-test-invitation-token fixture email)
+          prep    (th/command! {::th/type :prepare-register-profile
+                                :invitation-token itoken
+                                :fullname "foobar"
+                                :email email
+                                :password "Foobar12!"})
+          rtoken  (-> prep :result :token)]
+      (t/is (th/success? prep))
+      (th/db-delete! :team-invitation
+                     {:team-id (:id (:team fixture))
+                      :email-to email})
+      (let [out (th/command! {::th/type :register-profile
+                              :token rtoken})]
+        (t/is (not (th/success? out)))
+        (t/is (= :validation (-> out :error ex-data :type)))
+        (t/is (= :invalid-token (-> out :error ex-data :code)))
+        (t/is (nil? (th/db-get :profile {:email email})))))))
+
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
   ;; With email-verification ENABLED (the default), a brand-new
   ;; profile created via the invitation flow is NOT active yet, so
@@ -769,28 +937,8 @@
       (t/is (= :restriction (:type edata)))
       (t/is (= :email-does-not-match-invitation (:code edata))))))
 
-(t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
-  (with-redefs [app.config/flags [:disable-registration]]
-    (let [itoken (tokens/generate th/*system*
-                                  {:iss :team-invitation
-                                   :exp (ct/in-future "48h")
-                                   :role :editor
-                                   :team-id uuid/zero
-                                   :member-email "user@example.com"})
-          data  {::th/type :prepare-register-profile
-                 :invitation-token itoken
-                 :fullname "foobar"
-                 :email "user@example.com"
-                 :password "Foobar12!"}
-          out (th/command! data)]
-
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :restriction (:type edata)))
-        (t/is (= :registration-disabled (:code edata)))))))
-
-(t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
-  (with-redefs [app.config/flags [:disable-registration]]
+(t/deftest prepare-register-with-invitation-and-disabled-registration-and-wrong-email
+  (with-redefs [app.config/flags #{:login-with-password}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -808,10 +956,10 @@
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
-        (t/is (= :registration-disabled (:code edata)))))))
+        (t/is (= :email-does-not-match-invitation (:code edata)))))))
 
-(t/deftest prepare-and-register-with-invitation-and-disabled-login-with-password
-  (with-redefs [app.config/flags [:disable-login-with-password]]
+(t/deftest prepare-register-with-invitation-and-disabled-login-with-password
+  (with-redefs [app.config/flags #{:registration}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -830,6 +978,62 @@
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
         (t/is (= :registration-disabled (:code edata)))))))
+
+(t/deftest register-profile-rejects-disabled-login-with-password
+  (let [email   "login-disabled@example.com"
+        fixture (create-invitation-fixture email (ct/in-future "48h"))]
+    (with-redefs [app.config/flags #{:login-with-password :registration}]
+      (let [itoken (create-test-invitation-token fixture email)
+            prep   (th/command! {::th/type :prepare-register-profile
+                                 :invitation-token itoken
+                                 :fullname "foobar"
+                                 :email email
+                                 :password "Foobar12!"})]
+        (t/is (th/success? prep))
+        (with-redefs [app.config/flags #{:registration}]
+          (let [out (th/command! {::th/type :register-profile
+                                  :token (-> prep :result :token)})]
+            (t/is (not (th/success? out)))
+            (t/is (= :registration-disabled (-> out :error ex-data :code)))
+            (t/is (nil? (th/db-get :profile {:email email})))))))))
+
+(t/deftest verify-token-redirects-invitation-based-on-member-id
+  (with-redefs [app.config/flags #{:login-with-password}]
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          team   (th/create-team* 1 {:profile-id (:id owner)})
+          email  "invited@example.com"
+          token  (fn [claims]
+                   (tokens/generate th/*system*
+                                    (merge {:iss :team-invitation
+                                            :exp (ct/in-future "48h")
+                                            :role :editor
+                                            :profile-id (:id owner)
+                                            :team-id (:id team)
+                                            :member-email email}
+                                           claims)))]
+      (th/db-insert! :team-invitation
+                     {:id (uuid/random)
+                      :team-id (:id team)
+                      :email-to email
+                      :created-by (:id owner)
+                      :role "editor"
+                      :valid-until (ct/in-future "48h")})
+
+      (let [new-user-token (token {})
+            existing-user-token (token {:member-id (uuid/random)})
+            new-user-out (th/command! {::th/type :verify-token
+                                       :token new-user-token})
+            existing-user-out (th/command! {::th/type :verify-token
+                                            :token existing-user-token})]
+        (t/is (th/success? new-user-out))
+        (t/is (= :auth-register (get-in new-user-out [:result :redirect-to])))
+        (t/is (= :pending (get-in new-user-out [:result :state])))
+        (t/is (= new-user-token (get-in new-user-out [:result :invitation-token])))
+
+        (t/is (th/success? existing-user-out))
+        (t/is (= :auth-login (get-in existing-user-out [:result :redirect-to])))
+        (t/is (= :pending (get-in existing-user-out [:result :state])))
+        (t/is (= existing-user-token (get-in existing-user-out [:result :invitation-token])))))))
 
 (t/deftest prepare-register-with-registration-disabled
   (with-redefs [app.config/flags #{}]

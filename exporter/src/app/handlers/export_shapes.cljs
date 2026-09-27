@@ -164,9 +164,8 @@
 (defn prepare-exports
   [exports token is-wasm]
   (letfn [(process-group [[part1 :as group]]
-            ;; The browser renders a partition as a single DOM page, so it is
-            ;; chunked to bound that page. A wasm export is headless, so
-            ;; it does not need to be chunked, and can be rendered as a single partition.
+            ;; Browser path renders one DOM page per partition; headless WASM
+            ;; takes the whole group in one render.
             (if (rd/headless? {:is-wasm is-wasm :type (:type part1)})
               [(build-render group)]
               (sequence (comp (partition-all default-partition-size)

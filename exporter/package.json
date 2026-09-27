@@ -30,7 +30,6 @@
   },
   "scripts": {
     "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
-    "build:wasm": "exit 0",
     "watch:app": "pnpm run build:wasm && pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch main",
     "watch": "pnpm run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
@@ -38,7 +37,7 @@
     "build": "pnpm run clear:shadow-cache && pnpm run build:app",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "check-fmt:clj": "cljfmt check --parallel=true src/ test/",
-    "lint:clj": "clj-kondo --parallel --lint src/ test/",
+    "lint:clj": "clj-kondo --fail-level error --parallel --lint src/ test/",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test": "pnpm run build:test && PENPOT_SECRET_KEY=${PENPOT_SECRET_KEY:-test-secret-key} node target/tests/test.js",
     "test:quiet": "node ./scripts/test-quiet.js"

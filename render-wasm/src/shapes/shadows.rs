@@ -104,6 +104,45 @@ impl Shadow {
         filter
     }
 
+    /// Same shadow as [`Self::get_drop_shadow_filter`], for a `merge` input.
+    /// Skia defers color filters and offsets, and `merge` can draw them
+    /// unresolved in 8×8 cells (untinted source, or opaque black). A `blend`
+    /// always renders, so the tint is a SrcIn blend of the color over the
+    /// offset source.
+    pub fn get_layer_drop_shadow_filter(&self) -> Option<ImageFilter> {
+        let color = image_filters::shader(skia::shaders::color(self.color), None);
+        let offset = image_filters::offset((self.offset.0, self.offset.1), None, None);
+        let mut filter = image_filters::blend(skia::BlendMode::SrcIn, offset, color, None);
+
+        // Spread before blur, as in CSS and SVG. Dilating the blur instead
+        // works on Skia's downscaled blur output and comes out blocky.
+        if self.spread > 0. {
+            // Masked-group shadows are already in device space.
+            filter = Self::chained_dilate(self.spread, filter);
+        }
+
+        let sigma = radius_to_sigma(self.blur);
+        if sigma > 0.0 {
+            filter = image_filters::blur((sigma, sigma), None, filter, None);
+        }
+
+        filter
+    }
+
+    /// Square dilate by a device-space `radius`, split into steps Skia will
+    /// not clamp. Skia caps a single morphology radius at 256 px; square
+    /// dilates add up exactly, so chaining keeps the full spread.
+    fn chained_dilate(radius: f32, input: Option<ImageFilter>) -> Option<ImageFilter> {
+        const MAX_RADIUS: f32 = 255.0;
+        let steps = (radius / MAX_RADIUS).ceil().max(1.0) as usize;
+        let step = radius / steps as f32;
+        let mut filter = input;
+        for _ in 0..steps {
+            filter = image_filters::dilate((step, step), filter, None);
+        }
+        filter
+    }
+
     pub fn get_inner_shadow_paint(
         &self,
         antialias: bool,
@@ -237,6 +276,43 @@ mod tests {
             (gap - 0.5 * 3.0).abs() < 0.001,
             "expected 1.5 sigma, got {gap}"
         );
+    }
+
+    #[test]
+    fn chained_dilate_reaches_the_full_radius() {
+        let rect = skia::Rect::from_xywh(0.0, 0.0, 10.0, 10.0);
+        // 600 px is three steps of 200 px.
+        let filter = Shadow::chained_dilate(600.0, None).expect("dilate");
+        let bounds = filter.compute_fast_bounds(rect);
+        assert!((bounds.left + 600.0).abs() < 0.01);
+        assert!((bounds.right - 610.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn layer_drop_shadow_filter_matches_drop_shadow_bounds() {
+        let rect = skia::Rect::from_xywh(0.0, 0.0, 100.0, 50.0);
+        for (blur, spread, ox, oy) in [
+            (0.0, 0.0, 4.0, 4.0),
+            (4.0, 0.0, 4.0, 4.0),
+            (12.0, 6.0, -3.0, 8.0),
+        ] {
+            let s = shadow(blur, spread, ox, oy);
+            let expected = s
+                .get_drop_shadow_filter()
+                .expect("drop shadow filter")
+                .compute_fast_bounds(rect);
+            let actual = s
+                .get_layer_drop_shadow_filter()
+                .expect("layer drop shadow filter")
+                .compute_fast_bounds(rect);
+            assert!(
+                (expected.left - actual.left).abs() < 0.01
+                    && (expected.top - actual.top).abs() < 0.01
+                    && (expected.right - actual.right).abs() < 0.01
+                    && (expected.bottom - actual.bottom).abs() < 0.01,
+                "bounds differ for blur {blur}: {expected:?} vs {actual:?}"
+            );
+        }
     }
 
     #[test]
