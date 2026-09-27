@@ -30,6 +30,11 @@
    [benches.render-wasm.scenes.builder :as sb :include-macros true]
    [benches.render-wasm.scenes.core :as core :include-macros true]))
 
+;; This namespace is also loaded by Node discovery. Keep operation helpers
+;; portable: browser API/helper imports belong in browser adapters supplied
+;; through rtx, not in this require list or its transitive dependencies.
+;; See scenes.core's dependency contract before adding a capability.
+
 (def ^:private default-params
   {:count 1000
    :width 1920

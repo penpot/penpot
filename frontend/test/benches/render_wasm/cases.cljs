@@ -4,6 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
+;; Discovery loads each scene and its transitive requires, including any
+;; colocated operation functions. Stripping :run! only makes output plain
+;; data; it cannot isolate browser dependencies. Keep this entire import
+;; graph safe for Node. Browser adapters supply execution capabilities in
+;; rtx; discovery must never invoke operation bodies. Ticket 06 must prove
+;; collection with a real pan body present, not just metadata-only cases.
+
 (ns benches.render-wasm.cases
   "Case collection for the renderer benchmarks.
 

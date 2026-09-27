@@ -48,6 +48,26 @@
 ;; threaded value, and the body shape checked below.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Node/browser dependency contract (runtime wiring pending in ticket 06)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Scene declarations and bodies load in both Node and browser. Only the
+;; browser driver executes bodies. Their transitive imports must stay safe
+;; for Node; removing :run! from descriptors does not isolate dependencies.
+;;
+;; If an operation needs a browser API/helper, keep that import in a browser
+;; adapter and pass a narrow function or prepared resource through rtx.
+;; Keep pure calculations in portable helpers. Define arguments, return or
+;; promise completion, timing and cleanup ownership for each capability.
+;; Resource acquisition normally belongs to untimed preparation. Reuse
+;; existing capabilities before adding one; never import the adapter back
+;; into a scene, even if the operation body is not called during discovery.
+;;
+;; This keeps metadata and bodies together with one declaration authority,
+;; at the cost of portable imports and a maintained capability contract.
+;; If unrelated services accumulate in rtx, revisit this design explicitly.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Schemas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
