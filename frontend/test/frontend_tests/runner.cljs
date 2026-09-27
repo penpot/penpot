@@ -9,6 +9,7 @@
    [frontend-tests.benches.builder-test]
    [frontend-tests.benches.containers-test]
    [frontend-tests.benches.contracts-test]
+   [frontend-tests.benches.lifecycle-test]
    [frontend-tests.benches.scene-snapshot-test]
    [frontend-tests.benches.upload-test]
    [frontend-tests.code-gen-style-test]
@@ -157,6 +158,7 @@
    'frontend-tests.benches.builder-test
    'frontend-tests.benches.containers-test
    'frontend-tests.benches.contracts-test
+   'frontend-tests.benches.lifecycle-test
    'frontend-tests.benches.scene-snapshot-test
    'frontend-tests.benches.upload-test
    'frontend-tests.code-gen-style-test

@@ -20,6 +20,13 @@
    [app.common.render-wasm.serialize-shape :as serialize-shape]
    [benches.render-wasm.scenes.common :as common]))
 
+(defn prepare-scene
+  "Derives the parent-before-child shape vector from a validated `snapshot`.
+  Call it outside measured regions, then pass the result to
+  `serialize-shapes-batch!` inside."
+  [snapshot]
+  (common/upload-order snapshot))
+
 (defn upload-scene!
   "Uploads validated `snapshot` with `opts`.
 
@@ -31,5 +38,4 @@
 
   Returns the prepared shape vector."
   [snapshot opts]
-  (let [ordered (common/upload-order snapshot)]
-    (serialize-shape/serialize-shapes-batch! ordered opts)))
+  (serialize-shape/serialize-shapes-batch! (prepare-scene snapshot) opts))
