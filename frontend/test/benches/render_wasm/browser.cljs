@@ -204,8 +204,10 @@
   "Records effective graphics settings: requested CSS size and DPR
   separately from the observed drawing-buffer size and the context's actual
   attributes. Requested defaults live in `webgl/default-context-options`;
-  what the browser granted comes from `getContextAttributes`."
-  [canvas ctx width height dpr renderer]
+  the drawing-buffer size is the context's actual `drawingBufferWidth/Height`,
+  not the canvas attributes. What the browser granted comes from
+  `getContextAttributes`."
+  [ctx width height dpr renderer]
   (let [attrs (try
                 (.getContextAttributes ^js ctx)
                 (catch :default _ nil))
@@ -214,8 +216,8 @@
                   (unchecked-get attrs k)))]
     {"cssWidth" width
      "cssHeight" height
-     "drawingBufferWidth" (.-width ^js canvas)
-     "drawingBufferHeight" (.-height ^js canvas)
+     "drawingBufferWidth" (.-drawingBufferWidth ^js ctx)
+     "drawingBufferHeight" (.-drawingBufferHeight ^js ctx)
      "dpr" dpr
      "webgl2" true
      "antialias" (attr "antialias")
@@ -231,7 +233,7 @@
   for explicit disposal. Every failure path releases the owner when it still
   owns the realm, so budget exhaustion and context loss never leave a live
   canvas behind. Stale results never dispose: a newer owner is live."
-  [epoch module-ms graphics-ms upload-ms alive? poll snapshot seed canvas ctx width height dpr renderer]
+  [epoch module-ms graphics-ms upload-ms alive? poll snapshot seed ctx width height dpr renderer]
   (let [pm (js->clj poll :keywordize-keys true)]
     (cond
       (:stale pm)
@@ -264,7 +266,7 @@
         "renderFrames" (:frames pm)
         "scene" {"shapes" (count (:objects snapshot))
                  "seed" seed}
-        "effectiveGraphics" (read-graphics canvas ctx width height dpr renderer)})
+        "effectiveGraphics" (read-graphics ctx width height dpr renderer)})
 
       :else
       (do
@@ -542,7 +544,6 @@
                                  {:module-ms factory-ms
                                   :graphics-ms (- (now) g0)
                                   :renderer (renderer-string (:context ctx))
-                                  :canvas canvas
                                   :ctx ctx}))))))
                 (.then (fn [g]
                          (guard-current! epoch "scene-build")
@@ -582,13 +583,13 @@
                                                cause)))))))
                 (.then (fn [g]
                          (guard-current! epoch "first-render")
-                         (let [{:keys [module-ms graphics-ms renderer canvas ctx snapshot upload-ms]} g
+                         (let [{:keys [module-ms graphics-ms renderer ctx snapshot upload-ms]} g
                                r0 (now)]
                            (-> (poll-full epoch 0 r0)
                                (.then (fn [poll]
                                         (render-ok epoch module-ms graphics-ms upload-ms
                                                    (live?) poll snapshot seed
-                                                   canvas (:context ctx)
+                                                   (:context ctx)
                                                    width height dpr renderer)))
                                (.catch (fn [cause]
                                          (terminal-failure epoch cause "first-render")))))))

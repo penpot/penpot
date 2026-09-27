@@ -182,12 +182,17 @@
 
 (defn- fake-canvas
   "Numbered fake canvas identified by `id`. Removal and context loss are
-  recorded in the shared call log."
+  recorded in the shared call log. The context reports a drawing-buffer size
+  distinct from any canvas size, so tests prove `read-graphics` reads it from
+  the context rather than the canvas attributes."
   [id]
   (let [lose-ext #js {:loseContext (fn [] (record! ["lose" id]) nil)}
         context  #js {:getExtension (fn [name]
                                       (when (= name "WEBGL_lose_context")
-                                        lose-ext))}]
+                                        lose-ext))
+                      :getContextAttributes (fn [] nil)
+                      :drawingBufferWidth 1234
+                      :drawingBufferHeight 5678}]
     #js {:id id
          :width 0
          :height 0
@@ -337,6 +342,11 @@
                        (t/is (= "ok" (:status m)))
                        (t/is (= 1 (:renderFrames m)))
                        (t/is (= 1001 (:shapes (:scene m))) "the canonical scene uploads whole")
+                       (let [graphics (:effectiveGraphics m)]
+                         (t/is (= 1234 (:drawingBufferWidth graphics))
+                               "drawing buffer width comes from the context")
+                         (t/is (= 5678 (:drawingBufferHeight graphics))
+                               "drawing buffer height comes from the context"))
                        (let [calls (read-calls)]
                          (t/is (= 1 (effect-count calls "create")) "one canvas per load")
                          (t/is (zero? (effect-count calls "remove")) "success keeps the owner live"))
