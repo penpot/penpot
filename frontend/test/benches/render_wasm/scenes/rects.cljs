@@ -26,6 +26,7 @@
   where `rtx` is the injected runtime and each operation contributes its
   plain-data identity to the collected case."
   (:require
+   [app.common.schema :as sm]
    [benches.render-wasm.scenes.builder :as sb :include-macros true]
    [benches.render-wasm.scenes.core :as core :include-macros true]))
 
@@ -37,12 +38,19 @@
    :max-size 100})
 
 (def ^:private schema:params
-  [:map {:closed true}
-   [:count [:int {:min 1 :max 100000}]]
-   [:width pos?]
-   [:height pos?]
-   [:min-size pos?]
-   [:max-size pos?]])
+  "Workload parameters. Sizes are finite (`pos?` accepts Infinity, which JSON
+  cannot carry and the generator cannot honor); `:min-size` above `:max-size`
+  is rejected so parameter sweeps cannot silently measure a reversed range."
+  [:and
+   [:map {:closed true}
+    [:count [:int {:min 1 :max 100000}]]
+    [:width ::sm/positive-safe-number]
+    [:height ::sm/positive-safe-number]
+    [:min-size ::sm/positive-safe-number]
+    [:max-size ::sm/positive-safe-number]]
+   [:fn {:error/message "min-size exceeds max-size"}
+    (fn [{:keys [min-size max-size]}]
+      (<= min-size max-size))]])
 
 (defn- rect-defaults
   "Attribute generators for one rectangle of the workload."
