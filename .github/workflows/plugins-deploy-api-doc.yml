@@ -33,8 +33,10 @@ jobs:
     steps:
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,8 +80,9 @@ jobs:
         run: pnpm run build:doc
 
       - name: Select Worker name
+        env:
+          REF: ${{ steps.vars.outputs.gh_ref }}
         run: |
-          REF="${{ steps.vars.outputs.gh_ref }}"
           case "$REF" in
             main)
               echo "WORKER_NAME=penpot-plugins-api-doc-pro" >> $GITHUB_ENV
@@ -97,7 +100,7 @@ jobs:
         working-directory: plugins
         shell: bash
         run: |
-          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-api-doc.toml
+          sed -i "s/WORKER_URI/${WORKER_URI}/g" wrangler-penpot-plugins-api-doc.toml
 
       - name: Add noindex header and robots.txt files for non-production environments
         if: ${{ steps.vars.outputs.gh_ref != 'main' }}
