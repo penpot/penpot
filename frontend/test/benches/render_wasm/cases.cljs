@@ -97,7 +97,7 @@
 
 (defn- describe-case
   "Projects a validated case to its collected descriptor: scene
-  version/description/seed attached, internal keys stripped, plain data
+  version/description/seed attached, internal keys stripped, transit wire
   checked."
   [master-seed registered scene-entry]
   (let [projected (-> (core/project-case registered)
