@@ -1737,21 +1737,11 @@
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
 
-(defn process-object
-  [shape]
-  (let [{:keys [thumbnails full font-face-keys pending-font-face-keys]}
-        (set-object shape)
-        text-font-state (acc-text-font-state empty-text-font-state
-                                             (:id shape)
-                                             font-face-keys
-                                             pending-font-face-keys)]
-    (process-pending [shape] thumbnails full text-font-state noop-fn)))
-
 (defn process-objects
-  "Like process-object but for multiple shapes at once. Accumulates all
-   pending font/image callbacks before calling process-pending, so that
-   update-text-layouts fires for all text shapes after fonts load — not
-   just the first shape that triggered the fetch."
+  "Takes multiple shapes, calling `set-object` for each one and accumulating
+  their thumbnails, full-image callbacks, and text font state. Then calls
+  `process-pending` once for the whole batch, so text layouts are updated for
+  all shapes after pending fonts and images are processed."
   [shapes]
   (let [total-shapes (count shapes)
         {:keys [thumbnails full text-font-state]}
