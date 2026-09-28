@@ -144,10 +144,15 @@
   [{:keys [font type name data] :as _params}]
   (if font
     ;; Font was parsed with opentype.js (ttf, otf, woff)
-    (let [family          (or (.getEnglishName ^js font "preferredFamily")
-                              (.getEnglishName ^js font "fontFamily"))
-          variant         (or (.getEnglishName ^js font "preferredSubfamily")
-                              (.getEnglishName ^js font "fontSubfamily"))
+    (let [;; Select the first nonblank name candidate: a blank
+          ;; preferredFamily/preferredSubfamily must not shadow a valid
+          ;; fontFamily/fontSubfamily.
+          family          (cm/first-nonblank-string
+                           (.getEnglishName ^js font "preferredFamily")
+                           (.getEnglishName ^js font "fontFamily"))
+          variant         (cm/first-nonblank-string
+                           (.getEnglishName ^js font "preferredSubfamily")
+                           (.getEnglishName ^js font "fontSubfamily"))
 
           ;; Vertical metrics determine the baseline in a text and the space between lines of
           ;; text. For historical reasons, there are three pairs of ascender/descender

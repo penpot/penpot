@@ -142,4 +142,17 @@
       (t/is (= "Pretendard" (:font-family result)))
       (t/is (= 600 (:font-weight result)))
       (t/is (= "normal" (:font-style result)))
-      (t/is (false? (:height-warning? result))))))
+      (t/is (false? (:height-warning? result)))))
+
+  (t/testing "a blank first candidate does not shadow a valid second one"
+    (let [result (df/prepare-font-entry
+                  {:font (fake-font {"preferredFamily" "   "
+                                     "preferredSubfamily" "  "
+                                     "fontSubfamily" "Bold"})
+                   :type "font/ttf"
+                   :name "Roboto-Light.ttf"
+                   :data (js/Uint8Array. 4)})]
+      (t/is (= "Roboto" (:font-family result)))
+      (t/is (= 700 (:font-weight result)))
+      (t/is (= "normal" (:font-style result)))
+      (t/is (= "Bold" (:variant-name result))))))

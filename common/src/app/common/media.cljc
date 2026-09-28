@@ -136,6 +136,11 @@
       "italic"
       "normal")))
 
+(defn first-nonblank-string
+  "Return the first nonblank string from the candidates, or nil."
+  [& candidates]
+  (first (filter #(and (string? %) (not (str/blank? %))) candidates)))
+
 (defn font-weight->name
   [weight]
   (case (long weight)

@@ -89,6 +89,18 @@
   (t/testing "falls back to the base name when everything is stripped"
     (t/is (= "BoldItalic" (media/parse-font-family "BoldItalic")))))
 
+(t/deftest test-first-nonblank-string
+  (t/testing "returns the first nonblank string"
+    (t/is (= "Bold" (media/first-nonblank-string "  " "Bold")))
+    (t/is (= "Bold" (media/first-nonblank-string "Bold" "Light")))
+    (t/is (= "Bold" (media/first-nonblank-string nil "Bold")))
+    (t/is (= "Inter" (media/first-nonblank-string "" "Inter"))))
+
+  (t/testing "returns nil when every candidate is blank or not a string"
+    (t/is (nil? (media/first-nonblank-string nil "  ")))
+    (t/is (nil? (media/first-nonblank-string)))
+    (t/is (nil? (media/first-nonblank-string 42 "  ")))))
+
 (t/deftest test-strip-image-extension
   (t/testing "removes extension from supported image files"
     (t/is (= (media/strip-image-extension "foo.png") "foo"))
