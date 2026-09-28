@@ -616,9 +616,10 @@
         path        (:path route)
         params      (:query-params route)
 
-        workspace?  (str/includes? path "workspace")
-        dashboard?  (str/includes? path "dashboard")
-        view?       (str/includes? path "view")
+        screen      (get params :screen)
+        workspace?  (= screen "workspace")
+        dashboard?  (= screen "dashboard")
+        view?       (= screen "view")
 
         ;; We store the request access info int this state
         info*       (mf/use-state nil)
