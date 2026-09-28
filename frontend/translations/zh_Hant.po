@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-23 10:51+0000\n"
+"PO-Revision-Date: 2026-09-28 08:13+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
-"Language-Team: Chinese (Traditional Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
+"Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -354,6 +354,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(複製)"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#, fuzzy
 msgid "dashboard.create-new-organization"
 msgstr "建立組織"
 
@@ -707,6 +708,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "確認前，請檢查資料庫連結："
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "已連結"
 
@@ -1628,8 +1630,11 @@ msgid "errors.registration-disabled"
 msgstr "目前未開放註冊。"
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
-msgstr "尚未確認您的最新變更是否已儲存，且儲存功能可能不會自動恢復。請勿關閉或重新載入此分頁，以免遺失變更。請聯絡支援人員尋求協助。"
+msgstr ""
+"尚未確認您的最新變更是否已儲存，且儲存功能可能不會自動恢復。請勿關閉或重新載"
+"入此分頁，以免遺失變更。請聯絡支援人員尋求協助。"
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
