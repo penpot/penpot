@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-28 08:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Surfoo <surfooo@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -764,6 +764,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Vérifiez les liens des bibliothèques avant de confirmer :"
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "Lié"
 
@@ -1761,6 +1762,7 @@ msgid "errors.registration-disabled"
 msgstr "L’enregistrement est actuellement désactivé."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Vos dernières modifications ne sont pas confirmées comme enregistrées. "
