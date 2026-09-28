@@ -35,7 +35,20 @@ permissions:
 jobs:
   deploy:
     runs-on: penpot-standar-runner
+    env:
+      GH_REF: ${{ inputs.gh_ref }}
+      PLUGIN_NAME: ${{ inputs.plugin_name }}
     steps:
+      # plugin_name is a free-form string that ends up in paths, worker names
+      # and GITHUB_ENV; reject anything that is not a plain slug before it is
+      # used anywhere.
+      - name: Validate inputs
+        run: |
+          if ! [[ "$PLUGIN_NAME" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+            echo "::error::Invalid plugin_name: must match ^[a-z0-9][a-z0-9-]*$"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -75,29 +88,28 @@ jobs:
       - name: "Build package for ${{ inputs.plugin_name }}-plugin"
         working-directory: plugins
         shell: bash
-        run: pnpm --filter ${{ inputs.plugin_name }}-plugin build
+        run: pnpm --filter "${PLUGIN_NAME}-plugin" build
 
       - name: Select Worker name
         run: |
-          REF="${{ inputs.gh_ref }}"
-          case "$REF" in
+          case "$GH_REF" in
             main)
-              echo "WORKER_NAME=${{ inputs.plugin_name }}-plugin-pro" >> $GITHUB_ENV
-              echo "WORKER_URI=${{ inputs.plugin_name }}.plugins.penpot.app" >> $GITHUB_ENV ;;
+              echo "WORKER_NAME=${PLUGIN_NAME}-plugin-pro" >> $GITHUB_ENV
+              echo "WORKER_URI=${PLUGIN_NAME}.plugins.penpot.app" >> $GITHUB_ENV ;;
             staging)
-              echo "WORKER_NAME=${{ inputs.plugin_name }}-plugin-pre" >> $GITHUB_ENV
-              echo "WORKER_URI=${{ inputs.plugin_name }}.plugins.penpot.dev" >> $GITHUB_ENV ;;
+              echo "WORKER_NAME=${PLUGIN_NAME}-plugin-pre" >> $GITHUB_ENV
+              echo "WORKER_URI=${PLUGIN_NAME}.plugins.penpot.dev" >> $GITHUB_ENV ;;
             develop)
-              echo "WORKER_NAME=${{ inputs.plugin_name }}-plugin-hourly" >> $GITHUB_ENV
-              echo "WORKER_URI=${{ inputs.plugin_name }}.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
-            *) echo "Unsupported branch ${REF}" && exit 1 ;;
+              echo "WORKER_NAME=${PLUGIN_NAME}-plugin-hourly" >> $GITHUB_ENV
+              echo "WORKER_URI=${PLUGIN_NAME}.plugins.hourly.penpot.dev" >> $GITHUB_ENV ;;
+            *) echo "Unsupported branch ${GH_REF}" && exit 1 ;;
           esac
 
       - name: Set the custom url
         working-directory: plugins
         shell: bash
         run: |
-          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" apps/${{ inputs.plugin_name }}-plugin/wrangler.toml
+          sed -i "s/WORKER_URI/${WORKER_URI}/g" "apps/${PLUGIN_NAME}-plugin/wrangler.toml"
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

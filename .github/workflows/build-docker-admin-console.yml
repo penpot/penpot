@@ -48,16 +48,17 @@ jobs:
       WORKFLOW: build-docker-admin-console.yml
       GH_REF: ${{ inputs.gh_ref }}
       DISPATCH_REF: ${{ inputs.dispatch_ref }}
+      FORCE: ${{ inputs.force }}
     steps:
       - name: Trigger nitrate docker build
         id: dispatch
         run: |
-          DISTINCT_ID="${{ github.run_id }}-${{ github.run_attempt }}"
-          CALLER_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          DISTINCT_ID="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          CALLER_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           gh workflow run "$WORKFLOW" --repo "$REPO" --ref "$DISPATCH_REF" \
             -f gh_ref="$GH_REF" \
-            -f force="${{ inputs.force }}" \
+            -f force="$FORCE" \
             -f caller_run_id="$DISTINCT_ID" \
             -f caller_run_url="$CALLER_URL"
 
@@ -83,20 +84,25 @@ jobs:
           echo "::notice title=Nitrate docker build::$RUN_URL"
 
       - name: Wait for nitrate docker build
+        env:
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
         run: |
-          gh run watch "${{ steps.dispatch.outputs.run_id }}" \
+          gh run watch "$RUN_ID" \
             --repo "$REPO" \
             --interval 30 \
             --exit-status
 
       - name: Report result
         if: always() && steps.dispatch.outputs.run_id != ''
+        env:
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+          RUN_URL: ${{ steps.dispatch.outputs.run_url }}
         run: |
-          CONCLUSION=$(gh run view "${{ steps.dispatch.outputs.run_id }}" \
+          CONCLUSION=$(gh run view "$RUN_ID" \
             --repo "$REPO" --json conclusion --jq '.conclusion')
           {
             echo "### 🐳 Nitrate docker build"
             echo ""
             echo "- Result: \`${CONCLUSION:-in_progress}\`"
-            echo "- Run: ${{ steps.dispatch.outputs.run_url }}"
+            echo "- Run: ${RUN_URL}"
           } >> "$GITHUB_STEP_SUMMARY"
