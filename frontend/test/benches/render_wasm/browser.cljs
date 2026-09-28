@@ -355,7 +355,7 @@
       unrenderable-value)))
 
 (defn- finite-cause-number?
-  "True for numbers the bridge can carry. Mirrors `serializable?`: NaN and
+  "True for numbers kept as numbers in failure causes. NaN and
   infinities travel as truncated strings, never as numbers."
   [value]
   (and (number? value)

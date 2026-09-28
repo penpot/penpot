@@ -21,6 +21,7 @@
   returns plain data"
   (:require
    [app.common.schema :as sm]
+   [app.common.transit :as t]
    [clojure.string :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -84,9 +85,8 @@
 
 (def schema:view
   "Camera placement plus optional viewport override. All numbers are finite:
-  unbounded `number?` accepts Infinity, which JSON cannot carry and the
-  renderer cannot use. Bounds come from `::sm/safe-number`, whose min/max
-  also rejects NaN and infinities."
+  unbounded `number?` accepts Infinity, which the renderer cannot use. Bounds
+  come from `::sm/safe-number`, whose min/max also rejects NaN and infinities."
   [:map {:closed true}
    [:scale ::sm/positive-safe-number]
    [:x ::sm/safe-number]
@@ -381,66 +381,22 @@
         seed))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Projection
+;; Descriptor wire
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- finite-number?
-  "True for numbers JSON preserves: rejects NaN and infinities, which
-  `number?` accepts but `JSON.stringify` turns into null."
+(defn transit-round-trips?
+  "True when `value` survives the descriptor wire: transit encode then decode
+  yields an equal value. Namespaced keywords, mixed string/keyword keys and
+  other tagged values survive. Unhandled values (functions, records, most
+  host objects) make the writer throw and fail; NaN fails the equality check.
+
+  ±Infinity survives the wire and is accepted. It can enter through open
+  :params/:operation/:preparation maps or future measurement fields; ticket
+  09 gives non-finite measurements explicit invalid-reason forms."
   [value]
-  (and (number? value)
-       (js/isFinite value)))
-
-(defn serializable?
-  "True when `value` is plain data the runner can hand to the browser and
-  store in results.
-
-  True for nil, booleans, finite numbers, strings, keywords, and vectors, and
-  maps with strings or keyword keys.
-
-  NaN, infinities and non-string map keys fail: JSON does not carry them
-  losslessly.
-
-  Records fail: a record reaches the runner as a host object, not plain data.
-
-  Functions, atoms and host objects fail.
-
-  Keywords are encoded with `encode-id`: the planned `app.common.json` converter
-  renders keyword values by unqualified name, so `:rects/load` would arrive as
-  `\"load\"`."
-  [value]
-  (cond
-    (or (nil? value) (boolean? value) (finite-number? value)
-        (string? value) (keyword? value))
-    true
-
-    (and (map? value) (not (record? value)))
-    (every? (fn [[k v]]
-              (and (or (string? k) (keyword? k))
-                   (serializable? v)))
-            value)
-
-    (vector? value)
-    (every? serializable? value)
-
-    :else
-    false))
-
-(defn encode-id
-  "Lossless JSON-wire encoding of a keyword identity: `:rects/load` becomes
-  `\"rects/load\"`, `:fresh` becomes `\"fresh\"`. `decode-id` inverts it.
-  The runner (ticket 11) applies this pair at the JSON boundary; nothing
-  else may turn identities into bare `name` strings."
-  [id]
-  (when-not (keyword? id)
-    (throw (ex-info (str "wire identities are keywords, got: " (pr-str id))
-                    {:type ::invalid-case :id id})))
-  (subs (str id) 1))
-
-(defn decode-id
-  "Inverts `encode-id`: `\"rects/load\"` becomes `:rects/load`."
-  [s]
-  (keyword s))
+  (try
+    (= value (-> value t/encode-str t/decode-str))
+    (catch :default _ false)))
 
 (defn project-case
   "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`,
@@ -456,16 +412,17 @@
 (defn check-collected-case!
   "Validates a collected case descriptor and returns it unchanged.
 
-  Rejects anything that is not plain data: browser-side run functions must never
-  reach the runner."
+  Rejects anything that fails the schema and anything that does not survive
+  the transit descriptor wire: browser-side run functions must never reach
+  the runner."
   [projected]
   (when-not (sm/validate schema:collected-case projected)
     (throw (ex-info (str "invalid collected case: " (:id projected))
                     {:type ::invalid-case
                      :id (:id projected)
                      ::sm/explain (sm/explain schema:collected-case projected)})))
-  (when-not (serializable? projected)
-    (throw (ex-info (str "collected case is not plain data: " (:id projected))
+  (when-not (transit-round-trips? projected)
+    (throw (ex-info (str "collected case does not survive the transit wire: " (:id projected))
                     {:type ::non-serializable-case
                      :id (:id projected)})))
   projected)
