@@ -1199,7 +1199,8 @@
    [:file-id ::sm/uuid]
    [:library-id ::sm/uuid]
    [:tokens-status-names {:optional true} [:map]]
-   [:candidate-ids {:optional true} [:vector ::sm/uuid]]])
+   [:candidate-ids {:optional true} [:vector ::sm/uuid]]
+   [:preserve-ids {:optional true} [:vector ::sm/uuid]]])
 
 (sv/defmethod ::resolve-import-token-source
   "Resolve the chosen token-source library and state of an imported file in one step."
@@ -1207,10 +1208,12 @@
    ::webhooks/event? true
    ::sm/params schema:resolve-import-token-source
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names candidate-ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names candidate-ids preserve-ids]}]
   (check-edition-permissions! conn profile-id file-id)
   (check-library-link! cfg conn profile-id file-id library-id)
-  (let [unlinkable (filterv #(can-unlink-candidate? conn profile-id file-id %)
+  (let [preserved (set (or preserve-ids []))
+        unlinkable (filterv #(and (not (contains? preserved %))
+                                   (can-unlink-candidate? conn profile-id file-id %))
                             (distinct (remove #{library-id} (or candidate-ids []))))]
     (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names unlinkable)))
 

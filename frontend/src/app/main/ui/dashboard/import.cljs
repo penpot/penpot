@@ -179,21 +179,26 @@
              resolution))
 
 (defn pending-library-resolution-request
-  [file-id pending-entry library-id]
-  (cond
-    (and (:tokens-source? pending-entry) library-id)
-    {:command :resolve-import-token-source
-     :params (cond-> {:file-id file-id
-                      :library-id library-id}
-               (some? (:tokens-status-names pending-entry))
-               (assoc :tokens-status-names (:tokens-status-names pending-entry))
-               (seq (:candidates pending-entry))
-               (assoc :candidate-ids (mapv :id (:candidates pending-entry))))}
+  ([file-id pending-entry library-id]
+   (pending-library-resolution-request file-id pending-entry library-id nil))
+  ([file-id pending-entry library-id other-selected]
+   (let [preserve (vec (remove #{library-id} (distinct (filter some? other-selected))))]
+     (cond
+       (and (:tokens-source? pending-entry) library-id)
+       {:command :resolve-import-token-source
+        :params (cond-> {:file-id file-id
+                         :library-id library-id}
+                  (some? (:tokens-status-names pending-entry))
+                  (assoc :tokens-status-names (:tokens-status-names pending-entry))
+                  (seq (:candidates pending-entry))
+                  (assoc :candidate-ids (mapv :id (:candidates pending-entry)))
+                  (seq preserve)
+                  (assoc :preserve-ids preserve))}
 
-    library-id
-    {:command :link-file-to-library
-     :params {:file-id file-id
-              :library-id library-id}}))
+       library-id
+       {:command :link-file-to-library
+        :params {:file-id file-id
+                 :library-id library-id}}))))
 
 (defn- notify-token-source-outcome
   [outcome]
@@ -415,10 +420,13 @@
     (:tokens-source-fallback pending-entry)))
 
 (defn- resolve-library-link!
-  [file-id pending-entry library-id]
-  (if-let [{:keys [command params]} (pending-library-resolution-request file-id
-                                                                          pending-entry
-                                                                          library-id)]
+  ([file-id pending-entry library-id]
+   (resolve-library-link! file-id pending-entry library-id nil))
+  ([file-id pending-entry library-id other-selected]
+   (if-let [{:keys [command params]} (pending-library-resolution-request file-id
+                                                                         pending-entry
+                                                                         library-id
+                                                                         other-selected)]
     (->> (rp/cmd! command params)
          (rx/tap #(notify-token-source-outcome (:tokens-source-outcome %)))
          (rx/catch (fn [cause]
@@ -427,10 +435,10 @@
                                 :library-id library-id
                                 :cause cause)
                      (rx/of nil))))
-    (do
-      (when-let [outcome (skipped-token-source-outcome pending-entry)]
-        (notify-token-source-outcome outcome))
-      (rx/of nil))))
+     (do
+       (when-let [outcome (skipped-token-source-outcome pending-entry)]
+         (notify-token-source-outcome outcome))
+       (rx/of nil)))))
 
 (mf/defc library-resolution*
   {::mf/private true}
@@ -912,10 +920,11 @@
                    (fn [[file-id resolution-file]]
                      (->> (rx/from (:pending resolution-file))
                           (rx/merge-map
-                           (fn [{:keys [id] :as pending-entry}]
-                             (resolve-library-link! file-id
-                                                    pending-entry
-                                                    (get-in slc [file-id id])))))))
+                          (fn [{:keys [id] :as pending-entry}]
+                            (resolve-library-link! file-id
+                                                   pending-entry
+                                                    (get-in slc [file-id id])
+                                                    (vals (dissoc (get slc file-id) id))))))))
                   (rx/subs! (constantly nil)
                             (constantly nil)
                             (fn []
