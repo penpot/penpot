@@ -5,6 +5,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
+   [frontend-tests.browser-history-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -216,6 +217,7 @@
    'frontend-tests.render-wasm.serialization-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test
    'frontend-tests.render-wasm.text-editor-caret-color-test
+   'frontend-tests.browser-history-test
    'frontend-tests.router-test
    'frontend-tests.svg-fills-test
    'frontend-tests.svg-filters-test

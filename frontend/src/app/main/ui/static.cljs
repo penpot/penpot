@@ -34,7 +34,6 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -49,7 +48,8 @@
                      (fn []
                        (if (and profile-id (some? (:default-team-id profile)))
                          (st/emit! (dcm/go-to-dashboard-recent
-                                    :team-id (:default-team-id profile)))
+                                    :team-id (:default-team-id profile))
+                                   (rt/reload false))
                          (st/emit! (rt/nav-root)))))]
     [:section {:class (stl/css :exception-layout)}
      [:button
@@ -613,7 +613,6 @@
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
-        path        (:path route)
         params      (:query-params route)
 
         screen      (get params :screen)

@@ -3,6 +3,9 @@
 ## Router, app shell, and errors
 
 - Routing uses browser-history query tokens (`?screen=<route-name>&params`, single `/` path), but `on-navigate` rejects navigation if the current origin/path does not match `cf/public-uri`.
+- `app.util.browser-history` (CLJS, not the old `goog.history.Html5History` wrapper) is the only history layer: the token is `location.search`, the URL of a token is `(:path cf/public-uri)` + token, and every change (own `pushState`/`replaceState` or back/forward) lands on the `token-changes` subject the router subscribes to. Nothing about it lives in the store: `rt/initialize-history` is effect-only.
+- `set-token!` and `replace-token!` are deliberately asymmetric. `set-token!` is a total no-op when the token already is the current one (no URL write, no report), so navigating to the screen you are on cannot grow the history stack. `replace-token!` always writes and always reports, because it is how the app corrects the URL in place (legacy `#/…` translation, cleaned share links) and that correction must reach the router even when the token did not change. This matches `Html5History`, which did the same; do not "fix" the asymmetry without deciding what navigates to the current screen.
+- `app.util.dom/replace-history-state!` is the deliberate bypass used by `app.main.ui.dashboard`/`app.main.ui.static` to rewrite the URL **without** routing. Keep using it there instead of `replace-token!`, which would re-enter the router.
 - Route params live entirely in the query map under the reserved `screen` key; duplicate query params can become vectors, so use `rt/get-query-param` when a scalar is required.
 - Legacy `#/…` hash URLs translate client-side to the query format (one-version compat; see `legacy-routes` in `app.main.ui.routes`, TODO(next-version) to delete).
 - Unknown/empty routes trigger an extra `get-profile`/`get-teams` check before redirecting. This avoids invitation and root-route race conditions.
