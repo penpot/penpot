@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-28 08:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
 "Language: nl\n"
@@ -754,6 +754,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Controleer de bibliotheeklinks voordat je bevestigt:"
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "Gekoppeld"
 
@@ -1737,11 +1738,12 @@ msgid "errors.registration-disabled"
 msgstr "De registratie is momenteel uitgeschakeld."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
-"Jouw laatste wijzigingen zijn niet bevestigd als opgeslagen. Het opslaan "
-"kan niet automatisch worden hervat. Sluit of herlaad dit tabblad niet: je "
-"kunt wijzigingen verliezen. Neem contact op met ondersteuning voor hulp."
+"Jouw laatste wijzigingen zijn niet bevestigd als opgeslagen. Het opslaan kan "
+"niet automatisch worden hervat. Sluit of herlaad dit tabblad niet: je kunt "
+"wijzigingen verliezen. Neem contact op met ondersteuning voor hulp."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
