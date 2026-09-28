@@ -7021,6 +7021,10 @@ msgstr "Cancelar"
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
 
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+msgid "workspace.options.canvas-background-section"
+msgstr "Sección de fondo de lienzo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:722
 msgid "workspace.options.clip-content"
 msgstr "Truncar contenido"

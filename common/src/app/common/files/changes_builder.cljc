@@ -242,7 +242,7 @@
    (let [page (::page (meta changes))]
      (mod-page changes page options)))
 
-  ([changes page {:keys [name background pixel-grid-color pixel-grid-opacity]}]
+  ([changes page {:keys [name background pixel-grid-color pixel-grid-opacity] :as options}]
    (let [change {:type :mod-page :id (:id page)}
          redo   (cond-> change
                   (some? name)
@@ -250,6 +250,9 @@
 
                   (some? background)
                   (assoc :background background)
+
+                  (contains? options :background-token)
+                  (assoc :background-token (:background-token options))
 
                   (some? pixel-grid-color)
                   (assoc :pixel-grid-color pixel-grid-color)
@@ -263,6 +266,9 @@
 
                   (some? background)
                   (assoc :background (:background page))
+
+                  (contains? options :background-token)
+                  (assoc :background-token (:background-token page))
 
                   (some? pixel-grid-color)
                   (assoc :pixel-grid-color (:pixel-grid-color page))
