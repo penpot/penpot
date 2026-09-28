@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-28 08:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Alexis Morin <the.alexis.morin@gmail.com>\n"
 "Language-Team: French (Canada) <https://hosted.weblate.org/projects/penpot/"
 "frontend/fr_CA/>\n"
 "Language: fr_CA\n"
@@ -2051,6 +2051,7 @@ msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Aucune"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:117
+#, fuzzy
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "trait barré"
 
@@ -2121,6 +2122,7 @@ msgid "inspect.subtitle.main"
 msgstr "Composant principal"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:176
+#, fuzzy
 msgid "inspect.tabs-switcher-label"
 msgstr "Type d'info"
 
