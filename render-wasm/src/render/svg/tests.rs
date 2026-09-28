@@ -3563,3 +3563,96 @@ fn a_lone_per_side_stroke_is_not_mitered() {
         "one stroke has nothing to miter against, so it stays a plain band: {svg}"
     );
 }
+
+const INHERITED_GROUP_COLOR: skia::Color = skia::Color::from_rgb(17, 34, 52);
+
+fn group_with_empty_path(group_fills: Vec<Fill>) -> ShapesPool {
+    let mut pool = ShapesPool::new();
+    add_group(
+        &mut pool,
+        uid(1),
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 100.0),
+        &[uid(2)],
+    );
+    pool.get_mut(&uid(1)).unwrap().set_fills(group_fills);
+    add_empty_fill_closed_path(&mut pool, uid(2), uid(1), (10.0, 10.0, 90.0, 90.0));
+    pool
+}
+
+fn raster_png(pool: &ShapesPool, id: Uuid) -> Vec<u8> {
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let (bytes, _, _) = crate::render::raster::render_to_raster(
+        &mut resources,
+        &id,
+        pool,
+        1.0,
+        crate::render::raster::RasterFormat::Png,
+    )
+    .expect("raster export");
+    bytes
+}
+
+#[test]
+fn exported_child_inherits_ancestor_group_fill() {
+    let pool = group_with_empty_path(vec![Fill::Solid(SolidColor(INHERITED_GROUP_COLOR))]);
+
+    let svg = render(&pool, uid(2));
+    assert!(
+        svg.to_ascii_lowercase().contains("fill=\"#112234\""),
+        "child export must paint the inherited group fill: {svg}"
+    );
+}
+
+#[test]
+fn exported_child_does_not_inherit_past_a_frame() {
+    let mut pool = ShapesPool::new();
+    let group_id = uid(1);
+    let frame_id = uid(2);
+    let path_id = uid(3);
+
+    add_group(
+        &mut pool,
+        group_id,
+        Uuid::nil(),
+        (0.0, 0.0, 100.0, 100.0),
+        &[frame_id],
+    );
+    pool.get_mut(&group_id)
+        .unwrap()
+        .set_fills(vec![Fill::Solid(SolidColor(INHERITED_GROUP_COLOR))]);
+    add_frame(
+        &mut pool,
+        frame_id,
+        group_id,
+        (0.0, 0.0, 100.0, 100.0),
+        skia::Color::WHITE,
+        false,
+    );
+    {
+        let frame = pool.get_mut(&frame_id).unwrap();
+        frame.set_fills(vec![]);
+        frame.add_child(path_id);
+    }
+    add_empty_fill_closed_path(&mut pool, path_id, frame_id, (10.0, 10.0, 90.0, 90.0));
+
+    let svg = render(&pool, path_id);
+    assert!(
+        !svg.to_ascii_lowercase().contains("#112234"),
+        "a frame breaks group fill inheritance: {svg}"
+    );
+}
+
+#[test]
+fn raster_export_of_child_paints_inherited_group_fill() {
+    let fill = Fill::Solid(SolidColor(INHERITED_GROUP_COLOR));
+    let inherited = group_with_empty_path(vec![fill.clone()]);
+    let mut own = group_with_empty_path(vec![]);
+    own.get_mut(&uid(2)).unwrap().set_fills(vec![fill]);
+    let bare = group_with_empty_path(vec![]);
+
+    let inherited_png = raster_png(&inherited, uid(2));
+    assert_eq!(inherited_png, raster_png(&own, uid(2)));
+    assert_ne!(inherited_png, raster_png(&bare, uid(2)));
+}
