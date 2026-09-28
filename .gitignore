@@ -112,3 +112,5 @@ opencode.json
 /.ci-logs
 /.codex/
 /tools/__pycache__
+/frontend/playwright/perf/results*/
+/frontend/playwright/perf/report.html

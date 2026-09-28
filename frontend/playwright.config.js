@@ -11,6 +11,33 @@ const userAgent = platform === 'darwin' ?
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" :
   undefined;
 
+// GPU memory harness (playwright/perf). Never run in CI: select it with
+// `--project gpu-memory-<engine>`. Headed, since headless Chromium falls
+// back to SwiftShader and measures nothing real.
+function gpuMemoryProjects() {
+  const engines = {
+    chromium: {
+      ...devices["Desktop Chrome"],
+      launchOptions: { args: ["--enable-gpu", "--ignore-gpu-blocklist"] },
+    },
+    firefox: devices["Desktop Firefox"],
+    webkit: devices["Desktop Safari"],
+  };
+  return Object.entries(engines).map(([engine, use]) => ({
+    name: `gpu-memory-${engine}`,
+    testDir: "./playwright/perf",
+    timeout: 15 * 60 * 1000,
+    use: {
+      ...use,
+      // The global clipboard permissions only exist in Chromium.
+      permissions: [],
+      viewport: { width: 1920, height: 1080 },
+      deviceScaleFactor: Number(process.env.PERF_DPR ?? 2),
+      headless: false,
+    },
+  }));
+}
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -93,6 +120,7 @@ export default defineConfig({
         },
       },
     },
+    ...gpuMemoryProjects(),
   ],
 
   /* Run your local dev server before starting the tests */
