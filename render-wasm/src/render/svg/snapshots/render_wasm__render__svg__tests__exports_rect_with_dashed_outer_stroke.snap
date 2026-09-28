@@ -1,0 +1,8 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="120" height="100" viewBox="0 0 120 100">
+	<path fill="red" transform="translate(-10 -10)" d="M20 10L40 10L40 20L20 20L20 10ZM80 20L60 20L60 10L80 10L80 20ZM100 20L100 10L120 10L120 20L100 20ZM120 60L120 40L130 40L130 60L120 60ZM80 100L100 100L100 110L80 110L80 100ZM40 100L59.999996 100L59.999996 110L40 110L40 100ZM20 40L20 60L10 60L10 40L20 40ZM20 80L20 100L10 100L10 80L20 80ZM120 100L120 80L130 80L130 100L120 100Z" fill-rule="evenodd"/>
+</svg>

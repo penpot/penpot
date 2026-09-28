@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.settings.password
   (:require-macros [app.main.style :as stl])
@@ -30,6 +30,12 @@
 
       :weak-password
       (let [details (:details data)
+            ;; Execution time translation strings (keys sent by the backend):
+            ;;   (tr "errors.weak-password.too-short")
+            ;;   (tr "errors.weak-password.insufficient-digits")
+            ;;   (tr "errors.weak-password.insufficient-lowercase")
+            ;;   (tr "errors.weak-password.insufficient-uppercase")
+            ;;   (tr "errors.weak-password.insufficient-special")
             options (when (seq details)
                       (mapv tr details))]
         (swap! form assoc-in [:extra-errors :password-1]
@@ -64,7 +70,7 @@
     ;; The old password is validated by the backend, so it only needs to be
     ;; present here; it may predate the current minimum length policy.
     [:password-old [::sm/text {:max 500}]]]
-   [:fn {:error/code "errors.password-invalid-confirmation"
+   [:fn {:error/fn #(tr "errors.password-invalid-confirmation")
          :error/field :password-2}
     (fn [{:keys [password-1 password-2]}]
       (= password-1 password-2))]])

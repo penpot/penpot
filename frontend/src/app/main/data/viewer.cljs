@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.viewer
   (:require
@@ -76,7 +76,8 @@
                     (if (nil? lstate)
                       default-local-state
                       lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)))
+          (assoc-in [:viewer-local :share-id] share-id)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state _]

@@ -59,6 +59,7 @@ export class AppComponent {
     ),
   );
 
+  public isEditableTokens: boolean = false;
   public themes: TokenTheme[] = [];
   public sets: TokenSet[] = [];
   public tokenGroups: TokensGroup[] = [];
@@ -72,6 +73,8 @@ export class AppComponent {
         this.#setSets(event.data.setsData);
       } else if (event.data.type === 'set-tokens') {
         this.#setTokens(event.data.tokenGroupsData);
+      } else if (event.data.type === 'set-is-editable-tokens') {
+        this.#setIsEditableTokens(event.data.isEditableTokens);
       }
     });
   }
@@ -266,6 +269,10 @@ export class AppComponent {
 
   #sendMessage(message: PluginUIEvent) {
     parent.postMessage(message, '*');
+  }
+
+  #setIsEditableTokens(isEditableTokens: boolean) {
+    this.isEditableTokens = isEditableTokens;
   }
 
   #setThemes(themes: TokenTheme[]) {

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.helpers.wasm
   "Test helpers for mocking WASM API boundary functions.
@@ -58,7 +58,7 @@
   This effectively tells the caller \"apply exactly the transform that
   was requested\", which is what the real WASM engine does for simple
   moves / resizes without constraints."
-  [entries _pixel-precision]
+  [entries _snap-pixel? _snap-ignore-axis]
   (track! :propagate-modifiers)
   (when (d/not-empty? entries)
     (into []

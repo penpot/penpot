@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.exports
   (:require-macros [app.main.style :as stl])
@@ -193,6 +193,7 @@
                       {:value "1" :label "1x"}
                       {:value "1.5" :label "1.5x"}
                       {:value "2" :label "2x"}
+                      {:value "3" :label "3x"}
                       {:value "4" :label "4x"}
                       {:value "6" :label "6x"}]
 
@@ -207,7 +208,9 @@
       [:> title-bar* {:collapsable  has-exports?
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
-                      :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
+                      :title        (if (> (count ids) 1)
+                                      (tr "workspace.options.export-multiple")
+                                      (tr "workspace.options.export"))
                       :class        (stl/css-case :title-spacing-export (not has-exports?))}
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.export.add-export")

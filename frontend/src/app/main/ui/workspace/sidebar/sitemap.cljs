@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.sitemap
   (:require-macros [app.main.style :as stl])
@@ -138,8 +138,8 @@
         (mf/use-fn
          (mf/deps id is-separator?)
          (fn [event]
-           (let [new-name (str/trim (dom/get-target-val event))]
-             (if (str/empty? new-name)
+           (let [new-name (ctp/normalize-page-name (dom/get-target-val event))]
+             (if (not (ctp/valid-page-name? new-name))
                (when is-separator?
                  (st/emit! (dw/delete-page id)))
                (st/emit! (dw/rename-page id new-name))))

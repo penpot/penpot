@@ -1,7 +1,7 @@
 import puppeteer, { ConsoleMessage } from 'puppeteer';
 import { PenpotApi } from './api';
 import { getFileUrl } from './get-file-url';
-import { idObjectToArray } from './clean-id';
+import { cleanId, idObjectToArray } from './clean-id';
 import { Shape } from '../models/shape.model';
 
 const screenshotsEnable = process.env['E2E_SCREENSHOTS'] === 'true';
@@ -52,7 +52,8 @@ export async function Agent() {
   const file = await penpotApi.createFile();
   console.log('File created with id:', file['~:id']);
 
-  const fileUrl = getFileUrl(file);
+  const project = await penpotApi.getProject(cleanId(file['~:project-id']));
+  const fileUrl = getFileUrl(file, cleanId(project['~:team-id']));
   console.log('File URL:', fileUrl);
 
   console.log('Launching browser...');

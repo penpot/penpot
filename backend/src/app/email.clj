@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.email
   "Main api for send emails."
@@ -407,6 +407,16 @@
    :id ::password-recovery
    :schema schema:password-recovery))
 
+(def ^:private schema:password-changed
+  [:map
+   [:name ::sm/text]])
+
+(def password-changed
+  "A password changed notification email."
+  (template-factory
+   :id ::password-changed
+   :schema schema:password-changed))
+
 (def ^:private schema:change-email
   [:map
    [:name ::sm/text]
@@ -465,7 +475,7 @@
 
 (def ^:private schema:renewal-notice
   [:map
-   [:user-name [:maybe ::sm/text]]
+   [:user-name [:maybe :string]]
    [:renewal-date ::sm/text]
    [:estimated-amount ::sm/text]
    [:organizations [:vector schema:organization-data]]])

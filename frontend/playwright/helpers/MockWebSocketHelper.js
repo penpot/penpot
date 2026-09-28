@@ -28,6 +28,10 @@ export class MockWebSocketHelper extends EventTarget {
     await page.addInitScript({ path: "playwright/scripts/MockWebSocket.js" });
   }
 
+  static clear() {
+    this.#mocks = new Map();
+  }
+
   static waitForURL(url) {
     return new Promise((resolve) => {
       const intervalID = setInterval(() => {

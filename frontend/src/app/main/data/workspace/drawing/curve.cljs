@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.drawing.curve
   (:require
@@ -25,6 +25,9 @@
    [potok.v2.core :as ptk]))
 
 (def ^:const simplify-tolerance 0.3)
+
+;; Maximum curve-fit deviation in board units.
+(def ^:const smooth-tolerance 1)
 
 (defn- setup-frame
   []
@@ -82,7 +85,7 @@
       (update-in state [:workspace-drawing :object]
                  (fn [{:keys [::points] :as shape}]
                    (let [points   (ups/simplify points simplify-tolerance)
-                         content  (path/points->content points)
+                         content  (path/smooth-points->content points smooth-tolerance)
                          selrect  (path/calc-selrect content)
                          points   (grc/rect->points selrect)]
 
@@ -117,4 +120,3 @@
           (setup-frame)
           (finish-drawing)
           (common/handle-finish-drawing)))))))
-

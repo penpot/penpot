@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.text
   (:require-macros [app.main.style :as stl])
@@ -504,6 +504,8 @@
         (ts/schedule 0 #(some-> (mf/ref-val dropdown-ref) dom/focus!))))
 
     [:section {:class      (stl/css :element-set)
+               ;; Focusing these controls must not exit the v3 text editor (see `keep-editing-on-blur?`).
+               :data-keep-editing-on-blur true
                :aria-label (tr "workspace.options.text-options.text-section")}
      [:div {:class (stl/css :element-title)}
       [:> title-bar* {:collapsable  true
@@ -518,11 +520,14 @@
                             :on-click          toggle-token-dropdown
                             :tooltip-placement "top-left"
                             :icon              i/tokens}])
-        (when (and (some? font) (not typography) (not multiple?) (not applied-token-name))
+        (when (and (not typography) (not multiple?) (not applied-token-name))
           [:> icon-button* {:variant           "ghost"
-                            :aria-label        (tr "workspace.options.convert-to-typography")
+                            :aria-label        (if (not font)
+                                                 (tr "workspace.options.font-not-available" (:font-family values))
+                                                 (tr "workspace.options.convert-to-typography"))
                             :on-click          on-convert-to-typography
                             :tooltip-placement "top-left"
+                            :disabled          (not font)
                             :icon              i/add}])]]
       (when (and token-typography-row-enabled? token-dropdown-open?)
         [:> searchable-options-dropdown* {:on-click     on-option-click

@@ -7,6 +7,14 @@ use super::StrokeLineCap;
 use super::StrokeLineJoin;
 use super::SvgAttrs;
 
+/// Soft floor in device pixels for dropping dash/dotted PathEffects when the
+/// pattern period is effectively invisible.
+pub const STROKE_MIN_DEVICE_PX: f32 = 0.75;
+
+/// When Inner/Outer doubled-width footprint is below this (device px), paint
+/// as Center to avoid save_layer / Clear paths.
+pub const STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX: f32 = 2.0;
+
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
     Solid,
@@ -24,6 +32,24 @@ pub enum StrokeCap {
     DiamondMarker,
     Round,
     Square,
+}
+
+/// A rect side, in the order `Stroke::widths` stores them. Side `n` runs
+/// clockwise from corner `n` in `Corners` order, sharing its index.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Side {
+    Top,
+    Right,
+    Bottom,
+    Left,
+}
+
+impl Side {
+    pub const ALL: [Side; 4] = [Side::Top, Side::Right, Side::Bottom, Side::Left];
+
+    pub fn index(self) -> usize {
+        self as usize
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -45,8 +71,8 @@ pub struct Stroke {
     // default `width + 10` pattern to keep existing designs visually identical.
     pub dash: Option<f32>,
     pub gap: Option<f32>,
-    // Per-side widths [top, right, bottom, left] for rects and frames.
-    // `None` means the uniform `width` applies to all sides.
+    // Per-side widths in `Side` order. `None` means the uniform `width` applies
+    // to all sides.
     pub widths: Option<[f32; 4]>,
 }
 
@@ -60,6 +86,20 @@ impl Stroke {
         }
     }
 
+    /// Widens the band by `spread` on each side. Inner and Outer bands only
+    /// grow away from the path; the `2·spread` center stroke added by
+    /// `Shape::apply_shadow_spread` covers the other side.
+    pub fn grow_by_spread(&mut self, spread: f32, is_open: bool) {
+        let growth = match self.render_kind(is_open) {
+            StrokeKind::Center => 2.0 * spread,
+            StrokeKind::Inner | StrokeKind::Outer => spread,
+        };
+        self.width += growth;
+        if let Some(widths) = self.widths.as_mut() {
+            widths.iter_mut().for_each(|w| *w += growth);
+        }
+    }
+
     /// The widest side of the stroke: the uniform `width` unless per-side
     /// widths are set, in which case the maximum of the four sides.
     pub fn max_width(&self) -> f32 {
@@ -67,6 +107,62 @@ impl Stroke {
             Some(widths) => widths.into_iter().reduce(f32::max).unwrap_or(self.width),
             None => self.width,
         }
+    }
+
+    /// Inner/Outer use a doubled-width Center stroke plus clip/clear. When that
+    /// footprint is thin on screen, fall back to a plain Center stroke.
+    #[inline]
+    pub fn simplified_kind_at_scale(&self, is_open: bool, scale: f32) -> StrokeKind {
+        let kind = self.render_kind(is_open);
+        match kind {
+            StrokeKind::Inner | StrokeKind::Outer
+                if 2.0 * self.max_width() * scale < STROKE_INNER_OUTER_SIMPLIFY_DEVICE_PX =>
+            {
+                StrokeKind::Center
+            }
+            other => other,
+        }
+    }
+
+    /// Drop dash/dotted PathEffects when the pattern period is subpixel.
+    #[inline]
+    pub fn style_at_scale(&self, scale: f32) -> StrokeStyle {
+        if self.style == StrokeStyle::Solid {
+            return StrokeStyle::Solid;
+        }
+        let period = match self.style {
+            StrokeStyle::Dotted => self.width + 5.0,
+            StrokeStyle::Dashed => {
+                let dash = self.dash.unwrap_or(self.width + 10.);
+                let gap = self.gap.unwrap_or(self.width + 10.);
+                dash.min(gap)
+            }
+            StrokeStyle::Mixed => self.width + 1.0,
+            StrokeStyle::Solid => return StrokeStyle::Solid,
+        };
+        if period * scale < STROKE_MIN_DEVICE_PX {
+            StrokeStyle::Solid
+        } else {
+            self.style
+        }
+    }
+
+    /// Path/Bool overview LOD: simplify Inner/Outer and dash/dotted at low
+    /// scale. Never skips painting; stroke-only icons would otherwise go blank.
+    pub fn path_lod_at_scale(&self, is_open: bool, scale: f32) -> Stroke {
+        let kind = self.simplified_kind_at_scale(is_open, scale);
+        let style = self.style_at_scale(scale);
+        let kind_unchanged = kind == self.render_kind(is_open);
+        let style_unchanged = style == self.style;
+        if kind_unchanged && style_unchanged {
+            return self.clone();
+        }
+        let mut stroke = self.clone();
+        if !is_open {
+            stroke.kind = kind;
+        }
+        stroke.style = style;
+        stroke
     }
 
     /// Per-side widths [top, right, bottom, left] when they actually differ.
@@ -81,6 +177,23 @@ impl Stroke {
         } else {
             Some(widths)
         }
+    }
+
+    /// The widest each side reaches across a shape's per-side strokes, which is
+    /// the border box they miter against. `None` when at most one stroke needs it.
+    pub fn per_side_profile<'a>(strokes: impl Iterator<Item = &'a Stroke>) -> Option<[f32; 4]> {
+        let mut profile = [0.0f32; 4];
+        let mut per_side_strokes = 0;
+        for stroke in strokes {
+            let Some(widths) = stroke.per_side_widths() else {
+                continue;
+            };
+            per_side_strokes += 1;
+            for (side, width) in profile.iter_mut().zip(widths) {
+                *side = side.max(width);
+            }
+        }
+        (per_side_strokes > 1).then_some(profile)
     }
 
     pub fn bounds_width(&self, is_open: bool) -> f32 {
@@ -245,7 +358,9 @@ impl Stroke {
 
         let mut outer = *corners;
         for corner in outer.iter_mut() {
-            corner.offset((offset, offset))
+            if corner.x > 0.0 {
+                corner.offset((offset, offset))
+            }
         }
         outer
     }
@@ -291,46 +406,118 @@ impl Stroke {
         }
 
         if self.style != StrokeStyle::Solid {
-            let path_effect = match self.style {
-                StrokeStyle::Dotted => {
-                    let width = match self.kind {
-                        StrokeKind::Inner => self.width,
-                        StrokeKind::Center => self.width / 2.0,
-                        StrokeKind::Outer => self.width,
-                    };
-                    let circle_path = {
-                        let mut pb = skia::PathBuilder::new();
-                        pb.add_circle((0.0, 0.0), width, None);
-                        pb.detach()
-                    };
-                    let advance = self.width + 5.0;
-                    skia::PathEffect::path_1d(
-                        &circle_path,
-                        advance,
-                        0.0,
-                        skia::path_1d_path_effect::Style::Translate,
-                    )
-                }
-                StrokeStyle::Dashed => {
-                    let dash = self.dash.unwrap_or(self.width + 10.);
-                    let gap = self.gap.unwrap_or(self.width + 10.);
-                    skia::PathEffect::dash(&[dash, gap], 0.)
-                }
-                StrokeStyle::Mixed => skia::PathEffect::dash(
-                    &[
-                        self.width + 5.,
-                        self.width + 5.,
-                        self.width + 1.,
-                        self.width + 5.,
-                    ],
-                    0.,
-                ),
-                _ => None,
-            };
-            paint.set_path_effect(path_effect);
+            paint.set_path_effect(self.path_effect());
         }
 
         paint
+    }
+
+    /// On/off run lengths of this stroke's dash pattern; `None` for solid and
+    /// dotted. The defaults are width-derived, so each side gets its own.
+    pub fn dash_pattern(&self) -> Option<Vec<f32>> {
+        match self.style {
+            StrokeStyle::Dashed => {
+                let dash = self.dash.unwrap_or(self.width + 10.);
+                let gap = self.gap.unwrap_or(self.width + 10.);
+                Some(vec![dash, gap])
+            }
+            StrokeStyle::Mixed => Some(vec![
+                self.width + 5.,
+                self.width + 5.,
+                self.width + 1.,
+                self.width + 5.,
+            ]),
+            _ => None,
+        }
+    }
+
+    /// Circle radius and centre-to-centre spacing of a dotted stroke; `None`
+    /// for every other style.
+    pub fn dot_pattern(&self) -> Option<(f32, f32)> {
+        if self.style != StrokeStyle::Dotted {
+            return None;
+        }
+        let radius = match self.kind {
+            StrokeKind::Inner | StrokeKind::Outer => self.width,
+            StrokeKind::Center => self.width / 2.0,
+        };
+        Some((radius, self.width + 5.0))
+    }
+
+    /// The dash/dot `PathEffect` for this stroke's style.
+    pub fn path_effect(&self) -> Option<skia::PathEffect> {
+        match self.style {
+            StrokeStyle::Solid => None,
+            StrokeStyle::Dotted => {
+                let (radius, advance) = self.dot_pattern()?;
+                Self::dot_effect(radius, advance)
+            }
+            _ => skia::PathEffect::dash(&self.dash_pattern()?, 0.),
+        }
+    }
+
+    /// The dash/dot `PathEffect` stretched so a run of `length` begins and ends
+    /// on a dash, as a browser fits a border. Runs too short come out solid.
+    pub fn path_effect_fitted(&self, length: f32) -> Option<skia::PathEffect> {
+        if length <= 0.0 {
+            return self.path_effect();
+        }
+        match self.style {
+            StrokeStyle::Solid => None,
+            StrokeStyle::Dotted => {
+                let (radius, _) = self.dot_pattern()?;
+                Self::dot_effect(radius, self.fitted_dot_advance(length)?)
+            }
+            _ => skia::PathEffect::dash(&self.fitted_dash_pattern(length)?, 0.),
+        }
+    }
+
+    /// The dash pattern scaled so `length` holds a whole number of dashes and
+    /// both ends land on one, instead of being cut wherever the run stops.
+    pub fn fitted_dash_pattern(&self, length: f32) -> Option<Vec<f32>> {
+        let pattern = self.dash_pattern()?;
+        let period: f32 = pattern.iter().sum();
+        let first = pattern[0];
+        if length <= 0.0 || period <= 0.0 || first <= 0.0 {
+            return Some(pattern);
+        }
+        // Whole periods that fit before the closing dash.
+        let repeats = ((length - first) / period).round().max(0.0);
+        let scale = length / (repeats * period + first);
+        Some(pattern.iter().map(|run| run * scale).collect())
+    }
+
+    /// Dot spacing scaled so a dot lands on both ends of a `length` run.
+    pub fn fitted_dot_advance(&self, length: f32) -> Option<f32> {
+        let (_, advance) = self.dot_pattern()?;
+        if length <= 0.0 || advance <= 0.0 {
+            return Some(advance);
+        }
+        Some(length / (length / advance).round().max(1.0))
+    }
+
+    fn dot_effect(radius: f32, advance: f32) -> Option<skia::PathEffect> {
+        let circle_path = {
+            let mut pb = skia::PathBuilder::new();
+            pb.add_circle((0.0, 0.0), radius, None);
+            pb.detach()
+        };
+        skia::PathEffect::path_1d(
+            &circle_path,
+            advance,
+            0.0,
+            skia::path_1d_path_effect::Style::Translate,
+        )
+    }
+
+    /// The same stroke narrowed to a single side's width, so that side's
+    /// geometry and width-derived dash pattern come out of the shared style.
+    pub fn with_width(&self, width: f32) -> Stroke {
+        Stroke {
+            width,
+            widths: None,
+            ..self.clone()
+        }
     }
 
     pub fn to_stroked_paint(
@@ -399,6 +586,9 @@ impl Stroke {
     /// so this is a no-op on closed paths and avoids the extra fill draw the
     /// manual caps would otherwise require on open paths.
     pub fn to_skia_linecap(&self) -> Option<skia::paint::Cap> {
+        if self.style != StrokeStyle::Solid {
+            return None;
+        }
         match (self.cap_start, self.cap_end) {
             (Some(StrokeCap::Round), Some(StrokeCap::Round)) => Some(skia::paint::Cap::Round),
             (Some(StrokeCap::Square), Some(StrokeCap::Square)) => Some(skia::paint::Cap::Square),
@@ -463,6 +653,51 @@ mod tests {
     }
 
     #[test]
+    fn grow_by_spread_moves_both_band_edges_by_the_spread() {
+        let mut center = Stroke::new_center_stroke(4.0, StrokeStyle::Solid, None, None, None, None);
+        center.grow_by_spread(3.0, false);
+        assert_eq!(center.width, 10.0);
+
+        let mut inner = stroke_with_widths(Some([2.0, 0.0, 2.0, 0.0]));
+        inner.grow_by_spread(3.0, false);
+        assert_eq!(inner.width, 5.0);
+        assert_eq!(inner.widths, Some([5.0, 3.0, 5.0, 3.0]));
+
+        // Open paths render every stroke centered.
+        let mut open_inner = stroke_with_widths(None);
+        open_inner.grow_by_spread(3.0, true);
+        assert_eq!(open_inner.width, 8.0);
+    }
+
+    #[test]
+    fn per_side_profile_needs_two_strokes_to_miter_against() {
+        let one = [stroke_with_widths(Some([10.0, 0.0, 0.0, 0.0]))];
+        assert_eq!(Stroke::per_side_profile(one.iter()), None);
+
+        // A uniform stroke has no side of its own, so it never contributes.
+        let uniform = [
+            stroke_with_widths(Some([10.0, 0.0, 0.0, 0.0])),
+            stroke_with_widths(Some([4.0, 4.0, 4.0, 4.0])),
+            stroke_with_widths(None),
+        ];
+        assert_eq!(Stroke::per_side_profile(uniform.iter()), None);
+    }
+
+    #[test]
+    fn per_side_profile_takes_the_widest_side_of_each() {
+        let strokes = [
+            stroke_with_widths(Some([10.0, 0.0, 0.0, 0.0])),
+            stroke_with_widths(Some([0.0, 20.0, 0.0, 0.0])),
+            stroke_with_widths(Some([0.0, 0.0, 15.0, 5.0])),
+            stroke_with_widths(Some([6.0, 0.0, 0.0, 0.0])),
+        ];
+        assert_eq!(
+            Stroke::per_side_profile(strokes.iter()),
+            Some([10.0, 20.0, 15.0, 5.0])
+        );
+    }
+
+    #[test]
     fn max_width_falls_back_to_uniform_width() {
         let stroke = stroke_with_widths(None);
         assert_eq!(stroke.max_width(), 2.0);
@@ -492,5 +727,172 @@ mod tests {
         stroke.scale_content(2.0);
         assert_eq!(stroke.widths, Some([2.0, 4.0, 6.0, 8.0]));
         assert_eq!(stroke.width, 4.0);
+    }
+
+    #[test]
+    fn with_width_keeps_style_and_drops_per_side_widths() {
+        let mut stroke = stroke_with_widths(Some([1.0, 2.0, 3.0, 4.0]));
+        stroke.style = StrokeStyle::Dashed;
+        stroke.dash = Some(7.0);
+        let side = stroke.with_width(3.0);
+        assert_eq!(side.width, 3.0);
+        assert_eq!(side.widths, None);
+        assert_eq!(side.style, StrokeStyle::Dashed);
+        assert_eq!(side.dash, Some(7.0));
+        assert_eq!(side.kind, stroke.kind);
+    }
+
+    #[test]
+    fn dash_pattern_follows_side_width() {
+        let mut stroke = solid_center(4.0);
+        assert_eq!(stroke.dash_pattern(), None);
+
+        stroke.style = StrokeStyle::Dashed;
+        // Defaults are width-relative, so each side gets its own pattern.
+        assert_eq!(stroke.dash_pattern(), Some(vec![14.0, 14.0]));
+        assert_eq!(
+            stroke.with_width(10.0).dash_pattern(),
+            Some(vec![20.0, 20.0])
+        );
+
+        // An explicit dash/gap is shared by every side.
+        stroke.dash = Some(6.0);
+        stroke.gap = Some(2.0);
+        assert_eq!(stroke.dash_pattern(), Some(vec![6.0, 2.0]));
+        assert_eq!(stroke.with_width(10.0).dash_pattern(), Some(vec![6.0, 2.0]));
+
+        stroke.style = StrokeStyle::Mixed;
+        assert_eq!(stroke.dash_pattern(), Some(vec![9.0, 9.0, 5.0, 9.0]));
+    }
+
+    #[test]
+    fn fitted_dash_pattern_ends_on_a_dash() {
+        let mut stroke = solid_center(10.0);
+        stroke.style = StrokeStyle::Dashed;
+        stroke.dash = Some(30.0);
+        stroke.gap = Some(30.0);
+
+        // 235 holds 4 dashes and 3 gaps once stretched; both ends are a dash.
+        let fitted = stroke.fitted_dash_pattern(235.0).unwrap();
+        assert!((4.0 * fitted[0] + 3.0 * fitted[1] - 235.0).abs() < 1e-3);
+        // 175 only fits 3, so the sides stretch by different amounts.
+        let fitted = stroke.fitted_dash_pattern(175.0).unwrap();
+        assert!((3.0 * fitted[0] + 2.0 * fitted[1] - 175.0).abs() < 1e-3);
+
+        // A side too short for a whole period becomes one dash, as in CSS.
+        let fitted = stroke.fitted_dash_pattern(40.0).unwrap();
+        assert!((fitted[0] - 40.0).abs() < 1e-3);
+
+        // Mixed keeps its four-run shape and still closes on its first run.
+        stroke.style = StrokeStyle::Mixed;
+        stroke.dash = None;
+        stroke.gap = None;
+        let fitted = stroke.fitted_dash_pattern(200.0).unwrap();
+        let period: f32 = fitted.iter().sum();
+        let repeats = ((200.0 - fitted[0]) / period).round();
+        assert!((repeats * period + fitted[0] - 200.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn fitted_dot_advance_lands_on_both_ends() {
+        let mut stroke = solid_center(8.0);
+        stroke.style = StrokeStyle::Dotted;
+        // Nominal advance is 13; 200 / 13 rounds to 15 steps of 13.33.
+        let advance = stroke.fitted_dot_advance(200.0).unwrap();
+        assert!((200.0 / advance - 15.0).abs() < 1e-3);
+        // Shorter than one advance still yields a single step, never zero.
+        assert!(stroke.fitted_dot_advance(4.0).unwrap() > 0.0);
+    }
+
+    #[test]
+    fn dot_pattern_halves_the_radius_only_when_centered() {
+        let mut stroke = solid_center(8.0);
+        assert_eq!(stroke.dot_pattern(), None);
+
+        stroke.style = StrokeStyle::Dotted;
+        assert_eq!(stroke.dot_pattern(), Some((4.0, 13.0)));
+        stroke.kind = StrokeKind::Inner;
+        assert_eq!(stroke.dot_pattern(), Some((8.0, 13.0)));
+        assert_eq!(stroke.with_width(2.0).dot_pattern(), Some((2.0, 7.0)));
+    }
+
+    #[test]
+    fn path_effect_is_none_only_for_solid() {
+        let mut stroke = solid_center(4.0);
+        assert!(stroke.path_effect().is_none());
+        for style in [StrokeStyle::Dashed, StrokeStyle::Dotted, StrokeStyle::Mixed] {
+            stroke.style = style;
+            assert!(stroke.path_effect().is_some(), "{style:?} needs an effect");
+        }
+    }
+
+    fn solid_center(width: f32) -> Stroke {
+        Stroke::new_center_stroke(width, StrokeStyle::Solid, None, None, None, None)
+    }
+
+    #[test]
+    fn inner_outer_simplify_to_center_when_thin() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        // 2 * 8 * 0.1 = 1.6 < 2.0, simplify to Center
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.1),
+            StrokeKind::Center
+        );
+        // 2 * 8 * 0.2 = 3.2 >= 2.0, keep Inner
+        assert_eq!(
+            inner.simplified_kind_at_scale(false, 0.2),
+            StrokeKind::Inner
+        );
+    }
+
+    #[test]
+    fn dash_becomes_solid_when_period_subpixel() {
+        let dashed =
+            Stroke::new_center_stroke(2.0, StrokeStyle::Dashed, None, None, Some(20.0), Some(20.0));
+        // period 20 * 0.03 = 0.6 < 0.75, solid
+        assert_eq!(dashed.style_at_scale(0.03), StrokeStyle::Solid);
+        // period 20 * 0.05 = 1.0 >= 0.75, keep dashed
+        assert_eq!(dashed.style_at_scale(0.05), StrokeStyle::Dashed);
+    }
+
+    #[test]
+    fn native_linecap_is_used_for_solid_strokes() {
+        let solid = Stroke::new_center_stroke(
+            4.0,
+            StrokeStyle::Solid,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            None,
+            None,
+        );
+        assert_eq!(solid.to_skia_linecap(), Some(skia::paint::Cap::Round));
+    }
+
+    #[test]
+    fn native_linecap_is_skipped_for_dashed_strokes() {
+        let dashed = Stroke::new_center_stroke(
+            4.0,
+            StrokeStyle::Dashed,
+            Some(StrokeCap::Round),
+            Some(StrokeCap::Round),
+            None,
+            None,
+        );
+        assert_eq!(dashed.to_skia_linecap(), None);
+    }
+
+    #[test]
+    fn path_lod_never_drops_thin_stroke() {
+        // Hairline strokes must still paint (stroke-only icons).
+        let thin = solid_center(1.0).path_lod_at_scale(false, 0.5);
+        assert_eq!(thin.width, 1.0);
+        assert_eq!(thin.kind, StrokeKind::Center);
+    }
+
+    #[test]
+    fn path_lod_simplifies_inner_at_overview() {
+        let inner = Stroke::new_inner_stroke(8.0, StrokeStyle::Solid, None, None, None, None);
+        let lod = inner.path_lod_at_scale(false, 0.1);
+        assert_eq!(lod.kind, StrokeKind::Center);
     }
 }

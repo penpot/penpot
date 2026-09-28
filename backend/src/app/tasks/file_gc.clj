@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.tasks.file-gc
   "A maintenance task that is responsible of: purge unused file media,
@@ -251,12 +251,9 @@
     (try
       (-> cfg
           (assoc ::db/rollback (:rollback? props))
-          (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
-                        (let [cfg        (-> cfg
-                                             (update ::sto/storage sto/configure conn)
-                                             (assoc ::timestamp (ct/now)))
-                              processed? (process-file! cfg props)]
-
+          (assoc ::timestamp (ct/now))
+          (db/tx-run! (fn [cfg]
+                        (let [processed? (process-file! cfg props)]
                           (when (and processed? (contains? cf/flags :tiered-file-data-storage))
                             (wrk/submit! (-> cfg
                                              (assoc ::wrk/task :offload-file-data)

@@ -2,18 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.measurements
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
+   [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [app.main.constants :as mconst]
    [app.main.ui.formats :as fmt]
@@ -204,8 +206,41 @@
       :top    [p0 p1]
       :left   [p3 p0])))
 
+(defn- opposite-edge
+  [edge]
+  (case edge
+    :bottom :top
+    :top    :bottom
+    :left   :right
+    :right  :left))
+
+(defn- edge-rot-offset
+  [edge]
+  (case edge
+    :bottom 0
+    :right  270
+    :top    180
+    :left   90))
+
+(defn- edge-badge-position
+  "Badge center for a badge anchored to `edge` of the rotated shape."
+  [points edge offset]
+  (let [[ep1 ep2] (get-edge-points points edge)
+        mid-point (gpt/lerp ep1 ep2 0.5)
+        normal    (gpt/normal-right (gpt/subtract ep2 ep1))]
+    {:cx (+ (:x mid-point) (* (:x normal) offset))
+     :cy (+ (:y mid-point) (* (:y normal) offset))}))
+
+(defn- fits-above-vbox-bottom?
+  "True when a badge centered at `cy` (with `badge-height`) still lands above
+  the visible bottom edge of `vbox`."
+  [cy badge-height vbox]
+  (or (nil? vbox)
+      (<= (+ cy (/ badge-height 2))
+          (+ (:y vbox) (:height vbox)))))
+
 (mf/defc selection-size-badge*
-  [{:keys [zoom shapes]}]
+  [{:keys [zoom shapes vbox]}]
   (let [badge-height     (/ selection-badge-height zoom)
         badge-padding-x  (/ selection-badge-padding-x zoom)
         badge-gap        (/ selection-badge-vertical-gap zoom)
@@ -213,6 +248,11 @@
         badge-char-width (/ selection-badge-char-width zoom)
 
         single-shape     (and (= (count shapes) 1) (first shapes))
+
+        ;; Straight paths use endpoint controls instead of a size badge.
+        single-line?     (and single-shape
+                              (cfh/path-shape? single-shape)
+                              (path/single-line? (dm/get-prop single-shape :content)))
 
         component-color? (if single-shape
                            (ctk/instance-head? single-shape)
@@ -243,66 +283,72 @@
         text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
 
         text-width   (* (count text) badge-char-width)
-        badge-width  (+ text-width (* 2 badge-padding-x))]
+        badge-width  (+ text-width (* 2 badge-padding-x))
 
-    (if has-rotation?
-      (let [edge    (get-edge-for-badge rotation)
-            points  (dm/get-prop single-shape :points)
+        hidden?      (or single-line?
+                         (< shape-width badge-width)
+                         (< shape-height badge-height))]
 
-            [ep1 ep2]  (get-edge-points points edge)
+    (when-not ^boolean hidden?
+      (if has-rotation?
+        (let [edge       (get-edge-for-badge rotation)
+              points     (dm/get-prop single-shape :points)
+              offset     (+ badge-gap (/ badge-height 2))
 
-            mid-point  (gpt/lerp ep1 ep2 0.5)
-            normal     (gpt/normal-right (gpt/subtract ep2 ep1))
+              ;; Rotation follows the original edge even if the position
+              ;; flips to the opposite one for lack of space, so the text
+              ;; stays upright.
+              badge-rot  (+ rotation (edge-rot-offset edge))
 
-            rot-offset (case edge
-                         :bottom 0
-                         :right  270
-                         :top    180
-                         :left   90)
-            badge-rot  (+ rotation rot-offset)
-            offset     (+ badge-gap (/ badge-height 2))
+              position   (edge-badge-position points edge offset)
+              position   (if (fits-above-vbox-bottom? (:cy position) badge-height vbox)
+                           position
+                           (edge-badge-position points (opposite-edge edge) offset))
 
-            badge-x    (- (/ badge-width 2))
-            badge-y    (- (/ badge-height 2))
-            badge-cx   (+ (:x mid-point) (* (:x normal) offset))
-            badge-cy   (+ (:y mid-point) (* (:y normal) offset))]
+              badge-x    (- (/ badge-width 2))
+              badge-y    (- (/ badge-height 2))
+              badge-cx   (:cx position)
+              badge-cy   (:cy position)]
 
-        [:g.selection-size-badge {:pointer-events "none"
-                                  :transform (dm/str "translate(" badge-cx "," badge-cy ") rotate(" badge-rot ")")}
-         [:rect {:x badge-x
-                 :y badge-y
-                 :width badge-width
-                 :height badge-height
-                 :rx badge-radius
-                 :ry badge-radius
-                 :style {:fill badge-bg-color}}]
-         [:text {:class (stl/css :badge-text)
-                 :x 0
-                 :y 0
-                 :text-anchor "middle"
-                 :dominant-baseline "middle"}
-          text]])
+          [:g.selection-size-badge {:pointer-events "none"
+                                    :transform (dm/str "translate(" badge-cx "," badge-cy ") rotate(" badge-rot ")")}
+           [:rect {:x badge-x
+                   :y badge-y
+                   :width badge-width
+                   :height badge-height
+                   :rx badge-radius
+                   :ry badge-radius
+                   :style {:fill badge-bg-color}}]
+           [:text {:class (stl/css :badge-text)
+                   :x 0
+                   :y 0
+                   :text-anchor "middle"
+                   :dominant-baseline "middle"}
+            text]])
 
-      (let [badge-x    (- (/ badge-width 2))
-            badge-y    (- (/ badge-height 2))
-            badge-cx   (+ (:x selrect) (/ (:width selrect) 2))
-            badge-cy   (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))]
+        (let [badge-x     (- (/ badge-width 2))
+              badge-y     (- (/ badge-height 2))
+              badge-cx    (+ (:x selrect) (/ (:width selrect) 2))
+              below-cy    (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))
+              badge-cy    (if (fits-above-vbox-bottom? below-cy badge-height vbox)
+                            below-cy
+                            (- (:y selrect) badge-gap (/ badge-height 2)))]
 
-        [:g.selection-size-badge {:pointer-events "none"
-                                  :transform (dm/str "translate(" badge-cx "," badge-cy ")")}
-         [:rect {:x badge-x
-                 :y badge-y
-                 :width badge-width
-                 :height badge-height
-                 :rx badge-radius
-                 :ry badge-radius
-                 :style {:fill badge-bg-color}}]
-         [:text {:class (stl/css :badge-text)
-                 :x 0
-                 :y 0
-                 :text-anchor "middle"
-                 :dominant-baseline "middle"}
-          text]]))))
+          [:g.selection-size-badge {:pointer-events "none"
+                                    :transform (dm/str "translate(" badge-cx "," badge-cy ")")}
+           [:rect {:x badge-x
+                   :y badge-y
+                   :width badge-width
+                   :height badge-height
+                   :rx badge-radius
+                   :ry badge-radius
+                   :style {:fill badge-bg-color}}]
+           [:text {:class (stl/css :badge-text)
+                   :x 0
+                   :y 0
+                   :text-anchor "middle"
+                   :dominant-baseline "middle"}
+            text]])))))
 
 (mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
@@ -384,4 +430,3 @@
           [:> selection-rect* {:type :hover :selrect hover-selrect :zoom zoom}]
           [:> size-display* {:selrect hover-selrect :zoom zoom}]
           [:> distance-display* {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
-

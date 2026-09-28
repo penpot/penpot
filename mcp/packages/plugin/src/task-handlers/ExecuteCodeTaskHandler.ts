@@ -214,6 +214,17 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
 
         let result: any;
         try {
+            // wait for layout updates prior to executing the supplied code (if method is available)
+            try {
+                // @ts-ignore - TODO Penpot.waitForLayoutUpdate is not yet in the released types
+                if (penpot.waitForLayoutUpdate) {
+                    // @ts-ignore
+                    await penpot.waitForLayoutUpdate();
+                }
+            } catch (e) {
+                console.error("Error waiting for layout update:", e);
+            }
+
             // execute the code in an async function with the context variables as parameters
             result = await (async (ctx) => {
                 const fn = new Function(...Object.keys(ctx), `return (async () => { ${code} })();`);

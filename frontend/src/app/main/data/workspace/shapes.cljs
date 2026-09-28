@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.shapes
   (:require
@@ -109,8 +109,8 @@
    (update-shapes-buffer ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr
-            translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
+            translation? skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -148,11 +148,14 @@
                          nil
                          {:attrs attrs
                           :changed-sub-attr changed-sub-attr
+                          :changed-item-index changed-item-index
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
-                          :with-objects? with-objects?})
+                          :with-objects? with-objects?
+                          :skip-grid-reassignment? skip-grid-reassignment?})
                         (cond-> reg-objects? (pcb/resize-parents ids))
-                        (pcb/set-translation? translation?))))]
+                        (pcb/set-translation? translation?)
+                        (pcb/set-skip-component-sync? skip-component-sync?))))]
              ;; Check buffered text candidates when the buffer is committed.
              (if (or (empty? text-ids)
                      (not (wrfs/text-reflow-candidate? state props)))
@@ -187,7 +190,8 @@
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?]
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
+            skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -217,13 +221,16 @@
                                                objects
                                                {:attrs attrs
                                                 :changed-sub-attr changed-sub-attr
+                                                :changed-item-index changed-item-index
                                                 :ignore-tree ignore-tree
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?
-                                                :translation? translation?})
+                                                :translation? translation?
+                                                :skip-grid-reassignment? skip-grid-reassignment?})
                    (cond-> undo-group
                      (pcb/set-undo-group undo-group))
-                   (pcb/set-translation? translation?))
+                   (pcb/set-translation? translation?)
+                   (pcb/set-skip-component-sync? skip-component-sync?))
 
                changed-objects
                (pcb/lookup-objects changes)

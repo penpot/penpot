@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns debug
   (:require
@@ -15,6 +15,9 @@
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.render-wasm.helpers :as wasm.h]
+   [app.common.render-wasm.mem :as wasm.mem]
+   [app.common.render-wasm.wasm :as wasm]
    [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -36,9 +39,6 @@
    [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.render-wasm.helpers :as wasm.h]
-   [app.render-wasm.mem :as wasm.mem]
-   [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -373,6 +373,87 @@
   (-> (p/let [response (js/fetch url)]
         (.text response))
       (p/then apply-changes)))
+
+(def ^:private simulated-error-body
+  "Stands in for the error page a proxy or CDN writes when it answers instead
+  of the backend."
+  "<html><head><title>Simulated error</title></head><body>simulated intermediary response</body></html>")
+
+(defonce ^:private pending-http-error (atom nil))
+
+(defn- simulated-status
+  "Status to answer `uri` with, or nil to let the request through. A
+  simulation without a deadline answers one call; one with a deadline answers
+  every matching call until it runs out."
+  [uri]
+  (let [{:keys [method status until]} @pending-http-error]
+    (when (and (some? method)
+               (str/includes? uri (str "/api/main/methods/" method)))
+      (cond
+        (nil? until)              (do (reset! pending-http-error nil) status)
+        (< (js/Date.now) until)   status
+        :else                     (do (reset! pending-http-error nil) nil)))))
+
+;; The original fetch and the wrapper standing in for it, or nil when unhooked.
+(defonce ^:private http-error-hook (atom nil))
+
+(defn- install-http-error-hook!
+  []
+  (when (nil? @http-error-hook)
+    (let [original (unchecked-get js/globalThis "fetch")
+          wrapper  (fn [input params]
+                     (let [uri (if (string? input) input (unchecked-get input "url"))]
+                       (if-let [status (simulated-status uri)]
+                         (p/resolved (js/Response. simulated-error-body
+                                                   #js {:status status
+                                                        :headers #js {"content-type" "text/html"}}))
+                         (.call original js/globalThis input params))))]
+      (reset! http-error-hook {:original original :wrapper wrapper})
+      (unchecked-set js/globalThis "fetch" wrapper))))
+
+(defn- remove-http-error-hook!
+  []
+  (when-let [{:keys [original wrapper]} @http-error-hook]
+    ;; Restore only while the wrapper is still installed, so a later
+    ;; wrapper survives.
+    (when (identical? wrapper (unchecked-get js/globalThis "fetch"))
+      (unchecked-set js/globalThis "fetch" original))
+    (reset! http-error-hook nil)))
+
+(defn ^:export simulateHttpError
+  "Answers calls to an API method with `status` and a body that carries no
+  Penpot error code, the way a CDN or a corporate proxy does. Every other
+  request goes through untouched.
+
+  Without `seconds` the simulation is spent once it answers one call. With
+  `seconds` it answers every matching call for that long, which is how to
+  watch a save retry, warn, keep retrying and finally recover.
+
+  debug.simulateHttpError('update-file')
+  debug.simulateHttpError('get-comment-threads', 403)
+  debug.simulateHttpError('update-file', 524, 120)"
+  ([method]
+   (simulateHttpError method 524 nil))
+  ([method status]
+   (simulateHttpError method status nil))
+  ([method status seconds]
+   (install-http-error-hook!)
+   (let [until (when (and (number? seconds) (pos? seconds))
+                 (+ (js/Date.now) (* 1000 seconds)))]
+     (reset! pending-http-error {:method method
+                                 :status status
+                                 :until until})
+     (if (some? until)
+       (str "every " method " call will be answered with " status
+            " for the next " seconds " seconds")
+       (str "the next " method " call will be answered with " status)))))
+
+(defn ^:export clearHttpErrorSimulation
+  "Stops a running simulation and takes the wrapper off `fetch`."
+  []
+  (reset! pending-http-error nil)
+  (remove-http-error-hook!)
+  "requests reach the backend again")
 
 (defn ^:export reset-viewport
   []

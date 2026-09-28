@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.http
   (:require
@@ -17,6 +17,7 @@
    [app.http.awsns :as-alias awsns]
    [app.http.debug :as-alias debug]
    [app.http.errors :as errors]
+   [app.http.link-preview :as-alias link-preview]
    [app.http.management :as mgmt]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
@@ -250,6 +251,7 @@
    [::rpc/routes schema:routes]
    [::oidc/routes schema:routes]
    [::assets/routes schema:routes]
+   [::link-preview/routes schema:routes]
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
@@ -278,6 +280,7 @@
 
      (::mtx/routes cfg)
      (::assets/routes cfg)
+     (::link-preview/routes cfg)
      (::debug/routes cfg)
 
      ["/webhooks"

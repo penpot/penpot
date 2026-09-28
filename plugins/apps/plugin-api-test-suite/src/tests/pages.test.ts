@@ -1,5 +1,6 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
+import type { Board } from '@penpot/plugin-types';
 
 // Pages, selection and flows.
 // Most assertions use the active page (`currentPage`) and the scratch board so
@@ -13,6 +14,18 @@ describe('Pages', () => {
     if (page) {
       expect(typeof page.id).toBe('string');
       expect(typeof page.name).toBe('string');
+    }
+  });
+
+  test('page names are trimmed and cannot be blank', (ctx) => {
+    const page = ctx.penpot.currentPage;
+    expect(page).not.toBeNull();
+    if (page) {
+      expect(() => {
+        page.name = '   ';
+      }).toThrow();
+      page.name = '  Trimmed page  ';
+      expect(page.name).toBe('Trimmed page');
     }
   });
 
@@ -204,6 +217,68 @@ describe('Flows', () => {
       const before = page.flows.length;
       page.removeFlow(flow);
       expect(page.flows.length).toBe(before - 1);
+    }
+  });
+
+  test('flows require a live, unused board on their page', (ctx) => {
+    const page = ctx.penpot.currentPage;
+    expect(page).not.toBeNull();
+    if (page) {
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      expect(() =>
+        page.createFlow('rect-flow', rect as unknown as Board),
+      ).toThrow();
+
+      const removed = ctx.penpot.createBoard();
+      ctx.board.appendChild(removed);
+      removed.remove();
+      expect(() => page.createFlow('removed-flow', removed)).toThrow();
+
+      const target = ctx.penpot.createBoard();
+      ctx.board.appendChild(target);
+      const first = page.createFlow('first-flow', target);
+      expect(() => page.createFlow('duplicate-flow', target)).toThrow();
+
+      const secondTarget = ctx.penpot.createBoard();
+      ctx.board.appendChild(secondTarget);
+      const second = page.createFlow('second-flow', secondTarget);
+      expect(() => {
+        second.startingBoard = target;
+      }).toThrow();
+      expect(() => {
+        second.startingBoard = removed;
+      }).toThrow();
+      first.remove();
+      second.remove();
+    }
+  });
+
+  test('flows reject a starting board from another page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+
+    const localBoard = ctx.penpot.createBoard();
+    ctx.board.appendChild(localBoard);
+    const flow = original.createFlow('cross-page-flow', localBoard);
+    const otherPage = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(otherPage);
+      const otherBoard = ctx.penpot.createBoard();
+      (otherPage.root as Board).appendChild(otherBoard);
+      await ctx.penpot.openPage(original);
+
+      expect(() => original.createFlow('foreign-flow', otherBoard)).toThrow();
+      expect(() => {
+        flow.startingBoard = otherBoard;
+      }).toThrow();
+    } finally {
+      if (ctx.penpot.currentPage?.id !== original.id) {
+        await ctx.penpot.openPage(original);
+      }
+      flow.remove();
+      otherPage.remove();
     }
   });
 });

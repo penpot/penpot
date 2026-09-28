@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.tokens.helpers.tokens
   (:require
@@ -11,9 +11,11 @@
    [app.common.types.tokens-lib :as ctob]))
 
 (defn get-token [file name]
-  (some-> (get-in file [:data :tokens-lib])
-          (ctob/get-tokens-in-active-sets)
-          (get name)))
+  (let [data (get-in file [:data])
+        tokens-status (cfo/get-tokens-status data)
+        tokens-lib    (cfo/get-tokens-lib data)]
+    (some-> (cfo/get-tokens-in-active-sets tokens-status tokens-lib)
+            (get name))))
 
 (defn apply-token-to-shape
   [file shape-label token-label attributes]

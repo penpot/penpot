@@ -102,9 +102,18 @@ fn fix_radius(
 }
 
 pub fn rect_segments(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
+    transform_segments(rect_segments_local(shape, corners), shape)
+}
+
+/// Axis-aligned rect path in selrect space (no `shape.transform`).
+///
+/// Use when the caller already applies [`Shape::centered_transform`] on the
+/// canvas (e.g. SVG leaf export); [`rect_segments`] would bake the transform
+/// into the path and double-rotate.
+pub fn rect_segments_local(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
     let sr = shape.selrect;
 
-    let segments = if let Some([r1, r2, r3, r4]) = corners {
+    if let Some([r1, r2, r3, r4]) = corners {
         let (r1, r2, r3, r4) = fix_radius(r1, r2, r3, r4, sr.width(), sr.height());
 
         let p1 = (sr.x(), sr.y() + r1.y);
@@ -139,9 +148,7 @@ pub fn rect_segments(shape: &Shape, corners: Option<Corners>) -> Vec<Segment> {
             Segment::LineTo(p4),
             Segment::Close,
         ]
-    };
-
-    transform_segments(segments, shape)
+    }
 }
 
 fn transform_point(p: (f32, f32), matrix: &skia_safe::Matrix) -> (f32, f32) {
@@ -151,6 +158,11 @@ fn transform_point(p: (f32, f32), matrix: &skia_safe::Matrix) -> (f32, f32) {
 }
 
 pub fn circle_segments(shape: &Shape) -> Vec<Segment> {
+    transform_segments(circle_segments_local(shape), shape)
+}
+
+/// Circle path in selrect space (no `shape.transform`). See [`rect_segments_local`].
+pub fn circle_segments_local(shape: &Shape) -> Vec<Segment> {
     let sr = shape.selrect;
     let c = BEZIER_CIRCLE_C;
     let c1x = sr.x() + (sr.width() / 2.0 * (1.0 - c));
@@ -168,15 +180,13 @@ pub fn circle_segments(shape: &Shape) -> Vec<Segment> {
     let p3 = (mx, ey);
     let p4 = (sr.x(), my);
 
-    let segments = vec![
+    vec![
         Segment::MoveTo(p1),
         Segment::CurveTo(((c2x, p1.1), (p2.0, c1y), p2)),
         Segment::CurveTo(((p2.0, c2y), (c2x, p3.1), p3)),
         Segment::CurveTo(((c1x, p3.1), (p4.0, c2y), p4)),
         Segment::CurveTo(((p4.0, c1y), (c1x, p1.1), p1)),
-    ];
-
-    transform_segments(segments, shape)
+    ]
 }
 
 fn join_paths(path: Path, other: Path) -> Path {
@@ -254,9 +264,9 @@ impl ToPath for Shape {
             Type::SVGRaw(_) => Path::default(),
 
             Type::Text(ref text) => {
-                let text_paths = TextPaths::new(text.clone());
+                let text_paths = TextPaths::new(text.new_bounds(self.selrect()));
                 let mut result = Path::default();
-                for (path, _) in text_paths.get_paths(true) {
+                for path in text_paths.get_paths(self.vertical_align()) {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 

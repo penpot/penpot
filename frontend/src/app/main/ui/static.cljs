@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
@@ -560,21 +560,25 @@
 (mf/defc exception-section*
   {::mf/private true}
   [{:keys [data] :as props}]
-  (let [type   (get data :type)
-        cause  (get data ::errors/instance)
+  (let [type        (get data :type)
+        cause       (get data ::errors/instance)
+        environment (errors/environment-error? cause)
 
-        report (mf/with-memo [cause]
-                 (when (ex/exception? cause)
-                   (errors/generate-report cause)))
+        report      (mf/with-memo [cause]
+                      (when (ex/exception? cause)
+                        (errors/generate-report cause {:format (if environment :compact :full)})))
 
-        props  (mf/spread-props props {:report report})]
+        props       (mf/spread-props props {:report report})]
 
     (mf/with-effect [report type cause]
       (when (and (ex/exception? cause)
                  (not (contains? #{:not-found :authentication} type)))
-        (errors/submit-report :event-name "exception-page"
+        ;; Environment pages are audit-only: they use the canonical
+        ;; `handled-exception` event instead of `exception-page`.
+        (errors/submit-report :event-name (if environment "handled-exception" "exception-page")
                               :report report
-                              :hint (ex/get-hint cause))))
+                              :hint (ex/get-hint cause)
+                              :cause cause)))
 
     (case type
       :not-found

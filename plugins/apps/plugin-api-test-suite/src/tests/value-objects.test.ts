@@ -247,13 +247,11 @@ describe('Value objects', () => {
       }
     });
 
-    test('negative blur value is accepted (currently unvalidated)', (ctx) => {
-      // The blur setter does not reject a negative value; this pins the current
-      // lenient behaviour (a candidate for future hardening).
+    test('negative blur value throws', (ctx) => {
       const r = rect(ctx);
       expect(() => {
         r.blur = { value: -5 };
-      }).not.toThrow();
+      }).toThrow();
     });
   });
 

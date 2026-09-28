@@ -3,7 +3,7 @@ use skia_safe::{self as skia, Paint, RRect};
 use super::{filters, RenderState, SurfaceId};
 use crate::error::Result;
 use crate::get_resources;
-use crate::render::get_source_rect;
+use crate::render::{get_image_dest_rect, get_source_rect};
 use crate::shapes::{merge_fills, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 // Set the clipping area to the shape outline within the container bounds
@@ -56,6 +56,15 @@ fn clip_to_shape(
     }
 }
 
+/// Axis-aligned rect/frame with no corner radii: `dest` fills `selrect`, so a
+/// clip to the container is a no-op before `draw_image_rect`.
+fn is_axis_aligned_image_rect(shape: &Shape) -> bool {
+    matches!(
+        &shape.shape_type,
+        Type::Rect(Rect { corners: None }) | Type::Frame(Frame { corners: None, .. })
+    )
+}
+
 fn draw_image_fill(
     render_state: &mut RenderState,
     shape: &Shape,
@@ -82,32 +91,57 @@ fn draw_image_fill(
     let size = image.dimensions();
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
+    let sampling = get_resources().sampling_options;
 
-    let src_rect = get_source_rect(size, container, image_fill);
-    let dest_rect = container;
+    let dest_rect = get_image_dest_rect(container, image_fill);
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    let needs_clip = image_fill.transform().is_some() || !is_axis_aligned_image_rect(shape);
 
-    let mut image_paint = skia::Paint::default();
-    image_paint.set_anti_alias(antialias);
+    // `save_layer` is only required when a shape-level image filter (blur) must
+    // run over the clipped image. Otherwise a plain save/clip (or no clip for
+    // axis-aligned rects) avoids an offscreen buffer per fill — the hot path
+    // for photo-heavy boards during tile walks.
     if let Some(filter) = shape.image_filter(1.) {
-        image_paint.set_image_filter(filter.clone());
+        let mut layer_paint = skia::Paint::default();
+        layer_paint.set_anti_alias(antialias);
+        layer_paint.set_image_filter(filter);
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+        canvas.save_layer(&layer_rec);
+        clip_to_shape(canvas, shape, container, antialias);
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+            dest_rect,
+            sampling,
+            paint,
+        );
+        canvas.restore();
+        return;
     }
 
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
-    // Save the current canvas state
-    canvas.save_layer(&layer_rec);
+    let mut draw_paint = paint.clone();
+    draw_paint.set_anti_alias(antialias);
 
+    if !needs_clip {
+        canvas.draw_image_rect_with_sampling_options(
+            image,
+            Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
+            dest_rect,
+            sampling,
+            &draw_paint,
+        );
+        return;
+    }
+
+    canvas.save();
     clip_to_shape(canvas, shape, container, antialias);
-
-    // Draw the image with the calculated destination rectangle
     canvas.draw_image_rect_with_sampling_options(
         image,
         Some((&src_rect, skia::canvas::SrcRectConstraint::Strict)),
         dest_rect,
-        get_resources().sampling_options,
-        paint,
+        sampling,
+        &draw_paint,
     );
-
-    // Restore the canvas to remove the clipping
     canvas.restore();
 }
 
@@ -130,10 +164,6 @@ fn draw_svg_image_fill(
     let canvas = render_state.surfaces.canvas_and_mark_dirty(surface_id);
     let container = &shape.selrect;
     let size = skia::ISize::new(size.width as i32, size.height as i32);
-    let src_rect = get_source_rect(size, container, image_fill);
-    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
-        return true;
-    }
 
     let mut image_paint = skia::Paint::default();
     image_paint.set_anti_alias(antialias);
@@ -150,16 +180,22 @@ fn draw_svg_image_fill(
     let fill_layer = skia::canvas::SaveLayerRec::default().paint(paint);
     canvas.save_layer(&fill_layer);
 
-    // Map the cropped source rect onto the container: cover semantics when
-    // keep-aspect-ratio is set, stretch otherwise (same math as the raster
-    // path, expressed as a canvas transform).
-    let scale_x = container.width() / src_rect.width();
-    let scale_y = container.height() / src_rect.height();
+    let dest_rect = get_image_dest_rect(container, image_fill);
+    let src_rect = get_source_rect(size, &dest_rect, image_fill);
+    if src_rect.width() <= 0.0 || src_rect.height() <= 0.0 {
+        canvas.restore();
+        canvas.restore();
+        return true;
+    }
+
+    let scale_x = dest_rect.width() / src_rect.width();
+    let scale_y = dest_rect.height() / src_rect.height();
     canvas.translate((
-        container.left - src_rect.left * scale_x,
-        container.top - src_rect.top * scale_y,
+        dest_rect.left - src_rect.left * scale_x,
+        dest_rect.top - src_rect.top * scale_y,
     ));
     canvas.scale((scale_x, scale_y));
+
     dom.render(canvas);
 
     canvas.restore();

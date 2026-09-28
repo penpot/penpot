@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.types.token-test
   (:require
@@ -31,6 +31,19 @@
   (t/is (false? (sm/validate cto/schema:token-name "Hey%Foo.Bar")))
   (t/is (false? (sm/validate cto/schema:token-name "Hey / Foo/Bar"))))
 
+
+(t/deftest per-side-stroke-shape-test
+  (t/testing "boards and rectangles support per-side stroke widths"
+    (t/is (true? (cto/per-side-stroke-shape? :rect)))
+    (t/is (true? (cto/per-side-stroke-shape? :frame))))
+
+  (t/testing "other shape types do not support per-side stroke widths"
+    (t/is (false? (cto/per-side-stroke-shape? :circle)))
+    (t/is (false? (cto/per-side-stroke-shape? :text)))
+    (t/is (false? (cto/per-side-stroke-shape? :path)))
+    (t/is (false? (cto/per-side-stroke-shape? :image)))
+    (t/is (false? (cto/per-side-stroke-shape? :group)))
+    (t/is (false? (cto/per-side-stroke-shape? nil)))))
 
 (t/deftest token-value-with-refs
   (t/testing "empty value"

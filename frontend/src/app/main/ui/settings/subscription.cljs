@@ -201,6 +201,7 @@
                (reset! form nil)
                (st/emit! (ev/event {::ev/name event-name
                                     :type "unlimited"
+                                    :deployment (if cf/saas? "saas" "selfhost")
                                     :quantity min-members
                                     :subscription-mode subscription-mode})
                          (rt/nav-raw :href href))))))
@@ -216,6 +217,7 @@
                  href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
              (st/emit! (ev/event {::ev/name event-name
                                   :type "enterprise"
+                                  :deployment (if cf/saas? "saas" "selfhost")
                                   :subscription-mode subscription-mode})
                        (rt/nav-raw :href href)))))
 
@@ -224,6 +226,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "subscription-management-modal"}))
            (let [current-href (rt/get-current-href)
                  returnUrl (js/encodeURIComponent current-href)
@@ -489,6 +492,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "subscription"}))
            (let [current-href (rt/get-current-href)
                  returnUrl (js/encodeURIComponent current-href)
@@ -500,6 +504,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "settings"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "nitrate:enterprise"}))
            (dnt/go-to-nitrate-billing)))
 

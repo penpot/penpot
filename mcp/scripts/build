@@ -32,7 +32,7 @@ cp pnpm-lock.yaml ./dist/;
 touch ./dist/pnpm-workspace.yaml;
 
 cat <<EOF | tee ./dist/setup
-#/usr/bin/env bash
+#!/usr/bin/env bash
 set -e;
 command -v pnpm >/dev/null || { echo "error: pnpm not found in PATH" >&2; exit 1; };
 pnpm install -P

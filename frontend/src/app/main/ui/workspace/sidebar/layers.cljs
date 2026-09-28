@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require-macros [app.main.style :as stl])
@@ -26,6 +26,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item*]]
+   [app.main.ui.workspace.sidebar.scroll :as sc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
@@ -283,6 +284,7 @@
         search-scope          (:search-scope state)
         current-match-idx     (:current-match-idx state)
         search-input-ref      (mf/use-ref nil)
+        can-edit?             (:can-edit (deref refs/permissions))
 
         clear-search-text
         (mf/use-fn
@@ -583,11 +585,12 @@
                               :aria-label (tr "workspace.sidebar.layers.filter")
                               :on-click on-toggle-filters-click
                               :icon i/filter}]]
-           [:> icon-button* {:variant "ghost"
-                             :aria-pressed find-replace-mode?
-                             :aria-label (tr "workspace.sidebar.layers.search-and-replace")
-                             :on-click toggle-mode
-                             :icon i/menu}]
+           (when can-edit?
+             [:> icon-button* {:variant "ghost"
+                               :aria-pressed find-replace-mode?
+                               :aria-label (tr "workspace.sidebar.layers.search-and-replace")
+                               :on-click toggle-mode
+                               :icon i/menu}])
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
@@ -650,7 +653,10 @@
                             :text      (tr "workspace.sidebar.layers.texts")
                             :image     (tr "workspace.sidebar.layers.images")
                             :shape     (tr "workspace.sidebar.layers.shapes")
-                            (tr fkey))
+                            ;; Unreachable from the UI (the menu only emits the
+                            ;; above); fall back to the raw name, which is what
+                            ;; tr would render for an unknown key anyway.
+                            fname)
                     filter-icon (usi/get-shape-icon-by-type fkey)]
 
                 [:button {:class (stl/css :layer-filter)
@@ -797,7 +803,7 @@
 
 (mf/defc layers-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size-parent]}]
+  [{:keys [size-parent scroll-store]}]
   (let [page           (mf/deref refs/workspace-page)
         page-id        (get page :id)
 
@@ -809,6 +815,8 @@
 
         observer-var   (mf/use-var nil)
         lazy-load-ref  (mf/use-ref nil)
+        tree-ref       (mf/use-ref nil)
+        search-ref     (mf/use-ref nil)
 
         [filtered-objects show-more filter-component]
         (use-search page objects)
@@ -832,9 +840,32 @@
               (do (.disconnect ^js @observer-var)
                   (reset! observer-var nil)))))
 
+        ;; The search-results container reuses the lazy-load observer root
+        ;; and additionally tracks its node for scroll restore.
+        on-render-search-container
+        (fn [element]
+          (mf/set-ref-val! search-ref element)
+          (on-render-container element))
+
+        on-scroll-with-save
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers page-id] event)
+           (on-scroll event)))
+
+        on-search-scroll
+        (mf/use-fn
+         (mf/deps page-id)
+         (fn [event]
+           (sc/save-scroll! scroll-store [:layers-search page-id] event)))
+
         toogle-focus-mode
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
+
+    (sc/use-restore-scroll scroll-store :layers page-id tree-ref)
+    (sc/use-restore-scroll scroll-store :layers-search page-id search-ref)
 
     [:div {:id "layers"
            :class (stl/css :layers)
@@ -861,13 +892,15 @@
        [:*
         [:div {:class (stl/css :tool-window-content)
                :data-scroll-container true
-               :ref on-render-container}
+               :on-scroll on-search-scroll
+               :ref on-render-search-container}
          [:> filters-tree* {:objects filtered-objects
                             :key (dm/str page-id)
                             :parent-size size-parent}]
          [:div {:ref lazy-load-ref}]]
 
-        [:div {:on-scroll on-scroll
+        [:div {:on-scroll on-scroll-with-save
+               :ref tree-ref
                :class (stl/css :tool-window-content)
                :data-scroll-container true
                :style {:display (when (some? filtered-objects) "none")}}
@@ -876,7 +909,8 @@
                                    :is-filtered true
                                    :parent-size size-parent}]]]
 
-       [:div {:on-scroll on-scroll
+       [:div {:on-scroll on-scroll-with-save
+              :ref tree-ref
               :class (stl/css :tool-window-content)
               :data-scroll-container true
               :style {:display (when (some? filtered-objects) "none")}}

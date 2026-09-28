@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.router
   (:refer-clojure :exclude [resolve])
@@ -18,26 +18,35 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as e]
-   [potok.v2.core :as ptk]
-   [reitit.core :as r]))
+   [potok.v2.core :as ptk]))
 
 ;; --- Router API
 
-(defn map->Match
-  [data]
-  (r/map->Match data))
-
-(defn resolve
-  ([router id]
-   (resolve router id {}))
-  ([router id params]
-   (when router
-     (when-let [match (r/match-by-name router id)]
-       (r/match->path match params)))))
+;; Query-string routing: `router` is the set of enabled route names
+;; (see `app.main.ui.routes/routes`). The `screen` query param carries
+;; the route name; every other param travels as a plain query param.
 
 (defn create
   [routes]
-  (r/router routes))
+  routes)
+
+(defn resolve
+  "Build the history token (`?screen=<name>&params`) for a route.
+  Returns nil when the route id is not enabled."
+  ([router id]
+   (resolve router id {}))
+  ([router id params]
+   (when (contains? router id)
+     ;; The target screen always wins: callers often forward the
+     ;; current query params (which carry the previous screen).
+     (str "?" (u/map->query-string
+               (into {:screen (name id)} (dissoc params :screen)))))))
+
+(defn resolve-uri
+  "Build the absolute URL string for a route under `cf/public-uri`."
+  [router id params]
+  (when-let [token (resolve router id params)]
+    (dm/str cf/public-uri "?" (subs token 1))))
 
 (defn initialize-router
   [routes]
@@ -50,20 +59,33 @@
   [url]
   (js/encodeURIComponent url))
 
-(defn match
-  "Given routing tree and current path, return match with possibly
-  coerced parameters. Return nil if no match found."
-  [router path]
-  (let [uri (u/uri path)]
-    (when-let [match (r/match-by-path router (:path uri))]
-      (let [query-params (u/query-string->map (:query uri))
-            params       {:path (:path-params match)
-                          :query query-params}]
-        (-> match
-            (assoc :params params)
-            (assoc :query-params query-params))))))
-
 ;; --- Navigate (Event)
+
+(defn get-query-param
+  "Safely extracts a scalar value for a query param key from a params
+  map. When the same key appears multiple times in a URL,
+  query-string->map returns a vector for that key; this function
+  always returns a single (last) element in that case, so downstream
+  consumers such as parse-long always receive a plain string or nil."
+  [params k]
+  (let [v (get params k)]
+    (if (sequential? v) (peek v) v)))
+
+(defn match
+  "Given the enabled routes and the current history token (the query
+  string, `?screen=<name>&params`), return a match shaped like the old
+  reitit one (`:data/:name`, `:params/:query`, `:query-params`).
+  Return nil when there is no usable `screen`."
+  [router token]
+  (let [query        (if (str/starts-with? (or token "") "?")
+                       (subs token 1)
+                       (or token ""))
+        query-params (u/query-string->map query)
+        screen       (some-> (get-query-param query-params :screen) keyword)]
+    (when (contains? router screen)
+      {:data {:name screen}
+       :params {:path {} :query query-params}
+       :query-params query-params})))
 
 (defn navigated
   [match send-event-info?]
@@ -104,7 +126,7 @@
 
         (if ^boolean new-window
           (let [name   (or (::window-name options) "_blank")
-                uri    (assoc cf/public-uri :fragment path)]
+                uri    (assoc cf/public-uri :query (some-> path (subs 1)))]
             (dom/open-new-window uri name nil))
           (ts/asap
            #(if ^boolean replace
@@ -134,16 +156,6 @@
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))
-
-(defn get-query-param
-  "Safely extracts a scalar value for a query param key from a params
-  map. When the same key appears multiple times in a URL,
-  query-string->map returns a vector for that key; this function
-  always returns a single (last) element in that case, so downstream
-  consumers such as parse-long always receive a plain string or nil."
-  [params k]
-  (let [v (get params k)]
-    (if (sequential? v) (peek v) v)))
 
 (defn nav-back
   []
@@ -192,37 +204,26 @@
   []
   (.-href globals/location))
 
-(defn get-current-path
-  []
-  (let [hash (.-hash globals/location)]
-    (if (str/starts-with? hash "#")
-      (subs hash 1)
-      hash)))
-
 
 ;; --- History API
 
 ;; Check the urls to see if we need to send the navigated event.
-;; If two paths are the same we only send the event when there is a
-;; change in the parameters `file-id`, `page-id` or `team-id`
+;; If two query strings select the same screen we only send the event
+;; when there is a change in the parameters `screen`, `file-id`,
+;; `page-id` or `team-id`
 (defn- send-event-info?
   [old-url new-url]
-  (let [params [:file-id :page-id :team-id]
-        new-uri (u/uri new-url)
-        new-path (:path new-uri)
-        new-params (-> new-uri :query u/query-string->map (select-keys params))
-        old-uri (u/uri old-url)
-        old-path (:path old-uri)
-        old-params (-> old-uri :query u/query-string->map (select-keys params))]
-    (or (not= old-path new-path)
-        (not= new-params old-params))))
+  (let [params [:screen :file-id :page-id :team-id]
+        new-params (-> (u/uri new-url) :query u/query-string->map (select-keys params))
+        old-params (-> (u/uri old-url) :query u/query-string->map (select-keys params))]
+    (not= new-params old-params)))
 
 (defn initialize-history
   [on-change]
   (ptk/reify ::initialize-history
     ptk/UpdateEvent
     (update [_ state]
-      (let [history (bhistory/create)]
+      (let [history (bhistory/create (:path cf/public-uri))]
         (bhistory/enable! history)
         (assoc state :history history)))
 

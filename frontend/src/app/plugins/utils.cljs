@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.utils
   "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.tokens :as cfo]
    [app.common.i18n :as i18n :refer [tr]]
    [app.common.schema :as sm]
    [app.common.schema.messages :as csm]
@@ -67,8 +68,18 @@
 
 (defn locate-tokens-lib
   [file-id]
-  (let [file (locate-file file-id)]
-    (->> file :data :tokens-lib)))
+  (let [file-data        (-> (locate-file file-id) (ctf/file-data))
+        tokens-source-id (cfo/get-effective-tokens-source file-data)]
+    (some-> tokens-source-id
+            (locate-file)
+            (ctf/file-data)
+            (cfo/get-tokens-lib))))
+
+(defn locate-tokens-status
+  [file-id]
+  (let [file      (locate-file file-id)
+        file-data (ctf/file-data file)]
+    (cfo/get-tokens-status file-data)))
 
 (defn locate-token-theme
   [file-id id]
@@ -274,6 +285,12 @@
   [plugin-id]
   (boolean
    (dm/get-in @st/state [:plugins :flags plugin-id :natural-child-ordering])))
+
+(defn check-editable-tokens
+  [file-id]
+  (let [file (locate-file file-id)]
+    (when-not (cfo/editable-tokens? (ctf/file-data file))
+      (throw (js/Error. (dm/str "[PENPOT PLUGIN] Cannot modify tokens in an external library"))))))
 
 (defn throw-validation-errors?
   [plugin-id]

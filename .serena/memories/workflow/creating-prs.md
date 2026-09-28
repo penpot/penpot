@@ -80,7 +80,7 @@ The "Note:" line is required at the top. Adjust if this is a manual (non-AI) PR.
 ## Explicit Issue Assignment
 
 - For each GitHub issue that a PR resolves, run `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` after creating or editing the PR. Do not rely on `Closes #NNNN` in the body; it is only human-readable context.
-- The command calls `addCloseIssueReferences`, verifies the relationship from both the issue and PR, and exits non-zero if either side is missing. It is safe to rerun and also works for an already merged PR; it does not close an issue retroactively.
+- The command calls `addCloseIssueReferences` and trusts the successful mutation: GitHub does not reliably report mutation-created links back through `closedByPullRequestsReferences(userLinkedOnly: true)`, so the command exits non-zero only when a link target is missing or the mutation fails. It is safe to rerun and also works for an already merged PR; it does not close an issue retroactively.
 - Skip this process for `Relates to #NNNN` and Taiga references, which do not represent a closing relationship.
 
 ## Before Opening

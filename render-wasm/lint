@@ -8,7 +8,7 @@ if [[ "$1" == "--debug" ]]; then
     set -x
 fi
 
-. ./_build_env
+. ./_build_env frontend
 
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}

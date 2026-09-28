@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.common
   "A general purpose events."
@@ -247,7 +247,10 @@
 
 (defn handle-change-team-organization
   "Handle :team-organization-change websocket messages on dashboard and workspace.
-  Updates local team organization data and redirects to SSO when required."
+  Updates local team organization data and redirects to SSO when required.
+  `team` and `notification` come from the server-published message (see backend
+  app.rpc.notifications/notify-team-change); `notification` is a translation
+  key resolved here, dynamic by design."
   [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-organization
     ptk/WatchEvent
@@ -259,6 +262,11 @@
                    current-team?)
           (rx/concat
            (when notification
+             ;; Execution time translation strings (keys sent by the backend):
+             ;;   (tr "dashboard.team-belong-organization")
+             ;;   (tr "dashboard.team-no-longer-belong-organization")
+             ;; notification is a server-provided key, dynamic by design
+             #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
              (rx/of (ntf/show {:content (tr notification (:name organization))
                                :type :toast
                                :level :info

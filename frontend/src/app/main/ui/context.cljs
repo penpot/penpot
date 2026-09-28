@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.context
   (:require
@@ -25,6 +25,8 @@
 (def libraries            (mf/create-context nil))
 (def design-tokens        (mf/create-context nil))
 (def token-inputs         (mf/create-context nil))
+(def tokens-lib           (mf/create-context nil))
+(def tokens-status        (mf/create-context nil))
 
 (def current-scroll       (mf/create-context nil))
 (def current-zoom         (mf/create-context nil))
@@ -45,6 +47,7 @@
 
 (def permissions          (mf/create-context nil))
 (def can-edit?            (mf/create-context nil))
+(def can-edit-tokens?     (mf/create-context nil))
 
 (def active-tokens-by-type
   "Active tokens by type, used mainly for provide tokens data to the

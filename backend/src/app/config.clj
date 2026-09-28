@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.config
   (:refer-clojure :exclude [get])
@@ -49,6 +49,9 @@
 
    :host "localhost"
    :tenant "default"
+   ;; The SaaS host also sets penpotIsSaas in the browser. Keep this server
+   ;; value in sync so Admin Console can query the same deployment type.
+   :is-saas false
 
    :redis-uri "redis://redis/0"
 
@@ -58,6 +61,7 @@
    :objects-storage-fs-directory "assets"
 
    :auth-token-cookie-name "auth-token"
+   :auth-token-cookie-max-age-absolute (ct/duration {:days 30})
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -68,6 +72,9 @@
 
    :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
+
+   :login-lockout-max-attempts 5
+   :login-lockout-window (ct/duration "15m")
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
@@ -95,11 +102,7 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}
-
-   ;; Binfile import limits
-   :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
-   :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -109,6 +112,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
+    [:is-saas ::sm/boolean]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
@@ -157,8 +161,13 @@
     [:media-processing-service-timeout {:optional true} ::sm/int]
 
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
-    [:binfile-import-max-object-size {:optional true} ::sm/int]
+    [:binfile-import-max-binary-entry-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-entry-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
+
+    [:login-lockout-max-attempts {:optional true} ::sm/int]
+    [:login-lockout-window {:optional true} ::ct/duration]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
@@ -208,6 +217,7 @@
 
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
+    [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]
@@ -390,6 +400,22 @@
   []
   (or (c/get config :file-clean-delay)
       (ct/duration {:days 2})))
+
+(defn join-uri
+  "Join path segments onto a base URI, preserving a potential subpath
+  (same semantics as the frontend config). The base is normalized with
+  a trailing slash; segments must not start with `/` (a leading slash
+  would resolve against the host root and drop the subpath)."
+  [base & segments]
+  (assert (not (some #(str/starts-with? % "/") segments))
+          "URI segments must be relative (no leading slash)")
+  (str (apply u/join (u/ensure-path-slash base) segments)))
+
+(defn get-public-uri
+  "Canonical public URI builder: `join-uri` over the configured
+  :public-uri. With no segments, returns the normalized base."
+  [& segments]
+  (apply join-uri (c/get config :public-uri) segments))
 
 (defn get
   "A configuration getter. Helps code be more testable."

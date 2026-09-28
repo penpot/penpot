@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.email-sending-test
   (:require
@@ -89,3 +89,32 @@
                                :token "test-token"})]
     (t/is (not (str/includes? (email-text-body result) sso-notice-snippet)))
     (t/is (not (str/includes? (get-in result [:body "text/html"]) sso-notice-snippet)))))
+
+(defn- renewal-notice-params
+  [user-name]
+  {:to "billing@example.com"
+   :public-uri (cf/get :public-uri)
+   :user-name user-name
+   :renewal-date "2026-01-01"
+   :estimated-amount "$42.00"
+   :organizations [{:name "Acme"
+                    :initials "AC"}]})
+
+(t/deftest renewal-notice-greets-by-name-when-user-name-present
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params "Acme Org"))]
+    (t/is (str/includes? (email-text-body result) "Hi Acme Org,"))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi Acme Org,"))))
+
+(t/deftest renewal-notice-omits-space-before-comma-when-user-name-is-empty
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params ""))]
+    (t/is (str/includes? (email-text-body result) "Hi,"))
+    (t/is (not (str/includes? (email-text-body result) "Hi ,")))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi,"))
+    (t/is (not (str/includes? (get-in result [:body "text/html"]) "Hi ,")))))
+
+(t/deftest renewal-notice-omits-space-before-comma-when-user-name-is-nil
+  (let [result (emails/render emails/renewal-notice (renewal-notice-params nil))]
+    (t/is (str/includes? (email-text-body result) "Hi,"))
+    (t/is (not (str/includes? (email-text-body result) "Hi ,")))
+    (t/is (str/includes? (get-in result [:body "text/html"]) "Hi,"))
+    (t/is (not (str/includes? (get-in result [:body "text/html"]) "Hi ,")))))

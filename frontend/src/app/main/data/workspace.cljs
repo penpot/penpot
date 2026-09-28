@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace
   (:require
@@ -19,6 +19,7 @@
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
+   [app.common.render-wasm.wasm :as wasm-state]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -79,7 +80,6 @@
    [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.wasm :as wasm-state]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -244,7 +244,8 @@
                    {:redo-changes changes :undo-changes []
                     :save-undo? false
                     :origin it
-                    :tags #{:position-data}}))
+                    :tags #{:position-data}
+                    :skip-component-sync? true}))
            (rx/empty)))))))
 
 (defn- workspace-initialized
@@ -402,7 +403,8 @@
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
           (assoc :workspace-presence {})
-          (update :workspace-global dissoc :default-font)))
+          (update :workspace-global dissoc :default-font)
+          (update :comments-local dcmt/merge-persisted-filters)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -511,7 +513,7 @@
                     (rx/filter (ptk/type? :app.render-wasm.api/stale-text-selrects))
                     (rx/map deref)
                     (rx/map (fn [{:keys [ids]}]
-                              (dwwt/resize-wasm-text-all ids))))
+                              (dwwt/resize-wasm-text-all ids {:skip-component-sync? true}))))
 
                (let [local-commits-s
                      (->> stream
@@ -565,7 +567,8 @@
                              (dch/commit-changes
                               {:redo-changes changes :undo-changes []
                                :save-undo? false
-                               :tags #{:position-data}})))))
+                               :tags #{:position-data}
+                               :skip-component-sync? true})))))
                       (rx/take-until stoper-s)))
 
                (->> stream
@@ -1327,6 +1330,16 @@
               (-> params (assoc :kind :guide
                                 :guide guide)))))))
 
+(defn show-text-context-menu
+  "Context menu for the text being edited. Unlike the shape menu it leaves the
+   shape selection alone; `has-selection?` is captured at right-click time."
+  [{:keys [position] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-text-context-menu
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (show-context-menu (assoc params :kind :text))))))
+
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
     ptk/UpdateEvent
@@ -1367,7 +1380,41 @@
              page    (dsh/lookup-page state page-id)
              changes (-> (pcb/empty-changes it)
                          (pcb/with-page page)
-                         (pcb/mod-page {:background (:color color)}))]
+                         (pcb/mod-page {:background (:color color)
+                                        :background-token nil}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn apply-canvas-color-token
+  "Sets the canvas background to the resolved value of `token` and
+  remembers it as the applied token, so the background badge shows it."
+  ([color token-name]
+   (apply-canvas-color-token nil color token-name))
+  ([page-id color token-name]
+   (ptk/reify ::apply-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background color
+                                        :background-token token-name}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn detach-canvas-color-token
+  "Removes the applied-token link from the canvas background, keeping
+  the current background color as a plain value."
+  ([]
+   (detach-canvas-color-token nil))
+  ([page-id]
+   (ptk/reify ::detach-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background-token nil}))]
          (rx/of (dch/commit-changes changes)))))))
 
 (defn change-pixel-grid-color
@@ -1623,6 +1670,7 @@
 (dm/export dwt/update-dimensions-coalesced)
 (dm/export dwt/change-orientation)
 (dm/export dwt/start-rotate)
+(dm/export dwt/start-move-line-point)
 (dm/export dwt/increase-rotation)
 (dm/export dwt/increase-rotation-coalesced)
 (dm/export dwt/start-move-selected)

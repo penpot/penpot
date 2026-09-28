@@ -1,6 +1,7 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
- {penpot/common
+ {;; Carries `app.common.render-wasm.*`, shared with the headless exporter.
+  penpot/common
   {:local/root "../common"}
 
   org.clojure/clojure {:mvn/version "1.12.5"}
@@ -20,8 +21,8 @@
    :exclusions [funcool/beicon2]}
 
   funcool/beicon2
-  {:git/tag "v2.2"
-   :git/sha "8744c66"
+  {:git/tag "v2.3"
+   :git/sha "df7058a"
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext

@@ -2,11 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.test-helpers.tokens
   (:require
    [app.common.data :as d]
+   [app.common.files.tokens :as cfo]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
@@ -17,17 +18,39 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]))
 
+(defn get-tokens-source
+  [file]
+  (-> file (ctf/file-data) (cfo/get-tokens-source)))
+
 (defn get-tokens-lib
   [file]
-  (:tokens-lib (ctf/file-data file)))
+  (-> file (ctf/file-data) (cfo/get-tokens-lib)))
+
+(defn get-tokens-status
+  [file]
+  (-> file (ctf/file-data) (cfo/get-tokens-status)))
 
 (defn add-tokens-lib
+  "Ensure the file has a tokens-lib and a tokens-status in its data, creating empty ones if not"
   [file]
-  (ctf/update-file-data file #(update % :tokens-lib ctob/ensure-tokens-lib)))
+  (ctf/update-file-data file cfo/ensure-tokens-lib))
 
 (defn update-tokens-lib
+  "Modify the tokens-lib of a file "
   [file f]
-  (ctf/update-file-data file #(update % :tokens-lib f)))
+  (ctf/update-file-data file #(cfo/update-tokens-lib % f)))
+
+(defn update-tokens-status
+  [file f]
+  (ctf/update-file-data file #(cfo/update-tokens-status % f)))
+
+(defn sample-file-with-tokens
+  [& {:keys [lib-fn status-fn file-id] :as params
+      :or {lib-fn identity status-fn identity file-id :file1}}]
+  (-> (thf/sample-file file-id (dissoc params :lib-fn :status-fn))
+      (add-tokens-lib)
+      (update-tokens-lib lib-fn)
+      (update-tokens-status status-fn)))
 
 (defn get-token
   [file set-id token-id]

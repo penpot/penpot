@@ -232,9 +232,12 @@ describe('Variants', () => {
 
     const instance = vc.instance();
     ctx.board.appendChild(instance);
-    // Valid args (nat-int pos, string value): switches to the nearest variant
-    // with that value at the property position, or no-ops — never throws.
-    expect(() => instance.switchVariant(0, 'large')).not.toThrow();
+    const property = vc.variants!.properties[0];
+    const target =
+      vc.variants!.variantComponents()[1] as LibraryVariantComponent;
+    expect(() =>
+      instance.switchVariant(0, target.variantProps[property]),
+    ).not.toThrow();
   });
 
   // Community report (forum #10700, issue #3): switchVariant on an instance
@@ -256,7 +259,12 @@ describe('Variants', () => {
     const clonedInstance = cloned.children.find((s) => s.isComponentInstance());
     expect(clonedInstance).toBeDefined();
     if (clonedInstance) {
-      expect(() => clonedInstance.switchVariant(0, 'large')).not.toThrow();
+      const property = vc.variants!.properties[0];
+      const target =
+        vc.variants!.variantComponents()[1] as LibraryVariantComponent;
+      expect(() =>
+        clonedInstance.switchVariant(0, target.variantProps[property]),
+      ).not.toThrow();
     }
   });
 
@@ -332,6 +340,14 @@ describe('Variants', () => {
     expect(() => ctx.penpot.createVariantFromComponents([])).toThrow();
   });
 
+  test('createVariantFromComponents requires two distinct components', (ctx) => {
+    const main = componentMain(ctx);
+    expect(() => ctx.penpot.createVariantFromComponents([main])).toThrow();
+    expect(() =>
+      ctx.penpot.createVariantFromComponents([main, main]),
+    ).toThrow();
+  });
+
   test('removeProperty out of bounds throws', async (ctx) => {
     const vc = await variantComponent(ctx);
     const v = vc.variants;
@@ -339,6 +355,13 @@ describe('Variants', () => {
     if (v) {
       expect(() => v.removeProperty(999)).toThrow();
     }
+  });
+
+  test('the last variant property cannot be removed', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    const v = vc.variants!;
+    expect(v.properties).toHaveLength(1);
+    expect(() => v.removeProperty(0)).toThrow();
   });
 
   test('renameProperty out of bounds throws', async (ctx) => {
@@ -350,8 +373,88 @@ describe('Variants', () => {
     }
   });
 
+  test('variant property names are trimmed, nonblank, and at most 60 characters', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    const v = vc.variants!;
+    expect(() => v.renameProperty(0, '   ')).toThrow();
+    expect(() => v.renameProperty(0, 'x'.repeat(61))).toThrow();
+    v.renameProperty(0, '  Size  ');
+    expect(v.properties[0]).toBe('Size');
+  });
+
   test('setVariantProperty out of bounds throws', async (ctx) => {
     const vc = await variantComponent(ctx);
     expect(() => vc.setVariantProperty(999, 'large')).toThrow();
+  });
+
+  test('variant values are trimmed and at most 60 characters', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    expect(() => vc.setVariantProperty(0, 'x'.repeat(61))).toThrow();
+    vc.setVariantProperty(0, '  Large  ');
+    expect(vc.variantProps[vc.variants!.properties[0]]).toBe('Large');
+  });
+
+  test('empty variant values remain allowed after trimming', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    expect(() => vc.setVariantProperty(0, '   ')).not.toThrow();
+    expect(vc.variantProps[vc.variants!.properties[0]]).toBe('');
+  });
+
+  test('switchVariant rejects mains, bad positions, and unavailable values', async (ctx) => {
+    const vc = await variantComponent(ctx);
+    vc.addVariant();
+    await waitFor(() => (vc.variants?.variantComponents().length ?? 0) > 1);
+    const instance = vc.instance();
+    ctx.board.appendChild(instance);
+    expect(() => vc.mainInstance().switchVariant(0, 'Value2')).toThrow();
+    expect(() => instance.switchVariant(999, 'Value2')).toThrow();
+    expect(() => instance.switchVariant(0, 'missing-value')).toThrow();
+  });
+
+  test('variant combining rejects copies and existing variants', async (ctx) => {
+    const standard = componentWithMain(ctx);
+    const other = componentWithMain(ctx);
+    const copy = other.comp.instance() as Board;
+    ctx.board.appendChild(copy);
+
+    expect(() =>
+      ctx.penpot.createVariantFromComponents([standard.main, copy]),
+    ).toThrow();
+    expect(() => standard.main.combineAsVariants([copy.id])).toThrow();
+
+    const variant = await variantComponent(ctx);
+    expect(() =>
+      ctx.penpot.createVariantFromComponents([
+        standard.main,
+        variant.mainInstance() as Board,
+      ]),
+    ).toThrow();
+    expect(() =>
+      standard.main.combineAsVariants([variant.mainInstance().id]),
+    ).toThrow();
+  });
+
+  test('variant combining rejects components from another page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+
+    const originalMain = componentMain(ctx);
+    const otherPage = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(otherPage);
+      const rect = ctx.penpot.createRectangle();
+      (otherPage.root as Board).appendChild(rect);
+      const other = ctx.penpot.library.local.createComponent([rect]);
+      const otherMain = other.mainInstance() as Board;
+
+      expect(() =>
+        ctx.penpot.createVariantFromComponents([originalMain, otherMain]),
+      ).toThrow();
+      expect(() => otherMain.combineAsVariants([originalMain.id])).toThrow();
+    } finally {
+      await ctx.penpot.openPage(original);
+      otherPage.remove();
+    }
   });
 });

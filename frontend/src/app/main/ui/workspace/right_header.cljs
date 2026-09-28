@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
@@ -36,9 +36,8 @@
 
 ;; --- Zoom Widget
 
-(mf/defc zoom-widget-workspace
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc zoom-widget-workspace*
+  {::mf/wrap [mf/memo]}
   [{:keys [zoom on-increase on-decrease on-zoom-reset on-zoom-fit on-zoom-selected]}]
   (let [open*            (mf/use-state false)
         open?            (deref open*)
@@ -207,7 +206,7 @@
      [:div {:class (stl/css :separator)}]
 
      [:div {:class (stl/css :zoom-section)}
-      [:& zoom-widget-workspace
+      [:> zoom-widget-workspace*
        {:zoom zoom
         :on-increase on-increase
         :on-decrease on-decrease

@@ -10,7 +10,7 @@ import { rpcPost } from "./helpers/client.mjs";
 describe("auth flow", () => {
   it("creates a demo profile", async () => {
     const { email, password } = await createDemoProfile();
-    assert.match(email, /^demo-.*\.demo@example\.com$/);
+    assert.match(email, /^demo-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}@demo\.example\.com$/);
     assert.ok(password.length > 0);
   });
 

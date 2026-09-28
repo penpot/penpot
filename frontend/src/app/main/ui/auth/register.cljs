@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
@@ -78,6 +78,7 @@
 
         on-error
         (mf/use-fn
+         (mf/deps form)
          (fn [cause]
            (reset! submitted? false)
            (let [{:keys [type code] :as edata} (ex-data cause)
@@ -103,6 +104,9 @@
                [:restriction :email-has-complaints]
                (set-field-error! :email {:message (tr "errors.email-has-permanent-bounces" (:email edata))})
 
+               ;; Reported on the email input itself, the way the recovery and
+               ;; password forms report server side errors, so the field that
+               ;; needs fixing is the one marked as invalid
                [:validation :email-already-exists]
                (set-field-error! :email {:message (tr "errors.email-already-exists")})
 
@@ -110,6 +114,12 @@
                (set-field-error! :password {:message (tr "errors.email-as-password")})
 
                [:validation :weak-password]
+               ;; Execution time translation strings (keys sent by the backend):
+               ;;   (tr "errors.weak-password.too-short")
+               ;;   (tr "errors.weak-password.insufficient-digits")
+               ;;   (tr "errors.weak-password.insufficient-lowercase")
+               ;;   (tr "errors.weak-password.insufficient-uppercase")
+               ;;   (tr "errors.weak-password.insufficient-special")
                (let [options (when (seq (:details edata))
                                (mapv tr (:details edata)))]
                  (set-field-error! :password {:message (tr "errors.weak-password")

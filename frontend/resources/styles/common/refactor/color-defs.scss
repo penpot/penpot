@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) KALEIDOS INC Sucursal en España SL
+// Copyright (c) KALEIDOS SUBSIDIARY SL
 
 @use "sass:color";
 
@@ -41,6 +41,7 @@
   // APP COLORS
   --app-white: #fff; // Used in several places
   --app-black: #000; // Used on interactions, measurements and editor files
+  --app-pink: #f49ef7; // Used in path selection
 
   // SOCIAL LOGIN BUTTONS
   --google-login-background: #4285f4;

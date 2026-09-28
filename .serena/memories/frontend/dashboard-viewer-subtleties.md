@@ -13,4 +13,4 @@
 - Viewer bundle fetch sends the full supported feature set because anonymous shared viewers may not know team-enabled features.
 - View-only bundles can contain pointer values in `:pages-index` and file data. Viewer resolves those fragments with `:get-file-fragment` before storing the bundle.
 - `bundle-fetched` indexes pages and precomputes viewer frames/all-frames, stores libraries/users/thumbnails/permissions under `:viewer`, then navigates to frame id, query index, or auto-selected frame.
-- Viewer zoom and interaction mode changes update both `:viewer-local` and the `:viewer` route query params.
+- Viewer zoom and interaction mode changes update both `:viewer-local` and the `:viewer` route query params. `update-zoom-querystring` guards with a query-param comparison (`not= current expected`) and uses `::rt/replace`; without that guard the load sequence (`bundle-fetched` → `zoom-to-fill` → `update-zoom-querystring` → `rt/nav`) re-runs on every navigation and crashes with React "maximum update depth exceeded" (2.18.0-RC5 regression, fixed in `31b73460c3`; regression test: `bundle-fetched-with-zoom-fill-url-does-not-navigate`).

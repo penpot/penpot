@@ -1,4 +1,5 @@
 import "./style.css";
+import { shouldReconnectAfterClose } from "./ReconnectPolicy";
 
 /**
  * the maximum allowed size for task responses sent back to the MCP server in the integrated remote MCP mode.
@@ -255,6 +256,15 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
                 updateCurrentTask(null);
             }
             ws = null;
+            if (!shouldReconnectAfterClose(event.code)) {
+                // Policy violation (e.g. duplicate connection for the same user
+                // token - another tab already holds the connection). Retrying
+                // would be refused again immediately, so stay disconnected
+                // until the user explicitly reconnects.
+                shouldReconnect = false;
+                cancelReconnect();
+                return;
+            }
             scheduleReconnect();
         };
 

@@ -1,0 +1,12 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="164" height="124" viewBox="0 0 164 124"><defs><clipPath id="clip0" clipPathUnits="userSpaceOnUse">
+	<rect transform="translate(12 12)" width="140" height="100"/>
+</clipPath></defs><g clip-path="url(#clip0)">
+	<rect fill="#EEE" transform="translate(12 12)" width="140" height="100"/>
+</g>
+	<path fill="#1040FF" transform="translate(12 12)" d="M-12 -12L152 -12L152 112L-12 112L-12 -12ZM140 0L0 0L0 100L140 100L140 0Z" fill-rule="evenodd"/>
+</svg>

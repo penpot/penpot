@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.quotes
   "Penpot resource usage quotes."
@@ -535,7 +535,8 @@
 (def ^:private sql:get-upload-sessions-per-profile
   "SELECT count(*) AS total
      FROM upload_session
-    WHERE profile_id = ?")
+    WHERE profile_id = ?
+      AND deleted_at IS NULL")
 
 (defmethod check-quote ::upload-sessions-per-profile
   [{:keys [::profile-id ::target] :as quote}]

@@ -93,8 +93,8 @@ gh pr create --repo penpot/penpot --base "<BASE>" --title "<TITLE>" \
 repository default, which is wrong for a branch cut from `staging`. `--project
 "Main"` is required by `mem:workflow/creating-prs`.
 
-If an issue is present, run the explicit assignment and verification command
-from `mem:workflow/creating-prs` before reporting success:
+If an issue is present, run the explicit assignment command from
+`mem:workflow/creating-prs` before reporting success:
 
 ```bash
 python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>
@@ -117,8 +117,7 @@ gh pr view <NUMBER> --repo penpot/penpot --json title,body
 ```
 
 If the updated body contains `Closes #NNNN`, run the explicit assignment
-command from `mem:workflow/creating-prs` and require its verification to
-succeed:
+command from `mem:workflow/creating-prs`:
 
 ```bash
 python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>

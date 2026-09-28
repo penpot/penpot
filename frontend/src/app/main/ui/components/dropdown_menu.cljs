@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.components.dropdown-menu
   (:require
@@ -27,7 +27,7 @@
 
 (mf/defc internal-dropdown-menu*
   {::mf/private true}
-  [{:keys [on-close children class id on-pointer-enter on-pointer-leave]}]
+  [{:keys [on-close children class id style on-pointer-enter on-pointer-leave]}]
 
   (assert (fn? on-close) "missing `on-close` prop")
 
@@ -109,6 +109,7 @@
     [:ul {:class class
           :role "menu"
           :ref container
+          :style style
           :on-pointer-enter on-pointer-enter
           :on-pointer-leave on-pointer-leave}
      children]))

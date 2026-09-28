@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns common-tests.runner
   (:require
@@ -29,6 +29,7 @@
    [common-tests.geom-flex-layout-test]
    [common-tests.geom-grid-layout-test]
    [common-tests.geom-grid-test]
+   [common-tests.geom-image-bounds-resize-test]
    [common-tests.geom-line-test]
    [common-tests.geom-modif-tree-test]
    [common-tests.geom-modifiers-test]
@@ -84,6 +85,7 @@
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
    [common-tests.types.shape-layout-test]
+   [common-tests.types.stroke-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
    [common-tests.types.tokens-status-test]
@@ -108,6 +110,7 @@
    'common-tests.geom-flex-layout-test
    'common-tests.geom-grid-layout-test
    'common-tests.geom-grid-test
+   'common-tests.geom-image-bounds-resize-test
    'common-tests.geom-line-test
    'common-tests.geom-modif-tree-test
    'common-tests.geom-modifiers-test
@@ -163,6 +166,7 @@
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.shape-layout-test
+   'common-tests.types.stroke-test
    'common-tests.types.token-test
    'common-tests.types.tokens-lib-test
    'common-tests.types.tokens-status-test

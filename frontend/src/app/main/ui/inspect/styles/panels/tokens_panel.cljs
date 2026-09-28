@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.inspect.styles.panels.tokens-panel
   (:require-macros [app.main.style :as stl])
@@ -13,10 +13,10 @@
    [rumext.v2 :as mf]))
 
 (mf/defc tokens-panel*
-  [{:keys [theme-paths set-names]}]
+  [{:keys [theme-names set-names]}]
   [:div {:class (stl/css :tokens-panel)}
-   (when (seq theme-paths)
-     (let [theme-list (str/join ", " theme-paths)]
+   (when (seq theme-names)
+     (let [theme-list (str/join ", " theme-names)]
        [:> properties-row* {:class (stl/css :token-theme)
                             :term (tr "inspect.tabs.styles.active-themes")
                             :detail theme-list}]))

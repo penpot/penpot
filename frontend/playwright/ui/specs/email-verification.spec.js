@@ -18,7 +18,7 @@ test.describe("Email verification", () => {
     await registerPage.setupEmailVerificationSuccess();
 
     await registerPage.goToVerifyToken();
-    await page.waitForURL("**/dashboard/**");
+    await page.waitForURL(/screen=dashboard/);
 
     // `default` is the body class applied for dark theme, `light` for
     // light theme (see app.util.theme/set-color-scheme).
@@ -33,9 +33,9 @@ test.describe("Email verification", () => {
     await registerPage.setupEmailVerificationSuccess();
 
     await registerPage.goToVerifyToken();
-    await page.waitForURL("**/dashboard/**");
+    await page.waitForURL(/screen=dashboard/);
 
-    await page.goto("/#/settings/options");
+    await page.goto("/?screen=settings-options");
 
     // The language select is the first combobox on the page, the theme
     // select is the second one.

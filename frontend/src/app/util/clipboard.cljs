@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.util.clipboard
   (:require
    ["./clipboard.js" :as impl]
    [app.common.transit :as t]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
@@ -21,6 +22,18 @@
 (def ^:private default-options
   #js {:decodeTransit t/decode-str
        :allowHTMLPaste false})
+
+(defn plain-text->html
+  "Build a minimal text/html clipboard payload from plain text.
+
+  Windows apps often prefer CF_HTML over CF_UNICODETEXT; writing only
+  text/plain from a contenteditable copy handler can leave them with the
+  editor surface's empty/`<br>` fallback (a lone newline)."
+  [text]
+  (let [escaped (-> (or text "")
+                    (dom/escape-html)
+                    (str/replace "\n" "<br>"))]
+    (str "<meta charset=\"utf-8\">" escaped)))
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"
@@ -202,3 +215,34 @@
 
       :else
       (unavailable-error))))
+
+(defn read-text
+  "Read the system clipboard as plain text. Always returns a Promise, rejecting
+   like `to-clipboard` when the asynchronous Clipboard API is not exposed."
+  []
+  (let [clipboard (get-clipboard)]
+    (if (and clipboard (unchecked-get clipboard "readText"))
+      (.readText ^js clipboard)
+      (unavailable-error))))
+
+(defn permission-error?
+  "True for the `NotAllowedError` DOMException raised when access is denied."
+  [cause]
+  (and (instance? js/DOMException cause)
+       (= (.-name cause) "NotAllowedError")))
+
+(defn unavailable-error?
+  "True when `navigator.clipboard` is undefined, e.g. on an insecure origin."
+  [cause]
+  (and (instance? js/Error cause)
+       (str/starts-with? (.-message cause) "Clipboard API is unavailable.")))
+
+(defn error-message
+  "Translated message for a clipboard failure, or nil for any other error."
+  [cause]
+  (cond
+    (permission-error? cause)
+    (tr "errors.clipboard-permission-denied")
+
+    (unavailable-error? cause)
+    (tr "errors.clipboard-api-unavailable")))

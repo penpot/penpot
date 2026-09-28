@@ -2,12 +2,13 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.viewer.login
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.logging :as log]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -102,12 +103,13 @@
             [:a {:on-click set-section
                  :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
-           [:div
-            [:span
-             (tr "auth.register") " "]
-            [:a {:on-click set-section
-                 :data-value "register"}
-             (tr "auth.register-submit")]]]]
+           (when (contains? cf/flags :registration)
+             [:div
+              [:span
+               (tr "auth.register") " "]
+              [:a {:on-click set-section
+                   :data-value "register"}
+               (tr "auth.register-submit")]])]]
 
          :register
          [:div {:class (stl/css :login-form)}

@@ -1,0 +1,14 @@
+---
+source: src/render/svg/tests.rs
+expression: svg
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="330" height="160" viewBox="0 0 330 160"><defs><filter id="fx0" filterUnits="userSpaceOnUse" x="0" y="0" width="330" height="160" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="bg"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="alpha"/><feOffset in="alpha" dx="0" dy="0" result="off"/><feGaussianBlur in="off" stdDeviation="0" result="blurred"/><feColorMatrix in="blurred" type="matrix" values="0 0 0 0 0.8980392 0 0 0 0 0.0627451 0 0 0 0 0.13725491 0 0 0 1 0" result="colored"/><feBlend mode="normal" in="colored" in2="bg" result="drop0"/></filter><clipPath id="imgclip1" clipPathUnits="userSpaceOnUse">
+	<rect transform="translate(40 40)" width="120" height="120"/>
+</clipPath><clipPath id="imgclip2" clipPathUnits="userSpaceOnUse">
+	<rect width="120" height="120"/>
+</clipPath></defs><g filter="url(#fx0)"><g clip-path="url(#imgclip1)"><image href="images/test-fill.svg" x="0" y="0" width="120" height="120" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 40 40)"/></g>
+	<rect fill="#3D7BFF" transform="translate(40 40)" x="170" width="120" height="120"/>
+</g><g clip-path="url(#imgclip2)"><image href="images/test-fill.svg" x="0" y="0" width="120" height="120" preserveAspectRatio="xMidYMid slice" transform="matrix(1 0 0 1 0 0)"/></g>
+	<rect fill="#3D7BFF" x="170" width="120" height="120"/>
+</svg>

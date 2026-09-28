@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.http-middleware-test
   (:require
@@ -139,7 +139,8 @@
     (t/is (= "https://trusted.example" (get headers "access-control-allow-origin")))
     (t/is (= "true" (get headers "access-control-allow-credentials")))
     (t/is (= "Origin" (get headers "vary")))
-    (t/is (= "content-type" (get headers "access-control-expose-headers")))
+    (t/is (= "content-type, retry-after, x-rate-limit-remaining, x-rate-limit-reset"
+             (get headers "access-control-expose-headers")))
     (t/is (not (str/includes?
                 (get headers "access-control-allow-headers" "")
                 "cookie")))))
@@ -215,6 +216,70 @@
     (t/is (= "penpot" (:aud claims)))
     (t/is (= (:id session) (:sid claims)))
     (t/is (= (:id profile) (:uid claims)))))
+
+(t/deftest session-token-contains-exp-claim
+  (let [cfg     th/*system*
+        manager (session/inmemory-manager)
+        profile (th/create-profile* 1)
+        session (->> (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+                     (#'session/assign-token cfg))
+        claims  (tokens/decode cfg (:token session))
+        exp     (:exp claims)]
+    (t/is (some? exp) "session token should contain :exp claim")
+    (t/is (ct/inst? exp) "exp should be an instant")))
+
+(t/deftest session-token-exp-based-on-created-at
+  (let [cfg              th/*system*
+        manager          (session/inmemory-manager)
+        profile          (th/create-profile* 1)
+        session          (->> (session/create-session manager {:profile-id (:id profile)
+                                                               :user-agent "user agent"})
+                              (#'session/assign-token cfg))
+        claims           (tokens/decode cfg (:token session))
+        expected-exp     (ct/plus (:created-at session) (ct/duration {:days 30}))]
+    (t/is (some? (:exp claims)) "session token should contain :exp claim")
+    (t/is (= (inst-ms (:exp claims))
+             (inst-ms expected-exp))
+          "exp should equal created-at + 30 days")))
+
+(t/deftest session-token-past-exp-is-rejected
+  (let [cfg     th/*system*
+        manager (session/inmemory-manager)
+        profile (th/create-profile* 1)
+        session (->> (session/create-session manager {:profile-id (:id profile)
+                                                      :user-agent "user agent"})
+                     (#'session/assign-token cfg))
+        claims  (tokens/decode cfg (:token session))
+        ;; Manually create a token with exp in the past
+        past-claims (assoc claims :exp (ct/minus (ct/now) (ct/duration {:days 1})))
+        header     {:kid 1 :ver 1}
+        past-token (tokens/generate cfg past-claims header)]
+    (t/is (nil? (session/decode-token cfg past-token))
+          "token with exp in the past should be rejected")))
+
+(t/deftest session-renewal-preserves-original-exp
+  (let [cfg      th/*system*
+        manager  (session/inmemory-manager)
+        profile  (th/create-profile* 1)
+        handler  (-> (fn [req] req)
+                     (#'session/wrap-authz  {::session/manager manager})
+                     (#'mw/wrap-auth {:bearer (partial session/decode-token cfg)
+                                      :cookie (partial session/decode-token cfg)}))
+        session  (->> (session/create-session manager {:profile-id (:id profile)
+                                                       :user-agent "user agent"})
+                      (#'session/assign-token cfg))
+        original-exp (:exp (tokens/decode cfg (:token session)))
+        ;; Force renewal by setting modified-at to 7 hours ago
+        old-session  (assoc session :modified-at (ct/minus (ct/now) (ct/duration {:hours 7})))
+        response    (handler (th/make-dummy-request {:cookies {"auth-token" (:token old-session)}}))
+        {:keys [token claims]} (get response ::http/auth-data)
+        new-exp     (:exp claims)]
+    (t/is (some? original-exp) "original token should have :exp")
+    (t/is (some? new-exp) "renewed token should have :exp")
+    (t/is (= (inst-ms original-exp)
+             (inst-ms new-exp))
+          "renewed token should preserve original :exp, not extend it")))
 
 (t/deftest parse-request-illegal-argument-exception
   ;; clojure.data.json raises IllegalArgumentException (case

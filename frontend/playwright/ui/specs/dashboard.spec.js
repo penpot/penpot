@@ -10,7 +10,7 @@ test("Dashboard page has title ", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.page).toHaveURL(/dashboard/);
+  await expect(dashboardPage.page).toHaveURL(/screen=dashboard/);
   await expect(dashboardPage.mainHeading).toBeVisible();
 });
 
@@ -168,7 +168,7 @@ test("Bug 10141, The team does not disappear from the team list after deletion",
   await dashboardPage.teamDropdown.click();
   await expect(page.getByText("Second Team")).toBeVisible();
   await page.getByText("Second Team").click();
-  await page.getByRole("button", { name: "team-management" }).click();
+  await page.getByTestId("team-options-button").click();
   await page.getByTestId("delete-team").click();
 
   await DashboardPage.mockRPC(

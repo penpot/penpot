@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.constants)
 
@@ -299,7 +299,21 @@
     :height 1152}
    {:name "YouTube thumb"
     :width 1280
-    :height 720}])
+    :height 720}
+
+   {:name "PENPOT"}
+   {:name "File thumbnail"
+    :width 300
+    :height 200}
+   {:name "Template cover"
+    :width 1390
+    :height 781}
+   {:name "Plugin icon"
+    :width 400
+    :height 400}
+   {:name "Plugin cover"
+    :width 1390
+    :height 724}])
 
 (def max-input-length 255)
 

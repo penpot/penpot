@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.tasks.delete-object
   "A generic task for object deletion cascade handling"
@@ -13,6 +13,7 @@
    [app.db.sql :as-alias sql]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as sto]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
@@ -149,7 +150,8 @@
 
 (defmethod ig/assert-key ::handler
   [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

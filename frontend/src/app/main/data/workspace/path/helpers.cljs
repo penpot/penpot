@@ -2,14 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.path.helpers
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.intersect :as gsi]
    [app.common.math :as mth]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]))
+
+(defn start-subpath
+  "Adds the subpath start a pending node draws its first segment from."
+  [shape position]
+  (update shape :content path/append-segment
+          {:command :move-to :params (select-keys position [:x :y])}))
 
 (defn append-node
   "Creates a new node in the path. Usually used when drawing."
@@ -25,8 +35,32 @@
     (gpt/to-vec common p1)
     (gpt/to-vec common p2))))
 
+(defn mirror-point
+  "Reflects `point` through `center`."
+  [center point]
+  (gpt/subtract (gpt/scale center 2) point))
+
+(defn opposite-handler-target
+  "Returns the opposite handler target for mirror or aligned modes."
+  [node handler opposite mode]
+  (if (and (some? node) (some? handler) (some? opposite))
+    (case mode
+      :mirror
+      (mirror-point node handler)
+
+      :aligned
+      (let [handler-vector (gpt/to-vec node handler)]
+        (if (mth/almost-zero? (gpt/length handler-vector))
+          opposite
+          (gpt/subtract node
+                        (gpt/scale (gpt/unit handler-vector)
+                                   (gpt/distance node opposite)))))
+
+      opposite)
+    opposite))
+
 (defn- calculate-opposite-delta [node handler opposite match-angle? match-distance? dx dy]
-  (when (and (some? handler) (some? opposite))
+  (if (and (some? handler) (some? opposite))
     (let [;; To match the angle, the angle should be matching (angle between points 180deg)
           angle-handlers (angle-points node handler opposite)
 
@@ -54,30 +88,625 @@
                          match-distance?
                          (gpt/scale-from node distance-scale))]
       [(- (:x new-opposite) (:x opposite))
-       (- (:y new-opposite) (:y opposite))])))
+       (- (:y new-opposite) (:y opposite))])
+    ;; Leave missing opposite handles unchanged.
+    [0 0]))
+
+(defn handlers-joined?
+  "True when a node's handlers are collinear and opposite."
+  [content index prefix]
+  (let [[op-idx op-prefix] (path/opposite-index content index prefix)
+        node     (path/handler->node content index prefix)
+        handler  (path/get-handler-point content index prefix)
+        opposite (when op-idx (path/get-handler-point content op-idx op-prefix))]
+    (boolean
+     (and (some? op-idx)
+          (some? handler)
+          (some? opposite)
+          (not= handler node)
+          (not= opposite node)
+          (<= (mth/abs (- 180 (angle-points node handler opposite))) 0.1)))))
 
 (defn move-handler-modifiers
-  [content index prefix match-distance? match-angle? dx dy]
+  ([content index prefix match-distance? match-angle? dx dy]
+   (move-handler-modifiers content index prefix match-distance? match-angle? false dx dy))
+  ([content index prefix match-distance? match-angle? rejoin? dx dy]
 
-  (let [[cx cy] (path.helpers/prefix->coords prefix)
+   (let [[cx cy] (path.helpers/prefix->coords prefix)
+         [op-idx op-prefix] (path/opposite-index content index prefix)
+
+         node (path/handler->node content index prefix)
+         handler (path/get-handler-point content index prefix)
+         opposite (path/get-handler-point content op-idx op-prefix)
+
+         [ocx ocy] (path.helpers/prefix->coords op-prefix)
+         [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
+
+         hnv (if (some? handler)
+               (gpt/to-vec node (-> handler (update :x + dx) (update :y + dy)))
+               (gpt/point dx dy))
+         mirrored-opposite (opposite-handler-target
+                            node (gpt/add node hnv) opposite :mirror)]
+
+     (-> {}
+         (update index assoc cx dx cy dy)
+
+         (cond->
+          ;; Force an exact mirror when rejoining handlers.
+          (and (some? op-idx) rejoin? (not= opposite node))
+           (update op-idx assoc
+                   ocx (- (:x mirrored-opposite) (:x opposite))
+                   ocy (- (:y mirrored-opposite) (:y opposite)))
+
+           (and (some? op-idx) (not rejoin?) (not= opposite node))
+           (update op-idx assoc ocx odx ocy ody)
+
+           (and (some? op-idx) (= opposite node) match-distance? match-angle?)
+           (update op-idx assoc
+                   ocx (- (:x mirrored-opposite) (:x opposite))
+                   ocy (- (:y mirrored-opposite) (:y opposite))))))))
+
+(defn align-handler-modifiers
+  "Moves a handler and aligns its opposite without changing its length."
+  [content index prefix dx dy]
+  (let [[cx cy]            (path.helpers/prefix->coords prefix)
         [op-idx op-prefix] (path/opposite-index content index prefix)
+        node               (path/handler->node content index prefix)
+        opposite           (when (some? op-idx)
+                             (path/get-handler-point content op-idx op-prefix))
+        handler            (path/get-handler-point content index prefix)
+        modifiers          (-> {} (update index assoc cx dx cy dy))]
+    (if (and (some? handler) (some? opposite) (not= opposite node))
+      (let [moved-handler (-> handler (update :x + dx) (update :y + dy))
+            handler-vector (gpt/to-vec node moved-handler)
+            target        (opposite-handler-target node moved-handler opposite :aligned)]
+        (if (mth/almost-zero? (gpt/length handler-vector))
+          modifiers
+          (let [[ocx ocy] (path.helpers/prefix->coords op-prefix)]
+            (update modifiers op-idx assoc
+                    ocx (- (:x target) (:x opposite))
+                    ocy (- (:y target) (:y opposite))))))
+      modifiers)))
 
-        node (path/handler->node content index prefix)
-        handler (path/get-handler-point content index prefix)
-        opposite (path/get-handler-point content op-idx op-prefix)
+;; --- Per-node handler type (mirror / aligned / independent)
 
-        [ocx ocy] (path.helpers/prefix->coords op-prefix)
-        [odx ody] (calculate-opposite-delta node handler opposite match-angle? match-distance? dx dy)
+(defn handler-node-index
+  "Returns the anchor command index for a handler."
+  [index prefix]
+  (if (= prefix :c1) (dec index) index))
 
-        hnv (if (some? handler)
-              (gpt/to-vec node (-> handler (update :x + dx) (update :y + dy)))
-              (gpt/point dx dy))]
+(defn- subpath-bounds
+  "Returns the move-to index and last drawing index of `index`'s subpath."
+  [content index]
+  (when-let [start (->> (range index -1 -1)
+                        (filter #(= :move-to (:command (nth content % nil))))
+                        (first))]
+    [start (->> (range (inc start) (count content))
+                (take-while #(not= :move-to (:command (nth content % nil))))
+                (remove #(= :close-path (:command (nth content % nil))))
+                (last))]))
 
-    (-> {}
-        (update index assoc cx dx cy dy)
+(defn- seam-twin-index
+  "Returns the other command standing on a closed subpath's start node.
 
-        (cond-> (and (some? op-idx) (not= opposite node))
-          (update op-idx assoc ocx odx ocy ody)
+  Such a subpath begins and ends at that node, so the selection holds
+  either its move-to or its last drawing command."
+  [content index]
+  (let [[start end] (subpath-bounds content index)]
+    (when (and (some? end)
+               (= (path.helpers/segment->point (nth content start nil))
+                  (path.helpers/segment->point (nth content end nil))))
+      (condp = index
+        start end
+        end   start
+        nil))))
 
-          (and (some? op-idx) (= opposite node) match-distance? match-angle?)
-          (update op-idx assoc ocx (- (:x hnv)) ocy (- (:y hnv)))))))
+(defn- command-primary-handler
+  "Returns the curve handler next to `index`, its incoming handle first."
+  [content index]
+  (let [n       (count content)
+        out-idx (inc index)]
+    (cond
+      (and (>= index 0) (< index n)
+           (= :curve-to (:command (nth content index nil))))
+      [index :c2]
+
+      (and (< out-idx n)
+           (= :curve-to (:command (nth content out-idx nil))))
+      [out-idx :c1]
+
+      :else nil)))
+
+(defn node-primary-handler
+  "Returns a curve handler for a node, preferring its incoming handle.
+
+  A closed subpath starts and ends at one node, so either of the two
+  commands standing there finds the handlers of both."
+  [content node-index]
+  (or (command-primary-handler content node-index)
+      (some->> (seam-twin-index content node-index)
+               (command-primary-handler content))))
+
+(defn node-handler-ids
+  "Returns a node's curve handlers, its primary handle first."
+  [content node-index]
+  (if-let [[index prefix :as primary] (node-primary-handler content node-index)]
+    (let [[op-idx op-prefix] (path/opposite-index content index prefix)]
+      (if (some? op-idx)
+        [primary [op-idx op-prefix]]
+        [primary]))
+    []))
+
+(defn handler-type-reference
+  "Returns the handler that keeps its geometry when a node's handler type changes.
+
+  The other handler adapts to it. Priority: the node's only selected handler,
+  then `edited-handler` when it is one of this node's two handlers, then its
+  primary handle. `edited-handler` is the last handler edited anywhere in the
+  path, so a node only gets this hint while it holds the latest edit."
+  [content selection edited-handler node-index]
+  (let [handler-ids (node-handler-ids content node-index)
+        selected    (filterv (get selection :handlers #{}) handler-ids)]
+    (cond
+      (= 1 (count selected))
+      (first selected)
+
+      (some #{edited-handler} handler-ids)
+      edited-handler
+
+      :else
+      (first handler-ids))))
+
+(defn handlers-equal-length?
+  "True when a node's two handlers are the same distance from the node."
+  [content index prefix]
+  (let [[op-idx op-prefix] (path/opposite-index content index prefix)
+        node     (path/handler->node content index prefix)
+        handler  (path/get-handler-point content index prefix)
+        opposite (when op-idx (path/get-handler-point content op-idx op-prefix))]
+    (boolean
+     (and (some? handler) (some? opposite)
+          (mth/almost-zero? (- (gpt/distance node handler)
+                               (gpt/distance node opposite)))))))
+
+(defn derive-handler-type
+  "Infers a node's handler type from its geometry."
+  [content node-index]
+  (if-let [[idx prefix] (node-primary-handler content node-index)]
+    (cond
+      (not (handlers-joined? content idx prefix)) :independent
+      (handlers-equal-length? content idx prefix) :mirror
+      :else                                       :aligned)
+    :independent))
+
+(defn- line-beside-node
+  "Returns the index of the line opposite a node's live handler, looking
+  across the seam of a closed subpath, or nil."
+  [plain node-index [_ prefix] node]
+  (let [line?    #(= :line-to (:command (nth plain % nil)))
+        near-idx (if (= prefix :c2) (inc node-index) node-index)]
+    (if (line? near-idx)
+      near-idx
+      (let [[start end] (subpath-bounds plain node-index)
+            seam-idx    (when (some? end)
+                          (if (= prefix :c2) (inc start) end))]
+        (when (and (some? seam-idx)
+                   (= node (path.helpers/segment->point (get plain start)))
+                   (= node (path.helpers/segment->point (get plain end)))
+                   (line? seam-idx))
+          seam-idx)))))
+
+(defn- curve-line
+  "Turns the line at `line-idx` into a curve with `target` as its handler at
+  `node`. The far handler stays on its node."
+  [plain line-idx node target]
+  (let [segment (get plain line-idx)
+        end     (path.helpers/segment->point segment)]
+    (if (= node end)
+      (let [start (path.helpers/segment->point (get plain (dec line-idx)))]
+        (update plain line-idx path.helpers/update-curve-to start target))
+      (update plain line-idx path.helpers/update-curve-to target end))))
+
+(defn add-missing-handler
+  "Gives a node with a single handler a mirrored opposite.
+
+  A collapsed handler is moved out; a line on the node's other side becomes
+  a curve. Other nodes are returned unchanged."
+  [content node-index]
+  (let [collapsed?    (fn [[idx prefix]]
+                        (= (path/get-handler-point content idx prefix)
+                           (path/handler->node content idx prefix)))
+        handler-ids   (node-handler-ids content node-index)
+        [live & more] (remove collapsed? handler-ids)]
+    (if (or (nil? live) (some? more))
+      content
+      (let [[idx prefix]       live
+            node               (path/handler->node content idx prefix)
+            handler            (path/get-handler-point content idx prefix)
+            target             (mirror-point node handler)
+            plain              (vec content)
+            [op-idx op-prefix] (first (filter collapsed? handler-ids))
+            line-idx           (when (nil? op-idx)
+                                 (line-beside-node plain node-index live node))]
+        (cond
+          (some? op-idx)
+          (let [[cx cy] (path.helpers/prefix->coords op-prefix)]
+            (path/content (update-in plain [op-idx :params] assoc
+                                     cx (:x target) cy (:y target))))
+
+          (some? line-idx)
+          (path/content (curve-line plain line-idx node target))
+
+          :else
+          content)))))
+
+(defn remap-handler-types
+  "Remaps handler types by node position after structural changes."
+  [handler-types old-content new-content]
+  (let [handler-types (or handler-types {})]
+    (if (= (count old-content) (count new-content))
+      handler-types
+      (let [types-by-position
+            (reduce-kv
+             (fn [result index type]
+               (let [segment (nth old-content index nil)]
+                 (if (or (nil? segment) (= :close-path (:command segment)))
+                   result
+                   (update result
+                           (path.helpers/segment->point segment)
+                           (fnil conj #{})
+                           type))))
+             {}
+             handler-types)]
+        (into {}
+              (keep (fn [[index segment]]
+                      (when-not (= :close-path (:command segment))
+                        (let [types (get types-by-position
+                                         (path.helpers/segment->point segment))]
+                          (when (= 1 (count types))
+                            [index (first types)])))))
+              (d/enumerate new-content))))))
+
+;; Nodes and segments use command indices. Handlers use `[index prefix]`.
+;; Selection and hover use grouped index sets:
+;;   {:nodes #{index} :segments #{index} :handlers #{[index prefix]}}
+
+(def empty-selection
+  {:nodes #{} :segments #{} :handlers #{}})
+
+(defn node?
+  "True when the command at the given content index is a selectable node."
+  [content index]
+  (and (number? index)
+       (<= 0 index)
+       (< index (count content))
+       (not= :close-path (:command (nth content index nil)))))
+
+(defn node-indices
+  "Indices of every selectable node in the content."
+  [content]
+  (into []
+        (comp (remove (fn [[_ seg]] (= :close-path (:command seg))))
+              (map first))
+        (d/enumerate content)))
+
+(defn node-position
+  "Position of the node at the given content command index."
+  [content index]
+  (path.helpers/segment->point (nth content index)))
+
+(defn- command-curve-node?
+  "True when a handler next to `index` stands away from its node."
+  [content index]
+  (let [node           (node-position content index)
+        incoming       (when (= :curve-to (:command (nth content index nil)))
+                         (path/get-handler-point content index :c2))
+        outgoing-index (inc index)
+        outgoing       (when (= :curve-to (:command (nth content outgoing-index nil)))
+                         (path/get-handler-point content outgoing-index :c1))]
+    (boolean (some #(and (some? %) (not= node %)) [incoming outgoing]))))
+
+(defn curve-node?
+  "True when the node at `index` has a visible curve handler.
+
+  A closed subpath starts and ends at one node, so either of the two
+  commands standing there sees the handlers of both."
+  [content index]
+  (when (node? content index)
+    (or (command-curve-node? content index)
+        (boolean (some->> (seam-twin-index content index)
+                          (command-curve-node? content))))))
+
+(defn node-positions
+  "Set of positions for the given node indices in the content."
+  [content indices]
+  (let [indices (set indices)]
+    (into #{}
+          (comp (filter (fn [[index _]] (contains? indices index)))
+                (map (fn [[_ seg]] (path.helpers/segment->point seg))))
+          (d/enumerate content))))
+
+(defn nodes-in-rect
+  "Indices of the nodes whose position falls inside the given rect."
+  [content rect]
+  (into #{}
+        (comp (remove (fn [[_ seg]] (= :close-path (:command seg))))
+              (filter (fn [[_ seg]] (gsh/has-point-rect? rect (path.helpers/segment->point seg))))
+              (map first))
+        (d/enumerate content)))
+
+(def segment-entries
+  "Returns selectable path segments."
+  path/segment-entries)
+
+(defn segment-node-indices
+  "Unique endpoint-node indices for the selected segment command indices."
+  [content segment-indices]
+  (let [segment-indices (set segment-indices)]
+    (into #{}
+          (comp (filter #(contains? segment-indices (:index %)))
+                (mapcat (juxt :from-index :to-index))
+                (remove nil?))
+          (segment-entries content))))
+
+(defn coincident-node-indices
+  "Adds to `indices` every other command sharing one of their positions.
+
+  Commands at the same position are one node: they move together, so an
+  action cannot depend on which of them the selection holds."
+  [content indices]
+  (let [indices (into #{} (filter #(node? content %)) indices)]
+    (into indices
+          (mapcat #(path/point-indices content %))
+          (node-positions content indices))))
+
+(defn selected-node-count
+  "Number of nodes in the selection, counting coincident commands as one."
+  [content selection]
+  (count (node-positions content (get selection :nodes #{}))))
+
+(defn check-enabled
+  "Returns path actions enabled for selected node indices."
+  [content selected-nodes]
+  (when content
+    (let [selected-nodes    (coincident-node-indices content selected-nodes)
+          selected-segments (filter (fn [{:keys [from-index to-index]}]
+                                      (and (contains? selected-nodes from-index)
+                                           (contains? selected-nodes to-index)))
+                                    (segment-entries content))
+          num-segments      (count selected-segments)
+          num-nodes         (count (node-positions content selected-nodes))
+          nodes-selected?   (seq selected-nodes)
+          segments-selected? (seq selected-segments)
+          max-segments      (/ (* num-nodes (dec num-nodes)) 2)
+          curves-selected?  (some #(curve-node? content %) selected-nodes)
+          corners-selected? (some #(not (curve-node? content %)) selected-nodes)]
+      {:make-corner (and nodes-selected? curves-selected?)
+       :make-curve (and nodes-selected? corners-selected?)
+       :merge-nodes (and nodes-selected? (>= num-nodes 2))
+       :join-nodes (and nodes-selected? (>= num-nodes 2) (< num-segments max-segments))
+       :separate-nodes (or segments-selected? (= num-nodes 1))})))
+
+(defn selected-node-indices
+  "Returns selected nodes plus endpoints of selected segments."
+  [content selection]
+  (into (get selection :nodes #{})
+        (segment-node-indices content (get selection :segments #{}))))
+
+(defn selection-coordinate-rect
+  "Returns the bounds of selected segments, nodes, and handlers."
+  [content selection]
+  (let [segments    (get selection :segments #{})
+        node-indices (selected-node-indices content selection)
+        handlers    (get selection :handlers #{})
+        segment-rect (when (seq segments)
+                       (path/calc-selrect
+                        (path/extract-content content {:segments segments})))
+        point-rect   (grc/points->rect
+                      (into (node-positions content node-indices)
+                            (keep (fn [[index prefix]]
+                                    (path/get-handler-point content index prefix)))
+                            handlers))]
+    (grc/join-rects (keep identity [segment-rect point-rect]))))
+
+(defn handler-target-nodes
+  "Returns nodes targeted by the current node and handler selection."
+  [content selection]
+  (into (selected-node-indices content selection)
+        (map (fn [[idx prefix]] (handler-node-index idx prefix)))
+        (get selection :handlers #{})))
+
+(defn handler-selection-state
+  "Returns targeted curve nodes and their shared handler mode."
+  [content handler-types target-nodes]
+  (let [curve-nodes (into #{} (filter #(curve-node? content %)) target-nodes)
+        modes       (into #{}
+                          (map (fn [index]
+                                 (or (get handler-types index)
+                                     (derive-handler-type content index))))
+                          curve-nodes)]
+    {:nodes curve-nodes
+     :active-type (cond
+                    (empty? modes) nil
+                    (= 1 (count modes)) (first modes)
+                    :else :mixed)}))
+
+(defn handler-trigger-action
+  "Returns the handler menu action for the active mode."
+  [active-type]
+  (if (= active-type :mixed) :open :select))
+
+(def segment-insert-threshold
+  "Maximum screen distance for midpoint insertion."
+  12)
+
+(defn segment-mid-point
+  "Returns a segment's arc-length midpoint with split metadata."
+  [{:keys [from to segment] :as entry}]
+  (let [curve (path.helpers/entry->bezier entry)
+        t     (if (= :line-to (:command segment))
+                0.5
+                (path.helpers/curve-arc-length-t curve))]
+    (with-meta (path.helpers/curve-values curve t)
+      {:from-p from :to-p to :t t})))
+
+(defn insertion-mid-points
+  "Precomputes segment midpoint insertion candidates."
+  [content]
+  (into []
+        (comp (remove #(= :close-path (:command (:segment %))))
+              (map segment-mid-point))
+        (segment-entries content)))
+
+(defn- closest-insertion-mid-point
+  [mid-points position threshold]
+  (some->> mid-points
+           (reduce
+            (fn [closest mid-point]
+              (let [distance (gpt/distance position mid-point)]
+                (if (and (<= distance threshold)
+                         (or (nil? closest)
+                             (< distance (first closest))))
+                  [distance mid-point]
+                  closest)))
+            nil)
+           second))
+
+(defn insertion-point
+  "Returns the on-path point a nearby click would insert, with split metadata."
+  ([content position threshold anywhere?]
+   (insertion-point content position threshold anywhere? nil))
+  ([content position threshold anywhere? mid-points]
+   (if anywhere?
+     (let [point (path/closest-point content position 0.01)]
+       (when (and (some? point) (<= (gpt/distance position point) threshold))
+         point))
+     (closest-insertion-mid-point
+      (or mid-points (insertion-mid-points content)) position threshold))))
+
+(defn- segment-lines
+  [{:keys [from to segment]}]
+  (if (= :curve-to (:command segment))
+    (path.helpers/curve->lines from
+                               to
+                               (path/get-handler segment :c1)
+                               (path/get-handler segment :c2))
+    [[from to]]))
+
+(defn segments-in-rect
+  "Returns segments that cross or fall inside `rect`."
+  [content rect]
+  (let [rect-lines (gsi/points->lines (grc/rect->points rect))]
+    (into #{}
+          (comp
+           (filter
+            (fn [entry]
+              (let [lines (segment-lines entry)]
+                (or (some (fn [[from to]]
+                            (or (grc/contains-point? rect from)
+                                (grc/contains-point? rect to)))
+                          lines)
+                    (gsi/intersects-lines? rect-lines lines)))))
+           (map :index))
+          (segment-entries content))))
+
+(defn handler-entries
+  "Visible path handlers as `{:identity [index prefix] :point p}` entries."
+  [content]
+  (into []
+        (comp
+         (mapcat
+          (fn [[index segment]]
+            (when (= :curve-to (:command segment))
+              (keep
+               (fn [prefix]
+                 (let [handler (path/get-handler-point content index prefix)
+                       node    (path/handler->node content index prefix)]
+                   (when (and handler (not= handler node))
+                     {:identity [index prefix]
+                      :point handler})))
+               [:c1 :c2])))))
+        (d/enumerate content)))
+
+(defn handlers-in-rect
+  "Identities of visible path handlers whose control point is inside `rect`."
+  [content rect]
+  (into #{}
+        (comp (filter #(grc/contains-point? rect (:point %)))
+              (map :identity))
+        (handler-entries content)))
+
+(defn remap-selected-nodes
+  "Remaps selected nodes by position after structural changes."
+  [selected-nodes old-content new-content]
+  (if (empty? selected-nodes)
+    selected-nodes
+    (let [positions (node-positions old-content selected-nodes)]
+      (into #{}
+            (comp (remove (fn [[_ seg]] (= :close-path (:command seg))))
+                  (filter (fn [[_ seg]] (contains? positions (path.helpers/segment->point seg))))
+                  (map first))
+            (d/enumerate new-content)))))
+
+(defn- fragment-covered-nodes
+  "Returns nodes already included in a duplicated segment fragment."
+  [content {:keys [nodes segments]}]
+  (let [nodes    (or nodes #{})
+        segments (or segments #{})]
+    (into #{}
+          (comp (filter (fn [{:keys [index from-index to-index]}]
+                          (or (contains? segments index)
+                              (and (contains? nodes from-index)
+                                   (contains? nodes to-index)))))
+                (mapcat (juxt :from-index :to-index)))
+          (segment-entries content))))
+
+(defn duplicate-selection-content
+  "Duplicates selected nodes and segments for splicing as new subpaths."
+  [content selection offset]
+  (let [fragment (path/extract-content content selection)
+        fragment (cond-> fragment
+                   (and (seq fragment) (some? offset))
+                   (path/move-content offset))
+        fragment (vec fragment)
+        covered  (fragment-covered-nodes content selection)
+        free     (sort (remove covered (get selection :nodes #{})))]
+    (reduce (fn [{:keys [sub selected]} node-index]
+              (if-let [{ext :content ext-selected :selected}
+                       (path/duplicate-node-content content node-index offset)]
+                (let [start (count sub)]
+                  {:sub      (into sub ext)
+                   :selected (into selected (map #(+ start %)) ext-selected)})
+                {:sub sub :selected selected}))
+            {:sub fragment :selected (set (node-indices fragment))}
+            free)))
+
+(defn remap-selection
+  "Remaps a grouped selection after path content changes."
+  [selection old-content new-content]
+  (let [selection (or selection empty-selection)]
+    (if (= (count old-content) (count new-content))
+      (-> selection
+          ;; Drop indices that stopped being nodes.
+          (update :nodes
+                  (fn [nodes]
+                    (into #{}
+                          (filter #(node? new-content %))
+                          nodes)))
+          (update :handlers
+                  (fn [handlers]
+                    (into #{}
+                          (filter (fn [[index _]]
+                                    (= :curve-to (:command (nth new-content index nil)))))
+                          handlers)))
+          ;; Drop indices that became subpath breaks.
+          (update :segments
+                  (fn [segments]
+                    (into #{}
+                          (remove (fn [index]
+                                    (= :move-to (:command (nth new-content index nil)))))
+                          segments))))
+      (assoc empty-selection
+             :nodes (remap-selected-nodes (get selection :nodes #{})
+                                          old-content
+                                          new-content)))))

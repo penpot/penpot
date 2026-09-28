@@ -38,7 +38,7 @@ x-body-size: &penpot-http-body-size
 ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
 ## (eg http sessions, or invitations) are derived.
 ##
-## We recommend to use a trully randomly generated
+## We recommend to use a truly randomly generated
 ## 512 bits base64 encoded string here. You can generate one with:
 ##
 ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
@@ -58,6 +58,7 @@ networks:
 volumes:
   penpot_postgres_v15:
   penpot_assets:
+  # penpot_mailpit_data:
   # penpot_traefik:
 
 services:
@@ -139,6 +140,9 @@ services:
     networks:
       - penpot
 
+    ## Configuration environment variables for the backend container.
+
+
     environment:
       << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
 
@@ -169,13 +173,13 @@ services:
       PENPOT_TELEMETRY_ENABLED: "true"
       PENPOT_TELEMETRY_REFERER: compose
 
-      ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
+      ## Example SMTP/Email configuration. By default, emails are sent to the Mailpit
       ## service, but for production usage it is recommended to setup a real SMTP
       ## provider. Emails are used to confirm user registrations & invitations. Look below
-      ## how the mailcatch service is configured.
+      ## how the Mailpit service is configured.
       PENPOT_SMTP_DEFAULT_FROM: no-reply@example.com
       PENPOT_SMTP_DEFAULT_REPLY_TO: no-reply@example.com
-      PENPOT_SMTP_HOST: penpot-mailcatch
+      PENPOT_SMTP_HOST: penpot-mailpit
       PENPOT_SMTP_PORT: 1025
       PENPOT_SMTP_USERNAME:
       PENPOT_SMTP_PASSWORD:
@@ -224,8 +228,18 @@ services:
       # communicate with the frontend.
       PENPOT_INTERNAL_URI: http://penpot-frontend:8080
 
-      ## Valkey (or previously Redis) is used for the websockets notifications.
+      ## Valkey (or previously Redis) is used for the websockets notifications
+      ## and for storing the state export jobs
       PENPOT_REDIS_URI: redis://penpot-valkey/0
+
+      # PENPOT_EXPORTER_MAX_CONCURRENT_JOBS: 4
+      # PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE: 2
+      # PENPOT_EXPORTER_QUEUE_MAX: 64
+      # PENPOT_EXPORTER_JOB_TTL: 3600
+      # PENPOT_WASM_WORKER_POOL_MAX: 2
+      # PENPOT_WASM_WORKER_POOL_MIN: 1
+      # PENPOT_WASM_WORKER_IDLE_TIMEOUT: 300
+      # PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE: 134217728
 
   penpot-postgres:
     image: "postgres:15"
@@ -270,16 +284,22 @@ services:
       # although this should not be necessary.
       - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
 
-  ## A mailcatch service, used as temporal SMTP server. You can access via HTTP to the
-  ## port 1080 for read all emails the penpot platform has sent. Should be only used as a
-  ## temporal solution while no real SMTP provider is configured.
+  ## A Mailpit service, used as temporal SMTP server. You can access via HTTP to the
+  ## port 8025 to read all emails the penpot platform has sent. Should be only used as a
+  ## temporal solution while no real SMTP provider is configured. Messages are kept in
+  ## memory only and are lost when the container is recreated; uncomment the volume
+  ## below (and the one in the top-level volumes: section) to persist them instead.
 
-  penpot-mailcatch:
-    image: sj26/mailcatcher:latest
+  penpot-mailpit:
+    image: axllent/mailpit:v1
     restart: always
+    # volumes:
+    #   - penpot_mailpit_data:/data
+    # environment:
+    #   - MP_DATABASE=/data/mailpit.db
     expose:
       - '1025'
     ports:
-      - "1080:1080"
+      - "8025:8025"
     networks:
       - penpot

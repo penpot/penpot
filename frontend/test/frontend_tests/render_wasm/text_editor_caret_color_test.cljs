@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.render-wasm.text-editor-caret-color-test
   "Unit tests for the text-editor caret color resolution.
@@ -11,7 +11,7 @@
    anything else (no fill, gradient, image fills, mixed selection) it falls back
    to an inverted caret (white painted with a Difference blend)."
   (:require
-   [app.render-wasm.serializers.color :as sr-clr]
+   [app.common.render-wasm.serializers.color :as sr-clr]
    [app.render-wasm.text-editor :as text-editor]
    [cljs.test :as t :include-macros true]))
 

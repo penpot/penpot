@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.teams-invitations
   (:require
@@ -70,11 +70,32 @@
                 [sql:check-recent-invitation team-id email])]
     (some? (db/exec-one! conn query))))
 
+(defn active-invitation
+  ([cfg claims]
+   (active-invitation cfg claims {}))
+  ([cfg {:keys [team-id organization-id member-email]} opts]
+   (let [email      (profile/clean-email member-email)
+         invitation (cond
+                      organization-id (db/get* cfg :team-invitation
+                                               {:email-to email
+                                                :org-id organization-id}
+                                               opts)
+                      team-id (db/get* cfg :team-invitation
+                                       {:email-to email
+                                        :team-id team-id}
+                                       opts))]
+     (when (and invitation
+                (ct/is-after? (:valid-until invitation) (ct/now)))
+       invitation))))
+
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until organization-id organization-name team-id member-id member-email role]}]
   (tokens/generate cfg
                    {:iss :team-invitation
                     :exp valid-until
+                    ;; NOTE: :profile-id is the inviter (the `created-by` of
+                    ;; the invitation row). Callers must pass the row value
+                    ;; so the token stays consistent with the database.
                     :profile-id profile-id
                     :role role
                     :team-id team-id
@@ -218,7 +239,7 @@
               updated?        (not= id (:id invitation))
               profile-id      (:id profile)
               team-organization-id (get-in team [:organization :id])
-              tprops          {:profile-id profile-id
+              tprops          {:profile-id (or (:created-by invitation) profile-id)
                                :invitation-id (:id invitation)
                                :valid-until expire
                                :team-id (:id team)
@@ -535,15 +556,15 @@
 ;; --- Mutation: Create Team & Invite Members
 
 (def ^:private schema:create-team-with-invitations
-  [:map {:title "create-team-with-invitations"}
+  [:map {:title "create-team-with-invitations" :closed true}
    [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
-   [:id {:optional true} ::sm/user-provided-uuid]
    [:emails [::sm/set ::sm/email]]
    [:role types.team/schema:role]])
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
+   ::doc/changes [["2.19" "The optional :id param is rejected with a params-validation error; the server always generates the identifier"]]
    ::doc/module :teams
    ::sm/params schema:create-team-with-invitations
    ::db/transaction true}
@@ -611,7 +632,11 @@
 
         member (profile/get-profile-by-email pool (:email-to invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
-                                             :profile-id profile-id
+                                             ;; The inviter is the creator of
+                                             ;; the invitation row, not the
+                                             ;; profile requesting the token.
+                                             :profile-id (or (:created-by invit)
+                                                             profile-id)
                                              :valid-until (:valid-until invit)
                                              :role (:role invit)
                                              :member-id (:id member)

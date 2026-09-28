@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.metrics
   (:refer-clojure :exclude [run!])
@@ -58,11 +58,17 @@
 
 (def ^:private schema:definitions
   [:map-of :keyword
-   [:map {:title "definition"}
+   [:map {:title "definition" :closed true}
     [::mdef/name :string]
     [::mdef/help :string]
     [::mdef/type [:enum :gauge :counter :summary :histogram]]
     [::mdef/labels {:optional true} [::sm/vec :string]]
+    [::mdef/quantiles {:optional true} [::sm/vec [:tuple :double :double]]]
+    [::mdef/max-age {:optional true} :int]
+    ;; NB: in :summary, buckets are the age buckets; in :histogram,
+    ;; the observation buckets.
+    [::mdef/buckets {:optional true} [::sm/vec [:or :int :double]]]
+    [::mdef/reg {:optional true} ::registry]
     [::mdef/instance {:optional true} ::collector]]])
 
 (defn metrics?
@@ -131,15 +137,51 @@
 (def default-histogram-buckets
   [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500])
 
+(defn label
+  "Coerce a metric label value to string, falling back when absent."
+  [value fallback]
+  (cond
+    (string? value)  value
+    (keyword? value) (name value)
+    (number? value)  (str value)
+    :else            fallback))
+
 (defmulti run-collector! (fn [mdef _] (::mdef/type mdef)))
 (defmulti create-collector ::mdef/type)
 
+(defonce ^:private warned-hints (atom #{}))
+
+(defn- report-safe-failure!
+  [hint cause]
+  (if (contains? @warned-hints hint)
+    (l/dbg :hint hint :cause cause)
+    (do
+      (swap! warned-hints conj hint)
+      (l/wrn :hint hint :cause cause))))
+
 (defn run!
+  "Record a metric.
+
+  Recording never throws: a metrics bug must not change the behavior of
+  the operation being measured. The first failure per metric id logs at
+  warn level and later ones at debug, so a broken setup surfaces once
+  without flooding the log on every request.
+
+  The `instance` precondition is a plain assert: it holds because every
+  component is wired with metrics (`::mtx/metrics` is required by the
+  component schemas). The collector lookup stays outside the recording
+  guard, so a missing instance also fails hard when asserts are
+  disabled."
   [instance & {:keys [id] :as params}]
   (assert (metrics? instance) "expected valid metrics instance")
+
   (when-let [mobj (get-collector instance id)]
-    (run-collector! mobj params)
-    true))
+    (try
+      (run-collector! mobj params)
+      true
+      (catch Throwable cause
+        (report-safe-failure! (str "unable to record metric " (pr-str id)) cause)
+        nil))))
 
 (defn- create-registry
   []

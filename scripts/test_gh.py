@@ -49,82 +49,41 @@ class LinkIssueTests(unittest.TestCase):
                 "issue": {"id": "issue-id", "number": 11235}
             }
         }
-        self.verification_response = {
-            "repository": {
-                "issue": {
-                    "number": 11235,
-                    "state": "OPEN",
-                    "closedByPullRequestsReferences": {
-                        "nodes": [
-                            {
-                                "number": 11243,
-                                "state": "MERGED",
-                                "url": "https://github.com/penpot/penpot/pull/11243",
-                            }
-                        ]
-                    },
-                },
-                "pullRequest": {
-                    "number": 11243,
-                    "state": "MERGED",
-                    "closingIssuesReferences": {
-                        "nodes": [
-                            {
-                                "number": 11235,
-                                "state": "OPEN",
-                                "url": "https://github.com/penpot/penpot/issues/11235",
-                            }
-                        ]
-                    },
-                },
-            }
-        }
 
     @patch.object(gh, "run_gh_graphql")
-    def test_link_issue_to_pr_adds_and_verifies_reference(self, run_graphql):
+    def test_link_issue_to_pr_adds_reference(self, run_graphql):
         run_graphql.side_effect = [
             self.target_response,
             self.mutation_response,
-            self.verification_response,
         ]
 
         result = gh.link_issue_to_pr(11235, 11243)
 
         self.assertTrue(result["linked"])
-        self.assertEqual(
-            result["issue"]["linked_pull_requests"][0]["number"],
-            11243,
-        )
-        self.assertEqual(
-            result["pull_request"]["linked_issues"][0]["number"],
-            11235,
-        )
-        self.assertEqual(run_graphql.call_count, 3)
+        self.assertEqual(result["issue"]["number"], 11235)
+        self.assertEqual(result["pull_request"]["number"], 11243)
+        self.assertEqual(run_graphql.call_count, 2)
         self.assertEqual(
             run_graphql.call_args_list[1].args[1],
             {"issueId": "issue-id", "pullRequestIds": ["pr-id"]},
         )
 
     @patch.object(gh, "run_gh_graphql")
-    def test_link_issue_to_pr_fails_when_verification_is_missing(self, run_graphql):
-        self.verification_response["repository"]["issue"][
-            "closedByPullRequestsReferences"
-        ]["nodes"] = []
+    def test_link_issue_to_pr_fails_when_mutation_did_not_link(self, run_graphql):
         run_graphql.side_effect = [
             self.target_response,
-            self.mutation_response,
-            self.verification_response,
+            {"addCloseIssueReferences": {"issue": {"id": "issue-id", "number": 999}}},
         ]
 
-        with self.assertRaisesRegex(RuntimeError, "are not linked"):
+        with self.assertRaisesRegex(RuntimeError, "did not link issue #11235"):
             gh.link_issue_to_pr(11235, 11243)
 
     @patch.object(gh, "link_issue_to_pr")
-    def test_cmd_link_issue_outputs_verified_result(self, link_issue):
+    def test_cmd_link_issue_outputs_result(self, link_issue):
         expected = {
             "linked": True,
-            "issue": {"number": 11235, "state": "OPEN"},
-            "pull_request": {"number": 11243, "state": "MERGED"},
+            "issue": {"number": 11235},
+            "pull_request": {"number": 11243},
         }
         link_issue.return_value = expected
         args = types.SimpleNamespace(issue_number=11235, pr_number=11243)
@@ -135,11 +94,11 @@ class LinkIssueTests(unittest.TestCase):
             gh.cmd_link_issue(args)
 
         self.assertEqual(json.loads(stdout.getvalue()), expected)
-        self.assertIn("Verified issue #11235", stderr.getvalue())
+        self.assertIn("Linked issue #11235", stderr.getvalue())
         link_issue.assert_called_once_with(11235, 11243)
 
     @patch.object(gh, "link_issue_to_pr", side_effect=RuntimeError("link missing"))
-    def test_cmd_link_issue_fails_when_verification_is_missing(self, _link_issue):
+    def test_cmd_link_issue_exits_on_error(self, _link_issue):
         args = types.SimpleNamespace(issue_number=11235, pr_number=11243)
         stderr = io.StringIO()
 

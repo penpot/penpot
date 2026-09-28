@@ -206,26 +206,83 @@ describe('Library', () => {
       const typo = ctx.penpot.library.local.createTypography();
       expect(typeof typo.fontFamily).toBe('string');
 
-      typo.fontFamily = 'Arial';
-      typo.fontId = 'gfont-arial';
-      expect(typo.fontFamily).toBe('Arial');
-      expect(typo.fontId).toBe('gfont-arial');
+      const font = ctx.penpot.fonts.all[0];
+      typo.fontFamily = font.fontFamily;
+      typo.fontId = font.fontId;
+      expect(typo.fontFamily).toBe(font.fontFamily);
+      expect(typo.fontId).toBe(font.fontId);
     });
 
     test('typography style members round-trip', (ctx) => {
       const typo = ctx.penpot.library.local.createTypography();
-      typo.fontStyle = 'italic';
+      const font =
+        ctx.penpot.fonts.all.find((item) =>
+          item.variants.some((variant) => variant.fontStyle === 'italic'),
+        ) ?? ctx.penpot.fonts.all[0];
+      typo.setFont(font);
+      const italic = font.variants.find(
+        (variant) => variant.fontStyle === 'italic',
+      );
+      if (italic) {
+        typo.fontStyle = italic.fontStyle;
+        expect(typo.fontStyle).toBe(italic.fontStyle);
+        expect(typo.fontVariantId).toBe(italic.fontVariantId);
+        expect(typo.fontWeight).toBe(italic.fontWeight);
+      }
       typo.textTransform = 'uppercase';
-      typo.fontWeight = '700';
-      typo.fontVariantId = 'regular';
+      const variant = font.variants[font.variants.length - 1];
+      typo.fontWeight = variant.fontWeight;
+      typo.fontVariantId = variant.fontVariantId;
       typo.lineHeight = '1.5';
       typo.letterSpacing = '1';
-      expect(typo.fontStyle).toBe('italic');
       expect(typo.textTransform).toBe('uppercase');
-      expect(typo.fontWeight).toBe('700');
-      expect(typo.fontVariantId).toBe('regular');
-      expect(typeof typo.lineHeight).toBe('string');
+      expect(typo.fontWeight).toBe(variant.fontWeight);
+      expect(typo.fontStyle).toBe(variant.fontStyle);
+      expect(typo.fontVariantId).toBe(variant.fontVariantId);
+      expect(typo.lineHeight).toBe('1.5');
       expect(typeof typo.letterSpacing).toBe('string');
+    });
+
+    test('typography text values use text validation', (ctx) => {
+      const typo = ctx.penpot.library.local.createTypography();
+      expect(() => {
+        typo.fontSize = '2';
+      }).toThrow();
+      expect(() => {
+        typo.fontSize = '12px';
+      }).toThrow();
+      expect(() => {
+        typo.lineHeight = '201';
+      }).toThrow();
+      expect(() => {
+        typo.lineHeight = '12px';
+      }).toThrow();
+      expect(() => {
+        typo.letterSpacing = '12px';
+      }).toThrow();
+      expect(() => {
+        typo.textTransform = 'not-a-transform' as unknown as 'uppercase';
+      }).toThrow();
+    });
+
+    test('typography font fields require installed fonts and variants', (ctx) => {
+      const typo = ctx.penpot.library.local.createTypography();
+      expect(() => {
+        typo.fontId = 'missing-font';
+      }).toThrow();
+      expect(() => {
+        typo.fontFamily = 'Missing Font Family';
+      }).toThrow();
+      expect(() => {
+        typo.fontVariantId = 'missing-variant';
+      }).toThrow();
+
+      const fonts = ctx.penpot.fonts.all;
+      const first = fonts[0];
+      const second = fonts.find((font) => font.fontId !== first.fontId);
+      if (second) {
+        expect(() => typo.setFont(first, second.variants[0])).toThrow();
+      }
     });
 
     test('typography setFont updates the font', (ctx) => {

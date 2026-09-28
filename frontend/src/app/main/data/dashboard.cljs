@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.dashboard
   (:require
@@ -198,8 +198,7 @@
     (update [_ state]
       (-> state
           (dissoc :selected-files)
-          (dissoc :selected-project)
-          (update :dashboard-local dissoc :menu-open :menu-pos)))))
+          (dissoc :selected-project)))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
@@ -213,36 +212,6 @@
               (update :selected-files #(if (contains? % id) (disj % id) (conj % id)))
               (assoc :selected-project project-id))
           state)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Show grid menu
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn show-file-menu-with-position
-  [file-id pos]
-  (ptk/reify ::show-file-menu-with-position
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local assoc
-              :menu-open true
-              :menu-pos pos
-              :file-id file-id))))
-
-(defn show-file-menu
-  []
-  (ptk/reify ::show-file-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open true))))
-
-(defn hide-file-menu
-  []
-  (ptk/reify ::hide-file-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open false))))
 
 (defn start-edit-file-name
   [file-id]
@@ -686,6 +655,11 @@
              (modal/hide)))))
 
 (defn- handle-user-organization-change
+  "Handle :user-organization-change websocket messages.
+  `organization-id`, `organization-name` and `notification` come from the
+  server-published message (see backend app.rpc.notifications/
+  notify-user-organization-change); `notification` is a translation key
+  resolved here, dynamic by design."
   [{:keys [organization-id organization-name notification]}]
   (ptk/reify ::handle-user-organization-change
     ptk/WatchEvent
@@ -693,6 +667,10 @@
       (when (and notification (contains? cf/flags :admin-console))
         (let [team-id (:current-team-id state)
               team    (dm/get-in state [:teams team-id])]
+          ;; Execution time translation strings (keys sent by the backend):
+          ;;   (tr "dashboard.user-no-longer-belong-organization")
+          ;; notification is a server-provided key, dynamic by design
+          #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
           (rx/of (ntf/show {:content (tr notification organization-name)
                             :type :toast
                             :level :info

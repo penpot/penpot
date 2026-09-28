@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require-macros [app.main.style :as stl])
@@ -620,8 +620,8 @@
            :options size-options
            :type "number"
            :placeholder (tr "settings.multiple")
-           :min 3
-           :max 1000
+           :min txt/font-size-min
+           :max txt/font-size-max
            :on-change on-font-size-change
            :on-blur on-blur}])]
 
@@ -669,8 +669,8 @@
               :alt (tr "workspace.options.text-options.line-height")}
        deprecated-icon/text-lineheight]
       [:> deprecated-input/numeric-input*
-       {:min -200
-        :max 200
+       {:min txt/spacing-min
+        :max txt/spacing-max
         :step 0.1
         :default-value "1.2"
         :class (stl/css :line-height-input)
@@ -688,8 +688,8 @@
         :alt (tr "workspace.options.text-options.letter-spacing")}
        deprecated-icon/text-letterspacing]
       [:> deprecated-input/numeric-input*
-       {:min -200
-        :max 200
+       {:min txt/spacing-min
+        :max txt/spacing-max
         :step 0.1
         :default-value "0"
         :class (stl/css :letter-spacing-input)

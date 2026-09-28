@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-nitrate-test
   (:require
@@ -584,6 +584,8 @@
                   :teams-to-transfer 0
                   :teams-to-exit 0
                   :teams-to-detach 0
+                  :team-ids-to-delete []
+                  :transferable-teams []
                   :member-added-at (ct/inst "2026-07-17T12:00:00Z")
                   :organization-member-count-before 2}
                  (:result out)))))))
@@ -618,9 +620,49 @@
                   :teams-to-transfer 0
                   :teams-to-exit 0
                   :teams-to-detach 1
+                  :team-ids-to-delete [(:id extra-team)]
+                  :transferable-teams []
                   :member-added-at (ct/inst "2026-07-17T12:00:00Z")
                   :organization-member-count-before 2}
                  (:result out)))))))
+
+(t/deftest get-leave-organization-summary-lists-transferable-teams-with-members
+  (let [profile-owner  (th/create-profile* 1 {:is-active true})
+        profile-user   (th/create-profile* 2 {:is-active true})
+        ;; profile-user owns both; only pair-team has another member
+        solo-team      (th/create-team* 1 {:profile-id (:id profile-user)})
+        pair-team      (th/create-team* 2 {:profile-id (:id profile-user)})
+        _              (th/create-team-role* {:team-id    (:id pair-team)
+                                              :profile-id (:id profile-owner)
+                                              :role       :admin})
+        organization-default-team (th/create-team* 99 {:profile-id (:id profile-user)})
+
+        organization-id (uuid/random)
+        your-penpot-id  (:id organization-default-team)
+        organization-summary (make-organization-summary
+                              :organization-id organization-id
+                              :organization-name "Test Org"
+                              :owner-id (:id profile-owner)
+                              :your-penpot-teams [your-penpot-id]
+                              :organization-teams [(:id solo-team) (:id pair-team)])]
+
+    (with-redefs [nitrate/call (nitrate-organization-summary-only-mock organization-summary)]
+      (let [out    (th/command! {::th/type :get-leave-organization-summary
+                                 ::rpc/profile-id (:id profile-user)
+                                 :id organization-id
+                                 :default-team-id your-penpot-id})
+            result (:result out)]
+        (t/is (th/success? out))
+        (t/is (= 1 (:teams-to-transfer result)))
+        (t/is (= [(:id solo-team)] (:team-ids-to-delete result)))
+        ;; The members that can take over pair-team, without profile-user
+        (t/is (= [{:id      (:id pair-team)
+                   :name    (:name pair-team)
+                   :members [{:id       (:id profile-owner)
+                              :name     (:fullname profile-owner)
+                              :email    (:email profile-owner)
+                              :is-admin true}]}]
+                 (:transferable-teams result)))))))
 
 (t/deftest leave-organization-error-organization-owner-cannot-leave
   (let [profile-owner  (th/create-profile* 1 {:is-active true})
@@ -1318,8 +1360,11 @@
                  body))
 
         (let [[_ method-fn] (get-in th/*system* [:app.rpc/methods :get-nitrate-activation-code-request])
-              result        (method-fn {::rpc/profile-id (:id profile)
-                                        ::rpc/request-at now})
+              request       (assoc (th/make-dummy-request) :params {})
+              params        (-> {::rpc/profile-id (:id profile)
+                                 ::rpc/request-at now}
+                                (with-meta {:app.http/request request}))
+              result        (method-fn params)
               headers       (::http/headers (meta result))]
           (t/is (rph/wrapped? result))
           (t/is (= "text/plain" (get headers "content-type")))

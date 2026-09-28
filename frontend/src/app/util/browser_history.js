@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) KALEIDOS INC Sucursal en España SL
+ * Copyright (c) KALEIDOS SUBSIDIARY SL
  */
 
 "use strict";
@@ -16,8 +16,10 @@ goog.scope(function() {
   const Html5History = goog.history.Html5History;
 
   class TokenTransformer {
+    // Query-string routing: the history token is the query string
+    // ("?screen=...&..."), the path always stays the application base.
     retrieveToken(pathPrefix, location) {
-      return location.pathname.substr(pathPrefix.length) + location.search;
+      return location.search;
     }
 
     createUrl(token, pathPrefix, location) {
@@ -25,9 +27,10 @@ goog.scope(function() {
     }
   }
 
-  self.create = function() {
+  self.create = function(pathPrefix) {
     const instance = new Html5History(null, new TokenTransformer());
-    instance.setUseFragment(true);
+    instance.setUseFragment(false);
+    instance.setPathPrefix(pathPrefix);
     return instance;
   };
 

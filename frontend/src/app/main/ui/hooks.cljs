@@ -43,13 +43,12 @@
 
 (defn use-shortcuts
   [key shortcuts group-key]
-  (let [custom-shortcuts (mf/deref refs/custom-shortcuts)]
-    (mf/use-effect
-     #js [(str key) shortcuts custom-shortcuts]
+  (mf/use-effect
+   #js [(str key) shortcuts]
+   (fn []
+     (st/emit! (dsc/push-shortcuts key shortcuts group-key))
      (fn []
-       (st/emit! (dsc/push-shortcuts key shortcuts group-key))
-       (fn []
-         (st/emit! (dsc/pop-shortcuts key)))))))
+       (st/emit! (dsc/pop-shortcuts key))))))
 
 (defn- set-timer
   [state ms func]
@@ -307,6 +306,17 @@
   [ms value]
   (let [[state update-state-fn] (mf/useState value)
         update-fn (mf/use-memo (mf/deps ms) #(f/debounce update-state-fn ms))]
+    (mf/with-effect [value]
+      (update-fn value))
+    state))
+
+(defn use-throttle
+  "Like `use-debounce`, but updates at most once per `ms` instead of only
+  after the value stops changing: the first and the last value of each burst
+  are both applied, so it stays live during continuous updates (e.g. a drag)."
+  [ms value]
+  (let [[state update-state-fn] (mf/useState value)
+        update-fn (mf/use-memo (mf/deps ms) #(f/throttle update-state-fn ms))]
     (mf/with-effect [value]
       (update-fn value))
     state))

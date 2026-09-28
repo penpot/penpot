@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.shape.background-blur
   (:require
@@ -12,5 +12,5 @@
   [:map {:title "BackgroundBlur"}
    [:id ::sm/uuid]
    [:type [:enum :background-blur]]
-   [:value ::sm/safe-number]
+   [:value ::sm/non-negative-safe-number]
    [:hidden :boolean]])

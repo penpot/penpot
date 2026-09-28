@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.helpers.mock
   "Async-first mocking primitives for ClojureScript tests.
@@ -19,13 +19,20 @@
   The `with-mocks` helper wraps the lifecycle:
     1. Reset recording atoms
     2. Save original var values, install mocks via `set!`
-    3. Execute `(test-fn inner-done)`
+    3. Defer `(test-fn inner-done)` past the current tick via `asap`,
+       so the body provably runs with mocks that survived an async
+       boundary
     4. `inner-done` restores originals and calls `outer-done`
-       (typically `cljs.test/async`'s done).
+       (typically `cljs.test/async`'s done). A throw inside the deferred
+       body is reported as an `:error`, then restores and completes.
+
+  Requires a done-chained context (usually `t/async`): a synchronous
+  test completes before its deferred body runs.
 
   Usage: `(with-mocks {ns/sym mock-fn, ...} test-fn done)`"
   #?(:cljs (:require
-            [beicon.v2.core :as rx]))
+            [beicon.v2.core :as rx]
+            [cljs.test :as t]))
   #?(:cljs (:require-macros [frontend-tests.helpers.mock])))
 
 ;; ═══════════════════════════════════════════════════════════════
@@ -34,15 +41,19 @@
 
 #?(:clj
    (defmacro with-mocks
-     "Resets recording atoms, installs `mocks` via `set!`, then
-     calls `(test-fn inner-done)`.  Original var values are restored
-     when `inner-done` is called.
+     "Resets recording atoms, installs `mocks` via `set!`, then defers
+     `(test-fn inner-done)` past the current tick via `asap`.
 
      `mocks` is a map of sym → mock-fn
      (e.g. `{app.main.repo/cmd! mock-fn}`).
 
      `inner-done` restores the originals and calls `outer-done` (the
-     `cljs.test/async` `done` callback).
+     `cljs.test/async` `done` callback). A throw inside the deferred body
+     is reported as an `:error` before restoring and completing, so a
+     failing body can neither leak the mocks nor stall the run.
+
+     Requires a done-chained context (usually `t/async`): a synchronous
+     caller completes before its deferred body runs.
 
      Example:
 
@@ -55,7 +66,8 @@
                       (rx/subs!
                         (fn [v] ...)
                         (fn [err] (done'))
-                        (fn [] (done'))))))))"
+                        (fn [] (done')))))
+               done)))"
      [mocks test-fn outer-done]
      (let [entries   (map identity mocks)
            gen-pairs (mapv (fn [[qsym _mock]]
@@ -76,13 +88,67 @@
                           (fn [{:keys [qsym osym]}]
                             `(set! ~qsym ~osym))
                           gen-pairs)]
+       `(let [test-fn# ~test-fn]
+          (frontend-tests.helpers.mock/reset-state!)
+          (let ~let-bindings
+            ~@install-exprs
+            (frontend-tests.helpers.mock/asap
+             (fn []
+               (try
+                 (test-fn# (fn []
+                             ~@restore-exprs
+                             (~outer-done)))
+                 (catch :default e#
+                   ~@restore-exprs
+                   (cljs.test/report {:type :error
+                                      :message "Uncaught exception, not in assertion."
+                                      :expected nil
+                                      :actual e#})
+                   (~outer-done))))))))))
+
+#?(:clj
+   (defmacro with-mocks*
+     "Installs `mocks` via `set!`, then evaluates `body` inside a generated
+     `^:async` fn awaited via `run-mocked`: when the body settles, the
+     originals are restored — always. A rejection is reported as an `:error`.
+
+     Evaluates to a promise resolving once the body settles and the mocks
+     are restored. `await` it, either directly or by returning it from an
+     `^:async` fn; nested scopes must be awaited too.
+
+     Example:
+
+         (t/deftest ^:async my-async-test
+           (await (mock/with-mocks*
+                    {app.main.repo/cmd! mock/rpc-cmd-mock}
+                    (await (some-async-flow))
+                    ...)))"
+     [mocks & body]
+     (let [entries   (map identity mocks)
+           gen-pairs (mapv (fn [[qsym _mock]]
+                             {:qsym qsym
+                              :osym  (gensym "orig-")})
+                           entries)
+           let-bindings (vec (mapcat
+                              (fn [{:keys [qsym osym]}]
+                                [osym qsym])
+                              gen-pairs))
+           install-exprs (mapv
+                          (fn [[_qsym mock-fn] {:keys [qsym]}]
+                            `(set! ~qsym ~mock-fn))
+                          entries
+                          gen-pairs)
+           restore-exprs (mapv
+                          (fn [{:keys [qsym osym]}]
+                            `(set! ~qsym ~osym))
+                          gen-pairs)]
        `(do
           (frontend-tests.helpers.mock/reset-state!)
           (let ~let-bindings
             ~@install-exprs
-            (~test-fn (fn inner-done# []
-                        ~@restore-exprs
-                        (~outer-done))))))))
+            (frontend-tests.helpers.mock/run-mocked
+             (^:async fn [] ~@body)
+             (fn [] ~@restore-exprs)))))))
 
 ;; ═══════════════════════════════════════════════════════════════
 ;; Runtime (ClojureScript only)
@@ -163,6 +229,41 @@
          ([a b c d] (f a b c d))
          ([a b c d e] (f a b c d e))
          ([a b c d e g] (f a b c d e g))))
+
+     ;; Scheduling
+     ;; ═══════════════════════════════════════════════════════════════
+
+     (defn asap
+       "Runs `f` on the next macrotask (`js/setTimeout` 0) and returns
+        the timer id. Used by `with-mocks` to defer the test body past
+        the current tick, so installed mocks provably survive async
+        boundaries."
+       [f]
+       (js/setTimeout f 0))
+
+     (defn ^:async run-mocked
+       "Awaits the async zero-arg `thunk`, then runs `restore` — always, in
+        that order — and resolves. A rejection is reported as an `:error`
+        (uncaught-exception semantics, like `test-var-block*`); a non-promise
+        return is reported as an `:error` too."
+       [thunk restore]
+       (let [p (thunk)]
+         (if (and (some? p) (fn? (.-then p)))
+           (try
+             (await p)
+             (catch :default e
+               (t/report {:type :error
+                          :message "Uncaught exception, not in assertion."
+                          :expected nil
+                          :actual e}))
+             (finally
+               (restore)))
+           (do
+             (restore)
+             (t/report {:type :error
+                        :message "with-mocks* body did not return a promise."
+                        :expected nil
+                        :actual p})))))
 
      ;; Lifecycle
      ;; ═══════════════════════════════════════════════════════════════

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.transforms
   "Events related with shapes transformations"
@@ -23,6 +23,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -147,10 +149,15 @@
 
 ;; -- Resize --------------------------------------------------------
 
+(defn- shape-has-image-fill?
+  [shape]
+  (boolean (or (some :fill-image (:fills shape))
+               (:fill-image shape))))
+
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout objects [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout objects [point lock? center? bounds-resize? point-snap]]
             (let [selrect  (dm/get-prop shape :selrect)
                   width    (dm/get-prop selrect :width)
                   height   (dm/get-prop selrect :height)
@@ -233,7 +240,59 @@
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   change-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))]
+                  (not (mth/close? (dm/get-prop scalev :y) 1))
+
+                  ;; Calculate independent image bounds resize transform
+                  sx (dm/get-prop scalev :x)
+                  sy (dm/get-prop scalev :y)
+                  w-new (* width sx)
+                  h-new (* height sy)
+
+                  bounds-resize? (and ^boolean bounds-resize?
+                                      (pos? w-new)
+                                      (pos? h-new))
+
+                  [dx dy] (if ^boolean center?
+                            [(/ (* width (- 1.0 sx)) 2.0)
+                             (/ (* height (- 1.0 sy)) 2.0)]
+                            [(case handler
+                               (:left :bottom-left :top-left) (* width (- 1.0 sx))
+                               0.0)
+                             (case handler
+                               (:top :top-left :top-right) (* height (- 1.0 sy))
+                               0.0)])
+
+                  new-fills
+                  (when (and bounds-resize? (seq (:fills shape)))
+                    (mapv (fn [fill]
+                            (if-let [img-fill (:fill-image fill)]
+                              (let [tf (get img-fill :transform)
+                                    nx0 (get tf :x 0.0)
+                                    ny0 (get tf :y 0.0)
+                                    nw0 (get tf :width 1.0)
+                                    nh0 (get tf :height 1.0)
+                                    nx' (/ (- (* nx0 width) dx) w-new)
+                                    ny' (/ (- (* ny0 height) dy) h-new)
+                                    nw' (/ nw0 sx)
+                                    nh' (/ nh0 sy)]
+                                (assoc-in fill [:fill-image :transform]
+                                          {:x nx' :y ny' :width nw' :height nh'}))
+                              fill))
+                          (:fills shape)))
+
+                  new-fill-image
+                  (when (and bounds-resize? (some? (:fill-image shape)))
+                    (let [img-fill (:fill-image shape)
+                          tf (get img-fill :transform)
+                          nx0 (get tf :x 0.0)
+                          ny0 (get tf :y 0.0)
+                          nw0 (get tf :width 1.0)
+                          nh0 (get tf :height 1.0)
+                          nx' (/ (- (* nx0 width) dx) w-new)
+                          ny' (/ (- (* ny0 height) dy) h-new)
+                          nw' (/ nw0 sx)
+                          nh' (/ nh0 sy)]
+                      (assoc img-fill :transform {:x nx' :y ny' :width nw' :height nh'})))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -256,18 +315,30 @@
                 (and new-grow-type (not= new-grow-type (dm/get-prop shape :grow-type)))
                 (ctm/change-property :grow-type new-grow-type)
 
+                (and bounds-resize? (some? new-fills))
+                (ctm/change-property :fills new-fills)
+
+                (and bounds-resize? (some? new-fill-image))
+                (ctm/change-property :fill-image new-fill-image)
+
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point shift? alt?]]
-            (let [proportion-lock? (:proportion-lock shape)]
+          (normalize-proportion-lock [[point shift? alt? mod?]]
+            (let [has-img? (shape-has-image-fill? shape)
+                  bounds-resize? (and has-img? (boolean mod?))
+                  proportion-lock? (:proportion-lock shape)
+                  lock? (if bounds-resize?
+                          (boolean shift?)
+                          (or ^boolean proportion-lock?
+                              ^boolean shift?))]
               [point
-               (or ^boolean proportion-lock?
-                   ^boolean shift?)
-               alt?]))]
+               lock?
+               alt?
+               bounds-resize?]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -295,10 +366,10 @@
                     resize-events-stream
                     (->> ms/mouse-position
                          (rx/filter some?)
-                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt ms/mouse-position-mod)
                          (rx/map normalize-proportion-lock)
                          (rx/switch-map
-                          (fn [[point _ _ :as current]]
+                          (fn [[point _ _ _ :as current]]
                             (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                                  (rx/map #(conj current %)))))
                          (rx/map #(resize shape initial-position layout objects %))
@@ -362,6 +433,71 @@
                    (rx/of
                     (dwm/apply-modifiers)
                     (finish-transform))))))))))))
+
+(defn start-move-line-point
+  "Drags one endpoint of a straight path while keeping the other fixed."
+  [shape index]
+  (ptk/reify ::start-move-line-point
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id          (dm/get-prop shape :id)
+            page-id     (:current-page-id state)
+            objects     (dsh/lookup-page-objects state page-id)
+            zoom        (dm/get-in state [:workspace-local :zoom] 1)
+            layout      (:workspace-layout state)
+            focus       (:workspace-focus-selected state)
+
+            content     (dm/get-prop shape :content)
+            start-point (path.helpers/segment->point (nth content index))
+            other-point (path.helpers/segment->point (nth content (if (zero? index) 1 0)))
+
+            stopper     (mse/drag-stopper stream)
+
+            ;; Shift constrains the endpoint around the fixed point.
+            position-stream
+            (->> ms/mouse-position
+                 (rx/filter some?)
+                 (rx/with-latest-from ms/mouse-position-shift)
+                 (rx/switch-map
+                  (fn [[pos shift?]]
+                    (if ^boolean shift?
+                      (rx/of (path.helpers/position-fixed-angle pos other-point))
+                      (snap/closest-snap-point page-id [shape] objects layout zoom focus pos))))
+                 (rx/share))
+
+            move-endpoint
+            (fn [pos save-undo?]
+              (let [delta (gpt/to-vec start-point pos)]
+                (dwsh/update-shapes
+                 [id]
+                 (fn [_]
+                   (-> shape
+                       (assoc :content (path/apply-content-modifiers
+                                        content
+                                        {index {:x (dm/get-prop delta :x)
+                                                :y (dm/get-prop delta :y)}}))
+                       (path/update-geometry)))
+                 {:reg-objects? true :save-undo? save-undo?})))]
+
+        ;; Hide selection controls during the drag.
+        (rx/concat
+         (rx/of #(assoc-in % [:workspace-local :transform] :move))
+         ;; Subscribe the preview and commit branches together.
+         (rx/merge
+          ;; Preview without creating undo entries.
+          (->> position-stream
+               (rx/sample mconst/move-sample-time)
+               (rx/map #(move-endpoint % false))
+               (rx/take-until stopper))
+          ;; Commit the final position as one undo step.
+          (->> position-stream
+               (rx/take-until stopper)
+               (rx/last)
+               (rx/mapcat
+                (fn [pos]
+                  (rx/of (move-endpoint start-point false)
+                         (move-endpoint pos true))))))
+         (rx/of #(assoc-in % [:workspace-local :transform] nil)))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)
@@ -525,12 +661,14 @@
            (rx/merge
             (->> angle-stream
                  (rx/sample mconst/rotation-sample-time)
-                 (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)))
+                 (rx/map #(dwm/set-wasm-modifiers (rotation-modifiers % shapes group-center)
+                                                  :ignore-snap-pixel true))
                  (rx/take-until stopper))
             (->> angle-stream
                  (rx/take-until stopper)
                  (rx/last)
-                 (rx/map #(dwm/apply-wasm-modifiers (rotation-modifiers % shapes group-center)))))
+                 (rx/map #(dwm/apply-wasm-modifiers (rotation-modifiers % shapes group-center)
+                                                    :ignore-snap-pixel true))))
 
            (rx/of (finish-transform)))
 
@@ -571,7 +709,9 @@
                modif-tree
                (dwm/build-modif-tree ids objects get-modifier)]
 
-           (rx/of (dwm/apply-wasm-modifiers modif-tree :ignore-touched (:ignore-touched options))))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                            :ignore-touched (:ignore-touched options)
+                                            :ignore-snap-pixel true)))
 
          (let [page-id (or (:page-id options)
                            (:current-page-id state))

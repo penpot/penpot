@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
 
   const login = new LoginPage(page);
   await login.initWithLoggedOutUser();
-  await login.page.goto("/#/auth/login");
+  await login.page.goto("/?screen=auth-login");
 });
 
 test.describe("Login form", () => {
@@ -33,7 +33,7 @@ test.describe("Login form", () => {
     await login.clickLoginButton();
 
     await expect(login.invalidCredentialsError).toBeVisible();
-    await expect(login.page).toHaveURL(/auth\/login$/);
+    await expect(login.page).toHaveURL(/screen=auth-login$/);
     await expect(login.page).toHaveScreenshot();
   });
 });

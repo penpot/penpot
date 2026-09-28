@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-management-test
   (:require
@@ -11,6 +11,7 @@
    [app.common.pprint :as pp]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
@@ -19,6 +20,7 @@
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [buddy.core.bytes :as b]
    [clojure.test :as t]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]))
 
@@ -50,10 +52,15 @@
                            :path path
                            :mtype "image/png"
                            :size 7}}
-        out1    (th/management-command! params)
-        out2    (th/management-command! params)]
+        config  (assoc cf/config :public-uri "https://example.com/penpot")
+        out1    (binding [cf/config config]
+                  (th/management-command! params))
+        out2    (binding [cf/config config]
+                  (th/management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
+    (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
+                            "https://example.com/penpot/assets/by-id/"))
     (t/is (not= (get-in out1 [:result :id])
                 (get-in out2 [:result :id])))))
 
@@ -171,7 +178,7 @@
                                                :media-id (:id sobject)})]
 
     (th/mark-file-deleted* {:id (:id file2)})
-    (sto/del-object! storage sobject)
+    (sto/del-object! storage (:id sobject))
 
     (let [data {::th/type :duplicate-file
                 ::rpc/profile-id (:id profile)

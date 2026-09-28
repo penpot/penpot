@@ -7,9 +7,13 @@
 - Basic Penpot registration is token staged: prepare/register creates or verifies temporary tokens, then profile creation/session setup is reused by other auth backends. The frontend `/auth/verify-token` flow is a hub for registration confirmation, email change, and invitation tokens.
 - OIDC-compatible providers share a generic flow: redirect to provider, validate callback/request token, fetch identity data, then login an existing profile or register a new one. Known providers may have hardcoded endpoints; generic OIDC can use discovery/configured endpoints.
 - LDAP login validates credentials against the external directory, fetches identity data, then logs in or registers a matching Penpot profile. LDAP registration is not a separate Penpot signup flow.
+- LDAP session identity MUST come from the directory-returned email (`info.email`): the profile matching the typed email can differ (aliases, UPNs, multi-valued `mail` attributes) and is used only for lockout checks, never to bind the session.
+- Account lockout (flag `:account-lockout`, `app.auth.login-lockout`) is Redis-backed and keyed per profile id. Password and LDAP flows check/increment on the profile derived from the typed email and clear on the profile that actually logs in.
+- Lockout and RPC rate limits share the `app.http.errors/handle-error :rate-limit` HTTP path: status 429, body `{:type :rate-limit :code ... :hint ... :ttl ...}`, and any supplied `::http/headers` preserved. Account lockout raises `:code :account-locked` and, when it carries a non-nil `:ttl` (seconds), the handler adds `retry-after`. The RPC limiter (`app.rpc.rlimit`) raises `:code :request-blocked` and sets `retry-after` itself in `::http/headers` (seconds until the longest rejecting limit resets), alongside `x-rate-limit-remaining`/`x-rate-limit-reset`. CORS (`app.http.middleware/with-cors-headers`) exposes `content-type`, `retry-after`, and both `x-rate-limit-*` headers. External flags: `enable-account-lockout`, `enable-rpc-rlimit`.
 - Logout may return an OIDC provider redirect URI when the session claims include provider/session data and the provider has a logout URI.
 - Invitation tokens are verified through token issuers and only accepted when the token member id/email matches the authenticated profile; otherwise login proceeds without consuming the invitation.
-- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/http-storage-filedata-subtleties`.
+- When public registration is disabled, invitation-based password registration also requires a matching, non-expired `team_invitation` row; registration revalidates it under a row lock before creating the profile.
+- HTTP/session parsing details such as cookie/header precedence, JWT session token versions, and SameSite behavior are in `mem:backend/subtleties`.
 
 ## Permission model
 
@@ -37,4 +41,4 @@
 - Enable LDAP login locally with frontend flag `enable-login-with-ldap`; the devenv includes a configured test LDAP service.
 - OIDC testing requires external provider app credentials plus matching backend/frontend config.
 - Backend domain tests usually live under `backend/test/backend_tests/rpc/commands/*_test.clj` or nearby backend test namespaces. Use focused `clojure -M:dev:test --focus ...` from `backend/` when possible.
-- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/http-storage-filedata-subtleties` because RPC-level tests may not exercise cookie/header transforms.
+- For auth/session or HTTP behavior, combine backend tests with the HTTP/session notes in `mem:backend/subtleties` because RPC-level tests may not exercise cookie/header transforms.

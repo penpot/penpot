@@ -2,4 +2,7 @@
 
 set -ex
 pnpm install;
+pushd ../render-wasm;
+./build export;
+popd
 pnpm run test;

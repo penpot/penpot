@@ -56,6 +56,20 @@ describe('Tokens', () => {
       expect(cat.themes.length).toBeGreaterThan(0);
       expect(cat.getThemeById(theme.id)).toBeDefined();
     });
+
+    test('catalog name validation uses current state and rejects blank names', (ctx) => {
+      const cat = catalog(ctx);
+      const name = unique('live-set');
+      cat.addSet({ name });
+      expect(() => cat.addSet({ name })).toThrow();
+      expect(() => cat.addSet({ name: '   ' })).toThrow();
+      expect(() => cat.addTheme({ group: '', name: '   ' })).toThrow();
+
+      const group = unique('live-theme-group');
+      const themeName = unique('live-theme');
+      cat.addTheme({ group, name: themeName });
+      expect(() => cat.addTheme({ group, name: themeName })).toThrow();
+    });
   });
 
   describe('Set', () => {
@@ -68,6 +82,17 @@ describe('Tokens', () => {
       expect(set.active).toBe(false);
       set.toggleActive();
       expect(set.active).toBe(true);
+    });
+
+    test('retained set proxies validate names against current state', (ctx) => {
+      const first = activeSet(ctx, unique('set'));
+      const second = activeSet(ctx, unique('set'));
+      expect(() => {
+        first.name = second.name;
+      }).toThrow();
+      expect(() => {
+        first.name = '   ';
+      }).toThrow();
     });
 
     // Community report (forum #10700, issue #14): toggling a token set's
@@ -148,15 +173,42 @@ describe('Tokens', () => {
         }),
       ).toThrow();
     });
+
+    test('empty composites and line-height without font-size throw', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      expect(() =>
+        set.addToken({
+          type: 'typography',
+          name: unique('empty-typography.'),
+          value: {} as never,
+        }),
+      ).toThrow();
+      expect(() =>
+        set.addToken({
+          type: 'shadow',
+          name: unique('empty-shadow.'),
+          value: [] as never,
+        }),
+      ).toThrow();
+      expect(() =>
+        set.addToken({
+          type: 'typography',
+          name: unique('line-height-only.'),
+          value: { lineHeight: '1.2' } as never,
+        }),
+      ).toThrow();
+    });
   });
 
   describe('Theme', () => {
     test('group, name and active round-trip', (ctx) => {
       const theme = catalog(ctx).addTheme({ group: '', name: unique('theme') });
-      theme.group = 'brand';
-      theme.name = 'dark';
-      expect(theme.group).toBe('brand');
-      expect(theme.name).toBe('dark');
+      const group = unique('brand');
+      const name = unique('dark');
+      theme.group = group;
+      theme.name = name;
+      expect(theme.group).toBe(group);
+      expect(theme.name).toBe(name);
       theme.active = true;
       expect(theme.active).toBe(true);
       theme.toggleActive();
@@ -190,6 +242,33 @@ describe('Tokens', () => {
       const dup = theme.duplicate();
       expect(dup.id).not.toBe(theme.id);
       dup.remove();
+    });
+
+    test('theme names stay unique within their current group', (ctx) => {
+      const cat = catalog(ctx);
+      const group = unique('group');
+      const first = cat.addTheme({ group, name: unique('theme') });
+      const second = cat.addTheme({ group, name: unique('theme') });
+      expect(() => {
+        first.name = second.name;
+      }).toThrow();
+      expect(() => {
+        first.name = '   ';
+      }).toThrow();
+
+      const duplicate = first.duplicate();
+      expect(duplicate.name).not.toBe(first.name);
+      duplicate.remove();
+    });
+
+    test('moving a retained theme cannot create a group/name collision', (ctx) => {
+      const cat = catalog(ctx);
+      const name = unique('shared-theme');
+      const first = cat.addTheme({ group: unique('group-a'), name });
+      const second = cat.addTheme({ group: unique('group-b'), name });
+      expect(() => {
+        first.group = second.group;
+      }).toThrow();
     });
   });
 
@@ -315,7 +394,129 @@ describe('Tokens', () => {
       });
       const dup = token.duplicate();
       expect(dup.id).not.toBe(token.id);
+      expect(dup.name).not.toBe(token.name);
       dup.remove();
+    });
+
+    test('token edits reject missing, self, cyclic, and dotted-name conflicts', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const prefix = unique('tree');
+      set.addToken({
+        type: 'dimension',
+        name: `${prefix}.child`,
+        value: '8',
+      });
+      const token = set.addToken({
+        type: 'dimension',
+        name: unique('editable.'),
+        value: '4',
+      });
+      expect(() => {
+        token.name = prefix;
+      }).toThrow();
+      expect(() => {
+        token.value = `{${token.name}}`;
+      }).toThrow();
+      expect(() => {
+        token.value = '{missing-token}';
+      }).toThrow();
+
+      const other = set.addToken({
+        type: 'dimension',
+        name: unique('other.'),
+        value: '2',
+      });
+      token.value = `{${other.name}}`;
+      expect(() => {
+        other.value = `{${token.name}}`;
+      }).toThrow();
+    });
+
+    test('retained token proxies validate names against current state', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const retained = set.addToken({
+        type: 'dimension',
+        name: unique('retained.'),
+        value: '1',
+      });
+      const later = set.addToken({
+        type: 'dimension',
+        name: unique('later.'),
+        value: '2',
+      });
+      expect(() => {
+        retained.name = later.name;
+      }).toThrow();
+    });
+
+    test('renaming validates the whole token and rejects a new self-reference', (ctx) => {
+      const targetName = unique('rename-target');
+      activeSet(ctx, unique('target-set')).addToken({
+        type: 'dimension',
+        name: targetName,
+        value: '8',
+      });
+      const token = activeSet(ctx, unique('source-set')).addToken({
+        type: 'dimension',
+        name: unique('rename-source'),
+        value: `{${targetName}}`,
+      });
+
+      expect(() => {
+        token.name = targetName;
+      }).toThrow();
+    });
+
+    test('composite token updates reject empty values and missing font size', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const typography = set.addToken({
+        type: 'typography',
+        name: unique('typography.'),
+        value: { fontSizes: '14', lineHeight: '1.2' } as never,
+      }) as TokenTypography;
+      const shadow = set.addToken({
+        type: 'shadow',
+        name: unique('shadow.'),
+        value: {
+          color: '#000000',
+          inset: 'false',
+          offsetX: '0',
+          offsetY: '0',
+          spread: '0',
+          blur: '1',
+        },
+      }) as TokenShadow;
+
+      expect(() => {
+        typography.value = {} as never;
+      }).toThrow();
+      expect(() => {
+        typography.value = { lineHeight: '1.2' } as never;
+      }).toThrow();
+      expect(() => {
+        shadow.value = [];
+      }).toThrow();
+    });
+
+    test('tokens with newly broken references cannot be applied', (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const base = set.addToken({
+        type: 'borderRadius',
+        name: unique('base.'),
+        value: '8',
+      });
+      const ref = set.addToken({
+        type: 'borderRadius',
+        name: unique('ref.'),
+        value: `{${base.name}}`,
+      });
+      base.remove();
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+      ctx.penpot.selection = [rect];
+      expect(() => ref.applyToShapes([rect])).toThrow();
+      expect(() => ref.applyToSelected()).toThrow();
+      expect(() => rect.applyToken(ref)).toThrow();
     });
 
     // Reference resolution — a token referencing another resolves transitively.

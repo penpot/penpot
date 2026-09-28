@@ -13,6 +13,10 @@ export PENPOT_MANAGEMENT_API_KEY=super-secret-management-api-key
 # PENPOT_DATABASE_*, PENPOT_REDIS_URI, PENPOT_OBJECTS_STORAGE_*, AWS_*) is owned by
 # docker/devenv/defaults.env and injected via the main service's env block.
 
+if [ -f /home/selfsigned.crt ]; then
+    export NODE_EXTRA_CA_CERTS=/home/selfsigned.crt;
+fi
+
 # Background worker flag is per-instance. Defaults to enabled (ws0); ws1+
 # overlays set PENPOT_BACKEND_WORKER=false so scheduled and async tasks only
 # run on ws0, keeping notification Pub/Sub bound to a single Valkey. See
@@ -44,6 +48,7 @@ export PENPOT_FLAGS="\
        enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
+       enable-account-lockout \
        enable-prepl-server \
        enable-urepl-server \
        enable-nrepl-server \
@@ -58,6 +63,7 @@ export PENPOT_FLAGS="\
        enable-file-validation \
        enable-file-schema-validation \
        enable-redis-cache \
+       enable-link-preview \
        enable-subscriptions";
 
 # Uncomment for nexus integration testing
@@ -89,7 +95,8 @@ export JAVA_OPTS="\
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
-       --enable-native-access=ALL-UNNAMED";
+       --enable-native-access=ALL-UNNAMED \
+       --add-opens=java.base/java.nio=ALL-UNNAMED";
 
 function setup_s3_bucket() {
     if [ "${PENPOT_OBJECTS_STORAGE_BACKEND}" != "s3" ]; then
@@ -119,5 +126,3 @@ function setup_s3_bucket() {
         sleep 1
     done
 }
-
-

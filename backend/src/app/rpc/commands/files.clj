@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.files
   (:require
@@ -14,6 +14,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.stats :as cfs]
+   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
@@ -21,6 +22,7 @@
    [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
@@ -520,18 +522,29 @@
 
         components-sample
         (-> (sample-assets components 4)
-            (update :sample load-objects))]
+            (update :sample load-objects))
+
+        tokens-lib         (cfo/get-tokens-lib data)
+        tokens-count       (if (some? tokens-lib) (count (ctob/get-all-tokens tokens-lib)) 0)
+        token-sets-count   (if (some? tokens-lib) (count (ctob/get-sets tokens-lib)) 0)
+        token-themes-count (if (some? tokens-lib) (count (ctob/get-themes-no-hidden tokens-lib)) 0)]
 
     {:components components-sample
      :variants {:count (count variant-ids)}
      :colors (sample-assets (:colors data) 3)
-     :typographies (sample-assets (:typographies data) 3)}))
+     :typographies (sample-assets (:typographies data) 3)
+     :tokens-count tokens-count
+     :token-sets-count token-sets-count
+     :token-themes-count token-themes-count}))
 
 (def ^:private file-summary-cache-key-ttl
   (ct/duration {:days 30}))
 
-(def file-summary-cache-key-prefix
-  "penpot.library-summary.")
+(defn file-summary-cache-key
+  "Build the redis cache key for the file library summary. The tenant is
+   included to prevent key collisions between tenants sharing a redis instance"
+  [id]
+  (str "penpot.library-summary." (cf/get :tenant) "." id))
 
 (defn- get-file-with-summary
   "Get a file without data with a summary of its local library content"
@@ -560,7 +573,7 @@
                    (rds/build-set-args {:ex file-summary-cache-key-ttl})))]
 
     (if (contains? cf/flags :redis-cache)
-      (let [cache-key (str file-summary-cache-key-prefix id)]
+      (let [cache-key (file-summary-cache-key id)]
         (or (rds/run! cfg get-from-cache cache-key)
             (let [file (calculate-from-db)]
               (rds/run! cfg persist-to-cache (:library-summary file) cache-key)

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
@@ -13,7 +13,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
-   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.modal :as modal]
@@ -44,6 +43,7 @@
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
    [app.main.ui.workspace.viewport.outline :as outline]
+   [app.main.ui.workspace.viewport.path-state :as path-state]
    [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
    [app.main.ui.workspace.viewport.presence :as presence]
    [app.main.ui.workspace.viewport.rulers :as rulers]
@@ -51,8 +51,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar*
-                                                   path-edition-bar*
+   [app.main.ui.workspace.viewport.top-bar :refer [edition-bars*
                                                    view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :as vp-ref :refer [create-viewport-ref]]
@@ -202,9 +201,21 @@
           [base-objects wasm-modifiers]
           (apply-modifiers-to-selected selected base-objects wasm-modifiers))
 
-        selected-shapes   (->> selected
-                               (into [] (keep (d/getf objects-modified)))
-                               (not-empty))
+        selected-shapes   (mf/with-memo [selected objects-modified]
+                            (->> selected
+                                 (into [] (keep (d/getf objects-modified)))
+                                 (not-empty)))
+
+        ;; True when at least one selected shape can be alt-duplicated.
+        ;; Inner shapes of component copies are excluded by ctk/allow-duplicate?
+        can-alt-duplicate? (mf/with-memo [selected base-objects]
+                             (some #(ctk/allow-duplicate? base-objects %)
+                                   (map (d/getf base-objects) selected)))
+
+        selected-shapes'  (ui-hooks/use-throttle 100 selected-shapes)
+        badge-shapes      (if (= transform :resize)
+                            selected-shapes'
+                            selected-shapes)
         ;; STATE
         alt?                 (mf/use-state false)
         shift?               (mf/use-state false)
@@ -282,21 +293,22 @@
         ;; Only when we have all the selected shapes in one frame
         selected-frame    (when (= (count selected-frames) 1) (get base-objects (first selected-frames)))
 
-        edit-path-state   (get edit-path edition)
-        edit-path-mode    (get edit-path-state :edit-mode)
+        {:keys [edit-state
+                editing?
+                drawing?
+                editing-shape
+                bar-state
+                bar-shape
+                drawing-shape]}
+        (mf/with-memo [edit-path edition drawing-tool drawing-obj base-objects]
+          (path-state/derive-path-state edit-path edition drawing-tool drawing-obj base-objects))
 
-        path-editing?     (some? edit-path-state)
-        path-drawing?     (or (= edit-path-mode :draw)
-                              (and (= :path (get drawing-obj :type))
-                                   (not= :curve drawing-tool)))
-
-        editing-shape     (when edition
-                            (get base-objects edition))
-
-        editing-shape     (mf/with-memo [editing-shape path-editing? base-objects]
-                            (if path-editing?
-                              (path/convert-to-path editing-shape base-objects)
-                              editing-shape))
+        edit-path-state   edit-state
+        path-editing?     editing?
+        path-drawing?     drawing?
+        path-bar-state    bar-state
+        path-bar-shape    bar-shape
+        draw-area-shape   drawing-shape
 
         create-comment?   (= :comments drawing-tool)
 
@@ -372,8 +384,9 @@
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
                                           (contains? layout :snap-guides))
                                       (or drawing-obj transform)
+                                      (not path-editing?)
                                       (not page-transition?))
-        show-selrect?            (and selrect (empty? drawing) (not text-editing?) (not page-transition?))
+        show-selrect?            (and selrect (or (empty? drawing) path-editing?) (not text-editing?) (not page-transition?))
         show-measures?           (and (not transform)
                                       (not path-editing?)
                                       (or show-distances? mode-inspect? read-only?)
@@ -629,14 +642,25 @@
 
     (hooks/setup-dom-events zoom disable-paste-ref in-viewport-ref read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? (get path-bar-state :drag-cursor) z? read-only? can-alt-duplicate?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures? read-only? transform)
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    (mf/with-effect [path-editing? edition @initialized?]
+      (when (and path-editing? edition @initialized?)
+        (wasm.api/use-shape edition)
+        (wasm.api/set-shape-hidden true)
+        (wasm.api/request-render "start-path-edition")
+        (fn []
+          (when (wasm.api/initialized?)
+            (wasm.api/use-shape edition)
+            (wasm.api/set-shape-hidden false)
+            (wasm.api/request-render "stop-path-edition")))))
+
+    [:div {:class (dm/str @cursor " " (stl/css :viewport)) :style #js {"--zoom" zoom} :data-testid "viewport"}
 
      (cond
        (some? preview-id)
@@ -650,15 +674,14 @@
         (when-not hide-ui?
           [:> top-toolbar* {:layout layout}])
 
-        (when (and ^boolean path-editing?
-                   ^boolean single-select?)
-          [:> path-edition-bar* {:shape editing-shape
-                                 :edit-path-state edit-path-state
-                                 :layout layout}])
-
-        (when (and ^boolean grid-editing?
-                   ^boolean single-select?)
-          [:> grid-edition-bar* {:shape editing-shape}])])
+        [:> edition-bars* {:layout layout
+                           :path-editing path-editing?
+                           :path-drawing path-drawing?
+                           :path-state path-bar-state
+                           :path-shape path-bar-shape
+                           :grid-editing grid-editing?
+                           :grid-shape editing-shape
+                           :single-select single-select?}]])
 
      [:div {:class (stl/css :viewport-overlays)}
       (when show-comments?
@@ -709,7 +732,8 @@
                        :global/cursor-resize-ew-0 (= @guide-hover-axis* :x)
                        :global/cursor-resize-ns-0 (= @guide-hover-axis* :y)
                        :viewport-controls true))
-       :style {:touch-action "none"}
+       :style {:touch-action "none"
+               :pointer-events (if page-transition? "none" "auto")}
        :fill "none"
        :on-click         on-click
        :on-context-menu  on-context-menu
@@ -794,15 +818,16 @@
            :zoom zoom}])
 
        (when (and (seq selected-shapes)
-                  (not transform)
+                  (or (not transform) (contains? #{:resize :move} transform))
                   (not text-editing?)
                   (not edition)
                   (not read-only?)
                   (not mode-inspect?)
                   (not page-transition?))
          [:> msr/selection-size-badge*
-          {:shapes selected-shapes
-           :zoom zoom}])
+          {:shapes badge-shapes
+           :zoom zoom
+           :vbox vbox}])
 
        (when show-measures?
          [:> msr/measurement*
@@ -865,7 +890,7 @@
        (when (and ^boolean show-draw-area?
                   ^boolean (cts/shape? drawing-obj))
          [:> drawarea/draw-area*
-          {:shape drawing-obj
+          {:shape draw-area-shape
            :zoom zoom
            :tool drawing-tool}])
 

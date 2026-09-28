@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.layout-container
   (:require-macros [app.main.style :as stl])
@@ -1098,6 +1098,8 @@
                      (get n-values :layout-justify-content))
          (identical? (get o-values :layout-align-content)
                      (get n-values :layout-align-content))
+         (identical? (get o-values :layout-grid-dir)
+                     (get n-values :layout-grid-dir))
          (identical? (get o-values :layout)
                      (get n-values :layout)))))
 
@@ -1231,7 +1233,7 @@
          (fn [dir]
            (if (= :flex layout-type)
              (st/emit! (dwsl/update-layout ids {:layout-flex-dir dir}))
-             (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir})))))
+             (st/emit! (dwsl/change-grid-direction ids dir)))))
 
         ;; Align grid
         align-items-row    (:layout-align-items values)
@@ -1426,7 +1428,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [dir]
-           (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir}))))
+           (st/emit! (dwsl/change-grid-direction ids dir))))
 
         on-gap-change
         (mf/use-fn

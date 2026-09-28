@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.plugins.tracks
   (:require
@@ -43,7 +43,7 @@
        :set
        (fn [value]
          (cond
-           (not (sm/valid-safe-number? value))
+           (not (sm/valid-non-negative-safe-number? value))
            (u/not-valid plugin-id :value value)
 
            (not (r/check-permission plugin-id "content:write"))

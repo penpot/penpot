@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.rpc.commands.binfile
   (:refer-clojure :exclude [assert])
@@ -42,17 +42,24 @@
   schema:export-binfile
   [:map {:title "export-binfile"}
    [:file-id ::sm/uuid]
-   [:include-libraries ::sm/boolean]
-   [:embed-assets ::sm/boolean]])
+   [:type {:optional true} [::sm/one-of #{:include-libraries :merge-libraries :detach-libraries :link-later}]]
+   [:include-libraries {:optional true} ::sm/boolean]
+   [:embed-assets {:optional true} ::sm/boolean]])
 
 (defn- export-binfile
-  [{:keys [::sto/storage] :as cfg} {:keys [file-id include-libraries embed-assets]}]
-  (let [output  (tmp/tempfile*)]
+  [{:keys [::sto/storage] :as cfg} {:keys [type file-id include-libraries embed-assets]}]
+  (let [output (tmp/tempfile*)
+        ;; Convert legacy boolean flags to unified export-type
+        export-type (cond
+                      (some? type) type
+                      (true? include-libraries) :include-libraries
+                      (true? embed-assets) :merge-libraries
+                      :else :detach-libraries)]
+
     (try
       (-> cfg
           (assoc ::bfc/ids #{file-id})
-          (assoc ::bfc/embed-assets embed-assets)
-          (assoc ::bfc/include-libraries include-libraries)
+          (assoc ::bfc/export-type export-type)
           (bf.v3/export-files! output))
 
       (let [data   (sto/content output)
@@ -63,7 +70,8 @@
                                      :bucket sto/tempfile-bucket})]
 
         (-> (cf/get :public-uri)
-            (u/join "/assets/by-id/")
+            (u/ensure-path-slash)
+            (u/join "assets/by-id/")
             (u/join (str (:id object)))))
 
       (finally
@@ -72,7 +80,8 @@
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
-   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]]
+   ::doc/changes [["2.12" "Remove version parameter, only one version is supported"]
+                  ["2.19" "Deprecated `include-libraries` and `embed-assets` params"]]
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
@@ -93,8 +102,11 @@
             (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
             (assoc ::bfc/project-id project-id)
             (assoc ::bfc/profile-id profile-id)
+            (assoc ::bfc/team-id (:id team))
             (assoc ::bfc/name name)
-            (assoc ::bfc/import-max-object-size (cf/get :binfile-import-max-object-size))
+            (assoc ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+            (assoc ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
+            (assoc ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
             (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
 
         input-path (:path file)
@@ -125,7 +137,7 @@
 
 (def ^:private schema:import-binfile
   [:and
-   [:map {:title "import-binfile"}
+   [:map {:title "import-binfile" :closed true}
     [:name [:or [:string {:max 250}]
             [:map-of ::sm/uuid [:string {:max 250}]]]]
     [:project-id ::sm/uuid]
@@ -171,7 +183,7 @@
         manifest
         (case (int version)
           1 nil
-          3 (bf.v3/get-manifest (-> params :file :path))
+          3 (bf.v3/get-manifest cfg (-> params :file :path))
           (throw (ex-info (str "Unsupported binfile version: " version)
                           {:type :validation
                            :code :unsupported-version

@@ -2,7 +2,7 @@
 ;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.ui.workspace.sidebar.versions
   (:require-macros [app.main.style :as stl])
@@ -29,7 +29,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -55,7 +54,7 @@
         is-owner?           (-> team :permissions :is-owner)
         email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
         support-email       "support@penpot.app"
-        go-to-subscription  (dm/str (u/join cfg/public-uri "#/settings/subscriptions"))]
+        go-to-subscription  (dm/str cfg/public-uri "?screen=settings-subscription")]
 
     (if (contains? cfg/flags :subscriptions)
       (if is-owner?

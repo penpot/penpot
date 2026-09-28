@@ -100,34 +100,13 @@ mutation($issueId: ID!, $pullRequestIds: [ID!]!) {
 }
 """
 
-GQL_VERIFY_ISSUE_LINK_QUERY = """\
-query($owner: String!, $repo: String!, $issueNumber: Int!, $prNumber: Int!) {
-  repository(owner: $owner, name: $repo) {
-    issue(number: $issueNumber) {
-      number
-      state
-      closedByPullRequestsReferences(
-        includeClosedPrs: true
-        userLinkedOnly: true
-        first: 100
-      ) {
-        nodes { number state url }
-      }
-    }
-    pullRequest(number: $prNumber) {
-      number
-      state
-      closingIssuesReferences(first: 100) {
-        nodes { number state url }
-      }
-    }
-  }
-}
-"""
-
-
 def link_issue_to_pr(issue_number: int, pr_number: int) -> dict:
-    """Add and verify an explicit GitHub issue-to-PR link."""
+    """Add an explicit GitHub issue-to-PR link.
+
+    We trust the successful ``addCloseIssueReferences`` mutation instead of
+    re-querying: GitHub does not reliably report mutation-created links
+    through ``closedByPullRequestsReferences(userLinkedOnly: true)``.
+    """
     if issue_number <= 0 or pr_number <= 0:
         raise ValueError("issue and pull request numbers must be positive")
 
@@ -158,40 +137,10 @@ def link_issue_to_pr(issue_number: int, pr_number: int) -> dict:
     if linked_issue.get("number") != issue_number:
         raise RuntimeError(f"GitHub did not link issue #{issue_number}")
 
-    verification_data = run_gh_graphql(GQL_VERIFY_ISSUE_LINK_QUERY, variables)
-    repository = verification_data.get("repository") or {}
-    issue = repository.get("issue") or {}
-    pull_request = repository.get("pullRequest") or {}
-    if not issue or not pull_request:
-        raise RuntimeError("GitHub did not return both link targets during verification")
-
-    issue_links = [
-        node
-        for node in issue["closedByPullRequestsReferences"]["nodes"]
-        if node.get("number") == pr_number
-    ]
-    pr_links = [
-        node
-        for node in pull_request["closingIssuesReferences"]["nodes"]
-        if node.get("number") == issue_number
-    ]
-    if not issue_links or not pr_links:
-        raise RuntimeError(
-            f"issue #{issue_number} and pull request #{pr_number} are not linked"
-        )
-
     return {
         "linked": True,
-        "issue": {
-            "number": issue["number"],
-            "state": issue["state"],
-            "linked_pull_requests": issue_links,
-        },
-        "pull_request": {
-            "number": pull_request["number"],
-            "state": pull_request["state"],
-            "linked_issues": pr_links,
-        },
+        "issue": {"number": issue_number},
+        "pull_request": {"number": pr_number},
     }
 
 
@@ -208,7 +157,7 @@ def cmd_link_issue(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     print(
-        f"Verified issue #{args.issue_number} -> pull request #{args.pr_number}",
+        f"Linked issue #{args.issue_number} -> pull request #{args.pr_number}",
         file=sys.stderr,
     )
     print(json.dumps(result, indent=2))
@@ -905,7 +854,7 @@ def main() -> None:
     p_link = sub.add_parser(
         "link-issue",
         aliases=["link"],
-        help="Explicitly link an issue to a pull request and verify both sides",
+        help="Explicitly link an issue to a pull request",
     )
     p_link.add_argument("issue_number", type=int, help="Issue number")
     p_link.add_argument("pr_number", type=int, help="Pull request number")

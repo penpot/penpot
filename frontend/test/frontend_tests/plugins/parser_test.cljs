@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.plugins.parser-test
   (:require
@@ -173,3 +173,23 @@
                (:animation result)))
       (t/is (true? (sm/validate ctsi/schema:interaction result))))))
 
+
+(t/deftest test-parse-id-treats-blank-as-absent
+  ;; `""` is truthy in ClojureScript, so an unguarded blank id reaches
+  ;; `uuid/parse`. Plugins pass ids straight from JS, where an absent
+  ;; value is routinely an empty string.
+  (t/testing "nil is absent"
+    (t/is (nil? (parser/parse-id nil))))
+
+  (t/testing "an empty string is absent"
+    (t/is (nil? (parser/parse-id ""))))
+
+  (t/testing "a whitespace-only string is absent"
+    (t/is (nil? (parser/parse-id "   "))))
+
+  (t/testing "a valid uuid string is parsed"
+    (let [id (uuid/next)]
+      (t/is (= id (parser/parse-id (str id))))))
+
+  (t/testing "a malformed id raises, so plugin bugs stay visible"
+    (t/is (thrown? js/Error (parser/parse-id "not-a-uuid")))))

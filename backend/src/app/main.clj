@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main
   (:require
@@ -20,6 +20,7 @@
    [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
    [app.http.debug :as-alias http.debug]
+   [app.http.link-preview :as-alias http.link-preview]
    [app.http.management :as mgmt]
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
@@ -37,6 +38,7 @@
    [app.storage.fs :as-alias sto.fs]
    [app.storage.gc-deleted :as-alias sto.gc-deleted]
    [app.storage.gc-touched :as-alias sto.gc-touched]
+   [app.storage.pending-gc :as-alias sto.pending-gc]
    [app.storage.s3 :as-alias sto.s3]
    [app.system :as sys]
    [app.util.cron]
@@ -141,6 +143,43 @@
     ::mdef/labels []
     ::mdef/type :histogram}
 
+   :storage-s3-requests
+   {::mdef/name "penpot_storage_s3_requests_total"
+    ::mdef/help "Total S3 API calls performed by the storage backend."
+    ::mdef/labels ["operation" "target" "result"]
+    ::mdef/type :counter}
+
+   :storage-s3-retries
+   {::mdef/name "penpot_storage_s3_retries_total"
+    ::mdef/help "Total SDK retries observed on S3 API calls."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :counter}
+
+   :storage-s3-timing
+   {::mdef/name "penpot_storage_s3_timing"
+    ::mdef/help "S3 API call timing (milliseconds)."
+    ::mdef/labels ["operation" "target"]
+    ::mdef/type :histogram
+    ::mdef/buckets [5 10 25 50 100 250 500 1000 2500 5000 10000 30000 60000]}
+
+   :storage-operations
+   {::mdef/name "penpot_storage_operations_total"
+    ::mdef/help "Logical storage operations by Penpot bucket."
+    ::mdef/labels ["op" "bucket" "backend"]
+    ::mdef/type :counter}
+
+   :storage-dedup
+   {::mdef/name "penpot_storage_dedup_total"
+    ::mdef/help "Storage deduplication outcomes."
+    ::mdef/labels ["result" "bucket"]
+    ::mdef/type :counter}
+
+   :storage-asset-requests
+   {::mdef/name "penpot_storage_asset_requests_total"
+    ::mdef/help "Asset requests served by app.http.assets."
+    ::mdef/labels ["route" "backend" "bucket" "result"]
+    ::mdef/type :counter}
+
    :http-server-dispatch-timing
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
@@ -234,6 +273,10 @@
    ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
 
+   ::sto.pending-gc/handler
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
    ::http.client/client
    {::wrk/executor (ig/ref ::wrk/executor)}
 
@@ -313,12 +356,18 @@
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
+    ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
 
+   ::http.link-preview/routes
+   {::db/pool         (ig/ref ::db/pool)}
+
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
+    ::rds/pool        (ig/ref ::rds/pool)
     ::session/manager (ig/ref ::session/manager)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
     ::sto/storage     (ig/ref ::sto/storage)
     ::setup/props     (ig/ref ::setup/props)}
 
@@ -333,6 +382,7 @@
    {::http.assets/path              (cf/get :assets-path)
     ::http.assets/cache-max-age     (ct/duration {:hours 24})
     ::http.assets/signature-max-age (ct/duration {:hours 24 :minutes 15})
+    ::mtx/metrics                   (ig/ref ::mtx/metrics)
     ::sto/storage                   (ig/ref ::sto/storage)
     ::session/manager               (ig/ref ::session/manager)
     ::setup/props                   (ig/ref ::setup/props)
@@ -418,9 +468,9 @@
      :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :upload-session-gc  (ig/ref :app.tasks.upload-session-gc/handler)
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
+     :storage-pending-gc (ig/ref ::sto.pending-gc/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
      :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
@@ -456,15 +506,13 @@
    :app.tasks.tasks-gc/handler
    {::db/pool (ig/ref ::db/pool)}
 
-   :app.tasks.upload-session-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
-
    :app.tasks.objects-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.delete-object/handler
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.demo-purge/handler
    {::db/pool (ig/ref ::db/pool)}
@@ -541,6 +589,7 @@
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
     ::sto/backends
     {:s3 (ig/ref :app.storage.s3/backend)
      :fs (ig/ref :app.storage.fs/backend)
@@ -560,6 +609,7 @@
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
                             (cf/get :objects-storage-s3-io-threads))
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
 
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
@@ -586,10 +636,10 @@
       :task :storage-gc-touched}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :tasks-gc}
+      :task :storage-pending-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :upload-session-gc}
+      :task :tasks-gc}
 
      {:cron #penpot/cron "0 0 2 * * ?" ;; daily
       :task :file-gc-scheduler}

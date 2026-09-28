@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.svg-upload
   (:require
@@ -53,10 +53,13 @@
                           (or (str/starts-with? url "http://")
                               (str/starts-with? url "https://"))))))
        (rx/mapcat (fn [item]
+                    ;; The upload commands use closed params schemas, so
+                    ;; drop the svg-only attrs (:href :width :height) that
+                    ;; `svg/collect-images` attaches.
                     (->> (rp/cmd! (if (contains? item :content)
                                     :upload-file-media-object
                                     :create-file-media-object-from-url)
-                                  (dissoc item :href))
+                                  (dissoc item :href :width :height))
                          ;; When the image uploaded fail we skip the shape
                          ;; returning `nil` will afterward not create the shape.
                          (rx/catch #(rx/of nil))

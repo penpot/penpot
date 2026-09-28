@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.types.token
   (:require
@@ -122,9 +122,13 @@
 
 (def composite-dtcg-token-type->token-type
   "Same as above, in the opposite direction."
-  (assoc dtcg-token-type->token-type
-         "lineHeights" :line-height
-         "lineHeight"  :line-height))
+  (let [mapping (assoc dtcg-token-type->token-type
+                       "lineHeights" :line-height
+                       "lineHeight"  :line-height)]
+    (into mapping
+          (map (fn [[key value]]
+                 [(keyword (str/kebab key)) value]))
+          mapping)))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
@@ -269,10 +273,17 @@
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:stroke-width
-  [:map
-   [:stroke-width {:optional true} schema:token-name]])
+  [:map {:title "StrokeWidthTokenAttrs"}
+   [:stroke-width-top {:optional true} schema:token-name]
+   [:stroke-width-right {:optional true} schema:token-name]
+   [:stroke-width-bottom {:optional true} schema:token-name]
+   [:stroke-width-left {:optional true} schema:token-name]])
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
+
+(def per-side-stroke-width-keys
+  "Per-side stroke width attribute keys."
+  #{:stroke-width-top :stroke-width-right :stroke-width-bottom :stroke-width-left})
 
 (def ^:private schema:dimensions
   (-> (reduce mu/union [schema:sizing
@@ -421,25 +432,31 @@
     :fill :fills
     :stroke-color :strokes
     :stroke-width :strokes
+    :stroke-width-top :strokes
+    :stroke-width-right :strokes
+    :stroke-width-bottom :strokes
+    :stroke-width-left :strokes
     token-attr))
 
-(defn shape-attr->token-attrs
-  "Returns the token-attr affected when a given attribute in a shape is changed.
-   The sub-attr is for attributes that may have multiple values, like strokes
-   (may be width or color) and layout padding & margin (may have 4 edges)."
-  ([shape-attr] (shape-attr->token-attrs shape-attr nil))
+(defn- shape-attr->token-attrs*
+  ([shape-attr] (shape-attr->token-attrs* shape-attr nil))
   ([shape-attr changed-sub-attr]
    (cond
      (= :fills shape-attr)
      #{:fill}
 
      (and (= :strokes shape-attr) (nil? changed-sub-attr))
-     #{:stroke-width :stroke-color}
+     (set/union stroke-width-keys #{:stroke-color})
 
      (= :strokes shape-attr)
-     (cond
-       (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
-       (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
+     (let [sub-attrs (set changed-sub-attr)
+           per-side  (set/intersection sub-attrs stroke-width-keys)]
+       (cond
+         (sub-attrs :stroke-color) #{:stroke-color}
+         ;; A single side change must only unapply that side's token, even
+         ;; when the top side also writes the global :stroke-width.
+         (seq per-side) per-side
+         (sub-attrs :stroke-width) stroke-width-keys))
 
      (= :layout-padding shape-attr)
      (if (seq changed-sub-attr)
@@ -460,6 +477,7 @@
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
      (border-radius-keys shape-attr) #{shape-attr}
+     (stroke-width-keys shape-attr) #{shape-attr}
      (shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
@@ -467,6 +485,20 @@
      (rotation-keys shape-attr) #{shape-attr}
      (number-keys shape-attr) #{shape-attr}
      (axis-keys shape-attr) #{shape-attr})))
+
+(def ^:private shape-attr->token-attrs-1
+  (memoize shape-attr->token-attrs*))
+
+(defn shape-attr->token-attrs
+  "Returns the token-attr affected when a given attribute in a shape is changed.
+   The sub-attr is for attributes that may have multiple values, like strokes
+   (may be width or color) and layout padding & margin (may have 4 edges)."
+  ([shape-attr]
+   (shape-attr->token-attrs-1 shape-attr))
+  ([shape-attr changed-sub-attr]
+   (if (nil? changed-sub-attr)
+     (shape-attr->token-attrs-1 shape-attr)
+     (shape-attr->token-attrs* shape-attr changed-sub-attr))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS for token attributes by shape type
@@ -513,6 +545,12 @@
     :text    text-attributes
     nil))
 
+(defn per-side-stroke-shape?
+  "Returns true when the given shape type supports independent stroke
+  widths per side (boards and rectangles)."
+  [shape-type]
+  (contains? #{:rect :frame} shape-type))
+
 (defn appliable-attrs-for-shape
   "Returns which ones of the given `attributes` can be applied to a shape
    of type `shape-type` and `is-layout`."
@@ -555,6 +593,10 @@
    :line-height        [:line-height :number]
    :opacity            [:opacity]
    :stroke-width       [:stroke-width :dimensions]
+   :stroke-width-top   [:stroke-width :dimensions]
+   :stroke-width-right [:stroke-width :dimensions]
+   :stroke-width-bottom [:stroke-width :dimensions]
+   :stroke-width-left  [:stroke-width :dimensions]
    :font-size          [:font-size]
    :font-weight        [:font-weight]
    :text-decoration    [:text-decoration]
@@ -563,6 +605,7 @@
    :dimensions         [:dimensions]
    :fill               [:color]
    :stroke-color       [:color]
+   :canvas             [:color]
    :typography         [:typography]
    :number             [:number]
    :sizing             [:sizing :dimensions]

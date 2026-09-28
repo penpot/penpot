@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) KALEIDOS INC Sucursal en España SL
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.common.schema.messages
   (:require
@@ -15,6 +15,8 @@
 
 (defn- translate-code
   [code]
+  ;; validation codes are dynamic by design
+  #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
   (if (vector? code)
     (tr (nth code 0) (i18n/c (nth code 1)))
     (tr code)))
