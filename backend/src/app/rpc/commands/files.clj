@@ -1111,22 +1111,39 @@
 
 ;; --- Library relation helpers
 
+(def ^:private sql:same-team?
+  "SELECT EXISTS (
+     SELECT 1 FROM file AS f
+     JOIN project AS fp ON (fp.id = f.project_id)
+     JOIN file AS l ON (l.id = ?)
+     JOIN project AS lp ON (lp.id = l.project_id)
+     WHERE f.id = ? AND fp.team_id = lp.team_id
+   ) AS ok")
+
+(defn- same-team?
+  [conn file-id library-id]
+  (boolean (:ok (db/exec-one! conn [sql:same-team? library-id file-id]))))
+
 (defn- check-library-team-ownership!
   "Verify that file and library belong to the same team.
-  Prevents cross-team library relation injection."
+   Prevents cross-team library relation injection."
   [conn file-id library-id]
-  (let [sql "SELECT EXISTS (
-               SELECT 1 FROM file AS f
-               JOIN project AS fp ON (fp.id = f.project_id)
-               JOIN file AS l ON (l.id = ?)
-               JOIN project AS lp ON (lp.id = l.project_id)
-               WHERE f.id = ? AND fp.team_id = lp.team_id
-             ) AS ok"
-        row (db/exec-one! conn [sql library-id file-id])]
-    (when-not (:ok row)
-      (ex/raise :type :not-found
-                :code :object-not-found
-                :hint "file and library must belong to the same team"))))
+  (when-not (same-team? conn file-id library-id)
+    (ex/raise :type :not-found
+              :code :object-not-found
+              :hint "file and library must belong to the same team")))
+
+(defn- can-unlink-candidate?
+  "Whether profile may drop the relation between file and a superseded
+  candidate: same bar as the unlink command (edit permission on the
+  candidate library plus same team), checked without raising so one
+  foreign id in client input can neither block the resolution nor cut
+  a relation it has no rights over."
+  [conn profile-id file-id library-id]
+  (boolean
+   (and (not= file-id library-id)
+        (:can-edit (bfc/get-file-permissions conn profile-id library-id))
+        (same-team? conn file-id library-id))))
 
 ;; --- MUTATION COMMAND: link-file-to-library
 
@@ -1180,19 +1197,22 @@
 (def ^:private schema:resolve-import-token-source
   [:map {:title "resolve-import-token-source"}
    [:file-id ::sm/uuid]
-   [:library-id {:optional true} ::sm/uuid]])
+   [:library-id ::sm/uuid]
+   [:tokens-status-names {:optional true} [:map]]
+   [:candidate-ids {:optional true} [:vector ::sm/uuid]]])
 
 (sv/defmethod ::resolve-import-token-source
-  "Resolve an imported file's pending token-source library and state."
+  "Resolve the chosen token-source library and state of an imported file in one step."
   {::doc/added "2.19"
    ::webhooks/event? true
    ::sm/params schema:resolve-import-token-source
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names candidate-ids]}]
   (check-edition-permissions! conn profile-id file-id)
-  (when library-id
-    (check-library-link! cfg conn profile-id file-id library-id))
-  (bfv3/resolve-import-token-source! cfg file-id library-id))
+  (check-library-link! cfg conn profile-id file-id library-id)
+  (let [unlinkable (filterv #(can-unlink-candidate? conn profile-id file-id %)
+                            (distinct (remove #{library-id} (or candidate-ids []))))]
+    (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names unlinkable)))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 

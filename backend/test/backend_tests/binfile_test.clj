@@ -621,7 +621,6 @@
                                    :library-file-id (:id replacement)}))))
       (t/is (nil? (cfo/get-tokens-source (:data file))))
       (t/is (ctos/tokens-status? (get-in file [:data :tokens-status])))
-      (t/is (nil? (:pending-tokens-source (:data file))))
       (t/is (nil? (cfv/validate-file file []))))
 
     (let [status (get-in local-match-file [:data :tokens-status])]
@@ -644,7 +643,6 @@
                (ctos/get-active-theme-ids status)))
       (t/is (= #{(:local-set-id (nth cases 2))}
                (ctos/get-active-set-ids status)))
-      (t/is (nil? (:pending-tokens-source (:data local-missing-file))))
       (t/is (nil? (cfv/validate-file local-missing-file []))))
 
     (doseq [[case file outcome] [[(first cases) local-match-file :tokens-source-fallback-local]
@@ -769,32 +767,33 @@
           second-imported (get imported "Manual Skipped Consumer")
           ordinary-imported (get imported "Manual Ordinary Consumer")
           first-before (bfc/get-file th/*system* (:id first-imported))
-          second-before (bfc/get-file th/*system* (:id second-imported))
           pending (first (get-in result [:resolution (:id first-imported) :pending]))
           ordinary-pending (first (get-in result [:resolution (:id ordinary-imported) :pending]))]
       (t/is (:tokens-source? pending))
       (t/is (not (:tokens-source? ordinary-pending)))
-      (t/is (= #{(:id candidate-a) (:id candidate-b)}
-               (get-in first-imported [:data :pending-tokens-source :candidate-ids])))
+      (t/is (= (set (map :id (:candidates pending)))
+               #{(:id candidate-a) (:id candidate-b)}))
+      (t/is (some? (:tokens-status-names pending)))
       (t/is (nil? (cfv/validate-file first-imported [])))
-      (let [chosen-out (th/command! {::th/type :resolve-import-token-source
-                                     ::rpc/profile-id (:id profile)
-                                     :file-id (:id first-imported)
-                                     :library-id (:id candidate-a)})
-            skipped-out (th/command! {::th/type :resolve-import-token-source
-                                      ::rpc/profile-id (:id profile)
-                                      :file-id (:id second-imported)})
-            ordinary-out (th/command! {::th/type :link-file-to-library
-                                       ::rpc/profile-id (:id profile)
-                                       :file-id (:id ordinary-imported)
-                                       :library-id (:id candidate-b)})]
+      (let [resolve-params {::th/type :resolve-import-token-source
+                            ::rpc/profile-id (:id profile)
+                            :file-id (:id first-imported)
+                            :library-id (:id candidate-a)
+                            :tokens-status-names (:tokens-status-names pending)
+                            :candidate-ids [(:id candidate-a) (:id candidate-b)]}
+            chosen-out      (th/command! resolve-params)
+            repeated-out    (th/command! resolve-params)
+            ordinary-out    (th/command! {::th/type :link-file-to-library
+                                           ::rpc/profile-id (:id profile)
+                                           :file-id (:id ordinary-imported)
+                                           :library-id (:id candidate-b)})]
         (t/is (nil? (:error chosen-out)))
-        (t/is (nil? (:error skipped-out)))
+        (t/is (nil? (:error repeated-out)))
         (t/is (nil? (:error ordinary-out)))
         (t/is (= :tokens-source-restored
                  (get-in chosen-out [:result :tokens-source-outcome])))
-        (t/is (= :tokens-source-fallback-local
-                 (get-in skipped-out [:result :tokens-source-outcome]))))
+        (t/is (= :tokens-source-restored
+                 (get-in repeated-out [:result :tokens-source-outcome]))))
       (let [first-imported (bfc/get-file th/*system* (:id first-imported))
             second-imported (bfc/get-file th/*system* (:id second-imported))
             ordinary-imported (bfc/get-file th/*system* (:id ordinary-imported))
@@ -803,25 +802,23 @@
             ordinary-status (get-in ordinary-imported [:data :tokens-status])]
         (t/is (= (inc (:revn first-before)) (:revn first-imported)))
         (t/is (not= (:modified-at first-before) (:modified-at first-imported)))
-        (t/is (= (inc (:revn second-before)) (:revn second-imported)))
-        (t/is (not= (:modified-at second-before) (:modified-at second-imported)))
         (t/is (= (:id candidate-a) (cfo/get-tokens-source (:data first-imported))))
         (t/is (= #{candidate-a-theme} (ctos/get-active-theme-ids first-status)))
         (t/is (= #{candidate-a-set} (ctos/get-active-set-ids first-status)))
-        (t/is (nil? (:pending-tokens-source (:data first-imported))))
         (t/is (nil? (cfo/get-tokens-source (:data second-imported))))
         (t/is (= #{second-local-theme} (ctos/get-active-theme-ids second-status)))
         (t/is (= #{second-local-set} (ctos/get-active-set-ids second-status)))
-        (t/is (nil? (:pending-tokens-source (:data second-imported))))
         (t/is (nil? (cfo/get-tokens-source (:data ordinary-imported))))
         (t/is (= (:id ordinary-imported)
                  (cfo/get-effective-tokens-source (:data ordinary-imported))))
         (t/is (= #{ordinary-local-theme} (ctos/get-active-theme-ids ordinary-status)))
         (t/is (= #{ordinary-local-set} (ctos/get-active-set-ids ordinary-status)))
-        (t/is (nil? (:pending-tokens-source (:data ordinary-imported))))
         (t/is (= 1 (count (db/query th/*system* :file-library-rel
                                     {:file-id (:id first-imported)
                                      :library-file-id (:id candidate-a)}))))
+        (t/is (empty? (db/query th/*system* :file-library-rel
+                                    {:file-id (:id first-imported)
+                                     :library-file-id (:id candidate-b)}))))
         (t/is (= 1 (count (db/query th/*system* :file-library-rel
                                     {:file-id (:id ordinary-imported)
                                      :library-file-id (:id candidate-b)}))))
@@ -829,7 +826,59 @@
                                 {:file-id (:id second-imported)})))
         (t/is (nil? (cfv/validate-file first-imported [candidate-a])))
         (t/is (nil? (cfv/validate-file second-imported [])))
-        (t/is (nil? (cfv/validate-file ordinary-imported [candidate-b])))))))
+        (t/is (nil? (cfv/validate-file ordinary-imported [candidate-b])))
+        (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                    {:file-id (:id first-imported)
+                                     :library-file-id (:id candidate-a)}))))
+        (t/is (empty? (db/query th/*system* :file-library-rel
+                                {:file-id (:id first-imported)
+                                 :library-file-id (:id candidate-b)})))
+        (let [supersede-out (th/command! {::th/type :resolve-import-token-source
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id first-imported)
+                                          :library-id (:id candidate-b)
+                                          :tokens-status-names (:tokens-status-names pending)
+                                          :candidate-ids [(:id candidate-a) (:id candidate-b)]})
+              superseded    (bfc/get-file th/*system* (:id first-imported))
+              superseded-status (get-in superseded [:data :tokens-status])]
+          (t/is (nil? (:error supersede-out)))
+          (t/is (= :tokens-source-restored
+                   (get-in supersede-out [:result :tokens-source-outcome])))
+          (t/is (= (:id candidate-b) (cfo/get-tokens-source (:data superseded))))
+          (t/is (= #{candidate-b-theme} (ctos/get-active-theme-ids superseded-status)))
+          (t/is (= #{candidate-b-set} (ctos/get-active-set-ids superseded-status)))
+          (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                      {:file-id (:id first-imported)
+                                       :library-file-id (:id candidate-b)}))))
+          (t/is (empty? (db/query th/*system* :file-library-rel
+                                  {:file-id (:id first-imported)
+                                   :library-file-id (:id candidate-a)})))
+          (t/is (nil? (cfv/validate-file superseded [candidate-b]))))
+          (let [other-profile (th/create-profile* 2)
+                foreign-lib   (th/create-file* 7 {:profile-id (:id other-profile)
+                                                  :project-id (:default-project-id other-profile)
+                                                  :is-shared true
+                                                  :name "Foreign Library"})
+                _             (db/insert! th/*system* :file-library-rel
+                                          {:file-id (:id first-imported)
+                                           :library-file-id (:id foreign-lib)})
+                foreign-out   (th/command! {::th/type :resolve-import-token-source
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id first-imported)
+                                            :library-id (:id candidate-b)
+                                            :tokens-status-names (:tokens-status-names pending)
+                                            :candidate-ids [(:id candidate-b) (:id foreign-lib)]})
+                foreign-file  (bfc/get-file th/*system* (:id first-imported))]
+            (t/is (nil? (:error foreign-out)))
+            (t/is (= :tokens-source-restored
+                     (get-in foreign-out [:result :tokens-source-outcome])))
+            (t/is (= (:id candidate-b) (cfo/get-tokens-source (:data foreign-file))))
+            (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                        {:file-id (:id first-imported)
+                                         :library-file-id (:id candidate-b)}))))
+            (t/is (= 1 (count (db/query th/*system* :file-library-rel
+                                        {:file-id (:id first-imported)
+                                         :library-file-id (:id foreign-lib)}))))))))
 
 (t/deftest import-no-auto-link-no-match
   (let [profile (th/create-profile* 1)

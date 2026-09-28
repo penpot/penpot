@@ -89,14 +89,7 @@
    [:plugin-data {:optional true} schema:plugin-data]
    [:tokens-source {:optional true} ::sm/uuid]                ;; The tokens-lib may be in this file or in an external library
    [:tokens-lib {:optional true} ctob/schema:tokens-lib]
-   [:tokens-status {:optional true} ctos/schema:tokens-status]
-   [:pending-tokens-source {:optional true}
-    [:map {:title "PendingTokensSource"}
-     [:library-id ::sm/uuid]
-     [:status-names [:map-of :string [:vector :string]]]
-     [:fallback-outcome [:enum :tokens-source-fallback-local
-                         :tokens-source-deactivated]]
-     [:candidate-ids {:optional true} [:set ::sm/uuid]]]]])
+   [:tokens-status {:optional true} ctos/schema:tokens-status]])
 
 (def schema:file-metadata
   [:map {:title "Metadata"}

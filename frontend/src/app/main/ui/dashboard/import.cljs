@@ -181,10 +181,14 @@
 (defn pending-library-resolution-request
   [file-id pending-entry library-id]
   (cond
-    (:tokens-source? pending-entry)
+    (and (:tokens-source? pending-entry) library-id)
     {:command :resolve-import-token-source
-     :params (cond-> {:file-id file-id}
-               library-id (assoc :library-id library-id))}
+     :params (cond-> {:file-id file-id
+                      :library-id library-id}
+               (some? (:tokens-status-names pending-entry))
+               (assoc :tokens-status-names (:tokens-status-names pending-entry))
+               (seq (:candidates pending-entry))
+               (assoc :candidate-ids (mapv :id (:candidates pending-entry))))}
 
     library-id
     {:command :link-file-to-library
@@ -402,6 +406,14 @@
   (fn []
     (mapv #(assoc % :status :analyze) entries)))
 
+(defn skipped-token-source-outcome
+  "Outcome to notify when a pending token-source resolution is skipped
+  without choosing a replacement. The imported file already persists the
+  fallback state, so the matching notice keeps state and message aligned."
+  [pending-entry]
+  (when (:tokens-source? pending-entry)
+    (:tokens-source-fallback pending-entry)))
+
 (defn- resolve-library-link!
   [file-id pending-entry library-id]
   (if-let [{:keys [command params]} (pending-library-resolution-request file-id
@@ -415,7 +427,10 @@
                                 :library-id library-id
                                 :cause cause)
                      (rx/of nil))))
-    (rx/of nil)))
+    (do
+      (when-let [outcome (skipped-token-source-outcome pending-entry)]
+        (notify-token-source-outcome outcome))
+      (rx/of nil))))
 
 (mf/defc library-resolution*
   {::mf/private true}
