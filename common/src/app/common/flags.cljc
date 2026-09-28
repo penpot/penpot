@@ -228,10 +228,12 @@
    :enable-available-viewer-wasm
    :enable-background-blur
    :enable-stroke-path
+   :enable-stroke-per-side
    :enable-token-combobox
    :enable-custom-shortcuts
    :enable-token-lib-sync
    :enable-link-unfurl])
+
 (defn parse
   [& flags]
   (loop [flags  (apply concat flags)
