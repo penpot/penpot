@@ -15,6 +15,8 @@
 
 (defn- translate-code
   [code]
+  ;; validation codes are dynamic by design
+  #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
   (if (vector? code)
     (tr (nth code 0) (i18n/c (nth code 1)))
     (tr code)))

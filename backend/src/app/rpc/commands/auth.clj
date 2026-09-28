@@ -7,6 +7,7 @@
 (ns app.rpc.commands.auth
   (:require
    [app.auth :as auth]
+   [app.auth.login-lockout :as login-lockout]
    [app.auth.oidc :as oidc]
    [app.auth.passwords :as passwords]
    [app.common.data :as d]
@@ -30,6 +31,7 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.teams-invitations :as teams-invitations]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
@@ -85,9 +87,21 @@
               (ex/raise :type :restriction
                         :code :profile-blocked
                         :hint "profile is marked as blocked"))
+            (let [result (login-lockout/locked? cfg (:id profile))]
+              (when (:locked? result)
+                (ex/raise :type :rate-limit
+                          :code :account-locked
+                          :hint "account locked due to too many failed login attempts"
+                          :ttl (:ttl result))))
             (when-not (check-password cfg profile password)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
+              (let [result (login-lockout/record-failed-attempt! cfg (:id profile))]
+                (if (and result (:locked? result))
+                  (ex/raise :type :rate-limit
+                            :code :account-locked
+                            :hint "account locked due to too many failed login attempts"
+                            :ttl (:ttl result))
+                  (ex/raise :type :validation
+                            :code :wrong-credentials))))
             (when-let [deleted-at (:deleted-at profile)]
               (when (ct/is-after? (ct/now) deleted-at)
                 (ex/raise :type :validation
@@ -111,6 +125,7 @@
                                {:invitation-token (:invitation-token params)}
                                (assoc profile :is-admin (let [admins (cf/get :admins)]
                                                           (contains? admins (:email profile)))))]
+              (login-lockout/clear-attempts! cfg (:id profile))
               (-> response
                   (rph/with-transform (session/create-fn cfg profile))
                   (rph/with-meta {::audit/props (audit/profile->props profile)
@@ -179,11 +194,19 @@
           (update-password [conn profile-id]
             (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
-              nil))]
+              (db/get-by-id conn :profile profile-id)))]
 
     (passwords/validate-password password)
-    (->> (validate-token token)
-         (update-password conn))
+
+    (let [profile (some->> (validate-token token)
+                           (update-password conn))]
+      (when profile
+        (login-lockout/clear-attempts! cfg (:id profile))
+        (eml/send! {::eml/conn conn
+                    ::eml/factory eml/password-changed
+                    :public-uri (cf/get :public-uri)
+                    :to (:email profile)
+                    :name (:fullname profile)})))
 
     nil))
 
@@ -203,23 +226,51 @@
 
 ;; ---- COMMAND: Prepare Register
 
+(defn- validate-registration-flags!
+  ([cfg invitation]
+   (validate-registration-flags! cfg invitation false))
+  ([cfg invitation lock-invitation?]
+   (when-not (contains? cf/flags :login-with-password)
+     (ex/raise :type :restriction
+               :code :registration-disabled
+               :hint "registration disabled"))
+
+   (when-not (contains? cf/flags :registration)
+     (if (nil? invitation)
+       (ex/raise :type :restriction
+                 :code :registration-disabled
+                 :hint "registration disabled")
+       (let [opts (when lock-invitation? {::db/for-update true})]
+         (when (nil? (teams-invitations/active-invitation cfg invitation opts))
+           (ex/raise :type :validation
+                     :code :invalid-token
+                     :hint "no active invitation associated with the token")))))))
+
 (defn- validate-register-attempt!
   [cfg params]
-
-  (when (or (not (contains? cf/flags :registration))
-            (not (contains? cf/flags :login-with-password)))
-    (ex/raise :type :restriction
-              :code :registration-disabled
-              :hint "registration disabled"))
-
-  (when (contains? params :invitation-token)
-    (let [invitation (tokens/verify cfg
+  (let [invitation? (contains? params :invitation-token)
+        invitation (when invitation?
+                     (tokens/verify cfg
                                     {:token (:invitation-token params)
-                                     :iss :team-invitation})]
-      (when-not (= (:email params) (:member-email invitation))
-        (ex/raise :type :restriction
-                  :code :email-does-not-match-invitation
-                  :hint "email should match the invitation"))))
+                                     :iss :team-invitation}))]
+
+    (when (or (not (contains? cf/flags :login-with-password))
+              (and (not (contains? cf/flags :registration))
+                   (not invitation?)))
+      (ex/raise :type :restriction
+                :code :registration-disabled
+                :hint "registration disabled"))
+
+    (when (and invitation?
+               (not= (profile/clean-email (:email params))
+                     (profile/clean-email (:member-email invitation))))
+      (ex/raise :type :restriction
+                :code :email-does-not-match-invitation
+                :hint "email should match the invitation"))
+
+    (when (and invitation?
+               (not (contains? cf/flags :registration)))
+      (validate-registration-flags! cfg invitation)))
 
   (when (and (email.blacklist/enabled? cfg)
              (email.blacklist/contains? cfg (:email params)))
@@ -445,6 +496,9 @@
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify cfg {:token token :iss :prepared-register})
+        invitation (when-let [token (:invitation-token claims)]
+                     (tokens/verify cfg {:token token :iss :team-invitation}))
+        _          (validate-registration-flags! cfg invitation true)
         params     (cond-> claims
                      (:accept-newsletter-updates params)
                      (update :props assoc :newsletter-updates true))
@@ -461,9 +515,6 @@
                          (vary-meta profile assoc :created true)))
 
         created?   (-> profile meta :created true?)
-
-        invitation (when-let [token (:invitation-token params)]
-                     (tokens/verify cfg {:token token :iss :team-invitation}))
 
         props      (-> (audit/profile->props profile)
                        (assoc :from-invitation (some? invitation)))]

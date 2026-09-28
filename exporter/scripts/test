@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 set -ex
-corepack enable;
-corepack install;
 pnpm install;
+pushd ../render-wasm;
+./build export;
+popd
 pnpm run test;

@@ -59,6 +59,7 @@
     :feDiffuseLighting
     :feDisplacementMap
     :feDistantLight
+    :feDropShadow
     :feFlood
     :feFuncA
     :feFuncB
@@ -439,6 +440,7 @@
     :feConvolveMatrix
     :feDiffuseLighting
     :feDisplacementMap
+    :feDropShadow
     :feFlood
     :feGaussianBlur
     :feImage

@@ -1,5 +1,6 @@
 import { expect } from '../framework/expect';
 import { describe, test } from '../framework/registry';
+import type { Board } from '@penpot/plugin-types';
 
 // Viewport and guides (ruler guides + board guides).
 
@@ -80,6 +81,51 @@ describe('Ruler guides', () => {
       page.removeRulerGuide(guide);
     }
   });
+
+  test('page ruler guide rejects a removed board', (ctx) => {
+    const page = ctx.penpot.currentPage;
+    expect(page).not.toBeNull();
+    if (page) {
+      const removed = ctx.penpot.createBoard();
+      ctx.board.appendChild(removed);
+      removed.remove();
+      expect(() => page.addRulerGuide('vertical', 20, removed)).toThrow();
+
+      const guide = page.addRulerGuide('vertical', 20);
+      expect(() => {
+        guide.board = removed;
+      }).toThrow();
+      guide.remove();
+    }
+  });
+
+  test('ruler guides reject boards from another page', async (ctx) => {
+    const original = ctx.penpot.currentPage;
+    expect(original).not.toBeNull();
+    if (!original) return;
+
+    const guide = original.addRulerGuide('vertical', 20);
+    const otherPage = ctx.penpot.createPage();
+    try {
+      await ctx.penpot.openPage(otherPage);
+      const otherBoard = ctx.penpot.createBoard();
+      (otherPage.root as Board).appendChild(otherBoard);
+      await ctx.penpot.openPage(original);
+
+      expect(() =>
+        original.addRulerGuide('vertical', 20, otherBoard),
+      ).toThrow();
+      expect(() => {
+        guide.board = otherBoard;
+      }).toThrow();
+    } finally {
+      if (ctx.penpot.currentPage?.id !== original.id) {
+        await ctx.penpot.openPage(original);
+      }
+      guide.remove();
+      otherPage.remove();
+    }
+  });
 });
 
 describe('Board guides', () => {
@@ -136,5 +182,67 @@ describe('Board guides', () => {
         void g.params.size;
       }
     }
+  });
+
+  test('board guides allow automatic sizes', (ctx) => {
+    expect(() => {
+      ctx.board.guides = [
+        {
+          type: 'column',
+          display: true,
+          params: { color: { color: '#ff0000', opacity: 1 } },
+        },
+        {
+          type: 'row',
+          display: true,
+          params: { color: { color: '#00ff00', opacity: 1 } },
+        },
+        {
+          type: 'square',
+          display: true,
+          params: { color: { color: '#0000ff', opacity: 1 } },
+        },
+      ];
+    }).not.toThrow();
+  });
+
+  test('board guide sizes must meet their positive minimums', (ctx) => {
+    expect(() => {
+      ctx.board.guides = [
+        {
+          type: 'column',
+          display: true,
+          params: {
+            color: { color: '#000000', opacity: 1 },
+            type: 'stretch',
+            size: 0.5,
+            gutter: 0,
+          },
+        },
+      ];
+    }).toThrow();
+    expect(() => {
+      ctx.board.guides = [
+        {
+          type: 'row',
+          display: true,
+          params: {
+            color: { color: '#000000', opacity: 1 },
+            type: 'stretch',
+            size: 0.5,
+            gutter: 0,
+          },
+        },
+      ];
+    }).toThrow();
+    expect(() => {
+      ctx.board.guides = [
+        {
+          type: 'square',
+          display: true,
+          params: { color: { color: '#000000', opacity: 1 }, size: 0.009 },
+        },
+      ];
+    }).toThrow();
   });
 });

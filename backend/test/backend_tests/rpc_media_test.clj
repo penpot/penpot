@@ -79,6 +79,7 @@
     (t/is (nil? (:error out)))
     (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
+      (t/is (uuid? (:id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
       (t/is (= "image/jpeg" (:mtype result)))
@@ -91,51 +92,6 @@
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
-
-
-(t/deftest media-object-upload-idempotency
-  (let [prof   (th/create-profile* 1)
-        proj   (th/create-project* 1 {:profile-id (:id prof)
-                                      :team-id (:default-team-id prof)})
-        file   (th/create-file* 1 {:profile-id (:id prof)
-                                   :project-id (:default-project-id prof)
-                                   :is-shared false})
-        mfile  {:filename "sample.jpg"
-                :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                :mtype "image/jpeg"
-                :size 312043}
-
-        params {::th/type :upload-file-media-object
-                ::rpc/profile-id (:id prof)
-                :file-id (:id file)
-                :is-local true
-                :name "testfile"
-                :content mfile
-                :id (uuid/next)}]
-
-    ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (= (:id params) (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))
-
-    ;; Second try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (= (:id params) (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))))
 
 
 (t/deftest media-object-from-url-command
@@ -194,6 +150,7 @@
     (t/is (nil? (:error out)))
     (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
+      (t/is (uuid? (:id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
       (t/is (= "image/jpeg" (:mtype result)))
@@ -206,51 +163,6 @@
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3890   (:size mobj2)))))))
-
-
-(t/deftest media-object-upload-idempotency-command
-  (let [prof   (th/create-profile* 1)
-        proj   (th/create-project* 1 {:profile-id (:id prof)
-                                      :team-id (:default-team-id prof)})
-        file   (th/create-file* 1 {:profile-id (:id prof)
-                                   :project-id (:default-project-id prof)
-                                   :is-shared false})
-        mfile  {:filename "sample.jpg"
-                :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                :mtype "image/jpeg"
-                :size 312043}
-
-        params {::th/type :upload-file-media-object
-                ::rpc/profile-id (:id prof)
-                :file-id (:id file)
-                :is-local true
-                :name "testfile"
-                :content mfile
-                :id (uuid/next)}]
-
-    ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (= (:id params) (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))
-
-    ;; Second try
-    (let [{:keys [result error] :as out} (th/command! params)]
-      ;; (th/print-result! out)
-      (t/is (nil? error))
-      (t/is (= (:id params) (:id result)))
-      (t/is (= (:file-id params) (:file-id result)))
-      (t/is (= 800 (:width result)))
-      (t/is (= 800 (:height result)))
-      (t/is (= "image/jpeg" (:mtype result)))
-      (t/is (uuid? (:media-id result)))
-      (t/is (uuid? (:thumbnail-id result))))))
 
 
 (t/deftest media-object-upload-command-when-file-is-deleted
@@ -520,7 +432,6 @@
         file       (th/create-file* 1 {:profile-id (:id prof)
                                        :project-id (:default-project-id prof)
                                        :is-shared false})
-        media-id   (uuid/next)
         source-path (th/tempfile "backend_tests/test_files/sample.jpg")
         chunks      (split-file-into-chunks source-path 312043) ; single chunk = whole file
         mtype       "image/jpeg"
@@ -540,10 +451,9 @@
                              :file-id         (:id file)
                              :is-local        true
                              :name            "sample"
-                             :mtype           mtype
-                             :id              media-id})]
+                             :mtype           mtype})]
       (t/is (nil? (:error out1)))
-      (t/is (= media-id (:id (:result out1)))))
+      (t/is (uuid? (:id (:result out1)))))
 
     ;; Second assemble with the same session-id must fail because the
     ;; session row has been marked as consumed after the first assembly
@@ -553,8 +463,7 @@
                              :file-id         (:id file)
                              :is-local        true
                              :name            "sample"
-                             :mtype           mtype
-                             :id              media-id})]
+                             :mtype           mtype})]
       (t/is (some? (:error out2)))
       (t/is (= :not-found (-> out2 :error ex-data :type)))
       (t/is (= :object-not-found (-> out2 :error ex-data :code))))))
@@ -1262,3 +1171,58 @@
       (t/is (th/ex-info? error))
       (t/is (= :not-found (:type error-data)))
       (t/is (= :object-not-found (:code error-data))))))
+
+(t/deftest upload-file-media-object-rejects-client-id
+  (let [prof  (th/create-profile* 1)
+        file  (th/create-file* 1 {:profile-id (:id prof)
+                                  :project-id (:default-project-id prof)
+                                  :is-shared false})
+        mfile {:filename "sample.jpg"
+               :path (th/tempfile "backend_tests/test_files/sample.jpg")
+               :mtype "image/jpeg"
+               :size 312043}
+        sent-id (uuid/next)
+        out   (th/command! {::th/type :upload-file-media-object
+                            ::rpc/profile-id (:id prof)
+                            :file-id (:id file)
+                            :is-local true
+                            :name "testfile"
+                            :content mfile
+                            :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest create-file-media-object-from-url-rejects-client-id
+  (let [prof  (th/create-profile* 1)
+        file  (th/create-file* 1 {:profile-id (:id prof)
+                                  :project-id (:default-project-id prof)
+                                  :is-shared false})
+        sent-id (uuid/next)
+        out   (th/command! {::th/type :create-file-media-object-from-url
+                            ::rpc/profile-id (:id prof)
+                            :file-id (:id file)
+                            :is-local true
+                            :url "https://example.com/sample.jpg"
+                            :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest assemble-file-media-object-rejects-client-id
+  (let [prof   (th/create-profile* 1)
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        sent-id (uuid/next)
+        out     (th/command! {::th/type :assemble-file-media-object
+                              ::rpc/profile-id (:id prof)
+                              :session-id (uuid/next)
+                              :file-id (:id file)
+                              :is-local true
+                              :name "assembled-image"
+                              :mtype "image/jpeg"
+                              :id sent-id})]
+    (t/is (th/ex-info? (:error out)))
+    (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

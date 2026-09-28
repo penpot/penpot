@@ -44,8 +44,6 @@ jobs:
       - name: Lint
         working-directory: ./common
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
           pnpm run check-fmt:clj
           pnpm run check-fmt:js

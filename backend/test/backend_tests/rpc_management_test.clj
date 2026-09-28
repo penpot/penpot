@@ -178,7 +178,7 @@
                                                :media-id (:id sobject)})]
 
     (th/mark-file-deleted* {:id (:id file2)})
-    (sto/del-object! storage sobject)
+    (sto/del-object! storage (:id sobject))
 
     (let [data {::th/type :duplicate-file
                 ::rpc/profile-id (:id profile)

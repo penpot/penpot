@@ -25,6 +25,6 @@
      (when icon
        [:div {:class (stl/css :icon-wrapper)}
         [:> icon* {:icon-id icon
-                   :size "l"
+                   :size "xl"
                    :class (stl/css :icon)}]])
      [:div {:class (stl/css :text)} text]]))

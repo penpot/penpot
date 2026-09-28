@@ -35,6 +35,21 @@
         "x-forwarded-for" "127.0.0.44"
         "x-real-ip" "127.0.0.43"))))
 
+(t/deftest prepare-context-initiator-is-plain-string
+  ;; The initiator must always be a plain string, never a keyword: shared-key
+  ;; authenticated callers (exporter, admin-console) arrive as keywords on
+  ;; :app.http/auth-key-id and transit would persist them as "~:exporter".
+  (let [base {:headers {"x-forwarded-for" "127.0.0.44"}}]
+    (t/is (= "app" (:initiator (audit/prepare-context-from-request base))))
+    (t/is (= "exporter"
+             (:initiator (audit/prepare-context-from-request
+                          (assoc base :app.http/auth-key-id :exporter)))))
+    (t/is (= "admin-console"
+             (:initiator (audit/prepare-context-from-request
+                          (assoc base :app.http/auth-key-id :admin-console)))))
+    (t/is (string? (:initiator (audit/prepare-context-from-request
+                                (assoc base :app.http/auth-key-id :nexus)))))))
+
 (t/deftest push-events-1
   (with-redefs [app.config/flags #{:audit-log}]
     (let [prof    (th/create-profile* 1 {:is-active true})
@@ -288,6 +303,41 @@
 
       (t/is (nil? (:error out)))
       (t/is (= 0 (count (th/db-exec! ["select * from audit_log"])))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GET-ENVIRONMENT-DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest get-environment-data-returns-selfhost-by-default
+  (with-redefs [cf/flags #{:audit-log}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= "selfhost" (-> out :result :deployment))))))
+
+(t/deftest get-environment-data-returns-saas-when-configured
+  (with-redefs [cf/flags #{:telemetry}]
+    (binding [cf/config (assoc cf/config :is-saas true)]
+      (let [out (th/command! {::th/type :get-environment-data})]
+        (t/is (th/success? out))
+        (t/is (= "saas" (-> out :result :deployment)))))))
+
+(t/deftest get-environment-data-only-exposes-event-flags
+  (with-redefs [cf/flags #{:audit-log :telemetry :graph :nrepl-server}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= #{:audit-log :telemetry} (-> out :result :flags))))))
+
+(t/deftest get-environment-data-returns-empty-flags-when-none-enabled
+  (with-redefs [cf/flags #{:graph}]
+    (let [out (th/command! {::th/type :get-environment-data})]
+      (t/is (th/success? out))
+      (t/is (= #{} (-> out :result :flags))))))
+
+(t/deftest get-enabled-flags-still-returns-flat-set
+  (with-redefs [cf/flags #{:audit-log :telemetry :graph}]
+    (let [out (th/command! {::th/type :get-enabled-flags})]
+      (t/is (th/success? out))
+      (t/is (= #{:audit-log :telemetry} (:result out))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PURE HELPER UNIT TESTS

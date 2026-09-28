@@ -356,7 +356,7 @@ npx playwright test --ui
 
 > ❗️ **IMPORTANT**: You might need to [install Playwright's browsers and dependencies](https://playwright.dev/docs/intro) in your host machine with: <code class="language-bash">npx playwright install --with-deps</code>. In case you are using a Linux distribution other than Ubuntu, [you might need to install the dependencies manually](https://github.com/microsoft/playwright/issues/11122).
 
-> You will also need pnpm in your host nodejs. For this, do <code class="language-bash">corepack enable</code> and then just <code class="language-bash">pnpm</code>.
+> You will also need pnpm in your host nodejs (the devenv already ships it; outside it, run <code class="language-bash">npm install -g pnpm</code>) and then just <code class="language-bash">pnpm</code>.
 
 ### How to write a test
 

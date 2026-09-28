@@ -96,12 +96,24 @@ enabled with <code class="language-bash">enable-email-whitelist</code> flag. For
 autoenable it when <code class="language-bash">PENPOT_REGISTRATION_DOMAIN_WHITELIST</code> is set with
 not-empty content.
 
-Penpot also comes with an option to completely disable the registration process;
-for this, use the following flag:
+Penpot also comes with an option to disable public registration. Users with a
+valid and active team invitation can still register an account when password
+login is enabled. The invitation must still exist in the database and its
+validity period must not have ended. To disable public registration, use the
+following flag:
 
 ```bash
 PENPOT_FLAGS: [...] disable-registration
 ```
+
+For invitation-based registration, keep the password login flag enabled:
+
+```bash
+PENPOT_FLAGS: [...] disable-registration enable-login-with-password
+```
+
+The `disable-login-with-password` flag still disables password-based login and
+registration, including password-based registration through an invitation.
 
 This option is only recommended for demo instances, not for production environments.
 
@@ -310,6 +322,37 @@ PENPOT_LDAP_ATTRS_FULLNAME: cn
 PENPOT_LDAP_ATTRS_PHOTO: jpegPhoto
 ```
 
+### Account lockout
+
+__Since version 2.19.0__
+
+Account lockout is disabled by default. Backend administrators can enable it by
+adding the <code class="language-bash">enable-account-lockout</code> flag:
+
+```bash
+PENPOT_FLAGS: [...] enable-account-lockout
+```
+
+When enabled, Penpot locks an existing account after 5 failed password or LDAP
+login attempts within 15 minutes. It only applies to the password and LDAP
+logins; OIDC and the other authentication providers are not affected. The
+defaults can be changed with:
+
+```bash
+# Backend
+PENPOT_LOGIN_LOCKOUT_MAX_ATTEMPTS: 5
+PENPOT_LOGIN_LOCKOUT_WINDOW: 15m
+```
+
+While the account is locked, login returns HTTP 429 with a `Retry-After`
+header and a JSON error with the code `account-locked` and the remaining
+seconds in `ttl`.
+
+Redis must be available. If Redis fails, login continues without lockout
+checks. This feature prevents repeated password guessing, but anyone who knows
+an email address can lock that account by failing the configured number of
+attempts.
+
 ## Penpot URI
 
 You will need to set the <code class="language-bash">PENPOT_PUBLIC_URI</code> environment variable in case you go to serve Penpot to the users;
@@ -402,7 +445,8 @@ This is an example of a demo configuration:
 PENPOT_FLAGS: disable-registration enable-demo-users enable-demo-warning
 ```
 
-**disable-registration** prevents any user from registering in the platform.
+**disable-registration** prevents public registration in the platform, while
+valid team invitations can still create accounts when password login is enabled.
 **enable-demo-users** creates users with a default expiration time of 7 days, and
 once expired they are completely deleted with all the generated content.
 From the registration page, there is a link with a `Create demo account` which creates one of these
@@ -806,8 +850,8 @@ PENPOT_MCP_URI: http://penpot-mcp:4401
 PENPOT_MCP_URI_WS: http://penpot-mcp:4402
 ```
 
-- `PENPOT_MCP_URI`: The URI of the MCP server, used for the streamable HTTP and SSE
-  endpoints.
+- `PENPOT_MCP_URI`: The URI of the MCP server, used for the Streamable HTTP
+  endpoint.
 - `PENPOT_MCP_URI_WS`: The URI of the MCP server used for the websocket connection.
 
 The defaults match the service name used in the official `docker-compose.yaml`. Change

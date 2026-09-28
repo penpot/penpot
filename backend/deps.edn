@@ -28,8 +28,8 @@
   com.google.guava/guava {:mvn/version "33.7.1-jre"}
 
   funcool/yetti
-  {:git/tag "v11.10"
-   :git/sha "88701f4"
+  {:git/tag "v11.11"
+   :git/sha "e810f87"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 

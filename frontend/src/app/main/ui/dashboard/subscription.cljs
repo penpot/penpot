@@ -279,6 +279,7 @@
          (fn []
            (st/emit! (ev/event {::ev/name "open-subscription-management"
                                 ::ev/origin "dashboard"
+                                :deployment (if cf/saas? "saas" "selfhost")
                                 :section "team-settings"}))
            (let [href (-> (rt/get-current-href)
                           (rt/encode-url))

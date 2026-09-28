@@ -16,6 +16,7 @@
    [app.common.types.library :as ctl]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :as types.shadow]
+   [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
@@ -335,7 +336,6 @@
    :stroke-width
    :stroke-dash
    :stroke-gap
-   :stroke-per-side
    :stroke-width-top
    :stroke-width-right
    :stroke-width-bottom
@@ -402,7 +402,9 @@
    (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
+       (rx/of (let [options (assoc options
+                                   :changed-sub-attr [:stroke-color]
+                                   :changed-item-index index)]
                 (dwsh/update-shapes ids #(update-shape-stroke-color % index color) options)))))))
 
 (defn change-stroke-attrs
@@ -412,7 +414,9 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [changed-sub-attr (keys attrs)
-             options (assoc options :changed-sub-attr changed-sub-attr)]
+             options          (assoc options
+                                     :changed-sub-attr changed-sub-attr
+                                     :changed-item-index index)]
          (rx/of (dwsh/update-shapes
                  ids
                  (fn [shape]
@@ -426,6 +430,57 @@
                        :always
                        (assoc-in [:strokes index] attrs))))
                  options)))))))
+
+;; --- Stroke side width
+
+(defn change-stroke-side-width
+  "Change the width of one side on the stroke at `index` of each shape. All
+  four per-side keys are materialized so consumers never fall back to
+  `:stroke-width`: the edited side takes `value`, the others keep their
+  current width (0 when the shape has no stroke). `:stroke-width` mirrors the
+  top side for legacy readers. Only the edited key (+ `:stroke-width` when
+  top) is reported as changed, so a token on an untouched side is not
+  unapplied."
+  ([ids attr value index] (change-stroke-side-width ids attr value index nil))
+  ([ids attr value index options]
+   (when (number? value)
+     (ptk/reify ::change-stroke-side-width
+       ptk/WatchEvent
+       (watch [_ _ _]
+         (let [changed-sub-attr (if (= attr :stroke-width-top)
+                                  [attr :stroke-width]
+                                  [attr])
+               options          (assoc options
+                                       :changed-sub-attr changed-sub-attr
+                                       :changed-item-index index)]
+           (rx/of (dwsh/update-shapes
+                   ids
+                   (fn [shape]
+                     (let [current (get-in shape [:strokes index])
+                           stroke  (cts/materialize-stroke-side-widths
+                                    current #{attr} value)]
+                       (cond-> shape
+                         (not (contains? shape :strokes))
+                         (assoc :strokes [])
+
+                         :always
+                         (assoc-in [:strokes index] stroke))))
+                   options))))))))
+
+;; --- Per-side controls expansion (Design tab UI state)
+
+(defn toggle-stroke-per-side
+  "Toggle the per-side width controls of the stroke at `index` for the shapes
+  in `ids`. Purely ephemeral UI state: it lives in `:workspace-local` keyed by
+  `[ids index]`, so it survives selecting another shape and coming back, but
+  resets on reload."
+  [ids index]
+  (ptk/reify ::toggle-stroke-per-side
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :stroke-per-side [ids index]] not))))
+
+;; --- Shadows
 
 (defn change-shadow
   [ids attrs index]
@@ -504,7 +559,8 @@
                 (update shape :strokes remove-fill-by-index position))]
         (rx/of (dwsh/update-shapes ids
                                    remove-stroke
-                                   {:attrs [:strokes]}))))))
+                                   {:attrs [:strokes]
+                                    :changed-item-index position}))))))
 
 (defn remove-all-strokes
   [ids]

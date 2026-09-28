@@ -13,6 +13,7 @@
    [app.db.sql :as-alias sql]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
+   [app.storage :as sto]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
@@ -149,7 +150,8 @@
 
 (defmethod ig/assert-key ::handler
   [_ params]
-  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

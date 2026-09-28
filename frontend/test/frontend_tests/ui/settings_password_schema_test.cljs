@@ -25,14 +25,19 @@
 
 (defn- error-codes
   "Maps every schema problem to [field error-code], mirroring how
-  app.common.schema.messages resolves the message shown next to an input."
+  app.common.schema.messages resolves the message shown next to an input
+  (:error/fn wins over :error/code; tr returns the bare code when no
+  locale data is loaded, as in tests)."
   [data]
   (->> (:errors (sm/explain passwd/schema:password-form data))
-       (map (fn [{:keys [in schema]}]
+       (map (fn [{:keys [in schema] :as problem}]
               (let [props  (m/properties schema)
-                    tprops (m/type-properties schema)]
+                    tprops (m/type-properties schema)
+                    efn    (or (:error/fn props) (:error/fn tprops))]
                 [(or (:error/field props) (first in))
-                 (or (:error/code props) (:error/code tprops))])))
+                 (if efn
+                   (efn problem)
+                   (or (:error/code props) (:error/code tprops)))])))
        (into {})))
 
 (t/deftest short-old-password-is-accepted

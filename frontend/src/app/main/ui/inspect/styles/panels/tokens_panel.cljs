@@ -13,10 +13,10 @@
    [rumext.v2 :as mf]))
 
 (mf/defc tokens-panel*
-  [{:keys [theme-paths set-names]}]
+  [{:keys [theme-names set-names]}]
   [:div {:class (stl/css :tokens-panel)}
-   (when (seq theme-paths)
-     (let [theme-list (str/join ", " theme-paths)]
+   (when (seq theme-names)
+     (let [theme-list (str/join ", " theme-names)]
        [:> properties-row* {:class (stl/css :token-theme)
                             :term (tr "inspect.tabs.styles.active-themes")
                             :detail theme-list}]))

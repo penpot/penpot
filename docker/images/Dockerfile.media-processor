@@ -1,17 +1,16 @@
-FROM ubuntu:26.04
+# syntax=docker/dockerfile:1
+FROM dhi.io/node:24.20.0-debian13-dev
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v24.20.0 \
-    DEBIAN_FRONTEND=noninteractive \
-    PATH=/opt/node/bin:$PATH
+    DEBIAN_FRONTEND=noninteractive
 
+# passwd provides useradd, not preinstalled on the DHI base image.
 RUN set -ex; \
-    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    mkdir -p /etc/resolvconf/resolv.conf.d; \
-    echo "nameserver 127.0.0.11" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install passwd; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
       curl \
@@ -34,7 +33,7 @@ RUN set -ex; \
       \
       libgomp1 \
       libheif1 \
-      libjpeg-turbo8 \
+      libjpeg62-turbo \
       liblcms2-2 \
       libopenexr-3-1-30 \
       libopenjp2-7 \
@@ -44,34 +43,12 @@ RUN set -ex; \
       libwebp7 \
       libwebpdemux2 \
       libwebpmux3 \
-      libxml2-16 \
+      libxml2 \
       libzip5 \
       libzstd1 \
     ; \
     apt-get clean; \
-    rm -rf /var/lib/apt/lists/*;
-
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
-         ;; \
-       amd64|x86_64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; \
-         exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
-    mkdir -p /opt/node; \
-    cd /opt/node; \
-    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
-    chown -R root /opt/node; \
-    rm -rf /tmp/nodejs.tar.gz; \
-    corepack enable; \
+    rm -rf /var/lib/apt/lists/*; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 
@@ -79,8 +56,42 @@ ARG BUNDLE_PATH="./bundle-media-processor/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/media-processor/
 
 WORKDIR /opt/penpot/media-processor
-USER penpot:penpot
 
-RUN ./setup
+# pnpm ships as a system binary (same tarball + SHA pin as
+# docker/devenv/Dockerfile); ./setup expects it on PATH.
+# Corepack is gone from Node 25+, so nothing here may use it.
+ARG PNPM_VERSION=12.5.1
+RUN set -eux; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install gzip; \
+    rm -rf /var/lib/apt/lists/*; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         PNPM_ARCH='arm64'; \
+         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
+         ;; \
+       amd64|x86_64) \
+         PNPM_ARCH='x64'; \
+         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/pnpm.tar.gz "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/pnpm-linux-${PNPM_ARCH}.tar.gz"; \
+    echo "${PNPM_SHA256} */tmp/pnpm.tar.gz" | sha256sum -c -; \
+    mkdir -p /usr/local/bin; \
+    tar -xzf /tmp/pnpm.tar.gz -C /usr/local/bin pnpm; \
+    chmod 755 /usr/local/bin/pnpm; \
+    rm -f /tmp/pnpm.tar.gz; \
+    pnpm --version;
+
+# Runs as root: this base image installs Node system-wide (symlinked into
+# /usr/bin), so ./setup needs write access there.
+RUN ./setup && chown -R penpot:penpot /opt/penpot/media-processor
+
+USER penpot:penpot
 
 CMD ["node", "dist/index.js"]

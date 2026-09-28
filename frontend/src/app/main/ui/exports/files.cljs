@@ -8,8 +8,8 @@
   "The files export dialog/modal"
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -82,6 +82,9 @@
   [{:keys [team-id files]}]
   (let [state*       (mf/use-state (partial initialize-state files))
         has-libs?    (some :has-libraries files)
+        export-types (cond-> fexp/valid-types
+                       (not (contains? cf/flags :export-link-later))
+                       (disj :link-later))
 
         state        (deref state*)
         selected     (:selected state)
@@ -148,24 +151,11 @@
           [:> text* {:as "p" :typography t/body-large :class (stl/css :modal-msg)}
            "What do you want to do with linked libraries?"]
 
-          (for [type fexp/valid-types]
+          (for [type export-types]
             [:div {:class (stl/css :export-option true)
                    :key (name type)}
              [:label {:for (str "export-" type)
                       :class (stl/css :export-option-label)}
-              ;; Execution time translation strings:
-              ;;   (tr "files-export-modal.options.include-libraries.title")
-              ;;   (tr "files-export-modal.options.include-libraries.message")
-
-              ;;   (tr "files-export-modal.options.merge-libraries.title")
-              ;;   (tr "files-export-modal.options.merge-libraries.message")
-
-              ;;   (tr "files-export-modal.options.detach-libraries.title")
-              ;;   (tr "files-export-modal.options.detach-libraries.message")
-
-              ;;   (tr "files-export-modal.options.link-later.title")
-              ;;   (tr "files-export-modal.options.link-later.message")
-
               [:span {:class (stl/css-case
                               :option-icon-wrapper true
                               :checked (= selected type))}
@@ -181,9 +171,17 @@
                [:> heading* {:level 3
                              :typography t/body-large
                              :class (stl/css :option-title)}
-                (tr (dm/str "files-export-modal.options." (d/name type) ".title"))]
+                (case type
+                  :include-libraries (tr "files-export-modal.options.include-libraries.title")
+                  :merge-libraries (tr "files-export-modal.options.merge-libraries.title")
+                  :detach-libraries (tr "files-export-modal.options.detach-libraries.title")
+                  :link-later (tr "files-export-modal.options.link-later.title"))]
                [:> text* {:as "p" :typography t/body-large :class (stl/css :modal-msg)}
-                (tr (dm/str "files-export-modal.options." (d/name type) ".message"))]]
+                (case type
+                  :include-libraries (tr "files-export-modal.options.include-libraries.message")
+                  :merge-libraries (tr "files-export-modal.options.merge-libraries.message")
+                  :detach-libraries (tr "files-export-modal.options.detach-libraries.message")
+                  :link-later (tr "files-export-modal.options.link-later.message"))]]
 
               [:input {:type "radio"
                        :class (stl/css :option-input)

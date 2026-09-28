@@ -7,8 +7,8 @@ if [ -f $SCRIPT_DIR/_env.local ]; then
     source $SCRIPT_DIR/_env.local;
 fi
 
-# Initialize MINIO config
-setup_minio;
+# Ensure the object storage bucket exists.
+setup_s3_bucket;
 
 shift 1;
 set -ex

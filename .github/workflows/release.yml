@@ -26,8 +26,10 @@ jobs:
     steps:
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v6
@@ -62,7 +64,7 @@ jobs:
 
           echo "$PUB_DOCKER_PASSWORD" | skopeo login --username "$PUB_DOCKER_USERNAME" --password-stdin docker.io
 
-          IMAGES=("frontend" "backend" "exporter" "mcp" "storybook")
+          IMAGES=("frontend" "backend" "exporter" "admin-console" "mcp" "storybook")
           SHORT_TAG=${TAG%.*}
 
           for image in "${IMAGES[@]}"; do

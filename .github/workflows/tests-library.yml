@@ -46,8 +46,6 @@ jobs:
       - name: Lint
         working-directory: ./library
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
           pnpm run check-fmt
           pnpm run lint

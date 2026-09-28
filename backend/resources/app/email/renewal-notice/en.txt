@@ -1,4 +1,4 @@
-Hi {% if user-name %}{{ user-name }}{% endif %},
+Hi{% if user-name %} {{ user-name }}{% endif %},
 
 Your Enterprise subscription is coming up for renewal. Here's a summary of what's included.
 

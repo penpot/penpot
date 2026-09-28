@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# Usage: ./clean [frontend|export]
+
+set -e
+
+_SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+_RENDER_TARGET=${1:-frontend}
+
+case "$_RENDER_TARGET" in
+    frontend|export) ;;
+    *)
+        echo "ERROR: unknown render target '$_RENDER_TARGET' (expected 'frontend' or 'export')" >&2
+        exit 1
+        ;;
+esac
+
+pushd "$_SCRIPT_DIR" > /dev/null
+
+export RENDER_TARGET="$_RENDER_TARGET"
+unset CARGO_TARGET_DIR
+. ./_build_env "$_RENDER_TARGET"
+. ./_build_lock
+
+acquire_build_lock
+cargo clean --target-dir "$CARGO_TARGET_DIR"
+
+RESULT=$?
+popd > /dev/null
+
+exit $RESULT

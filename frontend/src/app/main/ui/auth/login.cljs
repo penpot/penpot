@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.logging :as log]
+   [app.common.math :as math]
    [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.auth :as da]
@@ -63,7 +64,7 @@
 
 (def ^:private schema:login-form
   [:map {:title "LoginForm"}
-   [:email [::sm/email {:error/code "errors.invalid-email"}]]
+   [:email [::sm/email {:error/fn #(tr "errors.invalid-email")}]]
    [:password {:optional true} [:string {:min 1}]]
    [:invitation-token {:optional true}
     [:string {:min 1}]]])
@@ -105,6 +106,11 @@
               (and (= :validation (:type cause))
                    (= :account-without-password (:code cause)))
               (reset! error (tr "errors.wrong-credentials"))
+
+              (and (= :rate-limit (:type cause))
+                   (= :account-locked (:code cause)))
+              (let [minutes (max 1 (int (math/ceil (/ (:ttl cause) 60))))]
+                (reset! error (tr "errors.account-locked" minutes)))
 
               :else
               (reset! error (tr "errors.generic")))))

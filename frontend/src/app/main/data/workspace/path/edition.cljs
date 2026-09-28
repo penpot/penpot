@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.render-wasm.svg-derived :as svg-derived]
    [app.common.types.path :as path]
    [app.common.types.path.helpers :as path.helpers]
    [app.main.data.helpers :as dsh]
@@ -22,7 +23,6 @@
    [app.main.data.workspace.path.tools :as tools]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.streams :as ms]
-   [app.render-wasm.svg-fills :as svg-fills]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -885,7 +885,7 @@
   "Resolves the fills inherited by the editing copy.
   Frames stop group fill inheritance."
   [shape objects]
-  (let [own (svg-fills/resolve-shape-fills shape)]
+  (let [own (svg-derived/resolve-shape-fills shape)]
     (if (seq own)
       own
       (loop [parent-id (:parent-id shape)
@@ -897,7 +897,7 @@
           (let [parent (get objects parent-id)]
             (cond
               (nil? parent)             []
-              (cfh/group-shape? parent) (let [fills (svg-fills/resolve-shape-fills parent)]
+              (cfh/group-shape? parent) (let [fills (svg-derived/resolve-shape-fills parent)]
                                           (if (seq fills)
                                             fills
                                             (recur (:parent-id parent)

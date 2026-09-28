@@ -13,5 +13,5 @@
 (def schema:export
   [:map {:title "ShapeExport"}
    [:type [::sm/one-of types]]
-   [:scale ::sm/safe-number]
+   [:scale ::sm/positive-safe-number]
    [:suffix :string]])

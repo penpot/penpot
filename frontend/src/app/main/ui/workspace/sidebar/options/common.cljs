@@ -36,3 +36,14 @@
                          :attrs     attrs
                          :shape-ids ids}))))
 
+(defn tokens-allowed-position?
+  "Design tokens only apply to the first fill or stroke in a shape's ordered list,
+  so token controls are only enabled for the entry at `index` zero.
+
+  `first-only?` marks the lists where that rule applies. Other color rows
+  (shadows, gradients, the selection color list) reuse `index` for their own row
+  order and must keep their token controls enabled."
+  [first-only? index]
+  (or (not first-only?)
+      (and (some? index) (zero? index))))
+

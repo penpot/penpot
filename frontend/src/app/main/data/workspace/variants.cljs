@@ -733,6 +733,45 @@
           (redirect-to-page page-id)
           (combine current-page))))))
 
+(defn valid-components-for-variants?
+  [state page-id ids]
+  (let [ids     (distinct ids)
+        objects (dsh/lookup-page-objects state page-id)
+        data    (dsh/lookup-file-data state)]
+    (and (= page-id (:current-page-id state))
+         (> (count ids) 1)
+         (every?
+          (fn [id]
+            (let [shape     (get objects id)
+                  component (ctkl/get-component data (:component-id shape) false)]
+              (and (ctc/main-instance? shape)
+                   component
+                   (not (ctc/is-variant? component)))))
+          ids))))
+
+(defn valid-variant-switch?
+  [state shape pos val]
+  (let [libraries              (dsh/lookup-libraries state)
+        component              (ctf/get-component libraries
+                                                  (:component-file shape)
+                                                  (:component-id shape)
+                                                  :include-deleted? false)
+        component-file-data    (dm/get-in libraries [(:component-file shape) :data])
+        component-page         (dsh/get-page component-file-data (:main-instance-page component))
+        component-page-objects (:objects component-page)
+        variant-components     (when component
+                                 (cfv/find-variant-components component-file-data
+                                                              component-page-objects
+                                                              (:variant-id component)))]
+    (and (ctc/instance-head? shape)
+         (ctc/in-component-copy? shape)
+         (ctc/is-variant? component)
+         (nat-int? pos)
+         (< pos (count (:variant-properties component)))
+         (string? val)
+         (some #(= val (dm/get-in % [:variant-properties pos :value]))
+               variant-components))))
+
 (defn combine-selected-as-variants
   [options]
   (ptk/reify ::combine-selected-as-variants
@@ -799,4 +838,3 @@
                             (with-meta (meta it))))))
          (rx/of (dwu/commit-undo-transaction undo-id)
                 (dws/select-shapes ids)))))))
-

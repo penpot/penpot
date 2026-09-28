@@ -78,11 +78,11 @@ flowchart TB
 ## Export wiring (single vs multiple)
 
 The client-side WASM export — rendering in the browser through the vector path
-(`render_shape_pdf` / `render_shape_pixels`) — is wired **only for single
-exports** (`request-simple-export` in `frontend/.../exports/assets.cljs`), and
-only when render-wasm is active and the `enable-wasm-export` flag is set. The
-exporter service reads the same flag to decide whether it can serve the
-headless WASM path.
+(`render_shape_pdf` / `render_shape_pixels` / `render_shape_svg`) — is wired
+**only for single exports** (`request-simple-export` in
+`frontend/.../exports/assets.cljs`), and only when the active renderer is
+render-wasm (`render-wasm/v1`). The exporter service takes the headless WASM
+path when the client sends `:is-wasm true` (same condition).
 
 **Multiple/batch export** (`request-multiple-export`) always runs **server-side**
 via the `:export-shapes` command; it merely passes an `:is-wasm` hint so the

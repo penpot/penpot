@@ -11,6 +11,7 @@
    [app.util.http :as http]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]))
 
 (def sample-font
@@ -139,104 +140,107 @@
 
 (t/use-fixtures
   :each
-  (fn [test-fn]
-    (reset! fonts/preview-sprite {:status :idle :ids #{} :node nil :refs 0})
-    (test-fn)))
+  {:before #(reset! fonts/preview-sprite {:status :idle :ids #{} :node nil :refs 0})})
 
 (defn- fake-node
   "A minimal DOM-like node exposing only what the sprite attach/detach touches."
   []
   #js {:remove (fn [] nil)})
 
-(t/deftest attach-preview-sprite-returns-nil-while-sprite-is-not-ready
-  (mock/with-mocks
-    {globals/browser? (mock/stub (constantly true))}
-    (fn [done]
-      (reset! fonts/preview-sprite {:status :loading :ids #{} :node nil :refs 0})
-      (t/is (nil? (fonts/attach-preview-sprite!)))
-      (t/is (= 0 (:refs @fonts/preview-sprite)))
+(t/deftest ^:async attach-preview-sprite-returns-nil-while-sprite-is-not-ready
+  (await
+   (mock/with-mocks*
+     {globals/browser? (mock/stub (constantly true))}
+     (reset! fonts/preview-sprite {:status :loading :ids #{} :node nil :refs 0})
+     (t/is (nil? (fonts/attach-preview-sprite!)))
+     (t/is (= 0 (:refs @fonts/preview-sprite)))
 
-      (reset! fonts/preview-sprite {:status :error :ids #{} :node nil :refs 0})
-      (t/is (nil? (fonts/attach-preview-sprite!)))
-      (t/is (= 0 (:refs @fonts/preview-sprite)))
-      (done))
-    (fn [] nil)))
+     (reset! fonts/preview-sprite {:status :error :ids #{} :node nil :refs 0})
+     (t/is (nil? (fonts/attach-preview-sprite!)))
+     (t/is (= 0 (:refs @fonts/preview-sprite)))
+     ;; Trailing settle: the body is synchronous, but `with-mocks*`
+     ;; evaluates to a promise, so the body must settle one.
+     (await (async/settle)))))
 
-(t/deftest attach-preview-sprite-increments-refs-and-returns-the-node
-  (mock/with-mocks
-    {globals/browser? (mock/stub (constantly true))}
-    (fn [done]
-      (let [node (fake-node)]
-        (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
-        (t/is (identical? node (fonts/attach-preview-sprite!)))
-        (t/is (= 1 (:refs @fonts/preview-sprite)))
-        (t/is (identical? node (fonts/attach-preview-sprite!)))
-        (t/is (= 2 (:refs @fonts/preview-sprite)))
-        (done)))
-    (fn [] nil)))
+(t/deftest ^:async attach-preview-sprite-increments-refs-and-returns-the-node
+  (await
+   (mock/with-mocks*
+     {globals/browser? (mock/stub (constantly true))}
+     (let [node (fake-node)]
+       (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
+       (t/is (identical? node (fonts/attach-preview-sprite!)))
+       (t/is (= 1 (:refs @fonts/preview-sprite)))
+       (t/is (identical? node (fonts/attach-preview-sprite!)))
+       (t/is (= 2 (:refs @fonts/preview-sprite)))
+       ;; Trailing settle: the body is synchronous, but `with-mocks*`
+       ;; evaluates to a promise, so the body must settle one.
+       (await (async/settle))))))
 
-(t/deftest detach-preview-sprite-removes-node-only-when-last-reference-drops
-  (mock/with-mocks
-    {globals/browser? (mock/stub (constantly true))}
-    (fn [done]
-      (let [removed? (volatile! false)
-            node     #js {:remove (fn [] (vreset! removed? true))}]
-        (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
-        (fonts/attach-preview-sprite!)
-        (fonts/attach-preview-sprite!)
+(t/deftest ^:async detach-preview-sprite-removes-node-only-when-last-reference-drops
+  (await
+   (mock/with-mocks*
+     {globals/browser? (mock/stub (constantly true))}
+     (let [removed? (volatile! false)
+           node     #js {:remove (fn [] (vreset! removed? true))}]
+       (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
+       (fonts/attach-preview-sprite!)
+       (fonts/attach-preview-sprite!)
 
-        ;; First detach keeps the node: another dropdown is still open.
-        (fonts/detach-preview-sprite! node)
-        (t/is (= 1 (:refs @fonts/preview-sprite)))
-        (t/is (false? @removed?))
+       ;; First detach keeps the node: another dropdown is still open.
+       (fonts/detach-preview-sprite! node)
+       (t/is (= 1 (:refs @fonts/preview-sprite)))
+       (t/is (false? @removed?))
 
-        ;; Second detach reaches zero refs, so the node is removed from the DOM.
-        (fonts/detach-preview-sprite! node)
-        (t/is (= 0 (:refs @fonts/preview-sprite)))
-        (t/is (true? @removed?))
-        (done)))
-    (fn [] nil)))
+       ;; Second detach reaches zero refs, so the node is removed from the DOM.
+       (fonts/detach-preview-sprite! node)
+       (t/is (= 0 (:refs @fonts/preview-sprite)))
+       (t/is (true? @removed?))
+       ;; Trailing settle: the body is synchronous, but `with-mocks*`
+       ;; evaluates to a promise, so the body must settle one.
+       (await (async/settle))))))
 
-(t/deftest detach-preview-sprite-clamps-refs-at-zero
-  (mock/with-mocks
-    {globals/browser? (mock/stub (constantly true))}
-    (fn [done]
-      (let [removed? (volatile! false)
-            node     #js {:remove (fn [] (vreset! removed? true))}]
-        (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
-        (fonts/detach-preview-sprite! node)
-        (t/is (= 0 (:refs @fonts/preview-sprite)))
-        (t/is (true? @removed?))
-        (done)))
-    (fn [] nil)))
+(t/deftest ^:async detach-preview-sprite-clamps-refs-at-zero
+  (await
+   (mock/with-mocks*
+     {globals/browser? (mock/stub (constantly true))}
+     (let [removed? (volatile! false)
+           node     #js {:remove (fn [] (vreset! removed? true))}]
+       (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node node :refs 0})
+       (fonts/detach-preview-sprite! node)
+       (t/is (= 0 (:refs @fonts/preview-sprite)))
+       (t/is (true? @removed?))
+       ;; Trailing settle: the body is synchronous, but `with-mocks*`
+       ;; evaluates to a promise, so the body must settle one.
+       (await (async/settle))))))
 
-(t/deftest prefetch-preview-sprite-fetches-only-from-idle-or-error
+(t/deftest ^:async prefetch-preview-sprite-fetches-only-from-idle-or-error
   (let [calls (volatile! 0)
         fetch (mock/stub (fn [& _]
                            (vswap! calls inc)
                            (rx/empty)))]
-    (mock/with-mocks
-      {globals/browser? (mock/stub (constantly true))
-       http/fetch fetch}
-      (fn [done]
-        ;; :ready → no refetch
-        (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node (fake-node) :refs 0})
-        (fonts/prefetch-preview-sprite!)
-        (t/is (= 0 @calls))
+    (await
+     (mock/with-mocks*
+       {globals/browser? (mock/stub (constantly true))
+        http/fetch fetch}
+       ;; :ready → no refetch
+       (reset! fonts/preview-sprite {:status :ready :ids #{"a"} :node (fake-node) :refs 0})
+       (fonts/prefetch-preview-sprite!)
+       (t/is (= 0 @calls))
 
-        ;; :loading → no refetch (an earlier request is in flight)
-        (reset! fonts/preview-sprite {:status :loading :ids #{} :node nil :refs 0})
-        (fonts/prefetch-preview-sprite!)
-        (t/is (= 0 @calls))
+       ;; :loading → no refetch (an earlier request is in flight)
+       (reset! fonts/preview-sprite {:status :loading :ids #{} :node nil :refs 0})
+       (fonts/prefetch-preview-sprite!)
+       (t/is (= 0 @calls))
 
-        ;; :error → retries
-        (reset! fonts/preview-sprite {:status :error :ids #{} :node nil :refs 0})
-        (fonts/prefetch-preview-sprite!)
-        (t/is (= 1 @calls))
+       ;; :error → retries
+       (reset! fonts/preview-sprite {:status :error :ids #{} :node nil :refs 0})
+       (fonts/prefetch-preview-sprite!)
+       (t/is (= 1 @calls))
 
-        ;; :idle → first fetch
-        (reset! fonts/preview-sprite {:status :idle :ids #{} :node nil :refs 0})
-        (fonts/prefetch-preview-sprite!)
-        (t/is (= 2 @calls))
-        (done))
-      (fn [] nil))))
+       ;; :idle → first fetch
+       (reset! fonts/preview-sprite {:status :idle :ids #{} :node nil :refs 0})
+       (fonts/prefetch-preview-sprite!)
+       (t/is (= 2 @calls))
+       ;; Trailing settle: the body is synchronous, but `with-mocks*`
+       ;; evaluates to a promise, so the body must settle one.
+       (await (async/settle))))))

@@ -9,11 +9,18 @@
    [app.common.time :as ct]
    [app.common.uri :as u]
    [app.main.data.event :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.nitrate :as dnt]
    [app.main.data.nitrate-audit :as nitrate-audit]
+   [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dt]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.auth.verify-token :as verify-token]
-   [cljs.test :as t :include-macros true]))
+   [beicon.v2.core :as rx]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]
+   [potok.v2.core :as ptk]))
 
 (t/deftest account-age-days-test
   (with-redefs [ct/now (constantly (ct/inst "2026-07-27T12:00:00Z"))]
@@ -115,15 +122,9 @@
         (t/is (contains? event :days-since-member-added))
         (t/is (nil? (:days-since-member-added event)))))))
 
-(t/deftest accept-organization-invitation-audit-event-test
-  (let [emitted (atom [])
-        props   {:team-id "team-1"
-                 :organization-id "organization-1"
-                 :role :editor
-                 :invitation-id "invitation-1"
-                 :organization-member-add-source "team-invitation"
-                 :belongs-to-team-on-add true
-                 :organization-member-count-before 4}]
+(t/deftest pending-team-invitation-redirects-to-register
+  (let [emitted           (atom [])
+        invitation-token "invitation-123"]
     (with-redefs [st/emit! (fn
                              ([event]
                               (swap! emitted conj event))
@@ -131,16 +132,81 @@
                               (swap! emitted into (cons event events))))]
       (verify-token/handle-token
        {:iss :team-invitation
-        :state :created
-        :team-id "team-1"
-        :organization-invitation-audit
-        {:origin "team-invitation-acceptance"
-         :props props}}))
+        :state :pending
+        :redirect-to :auth-register
+        :invitation-token invitation-token})
 
-    (let [event @(first @emitted)]
-      (t/is (= "accept-organization-invitation" (::ev/name event)))
-      (t/is (= "team-invitation-acceptance" (::ev/origin event)))
-      (t/is (= props (dissoc event ::ev/name ::ev/origin))))))
+      (let [event @(first @emitted)]
+        (t/is (= :auth-register (:id event)))
+        (t/is (= invitation-token (get-in event [:params :invitation-token])))))))
+
+(t/deftest accept-organization-invitation-audit-event-test
+  (let [emitted (atom [])]
+    (with-redefs [st/emit! (fn
+                             ([event]
+                              (swap! emitted conj event))
+                             ([event & events]
+                              (swap! emitted into (cons event events))))]
+      (t/testing "accepting a team invitation that adds an organization member"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :team-id "team-1"
+          :organization-id "organization-1"
+          :role :editor
+          :invitation-id "invitation-1"
+          :member-id "invitee-1"
+          :profile-id "inviter-1"
+          :organization-member-count-before 4})
+
+        (t/is (= {::ev/name "accept-organization-invitation"
+                  ::ev/origin "team-invitation-acceptance"
+                  :team-id "team-1"
+                  :organization-id "organization-1"
+                  :role :editor
+                  :invitation-id "invitation-1"
+                  :user-id "invitee-1"
+                  :user-who-send-invitation "inviter-1"
+                  :organization-member-add-source "team-invitation"
+                  :belongs-to-team-on-add true
+                  :organization-member-count-before 4}
+                 @(first @emitted))))
+
+      (reset! emitted [])
+      (t/testing "accepting an invitation directly to the organization"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :organization-id "organization-2"
+          :organization-team-id "team-default"
+          :role :viewer
+          :invitation-id "invitation-2"
+          :member-id "invitee-2"
+          :profile-id "inviter-2"
+          :organization-member-count-before 0})
+
+        (t/is (= {::ev/name "accept-organization-invitation"
+                  ::ev/origin "organization-invitation-acceptance"
+                  :organization-id "organization-2"
+                  :role :viewer
+                  :invitation-id "invitation-2"
+                  :user-id "invitee-2"
+                  :user-who-send-invitation "inviter-2"
+                  :organization-member-add-source "direct-organization-invitation"
+                  :belongs-to-team-on-add false
+                  :organization-member-count-before 0}
+                 @(first @emitted))))
+
+      (reset! emitted [])
+      (t/testing "does not audit a team invitation for an existing organization member"
+        (verify-token/handle-token
+         {:iss :team-invitation
+          :state :created
+          :team-id "team-3"
+          :organization-id "organization-3"
+          :role :editor})
+
+        (t/is (= 3 (count @emitted)))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"
@@ -215,6 +281,134 @@
   (t/testing "must be a string so licenses/billing?callback=... survives query encoding"
     (t/is (string? dnt/go-to-subscription-url))
     (t/is (not (u/uri? dnt/go-to-subscription-url)))))
+
+(t/deftest organization-teams-filters-by-organization-id
+  (let [teams {"t1" {:id "t1" :organization {:id "org-a"}}
+               "t2" {:id "t2" :organization {:id "org-b"}}
+               "t3" {:id "t3" :is-default true}
+               "t4" {:id "t4" :organization {:id "org-a"}}}]
+    (t/is (= ["t1" "t4"] (map :id (dnt/organization-teams teams "org-a"))))
+    (t/is (= [] (dnt/organization-teams teams "org-c")))))
+
+(t/deftest organization-leave-info-keeps-default-and-not-owned-teams
+  (let [org-teams [{:id "default" :is-default true}
+                   {:id "owned-1" :permissions {:is-owner true}}
+                   {:id "member-1" :permissions {:is-owner false}}]
+        info (dnt/organization-leave-info org-teams)]
+    (t/is (= "default" (:default-team-id info)))
+    (t/is (= ["member-1"] (map :id (:not-owned-teams info))))))
+
+(t/deftest leave-organization-fn-builds-delete-and-leave-lists
+  (let [captured (atom nil)
+        emitted  (atom [])
+        not-owned-teams [{:id "member-1" :name "extra"}]
+        leave-fn (dnt/leave-organization-fn {:organization {:id "org-1" :name "Acme"}
+                                             :default-team-id "default"
+                                             :not-owned-teams not-owned-teams
+                                             :on-error :on-error-fn})]
+    (with-redefs [dnt/leave-organization (fn [params] (reset! captured params) ::leave-event)
+                  st/emit! (fn
+                             ([event] (swap! emitted conj event))
+                             ([event & events] (swap! emitted into (cons event events))))]
+
+      (t/testing "with no teams offered for transfer"
+        (leave-fn {:teams-to-transfer nil
+                   :teams-to-delete ["solo"]
+                   :member-added-at "2026-07-17T00:00:00Z"
+                   :organization-member-count-before 3})
+
+        (t/is (= [::leave-event] @emitted))
+        (t/is (= {:id "org-1"
+                  :name "Acme"
+                  :default-team-id "default"
+                  :teams-to-delete ["solo"]
+                  :teams-to-leave [{:id "member-1"}]
+                  :member-added-at "2026-07-17T00:00:00Z"
+                  :organization-member-count-before 3
+                  :on-error :on-error-fn}
+                 @captured)))
+
+      (t/testing "folds transferred teams into teams-to-leave, ahead of the rest"
+        (leave-fn {:teams-to-transfer [{:id "pair" :reassign-to "new-owner"}]
+                   :member-added-at "2026-07-17T00:00:00Z"
+                   :organization-member-count-before 3})
+
+        (t/is (= [{:id "pair" :reassign-to "new-owner"}
+                  {:id "member-1"}]
+                 (:teams-to-leave @captured)))))))
+
+(t/deftest show-leave-organization-modal-takes-owned-teams-from-the-summary
+  (let [requests    (atom [])
+        accepted    (atom nil)
+        transferable [{:id "pair" :name "Pair" :members [{:id "m2" :name "Other"}]}]
+        summary     {:teams-to-delete 1
+                     :teams-to-transfer 1
+                     :teams-to-exit 0
+                     :teams-to-detach 0
+                     :team-ids-to-delete ["solo"]
+                     :transferable-teams transferable
+                     :member-added-at "2026-07-17T00:00:00Z"
+                     :organization-member-count-before 3}
+        event       (dnt/show-leave-organization-modal
+                     {:organization {:id "org-1" :name "Acme"}
+                      :profile {:id "me"}
+                      :default-team-id "default"
+                      :leave-fn #(reset! accepted %)
+                      :on-error identity})]
+    (with-redefs [rp/cmd! (mock/stub
+                           (fn [cmd params]
+                             (swap! requests conj cmd)
+                             (t/is (= {:id "org-1" :default-team-id "default"} params))
+                             (rx/of summary)))
+                  modal/show (mock/stub (fn [params] params))]
+      (let [modal-params (atom nil)]
+        (rx/sub! (ptk/watch event nil nil) #(reset! modal-params %))
+
+        ;; The summary is the only request: no SSO gated member fetch
+        (t/is (= [::dnt/get-leave-organization-summary] @requests))
+        (t/is (= :leave-and-reassign-organization (:type @modal-params)))
+        (t/is (= transferable (:teams-to-transfer @modal-params)))
+
+        ((:accept @modal-params) {:teams-to-transfer [{:id "pair" :reassign-to "m2"}]})
+        (t/is (= {:teams-to-transfer [{:id "pair" :reassign-to "m2"}]
+                  :teams-to-delete ["solo"]
+                  :member-added-at "2026-07-17T00:00:00Z"
+                  :organization-member-count-before 3}
+                 @accepted))))))
+
+(t/deftest team-leave-on-error-matrix
+  (t/testing "known error code shows a translated notification"
+    (let [emitted (atom [])]
+      (->> (dnt/team-leave-on-error (ex-info "boom" {:code :owner-cant-leave-team}))
+           (rx/subs! #(swap! emitted conj %)))
+      (t/is (= 1 (count @emitted)))
+      (t/is (= :visible (:status (:notification (ptk/update (first @emitted) {})))))))
+
+  (t/testing "unknown error code rethrows the original error"
+    (let [error (ex-info "boom" {:code :something-unmapped})
+          rejected (atom [])]
+      (->> (dnt/team-leave-on-error error)
+           (rx/subs! (fn [_]) #(swap! rejected conj %)))
+      (t/is (= [error] @rejected)))))
+
+(t/deftest org-leave-on-error-matrix
+  (t/testing "known error code refetches teams, hides the modal, and notifies"
+    (let [emitted (atom [])]
+      (->> (dnt/org-leave-on-error (ex-info "boom" {:code :not-valid-teams}))
+           (rx/subs! #(swap! emitted conj %)))
+      (t/is (= 3 (count @emitted)))
+      (t/is (some (ptk/type? ::dt/fetch-teams) @emitted))
+      (t/is (some (ptk/type? ::modal/hide-modal) @emitted))
+      (let [notification-event (first (filter (ptk/type? ::ntf/show) @emitted))]
+        (t/is (some? notification-event))
+        (t/is (= :visible (:status (:notification (ptk/update notification-event {}))))))))
+
+  (t/testing "unknown error code rethrows the original error"
+    (let [error (ex-info "boom" {:code :something-unmapped})
+          rejected (atom [])]
+      (->> (dnt/org-leave-on-error error)
+           (rx/subs! (fn [_]) #(swap! rejected conj %)))
+      (t/is (= [error] @rejected)))))
 
 (t/deftest build-admin-console-billing-url-encodes-string-callback
   (t/testing "billing callback query param round-trips as a real URL string"

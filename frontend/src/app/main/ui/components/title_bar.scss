@@ -57,6 +57,7 @@
 
 .icon {
   color: var(--arrow-icon-color);
+  flex-shrink: 0;
 }
 
 .title-wrapper {

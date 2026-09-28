@@ -25,7 +25,7 @@
    [:style [::sm/one-of styles]]
    [:offset-x ::sm/safe-number]
    [:offset-y ::sm/safe-number]
-   [:blur ::sm/safe-number]
+   [:blur ::sm/non-negative-safe-number]
    [:spread ::sm/safe-number]
    [:hidden :boolean]
    [:color schema:color]])
@@ -35,4 +35,3 @@
 
 (def valid-shadow?
   (sm/validator schema:shadow))
-

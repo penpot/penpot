@@ -138,13 +138,15 @@ Distinguishing abstractions (the OOP articulation of the shared principles):
   control via Playwright; recipe in the README.
 
 ## CI
-Headless per-PR gate: `.github/workflows/tests-composable-suite.yml` runs
-`pnpm --filter composable-test-suite run test:ci` — mocked backend (frontend e2e static server +
+Headless per-PR gate: the `composable-test-suite` job in
+`.github/workflows/tests-e2e.yml` runs `pnpm --filter composable-test-suite run test:ci` — mocked
+backend (frontend e2e static server +
 Playwright RPC fixtures, no backend/login), the in-sandbox bundle injected via `ɵloadPlugin`,
 results streamed via console markers, `TEST_FILTER` by identifier substring. The mocked backend is
 NOT a limitation for this suite (everything asserted is frontend store logic; empirically
 confirmed against the interactive runs). Architecture mirrors `plugin-api-test-suite`'s CI driver;
 the mock harness exists in THREE places that must stay in sync (provenance note in `ci/run-ci.ts`).
+The frontend bundle is built once per SHA and restored by this job (`mem:frontend/e2e-ci-workflow`).
 Details: README, "Running in CI".
 
 ## Substrate

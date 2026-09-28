@@ -9,13 +9,23 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [backend-tests.helpers :as th]
-   [clojure.test :as t])
+   [clojure.test :as t]
+   [integrant.core :as ig])
   (:import
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    java.sql.Connection))
 
 (t/use-fixtures :once th/state-init)
+
+(t/deftest pool-requires-metrics
+  ;; Metrics is required by the pool schema: a pool wired without it
+  ;; fails at the boundary (AssertionError when asserts are enabled) or
+  ;; when the prometheus tracker is wired, instead of silently skipping
+  ;; the instrumentation.
+  (t/is (thrown? Throwable
+                 (ig/init-key :app.db/pool
+                              {::db/uri (java.net.URI. "postgresql://localhost/test")}))))
 
 (t/deftest pool-stats-returns-expected-keys
   (let [stats (db/pool-stats th/*pool*)]

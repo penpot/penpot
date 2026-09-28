@@ -1,9 +1,9 @@
-import { spawn, type ChildProcess } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from 'playwright';
 import type { CoverageReport, TestResult } from '../src/framework/types';
+import { startStaticServer, type StaticServer } from './static-server.ts';
 
 // Out-of-sandbox CI driver (Node + Playwright). Injects the prebuilt
 // `headless.js` bundle (built from the in-sandbox entry `src/ci/headless.ts` —
@@ -19,8 +19,9 @@ import type { CoverageReport, TestResult } from '../src/framework/types';
 //   the given substring (case-insensitive).
 //   Optional env: RENDER_WASM — force the workspace renderer (`true`/`false`).
 //
-// - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle via the e2e
-//   static server and intercepts every backend RPC with Playwright `page.route`,
+// - MOCKED (`MOCK_BACKEND=1`): serves the prebuilt frontend bundle with the
+//   zero-dependency static server in `ci/static-server.ts` and intercepts
+//   every backend RPC with Playwright `page.route`,
 //   reusing the frontend e2e mock fixtures. No backend/login needed. Validates
 //   the frontend Plugin API binding + in-memory store only; results that depend
 //   on real backend behaviour are not faithfully reproduced, so those tests are
@@ -30,7 +31,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 // here = <root>/plugins/apps/plugin-api-test-suite/ci
 const repoRoot = resolve(here, '../../../../');
 const frontendDir = resolve(repoRoot, 'frontend');
+const staticRoot = resolve(frontendDir, 'resources/public');
 const e2eDataDir = resolve(frontendDir, 'playwright/data');
+
+// Console prefixes Penpot's error handler prints for failures the app did not
+// expect (`frontend/src/app/main/errors.cljs`). The store swallows these, so
+// the console is the only place a test can observe them. "Plugin Error" and
+// "Network Error" are left out: tests provoke both on purpose.
+const APP_ERROR_RE =
+  /^(Internal Error|Unexpected Error|Assertion Error|Uncaught Exception|Uncaught Rejection):/;
 
 const MOCKED = !!process.env['MOCK_BACKEND'];
 const MOCK_BASE_URL = 'http://localhost:3000';
@@ -179,16 +188,15 @@ async function waitForServer(url: string, timeoutMs = 30000): Promise<void> {
   }
 }
 
-function startE2eServer(): ChildProcess {
-  // Reuse the frontend e2e static server: it serves frontend/resources/public
-  // on port 3000, which is also the host the app opens its notifications
-  // WebSocket against (ws://localhost:3000/ws/notifications) — so the WS mock
-  // below matches without extra config.
-  const child = spawn('node', ['scripts/e2e-server.js'], {
-    cwd: frontendDir,
-    stdio: 'inherit',
-  });
-  return child;
+function startE2eServer(): Promise<StaticServer> {
+  // Serve the prebuilt bundle from `frontend/resources/public` on port 3000,
+  // which is also the host the app opens its notifications WebSocket against
+  // (ws://localhost:3000/ws/notifications) — so the WS mock below matches
+  // without extra config. This used to shell out to the express-based
+  // `frontend/scripts/e2e-server.js`, but that resolves `express` from
+  // `frontend/node_modules`, which the CI jobs never install (only
+  // `plugins/` deps), so the driver crashed before serving anything.
+  return startStaticServer(staticRoot, 3000);
 }
 
 // Install the frontend e2e WebSocket mock so the workspace's notifications
@@ -337,12 +345,12 @@ function printReport(
 async function main() {
   const bundle = readFileSync(headlessBundlePath, 'utf-8');
 
-  let server: ChildProcess | undefined;
+  let server: StaticServer | undefined;
   let fileUrl: string;
   let authToken: string | undefined;
 
   if (MOCKED) {
-    server = startE2eServer();
+    server = await startE2eServer();
     await waitForServer(MOCK_BASE_URL);
     fileUrl = mockedFileUrl();
   } else {
@@ -392,13 +400,36 @@ async function main() {
   let fatal: string | null = null;
 
   console.log('\nRunning tests:');
+  // Errors the app reported since the previous test result.
+  let appErrors: string[] = [];
+  const takeAppErrors = (): string => {
+    const detail = appErrors.join('; ');
+    appErrors = [];
+    return detail;
+  };
+
   const done = new Promise<void>((resolvePromise) => {
+    page.on('pageerror', (err) => {
+      appErrors.push(`Uncaught ${err.message}`);
+    });
     page.on('console', (msg) => {
       const text = msg.text();
+      if (APP_ERROR_RE.test(text)) {
+        appErrors.push(text.split('\n')[0]!.trim());
+      }
       if (text.startsWith('__TEST_RESULT__ ')) {
         const result: TestResult = JSON.parse(
           text.slice('__TEST_RESULT__ '.length),
         );
+        // Errors buffered so far belong to the test this result closes.
+        const reported = takeAppErrors();
+        if (reported) {
+          result.error =
+            result.status === 'fail' && result.error
+              ? `${result.error} — Penpot also reported: ${reported}`
+              : `Penpot reported an error during the test: ${reported}`;
+          result.status = 'fail';
+        }
         results.push(result);
         // Print each result as it streams in so the run shows live progress
         // instead of staying silent until it finishes.
@@ -463,7 +494,7 @@ async function main() {
   ]);
 
   await browser.close();
-  server?.kill();
+  await server?.close();
 
   printReport(results, coverage, skipped);
 

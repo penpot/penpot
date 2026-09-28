@@ -247,7 +247,10 @@
 
 (defn handle-change-team-organization
   "Handle :team-organization-change websocket messages on dashboard and workspace.
-  Updates local team organization data and redirects to SSO when required."
+  Updates local team organization data and redirects to SSO when required.
+  `team` and `notification` come from the server-published message (see backend
+  app.rpc.notifications/notify-team-change); `notification` is a translation
+  key resolved here, dynamic by design."
   [{:keys [team notification]}]
   (ptk/reify ::handle-change-team-organization
     ptk/WatchEvent
@@ -259,6 +262,11 @@
                    current-team?)
           (rx/concat
            (when notification
+             ;; Execution time translation strings (keys sent by the backend):
+             ;;   (tr "dashboard.team-belong-organization")
+             ;;   (tr "dashboard.team-no-longer-belong-organization")
+             ;; notification is a server-provided key, dynamic by design
+             #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
              (rx/of (ntf/show {:content (tr notification (:name organization))
                                :type :toast
                                :level :info
