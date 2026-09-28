@@ -35,6 +35,15 @@ permissions:
 jobs:
   deploy:
     runs-on: penpot-standar-runner
+    container:
+      image: penpotapp/devenv:latest
+      volumes:
+        # Persistent pnpm store shared by all runner instances on the host.
+        # pnpm's content-addressable store is safe for concurrent access.
+        - /var/cache/github-runner/pnpm-store:/root/.local/share/pnpm/store
+    defaults:
+      run:
+        shell: bash
     env:
       GH_REF: ${{ inputs.gh_ref }}
       PLUGIN_NAME: ${{ inputs.plugin_name }}
@@ -54,29 +63,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
-
-      # START: Setup Node and PNPM enabling cache
-      - name: Setup pnpm + Node.js
-        uses: pnpm/setup@v2
-        with:
-          working-directory: plugins
-          runtime: node@24.21.0
-          install: false
-
-      - name: Get pnpm store path
-        id: pnpm-store
-        working-directory: ./plugins
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-      # END: Setup Node and PNPM enabling cache
 
       - name: Install deps
         working-directory: ./plugins
@@ -112,7 +98,7 @@ jobs:
           sed -i "s/WORKER_URI/${WORKER_URI}/g" "apps/${PLUGIN_NAME}-plugin/wrangler.toml"
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
           workingDirectory: plugins
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
