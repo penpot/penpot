@@ -6,7 +6,7 @@
 
 (ns benches.render-wasm.pilot
   "Interim diagnostic: loads `:rects/load` in headless Chromium and prints the
-  bridge result JSON on stdout.
+  bridge result as a transit string on stdout.
 
   TODO(mem:render-wasm/performance/cljs-rewrite/10-process-build-and-server):
   the inline static server and artifact layout here are pilot scaffolding.
@@ -19,8 +19,9 @@
   ticket 11. Raw `.then` chains below are diagnostic scaffolding, not the
   runner's interop pattern.
 
-  Exit codes: 0 when result JSON is produced (including bridge failure maps,
-  which are valid pilot output); 1 on harness errors and timeouts. A timeout
+  Exit codes: 0 when a result transit string is produced (including bridge
+  failure maps, which are valid pilot output); 1 on harness errors and
+  timeouts. A timeout
   closes the browser, so it stops even a synchronously blocked page.
 
   Usage, from `frontend/` with Playwright's Chromium installed:
@@ -46,6 +47,7 @@
    ["http" :as http]
    ["path" :as path]
    ["playwright" :as playwright]
+   [app.common.transit :as t]
    [clojure.string :as str]))
 
 (def ^:private default-seed 42)
@@ -129,13 +131,13 @@
         (js/process.exit 1)))))
 
 (defn- trace
-  "Diagnostic line on stderr; stdout carries only the result JSON."
+  "Diagnostic line on stderr; stdout carries only the result transit string."
   [message]
   (.error js/console message))
 
 (defn- print-result!
   [result]
-  (println (.stringify js/JSON result nil 2)))
+  (println (t/encode-str (js->clj result))))
 
 (defn -main
   [& argv]
@@ -155,6 +157,37 @@
                  port   (unchecked-get info "port")
                  url    (str "http://127.0.0.1:" port "/pilot.html")
                  close! (fn [] (js/Promise.resolve (.close server)))
+                 wait-for-bench-ready (fn [^js page] (fn [] (.waitForFunction page "window.__benchReady === true")))
+                 evaluate-load-rects (fn [^js page] (fn [_]
+                                                      (trace "pilot: bridge ready, evaluating")
+                                                      ;; NOTE: a string page-function evaluates
+                                                      ;; as an expression, so inline the args
+                                                      ;; into an IIFE; a passed arg would
+                                                      ;; never arrive.
+                                                      (let [call (str "(async () => window.__benchBridge.loadRects("
+                                                                      (.stringify
+                                                                       js/JSON
+                                                                       #js {"seed" seed
+                                                                            "module-url" "/js/render-wasm.js"
+                                                                            "wasm-url" "/js/render-wasm.wasm"})
+                                                                      "))()")]
+                                                        (.evaluate page call))))
+                 attach-screenshot-path (fn [^js page ^js version] (fn [result]
+                                                                     (let [out #js {"seed" seed
+                                                                                    "result" result}]
+                                                                       (aset out "browser"
+                                                                             #js {"chromium" version})
+                                                                       (if-let [shot (:screenshot opts)]
+                                                                         (-> (.screenshot
+                                                                              page
+                                                                              #js {"path" shot})
+                                                                             (.then (fn [_]
+                                                                                      (aset out "screenshot" shot)
+                                                                                      out)))
+                                                                         out))))
+                 viewport  #js {"viewport"
+                                #js {"width" 1920 "height" 1080}
+                                "deviceScaleFactor" 2}
                  ;; Holder so the outer timeout path can close a browser
                  ;; the work chain never returned (blocked page, or a
                  ;; launch/context/page failure after launch).
@@ -164,48 +197,16 @@
                             (.then (fn [^js pw-browser]
                                      (reset! browser-ref pw-browser)
                                      (let [version (.version pw-browser)]
-                                       (-> (.newContext
-                                            pw-browser
-                                            #js {"viewport"
-                                                 #js {"width" 1920 "height" 1080}
-                                                 "deviceScaleFactor" 2})
+                                       (-> (.newContext pw-browser viewport)
                                            (.then (fn [^js context]
                                                     (-> (.newPage context)
                                                         (.then
                                                          (fn [^js page]
                                                            (trace "pilot: page open")
                                                            (-> (.goto page url)
-                                                               (.then (fn [_]
-                                                                        (.waitForFunction
-                                                                         page
-                                                                         "window.__benchReady === true")))
-                                                               (.then (fn [_]
-                                                                        (trace "pilot: bridge ready, evaluating")
-                                                                        ;; NOTE: a string page-function evaluates
-                                                                        ;; as an expression, so inline the args
-                                                                        ;; into an IIFE; a passed arg would
-                                                                        ;; never arrive.
-                                                                        (let [call (str "(async () => window.__benchBridge.loadRects("
-                                                                                        (.stringify
-                                                                                         js/JSON
-                                                                                         #js {"seed" seed
-                                                                                              "module-url" "/js/render-wasm.js"
-                                                                                              "wasm-url" "/js/render-wasm.wasm"})
-                                                                                        "))()")]
-                                                                          (.evaluate page call))))
-                                                               (.then (fn [result]
-                                                                        (let [out #js {"seed" seed
-                                                                                       "result" result}]
-                                                                          (aset out "browser"
-                                                                                #js {"chromium" version})
-                                                                          (if-let [shot (:screenshot opts)]
-                                                                            (-> (.screenshot
-                                                                                 page
-                                                                                 #js {"path" shot})
-                                                                                (.then (fn [_]
-                                                                                         (aset out "screenshot" shot)
-                                                                                         out)))
-                                                                            out))))
+                                                               (.then (wait-for-bench-ready page))
+                                                               (.then (evaluate-load-rects page))
+                                                               (.then (attach-screenshot-path page version))
                                                                (.then (fn [out]
                                                                         (-> (.close pw-browser)
                                                                             (.then (fn [_] out)))))
