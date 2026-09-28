@@ -100,6 +100,17 @@ export function installWebGLMemoryTracker() {
   };
   const totals = { texture: 0, renderbuffer: 0, buffer: 0 };
   let allocatedBytesTotal = 0;
+  // Allocations since the last snapshot, by kind and size: shows which
+  // surfaces a step reallocated.
+  const allocsBySize = new Map();
+
+  function logAlloc(kind, w, h, bytes) {
+    const key = `${kind} ${w}x${h}`;
+    const entry = allocsBySize.get(key) ?? { count: 0, bytes: 0 };
+    entry.count++;
+    entry.bytes += bytes;
+    allocsBySize.set(key, entry);
+  }
   let contextLosses = 0;
 
   // texture -> Map("face:level" -> bytes); renderbuffer/buffer -> bytes
@@ -209,10 +220,14 @@ export function installWebGLMemoryTracker() {
     });
     wrap(proto, "texImage2D", (gl, a) => {
       if (a.length >= 8) {
-        setTextureLevel(gl, a[0], a[1], a[3] * a[4] * bpp(a[2], a[6], a[7]));
+        const bytes = a[3] * a[4] * bpp(a[2], a[6], a[7]);
+        setTextureLevel(gl, a[0], a[1], bytes);
+        logAlloc("texture", a[3], a[4], bytes);
       } else {
         const [w, h] = sourceSize(a[5]);
-        setTextureLevel(gl, a[0], a[1], w * h * bpp(a[2], a[3], a[4]));
+        const bytes = w * h * bpp(a[2], a[3], a[4]);
+        setTextureLevel(gl, a[0], a[1], bytes);
+        logAlloc("texture", w, h, bytes);
       }
     });
     wrap(proto, "texImage3D", (gl, a) => {
@@ -232,6 +247,7 @@ export function installWebGLMemoryTracker() {
     });
     wrap(proto, "texStorage2D", (gl, a) => {
       setTextureStorage(gl, a[0], a[1], a[3], a[4], 1, bpp(a[2]));
+      logAlloc("texture", a[3], a[4], a[3] * a[4] * bpp(a[2]));
     });
     wrap(proto, "texStorage3D", (gl, a) => {
       setTextureStorage(gl, a[0], a[1], a[3], a[4], a[5], bpp(a[2]));
@@ -250,11 +266,9 @@ export function installWebGLMemoryTracker() {
       stateOf(gl).renderbuffer = rb;
     });
     wrap(proto, "renderbufferStorage", (gl, [, fmt, w, h]) => {
-      setObjectBytes(
-        "renderbuffer",
-        stateOf(gl).renderbuffer,
-        w * h * bpp(fmt),
-      );
+      const bytes = w * h * bpp(fmt);
+      setObjectBytes("renderbuffer", stateOf(gl).renderbuffer, bytes);
+      logAlloc("renderbuffer", w, h, bytes);
     });
     wrap(
       proto,
@@ -262,6 +276,7 @@ export function installWebGLMemoryTracker() {
       (gl, [, samples, fmt, w, h]) => {
         const bytes = w * h * bpp(fmt) * Math.max(1, samples);
         setObjectBytes("renderbuffer", stateOf(gl).renderbuffer, bytes);
+        logAlloc("renderbuffer", w, h, bytes);
       },
     );
     wrap(proto, "createRenderbuffer", () => counters.renderbuffersCreated++);
@@ -372,6 +387,15 @@ export function installWebGLMemoryTracker() {
     };
   }
 
+  function skiaCache() {
+    const mod = globalThis.app?.common?.render_wasm?.wasm?.internal_module;
+    if (typeof mod?._resource_cache_bytes !== "function") return null;
+    return {
+      bytes: mod._resource_cache_bytes(),
+      purgeableBytes: mod._resource_cache_purgeable_bytes(),
+    };
+  }
+
   function wasmHeapBytes() {
     if (wasmMemories.length === 0) return null;
     return wasmMemories.reduce((acc, m) => acc + m.buffer.byteLength, 0);
@@ -396,6 +420,11 @@ export function installWebGLMemoryTracker() {
     rendererInfo,
     snapshot() {
       const drawingBuffer = drawingBuffers();
+      const bySize = [...allocsBySize.entries()]
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) => b.bytes - a.bytes)
+        .slice(0, 12);
+      allocsBySize.clear();
       return {
         textures: { count: textureLevels.size, bytes: totals.texture },
         renderbuffers: {
@@ -413,9 +442,11 @@ export function installWebGLMemoryTracker() {
             counters.bufferAllocs,
         },
         allocatedBytesTotal,
+        allocsBySize: bySize,
         contexts: contexts.length,
         contextLosses,
         wasmHeapBytes: wasmHeapBytes(),
+        skiaCache: skiaCache(),
         jsHeapBytes: performance.memory?.usedJSHeapSize ?? null,
       };
     },

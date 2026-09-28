@@ -72,6 +72,12 @@ const SERIES = [
     get: (s) => s.web?.allocs?.total,
   },
   {
+    key: "skia",
+    title: "Skia resource cache",
+    unit: "bytes",
+    get: (s) => s.web?.skiaCache?.bytes,
+  },
+  {
     key: "gpuRss",
     title: "RSS of processes holding the GPU",
     unit: "bytes",
@@ -188,6 +194,18 @@ const METRICS = [
     title: "WebGL growth per resize cycle",
     unit: "bytes",
     get: (r) => perCycleGrowth(r, webgl),
+  },
+  {
+    key: "skiaCachePeak",
+    title: "Skia resource cache, peak",
+    unit: "bytes",
+    get: (r) => peak(r, (s) => s.web?.skiaCache?.bytes),
+  },
+  {
+    key: "skiaPurgeableIdle",
+    title: "Skia purgeable bytes, idle",
+    unit: "bytes",
+    get: (r) => lastOf(r, "idle", (s) => s.web?.skiaCache?.purgeableBytes),
   },
   {
     key: "wasmHeapPeak",
@@ -341,7 +359,7 @@ function fmtDelta(delta) {
 }
 
 function pad(s, n) {
-  return String(s).padEnd(n);
+  return `${String(s).padEnd(n - 1)} `;
 }
 
 // ------------------------------------------------------------------- main
@@ -394,7 +412,7 @@ for (const engine of engines) {
       `  ${label}: ${used}/${n} runs, commit ${meta.commit}, wasm ${meta.wasm}, ${meta.renderer?.renderer ?? "unknown renderer"}`,
     );
   }
-  const header = [pad("metric", 38), ...present.map((l) => pad(l, 22))].join(
+  const header = [pad("metric", 38), ...present.map((l) => pad(l, 26))].join(
     "",
   );
   console.log(`\n${header}`);
@@ -404,9 +422,9 @@ for (const engine of engines) {
     const cells = present.map((label) => {
       const st = byLabel[label].metrics[m.key];
       const value = fmt(st?.median, m.unit);
-      if (label === baseline) return pad(value, 22);
+      if (label === baseline) return pad(value, 26);
       const v = verdict(base, st, m.informative, m.unit);
-      return pad(`${value} ${fmtDelta(v.delta)} ${v.verdict}`, 22);
+      return pad(`${value} ${fmtDelta(v.delta)} ${v.verdict}`, 26);
     });
     console.log([pad(m.title, 38), ...cells].join(""));
   }

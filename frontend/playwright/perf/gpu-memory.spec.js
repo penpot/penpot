@@ -23,6 +23,7 @@ const config = {
   iterations: Number(env.PERF_ITERATIONS ?? 12),
   settleMs: Number(env.PERF_SETTLE_MS ?? 300),
   purgeProbe: env.PERF_PURGE_PROBE === "1",
+  skiaCacheMb: env.PERF_SKIA_CACHE_MB ? Number(env.PERF_SKIA_CACHE_MB) : null,
   outDir: env.PERF_OUT_DIR ?? "playwright/perf/results",
 };
 
@@ -121,6 +122,19 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
     await workspace.mockGetFile(config.fixture);
     await workspace.goToWorkspace();
     await workspace.waitForFirstRenderWithoutUI();
+    if (config.skiaCacheMb) {
+      // Set after the first render, so the load phase still runs on the
+      // build's default budget.
+      const applied = await page.evaluate((mb) => {
+        const mod = globalThis.app?.common?.render_wasm?.wasm?.internal_module;
+        if (typeof mod?._set_resource_cache_limit_mb !== "function")
+          return false;
+        mod._set_resource_cache_limit_mb(mb);
+        return true;
+      }, config.skiaCacheMb);
+      if (!applied)
+        throw new Error("wasm build lacks set_resource_cache_limit_mb");
+    }
     await sample("load");
     // Canvas captures from the first repeat show whether a change broke
     // rendering, not only how much memory it saved.
@@ -186,6 +200,7 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
         repeat,
         fixture: config.fixture,
         iterations: config.iterations,
+        skiaCacheMb: config.skiaCacheMb,
         viewport: base,
         dpr: testInfo.project.use.deviceScaleFactor ?? 1,
         renderer,
