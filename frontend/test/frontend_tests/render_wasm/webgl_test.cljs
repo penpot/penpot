@@ -57,10 +57,10 @@
    :params {}})
 
 (defn- init-failure
-  "Runs `init-context!` against `env`, returning the thrown cause."
+  "Runs `init-context` against `env`, returning the thrown cause."
   [{:keys [canvas module]}]
   (try
-    (webgl/init-context! canvas (init-opts module))
+    (webgl/init-context canvas (init-opts module))
     nil
     (catch :default cause
       cause)))
@@ -81,7 +81,7 @@
 
 (t/deftest init-success-returns-context-and-handle
   (let [{:keys [canvas context module calls]} (fake-env {})
-        result (webgl/init-context! canvas (init-opts module))]
+        result (webgl/init-context canvas (init-opts module))]
     (t/is (= 7 (:handle result)))
     (t/is (identical? context (:context result)))
     (t/is (zero? (effect-count @calls :clean)) "no release on success")
@@ -90,7 +90,7 @@
 
 (t/deftest nil-context-returns-nil-without-releasing
   (let [{:keys [canvas module calls]} (fake-env {:nil-context? true})]
-    (t/is (nil? (webgl/init-context! canvas (init-opts module))))
+    (t/is (nil? (webgl/init-context canvas (init-opts module))))
     (t/is (empty? @calls) "nothing acquired, nothing released")))
 
 (t/deftest registration-failure-releases-browser-context-only

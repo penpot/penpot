@@ -83,7 +83,7 @@
     (catch :default _))
   (delete-context! module handle))
 
-(defn init-context!
+(defn init-context
   "Create a WebGL2 context on `canvas` and run the WASM renderer init sequence.
 
   Expects all values resolved by the caller. Writes no `wasm/` atoms and installs
