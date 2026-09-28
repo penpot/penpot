@@ -1130,7 +1130,7 @@
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
 (defn clear-shape-fills!
-  "Clear the fills of the currently-selected shape (call `use-shape!` first).
+  "Clear the fills of the currently-selected shape (call `use-shape` first).
   Equivalent to `set-shape-fills` with an empty collection."
   []
   (when (initialized?)
@@ -1588,7 +1588,7 @@
    `skip-fills-strokes?` is true, fill/stroke records were already in the batch;
    only image fetches remain.
 
-   Always `use-shape!` first: after a multi-shape batch the WASM current shape is
+   Always `use-shape` first: after a multi-shape batch the WASM current shape is
    the last record in the chunk, not this shape."
   [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
   (let [id      (dm/get-prop shape :id)
@@ -1643,7 +1643,7 @@
     {:thumbnails [] :full [] :font-face-keys #{} :pending-font-face-keys #{}}
     (do
       (perf/begin-measure "set-object")
-      (let [prepared (serialize-shape/serialize-shape! shape)
+      (let [prepared (serialize-shape/serialize-shape shape)
             result (set-object-host-attrs prepared false)]
         (perf/end-measure "set-object")
         result))))
@@ -1811,7 +1811,7 @@
         end-index (min total (+ start-index BATCH_MAX_SHAPES))
         chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
                                    start-index end-index))
-        prepared  (serialize-shape/serialize-shapes-batch!
+        prepared  (serialize-shape/serialize-shapes-batch
                    chunk
                    {:include-layout? true
                     :include-fills-strokes? true})]
@@ -1960,7 +1960,7 @@
 (defn- set-objects-sync
   "Synchronously process all shapes (for small shape counts)."
   [shapes render-callback on-shapes-ready]
-  (let [prepared     (serialize-shape/serialize-shapes-batch!
+  (let [prepared     (serialize-shape/serialize-shapes-batch
                       shapes
                       {:include-layout? true
                        :include-fills-strokes? true})
@@ -2472,14 +2472,14 @@
                       :max_blocking_time_ms             (wasm-get-numeric-value :max_blocking_time_ms)
                       :node_batch_threshold             (wasm-get-numeric-value :node_batch_threshold)
                       :blur_downscale_threshold         (wasm-get-numeric-value :blur_downscale_threshold)}
-          result     (webgl/init-context! canvas {:module     wasm/internal-module
-                                                  :context-id context-id
-                                                  :css-width  css-w
-                                                  :css-height css-h
-                                                  :dpr        dpr
-                                                  :flags      flags
-                                                  :browser    browser
-                                                  :params     params})
+          result     (webgl/init-context canvas {:module     wasm/internal-module
+                                                 :context-id context-id
+                                                 :css-width  css-w
+                                                 :css-height css-h
+                                                 :dpr        dpr
+                                                 :flags      flags
+                                                 :browser    browser
+                                                 :params     params})
           context-init? (some? result)
           can-listen? (fn? (.-addEventListener ^js canvas))]
       (when result
@@ -2487,7 +2487,7 @@
           (set! wasm/gl-context-handle handle)
           (set! wasm/gl-context context)
 
-          ;; `init-context!` already ran `_init` through `_set_browser` in
+          ;; `init-context` already ran `_init` through `_set_browser` in
           ;; order. Publish the handles, then mark live before sizing so the
           ;; guarded `resize-*` helpers can run (they require `wasm/live?`,
           ;; which is true here even while `reloading?` still blocks app callers).
