@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-28 08:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -752,6 +752,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Onaylamadan önce kütüphane bağlantılarını gözden geçirin:"
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "Bağlandı"
 
@@ -1724,12 +1725,13 @@ msgid "errors.registration-disabled"
 msgstr "Kayıt olma şu anda devre dışı."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "En son yaptığınız değişiklikler kaydedildi olarak onaylanmadı. Kaydetme "
 "işlemi otomatik devam etmeyebilir. Bu sekmeyi kapatmayın veya yeniden "
-"yüklemeyin: değişiklikleriniz kaybolabilir. Yardım için destek ile "
-"iletişime geçin."
+"yüklemeyin: değişiklikleriniz kaybolabilir. Yardım için destek ile iletişime "
+"geçin."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
