@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:19+0000\n"
+"PO-Revision-Date: 2026-09-28 08:14+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi "
 "<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
@@ -284,7 +284,7 @@ msgstr "कचरा साफ़ करें"
 msgid "dashboard.copy-suffix"
 msgstr "(कॉपी)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "नई टीम बनाएं"
 
@@ -331,7 +331,7 @@ msgstr ""
 msgid "dashboard.delete-success-notification"
 msgstr "%s सफलतापूर्वक हटा दिया गया है।"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "टीम हटाएं"
 
@@ -534,7 +534,7 @@ msgstr ""
 "[Transfonter](https://transfonter.org/) का उपयोग करके वेबफ़ॉन्ट्स जनरेट "
 "करने और त्रुटियों को ठीक करने की सलाह देते हैं। "
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:226
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:240
 msgid "dashboard.go-to-admin-console"
 msgstr "एडमिन कंसोल पर जाएं"
 
@@ -624,7 +624,7 @@ msgstr "निमंत्रण पुनः भेजें"
 msgid "dashboard.invite-profile"
 msgstr "लोगों को आमंत्रित करें"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "टीम छोड़ें"
 
@@ -646,7 +646,7 @@ msgstr "इनमें से और अधिक एक्सप्लोर �
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "टेम्पलेट आयात करने में समस्या आई। टेम्पलेट आयात नहीं किया गया।"
 
-#: src/app/main/ui/dashboard/libraries.cljs:68
+#: src/app/main/ui/dashboard/libraries.cljs:71
 msgid "dashboard.libraries-title"
 msgstr "लाइब्रेरीज़"
 
@@ -1025,7 +1025,7 @@ msgstr "अपडेट करने के लिए घटक:"
 msgid "ds.confirm-allow"
 msgstr "अनुमति देना"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:324, src/app/main/ui/settings/subscription.cljs:357, src/app/main/ui/settings/subscription.cljs:839, src/app/main/ui/settings/subscription.cljs:888, src/app/main/ui/settings/subscription.cljs:898, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "रद्द करें"
 
@@ -1045,11 +1045,11 @@ msgstr "सक्रिय सेट या थीम में कोई ला
 msgid "ds.inputs.numeric-input.no-matches"
 msgstr "कोई मेल नहीं मिले।"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:746, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
+#: src/app/main/ui/ds/controls/numeric_input.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:177, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "token सूची खोलें"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:117, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:118, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:134
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} यह token किसी भी सक्रिय सेट में नहीं है या इसका मान अमान्य है।"
 
@@ -1293,17 +1293,17 @@ msgstr "SVG अमान्य या त्रुटिपूर्ण है"
 msgid "errors.team-feature-mismatch"
 msgstr "असंगत सुविधा '%s' का पता चला"
 
-#: src/app/main/data/nitrate.cljs:201, src/app/main/ui/dashboard/team.cljs:505
+#: src/app/main/data/nitrate.cljs:192, src/app/main/ui/dashboard/team.cljs:505
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
 "टीम छोड़ने के लिए सदस्यों की संख्या अपर्याप्त है, शायद आप इसे हटाना चाहते "
 "हैं।"
 
-#: src/app/main/data/nitrate.cljs:202, src/app/main/ui/dashboard/team.cljs:508
+#: src/app/main/data/nitrate.cljs:193, src/app/main/ui/dashboard/team.cljs:508
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "जिस सदस्य को आप असाइन करने की कोशिश कर रहे हैं वह मौजूद नहीं है।"
 
-#: src/app/main/data/nitrate.cljs:203, src/app/main/ui/dashboard/team.cljs:511
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/team.cljs:511
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "मालिक टीम नहीं छोड़ सकता, आपको मालिक की भूमिका पुनः असाइन करनी होगी।"
 
@@ -1782,7 +1782,7 @@ msgstr "टॉगल पैनल %s"
 msgid "inspect.tabs.styles.token-panel"
 msgstr "Token सेट और थीम"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:144
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:145
 msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "हल किया गया मान:"
 
@@ -1830,7 +1830,7 @@ msgstr "प्रशासक"
 msgid "labels.adobe-xd"
 msgstr "एडोब XD"
 
-#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:99, src/app/main/ui/workspace/tokens/management/context_menu.cljs:137, src/app/main/ui/workspace/tokens/management/token_pill.cljs:118
+#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:101, src/app/main/ui/workspace/tokens/management/context_menu.cljs:139, src/app/main/ui/workspace/tokens/management/token_pill.cljs:127
 msgid "labels.all"
 msgstr "सभी"
 
@@ -1856,7 +1856,7 @@ msgstr "खराब गेटवे"
 msgid "labels.blur"
 msgstr "धुंधला"
 
-#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:532, src/app/main/data/nitrate.cljs:617, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
+#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:518, src/app/main/data/nitrate.cljs:603, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
 msgid "labels.cancel"
 msgstr "रद्द करें"
 
@@ -1864,7 +1864,7 @@ msgstr "रद्द करें"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
+#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:407, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
 msgstr "बंद करें"
 
@@ -1876,7 +1876,7 @@ msgstr "कोड"
 msgid "labels.collapse"
 msgstr "संकुचित करें"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:430
+#: src/app/main/ui/workspace/colorpicker.cljs:433
 msgid "labels.color"
 msgstr "रंग"
 
@@ -1908,11 +1908,11 @@ msgstr "पासवर्ड पुष्टि करें"
 msgid "labels.contact-support"
 msgstr "समर्थन से संपर्क करें"
 
-#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:939
+#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:944
 msgid "labels.contact-us"
 msgstr "हमसे संपर्क करें"
 
-#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:330, src/app/main/ui/settings/subscription.cljs:364, src/app/main/ui/settings/subscription.cljs:891
+#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:333, src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:896
 msgid "labels.continue"
 msgstr "जारी रखें"
 
@@ -2110,7 +2110,7 @@ msgstr "आंतरिक त्रुटि"
 msgid "labels.invision"
 msgstr "InVision(इंविज़न)"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:233, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:186, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
 msgid "labels.invitations"
 msgstr "आमंत्रण"
 
@@ -2158,7 +2158,7 @@ msgstr "मार्केटिंग"
 msgid "labels.member"
 msgstr "सदस्य"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:228, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:181, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
 msgid "labels.members"
 msgstr "सदस्यों"
 
@@ -2296,7 +2296,7 @@ msgstr "हटाना"
 msgid "labels.remove-member"
 msgstr "सदस्य निकालें"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:251, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "नाम बदलें"
 
@@ -2380,7 +2380,7 @@ msgstr "सेवा अनुपलब्ध है"
 msgid "labels.sets"
 msgstr "सेट्स"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:243, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:196, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
 msgid "labels.settings"
 msgstr "सेटिंग्स"
 
@@ -2432,7 +2432,7 @@ msgstr "प्रारंभ"
 msgid "labels.status"
 msgstr "स्थिति"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:72
+#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:105
 msgid "labels.stroke"
 msgstr "स्ट्रोक"
 
@@ -2448,7 +2448,7 @@ msgstr "शैलियों"
 msgid "labels.svg"
 msgstr "SVG"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:497
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:570
 msgid "labels.switch"
 msgstr "बदलना"
 
@@ -2520,7 +2520,7 @@ msgstr "दर्शक"
 msgid "labels.visibility"
 msgstr "दृश्यता"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:238, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
 msgid "labels.webhooks"
 msgstr "वेबहुक"
 
@@ -2620,15 +2620,15 @@ msgstr ""
 msgid "loader.tips.10.title"
 msgstr "प्लगइन्स समर्थन"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:488
+#: src/app/main/ui/workspace/colorpicker.cljs:494
 msgid "media.choose-image"
 msgstr "छवि चुनें"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:274
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:276
 msgid "media.gradient"
 msgstr "ग्रेडिएंट"
 
-#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:276, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:448
+#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:278, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:454
 msgid "media.image"
 msgstr "छवि"
 
@@ -2636,7 +2636,7 @@ msgstr "छवि"
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:483
+#: src/app/main/ui/workspace/colorpicker.cljs:489
 msgid "media.keep-aspect-ratio"
 msgstr "आकार अनुपात बनाए रखें"
 
@@ -2644,7 +2644,7 @@ msgstr "आकार अनुपात बनाए रखें"
 msgid "media.loading"
 msgstr "छवि लोड हो रही है…"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:272
+#: src/app/main/ui/workspace/colorpicker.cljs:274
 msgid "media.solid"
 msgstr "ठोस"
 
@@ -2921,13 +2921,13 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "सदस्यों को टीम में आमंत्रित करें"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:192, src/app/main/ui/dashboard/team.cljs:539
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:148, src/app/main/ui/dashboard/team.cljs:539
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "चूंकि आप इस टीम के एकमात्र सदस्य हैं, टीम अपने परियोजनाओं और फ़ाइलों के साथ "
 "हटा दी जाएगी।"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:538
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:147, src/app/main/ui/dashboard/team.cljs:538
 msgid "modals.leave-and-close-confirm.message"
 msgstr "क्या आप वाकई %s टीम छोड़ना चाहते हैं?"
 
@@ -2955,15 +2955,15 @@ msgstr "पदोन्नति के लिए सदस्य चुने�
 msgid "modals.leave-and-reassign.title"
 msgstr "छोड़ने से पहले"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:168, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:193, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:124, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:149, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
 msgid "modals.leave-confirm.accept"
 msgstr "टीम छोड़ें"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:167, src/app/main/ui/dashboard/team.cljs:561
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:123, src/app/main/ui/dashboard/team.cljs:561
 msgid "modals.leave-confirm.message"
 msgstr "क्या आप सचमुच इस टीम को छोड़ना चाहते हैं?"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:166, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:190, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:122, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:146, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
 msgid "modals.leave-confirm.title"
 msgstr "टीम छोड़ रहे हैं"
 
@@ -3342,19 +3342,19 @@ msgstr "डिजाइनिंग शुरू करें"
 msgid "profile.recovery.go-to-login"
 msgstr "लॉगइन पर जाएं"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:419
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
 msgstr "अलग करें"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:725, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:25, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:468, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:348, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:390
+#: src/app/main/ui/ds/controls/numeric_input.cljs:742, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:27, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:280, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:474, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:410, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:451
 msgid "settings.multiple"
 msgstr "मिश्रित"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:477
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:483
 msgid "settings.remove-color"
 msgstr "रंग हटाओ"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:482
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:488
 msgid "settings.select-this-color"
 msgstr "इस शैली का उपयोग करके आइटम चुनें"
 
@@ -3980,7 +3980,7 @@ msgstr "ज़ूम लेंस बढ़ाएं"
 msgid "shortcuts.zoom-selected"
 msgstr "चयनित पर ज़ूम करें"
 
-#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:315
+#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:316
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "एंटरप्राइज प्लान"
 
@@ -4013,7 +4013,7 @@ msgstr ""
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "अनलिमिटेड प्लान (परीक्षण)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:314
+#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:315
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "अनलिमिटेड प्लान"
 
@@ -4029,59 +4029,59 @@ msgstr ""
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "आपकी सदस्यता:"
 
-#: src/app/main/ui/dashboard/subscription.cljs:349
+#: src/app/main/ui/dashboard/subscription.cljs:350
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
 "आपकी स्वामित्व वाली टीमों में %s संपादक हैं, जबकि आपकी व्यावसायिक योजना 8 "
 "तक को कवर करती है।"
 
-#: src/app/main/ui/dashboard/subscription.cljs:357
+#: src/app/main/ui/dashboard/subscription.cljs:358
 #, markdown
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
 "कृपया ज़्यादा एडिटर, स्टोरेज और फ़ाइल रिकवरी के लिए अभी अनलिमिटेड या "
 "एंटरप्राइज़ में अपग्रेड करें। [अभी सब्सक्राइब करें।|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:290
+#: src/app/main/ui/dashboard/subscription.cljs:291
 msgid "subscription.dashboard.team-plan"
 msgstr "टीम योजना"
 
-#: src/app/main/ui/dashboard/subscription.cljs:352
+#: src/app/main/ui/dashboard/subscription.cljs:353
 msgid "subscription.dashboard.unlimited-dashboard-cta-title"
 msgstr ""
 "आपकी टीम बढ़ती जा रही है! आपकी अनलिमिटेड योजना में %s संपादकों तक की सेवाएँ "
 "शामिल हैं, लेकिन अब आपके पास %s हैं।"
 
-#: src/app/main/ui/dashboard/subscription.cljs:360
+#: src/app/main/ui/dashboard/subscription.cljs:361
 #, markdown
 msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
 msgstr ""
 "कृपया अपनी वर्तमान संपादक संख्या से मेल खाने के लिए अभी अपग्रेड करें। [अभी "
 "सदस्यता लें।|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:337
+#: src/app/main/ui/dashboard/subscription.cljs:338
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
 "आपकी स्वामित्व वाली टीमों के केवल नए संपादक ही भविष्य के बिलिंग में शामिल "
 "होंगे। 25+ संपादकों के लिए अभी भी $175/माह का एक समान शुल्क लागू है।"
 
-#: src/app/main/ui/dashboard/subscription.cljs:333
+#: src/app/main/ui/dashboard/subscription.cljs:334
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
 msgstr "असीमित योजना के दौरान लोगों को आमंत्रित करना"
 
-#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:545, src/app/main/ui/settings/subscription.cljs:606
+#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:550, src/app/main/ui/settings/subscription.cljs:611
 msgid "subscription.labels"
 msgstr "सदस्यता"
 
-#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:681
+#: src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:686
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "ट्रायल के बाद जारी रखने के लिए भुगतान का तरीका जोड़ें"
 
-#: src/app/main/ui/settings/subscription.cljs:649, src/app/main/ui/settings/subscription.cljs:740
+#: src/app/main/ui/settings/subscription.cljs:654, src/app/main/ui/settings/subscription.cljs:745
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "सभी प्रोफेशनल प्लान लाभ और:"
 
-#: src/app/main/ui/settings/subscription.cljs:662, src/app/main/ui/settings/subscription.cljs:675, src/app/main/ui/settings/subscription.cljs:686, src/app/main/ui/settings/subscription.cljs:756
+#: src/app/main/ui/settings/subscription.cljs:667, src/app/main/ui/settings/subscription.cljs:680, src/app/main/ui/settings/subscription.cljs:691, src/app/main/ui/settings/subscription.cljs:761
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "सभी अनलिमिटेड प्लान लाभ और:"
 
@@ -4089,46 +4089,46 @@ msgstr "सभी अनलिमिटेड प्लान लाभ और:"
 msgid "subscription.settings.editors"
 msgstr "(x %s संपादक)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:298, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:464, src/app/main/ui/settings/subscription.cljs:466, src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:611, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:752, src/app/main/ui/settings/subscription.cljs:768
+#: src/app/main/ui/dashboard/subscription.cljs:299, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:467, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:605, src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:757, src/app/main/ui/settings/subscription.cljs:773
 msgid "subscription.settings.enterprise"
 msgstr "उद्यम"
 
-#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:599, src/app/main/ui/settings/subscription.cljs:673
+#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:604, src/app/main/ui/settings/subscription.cljs:678
 msgid "subscription.settings.enterprise-trial"
 msgstr "एंटरप्राइज़ (परीक्षण)"
 
-#: src/app/main/ui/settings/subscription.cljs:677, src/app/main/ui/settings/subscription.cljs:688, src/app/main/ui/settings/subscription.cljs:758
+#: src/app/main/ui/settings/subscription.cljs:682, src/app/main/ui/settings/subscription.cljs:693, src/app/main/ui/settings/subscription.cljs:763
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90-दिन के ऑटोसेव संस्करण और फ़ाइल पुनर्प्राप्ति"
 
-#: src/app/main/ui/settings/subscription.cljs:678, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:759
+#: src/app/main/ui/settings/subscription.cljs:683, src/app/main/ui/settings/subscription.cljs:694, src/app/main/ui/settings/subscription.cljs:764
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "फ्लैट मासिक बिल"
 
-#: src/app/main/ui/settings/subscription.cljs:676, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:757
+#: src/app/main/ui/settings/subscription.cljs:681, src/app/main/ui/settings/subscription.cljs:692, src/app/main/ui/settings/subscription.cljs:762
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "असीमित भंडारण"
 
-#: src/app/main/ui/dashboard/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:653, src/app/main/ui/settings/subscription.cljs:666, src/app/main/ui/settings/subscription.cljs:679, src/app/main/ui/settings/subscription.cljs:690
+#: src/app/main/ui/dashboard/subscription.cljs:304, src/app/main/ui/settings/subscription.cljs:629, src/app/main/ui/settings/subscription.cljs:658, src/app/main/ui/settings/subscription.cljs:671, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:695
 msgid "subscription.settings.manage-your-subscription"
 msgstr "अपनी सदस्यता प्रबंधित करें"
 
-#: src/app/main/ui/settings/subscription.cljs:349
+#: src/app/main/ui/settings/subscription.cljs:352
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "भुगतान विवरण जोड़ें"
 
-#: src/app/main/ui/settings/subscription.cljs:336
+#: src/app/main/ui/settings/subscription.cljs:339
 msgid "subscription.settings.management-dialog.step-2-description"
 msgstr ""
 "परीक्षण अवधि के बाद अपनी सदस्यता को सुचारू रूप से जारी रखने और हमारे "
 "ओपन-सोर्स प्रोजेक्ट का समर्थन जारी रखने के लिए अभी अपनी भुगतान जानकारी "
 "जोड़ें। आपसे अभी कोई शुल्क नहीं लिया जाएगा।"
 
-#: src/app/main/ui/settings/subscription.cljs:344
+#: src/app/main/ui/settings/subscription.cljs:347
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "अभी छोड़ें और परीक्षण शुरू करें"
 
-#: src/app/main/ui/settings/subscription.cljs:267
+#: src/app/main/ui/settings/subscription.cljs:270
 msgid "subscription.settings.management-dialog.step-2-title"
 msgstr "हमें आगे बढ़ने में मदद करें और अपने परीक्षण को आसान बनाएं"
 
@@ -4138,7 +4138,7 @@ msgid_plural "subscription.settings.management.dialog.currently-editors-title"
 msgstr[0] "वर्तमान में, आपकी टीम में %s व्यक्ति हैं जो संपादन कर सकते हैं।"
 msgstr[1] "वर्तमान में, आपकी टीम में %s लोग हैं जो संपादन कर सकते हैं।"
 
-#: src/app/main/ui/settings/subscription.cljs:281
+#: src/app/main/ui/settings/subscription.cljs:284
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "ध्यान दें: कम प्लान पर स्विच करने का मतलब कम संग्रहण और कम अवधि के बैकअप "
@@ -4152,62 +4152,62 @@ msgstr "संपादनकर्ता"
 msgid "subscription.settings.management.dialog.editors-explanation"
 msgstr "(स्वामी, व्यवस्थापक और संपादक। दर्शकों को संपादक नहीं माना जाएगा)"
 
-#: src/app/main/ui/settings/subscription.cljs:314
+#: src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.management.dialog.input-error"
 msgstr ""
 "आप मौजूदा संपादकों की संख्या से कम संपादक नहीं सेट कर सकते। टीम सेटिंग में "
 "उन लोगों की भूमिका (संपादक/व्यवस्थापक से दर्शक) बदलें जो वास्तव में फ़ाइलें "
 "संपादित नहीं करते हैं।"
 
-#: src/app/main/ui/settings/subscription.cljs:310
+#: src/app/main/ui/settings/subscription.cljs:313
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "परीक्षण के बाद शुल्क लिया जाएगा। अभी क्रेडिट कार्ड की आवश्यकता नहीं है।"
 
-#: src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:307
+#: src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/settings/subscription.cljs:310
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 प्रति संपादक/महीना x %s"
 
-#: src/app/main/ui/settings/subscription.cljs:268
+#: src/app/main/ui/settings/subscription.cljs:271
 msgid "subscription.settings.management.dialog.title"
 msgstr "%s को अपनी टीमों पर लागू करें"
 
-#: src/app/main/ui/settings/subscription.cljs:317
+#: src/app/main/ui/settings/subscription.cljs:320
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr ""
 "सुझाव: आमंत्रणों से आगे रहने के लिए आप अभी अपनी सीटों की संख्या बढ़ा सकते "
 "हैं। 25+ संपादकों वाली टीमों में, आपको प्रति माह ₹175 का एकमुश्त शुल्क "
 "मिलेगा।"
 
-#: src/app/main/ui/settings/subscription.cljs:709
+#: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
 msgstr "%s से Penpot सदस्य"
 
-#: src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:746, src/app/main/ui/settings/subscription.cljs:762, src/app/main/ui/settings/subscription.cljs:782
+#: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
 msgstr "अधिक जानकारी"
 
-#: src/app/main/ui/settings/subscription.cljs:712
+#: src/app/main/ui/settings/subscription.cljs:717
 msgid "subscription.settings.other-plans"
 msgstr "अन्य पेनपॉट योजनाएँ"
 
-#: src/app/main/ui/settings/subscription.cljs:755
+#: src/app/main/ui/settings/subscription.cljs:760
 msgid "subscription.settings.price-organization-month"
 msgstr "प्रति माह संगठन"
 
-#: src/app/main/ui/dashboard/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:633, src/app/main/ui/settings/subscription.cljs:714
+#: src/app/main/ui/dashboard/subscription.cljs:294, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:719
 msgid "subscription.settings.professional"
 msgstr "प्रोफेशनल"
 
-#: src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:721
+#: src/app/main/ui/settings/subscription.cljs:643, src/app/main/ui/settings/subscription.cljs:726
 msgid "subscription.settings.professional.autosave-benefit"
 msgstr "7-दिन का स्वतः सहेजा गया संस्करण और फ़ाइल पुनर्प्राप्ति"
 
-#: src/app/main/ui/settings/subscription.cljs:635, src/app/main/ui/settings/subscription.cljs:718
+#: src/app/main/ui/settings/subscription.cljs:640, src/app/main/ui/settings/subscription.cljs:723
 msgid "subscription.settings.professional.storage-benefit"
 msgstr "10GB स्टोरेज"
 
-#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
+#: src/app/main/ui/settings/subscription.cljs:646, src/app/main/ui/settings/subscription.cljs:729
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "असीमित टीमें। आपकी स्वामित्व वाली टीमों में अधिकतम 8 संपादक।"
 
@@ -4215,61 +4215,61 @@ msgstr "असीमित टीमें। आपकी स्वामित
 msgid "subscription.settings.recommended"
 msgstr "अनुशंसित"
 
-#: src/app/main/ui/settings/subscription.cljs:609
+#: src/app/main/ui/settings/subscription.cljs:614
 msgid "subscription.settings.section-plan"
 msgstr "आपकी सदस्यता"
 
-#: src/app/main/ui/settings/subscription.cljs:364
+#: src/app/main/ui/settings/subscription.cljs:367
 msgid "subscription.settings.start-trial"
 msgstr "नि:शुल्क ट्रायल शुरू करें"
 
-#: src/app/main/ui/settings/subscription.cljs:329, src/app/main/ui/settings/subscription.cljs:726, src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760, src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:332, src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765, src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "subscription.settings.subscribe"
 msgstr "सदस्यता लें"
 
-#: src/app/main/ui/settings/subscription.cljs:396
+#: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
 msgstr ""
 "आप अपने खाते के विवरण में 'सदस्यता' पृष्ठ से कभी भी अपनी सदस्यता संपादित कर "
 "सकते हैं।"
 
-#: src/app/main/ui/settings/subscription.cljs:398
+#: src/app/main/ui/settings/subscription.cljs:401
 msgid "subscription.settings.success.dialog.footer"
 msgstr "अपनी योजना का आनंद लें!"
 
-#: src/app/main/ui/settings/subscription.cljs:394
+#: src/app/main/ui/settings/subscription.cljs:397
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "पेनपोट %s योजना चुनने के लिए धन्यवाद!"
 
-#: src/app/main/ui/settings/subscription.cljs:391
+#: src/app/main/ui/settings/subscription.cljs:394
 msgid "subscription.settings.success.dialog.title"
 msgstr "आप %s हैं!"
 
-#: src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760
+#: src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765
 msgid "subscription.settings.try-it-free"
 msgstr "14 दिनों का मुफ्त परीक्षण करें"
 
-#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:465, src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:736
+#: src/app/main/ui/dashboard/subscription.cljs:297, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:468, src/app/main/ui/settings/subscription.cljs:602, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:741
 msgid "subscription.settings.unlimited"
 msgstr "असीमित"
 
-#: src/app/main/ui/dashboard/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:647
+#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:652
 msgid "subscription.settings.unlimited-trial"
 msgstr "असीमित (परीक्षण)"
 
-#: src/app/main/ui/settings/subscription.cljs:651, src/app/main/ui/settings/subscription.cljs:664, src/app/main/ui/settings/subscription.cljs:742
+#: src/app/main/ui/settings/subscription.cljs:656, src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:747
 msgid "subscription.settings.unlimited.autosave-benefit"
 msgstr "30-दिन का स्वतः सहेजा गया संस्करण और फ़ाइल पुनर्प्राप्ति"
 
-#: src/app/main/ui/settings/subscription.cljs:652, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:743
+#: src/app/main/ui/settings/subscription.cljs:657, src/app/main/ui/settings/subscription.cljs:670, src/app/main/ui/settings/subscription.cljs:748
 msgid "subscription.settings.unlimited.bill"
 msgstr "मासिक बिल की सीमा"
 
-#: src/app/main/ui/settings/subscription.cljs:650, src/app/main/ui/settings/subscription.cljs:663, src/app/main/ui/settings/subscription.cljs:741
+#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:668, src/app/main/ui/settings/subscription.cljs:746
 msgid "subscription.settings.unlimited.storage-benefit"
 msgstr "25GB स्टोरेज"
 
-#: src/app/main/ui/dashboard/subscription.cljs:328
+#: src/app/main/ui/dashboard/subscription.cljs:329
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "अपनी योजना को सशक्त बनाएं"
 
@@ -4318,7 +4318,7 @@ msgstr "परियोजनाएँ - %s - पेनपॉट"
 msgid "title.dashboard.search"
 msgstr "खोज - %s - पेनपॉट"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:60
 msgid "title.dashboard.shared-libraries"
 msgstr "साझा लाइब्रेरी - %s - पेनपॉट"
 
@@ -4370,7 +4370,7 @@ msgstr "%s - दृश्य मोड - पेनपोट"
 msgid "title.workspace"
 msgstr "%s - पेनपोट"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:171
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:172
 msgid "token-actions.detach-token"
 msgstr "token अलग करें"
 
@@ -4616,7 +4616,7 @@ msgstr "पाठ रूपांतरण"
 msgid "workspace.assets.ungroup"
 msgstr "असमूहीकृत"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434, src/app/main/ui/workspace/colorpicker.cljs:448
+#: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
 msgstr "रंग टोकन"
 
@@ -4956,11 +4956,11 @@ msgstr "फ़ाइल लाइब्रेरी"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "हाल के रंग"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:367
+#: src/app/main/ui/workspace/colorpicker.cljs:369
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:560
+#: src/app/main/ui/workspace/colorpicker.cljs:566
 msgid "workspace.libraries.colors.save-color"
 msgstr "रंग शैली सहेजें"
 
@@ -5058,7 +5058,7 @@ msgstr "अपडेट"
 msgid "workspace.notification-pill.detail"
 msgstr "विवरण"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:780
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "इंटरैक्शन जोड़ने के लिए + बटन पर क्लिक करें।"
 
@@ -5082,7 +5082,7 @@ msgstr "चयन धुंधला"
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "धुंधलापन टॉगल करें"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "कैनवास पृष्ठभूमि"
 
@@ -5426,7 +5426,7 @@ msgstr "चौकोर"
 msgid "workspace.options.group-fill"
 msgstr "समूह भरण"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:71
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:104
 msgid "workspace.options.group-stroke"
 msgstr "समूह स्ट्रोक"
 
@@ -5658,11 +5658,11 @@ msgstr "माउस कर्सर hover करते समय"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "दबाते समय"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:739
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "इंटरैक्शन"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:742
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
 msgid "workspace.options.interactions.add-interaction"
 msgstr "इंटरैक्शन जोड़ें"
 
@@ -5814,7 +5814,7 @@ msgstr "चक्कर"
 msgid "workspace.options.search-font"
 msgstr "फ़ॉन्ट खोजें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "किसी कनेक्शन को दूसरे बोर्ड तक ले जाने के लिए एक शेप, बोर्ड या ग्रुप चुनें।"
 
@@ -5826,7 +5826,7 @@ msgstr "चयनित रंग"
 msgid "workspace.options.selection-fill"
 msgstr "चयन भरें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:70
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:103
 msgid "workspace.options.selection-stroke"
 msgstr "चयन स्ट्रोक"
 
@@ -5882,7 +5882,7 @@ msgstr "चयन छाया"
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "छाया टॉगल करें"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:264
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:265
 msgid "workspace.options.show-fill-on-export"
 msgstr "निर्यात में दिखाएँ"
 
@@ -5906,79 +5906,79 @@ msgstr "लॉक अनुपात"
 msgid "workspace.options.size.unlock"
 msgstr "अनलॉक अनुपात"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:275
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:334
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "चक्र"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:276
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:335
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "हीरा"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:272
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:331
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "तीर"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:270
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
 msgid "workspace.options.stroke-cap.none"
 msgstr "कोई नहीं"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:278
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
 msgid "workspace.options.stroke-cap.round"
 msgstr "गोल"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:279
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:338
 msgid "workspace.options.stroke-cap.square"
 msgstr "चौकोर"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:333
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "आयत"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:273
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:332
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "त्रिकोण"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:291
 msgid "workspace.options.stroke-color"
 msgstr "स्ट्रोक का रंग"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:382
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:405, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:443
 msgid "workspace.options.stroke-width"
 msgstr "स्ट्रोक की चौड़ाई"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:258
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:267
 msgid "workspace.options.stroke.add-stroke"
 msgstr "स्ट्रोक रंग जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:203
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:238
 msgid "workspace.options.stroke.center"
 msgstr "केंद्र"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:266
 msgid "workspace.options.stroke.dashed"
 msgstr "टूटी रेखा"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:265
 msgid "workspace.options.stroke.dotted"
 msgstr "बिंदुदार"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:239
 msgid "workspace.options.stroke.inner"
 msgstr "अंदर"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:232
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:267
 msgid "workspace.options.stroke.mixed"
 msgstr "मिश्रित"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:205
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:240
 msgid "workspace.options.stroke.outer"
 msgstr "बाहर की ओर"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:273, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:389
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "स्ट्रोक हटाओ"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:264
 msgid "workspace.options.stroke.solid"
 msgstr "ठोस"
 
@@ -6058,7 +6058,7 @@ msgstr "चयन पाठ"
 msgid "workspace.options.text-options.underline"
 msgstr "अंडरलाइन (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr "प्रोटोटाइप व्यू चलाने के लिए हेडर में प्ले बटन का उपयोग करें।"
 
@@ -6578,15 +6578,15 @@ msgstr "नई थीम जोड़ें"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "इस समूह में सेट जोड़ें"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:183
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:186
 msgid "workspace.tokens.add-token"
 msgstr "टोकन जोड़ें: %s"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:156
 msgid "workspace.tokens.applied-to"
 msgstr "के लिए आवेदन किया"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:343
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:400
 msgid "workspace.tokens.axis"
 msgstr "अक्ष"
 
@@ -6602,7 +6602,7 @@ msgstr "आधार फ़ॉन्ट आकार"
 msgid "workspace.tokens.base-font-size.error"
 msgstr "बेस फ़ॉन्ट का आकार पिक्सेल या यूनिट रहित होना चाहिए।"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:312, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
 msgid "workspace.tokens.color"
 msgstr "रंग"
 
@@ -6618,7 +6618,7 @@ msgstr "एक बनाएं।"
 msgid "workspace.tokens.create-token"
 msgstr "नया %s टोकन बनाएं"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:380
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "टोकन हटाएँ"
 
@@ -6626,7 +6626,7 @@ msgstr "टोकन हटाएँ"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "थीम हटाएँ"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:373
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "डुप्लीकेट टोकन"
 
@@ -6634,7 +6634,7 @@ msgstr "डुप्लीकेट टोकन"
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "कापी"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:359
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:416
 msgid "workspace.tokens.edit"
 msgstr "टोकन संपादित करें"
 
@@ -6682,7 +6682,7 @@ msgstr "एक फाइल"
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "फ़ॉन्ट आकार या {उपनाम}"
 
-#: src/app/main/data/workspace/tokens/application.cljs:329
+#: src/app/main/data/workspace/tokens/application.cljs:364
 msgid "workspace.tokens.font-variant-not-found"
 msgstr ""
 "फ़ॉन्ट वज़न/शैली सेट करते समय त्रुटि हुई। यह फ़ॉन्ट शैली वर्तमान फ़ॉन्ट में "
@@ -6692,7 +6692,7 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "फ़ॉन्ट वज़न (300, बोल्ड इटैलिक...) या {उपनाम}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:251
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
 msgid "workspace.tokens.gaps"
 msgstr "अंतराल"
 
@@ -6770,19 +6770,19 @@ msgstr "अक्षर रिक्ति या {उपनाम}"
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "पंक्ति ऊँचाई (गुणक, पिक्सेल, %) या {उपनाम}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:243
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:245
 msgid "workspace.tokens.margins"
 msgstr "मार्जिन्स"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:282
 msgid "workspace.tokens.max-size"
 msgstr "अधिकतम. आकार"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:274
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:276
 msgid "workspace.tokens.min-size"
 msgstr "न्यूनतम. आकार"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:125
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
 msgid "workspace.tokens.more-options"
 msgstr "विकल्प देखने के लिए राइट क्लिक करें"
 
@@ -6822,15 +6822,15 @@ msgstr "आपके पास वर्तमान में कोई थी�
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s सक्रिय सेट"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:134
 msgid "workspace.tokens.original-value"
 msgstr "मूल मान: %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:227
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.paddings"
 msgstr "पैडिंग्स"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:305
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:362
 msgid "workspace.tokens.radius"
 msgstr "त्रिज्या"
 
@@ -6842,7 +6842,7 @@ msgstr "token टाइपोग्राफी उपनाम दर्ज क
 msgid "workspace.tokens.reference-composite-shadow"
 msgstr "एक token छाया आलिया दर्ज करें"
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:127, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:135
 msgid "workspace.tokens.resolved-value"
 msgstr "समाधानित मान: %s"
 
@@ -6906,7 +6906,7 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:270
 msgid "workspace.tokens.size"
 msgstr "आकार"
 
@@ -6944,7 +6944,7 @@ msgstr "फॉन्ट परिवार"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "फ़ॉन्ट परिवार या अल्पविराम (,) द्वारा अलग किए गए फ़ॉन्ट की सूची"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:161, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:142, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:162, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64, src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.token-name"
 msgstr "नाम"
 
@@ -6993,7 +6993,7 @@ msgstr "टाइप '%s' समर्थित नहीं है (%s):"
 msgid "workspace.tokens.use-reference"
 msgstr "एक संदर्भ का प्रयोग करें"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
 msgid "workspace.tokens.value-not-valid"
 msgstr "मान मान्य नहीं है"
 

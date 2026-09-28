@@ -229,19 +229,34 @@
           (update-path-content state (path/toggle-segment-curve content index))
           state)))))
 
-(defn remove-handler
-  "Collapses one handler onto its node, which becomes independent."
-  [index prefix]
-  (ptk/reify ::remove-handler
+(defn remove-handlers
+  "Collapses handlers `[index prefix]` onto their nodes, which become
+  independent."
+  [handlers]
+  (ptk/reify ::remove-handlers
     ptk/UpdateEvent
     (update [_ state]
       (let [id      (st/get-path-id state)
             content (st/get-path state :content)]
-        (if (some? content)
-          (-> (update-path-content state (path/collapse-handler content index prefix))
-              (update-in [:workspace-local :edit-path id :handler-types]
-                         dissoc (helpers/handler-node-index index prefix)))
+        (if (and (some? content) (seq handlers))
+          (let [new-content (reduce (fn [content [index prefix]]
+                                      (path/collapse-handler content index prefix))
+                                    content
+                                    handlers)
+                nodes       (map (fn [[index prefix]]
+                                   (helpers/handler-node-index index prefix))
+                                 handlers)]
+            (-> (update-path-content state new-content)
+                (update-in [:workspace-local :edit-path id :handler-types]
+                           #(apply dissoc % nodes))
+                (update-in [:workspace-local :edit-path id :selection :handlers]
+                           #(reduce disj (or % #{}) handlers))))
           state)))))
+
+(defn remove-handler
+  "Collapses one handler onto its node, which becomes independent."
+  [index prefix]
+  (remove-handlers #{[index prefix]}))
 
 (defn merge-nodes []
   (process-path-tool path/merge-nodes))
@@ -287,7 +302,8 @@
        (path/separate-nodes content points offset)))))
 
 (defn delete-selected
-  "Heals selected nodes or opens selected segments."
+  "Heals selected nodes, opens selected segments or collapses selected
+  handlers."
   []
   (ptk/reify ::delete-selected
     ptk/WatchEvent
@@ -296,16 +312,20 @@
             content   (st/get-path state :content)
             selection (st/get-selection state id)
             nodes     (get selection :nodes #{})
-            segments  (get selection :segments #{})]
+            segments  (get selection :segments #{})
+            handlers  (get selection :handlers #{})]
         (rx/of
          (cond
            ;; Node selection takes priority in mixed selections.
            (seq nodes)
            (process-path-tool (helpers/node-positions content nodes) path/remove-nodes)
 
-           ;; Segment-only selection opens the path.
+           ;; Segment selection opens the path.
            (seq segments)
            (separate-nodes)
+
+           (seq handlers)
+           (remove-handlers handlers)
 
            :else
            (remove-node)))))))

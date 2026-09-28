@@ -26,8 +26,10 @@ jobs:
     steps:
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v6

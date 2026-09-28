@@ -1256,10 +1256,18 @@
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
-        (if (and (some? shape) (not (contains? selected (:id shape))))
+        (cond
+          ;; A shape missing from the current page can never become
+          ;; selected, so selecting it and retrying would recurse forever
+          (and (some? shape) (not (contains? objects (:id shape))))
+          (rx/empty)
+
+          (and (some? shape) (not (contains? selected (:id shape))))
           (rx/concat
            (rx/of (dws/select-shape (:id shape)))
            (rx/of (show-shape-context-menu params)))
+
+          :else
           (rx/of (show-context-menu
                   (-> params
                       (assoc
@@ -1372,7 +1380,41 @@
              page    (dsh/lookup-page state page-id)
              changes (-> (pcb/empty-changes it)
                          (pcb/with-page page)
-                         (pcb/mod-page {:background (:color color)}))]
+                         (pcb/mod-page {:background (:color color)
+                                        :background-token nil}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn apply-canvas-color-token
+  "Sets the canvas background to the resolved value of `token` and
+  remembers it as the applied token, so the background badge shows it."
+  ([color token-name]
+   (apply-canvas-color-token nil color token-name))
+  ([page-id color token-name]
+   (ptk/reify ::apply-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background color
+                                        :background-token token-name}))]
+         (rx/of (dch/commit-changes changes)))))))
+
+(defn detach-canvas-color-token
+  "Removes the applied-token link from the canvas background, keeping
+  the current background color as a plain value."
+  ([]
+   (detach-canvas-color-token nil))
+  ([page-id]
+   (ptk/reify ::detach-canvas-color-token
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (dsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/mod-page {:background-token nil}))]
          (rx/of (dch/commit-changes changes)))))))
 
 (defn change-pixel-grid-color

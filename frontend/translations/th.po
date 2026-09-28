@@ -233,7 +233,7 @@ msgstr "เปลี่ยนอีเมล"
 msgid "dashboard.copy-suffix"
 msgstr "(คัดลอก)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "สร้างทีมใหม่"
 
@@ -241,7 +241,7 @@ msgstr "สร้างทีมใหม่"
 msgid "dashboard.default-team-name"
 msgstr "Penpot ของคุณ"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "ลบทีม"
 
@@ -376,7 +376,7 @@ msgstr "กำลังอัปโหลดข้อมูลไปยังเ
 msgid "dashboard.import.progress.upload-media"
 msgstr "กำลังอัปโหลดไฟล์: %s"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "ออกจากทีม"
 
@@ -388,7 +388,7 @@ msgstr "ไลบรารีและเทมเพลต"
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "พบปัญหาในการนำเข้าเทมเพลต เทมเพลตนี้จึงไม่ถูกนำเข้า"
 
-#: src/app/main/ui/dashboard/libraries.cljs:68
+#: src/app/main/ui/dashboard/libraries.cljs:71
 msgid "dashboard.libraries-title"
 msgstr "ไลบรารี"
 
@@ -532,7 +532,7 @@ msgstr "ชื่อของคุณ"
 msgid "ds.confirm-allow"
 msgstr "อนุญาต"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:324, src/app/main/ui/settings/subscription.cljs:357, src/app/main/ui/settings/subscription.cljs:839, src/app/main/ui/settings/subscription.cljs:888, src/app/main/ui/settings/subscription.cljs:898, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "ยกเลิก"
 
@@ -660,7 +660,7 @@ msgstr "ลงชื่อออก"
 msgid "labels.member"
 msgstr "สมาชิก"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:228, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:181, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
 msgid "labels.members"
 msgstr "สมาชิก"
 

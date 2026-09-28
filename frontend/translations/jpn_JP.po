@@ -273,23 +273,23 @@ msgstr "共有ライブラリとして追加"
 msgid "dashboard.change-email"
 msgstr "メールアドレスを変更"
 
-#: src/app/main/data/nitrate.cljs:616
+#: src/app/main/data/nitrate.cljs:602
 msgid "dashboard.change-organization-modal.accept"
 msgstr "チームを移動"
 
-#: src/app/main/data/nitrate.cljs:614
+#: src/app/main/data/nitrate.cljs:600
 msgid "dashboard.change-organization-modal.choose"
 msgstr "移動先："
 
-#: src/app/main/data/nitrate.cljs:613
+#: src/app/main/data/nitrate.cljs:599
 msgid "dashboard.change-organization-modal.description"
 msgstr "プロジェクトとファイルは引き続きチームメンバーが利用できます。チームには新しい組織の設定が適用されます。"
 
-#: src/app/main/data/nitrate.cljs:615
+#: src/app/main/data/nitrate.cljs:601
 msgid "dashboard.change-organization-modal.select"
 msgstr "組織を選択"
 
-#: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
+#: src/app/main/data/nitrate.cljs:591, src/app/main/data/nitrate.cljs:598, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
 msgstr "チームの組織を変更"
 
@@ -353,11 +353,11 @@ msgstr "ゴミ箱を空にする"
 msgid "dashboard.copy-suffix"
 msgstr "(コピー)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
 msgstr "組織を新規作成"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "チームを新規作成"
 
@@ -397,7 +397,7 @@ msgstr "プロジェクト「%s」を完全に削除しますか？プロジェ�
 msgid "dashboard.delete-success-notification"
 msgstr "%sを削除しました。"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "チームを削除"
 
@@ -607,7 +607,7 @@ msgstr ""
 "metrics.netlify.app/)のようなフォントの垂直メトリクス確認サービスを利用できます。また、Webフォントの生成とエラーの修正には["
 "Transfonter](https://transfonter.org/)の使用をおすすめします。"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:226
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:240
 msgid "dashboard.go-to-admin-console"
 msgstr "管理コンソールへ移動"
 
@@ -777,15 +777,15 @@ msgstr "メンバーを招待"
 msgid "dashboard.invite-profile-disabled"
 msgstr "このチームにユーザーを招待する権限がありません"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:282, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:327
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "組織から退出"
 
-#: src/app/main/data/nitrate.cljs:268
+#: src/app/main/data/nitrate.cljs:259
 msgid "dashboard.leave-organization.toast"
 msgstr "組織「%s」から退出しました。"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "チームから退出"
 
@@ -805,7 +805,7 @@ msgstr "さらに探して、貢献する方法を知る"
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "テンプレートのインポート中に問題が発生しました。テンプレートはインポートされませんでした。"
 
-#: src/app/main/ui/dashboard/libraries.cljs:68
+#: src/app/main/ui/dashboard/libraries.cljs:71
 msgid "dashboard.libraries-title"
 msgstr "ライブラリ"
 
@@ -857,7 +857,7 @@ msgstr "「%s」に一致する結果が見つかりませんでした"
 msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "どの組織にもチームを追加する権限がありません。"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:171
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
 msgid "dashboard.no-organizations-yet"
 msgstr "組織はまだありません。"
 
@@ -925,7 +925,7 @@ msgstr "ステータスで並べ替え"
 msgid "dashboard.organization-deleted"
 msgstr "組織「%s」は削除されました。"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:194, src/app/main/ui/dashboard/organization_team_switch.cljs:195
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
 msgid "dashboard.other-teams"
 msgstr "その他のチーム"
 
@@ -949,7 +949,7 @@ msgstr "このチームのオーナーになりました。"
 msgid "dashboard.permissions-change.viewer"
 msgstr "このチームでのあなたのロールが閲覧者になりました。"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
 msgid "dashboard.personal-projects"
 msgstr "個人プロジェクト"
 
@@ -1041,19 +1041,19 @@ msgstr "検索…"
 msgid "dashboard.searching-for"
 msgstr "「%s」を検索しています…"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:166
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:180
 msgid "dashboard.section.organizations"
 msgstr "組織"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:235
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:249
 msgid "dashboard.section.teams"
 msgstr "チーム"
 
-#: src/app/main/data/nitrate.cljs:531
+#: src/app/main/data/nitrate.cljs:517
 msgid "dashboard.select-organization-modal.accept"
 msgstr "組織に追加"
 
-#: src/app/main/data/nitrate.cljs:529
+#: src/app/main/data/nitrate.cljs:515
 msgid "dashboard.select-organization-modal.choose"
 msgstr "組織を選択してください:"
 
@@ -1065,19 +1065,19 @@ msgstr "「%s」では、組織のメンバーのみがチームに参加でき�
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "外部ユーザーへの保留中の招待はキャンセルされます。"
 
-#: src/app/main/data/nitrate.cljs:597
+#: src/app/main/data/nitrate.cljs:583
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr "ここには、あなたが所属していて、チームを移動できる組織が表示されます。"
 
-#: src/app/main/data/nitrate.cljs:521
+#: src/app/main/data/nitrate.cljs:507
 msgid "dashboard.select-organization-modal.permission-info-add"
 msgstr "ここには、あなたが所属していて、チームを作成または追加できる組織が表示されます。"
 
-#: src/app/main/data/nitrate.cljs:530
+#: src/app/main/data/nitrate.cljs:516
 msgid "dashboard.select-organization-modal.select"
 msgstr "組織を選択"
 
-#: src/app/main/data/nitrate.cljs:528, src/app/main/data/nitrate.cljs:548, src/app/main/ui/dashboard/team_form.cljs:157
+#: src/app/main/data/nitrate.cljs:514, src/app/main/data/nitrate.cljs:534, src/app/main/ui/dashboard/team_form.cljs:157
 msgid "dashboard.select-organization-modal.title"
 msgstr "チームを組織に追加"
 
@@ -1225,7 +1225,7 @@ msgstr "チームの組織"
 msgid "dashboard.team-organization.add"
 msgstr "組織に追加"
 
-#: src/app/main/data/nitrate.cljs:547, src/app/main/data/nitrate.cljs:604
+#: src/app/main/data/nitrate.cljs:533, src/app/main/data/nitrate.cljs:590
 msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "このチームを、あなたが所属するどの組織にも追加する権限がありません。"
 
@@ -1391,7 +1391,7 @@ msgstr "更新するコンポーネント:"
 msgid "ds.confirm-allow"
 msgstr "許可"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:324, src/app/main/ui/settings/subscription.cljs:357, src/app/main/ui/settings/subscription.cljs:839, src/app/main/ui/settings/subscription.cljs:888, src/app/main/ui/settings/subscription.cljs:898, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "キャンセル"
 
@@ -1411,11 +1411,11 @@ msgstr "アクティブなセットまたはテーマに適用可能なトーク
 msgid "ds.inputs.numeric-input.no-matches"
 msgstr "一致するものが見つかりません。"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:746, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
+#: src/app/main/ui/ds/controls/numeric_input.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:177, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "トークン一覧を開く"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:117, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:118, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:134
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "トークン{%s}がどのアクティブなセットにも含まれていないか、値が無効です。"
 
@@ -1643,11 +1643,11 @@ msgstr "このバージョンをロックできるのは作成者のみです"
 msgid "errors.only-creator-can-unlock"
 msgstr "このバージョンのロックを解除できるのは作成者のみです"
 
-#: src/app/main/data/nitrate.cljs:218
+#: src/app/main/data/nitrate.cljs:209
 msgid "errors.organization-leave.no-valid-teams"
 msgstr "組織からの退出中に問題が発生しました。もう一度お試しください。"
 
-#: src/app/main/data/nitrate.cljs:219
+#: src/app/main/data/nitrate.cljs:210
 msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "組織のオーナーは組織から退出できません。"
 
@@ -1695,19 +1695,19 @@ msgstr "SVGが無効か、形式が正しくありません"
 msgid "errors.team-feature-mismatch"
 msgstr "互換性のない機能「%s」が検出されました"
 
-#: src/app/main/data/nitrate.cljs:201, src/app/main/ui/dashboard/team.cljs:505
+#: src/app/main/data/nitrate.cljs:192, src/app/main/ui/dashboard/team.cljs:505
 msgid "errors.team-leave.insufficient-members"
 msgstr "メンバーが不足しているためチームから退出できません。チームを削除することを検討してください。"
 
-#: src/app/main/data/nitrate.cljs:202, src/app/main/ui/dashboard/team.cljs:508
+#: src/app/main/data/nitrate.cljs:193, src/app/main/ui/dashboard/team.cljs:508
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "割り当てようとしたメンバーは存在しません。"
 
-#: src/app/main/data/nitrate.cljs:200
+#: src/app/main/data/nitrate.cljs:191
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "チームを削除できるのはオーナーのみです。"
 
-#: src/app/main/data/nitrate.cljs:203, src/app/main/ui/dashboard/team.cljs:511
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/team.cljs:511
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "オーナーはチームから退出できません。オーナーのロールを他のメンバーに譲渡してください。"
 
@@ -2284,7 +2284,7 @@ msgstr "%sパネルの表示を切り替え"
 msgid "inspect.tabs.styles.token-panel"
 msgstr "トークンセットとテーマ"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:144
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:145
 msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "解決された値:"
 
@@ -2546,7 +2546,7 @@ msgstr "管理者"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:99, src/app/main/ui/workspace/tokens/management/context_menu.cljs:137, src/app/main/ui/workspace/tokens/management/token_pill.cljs:118
+#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:101, src/app/main/ui/workspace/tokens/management/context_menu.cljs:139, src/app/main/ui/workspace/tokens/management/token_pill.cljs:127
 msgid "labels.all"
 msgstr "すべて"
 
@@ -2574,7 +2574,7 @@ msgstr "ぼかし"
 msgid "labels.blur-effects"
 msgstr "ぼかし効果"
 
-#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:532, src/app/main/data/nitrate.cljs:617, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
+#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:518, src/app/main/data/nitrate.cljs:603, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
 msgid "labels.cancel"
 msgstr "キャンセル"
 
@@ -2590,7 +2590,7 @@ msgstr "アップデートを確認"
 msgid "labels.checking-for-updates"
 msgstr "アップデートを確認中…"
 
-#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
+#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:407, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
 msgstr "閉じる"
 
@@ -2602,7 +2602,7 @@ msgstr "コード"
 msgid "labels.collapse"
 msgstr "折りたたむ"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:430
+#: src/app/main/ui/workspace/colorpicker.cljs:433
 msgid "labels.color"
 msgstr "カラー"
 
@@ -2634,11 +2634,11 @@ msgstr "パスワードを確認"
 msgid "labels.contact-support"
 msgstr "サポートに問い合わせる"
 
-#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:939
+#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:944
 msgid "labels.contact-us"
 msgstr "お問い合わせ"
 
-#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:330, src/app/main/ui/settings/subscription.cljs:364, src/app/main/ui/settings/subscription.cljs:891
+#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:333, src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:896
 msgid "labels.continue"
 msgstr "続行"
 
@@ -2878,7 +2878,7 @@ msgstr "内部エラー"
 msgid "labels.invision"
 msgstr "InVision"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:233, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:186, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
 msgid "labels.invitations"
 msgstr "招待"
 
@@ -2926,7 +2926,7 @@ msgstr "マーケティング"
 msgid "labels.member"
 msgstr "メンバー"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:228, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:181, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
 msgid "labels.members"
 msgstr "メンバー"
 
@@ -3097,7 +3097,7 @@ msgstr "削除"
 msgid "labels.remove-member"
 msgstr "メンバーを削除"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:251, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "名前を変更"
 
@@ -3181,7 +3181,7 @@ msgstr "サービスを利用できません"
 msgid "labels.sets"
 msgstr "セット"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:243, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:196, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
 msgid "labels.settings"
 msgstr "設定"
 
@@ -3249,7 +3249,7 @@ msgstr "開始"
 msgid "labels.status"
 msgstr "ステータス"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:72
+#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:105
 msgid "labels.stroke"
 msgstr "線"
 
@@ -3265,11 +3265,11 @@ msgstr "スタイル"
 msgid "labels.svg"
 msgstr "SVG"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:497
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:570
 msgid "labels.switch"
 msgstr "入れ替え"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:546
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:562
 msgid "labels.team-management"
 msgstr "チーム管理"
 
@@ -3350,7 +3350,7 @@ msgid "labels.warning-count"
 msgid_plural "labels.warning-count"
 msgstr[0] "%s件の警告"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:238, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
 msgid "labels.webhooks"
 msgstr "Webhook"
 
@@ -3446,15 +3446,15 @@ msgstr "コミュニティ製のプラグインでPenpotの機能を拡張でき
 msgid "loader.tips.10.title"
 msgstr "プラグインに対応"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:488
+#: src/app/main/ui/workspace/colorpicker.cljs:494
 msgid "media.choose-image"
 msgstr "画像を選択"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:274
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:276
 msgid "media.gradient"
 msgstr "グラデーション"
 
-#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:276, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:448
+#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:278, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:454
 msgid "media.image"
 msgstr "画像"
 
@@ -3462,7 +3462,7 @@ msgstr "画像"
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:483
+#: src/app/main/ui/workspace/colorpicker.cljs:489
 msgid "media.keep-aspect-ratio"
 msgstr "縦横比を維持"
 
@@ -3470,7 +3470,7 @@ msgstr "縦横比を維持"
 msgid "media.loading"
 msgstr "画像を読み込み中…"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:272
+#: src/app/main/ui/workspace/colorpicker.cljs:274
 msgid "media.solid"
 msgstr "単色"
 
@@ -3490,15 +3490,15 @@ msgstr "共有ライブラリとして追加すると、このファイルのラ
 msgid "modals.add-shared-confirm.message"
 msgstr "「%s」を共有ライブラリとして追加"
 
-#: src/app/main/data/nitrate.cljs:334
+#: src/app/main/data/nitrate.cljs:320
 msgid "modals.before-leave-organization.message"
 msgstr "あなたが唯一のメンバーであるチームがあります。これらのチームは、プロジェクトやファイルとともに削除されます。"
 
-#: src/app/main/data/nitrate.cljs:333, src/app/main/ui/dashboard/change_owner.cljs:151
+#: src/app/main/data/nitrate.cljs:319, src/app/main/ui/dashboard/change_owner.cljs:151
 msgid "modals.before-leave-organization.title"
 msgstr "組織を離れる前に"
 
-#: src/app/main/data/nitrate.cljs:337
+#: src/app/main/data/nitrate.cljs:323
 msgid "modals.before-leave-organization.warning"
 msgstr "あなたが唯一のメンバーであるチームはすべて削除されます。"
 
@@ -3817,11 +3817,11 @@ msgstr "メンバーをチームに招待すると、このファイルとチー
 msgid "modals.invite-team-member.title"
 msgstr "チームにメンバーを招待"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:192, src/app/main/ui/dashboard/team.cljs:539
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:148, src/app/main/ui/dashboard/team.cljs:539
 msgid "modals.leave-and-close-confirm.hint"
 msgstr "あなたはこのチームの唯一のメンバーのため、チームはプロジェクトやファイルとともに削除されます。"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:538
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:147, src/app/main/ui/dashboard/team.cljs:538
 msgid "modals.leave-and-close-confirm.message"
 msgstr "チーム「%s」から退出してもよろしいですか？"
 
@@ -3845,15 +3845,15 @@ msgstr "昇格させるメンバーを選択"
 msgid "modals.leave-and-reassign.title"
 msgstr "退出する前に"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:168, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:193, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:124, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:149, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
 msgid "modals.leave-confirm.accept"
 msgstr "チームから退出"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:167, src/app/main/ui/dashboard/team.cljs:561
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:123, src/app/main/ui/dashboard/team.cljs:561
 msgid "modals.leave-confirm.message"
 msgstr "このチームから退出してもよろしいですか？"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:166, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:190, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:122, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:146, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
 msgid "modals.leave-confirm.title"
 msgstr "チームからの退出"
 
@@ -3869,15 +3869,15 @@ msgstr "あなたが唯一のメンバーであるチームがあります。そ
 msgid "modals.leave-organization-and-reassign.hint-promote"
 msgstr "また、あなたは組織内の一部のチームのオーナーです。別のメンバーをオーナーに昇格させてください。"
 
-#: src/app/main/data/nitrate.cljs:335, src/app/main/data/nitrate.cljs:344
+#: src/app/main/data/nitrate.cljs:321, src/app/main/data/nitrate.cljs:330
 msgid "modals.leave-organization-confirm.accept"
 msgstr "組織から退出"
 
-#: src/app/main/data/nitrate.cljs:343
+#: src/app/main/data/nitrate.cljs:329
 msgid "modals.leave-organization-confirm.message"
 msgstr "組織内のすべてのチーム、プロジェクト、ファイルへのアクセスが完全に失われます。"
 
-#: src/app/main/data/nitrate.cljs:342
+#: src/app/main/data/nitrate.cljs:328
 msgid "modals.leave-organization-confirm.title"
 msgstr "組織「%s」から退出しますか？"
 
@@ -3928,19 +3928,19 @@ msgstr "ライブラリが空です。公開してもよろしいですか？"
 msgid "modals.publish-empty-library.title"
 msgstr "空のライブラリを公開"
 
-#: src/app/main/data/nitrate.cljs:391
+#: src/app/main/data/nitrate.cljs:377
 msgid "modals.remove-team-organization.accept"
 msgstr "組織から削除"
 
-#: src/app/main/data/nitrate.cljs:389
+#: src/app/main/data/nitrate.cljs:375
 msgid "modals.remove-team-organization.info"
 msgstr "プロジェクトとファイルは引き続きチームメンバーが利用できますが、組織の設定は適用されなくなります。"
 
-#: src/app/main/data/nitrate.cljs:388
+#: src/app/main/data/nitrate.cljs:374
 msgid "modals.remove-team-organization.text"
 msgstr "チーム「%s」を組織「%s」から削除してもよろしいですか？"
 
-#: src/app/main/data/nitrate.cljs:387
+#: src/app/main/data/nitrate.cljs:373
 msgid "modals.remove-team-organization.title"
 msgstr "組織からチームを削除"
 
@@ -4043,31 +4043,31 @@ msgstr "有効化"
 msgid "nitrate.code-activation.title"
 msgstr "Enterpriseを有効化"
 
-#: src/app/main/ui/settings/subscription.cljs:901
+#: src/app/main/ui/settings/subscription.cljs:906
 msgid "nitrate.contact-sales.button"
 msgstr "営業担当に問い合わせる"
 
-#: src/app/main/ui/settings/subscription.cljs:894
+#: src/app/main/ui/settings/subscription.cljs:899
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr "このプランに切り替えるには、営業チームにお問い合わせください。サブスクリプションの変更と、すべてが正しく設定されるようサポートいたします。"
 
-#: src/app/main/ui/settings/subscription.cljs:880
+#: src/app/main/ui/settings/subscription.cljs:885
 msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "組織は削除されます。"
 
-#: src/app/main/ui/settings/subscription.cljs:882
+#: src/app/main/ui/settings/subscription.cljs:887
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr "ストレージの総容量、自動バージョン履歴、ファイルの復元期間が制限されます。"
 
-#: src/app/main/ui/settings/subscription.cljs:881
+#: src/app/main/ui/settings/subscription.cljs:886
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr "チーム、プロジェクト、ファイルはどの組織にも属さなくなりますが、引き続き利用できます。"
 
-#: src/app/main/ui/settings/subscription.cljs:878
+#: src/app/main/ui/settings/subscription.cljs:883
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "ダウングレードすると:"
 
-#: src/app/main/ui/settings/subscription.cljs:875
+#: src/app/main/ui/settings/subscription.cljs:880
 msgid "nitrate.contact-sales.title"
 msgstr "%sプランに切り替えますか？"
 
@@ -4083,15 +4083,15 @@ msgstr "Enterpriseを14日間お試しいただくには、お問い合わせく
 msgid "nitrate.form.contact-upgrade"
 msgstr "Enterpriseへのアップグレードについては、お問い合わせください:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-free-trial"
 msgstr "Enterpriseプランを14日間お試しいただくには、お問い合わせください:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-upgrade"
 msgstr "Enterpriseプランへのアップグレードについては、お問い合わせください:"
 
-#: src/app/main/ui/settings/subscription.cljs:832
+#: src/app/main/ui/settings/subscription.cljs:837
 msgid "nitrate.form.enterprise-description"
 msgstr "今すぐ請求されることはありません。お支払いはトライアル終了時に処理されます。いつでもキャンセルできます。"
 
@@ -4107,7 +4107,7 @@ msgstr "専用の管理コンソールで、誰がどこで何をするかを一
 msgid "nitrate.form.enterprise-feature-3"
 msgstr "オープンソースの自由はそのままに、組織に必要なガバナンスを"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:827, src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:832, src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.enterprise-intro"
 msgstr "チームが大規模に安全に作業するために必要なものがすべて揃っています%s"
 
@@ -4115,7 +4115,7 @@ msgstr "チームが大規模に安全に作業するために必要なものが
 msgid "nitrate.form.enterprise.price"
 msgstr "メンバー1人あたり月額"
 
-#: src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "nitrate.form.free-trial-button"
 msgstr "14日間無料で試す"
 
@@ -4131,7 +4131,7 @@ msgstr "Enterpriseを始める"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "アクティベーションコードで登録"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:821
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:826
 msgid "nitrate.form.title"
 msgstr "Enterpriseの機能を利用する"
 
@@ -4143,7 +4143,7 @@ msgstr "14日間無料で試す"
 msgid "nitrate.modal-success.title"
 msgstr "Enterpriseへようこそ！"
 
-#: src/app/main/ui/settings/subscription.cljs:613
+#: src/app/main/ui/settings/subscription.cljs:618
 msgid "nitrate.subscription.active-until"
 msgstr "%sまで有効"
 
@@ -4151,11 +4151,11 @@ msgstr "%sまで有効"
 msgid "nitrate.subscription.renew-success"
 msgstr "Enterpriseサブスクリプションを更新しました。"
 
-#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:928
+#: src/app/main/ui/settings/subscription.cljs:630, src/app/main/ui/settings/subscription.cljs:933
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "サブスクリプションをキャンセル"
 
-#: src/app/main/ui/settings/subscription.cljs:932
+#: src/app/main/ui/settings/subscription.cljs:937
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "Enterpriseサブスクリプションをキャンセルするには、次の連絡先までお問い合わせください:"
 
@@ -4465,7 +4465,7 @@ msgstr "テンプレートをご用意しました。"
 msgid "onboarding.templates.title"
 msgstr "デザインを始める"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:120, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:121, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:137
 msgid "options.deleted-token-with-name"
 msgstr "トークン{%s}は存在しないか、削除されています。"
 
@@ -4501,19 +4501,19 @@ msgstr "デフォルト設定に戻す"
 msgid "restore-shortcuts.restore"
 msgstr "復元"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:419
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
 msgstr "切り離す"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:725, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:25, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:468, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:348, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:390
+#: src/app/main/ui/ds/controls/numeric_input.cljs:742, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:27, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:280, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:474, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:410, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:451
 msgid "settings.multiple"
 msgstr "混在"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:477
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:483
 msgid "settings.remove-color"
 msgstr "カラーを削除"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:482
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:488
 msgid "settings.select-this-color"
 msgstr "このスタイルを使用している要素を選択"
 
@@ -5257,7 +5257,7 @@ msgstr "Enterpriseを体験"
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:780
+#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:785
 msgid "subscription.current-plan.nitrate"
 msgstr "Enterprise"
 
@@ -5309,7 +5309,7 @@ msgstr "チームが大切にしているオープンソースの自由はその
 msgid "subscription.dashboard.banner.upgrade-nitrate"
 msgstr "Enterpriseを始める"
 
-#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:315
+#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:316
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterpriseプラン"
 
@@ -5338,7 +5338,7 @@ msgstr "トライアルはいかがですか？ずっとフルアクセスを利
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Unlimitedプラン（トライアル）"
 
-#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:314
+#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:315
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimitedプラン"
 
@@ -5351,47 +5351,47 @@ msgstr "定額で、すべてのチームにストレージ無制限、長期間
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "ご利用中のサブスクリプション："
 
-#: src/app/main/ui/dashboard/subscription.cljs:349
+#: src/app/main/ui/dashboard/subscription.cljs:350
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr "所有するチーム全体で編集者が%s人いますが、Professionalプランで利用できるのは8人までです。"
 
-#: src/app/main/ui/dashboard/subscription.cljs:357
+#: src/app/main/ui/dashboard/subscription.cljs:358
 #, markdown
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
 "UnlimitedまたはEnterpriseにアップグレードして、編集者数、ストレージ、ファイルの復元を拡張してください。[今すぐ登録する。|"
 "target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:290
+#: src/app/main/ui/dashboard/subscription.cljs:291
 msgid "subscription.dashboard.team-plan"
 msgstr "チームのプラン"
 
-#: src/app/main/ui/dashboard/subscription.cljs:352
+#: src/app/main/ui/dashboard/subscription.cljs:353
 msgid "subscription.dashboard.unlimited-dashboard-cta-title"
 msgstr "チームが成長しています！Unlimitedプランで利用できる編集者は%s人までですが、現在%s人います。"
 
-#: src/app/main/ui/dashboard/subscription.cljs:360
+#: src/app/main/ui/dashboard/subscription.cljs:361
 #, markdown
 msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
 msgstr "現在の編集者数に合わせてアップグレードしてください。[今すぐ登録する。|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:337
+#: src/app/main/ui/dashboard/subscription.cljs:338
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr "今後の請求対象になるのは、所有するチーム全体で新たに加わった編集者のみです。編集者が25人以上の場合は、月額$175の定額料金が適用されます。"
 
-#: src/app/main/ui/dashboard/subscription.cljs:333
+#: src/app/main/ui/dashboard/subscription.cljs:334
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
 msgstr "Unlimitedプランでのメンバー招待"
 
-#: src/app/main/ui/settings/subscription.cljs:429
+#: src/app/main/ui/settings/subscription.cljs:432
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "支払いが完了しませんでした。準備ができたら、もう一度お試しください。"
 
-#: src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:448
+#: src/app/main/ui/settings/subscription.cljs:431, src/app/main/ui/settings/subscription.cljs:451
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr "支払いが完了しませんでした。もう一度お試しください。問題が解決しない場合は、support@penpot.app までお問い合わせください。"
 
-#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:545, src/app/main/ui/settings/subscription.cljs:606
+#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:550, src/app/main/ui/settings/subscription.cljs:611
 msgid "subscription.labels"
 msgstr "サブスクリプション"
 
@@ -5399,23 +5399,23 @@ msgstr "サブスクリプション"
 msgid "subscription.settings.activate-by-code"
 msgstr "アクティベーションコードを入力"
 
-#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:681
+#: src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:686
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "トライアル終了後も続けるには、支払い方法を追加してください"
 
-#: src/app/main/ui/settings/subscription.cljs:621
+#: src/app/main/ui/settings/subscription.cljs:626
 msgid "subscription.settings.admin-console"
 msgstr "管理コンソール"
 
-#: src/app/main/ui/settings/subscription.cljs:649, src/app/main/ui/settings/subscription.cljs:740
+#: src/app/main/ui/settings/subscription.cljs:654, src/app/main/ui/settings/subscription.cljs:745
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "Professionalプランのすべての特典に加えて："
 
-#: src/app/main/ui/settings/subscription.cljs:662, src/app/main/ui/settings/subscription.cljs:675, src/app/main/ui/settings/subscription.cljs:686, src/app/main/ui/settings/subscription.cljs:756
+#: src/app/main/ui/settings/subscription.cljs:667, src/app/main/ui/settings/subscription.cljs:680, src/app/main/ui/settings/subscription.cljs:691, src/app/main/ui/settings/subscription.cljs:761
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "Unlimitedプランのすべての特典に加えて："
 
-#: src/app/main/ui/settings/subscription.cljs:614, src/app/main/ui/settings/subscription.cljs:771
+#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
 msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
 msgstr "Unlimitedプランのすべての特典に加えて："
 
@@ -5423,69 +5423,69 @@ msgstr "Unlimitedプランのすべての特典に加えて："
 msgid "subscription.settings.editors"
 msgstr "（編集者%s人分）"
 
-#: src/app/main/ui/dashboard/subscription.cljs:298, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:464, src/app/main/ui/settings/subscription.cljs:466, src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:611, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:752, src/app/main/ui/settings/subscription.cljs:768
+#: src/app/main/ui/dashboard/subscription.cljs:299, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:467, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:605, src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:757, src/app/main/ui/settings/subscription.cljs:773
 msgid "subscription.settings.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:599, src/app/main/ui/settings/subscription.cljs:673
+#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:604, src/app/main/ui/settings/subscription.cljs:678
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise（トライアル）"
 
-#: src/app/main/ui/settings/subscription.cljs:677, src/app/main/ui/settings/subscription.cljs:688, src/app/main/ui/settings/subscription.cljs:758
+#: src/app/main/ui/settings/subscription.cljs:682, src/app/main/ui/settings/subscription.cljs:693, src/app/main/ui/settings/subscription.cljs:763
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90日間の自動保存されたバージョンとファイルの復元"
 
-#: src/app/main/ui/settings/subscription.cljs:678, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:759
+#: src/app/main/ui/settings/subscription.cljs:683, src/app/main/ui/settings/subscription.cljs:694, src/app/main/ui/settings/subscription.cljs:764
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "月額定額料金"
 
-#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
+#: src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:781
 msgid "subscription.settings.enterprise.nitrate.advanced-control"
 msgstr "高度な管理："
 
-#: src/app/main/ui/settings/subscription.cljs:617, src/app/main/ui/settings/subscription.cljs:774
+#: src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:779
 msgid "subscription.settings.enterprise.nitrate.enterprise-security"
 msgstr "エンタープライズ向けセキュリティ："
 
-#: src/app/main/ui/settings/subscription.cljs:615, src/app/main/ui/settings/subscription.cljs:772
+#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
 msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
 msgstr "複数組織の管理："
 
-#: src/app/main/ui/settings/subscription.cljs:618, src/app/main/ui/settings/subscription.cljs:775
+#: src/app/main/ui/settings/subscription.cljs:623, src/app/main/ui/settings/subscription.cljs:780
 msgid "subscription.settings.enterprise.nitrate.native-sso"
 msgstr "ネイティブのSAML/SSOと、コンプライアンス報告のための完全な監査ログ。"
 
-#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
+#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:782
 msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
 msgstr "きめ細かなプラグインの許可リスト。AI連携のための安全で隔離されたMCPサーバーも含みます。"
 
-#: src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:773
+#: src/app/main/ui/settings/subscription.cljs:621, src/app/main/ui/settings/subscription.cljs:778
 msgid "subscription.settings.enterprise.nitrate.support-team"
 msgstr "複雑なチーム階層と独立したサブ組織に対応。"
 
-#: src/app/main/ui/settings/subscription.cljs:676, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:757
+#: src/app/main/ui/settings/subscription.cljs:681, src/app/main/ui/settings/subscription.cljs:692, src/app/main/ui/settings/subscription.cljs:762
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "ストレージ無制限"
 
-#: src/app/main/ui/dashboard/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:653, src/app/main/ui/settings/subscription.cljs:666, src/app/main/ui/settings/subscription.cljs:679, src/app/main/ui/settings/subscription.cljs:690
+#: src/app/main/ui/dashboard/subscription.cljs:304, src/app/main/ui/settings/subscription.cljs:629, src/app/main/ui/settings/subscription.cljs:658, src/app/main/ui/settings/subscription.cljs:671, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:695
 msgid "subscription.settings.manage-your-subscription"
 msgstr "サブスクリプションを管理"
 
-#: src/app/main/ui/settings/subscription.cljs:349
+#: src/app/main/ui/settings/subscription.cljs:352
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "支払い情報を追加"
 
-#: src/app/main/ui/settings/subscription.cljs:336
+#: src/app/main/ui/settings/subscription.cljs:339
 msgid "subscription.settings.management-dialog.step-2-description"
 msgstr ""
 "今のうちに支払い情報を追加しておけば、トライアル終了後もサブスクリプションをスムーズに継続でき、オープンソースプロジェクトの支援も続けられます。まだ料金"
 "は発生しません。"
 
-#: src/app/main/ui/settings/subscription.cljs:344
+#: src/app/main/ui/settings/subscription.cljs:347
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "今はスキップしてトライアルを開始"
 
-#: src/app/main/ui/settings/subscription.cljs:267
+#: src/app/main/ui/settings/subscription.cljs:270
 msgid "subscription.settings.management-dialog.step-2-title"
 msgstr "Penpotの成長を支え、トライアルをもっと手軽に"
 
@@ -5494,7 +5494,7 @@ msgid "subscription.settings.management.dialog.currently-editors-title"
 msgid_plural "subscription.settings.management.dialog.currently-editors-title"
 msgstr[0] "現在、チーム全体で編集できるメンバーは%s人です。"
 
-#: src/app/main/ui/settings/subscription.cljs:281
+#: src/app/main/ui/settings/subscription.cljs:284
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr "ご注意：下位のプランに切り替えると、ストレージが減り、バックアップとバージョン履歴の保存期間も短くなります。"
 
@@ -5506,78 +5506,78 @@ msgstr "編集者"
 msgid "subscription.settings.management.dialog.editors-explanation"
 msgstr "（オーナー、管理者、編集者が対象です。閲覧者は編集者に含まれません）"
 
-#: src/app/main/ui/settings/subscription.cljs:314
+#: src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.management.dialog.input-error"
 msgstr ""
 "現在の人数より少ない編集者数には設定できません。実際にファイルを編集しないメンバーは、チーム設定でロールを変更してください（編集者/"
 "管理者から閲覧者へ）。"
 
-#: src/app/main/ui/settings/subscription.cljs:310
+#: src/app/main/ui/settings/subscription.cljs:313
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "料金はトライアル終了後に請求されます。現時点ではクレジットカードは不要です。"
 
-#: src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:307
+#: src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/settings/subscription.cljs:310
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**/月"
 
-#: src/app/main/ui/settings/subscription.cljs:268
+#: src/app/main/ui/settings/subscription.cljs:271
 msgid "subscription.settings.management.dialog.title"
 msgstr "%sをチームに適用"
 
-#: src/app/main/ui/settings/subscription.cljs:317
+#: src/app/main/ui/settings/subscription.cljs:320
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr "ヒント：招待に備えて、今のうちにシート数を増やしておけます。チーム全体で編集者が25人以上になると、月額$175の定額料金になります。"
 
-#: src/app/main/ui/settings/subscription.cljs:709
+#: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
 msgstr "Penpotメンバー登録日：%s"
 
-#: src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:746, src/app/main/ui/settings/subscription.cljs:762, src/app/main/ui/settings/subscription.cljs:782
+#: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
 msgstr "詳細情報"
 
-#: src/app/main/ui/settings/subscription.cljs:770, src/app/main/ui/settings/subscription.cljs:830
+#: src/app/main/ui/settings/subscription.cljs:775, src/app/main/ui/settings/subscription.cljs:835
 msgid "subscription.settings.organization-member-month"
 msgstr "組織メンバー/月"
 
-#: src/app/main/ui/settings/subscription.cljs:712
+#: src/app/main/ui/settings/subscription.cljs:717
 msgid "subscription.settings.other-plans"
 msgstr "Penpotのその他のプラン"
 
-#: src/app/main/ui/settings/subscription.cljs:755
+#: src/app/main/ui/settings/subscription.cljs:760
 msgid "subscription.settings.price-organization-month"
 msgstr "組織あたり/月"
 
-#: src/app/main/ui/settings/subscription.cljs:716, src/app/main/ui/settings/subscription.cljs:739
+#: src/app/main/ui/settings/subscription.cljs:721, src/app/main/ui/settings/subscription.cljs:744
 msgid "subscription.settings.price-user-month"
 msgstr "ユーザー/月"
 
-#: src/app/main/ui/dashboard/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:633, src/app/main/ui/settings/subscription.cljs:714
+#: src/app/main/ui/dashboard/subscription.cljs:294, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:719
 msgid "subscription.settings.professional"
 msgstr "Professional"
 
-#: src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:721
+#: src/app/main/ui/settings/subscription.cljs:643, src/app/main/ui/settings/subscription.cljs:726
 msgid "subscription.settings.professional.autosave-benefit"
 msgstr "7日間の自動保存されたバージョンとファイルの復元"
 
-#: src/app/main/ui/settings/subscription.cljs:642, src/app/main/ui/settings/subscription.cljs:725
+#: src/app/main/ui/settings/subscription.cljs:647, src/app/main/ui/settings/subscription.cljs:730
 msgid "subscription.settings.professional.selfhost.community-support"
 msgstr "すべてのデザイン・プロトタイプ機能。コミュニティサポート。"
 
-#: src/app/main/ui/settings/subscription.cljs:636, src/app/main/ui/settings/subscription.cljs:719
+#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.professional.selfhost.control-over-data"
 msgstr "データとインフラを完全に管理できます。"
 
-#: src/app/main/ui/settings/subscription.cljs:639, src/app/main/ui/settings/subscription.cljs:722
+#: src/app/main/ui/settings/subscription.cljs:644, src/app/main/ui/settings/subscription.cljs:727
 msgid "subscription.settings.professional.selfhost.unlimited-users"
 msgstr "ユーザー、チーム、ファイルが無制限。"
 
-#: src/app/main/ui/settings/subscription.cljs:635, src/app/main/ui/settings/subscription.cljs:718
+#: src/app/main/ui/settings/subscription.cljs:640, src/app/main/ui/settings/subscription.cljs:723
 msgid "subscription.settings.professional.storage-benefit"
 msgstr "10GBのストレージ"
 
-#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
+#: src/app/main/ui/settings/subscription.cljs:646, src/app/main/ui/settings/subscription.cljs:729
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "チーム数無制限。所有するチーム全体で最大8人の編集者。"
 
@@ -5585,63 +5585,63 @@ msgstr "チーム数無制限。所有するチーム全体で最大8人の編�
 msgid "subscription.settings.recommended"
 msgstr "おすすめ"
 
-#: src/app/main/ui/settings/subscription.cljs:609
+#: src/app/main/ui/settings/subscription.cljs:614
 msgid "subscription.settings.section-plan"
 msgstr "ご利用中のサブスクリプション"
 
-#: src/app/main/ui/settings/subscription.cljs:364
+#: src/app/main/ui/settings/subscription.cljs:367
 msgid "subscription.settings.start-trial"
 msgstr "無料トライアルを開始"
 
-#: src/app/main/ui/settings/subscription.cljs:329, src/app/main/ui/settings/subscription.cljs:726, src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760, src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:332, src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765, src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "subscription.settings.subscribe"
 msgstr "登録する"
 
-#: src/app/main/ui/settings/subscription.cljs:702
+#: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "%sプランを%sからご利用中です。"
 
-#: src/app/main/ui/settings/subscription.cljs:396
+#: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
 msgstr "サブスクリプションは、アカウント情報の「サブスクリプション」ページからいつでも変更できます。"
 
-#: src/app/main/ui/settings/subscription.cljs:398
+#: src/app/main/ui/settings/subscription.cljs:401
 msgid "subscription.settings.success.dialog.footer"
 msgstr "プランをお楽しみください！"
 
-#: src/app/main/ui/settings/subscription.cljs:394
+#: src/app/main/ui/settings/subscription.cljs:397
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "Penpot %sプランをお選びいただき、ありがとうございます！"
 
-#: src/app/main/ui/settings/subscription.cljs:391
+#: src/app/main/ui/settings/subscription.cljs:394
 msgid "subscription.settings.success.dialog.title"
 msgstr "%sプランになりました！"
 
-#: src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760
+#: src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765
 msgid "subscription.settings.try-it-free"
 msgstr "14日間無料でお試し"
 
-#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:465, src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:736
+#: src/app/main/ui/dashboard/subscription.cljs:297, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:468, src/app/main/ui/settings/subscription.cljs:602, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:741
 msgid "subscription.settings.unlimited"
 msgstr "Unlimited"
 
-#: src/app/main/ui/dashboard/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:647
+#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:652
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited（トライアル）"
 
-#: src/app/main/ui/settings/subscription.cljs:651, src/app/main/ui/settings/subscription.cljs:664, src/app/main/ui/settings/subscription.cljs:742
+#: src/app/main/ui/settings/subscription.cljs:656, src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:747
 msgid "subscription.settings.unlimited.autosave-benefit"
 msgstr "30日間の自動保存バージョンとファイル復旧"
 
-#: src/app/main/ui/settings/subscription.cljs:652, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:743
+#: src/app/main/ui/settings/subscription.cljs:657, src/app/main/ui/settings/subscription.cljs:670, src/app/main/ui/settings/subscription.cljs:748
 msgid "subscription.settings.unlimited.bill"
 msgstr "月額料金の上限は$175"
 
-#: src/app/main/ui/settings/subscription.cljs:650, src/app/main/ui/settings/subscription.cljs:663, src/app/main/ui/settings/subscription.cljs:741
+#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:668, src/app/main/ui/settings/subscription.cljs:746
 msgid "subscription.settings.unlimited.storage-benefit"
 msgstr "25GBのストレージ"
 
-#: src/app/main/ui/dashboard/subscription.cljs:328
+#: src/app/main/ui/dashboard/subscription.cljs:329
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "プランをアップグレード"
 
@@ -5685,7 +5685,7 @@ msgstr "プロジェクト - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "検索 - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:60
 msgid "title.dashboard.shared-libraries"
 msgstr "共有ライブラリ - %s - Penpot"
 
@@ -5741,7 +5741,7 @@ msgstr "%s - 表示モード - Penpot"
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:171
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:172
 msgid "token-actions.detach-token"
 msgstr "トークンを切り離す"
 
@@ -5831,11 +5831,11 @@ msgstr "WebGL レンダリングを無効にしました"
 msgid "webgl.toast.webgl-render-enabled"
 msgstr "WebGL レンダリングを有効にしました"
 
-#: src/app/render_wasm/api.cljs:2487
+#: src/app/render_wasm/api.cljs:2462
 msgid "webgl.webgl-context-lost.toast"
 msgstr "WebGLコンテキストが失われました"
 
-#: src/app/render_wasm/api.cljs:2510
+#: src/app/render_wasm/api.cljs:2485
 msgid "webgl.webgl-context-recovered.toast"
 msgstr "WebGLコンテキストが復旧しました"
 
@@ -6044,19 +6044,19 @@ msgstr "グループ解除"
 msgid "workspace.clipboard.copying"
 msgstr "画像をコピー中…"
 
-#: src/app/main/data/workspace/clipboard.cljs:1193
+#: src/app/main/data/workspace/clipboard.cljs:1192
 msgid "workspace.clipboard.image-copied"
 msgstr "画像をクリップボードにコピーしました"
 
-#: src/app/main/data/workspace/clipboard.cljs:1199
+#: src/app/main/data/workspace/clipboard.cljs:1198
 msgid "workspace.clipboard.image-copy-failed"
 msgstr "画像のコピー中にエラーが発生しました"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:441
+#: src/app/main/ui/workspace/colorpicker.cljs:447
 msgid "workspace.colorpicker.color-picker"
 msgstr "画面から色を抽出"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434, src/app/main/ui/workspace/colorpicker.cljs:448
+#: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
 msgstr "カラートークン"
 
@@ -6481,11 +6481,11 @@ msgstr "ファイルライブラリ"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "最近使用したカラー"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:367
+#: src/app/main/ui/workspace/colorpicker.cljs:369
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:560
+#: src/app/main/ui/workspace/colorpicker.cljs:566
 msgid "workspace.libraries.colors.save-color"
 msgstr "カラースタイルを保存"
 
@@ -6647,7 +6647,7 @@ msgstr "更新"
 msgid "workspace.notification-pill.detail"
 msgstr "詳細"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:780
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "＋ボタンをクリックしてインタラクションを追加します。"
 
@@ -6703,7 +6703,7 @@ msgstr "その他のオプションを表示/非表示"
 msgid "workspace.options.cancel-export"
 msgstr "キャンセル"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "キャンバスの背景"
 
@@ -7060,7 +7060,7 @@ msgstr "正方形"
 msgid "workspace.options.group-fill"
 msgstr "グループの塗り"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:71
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:104
 msgid "workspace.options.group-stroke"
 msgstr "グループの線"
 
@@ -7292,11 +7292,11 @@ msgstr "ホバー中"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "押している間"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:739
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "インタラクション"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:742
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
 msgid "workspace.options.interactions.add-interaction"
 msgstr "インタラクションを追加"
 
@@ -7408,7 +7408,7 @@ msgstr "一致するサイズプリセットがありません"
 msgid "workspace.options.opacity"
 msgstr "不透明度"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:85
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
 msgid "workspace.options.pixel-grid-color"
 msgstr "ピクセルグリッドの色"
 
@@ -7468,7 +7468,7 @@ msgstr "フォントを検索"
 msgid "workspace.options.search-size-preset"
 msgstr "サイズプリセットを検索"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "シェイプ、ボード、またはグループを選択し、ドラッグして他のボードへの接続を作成してください。"
 
@@ -7484,7 +7484,7 @@ msgstr "カラー選択セクション"
 msgid "workspace.options.selection-fill"
 msgstr "選択範囲の塗り"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:70
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:103
 msgid "workspace.options.selection-stroke"
 msgstr "選択範囲の線"
 
@@ -7540,7 +7540,7 @@ msgstr "選択範囲のシャドウ"
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "シャドウの表示を切り替え"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:264
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:265
 msgid "workspace.options.show-fill-on-export"
 msgstr "エクスポートに表示"
 
@@ -7564,115 +7564,115 @@ msgstr "比率を固定"
 msgid "workspace.options.size.unlock"
 msgstr "比率の固定を解除"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:275
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:334
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "円"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:276
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:335
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "ひし形"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:272
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:331
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "矢印"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:270
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
 msgid "workspace.options.stroke-cap.none"
 msgstr "なし"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:278
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
 msgid "workspace.options.stroke-cap.round"
 msgstr "丸型"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:279
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:338
 msgid "workspace.options.stroke-cap.square"
 msgstr "角型"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:333
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "四角形"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:273
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:332
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "三角形"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:291
 msgid "workspace.options.stroke-color"
 msgstr "線の色"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:475
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:548
 msgid "workspace.options.stroke-dash"
 msgstr "ダッシュ"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:485
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:558
 msgid "workspace.options.stroke-gap"
 msgstr "間隔"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:382
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:405, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:443
 msgid "workspace.options.stroke-width"
 msgstr "線の幅"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:444
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:518
 msgid "workspace.options.stroke-width-bottom"
 msgstr "下（ブロック終端）"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:454
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:531
 msgid "workspace.options.stroke-width-left"
 msgstr "左（インライン始端）"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:434
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:505
 msgid "workspace.options.stroke-width-right"
 msgstr "右（インライン終端）"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:424
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:492
 msgid "workspace.options.stroke-width-top"
 msgstr "上（ブロック始端）"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:258
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:267
 msgid "workspace.options.stroke.add-stroke"
 msgstr "線の色を追加"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:203
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:238
 msgid "workspace.options.stroke.center"
 msgstr "中央"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:266
 msgid "workspace.options.stroke.dashed"
 msgstr "破線"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:265
 msgid "workspace.options.stroke.dotted"
 msgstr "点線"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:239
 msgid "workspace.options.stroke.inner"
 msgstr "内側"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:232
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:267
 msgid "workspace.options.stroke.mixed"
 msgstr "混在"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:205
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:240
 msgid "workspace.options.stroke.outer"
 msgstr "外側"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:150
 msgid "workspace.options.stroke.per-side"
 msgstr "辺ごとの線"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:149
 msgid "workspace.options.stroke.per-side-disabled"
 msgstr "辺ごとの線は新しいレンダリングでのみ利用できます。使用するにはレンダリングを切り替えてください。"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:273, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:389
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "線を削除"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:264
 msgid "workspace.options.stroke.solid"
 msgstr "実線"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:324
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:384
 msgid "workspace.options.stroke.toggle-stroke"
 msgstr "線の表示を切り替え"
 
@@ -7756,7 +7756,7 @@ msgstr "選択範囲のテキスト"
 msgid "workspace.options.text-options.underline"
 msgstr "下線（%s）"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr "ヘッダーの再生ボタンを使ってプロトタイプを表示してください。"
 
@@ -8355,15 +8355,15 @@ msgstr "セットを追加"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "このグループにセットを追加"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:183
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:186
 msgid "workspace.tokens.add-token"
 msgstr "トークンを追加：%s"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:156
 msgid "workspace.tokens.applied-to"
 msgstr "適用先"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:343
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:400
 msgid "workspace.tokens.axis"
 msgstr "軸"
 
@@ -8383,11 +8383,11 @@ msgstr "基準フォントサイズはピクセル値または単位なしの値
 msgid "workspace.tokens.change-token-source"
 msgstr "トークンのソースを変更"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:312, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
 msgid "workspace.tokens.color"
 msgstr "カラー"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:376
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:433
 msgid "workspace.tokens.copy-name"
 msgstr "トークンのパスをコピー"
 
@@ -8407,7 +8407,7 @@ msgstr "新しい%sトークンを作成"
 msgid "workspace.tokens.current-tokens-source-tooltip"
 msgstr "現在のトークンのソースです"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:380
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "トークンを削除"
 
@@ -8415,7 +8415,7 @@ msgstr "トークンを削除"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "テーマを削除"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:373
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "トークンを複製"
 
@@ -8427,7 +8427,7 @@ msgstr "トークングループを複製"
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "コピー"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:359
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:416
 msgid "workspace.tokens.edit"
 msgstr "トークンを編集"
 
@@ -8447,7 +8447,7 @@ msgstr "%sトークンを編集"
 msgid "workspace.tokens.enter-token-name"
 msgstr "%sトークンの名前を入力"
 
-#: src/app/main/data/workspace/tokens/application.cljs:732, src/app/main/ui/workspace/tokens/management/group.cljs:161
+#: src/app/main/data/workspace/tokens/application.cljs:767, src/app/main/ui/workspace/tokens/management/group.cljs:164
 msgid "workspace.tokens.error-text-edition"
 msgstr "テキストの編集中はトークンを適用できません。代わりにテキストレイヤーを選択してください。"
 
@@ -8479,7 +8479,7 @@ msgstr "単一ファイル"
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "フォントサイズまたは{alias}"
 
-#: src/app/main/data/workspace/tokens/application.cljs:329
+#: src/app/main/data/workspace/tokens/application.cljs:364
 msgid "workspace.tokens.font-variant-not-found"
 msgstr "フォントの太さ/スタイルを設定できませんでした。このフォントスタイルは現在のフォントに存在しません"
 
@@ -8487,7 +8487,7 @@ msgstr "フォントの太さ/スタイルを設定できませんでした。�
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "フォントの太さ（300、Bold Italic…）または{alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:251
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
 msgid "workspace.tokens.gaps"
 msgstr "間隔"
 
@@ -8563,23 +8563,23 @@ msgstr "文字間隔または{alias}"
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "行の高さ（倍率、px、%）または{alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:243
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:245
 msgid "workspace.tokens.margins"
 msgstr "マージン"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:282
 msgid "workspace.tokens.max-size"
 msgstr "最大サイズ"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:274
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:276
 msgid "workspace.tokens.min-size"
 msgstr "最小サイズ"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:317
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:351
 msgid "workspace.tokens.missing-reference"
 msgstr "参照先が見つかりません"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:125
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
 msgid "workspace.tokens.more-options"
 msgstr "右クリックでオプションを表示"
 
@@ -8631,19 +8631,19 @@ msgstr "%s個のアクティブなセット"
 msgid "workspace.tokens.open-source-new-tab"
 msgstr "トークンのソースを新しいタブで開く"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:134
 msgid "workspace.tokens.original-value"
 msgstr "元の値：%s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:227
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.paddings"
 msgstr "パディング"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:305
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:362
 msgid "workspace.tokens.radius"
 msgstr "角の半径"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:123, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:130, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:124, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:131, src/app/main/ui/workspace/tokens/management/token_pill.cljs:142
 msgid "workspace.tokens.ref-not-valid"
 msgstr "{%s}の参照が無効か、どのアクティブなセットにも含まれていません。"
 
@@ -8687,7 +8687,7 @@ msgstr "トークングループの名前を変更"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "トークンの名前は自動的に%s.(suffix).(tokenName)に変更されます"
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:127, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:135
 msgid "workspace.tokens.resolved-value"
 msgstr "解決された値：%s"
 
@@ -8759,7 +8759,7 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:270
 msgid "workspace.tokens.size"
 msgstr "サイズ"
 
@@ -8803,7 +8803,7 @@ msgstr "フォントファミリー"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "フォントファミリー、またはカンマ（,）区切りのフォントのリスト"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:161, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:142, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:162, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64, src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.token-name"
 msgstr "名前"
 
@@ -8851,7 +8851,7 @@ msgstr "タイプ「%s」はサポートされていません（%s）："
 msgid "workspace.tokens.use-reference"
 msgstr "参照を使用"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
 msgid "workspace.tokens.value-not-valid"
 msgstr "値が無効です"
 

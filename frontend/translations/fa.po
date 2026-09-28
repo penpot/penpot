@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
+"PO-Revision-Date: 2026-09-28 08:14+0000\n"
 "Last-Translator: Danial Shirali <danialshirali16@gmail.com>\n"
 "Language-Team: Persian "
 "<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
@@ -284,21 +284,81 @@ msgstr "افزودن به‌عنوان کتابخانه مشترک"
 msgid "dashboard.change-email"
 msgstr "تغییر ایمیل"
 
-#: src/app/main/data/nitrate.cljs:616
+#: src/app/main/data/nitrate.cljs:602
 msgid "dashboard.change-organization-modal.accept"
 msgstr "انتقال تیم"
 
-#: src/app/main/data/nitrate.cljs:614
+#: src/app/main/data/nitrate.cljs:600
 msgid "dashboard.change-organization-modal.choose"
 msgstr "انتقال به:"
 
-#: src/app/main/data/nitrate.cljs:615
+#: src/app/main/data/nitrate.cljs:599
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"پروژه‌ها و فایل‌ها برای اعضای تیم در دسترس خواهند ماند. تیم پیکربندی را از "
+"سازمان جدید دریافت خواهد کرد."
+
+#: src/app/main/data/nitrate.cljs:601
 msgid "dashboard.change-organization-modal.select"
 msgstr "انتخاب یک سازمان"
 
-#: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
+#: src/app/main/data/nitrate.cljs:591, src/app/main/data/nitrate.cljs:598, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
 msgstr "تغییر سازمان تیم"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"نسخه‌های جدیدتر شامل بهبود عملکرد، قابلیت‌های جدید و اصلاحاتی هستند که نصب "
+"شما را به‌روز نگه می‌دارند."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "نسخهٔ جدیدی از PENPOT در دسترس است"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "چه خبر است — نکات برجسته"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "نسخهٔ نصب‌شده"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "جدیدترین نسخه"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "دوباره تلاش کنید"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "شبکه یا پیکربندی نمونه را بررسی کنید و دوباره تلاش کنید."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "این نصب نتوانست به سرویس انتشار نسخه‌های Penpot دسترسی پیدا کند."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "امکان بررسی به‌روزرسانی‌ها وجود ندارد"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "شما در حال استفاده از جدیدترین نسخهٔ پایدار هستید:"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT به‌روز است"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "مشاهدهٔ گزارش تغییرات کامل"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "مشاهدهٔ یادداشت‌های انتشار"
 
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
@@ -308,11 +368,11 @@ msgstr "خالی کردن سطل زباله"
 msgid "dashboard.copy-suffix"
 msgstr "(کپی)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
 msgstr "ایجاد سازمان"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "ایجاد تیم جدید"
 
@@ -356,7 +416,7 @@ msgstr ""
 msgid "dashboard.delete-success-notification"
 msgstr "%s با موفقیت حذف شد."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "حذف تیم"
 
@@ -579,9 +639,13 @@ msgstr ""
 "کنید. همچنین توصیه می‌کنیم برای تولید فونت‌های وب و رفع خطاها از "
 "[Transfonter](https://transfonter.org/) استفاده کنید. "
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:226
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:240
 msgid "dashboard.go-to-admin-console"
 msgstr "رفتن به کنسول مدیریت"
+
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "آخرین ویرایش: %s"
 
 #: src/app/main/ui/dashboard/import.cljs:995, src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
@@ -591,9 +655,19 @@ msgstr "ایمپورت کردن فایل‌های پن‌پات"
 msgid "dashboard.import.analyze-error"
 msgstr "اوه! ما نتوانستیم این فایل را ایمپورت کنیم"
 
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "۱ کتابخانه بر اساس نام، به‌طور خودکار پیوند داده شد."
+msgstr[1] "%s کتابخانه بر اساس نام، به‌طور خودکار پیوند داده شدند."
+
 #: src/app/main/ui/dashboard.cljs:264
 msgid "dashboard.import.bad-url"
 msgstr "درون‌ریزی ناموفق بود. نشانی اینترنتی قالب نادرست است"
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "پیوندهای کتابخانه را تأیید کنید"
 
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
@@ -618,6 +692,12 @@ msgstr "فایل‌های دارای خطا بارگذاری نخواهند شد
 #: src/app/main/ui/dashboard/import.cljs:626
 msgid "dashboard.import.import-error.unknown-error"
 msgstr "هنگام پردازش فایل مشکلی پیش آمد."
+
+#: src/app/main/ui/dashboard/import.cljs:593
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "۱ فایل با موفقیت وارد شد."
+msgstr[1] "%s فایل با موفقیت وارد شدند."
 
 #: src/app/main/ui/dashboard/import.cljs:587
 msgid "dashboard.import.import-warning"
@@ -655,6 +735,24 @@ msgstr "در حال آپلود اطلاعات روی سرور (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "در حال آپلود فایل: %s"
 
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"برخی از کتابخانه‌ها به‌طور خودکار پیوند نخوردند. برای هرکدام کتابخانهٔ درست "
+"را انتخاب کنید:"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "پیش از تأیید، پیوندهای کتابخانه را بررسی کنید:"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "پیوند داده‌شده"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "هیچ کتابخانه‌ای انتخاب نشده است"
+
 #: src/app/main/ui/dashboard/team.cljs:881
 msgid "dashboard.invitation-modal.delete"
 msgstr "می‌خواهید دعوت‌نامه‌ها را برای افراد زیر حذف کنید:"
@@ -681,15 +779,19 @@ msgstr ""
 msgid "dashboard.invite-profile"
 msgstr "دعوت به تیم"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:282, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:327
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "اجازهٔ دعوت از افراد به این تیم را ندارید"
+
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "ترک سازمان"
 
-#: src/app/main/data/nitrate.cljs:268
+#: src/app/main/data/nitrate.cljs:259
 msgid "dashboard.leave-organization.toast"
 msgstr "دیگر بخشی از سازمان %s نیستید."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "خروج از تیم"
 
@@ -709,7 +811,7 @@ msgstr "بیشتر آنها را کاوش کنید و بدانید که چگون
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "مشکلی در ایمپورت کردن قالب وجود داشت. قالب ایمپورت نشد."
 
-#: src/app/main/ui/dashboard/libraries.cljs:68
+#: src/app/main/ui/dashboard/libraries.cljs:71
 msgid "dashboard.libraries-title"
 msgstr "کتابخانه‌های مشترک"
 
@@ -831,6 +933,10 @@ msgstr "مرتب‌سازی بر اساس وضعیت"
 msgid "dashboard.organization-deleted"
 msgstr "سازمان %s حذف شده است."
 
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
+msgid "dashboard.other-teams"
+msgstr "تیم‌های دیگر"
+
 #: src/app/main/ui/settings/password.cljs:112, src/app/main/ui/settings/password.cljs:126
 msgid "dashboard.password-change"
 msgstr "تغییر رمزعبور"
@@ -850,6 +956,10 @@ msgstr "اکنون در این تیم مالک هستید."
 #: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.viewer"
 msgstr "اکنون در این تیم بیننده هستید."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "پروژه‌های شخصی"
 
 #: src/app/main/ui/dashboard/files.cljs:122, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:251
 msgid "dashboard.pin-unpin"
@@ -941,19 +1051,19 @@ msgstr "جستجو…"
 msgid "dashboard.searching-for"
 msgstr "جستجو برای “%s“…"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:166
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:180
 msgid "dashboard.section.organizations"
 msgstr "سازمان‌ها"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:235
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:249
 msgid "dashboard.section.teams"
 msgstr "تیم‌ها"
 
-#: src/app/main/data/nitrate.cljs:531
+#: src/app/main/data/nitrate.cljs:517
 msgid "dashboard.select-organization-modal.accept"
 msgstr "افزودن به سازمان"
 
-#: src/app/main/data/nitrate.cljs:529
+#: src/app/main/data/nitrate.cljs:515
 msgid "dashboard.select-organization-modal.choose"
 msgstr "انتخاب یک سازمان:"
 
@@ -967,17 +1077,23 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "دعوت‌نامه‌های در انتظار برای کاربران خارجی لغو خواهند شد."
 
-#: src/app/main/data/nitrate.cljs:597
+#: src/app/main/data/nitrate.cljs:583
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "در اینجا همهٔ سازمان‌هایی را می‌بینید که اجازه دارید در آن‌ها تیم بسازید یا "
 "تیم اضافه کنید."
 
-#: src/app/main/data/nitrate.cljs:530
+#: src/app/main/data/nitrate.cljs:507
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"در اینجا سازمان‌هایی را می‌بینید که عضو آن‌ها هستید و اجازهٔ ایجاد یا "
+"افزودن تیم در آن‌ها را دارید."
+
+#: src/app/main/data/nitrate.cljs:516
 msgid "dashboard.select-organization-modal.select"
 msgstr "انتخاب یک سازمان"
 
-#: src/app/main/data/nitrate.cljs:528, src/app/main/data/nitrate.cljs:548, src/app/main/ui/dashboard/team_form.cljs:157
+#: src/app/main/data/nitrate.cljs:514, src/app/main/data/nitrate.cljs:534, src/app/main/ui/dashboard/team_form.cljs:157
 msgid "dashboard.select-organization-modal.title"
 msgstr "افزودن تیم به سازمان"
 
@@ -1069,9 +1185,21 @@ msgstr "نمایش همه فایل‌ها"
 msgid "dashboard.show-version-history"
 msgstr "تاریخچهٔ نسخه‌ها"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:129
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "فایل شما با موفقیت حذف شد"
+msgstr[1] "فایل‌های شما با موفقیت حذف شدند"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:74
 msgid "dashboard.success-delete-project"
 msgstr "پروژه شما با موفقیت حذف شد"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:124
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "فایل شما با موفقیت تکثیر شد"
+msgstr[1] "فایل‌های شما با موفقیت تکثیر شدند"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:46
 msgid "dashboard.success-duplicate-project"
@@ -1115,7 +1243,7 @@ msgstr "سازمان تیم"
 msgid "dashboard.team-organization.add"
 msgstr "افزودن به یک سازمان"
 
-#: src/app/main/data/nitrate.cljs:547, src/app/main/data/nitrate.cljs:604
+#: src/app/main/data/nitrate.cljs:533, src/app/main/data/nitrate.cljs:590
 msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "اجازه ندارید این تیم را به هیچ‌یک از سازمان‌هایتان اضافه کنید."
 
@@ -1284,7 +1412,7 @@ msgstr "کامپوننت‌ها برای به‌روزرسانی:"
 msgid "ds.confirm-allow"
 msgstr "اجازه دادن"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:324, src/app/main/ui/settings/subscription.cljs:357, src/app/main/ui/settings/subscription.cljs:839, src/app/main/ui/settings/subscription.cljs:888, src/app/main/ui/settings/subscription.cljs:898, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "لغو"
 
@@ -1304,11 +1432,11 @@ msgstr "در مجموعه‌ها یا پوسته‌های فعال، توکن ق
 msgid "ds.inputs.numeric-input.no-matches"
 msgstr "موردی پیدا نشد."
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:746, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
+#: src/app/main/ui/ds/controls/numeric_input.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:177, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "باز کردن فهرست توکن‌ها"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:117, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:118, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:134
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "توکن {%s} در هیچ مجموعهٔ فعالی نیست یا مقدار نامعتبری دارد."
 
@@ -1547,11 +1675,11 @@ msgstr "فقط ایجادکنندهٔ نسخه می‌تواند آن را قف�
 msgid "errors.only-creator-can-unlock"
 msgstr "فقط ایجادکنندهٔ نسخه می‌تواند قفل آن را باز کند"
 
-#: src/app/main/data/nitrate.cljs:218
+#: src/app/main/data/nitrate.cljs:209
 msgid "errors.organization-leave.no-valid-teams"
 msgstr "در ترک سازمان مشکلی پیش آمد. لطفاً دوباره تلاش کنید."
 
-#: src/app/main/data/nitrate.cljs:219
+#: src/app/main/data/nitrate.cljs:210
 msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "مالک سازمان نمی‌تواند سازمان را ترک کند."
 
@@ -1585,6 +1713,14 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 
+#: src/app/main/errors.cljs:538
+msgid "errors.save-failed"
+msgstr ""
+"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است "
+"ذخیره‌سازی به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری "
+"مجدد نکنید؛ در غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای "
+"دریافت کمک با پشتیبانی تماس بگیرید."
+
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG نامعتبر یا بدفرم است"
@@ -1593,19 +1729,19 @@ msgstr "SVG نامعتبر یا بدفرم است"
 msgid "errors.team-feature-mismatch"
 msgstr "قابلیت ناسازگار «%s» شناسایی شد"
 
-#: src/app/main/data/nitrate.cljs:201, src/app/main/ui/dashboard/team.cljs:505
+#: src/app/main/data/nitrate.cljs:192, src/app/main/ui/dashboard/team.cljs:505
 msgid "errors.team-leave.insufficient-members"
 msgstr "اعضای کافی برای ترک تیم وجود ندارد، احتمالاً می‌خواهید آن را حذف کنید."
 
-#: src/app/main/data/nitrate.cljs:202, src/app/main/ui/dashboard/team.cljs:508
+#: src/app/main/data/nitrate.cljs:193, src/app/main/ui/dashboard/team.cljs:508
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندارد."
 
-#: src/app/main/data/nitrate.cljs:200
+#: src/app/main/data/nitrate.cljs:191
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "فقط مالک تیم می‌تواند آن را حذف کند."
 
-#: src/app/main/data/nitrate.cljs:203, src/app/main/ui/dashboard/team.cljs:511
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/team.cljs:511
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "مالک نمی‌تواند تیم را ترک کند، شما باید نقش مالک را مجدداً اختصاص دهید."
 
@@ -1775,6 +1911,35 @@ msgstr "این نسخه قفل است و دیگران نمی‌توانند آن
 msgid "errors.version-not-supported"
 msgstr "فایل شمارهٔ نسخهٔ ناسازگاری دارد"
 
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+msgid "errors.weak-password"
+msgstr "گذرواژه شرایط لازم را برآورده نمی‌کند"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "حداقل ۱ عدد"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "حداقل ۱ حرف کوچک انگلیسی"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "حداقل ۱ نویسهٔ ویژه"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "حداقل ۱ حرف بزرگ انگلیسی"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, backend
+msgid "errors.weak-password.too-short"
+msgstr "حداقل ۸ نویسه"
+
 #: src/app/main/ui/static.cljs:380
 msgid "errors.webgl-context-lost.desc-message"
 msgstr "WebGL دیگر کار نمی‌کند. لطفاً برای بازنشانی، صفحه را دوباره بارگیری کنید"
@@ -1888,6 +2053,42 @@ msgstr "مشکل"
 #: src/app/main/ui/exports/files.cljs:140
 msgid "files-download-modal.title"
 msgstr "بارگیری فایل‌ها"
+
+#: src/app/main/ui/exports/files.cljs:183
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "دارایی‌های کتابخانهٔ پیوندشده در فایل قرار نمی‌گیرند."
+
+#: src/app/main/ui/exports/files.cljs:177
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "دارایی‌ها را به‌عنوان اشیای پایه در نظر بگیرید"
+
+#: src/app/main/ui/exports/files.cljs:181
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"فایل‌های دارای کتابخانه‌های پیوندشده در خروجی قرار می‌گیرند و پیوند آن‌ها "
+"حفظ می‌شود. "
+
+#: src/app/main/ui/exports/files.cljs:175
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "خروجی گرفتن از فایل + کتابخانه‌ها"
+
+#: src/app/main/ui/exports/files.cljs:184
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"پس از وارد کردن، می‌توانید کتابخانه‌های موجود با نام‌های منطبق را پیوند "
+"دهید."
+
+#: src/app/main/ui/exports/files.cljs:178
+msgid "files-export-modal.options.link-later.title"
+msgstr "پیوند دادن کتابخانه‌های منطبق هنگام وارد کردن"
+
+#: src/app/main/ui/exports/files.cljs:182
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr "فایل شما با ادغام دارایی کتابخانه در کتابخانهٔ محلی صادر خواهد شد."
+
+#: src/app/main/ui/exports/files.cljs:176
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "دارایی‌های کتابخانه را در فایل جاسازی کنید"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
@@ -2125,7 +2326,7 @@ msgstr "تغییر وضعیت پنل %s"
 msgid "inspect.tabs.styles.token-panel"
 msgstr "مجموعه‌های توکن و پوسته‌ها"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:144
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:145
 msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "مقدار نهایی:"
 
@@ -2402,7 +2603,7 @@ msgstr "مدیر"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:99, src/app/main/ui/workspace/tokens/management/context_menu.cljs:137, src/app/main/ui/workspace/tokens/management/token_pill.cljs:118
+#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:101, src/app/main/ui/workspace/tokens/management/context_menu.cljs:139, src/app/main/ui/workspace/tokens/management/token_pill.cljs:127
 msgid "labels.all"
 msgstr "همه"
 
@@ -2432,7 +2633,7 @@ msgstr "تاری"
 msgid "labels.blur-effects"
 msgstr "جلوه‌های تاری"
 
-#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:532, src/app/main/data/nitrate.cljs:617, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
+#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:518, src/app/main/data/nitrate.cljs:603, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
 msgid "labels.cancel"
 msgstr "لغو"
 
@@ -2440,7 +2641,15 @@ msgstr "لغو"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
+#: src/app/main/ui/dashboard/sidebar.cljs:553
+msgid "labels.check-for-updates"
+msgstr "بررسی به‌روزرسانی‌ها"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:552
+msgid "labels.checking-for-updates"
+msgstr "در حال بررسی به‌روزرسانی‌ها..."
+
+#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:407, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
 msgstr "بستن"
 
@@ -2452,7 +2661,7 @@ msgstr "کد"
 msgid "labels.collapse"
 msgstr "جمع کردن"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:430
+#: src/app/main/ui/workspace/colorpicker.cljs:433
 msgid "labels.color"
 msgstr "رنگ"
 
@@ -2484,11 +2693,11 @@ msgstr "تایید رمزعبور"
 msgid "labels.contact-support"
 msgstr "تماس با پشتیبانی"
 
-#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:939
+#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:944
 msgid "labels.contact-us"
 msgstr "تماس با ما"
 
-#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:330, src/app/main/ui/settings/subscription.cljs:364, src/app/main/ui/settings/subscription.cljs:891
+#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:333, src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:896
 msgid "labels.continue"
 msgstr "ادامه"
 
@@ -2730,7 +2939,7 @@ msgstr "خطای داخلی"
 msgid "labels.invision"
 msgstr "InVision"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:233, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:186, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
 msgid "labels.invitations"
 msgstr "دعوت‌نامه‌ها"
 
@@ -2778,7 +2987,7 @@ msgstr "بازاریابی"
 msgid "labels.member"
 msgstr "عضو"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:228, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:181, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
 msgid "labels.members"
 msgstr "اعضا"
 
@@ -2793,6 +3002,24 @@ msgstr "رمزعبور جدید"
 #: src/app/main/ui/dashboard/templates.cljs:297, src/app/main/ui/onboarding/questions.cljs:52, src/app/main/ui/viewer.cljs:112, src/app/main/ui/workspace/sidebar/layers.cljs:614
 msgid "labels.next"
 msgstr "بعدی"
+
+#: src/app/main/ui/static.cljs:362
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"این نمونه به مرحلهٔ راه‌اندازی‌ای نیاز دارد که همراه با آخرین نسخه ارائه "
+"شده است."
+
+#: src/app/main/ui/static.cljs:365
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "نگاهی به"
+
+#: src/app/main/ui/static.cljs:360
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot هنوز نمی‌تواند شروع به کار کند."
+
+#: src/app/main/ui/static.cljs:370
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "راهنمای فنی ما بیندازید"
 
 #: src/app/main/ui/static.cljs:350
 msgid "labels.nitrate-unavailable.main-message"
@@ -2938,7 +3165,7 @@ msgstr "حذف"
 msgid "labels.remove-member"
 msgstr "حذف عضو"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:251, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "تغییرنام"
 
@@ -3022,7 +3249,7 @@ msgstr "سرویس در دسترس نیست"
 msgid "labels.sets"
 msgstr "مجموعه‌ها"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:243, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:196, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
 msgid "labels.settings"
 msgstr "تنظیمات"
 
@@ -3066,6 +3293,20 @@ msgstr "Sketch"
 msgid "labels.sources"
 msgstr "منابع"
 
+#: src/app/main/ui/static.cljs:554
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"ورود با ارائه‌دهندهٔ هویت سازمان شما کامل نشد. ممکن است ارائه‌دهنده در "
+"دسترس نباشد یا حساب شما هنوز در فهرست آن ثبت نشده باشد."
+
+#: src/app/main/ui/static.cljs:555
+msgid "labels.sso-error.retry"
+msgstr "دوباره تلاش کنید"
+
+#: src/app/main/ui/static.cljs:553
+msgid "labels.sso-error.title"
+msgstr "ورود شما به %s ممکن نبود"
+
 #: src/app/main/ui/onboarding/questions.cljs:53
 msgid "labels.start"
 msgstr "شروع"
@@ -3074,7 +3315,7 @@ msgstr "شروع"
 msgid "labels.status"
 msgstr "وضعیت"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:72
+#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:105
 msgid "labels.stroke"
 msgstr "استروک"
 
@@ -3090,7 +3331,7 @@ msgstr "سبک‌ها"
 msgid "labels.svg"
 msgstr "SVG"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:497
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:570
 msgid "labels.switch"
 msgstr "تغییر"
 
@@ -3172,7 +3413,7 @@ msgid_plural "labels.warning-count"
 msgstr[0] "%s هشدار"
 msgstr[1] "%s هشدار"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:238, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
 msgid "labels.webhooks"
 msgstr "وب‌هوک‌ها"
 
@@ -3272,15 +3513,15 @@ msgstr ""
 msgid "loader.tips.10.title"
 msgstr "پشتیبانی از افزونه‌ها"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:488
+#: src/app/main/ui/workspace/colorpicker.cljs:494
 msgid "media.choose-image"
 msgstr "انتخاب تصویر"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:274
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:276
 msgid "media.gradient"
 msgstr "گرادیان"
 
-#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:276, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:448
+#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:278, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:454
 msgid "media.image"
 msgstr "تصویر"
 
@@ -3288,7 +3529,7 @@ msgstr "تصویر"
 msgid "media.image.short"
 msgstr "تصویر"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:483
+#: src/app/main/ui/workspace/colorpicker.cljs:489
 msgid "media.keep-aspect-ratio"
 msgstr "حفظ نسبت ابعاد"
 
@@ -3296,7 +3537,7 @@ msgstr "حفظ نسبت ابعاد"
 msgid "media.loading"
 msgstr "در حال بارگیری تصویر…"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:272
+#: src/app/main/ui/workspace/colorpicker.cljs:274
 msgid "media.solid"
 msgstr "یک‌دست"
 
@@ -3321,17 +3562,17 @@ msgstr ""
 msgid "modals.add-shared-confirm.message"
 msgstr "افزودن «%s» به عنوان کتابخانه مشترک"
 
-#: src/app/main/data/nitrate.cljs:334
+#: src/app/main/data/nitrate.cljs:320
 msgid "modals.before-leave-organization.message"
 msgstr ""
 "شما تنها عضو برخی تیم‌ها هستید. آن تیم‌ها همراه با پروژه‌ها و فایل‌هایشان "
 "حذف خواهند شد."
 
-#: src/app/main/data/nitrate.cljs:333, src/app/main/ui/dashboard/change_owner.cljs:151
+#: src/app/main/data/nitrate.cljs:319, src/app/main/ui/dashboard/change_owner.cljs:151
 msgid "modals.before-leave-organization.title"
 msgstr "پیش از ترک سازمان"
 
-#: src/app/main/data/nitrate.cljs:337
+#: src/app/main/data/nitrate.cljs:323
 msgid "modals.before-leave-organization.warning"
 msgstr "هر تیمی که تنها عضو آن هستید حذف خواهد شد."
 
@@ -3681,13 +3922,13 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "دعوت اعضا به تیم"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:192, src/app/main/ui/dashboard/team.cljs:539
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:148, src/app/main/ui/dashboard/team.cljs:539
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
 "حذف خواهد شد."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:538
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:147, src/app/main/ui/dashboard/team.cljs:538
 msgid "modals.leave-and-close-confirm.message"
 msgstr "آیا مطمئنید که می‌خواهید تیم %s را ترک کنید؟"
 
@@ -3715,15 +3956,15 @@ msgstr "انتخاب یک عضو برای ارتقا"
 msgid "modals.leave-and-reassign.title"
 msgstr "قبل از رفتن"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:168, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:193, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:124, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:149, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
 msgid "modals.leave-confirm.accept"
 msgstr "خروج از تیم"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:167, src/app/main/ui/dashboard/team.cljs:561
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:123, src/app/main/ui/dashboard/team.cljs:561
 msgid "modals.leave-confirm.message"
 msgstr "آیا مطمئنید که می‌خواهید این تیم را ترک کنید؟"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:166, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:190, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:122, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:146, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
 msgid "modals.leave-confirm.title"
 msgstr "درحال ترک تیم"
 
@@ -3743,17 +3984,17 @@ msgstr ""
 "همچنین، مالک تیم‌های برخی سازمان‌ها هستید. لطفاً عضو دیگری را به مالک ارتقا "
 "دهید."
 
-#: src/app/main/data/nitrate.cljs:335, src/app/main/data/nitrate.cljs:344
+#: src/app/main/data/nitrate.cljs:321, src/app/main/data/nitrate.cljs:330
 msgid "modals.leave-organization-confirm.accept"
 msgstr "ترک سازمان"
 
-#: src/app/main/data/nitrate.cljs:343
+#: src/app/main/data/nitrate.cljs:329
 msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "دسترسی خود را به همهٔ تیم‌ها، پروژه‌ها و فایل‌های آن برای همیشه از دست "
 "خواهید داد."
 
-#: src/app/main/data/nitrate.cljs:342
+#: src/app/main/data/nitrate.cljs:328
 msgid "modals.leave-organization-confirm.title"
 msgstr "سازمان %s را ترک می‌کنید؟"
 
@@ -3811,21 +4052,21 @@ msgstr "کتابخانهٔ شما خالی است. آیا مطمئنید می‌
 msgid "modals.publish-empty-library.title"
 msgstr "انتشار کتابخانهٔ خالی"
 
-#: src/app/main/data/nitrate.cljs:391
+#: src/app/main/data/nitrate.cljs:377
 msgid "modals.remove-team-organization.accept"
 msgstr "حذف از سازمان"
 
-#: src/app/main/data/nitrate.cljs:389
+#: src/app/main/data/nitrate.cljs:375
 msgid "modals.remove-team-organization.info"
 msgstr ""
 "پروژه‌ها و فایل‌ها همچنان برای اعضای تیم در دسترس می‌مانند، اما تنظیمات "
 "سازمان دیگر اعمال نخواهند شد."
 
-#: src/app/main/data/nitrate.cljs:388
+#: src/app/main/data/nitrate.cljs:374
 msgid "modals.remove-team-organization.text"
 msgstr "آیا مطمئنید می‌خواهید تیم «%s» را از سازمان «%s» حذف کنید؟"
 
-#: src/app/main/data/nitrate.cljs:387
+#: src/app/main/data/nitrate.cljs:373
 msgid "modals.remove-team-organization.title"
 msgstr "حذف تیم از سازمان"
 
@@ -3877,6 +4118,10 @@ msgstr "این کد منقضی شده است."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "کد نامعتبر است."
 
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.used-error"
+msgstr "این کد قبلاً استفاده شده است."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:58
 msgid "nitrate.activation-success.active-until"
 msgstr "طرح شما تا %s فعال است."
@@ -3897,11 +4142,19 @@ msgstr ""
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:121
 msgid "nitrate.code-activation.footer-after"
-msgstr " را دانلود و با ما تماس بگیرید:"
+msgstr "فایل را به"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
 msgid "nitrate.code-activation.footer-before"
-msgstr "کد لازم دارید؟ درخواست کد فعال‌سازی "
+msgstr "و کدتان را برای شما ارسال می‌کنیم."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+msgid "nitrate.code-activation.footer-download"
+msgstr "درخواست بارگیری"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+msgid "nitrate.code-activation.footer-title"
+msgstr "کد لازم دارید؟"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:96
 msgid "nitrate.code-activation.input-label"
@@ -3923,38 +4176,38 @@ msgstr "فعال‌سازی"
 msgid "nitrate.code-activation.title"
 msgstr "فعال‌سازی Nitrate"
 
-#: src/app/main/ui/settings/subscription.cljs:901
+#: src/app/main/ui/settings/subscription.cljs:906
 msgid "nitrate.contact-sales.button"
 msgstr "تماس با فروش"
 
-#: src/app/main/ui/settings/subscription.cljs:894
+#: src/app/main/ui/settings/subscription.cljs:899
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "برای تغییر به این طرح، لطفاً با تیم فروش ما تماس بگیرید. ما به شما کمک "
 "می‌کنیم اشتراکتان را به‌روزرسانی کنید و مطمئن شویم همه‌چیز به‌درستی تنظیم "
 "شده است."
 
-#: src/app/main/ui/settings/subscription.cljs:880
+#: src/app/main/ui/settings/subscription.cljs:885
 msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "سازمان شما حذف خواهد شد."
 
-#: src/app/main/ui/settings/subscription.cljs:882
+#: src/app/main/ui/settings/subscription.cljs:887
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "فضای ذخیره‌سازی کل، تاریخچهٔ نسخه‌های خودکار و دورهٔ بازیابی فایل شما محدود "
 "خواهند شد."
 
-#: src/app/main/ui/settings/subscription.cljs:881
+#: src/app/main/ui/settings/subscription.cljs:886
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
 "تیم‌ها، پروژه‌ها و فایل‌ها دیگر بخشی از هیچ سازمانی نخواهند بود، اما همچنان "
 "در دسترس می‌مانند."
 
-#: src/app/main/ui/settings/subscription.cljs:878
+#: src/app/main/ui/settings/subscription.cljs:883
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "هنگام تنزل طرح:"
 
-#: src/app/main/ui/settings/subscription.cljs:875
+#: src/app/main/ui/settings/subscription.cljs:880
 msgid "nitrate.contact-sales.title"
 msgstr "به طرح %s تغییر دهید؟"
 
@@ -3970,15 +4223,15 @@ msgstr "برای امتحان کردن طرح سازمانی به‌مدت ۱۴ 
 msgid "nitrate.form.contact-upgrade"
 msgstr "برای ارتقا به طرح سازمانی با ما تماس بگیرید:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-free-trial"
 msgstr "برای امتحان کردن طرح سازمانی به‌مدت ۱۴ روز با ما تماس بگیرید:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-upgrade"
 msgstr "برای ارتقا به طرح سازمانی با ما تماس بگیرید:"
 
-#: src/app/main/ui/settings/subscription.cljs:832
+#: src/app/main/ui/settings/subscription.cljs:837
 msgid "nitrate.form.enterprise-description"
 msgstr ""
 "اکنون هزینه‌ای از شما دریافت نمی‌شود. پرداخت در پایان دورهٔ آزمایشی پردازش "
@@ -3998,7 +4251,7 @@ msgstr ""
 msgid "nitrate.form.enterprise-feature-3"
 msgstr "آزادی کامل متن‌باز، همراه با حاکمیتی که سازمان شما نیاز دارد"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:827, src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:832, src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.enterprise-intro"
 msgstr "همهٔ آنچه تیم‌هایتان برای کار ایمن در مقیاس بزرگ نیاز دارند%s"
 
@@ -4006,7 +4259,7 @@ msgstr "همهٔ آنچه تیم‌هایتان برای کار ایمن در م
 msgid "nitrate.form.enterprise.price"
 msgstr "به‌ازای هر عضو در ماه"
 
-#: src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "nitrate.form.free-trial-button"
 msgstr "۱۴ روز رایگان امتحان کنید"
 
@@ -4022,7 +4275,7 @@ msgstr "شروع با طرح سازمانی"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "اشتراک با کد فعال‌سازی"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:821
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:826
 msgid "nitrate.form.title"
 msgstr "فعال‌سازی ویژگی‌های سازمانی"
 
@@ -4034,7 +4287,7 @@ msgstr "به‌مدت ۱۴ روز رایگان امتحان کنید"
 msgid "nitrate.modal-success.title"
 msgstr "به طرح سازمانی خوش آمدید!"
 
-#: src/app/main/ui/settings/subscription.cljs:613
+#: src/app/main/ui/settings/subscription.cljs:618
 msgid "nitrate.subscription.active-until"
 msgstr "فعال تا %s"
 
@@ -4042,11 +4295,11 @@ msgstr "فعال تا %s"
 msgid "nitrate.subscription.renew-success"
 msgstr "اشتراک Nitrate شما تمدید شد."
 
-#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:928
+#: src/app/main/ui/settings/subscription.cljs:630, src/app/main/ui/settings/subscription.cljs:933
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "لغو اشتراک"
 
-#: src/app/main/ui/settings/subscription.cljs:932
+#: src/app/main/ui/settings/subscription.cljs:937
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "برای لغو اشتراک Nitrate خود، لطفاً از این طریق با ما تماس بگیرید:"
 
@@ -4369,7 +4622,7 @@ msgstr "چند قالب در اینجا قرار دارد."
 msgid "onboarding.templates.title"
 msgstr "طراحی را شروع کنید"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:120, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:121, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:137
 msgid "options.deleted-token-with-name"
 msgstr "توکن {%s} وجود ندارد یا حذف شده است."
 
@@ -4405,19 +4658,19 @@ msgstr "بازیابی پیکربندی پیش‌فرض"
 msgid "restore-shortcuts.restore"
 msgstr "بازیابی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:419
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
 msgstr "جدا کردن"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:725, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:25, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:468, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:348, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:390
+#: src/app/main/ui/ds/controls/numeric_input.cljs:742, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:27, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:280, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:474, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:410, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:451
 msgid "settings.multiple"
 msgstr "مخلوط"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:477
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:483
 msgid "settings.remove-color"
 msgstr "حذف رنگ"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:482
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:488
 msgid "settings.select-this-color"
 msgstr "انتخاب موارد با استفاده از این سبک"
 
@@ -4532,6 +4785,14 @@ msgstr "حذف"
 #: src/app/main/data/workspace/path/shortcuts.cljs:68
 msgid "shortcuts.delete-node"
 msgstr "حذف گره"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:76
+msgid "shortcuts.delete-node-and-segments"
+msgstr "گره و قطعه‌ها را حذف کنید"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:157
+msgid "shortcuts.deselect-all"
+msgstr "لغو انتخاب همه"
 
 #: src/app/main/data/workspace/shortcuts.cljs:237
 msgid "shortcuts.detach-component"
@@ -5156,7 +5417,7 @@ msgstr "طرح سازمانی را در عمل ببینید"
 msgid "subscription.current-plan.enterprise"
 msgstr "سازمانی"
 
-#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:780
+#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:785
 msgid "subscription.current-plan.nitrate"
 msgstr "سازمانی"
 
@@ -5210,7 +5471,7 @@ msgstr ""
 msgid "subscription.dashboard.banner.upgrade-nitrate"
 msgstr "شروع با طرح سازمانی"
 
-#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:315
+#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:316
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "طرح سازمانی"
 
@@ -5243,7 +5504,7 @@ msgstr ""
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "طرح نامحدود (آزمایشی)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:314
+#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:315
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "طرح نامحدود"
 
@@ -5259,13 +5520,13 @@ msgstr ""
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "اشتراک شما:"
 
-#: src/app/main/ui/dashboard/subscription.cljs:349
+#: src/app/main/ui/dashboard/subscription.cljs:350
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
 "شما در تیم‌هایی که مالکشان هستید %s ویرایشگر دارید، در حالی که طرح حرفه‌ای "
 "شما حداکثر ۸ ویرایشگر را پوشش می‌دهد."
 
-#: src/app/main/ui/dashboard/subscription.cljs:357
+#: src/app/main/ui/dashboard/subscription.cljs:358
 #, markdown
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
@@ -5273,45 +5534,45 @@ msgstr ""
 "بیشتر، به طرح نامحدود یا سازمانی ارتقا دهید. [همین حالا مشترک "
 "شوید.|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:290
+#: src/app/main/ui/dashboard/subscription.cljs:291
 msgid "subscription.dashboard.team-plan"
 msgstr "طرح تیمی"
 
-#: src/app/main/ui/dashboard/subscription.cljs:352
+#: src/app/main/ui/dashboard/subscription.cljs:353
 msgid "subscription.dashboard.unlimited-dashboard-cta-title"
 msgstr ""
 "تیم شما همچنان در حال رشد است! طرح نامحدود شما حداکثر %s ویرایشگر را پوشش "
 "می‌دهد، اما اکنون %s ویرایشگر دارید."
 
-#: src/app/main/ui/dashboard/subscription.cljs:360
+#: src/app/main/ui/dashboard/subscription.cljs:361
 #, markdown
 msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
 msgstr ""
 "لطفاً همین حالا برای مطابقت با تعداد فعلی ویرایشگرهایتان ارتقا دهید. [همین "
 "حالا مشترک شوید.|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:337
+#: src/app/main/ui/dashboard/subscription.cljs:338
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
 "فقط ویرایشگرهای جدید در تیم‌هایی که مالکشان هستید، در صورتحساب‌های آینده "
 "محاسبه می‌شوند. برای ۲۵ ویرایشگر یا بیشتر، صورتحساب ثابت ماهانهٔ ۱۷۵ دلار "
 "همچنان اعمال می‌شود."
 
-#: src/app/main/ui/dashboard/subscription.cljs:333
+#: src/app/main/ui/dashboard/subscription.cljs:334
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
 msgstr "دعوت از افراد در طرح نامحدود"
 
-#: src/app/main/ui/settings/subscription.cljs:429
+#: src/app/main/ui/settings/subscription.cljs:432
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "پرداخت تکمیل نشد. هر زمان آماده بودید دوباره امتحان کنید."
 
-#: src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:448
+#: src/app/main/ui/settings/subscription.cljs:431, src/app/main/ui/settings/subscription.cljs:451
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "پرداخت تکمیل نشد. لطفاً دوباره امتحان کنید. اگر مشکل ادامه داشت، با ما تماس "
 "بگیرید: support@penpot.app."
 
-#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:545, src/app/main/ui/settings/subscription.cljs:606
+#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:550, src/app/main/ui/settings/subscription.cljs:611
 msgid "subscription.labels"
 msgstr "اشتراک"
 
@@ -5319,23 +5580,23 @@ msgstr "اشتراک"
 msgid "subscription.settings.activate-by-code"
 msgstr "کد فعال‌سازی را وارد کنید"
 
-#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:681
+#: src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:686
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "برای ادامه پس از دورهٔ آزمایشی، یک روش پرداخت اضافه کنید"
 
-#: src/app/main/ui/settings/subscription.cljs:621
+#: src/app/main/ui/settings/subscription.cljs:626
 msgid "subscription.settings.admin-console"
 msgstr "کنسول مدیریت"
 
-#: src/app/main/ui/settings/subscription.cljs:649, src/app/main/ui/settings/subscription.cljs:740
+#: src/app/main/ui/settings/subscription.cljs:654, src/app/main/ui/settings/subscription.cljs:745
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "همهٔ مزایای طرح حرفه‌ای و:"
 
-#: src/app/main/ui/settings/subscription.cljs:662, src/app/main/ui/settings/subscription.cljs:675, src/app/main/ui/settings/subscription.cljs:686, src/app/main/ui/settings/subscription.cljs:756
+#: src/app/main/ui/settings/subscription.cljs:667, src/app/main/ui/settings/subscription.cljs:680, src/app/main/ui/settings/subscription.cljs:691, src/app/main/ui/settings/subscription.cljs:761
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "همهٔ مزایای طرح نامحدود و:"
 
-#: src/app/main/ui/settings/subscription.cljs:614, src/app/main/ui/settings/subscription.cljs:771
+#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
 msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
 msgstr "همهٔ مزایای طرح نامحدود، به‌علاوه:"
 
@@ -5343,72 +5604,72 @@ msgstr "همهٔ مزایای طرح نامحدود، به‌علاوه:"
 msgid "subscription.settings.editors"
 msgstr "(× %s ویرایشگر)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:298, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:464, src/app/main/ui/settings/subscription.cljs:466, src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:611, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:752, src/app/main/ui/settings/subscription.cljs:768
+#: src/app/main/ui/dashboard/subscription.cljs:299, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:467, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:605, src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:757, src/app/main/ui/settings/subscription.cljs:773
 msgid "subscription.settings.enterprise"
 msgstr "سازمانی"
 
-#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:599, src/app/main/ui/settings/subscription.cljs:673
+#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:604, src/app/main/ui/settings/subscription.cljs:678
 msgid "subscription.settings.enterprise-trial"
 msgstr "سازمانی (آزمایشی)"
 
-#: src/app/main/ui/settings/subscription.cljs:677, src/app/main/ui/settings/subscription.cljs:688, src/app/main/ui/settings/subscription.cljs:758
+#: src/app/main/ui/settings/subscription.cljs:682, src/app/main/ui/settings/subscription.cljs:693, src/app/main/ui/settings/subscription.cljs:763
 msgid "subscription.settings.enterprise.autosave"
 msgstr "نسخه‌های ذخیرهٔ خودکار ۹۰روزه و بازیابی فایل"
 
-#: src/app/main/ui/settings/subscription.cljs:678, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:759
+#: src/app/main/ui/settings/subscription.cljs:683, src/app/main/ui/settings/subscription.cljs:694, src/app/main/ui/settings/subscription.cljs:764
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "صورتحساب ماهانهٔ ثابت"
 
-#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
+#: src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:781
 msgid "subscription.settings.enterprise.nitrate.advanced-control"
 msgstr "کنترل پیشرفته:"
 
-#: src/app/main/ui/settings/subscription.cljs:617, src/app/main/ui/settings/subscription.cljs:774
+#: src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:779
 msgid "subscription.settings.enterprise.nitrate.enterprise-security"
 msgstr "امنیت سازمانی:"
 
-#: src/app/main/ui/settings/subscription.cljs:615, src/app/main/ui/settings/subscription.cljs:772
+#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
 msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
 msgstr "مدیریت چندسازمانی:"
 
-#: src/app/main/ui/settings/subscription.cljs:618, src/app/main/ui/settings/subscription.cljs:775
+#: src/app/main/ui/settings/subscription.cljs:623, src/app/main/ui/settings/subscription.cljs:780
 msgid "subscription.settings.enterprise.nitrate.native-sso"
 msgstr "SAML/SSO بومی و ثبت کامل گزارش حسابرسی برای گزارش‌دهی انطباق."
 
-#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
+#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:782
 msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
 msgstr ""
 "فهرست مجاز دقیق افزونه‌ها، ازجمله سرور MCP امن و ایزولهٔ ما برای اتصال هوش "
 "مصنوعی."
 
-#: src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:773
+#: src/app/main/ui/settings/subscription.cljs:621, src/app/main/ui/settings/subscription.cljs:778
 msgid "subscription.settings.enterprise.nitrate.support-team"
 msgstr "پشتیبانی از سلسله‌مراتب پیچیدهٔ تیم‌ها و سازمان‌های فرعی جداگانه."
 
-#: src/app/main/ui/settings/subscription.cljs:676, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:757
+#: src/app/main/ui/settings/subscription.cljs:681, src/app/main/ui/settings/subscription.cljs:692, src/app/main/ui/settings/subscription.cljs:762
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "فضای ذخیره‌سازی نامحدود"
 
-#: src/app/main/ui/dashboard/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:653, src/app/main/ui/settings/subscription.cljs:666, src/app/main/ui/settings/subscription.cljs:679, src/app/main/ui/settings/subscription.cljs:690
+#: src/app/main/ui/dashboard/subscription.cljs:304, src/app/main/ui/settings/subscription.cljs:629, src/app/main/ui/settings/subscription.cljs:658, src/app/main/ui/settings/subscription.cljs:671, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:695
 msgid "subscription.settings.manage-your-subscription"
 msgstr "مدیریت اشتراک"
 
-#: src/app/main/ui/settings/subscription.cljs:349
+#: src/app/main/ui/settings/subscription.cljs:352
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "افزودن جزئیات پرداخت"
 
-#: src/app/main/ui/settings/subscription.cljs:336
+#: src/app/main/ui/settings/subscription.cljs:339
 msgid "subscription.settings.management-dialog.step-2-description"
 msgstr ""
 "اکنون جزئیات پرداخت خود را اضافه کنید تا پس از دورهٔ آزمایشی اشتراکتان بدون "
 "مشکل ادامه یابد و همچنان از پروژهٔ متن‌باز ما پشتیبانی کنید. هنوز هزینه‌ای "
 "از شما دریافت نمی‌شود."
 
-#: src/app/main/ui/settings/subscription.cljs:344
+#: src/app/main/ui/settings/subscription.cljs:347
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "فعلاً رد شوید و دورهٔ آزمایشی را شروع کنید"
 
-#: src/app/main/ui/settings/subscription.cljs:267
+#: src/app/main/ui/settings/subscription.cljs:270
 msgid "subscription.settings.management-dialog.step-2-title"
 msgstr "به رشد ما کمک کنید و دورهٔ آزمایشی‌تان را آسان‌تر کنید"
 
@@ -5418,7 +5679,7 @@ msgid_plural "subscription.settings.management.dialog.currently-editors-title"
 msgstr[0] "در حال حاضر، در تیم‌هایتان %s نفر ویرایشگر دارید که می‌تواند ویرایش کند."
 msgstr[1] "در حال حاضر، در تیم‌هایتان %s نفر ویرایشگر دارید که می‌توانند ویرایش کنند."
 
-#: src/app/main/ui/settings/subscription.cljs:281
+#: src/app/main/ui/settings/subscription.cljs:284
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "توجه: تغییر به طرح پایین‌تر به معنای فضای ذخیره‌سازی کمتر و پشتیبان‌گیری و "
@@ -5432,82 +5693,82 @@ msgstr "ویرایشگران"
 msgid "subscription.settings.management.dialog.editors-explanation"
 msgstr "(مالکان، مدیران و ویرایشگران. بینندگان جزو ویرایشگران محسوب نمی‌شوند)"
 
-#: src/app/main/ui/settings/subscription.cljs:314
+#: src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.management.dialog.input-error"
 msgstr ""
 "نمی‌توانید تعداد ویرایشگران را کمتر از تعداد فعلی تنظیم کنید. برای افرادی "
 "که واقعاً فایل‌های تیم را ویرایش نمی‌کنند، نقش را از ویرایشگر یا مدیر به "
 "بیننده تغییر دهید."
 
-#: src/app/main/ui/settings/subscription.cljs:310
+#: src/app/main/ui/settings/subscription.cljs:313
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "پس از دورهٔ آزمایشی هزینه دریافت می‌شود. اکنون به کارت اعتباری نیاز نیست."
 
-#: src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:307
+#: src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/settings/subscription.cljs:310
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**/ماه"
 
-#: src/app/main/ui/settings/subscription.cljs:268
+#: src/app/main/ui/settings/subscription.cljs:271
 msgid "subscription.settings.management.dialog.title"
 msgstr "اعمال %s روی تیم‌هایتان"
 
-#: src/app/main/ui/settings/subscription.cljs:317
+#: src/app/main/ui/settings/subscription.cljs:320
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr ""
 "نکته: می‌توانید همین حالا تعداد صندلی‌ها را افزایش دهید تا از دعوت‌ها جلو "
 "باشید. با ۲۵ ویرایشگر یا بیشتر در تیم‌ها، از صورتحساب ثابت ۱۷۵ دلار در ماه "
 "بهره‌مند می‌شوید."
 
-#: src/app/main/ui/settings/subscription.cljs:709
+#: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
 msgstr "عضویت در Penpot از: %s"
 
-#: src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:746, src/app/main/ui/settings/subscription.cljs:762, src/app/main/ui/settings/subscription.cljs:782
+#: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
 msgstr "اطلاعات بیشتر"
 
-#: src/app/main/ui/settings/subscription.cljs:770, src/app/main/ui/settings/subscription.cljs:830
+#: src/app/main/ui/settings/subscription.cljs:775, src/app/main/ui/settings/subscription.cljs:835
 msgid "subscription.settings.organization-member-month"
 msgstr "عضو سازمان / ماه"
 
-#: src/app/main/ui/settings/subscription.cljs:712
+#: src/app/main/ui/settings/subscription.cljs:717
 msgid "subscription.settings.other-plans"
 msgstr "طرح‌های دیگر Penpot"
 
-#: src/app/main/ui/settings/subscription.cljs:755
+#: src/app/main/ui/settings/subscription.cljs:760
 msgid "subscription.settings.price-organization-month"
 msgstr "سازمان در ماه"
 
-#: src/app/main/ui/settings/subscription.cljs:716, src/app/main/ui/settings/subscription.cljs:739
+#: src/app/main/ui/settings/subscription.cljs:721, src/app/main/ui/settings/subscription.cljs:744
 msgid "subscription.settings.price-user-month"
 msgstr "کاربر / ماه"
 
-#: src/app/main/ui/dashboard/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:633, src/app/main/ui/settings/subscription.cljs:714
+#: src/app/main/ui/dashboard/subscription.cljs:294, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:719
 msgid "subscription.settings.professional"
 msgstr "حرفه‌ای"
 
-#: src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:721
+#: src/app/main/ui/settings/subscription.cljs:643, src/app/main/ui/settings/subscription.cljs:726
 msgid "subscription.settings.professional.autosave-benefit"
 msgstr "نسخه‌های ذخیرهٔ خودکار ۷روزه و بازیابی فایل"
 
-#: src/app/main/ui/settings/subscription.cljs:642, src/app/main/ui/settings/subscription.cljs:725
+#: src/app/main/ui/settings/subscription.cljs:647, src/app/main/ui/settings/subscription.cljs:730
 msgid "subscription.settings.professional.selfhost.community-support"
 msgstr "همهٔ ویژگی‌های طراحی و نمونه‌سازی اولیه. پشتیبانی جامعه."
 
-#: src/app/main/ui/settings/subscription.cljs:636, src/app/main/ui/settings/subscription.cljs:719
+#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.professional.selfhost.control-over-data"
 msgstr "کنترل کامل بر داده‌ها و زیرساخت."
 
-#: src/app/main/ui/settings/subscription.cljs:639, src/app/main/ui/settings/subscription.cljs:722
+#: src/app/main/ui/settings/subscription.cljs:644, src/app/main/ui/settings/subscription.cljs:727
 msgid "subscription.settings.professional.selfhost.unlimited-users"
 msgstr "کاربران، تیم‌ها و فایل‌های نامحدود."
 
-#: src/app/main/ui/settings/subscription.cljs:635, src/app/main/ui/settings/subscription.cljs:718
+#: src/app/main/ui/settings/subscription.cljs:640, src/app/main/ui/settings/subscription.cljs:723
 msgid "subscription.settings.professional.storage-benefit"
 msgstr "۱۰ گیگابایت فضای ذخیره‌سازی"
 
-#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
+#: src/app/main/ui/settings/subscription.cljs:646, src/app/main/ui/settings/subscription.cljs:729
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "تیم‌های نامحدود. حداکثر ۸ ویرایشگر در تیم‌هایی که مالکشان هستید."
 
@@ -5515,65 +5776,65 @@ msgstr "تیم‌های نامحدود. حداکثر ۸ ویرایشگر در ت
 msgid "subscription.settings.recommended"
 msgstr "پیشنهادی"
 
-#: src/app/main/ui/settings/subscription.cljs:609
+#: src/app/main/ui/settings/subscription.cljs:614
 msgid "subscription.settings.section-plan"
 msgstr "اشتراک شما"
 
-#: src/app/main/ui/settings/subscription.cljs:364
+#: src/app/main/ui/settings/subscription.cljs:367
 msgid "subscription.settings.start-trial"
 msgstr "شروع دورهٔ آزمایشی رایگان"
 
-#: src/app/main/ui/settings/subscription.cljs:329, src/app/main/ui/settings/subscription.cljs:726, src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760, src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:332, src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765, src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "subscription.settings.subscribe"
 msgstr "مشترک شدن"
 
-#: src/app/main/ui/settings/subscription.cljs:702
+#: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "از %s در طرح %s هستید."
 
-#: src/app/main/ui/settings/subscription.cljs:396
+#: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
 msgstr ""
 "هر زمان می‌توانید اشتراک خود را از صفحهٔ «اشتراک» در جزئیات حسابتان ویرایش "
 "کنید."
 
-#: src/app/main/ui/settings/subscription.cljs:398
+#: src/app/main/ui/settings/subscription.cljs:401
 msgid "subscription.settings.success.dialog.footer"
 msgstr "از طرحتان لذت ببرید!"
 
-#: src/app/main/ui/settings/subscription.cljs:394
+#: src/app/main/ui/settings/subscription.cljs:397
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "از انتخاب طرح %s Penpot سپاسگزاریم!"
 
-#: src/app/main/ui/settings/subscription.cljs:391
+#: src/app/main/ui/settings/subscription.cljs:394
 msgid "subscription.settings.success.dialog.title"
 msgstr "شما %s هستید!"
 
-#: src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760
+#: src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765
 msgid "subscription.settings.try-it-free"
 msgstr "به‌مدت ۱۴ روز رایگان امتحان کنید"
 
-#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:465, src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:736
+#: src/app/main/ui/dashboard/subscription.cljs:297, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:468, src/app/main/ui/settings/subscription.cljs:602, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:741
 msgid "subscription.settings.unlimited"
 msgstr "نامحدود"
 
-#: src/app/main/ui/dashboard/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:647
+#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:652
 msgid "subscription.settings.unlimited-trial"
 msgstr "نامحدود (آزمایشی)"
 
-#: src/app/main/ui/settings/subscription.cljs:651, src/app/main/ui/settings/subscription.cljs:664, src/app/main/ui/settings/subscription.cljs:742
+#: src/app/main/ui/settings/subscription.cljs:656, src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:747
 msgid "subscription.settings.unlimited.autosave-benefit"
 msgstr "نسخه‌های ذخیرهٔ خودکار ۳۰روزه و بازیابی فایل"
 
-#: src/app/main/ui/settings/subscription.cljs:652, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:743
+#: src/app/main/ui/settings/subscription.cljs:657, src/app/main/ui/settings/subscription.cljs:670, src/app/main/ui/settings/subscription.cljs:748
 msgid "subscription.settings.unlimited.bill"
 msgstr "سقف صورتحساب ماهانه ۱۷۵ دلار"
 
-#: src/app/main/ui/settings/subscription.cljs:650, src/app/main/ui/settings/subscription.cljs:663, src/app/main/ui/settings/subscription.cljs:741
+#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:668, src/app/main/ui/settings/subscription.cljs:746
 msgid "subscription.settings.unlimited.storage-benefit"
 msgstr "۲۵ گیگابایت فضای ذخیره‌سازی"
 
-#: src/app/main/ui/dashboard/subscription.cljs:328
+#: src/app/main/ui/dashboard/subscription.cljs:329
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "طرح خود را ارتقا دهید"
 
@@ -5618,7 +5879,7 @@ msgstr "پروژه‌ها - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "جستجو - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:60
 msgid "title.dashboard.shared-libraries"
 msgstr "کتابخانه‌های مشترک - %s - پن‌پات"
 
@@ -5674,7 +5935,7 @@ msgstr "%s - حالت مشاهده - پن‌پات"
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:171
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:172
 msgid "token-actions.detach-token"
 msgstr "جدا کردن توکن"
 
@@ -5766,11 +6027,11 @@ msgstr "رندر WebGL غیرفعال شد"
 msgid "webgl.toast.webgl-render-enabled"
 msgstr "رندر WebGL فعال شد"
 
-#: src/app/render_wasm/api.cljs:2487
+#: src/app/render_wasm/api.cljs:2462
 msgid "webgl.webgl-context-lost.toast"
 msgstr "زمینهٔ WebGL از بین رفت"
 
-#: src/app/render_wasm/api.cljs:2510
+#: src/app/render_wasm/api.cljs:2485
 msgid "webgl.webgl-context-recovered.toast"
 msgstr "زمینهٔ WebGL بازیابی شد"
 
@@ -5980,15 +6241,15 @@ msgstr "حذف گروه"
 msgid "workspace.clipboard.copying"
 msgstr "در حال کپی تصویر…"
 
-#: src/app/main/data/workspace/clipboard.cljs:1193
+#: src/app/main/data/workspace/clipboard.cljs:1192
 msgid "workspace.clipboard.image-copied"
 msgstr "تصویر در کلیپ‌بورد کپی شد"
 
-#: src/app/main/data/workspace/clipboard.cljs:1199
+#: src/app/main/data/workspace/clipboard.cljs:1198
 msgid "workspace.clipboard.image-copy-failed"
 msgstr "خطا در کپی تصویر"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434, src/app/main/ui/workspace/colorpicker.cljs:448
+#: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
 msgstr "توکن‌های رنگ"
 
@@ -6412,11 +6673,11 @@ msgstr "کتابخانهٔ فایل"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "رنگ‌های اخیر"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:367
+#: src/app/main/ui/workspace/colorpicker.cljs:369
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:560
+#: src/app/main/ui/workspace/colorpicker.cljs:566
 msgid "workspace.libraries.colors.save-color"
 msgstr "ذخیره استایل رنگ"
 
@@ -6538,7 +6799,7 @@ msgstr "به‌روزرسانی‌ها"
 msgid "workspace.notification-pill.detail"
 msgstr "جزئیات"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:780
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "برای افزودن تعامل‌ها، روی دکمهٔ + کلیک کنید."
 
@@ -6592,7 +6853,11 @@ msgstr "تغییر وضعیت تاری"
 msgid "workspace.options.blur-options.toggle-more-options"
 msgstr "نمایش/پنهان کردن گزینه‌های بیشتر"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
+#: src/app/main/ui/exports/assets.cljs:332
+msgid "workspace.options.cancel-export"
+msgstr "لغو"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "پس‌زمینهٔ بوم"
 
@@ -6820,6 +7085,18 @@ msgstr "حذف خروجی"
 msgid "workspace.options.export.suffix"
 msgstr "پسوند"
 
+#: src/app/main/ui/exports/assets.cljs:267
+msgid "workspace.options.exporting-busy"
+msgstr "سرویس خروجی‌گیری مشغول است؛ لطفاً بعداً دوباره تلاش کنید"
+
+#: src/app/main/ui/exports/assets.cljs:270
+msgid "workspace.options.exporting-cancelled"
+msgstr "خروجی‌گیری لغو شد"
+
+#: src/app/main/ui/exports/assets.cljs:269
+msgid "workspace.options.exporting-cancelling"
+msgstr "در حال لغو..."
+
 #: src/app/main/ui/exports/assets.cljs:272
 msgid "workspace.options.exporting-complete"
 msgstr "خروجی با موفقیت انجام شد"
@@ -6835,6 +7112,10 @@ msgstr "خروجی ناموفق بود"
 #: src/app/main/ui/exports/assets.cljs:274
 msgid "workspace.options.exporting-object-slow"
 msgstr "خروجی به‌طور غیرمنتظره‌ای کند است"
+
+#: src/app/main/ui/exports/assets.cljs:271
+msgid "workspace.options.exporting-queued"
+msgstr "در انتظار..."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:238
 msgid "workspace.options.fill"
@@ -6944,7 +7225,7 @@ msgstr "مربع"
 msgid "workspace.options.group-fill"
 msgstr "پر گروه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:71
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:104
 msgid "workspace.options.group-stroke"
 msgstr "استروک گروه"
 
@@ -7176,11 +7457,11 @@ msgstr "هنگام قرار گرفتن نشانگر روی آن"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "هنگام فشردن"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:739
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "تعاملات"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:742
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
 msgid "workspace.options.interactions.add-interaction"
 msgstr "افزودن تعامل"
 
@@ -7348,7 +7629,7 @@ msgstr "جست‌وجوی فونت"
 msgid "workspace.options.search-size-preset"
 msgstr "جست‌وجوی پیش‌تنظیم اندازه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "یک شکل، برد یا گروه را برای کشیدن اتصال به تابلوی دیگر انتخاب کنید."
 
@@ -7364,7 +7645,7 @@ msgstr "بخش انتخاب رنگ"
 msgid "workspace.options.selection-fill"
 msgstr "پر انتخاب"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:70
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:103
 msgid "workspace.options.selection-stroke"
 msgstr "استروک انتخاب"
 
@@ -7420,7 +7701,7 @@ msgstr "سایه‌های انتخاب"
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "تغییر وضعیت سایه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:264
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:265
 msgid "workspace.options.show-fill-on-export"
 msgstr "نمایش در خروجی‌ها"
 
@@ -7444,117 +7725,117 @@ msgstr "قفل نسبت"
 msgid "workspace.options.size.unlock"
 msgstr "باز کردن قفل نسبت"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:275
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:334
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "دایره"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:276
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:335
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "لوزی"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:272
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:331
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "پیکان"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:270
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
 msgid "workspace.options.stroke-cap.none"
 msgstr "هیچ‌یک"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:278
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
 msgid "workspace.options.stroke-cap.round"
 msgstr "گردی"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:279
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:338
 msgid "workspace.options.stroke-cap.square"
 msgstr "مربع"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:333
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "مستطیل"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:273
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:332
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "مثلث"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:291
 msgid "workspace.options.stroke-color"
 msgstr "رنگ استروک"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:475
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:548
 msgid "workspace.options.stroke-dash"
 msgstr "خط‌چین"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:485
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:558
 msgid "workspace.options.stroke-gap"
 msgstr "فاصله"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:382
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:405, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:443
 msgid "workspace.options.stroke-width"
 msgstr "ضخامت استروک"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:444
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:518
 msgid "workspace.options.stroke-width-bottom"
 msgstr "پایین (انتهای بلوک)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:454
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:531
 msgid "workspace.options.stroke-width-left"
 msgstr "چپ (ابتدای درون‌خطی)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:434
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:505
 msgid "workspace.options.stroke-width-right"
 msgstr "راست (انتهای درون‌خطی)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:424
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:492
 msgid "workspace.options.stroke-width-top"
 msgstr "بالا (شروع بلوک)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:258
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:267
 msgid "workspace.options.stroke.add-stroke"
 msgstr "افزودن رنگ استروک"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:203
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:238
 msgid "workspace.options.stroke.center"
 msgstr "مرکز"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:266
 msgid "workspace.options.stroke.dashed"
 msgstr "نقطه‌چین"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:265
 msgid "workspace.options.stroke.dotted"
 msgstr "خط‌چین"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:239
 msgid "workspace.options.stroke.inner"
 msgstr "داخل"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:232
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:267
 msgid "workspace.options.stroke.mixed"
 msgstr "مخلوط"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:205
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:240
 msgid "workspace.options.stroke.outer"
 msgstr "خارج"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:150
 msgid "workspace.options.stroke.per-side"
 msgstr "استروک برای هر طرف"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:149
 msgid "workspace.options.stroke.per-side-disabled"
 msgstr ""
 "قابلیت استروک برای هر طرف فقط در رندر جدید در دسترس است. برای استفاده از "
 "آن، رندر را به رندر جدید تغییر دهید."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:273, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:389
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "حذف رنگ استروک"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:264
 msgid "workspace.options.stroke.solid"
 msgstr "یک‌دست"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:324
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:384
 msgid "workspace.options.stroke.toggle-stroke"
 msgstr "تغییر وضعیت استروک"
 
@@ -7638,7 +7919,7 @@ msgstr "متن انتخابی"
 msgid "workspace.options.text-options.underline"
 msgstr "خط‌زیر (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr "از دکمه پخش در هدر برای اجرای نمای پروتوتایپ استفاده کنید."
 
@@ -7657,6 +7938,22 @@ msgstr "Y"
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:270
 msgid "workspace.path.actions.draw-nodes"
 msgstr "رسم گره‌ها (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+msgid "workspace.path.actions.handler-aligned"
+msgstr "هم‌راستا"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:169
+msgid "workspace.path.actions.handler-independent"
+msgstr "مستقل"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:161
+msgid "workspace.path.actions.handler-mirror"
+msgstr "برابر"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.handler-type"
+msgstr "رفتار دستگیره"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:288
 msgid "workspace.path.actions.join-nodes"
@@ -8219,15 +8516,15 @@ msgstr "افزودن پوستهٔ جدید"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "افزودن مجموعه به این گروه"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:183
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:186
 msgid "workspace.tokens.add-token"
 msgstr "افزودن توکن: %s"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:156
 msgid "workspace.tokens.applied-to"
 msgstr "اعمال‌شده روی"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:343
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:400
 msgid "workspace.tokens.axis"
 msgstr "محور"
 
@@ -8243,11 +8540,11 @@ msgstr "اندازهٔ فونت پایه"
 msgid "workspace.tokens.base-font-size.error"
 msgstr "اندازهٔ فونت پایه باید مقداری برحسب پیکسل یا بدون واحد باشد."
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:312, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
 msgid "workspace.tokens.color"
 msgstr "رنگ"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:376
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:433
 msgid "workspace.tokens.copy-name"
 msgstr "کپی مسیر توکن"
 
@@ -8263,7 +8560,7 @@ msgstr "ایجاد یکی."
 msgid "workspace.tokens.create-token"
 msgstr "ایجاد توکن جدید %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:380
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "حذف توکن"
 
@@ -8271,7 +8568,7 @@ msgstr "حذف توکن"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "حذف پوسته"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:373
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "تکثیر توکن"
 
@@ -8283,7 +8580,7 @@ msgstr "تکثیر گروه توکن‌ها"
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "کپی"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:359
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:416
 msgid "workspace.tokens.edit"
 msgstr "ویرایش توکن"
 
@@ -8303,7 +8600,7 @@ msgstr "ویرایش توکن %s"
 msgid "workspace.tokens.enter-token-name"
 msgstr "نام توکن %s را وارد کنید"
 
-#: src/app/main/data/workspace/tokens/application.cljs:732, src/app/main/ui/workspace/tokens/management/group.cljs:161
+#: src/app/main/data/workspace/tokens/application.cljs:767, src/app/main/ui/workspace/tokens/management/group.cljs:164
 msgid "workspace.tokens.error-text-edition"
 msgstr ""
 "توکن‌ها هنگام ویرایش متن قابل اعمال نیستند. به‌جای آن، لایهٔ متن را انتخاب "
@@ -8337,7 +8634,7 @@ msgstr "یک فایل"
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "اندازهٔ فونت یا {alias}"
 
-#: src/app/main/data/workspace/tokens/application.cljs:329
+#: src/app/main/data/workspace/tokens/application.cljs:364
 msgid "workspace.tokens.font-variant-not-found"
 msgstr "خطا در تنظیم وزن یا سبک فونت. این سبک فونت در فونت فعلی وجود ندارد"
 
@@ -8345,7 +8642,7 @@ msgstr "خطا در تنظیم وزن یا سبک فونت. این سبک فون
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "وزن فونت (۳۰۰، ایتالیک پررنگ و...) یا {alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:251
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
 msgid "workspace.tokens.gaps"
 msgstr "فاصله‌ها"
 
@@ -8425,23 +8722,23 @@ msgstr "فاصلهٔ حروف یا {alias}"
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "ارتفاع خط (ضریب، پیکسل، ٪) یا {alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:243
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:245
 msgid "workspace.tokens.margins"
 msgstr "حاشیه‌ها"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:282
 msgid "workspace.tokens.max-size"
 msgstr "بیشینهٔ اندازه"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:274
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:276
 msgid "workspace.tokens.min-size"
 msgstr "کمینهٔ اندازه"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:317
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:351
 msgid "workspace.tokens.missing-reference"
 msgstr "ارجاع مفقود"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:125
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
 msgid "workspace.tokens.more-options"
 msgstr "برای دیدن گزینه‌ها کلیک راست کنید"
 
@@ -8485,19 +8782,19 @@ msgstr "نگاشت مجدد نکن"
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s مجموعهٔ فعال"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:134
 msgid "workspace.tokens.original-value"
 msgstr "مقدار اصلی: %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:227
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.paddings"
 msgstr "فاصله‌های داخلی"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:305
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:362
 msgid "workspace.tokens.radius"
 msgstr "شعاع"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:123, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:130, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:124, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:131, src/app/main/ui/workspace/tokens/management/token_pill.cljs:142
 msgid "workspace.tokens.ref-not-valid"
 msgstr "ارجاع در {%s} معتبر نیست یا در هیچ مجموعهٔ فعالی نیست."
 
@@ -8545,7 +8842,7 @@ msgstr "تغییر نام گروه توکن‌ها"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "توکن‌های شما به‌طور خودکار به %s.(suffix).(tokenName) تغییر نام می‌دهند"
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:127, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:135
 msgid "workspace.tokens.resolved-value"
 msgstr "مقدار نهایی: %s"
 
@@ -8619,7 +8916,7 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:270
 msgid "workspace.tokens.size"
 msgstr "اندازه"
 
@@ -8657,7 +8954,7 @@ msgstr "خانوادهٔ فونت"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "خانوادهٔ فونت یا فهرست فونت‌ها که با ویرگول (،) جدا شده‌اند"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:161, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:142, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:162, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64, src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.token-name"
 msgstr "نام"
 
@@ -8707,7 +9004,7 @@ msgstr "نوع «%s» پشتیبانی نمی‌شود (%s):"
 msgid "workspace.tokens.use-reference"
 msgstr "استفاده از ارجاع"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
 msgid "workspace.tokens.value-not-valid"
 msgstr "مقدار معتبر نیست"
 

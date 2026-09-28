@@ -190,12 +190,14 @@ jobs:
         working-directory: ./frontend
         env:
           WORKERS: ${{ inputs.workers }}
+          SHARD: ${{ matrix.shard }}
+          SHARD_TOTAL: ${{ strategy.job-total }}
         run: |
           WORKERS=${WORKERS:-2}
-          echo "Running shard ${{ matrix.shard }}/${{ strategy.job-total }} with $WORKERS workers"
+          echo "Running shard ${SHARD}/${SHARD_TOTAL} with $WORKERS workers"
           pnpm exec playwright test --project default \
             --workers="$WORKERS" \
-            --shard=${{ matrix.shard }}/${{ strategy.job-total }} \
+            --shard="${SHARD}/${SHARD_TOTAL}" \
             --reporter=blob
 
       - name: Upload blob report

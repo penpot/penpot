@@ -280,25 +280,25 @@ msgstr "Add as Shared Library"
 msgid "dashboard.change-email"
 msgstr "Change email"
 
-#: src/app/main/data/nitrate.cljs:616
+#: src/app/main/data/nitrate.cljs:602
 msgid "dashboard.change-organization-modal.accept"
 msgstr "MOVE TEAM"
 
-#: src/app/main/data/nitrate.cljs:614
+#: src/app/main/data/nitrate.cljs:600
 msgid "dashboard.change-organization-modal.choose"
 msgstr "Move to:"
 
-#: src/app/main/data/nitrate.cljs:613
+#: src/app/main/data/nitrate.cljs:599
 msgid "dashboard.change-organization-modal.description"
 msgstr ""
 "Projects and files will remain available to team members. The team will get "
 "the configuration from the new organization."
 
-#: src/app/main/data/nitrate.cljs:615
+#: src/app/main/data/nitrate.cljs:601
 msgid "dashboard.change-organization-modal.select"
 msgstr "Select an organization"
 
-#: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
+#: src/app/main/data/nitrate.cljs:591, src/app/main/data/nitrate.cljs:598, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
 msgstr "Change team's organization"
 
@@ -364,11 +364,11 @@ msgstr "Clear trash"
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
 msgstr "Create new organization"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "Create new team"
 
@@ -413,7 +413,7 @@ msgstr ""
 msgid "dashboard.delete-success-notification"
 msgstr "%s has been successfully deleted."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "Delete team"
 
@@ -635,7 +635,7 @@ msgstr ""
 "using [Transfonter](https://transfonter.org/) to generate webfonts and fix "
 "errors. "
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:226
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:240
 msgid "dashboard.go-to-admin-console"
 msgstr "Go to Admin Console"
 
@@ -811,15 +811,15 @@ msgstr "Invite people"
 msgid "dashboard.invite-profile-disabled"
 msgstr "You don't have permission to invite people to this team"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:282, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:327
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
 msgid "dashboard.leave-organization"
 msgstr "Leave org"
 
-#: src/app/main/data/nitrate.cljs:268
+#: src/app/main/data/nitrate.cljs:259
 msgid "dashboard.leave-organization.toast"
 msgstr "You're no longer part of the %s organization."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "Leave team"
 
@@ -839,7 +839,7 @@ msgstr "Explore more of them and know how to contribute"
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "There was a problem importing the template. The template wasn't imported."
 
-#: src/app/main/ui/dashboard/libraries.cljs:68
+#: src/app/main/ui/dashboard/libraries.cljs:71
 msgid "dashboard.libraries-title"
 msgstr "Libraries"
 
@@ -891,7 +891,7 @@ msgstr "No matches found for “%s“"
 msgid "dashboard.no-organization-allows-create-team.message"
 msgstr "You don't have permission to add teams to any of your organizations."
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:171
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
 msgid "dashboard.no-organizations-yet"
 msgstr "No organizations yet."
 
@@ -965,7 +965,7 @@ msgstr "Order by status"
 msgid "dashboard.organization-deleted"
 msgstr "The %s organization has been deleted."
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:194, src/app/main/ui/dashboard/organization_team_switch.cljs:195
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:208, src/app/main/ui/dashboard/organization_team_switch.cljs:209
 msgid "dashboard.other-teams"
 msgstr "Other teams"
 
@@ -989,7 +989,7 @@ msgstr "You are now owner on this team."
 msgid "dashboard.permissions-change.viewer"
 msgstr "You are now a viewer on this team."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:58, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
 msgid "dashboard.personal-projects"
 msgstr "Personal Projects"
 
@@ -1081,19 +1081,19 @@ msgstr "Search…"
 msgid "dashboard.searching-for"
 msgstr "Searching for “%s“…"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:166
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:180
 msgid "dashboard.section.organizations"
 msgstr "Organizations"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:235
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:249
 msgid "dashboard.section.teams"
 msgstr "Teams"
 
-#: src/app/main/data/nitrate.cljs:531
+#: src/app/main/data/nitrate.cljs:517
 msgid "dashboard.select-organization-modal.accept"
 msgstr "ADD TO ORGANIZATION"
 
-#: src/app/main/data/nitrate.cljs:529
+#: src/app/main/data/nitrate.cljs:515
 msgid "dashboard.select-organization-modal.choose"
 msgstr "Choose an organization:"
 
@@ -1107,23 +1107,23 @@ msgstr ""
 msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
 msgstr "Pending invitations to external users will be canceled."
 
-#: src/app/main/data/nitrate.cljs:597
+#: src/app/main/data/nitrate.cljs:583
 msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Here you'll find the organizations you are part of where you are allowed to "
 "move the team."
 
-#: src/app/main/data/nitrate.cljs:521
+#: src/app/main/data/nitrate.cljs:507
 msgid "dashboard.select-organization-modal.permission-info-add"
 msgstr ""
 "Here you'll find the organizations you are part of where you are allowed to "
 "create or add teams."
 
-#: src/app/main/data/nitrate.cljs:530
+#: src/app/main/data/nitrate.cljs:516
 msgid "dashboard.select-organization-modal.select"
 msgstr "Select an organization"
 
-#: src/app/main/data/nitrate.cljs:528, src/app/main/data/nitrate.cljs:548, src/app/main/ui/dashboard/team_form.cljs:157
+#: src/app/main/data/nitrate.cljs:514, src/app/main/data/nitrate.cljs:534, src/app/main/ui/dashboard/team_form.cljs:157
 msgid "dashboard.select-organization-modal.title"
 msgstr "Add team to an organization"
 
@@ -1273,7 +1273,7 @@ msgstr "Team organization"
 msgid "dashboard.team-organization.add"
 msgstr "Add to an organization"
 
-#: src/app/main/data/nitrate.cljs:547, src/app/main/data/nitrate.cljs:604
+#: src/app/main/data/nitrate.cljs:533, src/app/main/data/nitrate.cljs:590
 msgid "dashboard.team-organization.add.no-valid-organizations"
 msgstr "You don't have permission to add this team to any of your organizations."
 
@@ -1442,7 +1442,7 @@ msgstr "Components to update:"
 msgid "ds.confirm-allow"
 msgstr "Allow"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:324, src/app/main/ui/settings/subscription.cljs:357, src/app/main/ui/settings/subscription.cljs:839, src/app/main/ui/settings/subscription.cljs:888, src/app/main/ui/settings/subscription.cljs:898, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
 msgid "ds.confirm-cancel"
 msgstr "Cancel"
 
@@ -1462,11 +1462,11 @@ msgstr "No applicable tokens in active sets or themes."
 msgid "ds.inputs.numeric-input.no-matches"
 msgstr "No matches found."
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:746, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:176, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
+#: src/app/main/ui/ds/controls/numeric_input.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:519, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:177, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:270
 msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Open token list"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:117, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:133
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:54, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:118, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:134
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "{%s} token is not in any active set or has an invalid value."
 
@@ -1713,11 +1713,11 @@ msgstr "Only the version creator can lock it"
 msgid "errors.only-creator-can-unlock"
 msgstr "Only the version creator can unlock it"
 
-#: src/app/main/data/nitrate.cljs:218
+#: src/app/main/data/nitrate.cljs:209
 msgid "errors.organization-leave.no-valid-teams"
 msgstr "There was a problem leaving the organization. Please try again."
 
-#: src/app/main/data/nitrate.cljs:219
+#: src/app/main/data/nitrate.cljs:210
 msgid "errors.organization-leave.organization-owner-cannot-leave"
 msgstr "The organization owner can't leave the organization."
 
@@ -1767,19 +1767,19 @@ msgstr "SVG is invalid or malformed"
 msgid "errors.team-feature-mismatch"
 msgstr "Detected incompatible feature '%s'"
 
-#: src/app/main/data/nitrate.cljs:201, src/app/main/ui/dashboard/team.cljs:505
+#: src/app/main/data/nitrate.cljs:192, src/app/main/ui/dashboard/team.cljs:505
 msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
 
-#: src/app/main/data/nitrate.cljs:202, src/app/main/ui/dashboard/team.cljs:508
+#: src/app/main/data/nitrate.cljs:193, src/app/main/ui/dashboard/team.cljs:508
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "The member you try to assign does not exist."
 
-#: src/app/main/data/nitrate.cljs:200
+#: src/app/main/data/nitrate.cljs:191
 msgid "errors.team-leave.only-owner-can-delete"
 msgstr "Only the owner of a team can delete it."
 
-#: src/app/main/data/nitrate.cljs:203, src/app/main/ui/dashboard/team.cljs:511
+#: src/app/main/data/nitrate.cljs:194, src/app/main/ui/dashboard/team.cljs:511
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Owner can't leave team, you must reassign the owner role."
 
@@ -2371,7 +2371,7 @@ msgstr "Toggle panel %s"
 msgid "inspect.tabs.styles.token-panel"
 msgstr "Token Sets & Themes"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:144
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:46, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:104, src/app/main/ui/inspect/styles/rows/properties_row.cljs:62, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:145
 msgid "inspect.tabs.styles.token-resolved-value"
 msgstr "Resolved value:"
 
@@ -2648,7 +2648,7 @@ msgstr "Admin"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:99, src/app/main/ui/workspace/tokens/management/context_menu.cljs:137, src/app/main/ui/workspace/tokens/management/token_pill.cljs:118
+#: src/app/main/ui/settings/shortcuts.cljs:294, src/app/main/ui/workspace/tokens/management/context_menu.cljs:101, src/app/main/ui/workspace/tokens/management/context_menu.cljs:139, src/app/main/ui/workspace/tokens/management/token_pill.cljs:127
 msgid "labels.all"
 msgstr "All"
 
@@ -2678,7 +2678,7 @@ msgstr "Blur"
 msgid "labels.blur-effects"
 msgstr "Blur effects"
 
-#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:532, src/app/main/data/nitrate.cljs:617, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
+#: src/app/main/data/common.cljs:121, src/app/main/data/nitrate.cljs:518, src/app/main/data/nitrate.cljs:603, src/app/main/ui/dashboard/change_owner.cljs:67, src/app/main/ui/dashboard/change_owner.cljs:174, src/app/main/ui/dashboard/import.cljs:657, src/app/main/ui/dashboard/team.cljs:902, src/app/main/ui/dashboard/team.cljs:1411, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:163, src/app/main/ui/exports/files.cljs:199, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:156, src/app/main/ui/settings/integrations.cljs:220, src/app/main/ui/settings/restore_shortcuts_modal.cljs:165, src/app/main/ui/shortcuts.cljs:651, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:178, src/app/main/ui/workspace/tokens/export/modal.cljs:43, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/import_from_library.cljs:88, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:360, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:73, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:243
 msgid "labels.cancel"
 msgstr "Cancel"
 
@@ -2694,7 +2694,7 @@ msgstr "Check for updates"
 msgid "labels.checking-for-updates"
 msgstr "Checking for updates..."
 
-#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
+#: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:407, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
 msgstr "Close"
 
@@ -2706,7 +2706,7 @@ msgstr "Code"
 msgid "labels.collapse"
 msgstr "Collapse"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:430
+#: src/app/main/ui/workspace/colorpicker.cljs:433
 msgid "labels.color"
 msgstr "Color"
 
@@ -2738,11 +2738,11 @@ msgstr "Confirm password"
 msgid "labels.contact-support"
 msgstr "Contact support"
 
-#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:939
+#: src/app/main/ui/settings/sidebar.cljs:147, src/app/main/ui/settings/subscription.cljs:944
 msgid "labels.contact-us"
 msgstr "Contact us"
 
-#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:330, src/app/main/ui/settings/subscription.cljs:364, src/app/main/ui/settings/subscription.cljs:891
+#: src/app/main/ui/auth/login.cljs:208, src/app/main/ui/dashboard/deleted.cljs:46, src/app/main/ui/dashboard/deleted.cljs:281, src/app/main/ui/dashboard/file_menu.cljs:235, src/app/main/ui/dashboard/import.cljs:664, src/app/main/ui/dashboard/team.cljs:909, src/app/main/ui/exports/files.cljs:204, src/app/main/ui/settings/subscription.cljs:333, src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:896
 msgid "labels.continue"
 msgstr "Continue"
 
@@ -2982,7 +2982,7 @@ msgstr "Internal Error"
 msgid "labels.invision"
 msgstr "InVision"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:233, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:186, src/app/main/ui/dashboard/team.cljs:127, src/app/main/ui/dashboard/team.cljs:135, src/app/main/ui/dashboard/team.cljs:1219
 msgid "labels.invitations"
 msgstr "Invitations"
 
@@ -3030,7 +3030,7 @@ msgstr "Marketing"
 msgid "labels.member"
 msgstr "Member"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:228, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:181, src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:133
 msgid "labels.members"
 msgstr "Members"
 
@@ -3206,7 +3206,7 @@ msgstr "Remove"
 msgid "labels.remove-member"
 msgstr "Remove member"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:251, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
+#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:204, src/app/main/ui/dashboard/project_menu.cljs:90, src/app/main/ui/workspace/sidebar/assets/groups.cljs:186, src/app/main/ui/workspace/sidebar/versions.cljs:228, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:76, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:101, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Rename"
 
@@ -3290,7 +3290,7 @@ msgstr "Service Unavailable"
 msgid "labels.sets"
 msgstr "Sets"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:243, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:196, src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:140, src/app/main/ui/settings/options.cljs:133, src/app/main/ui/settings/sidebar.cljs:91, src/app/main/ui/settings/sidebar.cljs:118
 msgid "labels.settings"
 msgstr "Settings"
 
@@ -3361,7 +3361,7 @@ msgstr "Start"
 msgid "labels.status"
 msgstr "Status"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:72
+#: src/app/main/ui/inspect/styles/style_box.cljs:29, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:105
 msgid "labels.stroke"
 msgstr "Stroke"
 
@@ -3377,11 +3377,11 @@ msgstr "Styles"
 msgid "labels.svg"
 msgstr "SVG"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:497
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:570
 msgid "labels.switch"
 msgstr "Switch"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:546
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:562
 msgid "labels.team-management"
 msgstr "Team management"
 
@@ -3463,7 +3463,7 @@ msgid_plural "labels.warning-count"
 msgstr[0] "%s warning"
 msgstr[1] "%s warnings"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:238, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:138, src/app/main/ui/dashboard/team.cljs:1422
 msgid "labels.webhooks"
 msgstr "Webhooks"
 
@@ -3559,15 +3559,15 @@ msgstr "Extend Penpot with community-built plugins for extra functionality."
 msgid "loader.tips.10.title"
 msgstr "Plugins Support"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:488
+#: src/app/main/ui/workspace/colorpicker.cljs:494
 msgid "media.choose-image"
 msgstr "Choose image"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:274
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs:106, src/app/main/ui/workspace/colorpicker.cljs:276
 msgid "media.gradient"
 msgstr "Gradient"
 
-#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:276, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:448
+#: src/app/main/data/workspace/media.cljs:302, src/app/main/ui/components/color_bullet.cljs:42, src/app/main/ui/components/color_bullet.cljs:55, src/app/main/ui/ds/utilities/swatch.cljs:52, src/app/main/ui/ds/utilities/swatch.cljs:68, src/app/main/ui/inspect/attributes/common.cljs:43, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:67, src/app/main/ui/workspace/colorpicker.cljs:278, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:454
 msgid "media.image"
 msgstr "Image"
 
@@ -3575,7 +3575,7 @@ msgstr "Image"
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:483
+#: src/app/main/ui/workspace/colorpicker.cljs:489
 msgid "media.keep-aspect-ratio"
 msgstr "Keep aspect ratio"
 
@@ -3583,7 +3583,7 @@ msgstr "Keep aspect ratio"
 msgid "media.loading"
 msgstr "Loading image…"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:272
+#: src/app/main/ui/workspace/colorpicker.cljs:274
 msgid "media.solid"
 msgstr "Solid"
 
@@ -3608,17 +3608,17 @@ msgstr ""
 msgid "modals.add-shared-confirm.message"
 msgstr "Add “%s” as Shared Library"
 
-#: src/app/main/data/nitrate.cljs:334
+#: src/app/main/data/nitrate.cljs:320
 msgid "modals.before-leave-organization.message"
 msgstr ""
 "You are the only member of some of the teams. Those teams will be deleted "
 "along with its projects and files."
 
-#: src/app/main/data/nitrate.cljs:333, src/app/main/ui/dashboard/change_owner.cljs:151
+#: src/app/main/data/nitrate.cljs:319, src/app/main/ui/dashboard/change_owner.cljs:151
 msgid "modals.before-leave-organization.title"
 msgstr "BEFORE YOU LEAVE THE ORGANIZATION"
 
-#: src/app/main/data/nitrate.cljs:337
+#: src/app/main/data/nitrate.cljs:323
 msgid "modals.before-leave-organization.warning"
 msgstr "Any team where you’re the only member will be deleted."
 
@@ -3966,13 +3966,13 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "Invite members to the team"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:192, src/app/main/ui/dashboard/team.cljs:539
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:148, src/app/main/ui/dashboard/team.cljs:539
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "As you're the only member of this team, the team will be deleted along with "
 "its projects and files."
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:191, src/app/main/ui/dashboard/team.cljs:538
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:147, src/app/main/ui/dashboard/team.cljs:538
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Are you sure you want to leave the %s team?"
 
@@ -4000,15 +4000,15 @@ msgstr "Select a member to promote"
 msgid "modals.leave-and-reassign.title"
 msgstr "Before you leave"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:168, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:193, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:124, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:149, src/app/main/ui/dashboard/team.cljs:540, src/app/main/ui/dashboard/team.cljs:562
 msgid "modals.leave-confirm.accept"
 msgstr "Leave team"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:167, src/app/main/ui/dashboard/team.cljs:561
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:123, src/app/main/ui/dashboard/team.cljs:561
 msgid "modals.leave-confirm.message"
 msgstr "Are you sure you want to leave this team?"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:166, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:190, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:122, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:146, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:560
 msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
@@ -4030,17 +4030,17 @@ msgstr ""
 "Also, you are the owner of some organization's teams. Please promote "
 "another member to become an owner."
 
-#: src/app/main/data/nitrate.cljs:335, src/app/main/data/nitrate.cljs:344
+#: src/app/main/data/nitrate.cljs:321, src/app/main/data/nitrate.cljs:330
 msgid "modals.leave-organization-confirm.accept"
 msgstr "Leave organization"
 
-#: src/app/main/data/nitrate.cljs:343
+#: src/app/main/data/nitrate.cljs:329
 msgid "modals.leave-organization-confirm.message"
 msgstr ""
 "You will permanently lose access to all teams, projects, and files within "
 "it."
 
-#: src/app/main/data/nitrate.cljs:342
+#: src/app/main/data/nitrate.cljs:328
 msgid "modals.leave-organization-confirm.title"
 msgstr "Leaving %s organization?"
 
@@ -4098,21 +4098,21 @@ msgstr "Your library is empty. Are you sure you want to publish it?"
 msgid "modals.publish-empty-library.title"
 msgstr "Publish empty library"
 
-#: src/app/main/data/nitrate.cljs:391
+#: src/app/main/data/nitrate.cljs:377
 msgid "modals.remove-team-organization.accept"
 msgstr "Remove from organization"
 
-#: src/app/main/data/nitrate.cljs:389
+#: src/app/main/data/nitrate.cljs:375
 msgid "modals.remove-team-organization.info"
 msgstr ""
 "Projects and files will remain available to team members, but the "
 "organization's settings will no longer apply."
 
-#: src/app/main/data/nitrate.cljs:388
+#: src/app/main/data/nitrate.cljs:374
 msgid "modals.remove-team-organization.text"
 msgstr "Are you sure you want to remove the '%s' team from the '%s' organization?"
 
-#: src/app/main/data/nitrate.cljs:387
+#: src/app/main/data/nitrate.cljs:373
 msgid "modals.remove-team-organization.title"
 msgstr "REMOVE TEAM FROM THE ORGANIZATION"
 
@@ -4222,37 +4222,37 @@ msgstr "Activate"
 msgid "nitrate.code-activation.title"
 msgstr "Activate Enterprise"
 
-#: src/app/main/ui/settings/subscription.cljs:901
+#: src/app/main/ui/settings/subscription.cljs:906
 msgid "nitrate.contact-sales.button"
 msgstr "Contact sales"
 
-#: src/app/main/ui/settings/subscription.cljs:894
+#: src/app/main/ui/settings/subscription.cljs:899
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr ""
 "To switch to this plan, please contact our sales team. We'll help you "
 "update your subscription and ensure everything is set up correctly."
 
-#: src/app/main/ui/settings/subscription.cljs:880
+#: src/app/main/ui/settings/subscription.cljs:885
 msgid "nitrate.contact-sales.downgrade-organization-deleted"
 msgstr "Your organization will be deleted."
 
-#: src/app/main/ui/settings/subscription.cljs:882
+#: src/app/main/ui/settings/subscription.cljs:887
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr ""
 "Your total storage, auto-version history, and file recovery period will be "
 "limited."
 
-#: src/app/main/ui/settings/subscription.cljs:881
+#: src/app/main/ui/settings/subscription.cljs:886
 msgid "nitrate.contact-sales.downgrade-teams-available"
 msgstr ""
 "The teams, projects and files will no longer be part of any organization "
 "but they will remain available."
 
-#: src/app/main/ui/settings/subscription.cljs:878
+#: src/app/main/ui/settings/subscription.cljs:883
 msgid "nitrate.contact-sales.downgrade-title"
 msgstr "When you downgrade:"
 
-#: src/app/main/ui/settings/subscription.cljs:875
+#: src/app/main/ui/settings/subscription.cljs:880
 msgid "nitrate.contact-sales.title"
 msgstr "Switch to %s plan?"
 
@@ -4268,15 +4268,15 @@ msgstr "Contact us to try Enterprise for 14 days:"
 msgid "nitrate.form.contact-upgrade"
 msgstr "Contact us to upgrade to Enterprise:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-free-trial"
 msgstr "Contact us to try the Enterprise plan for 14 days:"
 
-#: src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.contact-us-upgrade"
 msgstr "Contact us to upgrade to the Enterprise plan:"
 
-#: src/app/main/ui/settings/subscription.cljs:832
+#: src/app/main/ui/settings/subscription.cljs:837
 msgid "nitrate.form.enterprise-description"
 msgstr ""
 "You won’t be charged right now. Payment will be processed at the end of the "
@@ -4296,7 +4296,7 @@ msgstr ""
 msgid "nitrate.form.enterprise-feature-3"
 msgstr "Full open-source freedom, with the governance your org needs"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:827, src/app/main/ui/settings/subscription.cljs:849
+#: src/app/main/ui/nitrate/nitrate_form.cljs:80, src/app/main/ui/settings/subscription.cljs:832, src/app/main/ui/settings/subscription.cljs:854
 msgid "nitrate.form.enterprise-intro"
 msgstr "Everything your teams need to work securely at scale%s"
 
@@ -4304,7 +4304,7 @@ msgstr "Everything your teams need to work securely at scale%s"
 msgid "nitrate.form.enterprise.price"
 msgstr "per member per month"
 
-#: src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "nitrate.form.free-trial-button"
 msgstr "Try 14 days for free"
 
@@ -4320,7 +4320,7 @@ msgstr "Get started with Enterprise"
 msgid "nitrate.form.subscribe-with-code"
 msgstr "Subscribe with an activation code"
 
-#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:821
+#: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:826
 msgid "nitrate.form.title"
 msgstr "Unlock Enterprise features"
 
@@ -4332,7 +4332,7 @@ msgstr "Try it free for 14 days"
 msgid "nitrate.modal-success.title"
 msgstr "Welcome to Enterprise!"
 
-#: src/app/main/ui/settings/subscription.cljs:613
+#: src/app/main/ui/settings/subscription.cljs:618
 msgid "nitrate.subscription.active-until"
 msgstr "Active until %s"
 
@@ -4340,11 +4340,11 @@ msgstr "Active until %s"
 msgid "nitrate.subscription.renew-success"
 msgstr "Your Enterprise subscription has been renewed."
 
-#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:928
+#: src/app/main/ui/settings/subscription.cljs:630, src/app/main/ui/settings/subscription.cljs:933
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "Cancel subscription"
 
-#: src/app/main/ui/settings/subscription.cljs:932
+#: src/app/main/ui/settings/subscription.cljs:937
 msgid "nitrate.subscription.settings.manual-contact-us"
 msgstr "To cancel your Enterprise subscription, please contact us at:"
 
@@ -4667,7 +4667,7 @@ msgstr "Here are some templates."
 msgid "onboarding.templates.title"
 msgstr "Start designing"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:120, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:121, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:137
 msgid "options.deleted-token-with-name"
 msgstr "{%s} token does not exist or has been deleted."
 
@@ -4703,19 +4703,19 @@ msgstr "Restore to default configuration"
 msgid "restore-shortcuts.restore"
 msgstr "Restore"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:419
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:990, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
 msgstr "Detach"
 
-#: src/app/main/ui/ds/controls/numeric_input.cljs:725, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:25, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:271, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:468, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:348, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:390
+#: src/app/main/ui/ds/controls/numeric_input.cljs:742, src/app/main/ui/inspect/exports.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:192, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:243, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:261, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:278, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:299, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1057, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1297, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:174, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:225, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/input_wrapper_tokens.cljs:27, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:244, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:388, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:519, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:553, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:586, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:620, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:755, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:793, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:80, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:189, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:572, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:606, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:634, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:647, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:656, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:667, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:688, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:699, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:165, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:280, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:679, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:698, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:474, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:410, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:451
 msgid "settings.multiple"
 msgstr "Mixed"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:477
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:483
 msgid "settings.remove-color"
 msgstr "Remove color"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:482
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:488
 msgid "settings.select-this-color"
 msgstr "Select items using this style"
 
@@ -5462,7 +5462,7 @@ msgstr "See Enterprise in action"
 msgid "subscription.current-plan.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:780
+#: src/app/main/ui/dashboard/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:785
 msgid "subscription.current-plan.nitrate"
 msgstr "Enterprise"
 
@@ -5516,7 +5516,7 @@ msgstr ""
 msgid "subscription.dashboard.banner.upgrade-nitrate"
 msgstr "Get started with Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:315
+#: src/app/main/ui/dashboard/subscription.cljs:117, src/app/main/ui/dashboard/subscription.cljs:316
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterprise plan"
 
@@ -5545,7 +5545,7 @@ msgstr "Enjoying your trial? Unlock full access forever.[Subscribe|target:self](
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Unlimited plan (trial)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:314
+#: src/app/main/ui/dashboard/subscription.cljs:103, src/app/main/ui/dashboard/subscription.cljs:315
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
 
@@ -5561,57 +5561,57 @@ msgstr ""
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Your subscription:"
 
-#: src/app/main/ui/dashboard/subscription.cljs:349
+#: src/app/main/ui/dashboard/subscription.cljs:350
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
 "You have %s editors across your owned teams, while your professional plan "
 "covers up to 8."
 
-#: src/app/main/ui/dashboard/subscription.cljs:357
+#: src/app/main/ui/dashboard/subscription.cljs:358
 #, markdown
 msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
 msgstr ""
 "Please upgrade now to Unlimited or Enterprise to unlock more editors, "
 "storage and file recovery. [Subscribe now.|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:290
+#: src/app/main/ui/dashboard/subscription.cljs:291
 msgid "subscription.dashboard.team-plan"
 msgstr "Team plan"
 
-#: src/app/main/ui/dashboard/subscription.cljs:352
+#: src/app/main/ui/dashboard/subscription.cljs:353
 msgid "subscription.dashboard.unlimited-dashboard-cta-title"
 msgstr ""
 "Your team keeps growing! Your Unlimited plan covers up to %s editors, but "
 "you now have %s."
 
-#: src/app/main/ui/dashboard/subscription.cljs:360
+#: src/app/main/ui/dashboard/subscription.cljs:361
 #, markdown
 msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
 msgstr ""
 "Please upgrade now to match your current editor count. [Subscribe "
 "now.|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:337
+#: src/app/main/ui/dashboard/subscription.cljs:338
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
 "Only new editors across your owned teams count towards future billing. A "
 "flat $175/month still applies for 25+ editors."
 
-#: src/app/main/ui/dashboard/subscription.cljs:333
+#: src/app/main/ui/dashboard/subscription.cljs:334
 msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
 msgstr "Inviting people while on the Unlimited plan"
 
-#: src/app/main/ui/settings/subscription.cljs:429
+#: src/app/main/ui/settings/subscription.cljs:432
 msgid "subscription.error.nitrate.checkout-cancelled"
 msgstr "Payment was not completed. Try again whenever you're ready."
 
-#: src/app/main/ui/settings/subscription.cljs:428, src/app/main/ui/settings/subscription.cljs:448
+#: src/app/main/ui/settings/subscription.cljs:431, src/app/main/ui/settings/subscription.cljs:451
 msgid "subscription.error.nitrate.checkout-failed"
 msgstr ""
 "The payment was not completed. Please try again. If the problem persists, "
 "contact us: support@penpot.app."
 
-#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:545, src/app/main/ui/settings/subscription.cljs:606
+#: src/app/main/ui/settings/sidebar.cljs:126, src/app/main/ui/settings/subscription.cljs:550, src/app/main/ui/settings/subscription.cljs:611
 msgid "subscription.labels"
 msgstr "Subscription"
 
@@ -5619,23 +5619,23 @@ msgstr "Subscription"
 msgid "subscription.settings.activate-by-code"
 msgstr "Enter activation code"
 
-#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:681
+#: src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:686
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "Add a payment method to continue after your trial"
 
-#: src/app/main/ui/settings/subscription.cljs:621
+#: src/app/main/ui/settings/subscription.cljs:626
 msgid "subscription.settings.admin-console"
 msgstr "Admin Console"
 
-#: src/app/main/ui/settings/subscription.cljs:649, src/app/main/ui/settings/subscription.cljs:740
+#: src/app/main/ui/settings/subscription.cljs:654, src/app/main/ui/settings/subscription.cljs:745
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "All Professional plan benefits and:"
 
-#: src/app/main/ui/settings/subscription.cljs:662, src/app/main/ui/settings/subscription.cljs:675, src/app/main/ui/settings/subscription.cljs:686, src/app/main/ui/settings/subscription.cljs:756
+#: src/app/main/ui/settings/subscription.cljs:667, src/app/main/ui/settings/subscription.cljs:680, src/app/main/ui/settings/subscription.cljs:691, src/app/main/ui/settings/subscription.cljs:761
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
-#: src/app/main/ui/settings/subscription.cljs:614, src/app/main/ui/settings/subscription.cljs:771
+#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
 msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
 msgstr "All Unlimited plan benefits, plus:"
 
@@ -5643,72 +5643,72 @@ msgstr "All Unlimited plan benefits, plus:"
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:298, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:464, src/app/main/ui/settings/subscription.cljs:466, src/app/main/ui/settings/subscription.cljs:600, src/app/main/ui/settings/subscription.cljs:611, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:752, src/app/main/ui/settings/subscription.cljs:768
+#: src/app/main/ui/dashboard/subscription.cljs:299, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:467, src/app/main/ui/settings/subscription.cljs:469, src/app/main/ui/settings/subscription.cljs:605, src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:757, src/app/main/ui/settings/subscription.cljs:773
 msgid "subscription.settings.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:599, src/app/main/ui/settings/subscription.cljs:673
+#: src/app/main/ui/settings/subscription.cljs:120, src/app/main/ui/settings/subscription.cljs:604, src/app/main/ui/settings/subscription.cljs:678
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (trial)"
 
-#: src/app/main/ui/settings/subscription.cljs:677, src/app/main/ui/settings/subscription.cljs:688, src/app/main/ui/settings/subscription.cljs:758
+#: src/app/main/ui/settings/subscription.cljs:682, src/app/main/ui/settings/subscription.cljs:693, src/app/main/ui/settings/subscription.cljs:763
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90-day autosave versions and file recovery"
 
-#: src/app/main/ui/settings/subscription.cljs:678, src/app/main/ui/settings/subscription.cljs:689, src/app/main/ui/settings/subscription.cljs:759
+#: src/app/main/ui/settings/subscription.cljs:683, src/app/main/ui/settings/subscription.cljs:694, src/app/main/ui/settings/subscription.cljs:764
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Flat monthly bill"
 
-#: src/app/main/ui/settings/subscription.cljs:619, src/app/main/ui/settings/subscription.cljs:776
+#: src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:781
 msgid "subscription.settings.enterprise.nitrate.advanced-control"
 msgstr "Advanced Control:"
 
-#: src/app/main/ui/settings/subscription.cljs:617, src/app/main/ui/settings/subscription.cljs:774
+#: src/app/main/ui/settings/subscription.cljs:622, src/app/main/ui/settings/subscription.cljs:779
 msgid "subscription.settings.enterprise.nitrate.enterprise-security"
 msgstr "Enterprise Security:"
 
-#: src/app/main/ui/settings/subscription.cljs:615, src/app/main/ui/settings/subscription.cljs:772
+#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
 msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
 msgstr "Multi-Org Management:"
 
-#: src/app/main/ui/settings/subscription.cljs:618, src/app/main/ui/settings/subscription.cljs:775
+#: src/app/main/ui/settings/subscription.cljs:623, src/app/main/ui/settings/subscription.cljs:780
 msgid "subscription.settings.enterprise.nitrate.native-sso"
 msgstr "Native SAML/​​SSO and full Audit Trail logging for compliance reporting."
 
-#: src/app/main/ui/settings/subscription.cljs:620, src/app/main/ui/settings/subscription.cljs:777
+#: src/app/main/ui/settings/subscription.cljs:625, src/app/main/ui/settings/subscription.cljs:782
 msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
 msgstr ""
 "Granular plugin whitelisting, including our secure, isolated MCP Server for "
 "AI connectivity."
 
-#: src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:773
+#: src/app/main/ui/settings/subscription.cljs:621, src/app/main/ui/settings/subscription.cljs:778
 msgid "subscription.settings.enterprise.nitrate.support-team"
 msgstr "Support for complex team hierarchies and separate sub-organizations."
 
-#: src/app/main/ui/settings/subscription.cljs:676, src/app/main/ui/settings/subscription.cljs:687, src/app/main/ui/settings/subscription.cljs:757
+#: src/app/main/ui/settings/subscription.cljs:681, src/app/main/ui/settings/subscription.cljs:692, src/app/main/ui/settings/subscription.cljs:762
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
 msgstr "Unlimited storage"
 
-#: src/app/main/ui/dashboard/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:624, src/app/main/ui/settings/subscription.cljs:653, src/app/main/ui/settings/subscription.cljs:666, src/app/main/ui/settings/subscription.cljs:679, src/app/main/ui/settings/subscription.cljs:690
+#: src/app/main/ui/dashboard/subscription.cljs:304, src/app/main/ui/settings/subscription.cljs:629, src/app/main/ui/settings/subscription.cljs:658, src/app/main/ui/settings/subscription.cljs:671, src/app/main/ui/settings/subscription.cljs:684, src/app/main/ui/settings/subscription.cljs:695
 msgid "subscription.settings.manage-your-subscription"
 msgstr "Manage your subscription"
 
-#: src/app/main/ui/settings/subscription.cljs:349
+#: src/app/main/ui/settings/subscription.cljs:352
 msgid "subscription.settings.management-dialog.step-2-add-payment-button"
 msgstr "Add payment details"
 
-#: src/app/main/ui/settings/subscription.cljs:336
+#: src/app/main/ui/settings/subscription.cljs:339
 msgid "subscription.settings.management-dialog.step-2-description"
 msgstr ""
 "Add your payment details now to keep your subscription running smoothly "
 "after the trial and continue supporting our open-source project. You won’t "
 "be charged yet."
 
-#: src/app/main/ui/settings/subscription.cljs:344
+#: src/app/main/ui/settings/subscription.cljs:347
 msgid "subscription.settings.management-dialog.step-2-skip-button"
 msgstr "Skip for now and start trial"
 
-#: src/app/main/ui/settings/subscription.cljs:267
+#: src/app/main/ui/settings/subscription.cljs:270
 msgid "subscription.settings.management-dialog.step-2-title"
 msgstr "Help us grow and make your trial easier"
 
@@ -5718,7 +5718,7 @@ msgid_plural "subscription.settings.management.dialog.currently-editors-title"
 msgstr[0] "Currently, your have %s person across your teams who can edit."
 msgstr[1] "Currently, your have %s people across your teams who can edit."
 
-#: src/app/main/ui/settings/subscription.cljs:281
+#: src/app/main/ui/settings/subscription.cljs:284
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "Heads up: switching to a lower plan means less storage and shorter backups "
@@ -5732,81 +5732,81 @@ msgstr "Editors"
 msgid "subscription.settings.management.dialog.editors-explanation"
 msgstr "(Owners, Admin and Editors. Viewers doesn't count as Editors)"
 
-#: src/app/main/ui/settings/subscription.cljs:314
+#: src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.management.dialog.input-error"
 msgstr ""
 "You can't set fewer editors than you have now. Change the role "
 "(editor/admin to viewer) for people who don't actually edit files in the "
 "team settings."
 
-#: src/app/main/ui/settings/subscription.cljs:310
+#: src/app/main/ui/settings/subscription.cljs:313
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "Charged after trial. No credit card required right now."
 
-#: src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:307
+#: src/app/main/ui/settings/subscription.cljs:306, src/app/main/ui/settings/subscription.cljs:310
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**/month"
 
-#: src/app/main/ui/settings/subscription.cljs:268
+#: src/app/main/ui/settings/subscription.cljs:271
 msgid "subscription.settings.management.dialog.title"
 msgstr "Apply %s to your teams"
 
-#: src/app/main/ui/settings/subscription.cljs:317
+#: src/app/main/ui/settings/subscription.cljs:320
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
 msgstr ""
 "Tip: You can increase your seat count now to stay ahead of invites. At 25+ "
 "editors across teams, you’ll enjoy a flat $175/month."
 
-#: src/app/main/ui/settings/subscription.cljs:709
+#: src/app/main/ui/settings/subscription.cljs:714
 msgid "subscription.settings.member-since"
 msgstr "Penpot member since: %s"
 
-#: src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:746, src/app/main/ui/settings/subscription.cljs:762, src/app/main/ui/settings/subscription.cljs:782
+#: src/app/main/ui/settings/subscription.cljs:736, src/app/main/ui/settings/subscription.cljs:751, src/app/main/ui/settings/subscription.cljs:767, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.more-information"
 msgstr "More information"
 
-#: src/app/main/ui/settings/subscription.cljs:770, src/app/main/ui/settings/subscription.cljs:830
+#: src/app/main/ui/settings/subscription.cljs:775, src/app/main/ui/settings/subscription.cljs:835
 msgid "subscription.settings.organization-member-month"
 msgstr "org member / month"
 
-#: src/app/main/ui/settings/subscription.cljs:712
+#: src/app/main/ui/settings/subscription.cljs:717
 msgid "subscription.settings.other-plans"
 msgstr "Other penpot plans"
 
-#: src/app/main/ui/settings/subscription.cljs:755
+#: src/app/main/ui/settings/subscription.cljs:760
 msgid "subscription.settings.price-organization-month"
 msgstr "organization per month"
 
-#: src/app/main/ui/settings/subscription.cljs:716, src/app/main/ui/settings/subscription.cljs:739
+#: src/app/main/ui/settings/subscription.cljs:721, src/app/main/ui/settings/subscription.cljs:744
 msgid "subscription.settings.price-user-month"
 msgstr "user / month"
 
-#: src/app/main/ui/dashboard/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:633, src/app/main/ui/settings/subscription.cljs:714
+#: src/app/main/ui/dashboard/subscription.cljs:294, src/app/main/ui/settings/subscription.cljs:122, src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:719
 msgid "subscription.settings.professional"
 msgstr "Professional"
 
-#: src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:721
+#: src/app/main/ui/settings/subscription.cljs:643, src/app/main/ui/settings/subscription.cljs:726
 msgid "subscription.settings.professional.autosave-benefit"
 msgstr "7-day autosave versions and file recovery"
 
-#: src/app/main/ui/settings/subscription.cljs:642, src/app/main/ui/settings/subscription.cljs:725
+#: src/app/main/ui/settings/subscription.cljs:647, src/app/main/ui/settings/subscription.cljs:730
 msgid "subscription.settings.professional.selfhost.community-support"
 msgstr "All design and prototyping features Community support."
 
-#: src/app/main/ui/settings/subscription.cljs:636, src/app/main/ui/settings/subscription.cljs:719
+#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
 msgid "subscription.settings.professional.selfhost.control-over-data"
 msgstr "Complete control over data and infrastructure."
 
-#: src/app/main/ui/settings/subscription.cljs:639, src/app/main/ui/settings/subscription.cljs:722
+#: src/app/main/ui/settings/subscription.cljs:644, src/app/main/ui/settings/subscription.cljs:727
 msgid "subscription.settings.professional.selfhost.unlimited-users"
 msgstr "Unlimited users, teams and files."
 
-#: src/app/main/ui/settings/subscription.cljs:635, src/app/main/ui/settings/subscription.cljs:718
+#: src/app/main/ui/settings/subscription.cljs:640, src/app/main/ui/settings/subscription.cljs:723
 msgid "subscription.settings.professional.storage-benefit"
 msgstr "10GB of storage"
 
-#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:724
+#: src/app/main/ui/settings/subscription.cljs:646, src/app/main/ui/settings/subscription.cljs:729
 msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Unlimited teams. Up to 8 editors across your owned teams."
 
@@ -5814,65 +5814,65 @@ msgstr "Unlimited teams. Up to 8 editors across your owned teams."
 msgid "subscription.settings.recommended"
 msgstr "Recommended"
 
-#: src/app/main/ui/settings/subscription.cljs:609
+#: src/app/main/ui/settings/subscription.cljs:614
 msgid "subscription.settings.section-plan"
 msgstr "Your subscription"
 
-#: src/app/main/ui/settings/subscription.cljs:364
+#: src/app/main/ui/settings/subscription.cljs:367
 msgid "subscription.settings.start-trial"
 msgstr "Start free trial"
 
-#: src/app/main/ui/settings/subscription.cljs:329, src/app/main/ui/settings/subscription.cljs:726, src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760, src/app/main/ui/settings/subscription.cljs:778, src/app/main/ui/settings/subscription.cljs:845
+#: src/app/main/ui/settings/subscription.cljs:332, src/app/main/ui/settings/subscription.cljs:731, src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765, src/app/main/ui/settings/subscription.cljs:783, src/app/main/ui/settings/subscription.cljs:850
 msgid "subscription.settings.subscribe"
 msgstr "Subscribe"
 
-#: src/app/main/ui/settings/subscription.cljs:702
+#: src/app/main/ui/settings/subscription.cljs:707
 msgid "subscription.settings.subscribed-since"
 msgstr "You've been on the %s plan since %s."
 
-#: src/app/main/ui/settings/subscription.cljs:396
+#: src/app/main/ui/settings/subscription.cljs:399
 msgid "subscription.settings.success.dialog.description"
 msgstr ""
 "You can edit your subscription at any time from the 'Subscription' page in "
 "your account details."
 
-#: src/app/main/ui/settings/subscription.cljs:398
+#: src/app/main/ui/settings/subscription.cljs:401
 msgid "subscription.settings.success.dialog.footer"
 msgstr "Enjoy your plan!"
 
-#: src/app/main/ui/settings/subscription.cljs:394
+#: src/app/main/ui/settings/subscription.cljs:397
 msgid "subscription.settings.success.dialog.thanks"
 msgstr "Thank your for chosing the Penpot %s plan!"
 
-#: src/app/main/ui/settings/subscription.cljs:391
+#: src/app/main/ui/settings/subscription.cljs:394
 msgid "subscription.settings.success.dialog.title"
 msgstr "You are %s!"
 
-#: src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:760
+#: src/app/main/ui/settings/subscription.cljs:749, src/app/main/ui/settings/subscription.cljs:765
 msgid "subscription.settings.try-it-free"
 msgstr "Try it free for 14 days"
 
-#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:465, src/app/main/ui/settings/subscription.cljs:597, src/app/main/ui/settings/subscription.cljs:660, src/app/main/ui/settings/subscription.cljs:736
+#: src/app/main/ui/dashboard/subscription.cljs:297, src/app/main/ui/settings/subscription.cljs:123, src/app/main/ui/settings/subscription.cljs:468, src/app/main/ui/settings/subscription.cljs:602, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:741
 msgid "subscription.settings.unlimited"
 msgstr "Unlimited"
 
-#: src/app/main/ui/dashboard/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:596, src/app/main/ui/settings/subscription.cljs:647
+#: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:119, src/app/main/ui/settings/subscription.cljs:601, src/app/main/ui/settings/subscription.cljs:652
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (trial)"
 
-#: src/app/main/ui/settings/subscription.cljs:651, src/app/main/ui/settings/subscription.cljs:664, src/app/main/ui/settings/subscription.cljs:742
+#: src/app/main/ui/settings/subscription.cljs:656, src/app/main/ui/settings/subscription.cljs:669, src/app/main/ui/settings/subscription.cljs:747
 msgid "subscription.settings.unlimited.autosave-benefit"
 msgstr "30-day autosave versions and file recovery"
 
-#: src/app/main/ui/settings/subscription.cljs:652, src/app/main/ui/settings/subscription.cljs:665, src/app/main/ui/settings/subscription.cljs:743
+#: src/app/main/ui/settings/subscription.cljs:657, src/app/main/ui/settings/subscription.cljs:670, src/app/main/ui/settings/subscription.cljs:748
 msgid "subscription.settings.unlimited.bill"
 msgstr "Capped monthly bill at $175"
 
-#: src/app/main/ui/settings/subscription.cljs:650, src/app/main/ui/settings/subscription.cljs:663, src/app/main/ui/settings/subscription.cljs:741
+#: src/app/main/ui/settings/subscription.cljs:655, src/app/main/ui/settings/subscription.cljs:668, src/app/main/ui/settings/subscription.cljs:746
 msgid "subscription.settings.unlimited.storage-benefit"
 msgstr "25GB of storage"
 
-#: src/app/main/ui/dashboard/subscription.cljs:328
+#: src/app/main/ui/dashboard/subscription.cljs:329
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "Power up your plan"
 
@@ -5919,7 +5919,7 @@ msgstr "Projects - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "Search - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs:57
+#: src/app/main/ui/dashboard/libraries.cljs:60
 msgid "title.dashboard.shared-libraries"
 msgstr "Shared Libraries - %s - Penpot"
 
@@ -5975,7 +5975,7 @@ msgstr "%s - View mode - Penpot"
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:171
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:172
 msgid "token-actions.detach-token"
 msgstr "Detach token"
 
@@ -6067,11 +6067,11 @@ msgstr "WebGL rendering disabled"
 msgid "webgl.toast.webgl-render-enabled"
 msgstr "WebGL rendering enabled"
 
-#: src/app/render_wasm/api.cljs:2487
+#: src/app/render_wasm/api.cljs:2462
 msgid "webgl.webgl-context-lost.toast"
 msgstr "WebGL context was lost"
 
-#: src/app/render_wasm/api.cljs:2510
+#: src/app/render_wasm/api.cljs:2485
 msgid "webgl.webgl-context-recovered.toast"
 msgstr "WebGL context was recovered"
 
@@ -6281,19 +6281,19 @@ msgstr "Ungroup"
 msgid "workspace.clipboard.copying"
 msgstr "Copying image…"
 
-#: src/app/main/data/workspace/clipboard.cljs:1193
+#: src/app/main/data/workspace/clipboard.cljs:1192
 msgid "workspace.clipboard.image-copied"
 msgstr "Image copied to the clipboard"
 
-#: src/app/main/data/workspace/clipboard.cljs:1199
+#: src/app/main/data/workspace/clipboard.cljs:1198
 msgid "workspace.clipboard.image-copy-failed"
 msgstr "Error copying image"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:441
+#: src/app/main/ui/workspace/colorpicker.cljs:447
 msgid "workspace.colorpicker.color-picker"
 msgstr "Pick color from screen"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:434, src/app/main/ui/workspace/colorpicker.cljs:448
+#: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
 msgstr "Color tokens"
 
@@ -6721,11 +6721,11 @@ msgstr "File library"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Recent colors"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:367
+#: src/app/main/ui/workspace/colorpicker.cljs:369
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:560
+#: src/app/main/ui/workspace/colorpicker.cljs:566
 msgid "workspace.libraries.colors.save-color"
 msgstr "Save color style"
 
@@ -6893,7 +6893,7 @@ msgstr "UPDATES"
 msgid "workspace.notification-pill.detail"
 msgstr "Details"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:780
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
 msgstr "Click the + button to add interactions."
 
@@ -6951,9 +6951,13 @@ msgstr "Show/hide more options"
 msgid "workspace.options.cancel-export"
 msgstr "Cancel"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+msgid "workspace.options.canvas-background-section"
+msgstr "Canvas background section"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:722
 msgid "workspace.options.clip-content"
@@ -7325,7 +7329,7 @@ msgstr "Square"
 msgid "workspace.options.group-fill"
 msgstr "Group fill"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:71
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:104
 msgid "workspace.options.group-stroke"
 msgstr "Group stroke"
 
@@ -7557,11 +7561,11 @@ msgstr "While Hovering"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "While Pressing"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:739
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:743
 msgid "workspace.options.interactions"
 msgstr "Interactions"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:742
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:746
 msgid "workspace.options.interactions.add-interaction"
 msgstr "Add interaction"
 
@@ -7673,7 +7677,7 @@ msgstr "No matching size preset"
 msgid "workspace.options.opacity"
 msgstr "Opacity"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:85
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
 msgid "workspace.options.pixel-grid-color"
 msgstr "Pixel grid color"
 
@@ -7733,7 +7737,7 @@ msgstr "Search font"
 msgid "workspace.options.search-size-preset"
 msgstr "Search size preset"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:782
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:786
 msgid "workspace.options.select-a-shape"
 msgstr "Select a shape, board or group to drag a connection to other board."
 
@@ -7749,7 +7753,7 @@ msgstr "Color selection section"
 msgid "workspace.options.selection-fill"
 msgstr "Selection fill"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:70
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:103
 msgid "workspace.options.selection-stroke"
 msgstr "Selection stroke"
 
@@ -7805,7 +7809,7 @@ msgstr "Selection shadows"
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "Toggle shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:264
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:265
 msgid "workspace.options.show-fill-on-export"
 msgstr "Show in exports"
 
@@ -7829,117 +7833,117 @@ msgstr "Lock ratio"
 msgid "workspace.options.size.unlock"
 msgstr "Unlock ratio"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:275
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:334
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "Circle"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:276
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:335
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "Diamond"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:272
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:331
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Arrow"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:270
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
 msgid "workspace.options.stroke-cap.none"
 msgstr "None"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:278
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:337
 msgid "workspace.options.stroke-cap.round"
 msgstr "Round"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:279
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:338
 msgid "workspace.options.stroke-cap.square"
 msgstr "Square"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:333
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Rectangle"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:273
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:332
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "Triangle"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:291
 msgid "workspace.options.stroke-color"
 msgstr "Stroke color"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:475
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:548
 msgid "workspace.options.stroke-dash"
 msgstr "Dash"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:485
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:558
 msgid "workspace.options.stroke-gap"
 msgstr "Gap"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:345, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:382
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:405, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:443
 msgid "workspace.options.stroke-width"
 msgstr "Stroke width"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:444
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:518
 msgid "workspace.options.stroke-width-bottom"
 msgstr "Bottom (block end)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:454
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:531
 msgid "workspace.options.stroke-width-left"
 msgstr "Left (inline start)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:434
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:505
 msgid "workspace.options.stroke-width-right"
 msgstr "Right (inline end)"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:424
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:492
 msgid "workspace.options.stroke-width-top"
 msgstr "Top (block start)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:258
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:267
 msgid "workspace.options.stroke.add-stroke"
 msgstr "Add stroke color"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:203
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:238
 msgid "workspace.options.stroke.center"
 msgstr "Center"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:266
 msgid "workspace.options.stroke.dashed"
 msgstr "Dashed"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:230
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:265
 msgid "workspace.options.stroke.dotted"
 msgstr "Dotted"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:204
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:239
 msgid "workspace.options.stroke.inner"
 msgstr "Inside"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:232
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:267
 msgid "workspace.options.stroke.mixed"
 msgstr "Mixed"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:205
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:240
 msgid "workspace.options.stroke.outer"
 msgstr "Outside"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:150
 msgid "workspace.options.stroke.per-side"
 msgstr "Stroke per side"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:126
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:149
 msgid "workspace.options.stroke.per-side-disabled"
 msgstr ""
 "Strokes per side feature is only available in the new render. Switch render "
 "to use it."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:273, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:389
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Remove stroke"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:264
 msgid "workspace.options.stroke.solid"
 msgstr "Solid"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:324
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:384
 msgid "workspace.options.stroke.toggle-stroke"
 msgstr "Toggle stroke"
 
@@ -8023,7 +8027,7 @@ msgstr "Selection text"
 msgid "workspace.options.text-options.underline"
 msgstr "Underline (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
 msgstr "Use the play button at the header to run the prototype view."
 
@@ -8627,15 +8631,15 @@ msgstr "Add set"
 msgid "workspace.tokens.add-set-to-group"
 msgstr "Add set to this group"
 
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:183
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:201, src/app/main/ui/workspace/tokens/management/group.cljs:186
 msgid "workspace.tokens.add-token"
 msgstr "Add token: %s"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:156
 msgid "workspace.tokens.applied-to"
 msgstr "Applied to"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:343
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:400
 msgid "workspace.tokens.axis"
 msgstr "Axis"
 
@@ -8655,11 +8659,11 @@ msgstr "Base font size must be a value in pixels or unitless."
 msgid "workspace.tokens.change-token-source"
 msgstr "Change token source"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:312, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:132
 msgid "workspace.tokens.color"
 msgstr "Color"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:376
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:433
 msgid "workspace.tokens.copy-name"
 msgstr "Copy token path"
 
@@ -8679,7 +8683,7 @@ msgstr "Create new %s token"
 msgid "workspace.tokens.current-tokens-source-tooltip"
 msgstr "This is the current Tokens source"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:380
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "Delete token"
 
@@ -8687,7 +8691,7 @@ msgstr "Delete token"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Delete theme"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:373
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicate token"
 
@@ -8699,7 +8703,7 @@ msgstr "Duplicate Tokens Group"
 msgid "workspace.tokens.duplicate-suffix"
 msgstr "copy"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:359
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:416
 msgid "workspace.tokens.edit"
 msgstr "Edit token"
 
@@ -8719,7 +8723,7 @@ msgstr "Edit %s token"
 msgid "workspace.tokens.enter-token-name"
 msgstr "Enter %s token name"
 
-#: src/app/main/data/workspace/tokens/application.cljs:732, src/app/main/ui/workspace/tokens/management/group.cljs:161
+#: src/app/main/data/workspace/tokens/application.cljs:767, src/app/main/ui/workspace/tokens/management/group.cljs:164
 msgid "workspace.tokens.error-text-edition"
 msgstr "Tokens can't be applied while editing text. Select the text layer instead."
 
@@ -8751,7 +8755,7 @@ msgstr "Single file"
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "Font size or {alias}"
 
-#: src/app/main/data/workspace/tokens/application.cljs:329
+#: src/app/main/data/workspace/tokens/application.cljs:364
 msgid "workspace.tokens.font-variant-not-found"
 msgstr ""
 "Error setting font weight/style. This font style does not exist in the "
@@ -8761,7 +8765,7 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Font weight (300, Bold Italic...) or an {alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:251
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:253
 msgid "workspace.tokens.gaps"
 msgstr "Gaps"
 
@@ -8839,23 +8843,23 @@ msgstr "Letter spacing or {alias}"
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "Line height (multiplier, px, %) or {alias}"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:243
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:245
 msgid "workspace.tokens.margins"
 msgstr "Margins"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:282
 msgid "workspace.tokens.max-size"
 msgstr "Max. size"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:274
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:276
 msgid "workspace.tokens.min-size"
 msgstr "Min. size"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:317
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:351
 msgid "workspace.tokens.missing-reference"
 msgstr "Missing reference"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:125
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:137
 msgid "workspace.tokens.more-options"
 msgstr "Right click to see options"
 
@@ -8903,7 +8907,7 @@ msgstr "Tokens source sets or themes have been modified"
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s active sets"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:178, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:184, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:198, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:200, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:207, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:209, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:408, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:497, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:512, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:527, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:542
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:67
 msgid "workspace.tokens.only-first-fill-or-stroke"
 msgstr "Design tokens can only be applied to the first fill or stroke in the list."
 
@@ -8911,23 +8915,19 @@ msgstr "Design tokens can only be applied to the first fill or stroke in the lis
 msgid "workspace.tokens.open-source-new-tab"
 msgstr "Open tokens' source in a new tab"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:122
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:134
 msgid "workspace.tokens.original-value"
 msgstr "Original value: %s"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:227
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.paddings"
 msgstr "Paddings"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:305
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:362
 msgid "workspace.tokens.radius"
 msgstr "Radius"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:287
-msgid "workspace.tokens.stroke-width"
-msgstr "Stroke Width"
-
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:124, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:131, src/app/main/ui/workspace/tokens/management/token_pill.cljs:142
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Reference in {%s} is not valid or is not in any active set."
 
@@ -8971,7 +8971,7 @@ msgstr "Rename Tokens Group"
 msgid "workspace.tokens.rename-group-name-hint"
 msgstr "Your tokens will automatically be renamed to %s.(suffix).(tokenName)"
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:127, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:135
 msgid "workspace.tokens.resolved-value"
 msgstr "Resolved value: %s"
 
@@ -9043,13 +9043,17 @@ msgstr "X"
 msgid "workspace.tokens.shadow-y"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:268
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:270
 msgid "workspace.tokens.size"
 msgstr "Size"
 
 #: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
 msgid "workspace.tokens.source"
 msgstr "Source:"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+msgid "workspace.tokens.stroke-width"
+msgstr "Stroke Width"
 
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:54, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:161
 msgid "workspace.tokens.text-case-value-enter"
@@ -9089,7 +9093,7 @@ msgstr "Font family"
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "Font family or list of fonts separated by comma (,)"
 
-#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:161, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64
+#: src/app/main/ui/ds/controls/shared/token_option.cljs:43, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:88, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:142, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:162, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:298, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:63, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:64, src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.token-name"
 msgstr "Name"
 
@@ -9138,7 +9142,7 @@ msgstr "Type '%s' is not supported (%s):"
 msgid "workspace.tokens.use-reference"
 msgstr "Use a reference"
 
-#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:136
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 

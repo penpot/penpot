@@ -12,7 +12,6 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.ds.layers.layer-button :refer [layer-button*]]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
    [rumext.v2 :as mf]))
@@ -29,7 +28,8 @@
    [:tokens-lib {:optional true} :any]
    [:on-token-pill-click {:optional true} fn?]
    [:on-pill-context-menu {:optional true} fn?]
-   [:on-node-context-menu {:optional true} fn?]])
+   [:on-node-context-menu {:optional true} fn?]
+   [:can-edit {:optional true} :boolean]])
 
 (mf/defc folder-node*
   {::mf/schema schema:folder-node}
@@ -43,7 +43,8 @@
            tokens-lib
            on-token-pill-click
            on-pill-context-menu
-           on-node-context-menu]}]
+           on-node-context-menu
+           can-edit]}]
   (let [full-path            (str (name type) "." (:path node))
         is-folder-expanded   (not (contains? (set (or folded-token-paths [])) full-path))
         children             (:children node)
@@ -100,6 +101,7 @@
                                  :on-pill-context-menu on-pill-context-menu
                                  :on-node-context-menu on-node-context-menu
                                  :tokens-lib tokens-lib
+                                 :can-edit can-edit
                                  :selected-token-set-id selected-token-set-id}]]
               (let [id    (:id (:leaf child))
                     token (ctob/get-token tokens-lib selected-token-set-id id)]
@@ -110,6 +112,7 @@
                   :is-selected-inside-layout is-selected-inside-layout
                   :active-theme-tokens active-theme-tokens
                   :on-click on-token-pill-click
+                  :can-edit can-edit
                   :on-context-menu on-pill-context-menu}]))))])]))
 
 (def ^:private schema:token-tree
@@ -124,7 +127,9 @@
    [:selected-token-set-id {:optional true} :any]
    [:on-token-pill-click {:optional true} fn?]
    [:on-pill-context-menu {:optional true} fn?]
-   [:on-node-context-menu {:optional true} fn?]])
+   [:on-node-context-menu {:optional true} fn?]
+   [:can-edit {:optional true} :boolean]
+   [:can-edit-tokens {:optional true} :boolean]])
 
 (mf/defc token-tree*
   {::mf/schema schema:token-tree}
@@ -138,19 +143,18 @@
            selected-token-set-id
            on-token-pill-click
            on-pill-context-menu
-           on-node-context-menu]}]
+           on-node-context-menu
+           can-edit
+           can-edit-tokens]}]
   (let [separator "."
         raw-tree
         (mf/with-memo [tokens]
           (cpn/build-tree-root tokens separator))
 
-        can-edit-file?
-        (mf/use-ctx ctx/can-edit?)
-
         on-node-context-menu (mf/use-fn
-                              (mf/deps can-edit-file? on-node-context-menu)
+                              (mf/deps can-edit-tokens on-node-context-menu)
                               (fn [event node]
-                                (when can-edit-file?
+                                (when can-edit-tokens
                                   (on-node-context-menu event node))))
 
         ordered-nodes (mf/with-memo [raw-tree]
@@ -175,6 +179,7 @@
              :is-selected-inside-layout is-selected-inside-layout
              :active-theme-tokens active-theme-tokens
              :on-click on-token-pill-click
+             :can-edit can-edit
              :on-context-menu on-pill-context-menu}])
          ;; Render segment folder
          [:ul {:class (stl/css :node-parent)
@@ -189,4 +194,5 @@
                             :on-node-context-menu on-node-context-menu
                             :on-pill-context-menu on-pill-context-menu
                             :tokens-lib tokens-lib
+                            :can-edit can-edit
                             :selected-token-set-id selected-token-set-id}]]))]))

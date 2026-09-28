@@ -247,7 +247,7 @@ msgstr "Broyt teldupost"
 msgid "dashboard.copy-suffix"
 msgstr "(avrita)"
 
-#: src/app/main/ui/dashboard/organization_team_switch.cljs:280
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:295
 msgid "dashboard.create-new-team"
 msgstr "Stovna nýtt toymi"
 
@@ -255,7 +255,7 @@ msgstr "Stovna nýtt toymi"
 msgid "dashboard.default-team-name"
 msgstr "Títt Penpot"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:274, src/app/main/ui/dashboard/team_form.cljs:153
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:227, src/app/main/ui/dashboard/team_form.cljs:153
 msgid "dashboard.delete-team"
 msgstr "Strika toymi"
 
@@ -365,7 +365,7 @@ msgstr "Innleggur fílu: %s"
 msgid "dashboard.invite-profile"
 msgstr "Bjóða við í toymi"
 
-#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:257, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:263, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:268, src/app/main/ui/dashboard/team.cljs:464
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:464
 msgid "dashboard.leave-team"
 msgstr "Far úr toymu"
 
