@@ -29,3 +29,4 @@
 - Migrations are an ordered set mixing legacy version-derived ids and newer named ids. Keep append order stable; `migrate` applies the set difference between available migrations and file migrations.
 - `migrate-file` synthesizes legacy migration ids from old numeric versions when `:migrations` is absent, migrates legacy features, and records feature flags created through `cfeat/*new*`.
 - When a file had no previous `:migrations`, `migrate-file` marks all migrations as migrated in metadata so callers persist the complete migration set, not only transformations that changed data.
+- Closed schemas (`schema:stroke-attrs` and others) reject a key that was dropped from the declaration, so removing a declared attr needs a migration in the same change, for data already written with it.
