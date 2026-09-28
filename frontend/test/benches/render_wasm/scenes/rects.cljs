@@ -43,8 +43,8 @@
    :max-size 100})
 
 (def ^:private schema:params
-  "Workload parameters. Sizes are finite (`pos?` accepts Infinity, which JSON
-  cannot carry and the generator cannot honor); `:min-size` above `:max-size`
+  "Workload parameters. Sizes are finite (`pos?` accepts Infinity, which the
+  generator cannot honor); `:min-size` above `:max-size`
   is rejected so parameter sweeps cannot silently measure a reversed range."
   [:and
    [:map {:closed true}
