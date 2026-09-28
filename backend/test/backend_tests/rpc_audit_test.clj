@@ -565,3 +565,33 @@
   ;; attribute the event to, so it lands on the zero uuid.
   (t/is (= uuid/zero
            (:profile-id (prepare-event nil {:some-data "value"})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREPARE-RPC-EVENT PROFILE-ID COERCION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest prepare-rpc-event-coerces-string-metadata-profile-id
+  ;; `::audit/profile-id` is set by hand in a dozen commands, and some of
+  ;; them read the value from token claims or other stringly-typed sources.
+  ;; The audit schema demands a uuid, and `submit*` swallows the validation
+  ;; error, so an unconverted string would drop the event on the floor.
+  (let [caller (th/create-profile* 1 {:is-active true})
+        target "33601240-a00b-11ea-ba1b-c554cc60e361"
+        result (with-meta {:some-data "value"}
+                 {::audit/profile-id target})]
+    (t/is (= #uuid "33601240-a00b-11ea-ba1b-c554cc60e361"
+             (:profile-id (prepare-event (:id caller) result))))
+    (t/is (uuid? (:profile-id (prepare-event (:id caller) result))))))
+
+(t/deftest prepare-rpc-event-discards-unusable-metadata-profile-id
+  ;; An override that cannot be turned into a uuid is dropped, not honoured
+  ;; and not propagated: the event falls back to the caller, which is always
+  ;; a valid uuid, instead of failing the schema check and losing the row.
+  (let [caller (th/create-profile* 1 {:is-active true})]
+    (doseq [bad ["not-a-valid-uuid" "" "  " 42 {} [] :whatever nil false]]
+      (let [result (with-meta {:some-data "value"}
+                     (cond-> {::audit/profile-id bad}
+                       (nil? bad) (dissoc ::audit/profile-id)))]
+        (t/is (= (:id caller)
+                 (:profile-id (prepare-event (:id caller) result)))
+              (str "override " (pr-str bad) " must fall back to the caller"))))))
