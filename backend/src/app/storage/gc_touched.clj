@@ -24,6 +24,7 @@
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
@@ -214,7 +215,9 @@
   [row]
   (try
     [:ok (impl/decode-row row)]
-    (catch Throwable cause
+    ;; Exception, not Throwable: JVM Errors (OOM, StackOverflow) must
+    ;; not be swallowed as a deferrable data problem.
+    (catch Exception cause
       (l/err :hint "storage object with corrupt metadata, deferring evaluation"
              :id (str (:id row))
              :cause cause)
@@ -229,10 +232,12 @@
      :poison (not-empty (mapv second (:poison grouped)))}))
 
 (defn- process-touched!
-  [{:keys [::db/pool ::timestamp] :as cfg}]
+  [{:keys [::db/pool ::mtx/metrics ::timestamp] :as cfg}]
   (loop [freezed 0
          deleted 0]
     (let [{:keys [chunk poison]} (get-chunk pool timestamp)]
+      (when (seq poison)
+        (mtx/run! metrics :id :storage-gc-poison :inc (count poison)))
       (if (or (seq chunk) (seq poison))
         (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk poison)]
           (recur (long (+ freezed nfo))
@@ -245,7 +250,8 @@
 
 (defmethod ig/assert-key ::handler
   [_ params]
-  (assert (db/pool? (::db/pool params)) "expect valid storage"))
+  (assert (db/pool? (::db/pool params)) "expect valid storage")
+  (assert (mtx/metrics? (::mtx/metrics params)) "expect valid metrics"))
 
 (defmethod ig/expand-key ::handler
   [k v]

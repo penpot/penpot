@@ -117,22 +117,40 @@
         (dissoc :reference :upload-id :chunk-index)
         (assoc :bucket bucket))))
 
+;; Decoder and encoder are built once per process: creating them
+;; compiles the (closed, multi-dispatch) schema, and `decode-metadata`
+;; runs on every read path (get-object, dedup probes, GC batches).
+(def ^:private decode-metadata*
+  (sm/decode-fn schema:metadata (sm/json-transformer)))
+
+(def ^:private encode-metadata*
+  (sm/encoder schema:metadata (sm/json-transformer)))
+
+(defn- transit-encoded?
+  "Legacy metadata is Transit json-verbose, where every top-level key is
+  a keyword, so the document starts with `{\"~:`. Anchoring the check to
+  the start avoids reading a plain-JSON document as Transit just because
+  one of its values contains `\"~:`."
+  [value]
+  (and (string? value)
+       (str/starts-with? (str/trim value) "{\"~:")))
+
 (defn decode-metadata
   "Decode storage metadata from a PGobject, accepting both the legacy
   Transit encoding (sniffed by the `\"~:` marker) and plain JSON.
   Always returns the normalized shape with id fields as UUIDs."
   [o]
   (when (some? o)
-    (let [raw (if (str/includes? (.getValue ^PGobject o) "\"~:")
+    (let [raw (if (transit-encoded? (.getValue ^PGobject o))
                 (db/decode-transit-pgobject o)
                 (db/decode-json-pgobject o))]
       (when-not (map? raw)
         (ex/raise :type :internal
                   :code :invalid-storage-metadata
                   :hint "expected a map on storage object metadata"))
-      (sm/decode schema:metadata (normalize-metadata raw) sm/json-transformer))))
+      (decode-metadata* (normalize-metadata raw)))))
 
-(def ^:private check-metadata!
+(def ^:private check-metadata
   (sm/check-fn schema:metadata
                :hint "invalid storage object metadata"
                :type :validation
@@ -144,11 +162,7 @@
   `:storage-metadata-as-json` config flag is unset, as plain JSON
   when it is set."
   [mdata]
-  (let [mdata (check-metadata!
-               (sm/decode schema:metadata
-                          (normalize-metadata mdata)
-                          sm/json-transformer))]
+  (let [mdata (check-metadata (decode-metadata* (normalize-metadata mdata)))]
     (if (cf/get :storage-metadata-as-json)
-      (->> (sm/encode schema:metadata mdata sm/json-transformer)
-           (db/json))
+      (db/json (encode-metadata* mdata))
       (db/tjson mdata))))

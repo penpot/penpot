@@ -9,7 +9,10 @@
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
@@ -24,6 +27,9 @@
    [mockery.core :refer [with-mocks]]
    [promesa.core :as p])
   (:import
+   (io.prometheus.client
+    Counter
+    Counter$Child)
    (org.postgresql.util
     PGobject)
    (software.amazon.awssdk.services.s3
@@ -44,6 +50,14 @@
   [storage]
   (assoc storage ::sto/backend :fs))
 
+(defn- poison-counter-value
+  "Read the process-wide gc-poison counter from the test system metrics."
+  []
+  (let [metrics   (:app.metrics/metrics th/*system*)
+        collector (mtx/get-collector metrics :storage-gc-poison)
+        instance  (::mdef/instance collector)]
+    (.get ^Counter$Child (.labels ^Counter instance (into-array String [])))))
+
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -60,6 +74,26 @@
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
+
+(t/deftest put-and-retrieve-with-json-metadata-flag
+  ;; End-to-end through the jsonb column: with the flag on, the row is
+  ;; stored as plain JSON and still decodes to native types.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          profile (uuid/random)
+          object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                            :bucket "tempfile"
+                                            :content-type "application/zip"
+                                            :profile-id profile})
+          row     (th/db-exec-one! ["select metadata::text as metadata from storage_object where id = ?"
+                                    (:id object)])]
+      (t/is (not (str/includes? (:metadata row) "\"~:")))
+      (t/is (str/includes? (:metadata row) "\"bucket\""))
+      (let [loaded (sto/get-object storage (:id object))]
+        (t/is (= "tempfile" (:bucket (meta loaded))))
+        (t/is (= "application/zip" (:content-type (meta loaded))))
+        (t/is (= profile (:profile-id (meta loaded))))))))
 
 (t/deftest tempfile-objects-are-not-deduplicated
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -96,8 +130,7 @@
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          ::sto/expired-at (ct/in-future {:seconds 1})})]
+                                          :content-type "text/plain"})]
     (t/is (sto/object? object))
     (t/is (true? (sto/del-object! storage (:id object))))
 
@@ -110,6 +143,18 @@
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
     (t/is (nil? (sto/get-object storage (:id object))))))
+
+(t/deftest delete-expired-object-returns-false
+  ;; An object stored with `::sto/expired-at` is born with `deleted_at`
+  ;; set, so deleting it is a no-op and must report `false`.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"
+                                          ::sto/expired-at (ct/in-future {:hours 1})})]
+    (t/is (some? (:expired-at object)))
+    (t/is (false? (sto/del-object! storage (:id object))))))
 
 (t/deftest deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -459,6 +504,7 @@
   ;; collected: it is logged and deferred exactly one day, keeping its
   ;; metadata intact for a later repair.
   (let [now     (ct/now)
+        before  (poison-counter-value)
         storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
@@ -474,6 +520,23 @@
     (let [row (th/db-exec-one! ["select metadata::text as metadata, touched_at from storage_object where id = ?" poison])]
       (t/is (= "[]" (:metadata row)))
       ;; inst-ms: timestamptz keeps micros, the frozen clock has nanos.
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))
+    ;; One poison row observed, one increment.
+    (t/is (= (inc before) (poison-counter-value)))))
+
+(t/deftest storage-gc-touched-poison-only
+  ;; A chunk made only of poison rows still terminates: the rows are
+  ;; deferred, the next scan returns nothing, and no delete is counted.
+  (let [now    (ct/now)
+        poison (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+    (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" poison])]
       (t/is (= (inst-ms (ct/plus now {:days 1}))
                (inst-ms (:touched-at row)))))))
 

@@ -203,3 +203,64 @@
   (let [mdata (stsch/decode-metadata
                (pgobject "{\"bucket\":\"file-media-object\",\"content-type\":\"image/png\",\"hash\":\"blake2b:9f1c2e\"}"))]
     (t/is (= "blake2b:9f1c2e" (:hash mdata)))))
+
+(def ^:private bucket-samples
+  ;; One representative payload per bucket, with every required key and
+  ;; one optional key where the bucket declares any.
+  [["file-media-object"
+    {:bucket "file-media-object" :content-type "image/png" :hash "blake2b:9f1c2e"}]
+   ["team-font-variant"
+    {:bucket "team-font-variant" :content-type "font/woff2"}]
+   ["file-object-thumbnail"
+    {:bucket "file-object-thumbnail" :content-type "image/png"}]
+   ["file-thumbnail"
+    {:bucket "file-thumbnail" :content-type "image/png"}]
+   ["profile"
+    {:bucket "profile" :content-type "image/png"}]
+   ["organization"
+    {:bucket "organization" :content-type "image/svg+xml"
+     :organization-id #uuid "11111111-2222-3333-4444-555555555555"}]
+   ["tempfile"
+    {:bucket "tempfile" :content-type "application/zip"
+     :profile-id #uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d"}]
+   ["upload-session"
+    {:bucket "upload-session" :content-type "application/octet-stream"}]
+   ["file-data"
+    {:bucket "file-data" :content-type "application/octet-stream"
+     :file-id #uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d"
+     :id #uuid "83df2f92-6bd4-4e6d-9c9a-3f6d2b1a4c55"}]
+   ["file-data-fragment"
+    {:bucket "file-data-fragment"}]
+   ["file-change"
+    {:bucket "file-change"}]])
+
+(t/deftest encode-decode-roundtrips-every-bucket
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+    (doseq [[bucket mdata] bucket-samples]
+      (t/testing bucket
+        (t/is (= mdata (stsch/decode-metadata (stsch/encode-metadata mdata))))))))
+
+(t/deftest json-encoding-roundtrips-every-bucket
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (doseq [[bucket mdata] bucket-samples]
+      (t/testing bucket
+        (t/is (= mdata (stsch/decode-metadata (stsch/encode-metadata mdata))))))))
+
+(t/deftest metadata-buckets-is-the-canonical-set
+  (t/is (= #{"file-media-object" "team-font-variant" "file-object-thumbnail"
+             "file-thumbnail" "profile" "organization" "tempfile"
+             "upload-session" "file-data" "file-data-fragment" "file-change"}
+           stsch/metadata-buckets)))
+
+(t/deftest decode-metadata-returns-nil-for-nil
+  (t/is (nil? (stsch/decode-metadata nil))))
+
+(t/deftest sniff-treats-leading-tilde-value-as-json
+  ;; A plain-JSON value starting with `~:` must not switch the reader to
+  ;; the Transit branch: the sniff is anchored to the first key.
+  (let [encoded (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+                  (stsch/encode-metadata {:bucket "tempfile"
+                                          :content-type "~:not-transit"}))
+        decoded (stsch/decode-metadata encoded)]
+    (t/is (= "~:not-transit" (:content-type decoded)))
+    (t/is (= "tempfile" (:bucket decoded)))))
