@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-20 02:51+0000\n"
+"PO-Revision-Date: 2026-09-28 08:14+0000\n"
 "Last-Translator: Danial Shirali <danialshirali16@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -369,6 +369,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(کپی)"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#, fuzzy
 msgid "dashboard.create-new-organization"
 msgstr "ایجاد سازمان"
 
@@ -746,6 +747,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "پیش از تأیید، پیوندهای کتابخانه را بررسی کنید:"
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "پیوند داده‌شده"
 
@@ -1714,12 +1716,13 @@ msgid "errors.registration-disabled"
 msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
-"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است "
-"ذخیره‌سازی به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری "
-"مجدد نکنید؛ در غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای "
-"دریافت کمک با پشتیبانی تماس بگیرید."
+"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است ذخیره‌سازی "
+"به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری مجدد نکنید؛ در "
+"غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای دریافت کمک با "
+"پشتیبانی تماس بگیرید."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
