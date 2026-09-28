@@ -644,5 +644,13 @@
 
 (mf/defc viewer-page*
   {::mf/lazy-load true}
-  [props]
-  [:> viewer* props])
+  [{:keys [file-id] :as props}]
+
+  (mf/with-effect [file-id]
+    (when-not (uuid? file-id)
+      (ex/raise :type :not-found
+                :code :missing-file-id
+                :hint "provided file-id is invalid uuid or nil")))
+
+  (when (uuid? file-id)
+    [:> viewer* props]))
