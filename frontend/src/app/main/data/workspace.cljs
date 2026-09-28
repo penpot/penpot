@@ -1253,10 +1253,18 @@
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
-        (if (and (some? shape) (not (contains? selected (:id shape))))
+        (cond
+          ;; A shape missing from the current page can never become
+          ;; selected, so selecting it and retrying would recurse forever
+          (and (some? shape) (not (contains? objects (:id shape))))
+          (rx/empty)
+
+          (and (some? shape) (not (contains? selected (:id shape))))
           (rx/concat
            (rx/of (dws/select-shape (:id shape)))
            (rx/of (show-shape-context-menu params)))
+
+          :else
           (rx/of (show-context-menu
                   (-> params
                       (assoc
