@@ -81,27 +81,58 @@
   (let [image-extensions-re #"(\.png)|(\.jpg)|(\.jpeg)|(\.webp)|(\.gif)|(\.svg)$"]
     (str/replace filename image-extensions-re "")))
 
+(def ^:private font-variant-tokens
+  "Weight and style tokens stripped from a font name to derive its family.
+  Keep the alternatives in sync with `parse-font-weight` and
+  `parse-font-style`."
+  ["extra\\s*black" "ultra\\s*black" "extra\\s*bold" "ultra\\s*bold"
+   "semi\\s*bold" "demi\\s*bold" "extra\\s*light" "ultra\\s*light"
+   "hairline" "thin" "light" "normal" "regular" "medium" "bold" "black"
+   "heavy" "solid" "italic" "oblique"])
+
+(def ^:private font-variant-tokens-re
+  ;; The trailing boundary is a lookahead, so two tokens separated by a single
+  ;; space are both stripped in one pass (the separator is not consumed).
+  (re-pattern (str "(?i)(^|[-_\\s])(" (str/join "|" font-variant-tokens) ")(?=[-_\\s]|$)")))
+
+(def ^:private font-concatenated-style-re
+  ;; Separate a style token glued to a weight token, e.g. "BoldItalic" ->
+  ;; "Bold Italic". Only a known weight token followed by a style token is
+  ;; split, so families such as "OpenSans" are left untouched.
+  #"(?i)(black|bold|heavy|solid|medium|light|thin|hairline|regular|normal)(italic|oblique)\b")
+
+(defn parse-font-family
+  "Derive a font family name from a base name (a filename without its
+  extension), stripping the known weight/style tokens."
+  [base-name]
+  (let [normalized (str/replace base-name font-concatenated-style-re "$1 $2")
+        stripped   (-> normalized
+                       (str/replace font-variant-tokens-re "$1")
+                       (str/replace #"[-_\s]+" " ")
+                       (str/trim))]
+    (if (str/blank? stripped) base-name stripped)))
+
 (defn parse-font-weight
   [variant]
   (let [variant (or variant "")]
     (cond
-      (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b))" variant)               100
-      (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b))" variant) 200
-      (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b))" variant)                       300
-      (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b))" variant)              400
-      (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b))" variant)                      500
-      (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)     600
-      (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b))" variant)   800
-      (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b))" variant)                        700
-      (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b))" variant) 950
-      (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b))" variant)           900
-      :else                                                                                      400)))
+      (re-seq #"(?i)(?:^|[-_\s])(hairline|thin)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)               100
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*light|ultra\s*light)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant) 200
+      (re-seq #"(?i)(?:^|[-_\s])(light)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)                       300
+      (re-seq #"(?i)(?:^|[-_\s])(normal|regular)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)              400
+      (re-seq #"(?i)(?:^|[-_\s])(medium)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)                      500
+      (re-seq #"(?i)(?:^|[-_\s])(semi\s*bold|demi\s*bold)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)     600
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*bold|ultra\s*bold)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)   800
+      (re-seq #"(?i)(?:^|[-_\s])(bold)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)                        700
+      (re-seq #"(?i)(?:^|[-_\s])(extra\s*black|ultra\s*black)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant) 950
+      (re-seq #"(?i)(?:^|[-_\s])(black|heavy|solid)(?=(?:[-_\s]|$|italic\b|oblique\b))" variant)           900
+      :else                                                                                                400)))
 
 (defn parse-font-style
   [variant]
   (let [variant (or variant "")]
-    (if (or (re-seq #"(?i)(?:^|[-_\s])(italic)(?:[-_\s]|$)" variant)
-            (re-seq #"(?i)italic$" variant))
+    (if (or (re-seq #"(?i)(?:^|[-_\s])(italic|oblique)(?:[-_\s]|$)" variant)
+            (re-seq #"(?i)(?:italic|oblique)$" variant))
       "italic"
       "normal")))
 
