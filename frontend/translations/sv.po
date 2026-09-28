@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2026-09-28 08:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -749,6 +749,7 @@ msgid "dashboard.import.resolve-libraries-summary"
 msgstr "Granska bibliotekslänkarna innan du bekräftar:"
 
 #: src/app/main/ui/dashboard/import.cljs:521
+#, fuzzy
 msgid "dashboard.import.summary.linked"
 msgstr "Länkad"
 
@@ -1720,6 +1721,7 @@ msgid "errors.registration-disabled"
 msgstr "Registreringen är för närvarande inaktiverad."
 
 #: src/app/main/errors.cljs:538
+#, fuzzy
 msgid "errors.save-failed"
 msgstr ""
 "Dina senaste ändringar har inte bekräftats som sparade. Sparandet kanske "
