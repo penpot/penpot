@@ -6245,6 +6245,10 @@ msgstr "Typographies"
 msgid "workspace.assets.typography.add-typography"
 msgstr "Add typography"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:461
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "Select one text to create a typography style"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:855
 msgid "workspace.assets.typography.font-size"
 msgstr "Size"

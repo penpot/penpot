@@ -380,6 +380,74 @@
                  "float letter-spacing is normalised to 2-decimal string")))))))
 
 ;; ---------------------------------------------------------------------------
+;; Tests: add-typography must not create an asset from a deleted font
+;;
+;; A text shape can keep referencing a font-id that is no longer installed
+;; (the font was removed, or belongs to an unavailable library). Creating a
+;; typography from it would bake that broken font-id into a brand-new asset.
+;; ---------------------------------------------------------------------------
+
+(t/deftest add-typography-skips-shape-with-deleted-font
+  (t/async
+    done
+    (let [content   (txt/change-text nil "hello" :font-id "deleted-font-id")
+          file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content content))
+          shape-id  (:id (cths/get-shape file :text1))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
+                     (dwte/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))
+               shape'       (cths/get-shape file' :text1)]
+           (t/is (= 0 (count typographies))
+                 "no typography was added for a shape with a deleted font")
+           (t/is (nil? (:typography-ref-id shape'))
+                 "the shape was not linked to a typography")))))))
+
+;; ---------------------------------------------------------------------------
+;; Tests: add-typography must not create an asset from two or more selected texts
+;;
+;; Deriving a typography from a specific text only makes sense for a single
+;; shape; with several texts selected there is no one style to capture.
+;; ---------------------------------------------------------------------------
+
+(t/deftest add-typography-skips-multiple-selected-texts
+  (t/async
+    done
+    (let [file      (-> (cthf/sample-file :file1)
+                        (cths/add-sample-shape :text1
+                                               :type    :text
+                                               :x 0 :y 0
+                                               :content (txt/change-text nil "hello"))
+                        (cths/add-sample-shape :text2
+                                               :type    :text
+                                               :x 0 :y 100
+                                               :content (txt/change-text nil "world")))
+          shape-id-1 (:id (cths/get-shape file :text1))
+          shape-id-2 (:id (cths/get-shape file :text2))
+          file-id   (:id file)
+          store     (ths/setup-store file)
+          events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id-1 shape-id-2}))
+                     (dwte/add-typography file-id)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [file'        (ths/get-file-from-state new-state)
+               typographies (vals (get-in file' [:data :typographies]))]
+           (t/is (= 0 (count typographies))
+                 "no typography was added when two texts are selected")))))))
+
+;; ---------------------------------------------------------------------------
 ;; Tests: save-default-font must not persist typography refs into the global default font
 ;;
 ;; Root cause of #10925: typography assets are file-specific references, but
