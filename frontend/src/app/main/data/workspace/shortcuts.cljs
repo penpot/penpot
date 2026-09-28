@@ -618,6 +618,7 @@
                              :fn #(st/emit! (toggle-layout-flag :snap-ruler-guides))}
 
    :export-selection    {:tooltip (ds/alt (ds/meta-shift "E"))
+                         :label (fn [] (tr "shortcuts.export-selection"))
                          :command (ds/c-mod "alt+shift+e")
                          :subsections [:basics :main-menu]
                          :section [:workspace :basics]

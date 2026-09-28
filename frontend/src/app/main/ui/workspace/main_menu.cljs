@@ -655,13 +655,6 @@
         (mf/use-fn
          #(st/emit! (de/export-selected-shapes {:origin "workspace:menu"})))
 
-        on-export-selection-key-down
-        (mf/use-fn
-         (mf/deps on-export-selection)
-         (fn [event]
-           (when (kbd/enter? event)
-             (on-export-selection event))))
-
         on-export-file
         (mf/use-fn
          (mf/deps file)
@@ -741,7 +734,6 @@
 
      [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
                               :on-click    on-export-selection
-                              :on-key-down on-export-selection-key-down
                               :id          "file-menu-export-selection"}
       [:span {:class (stl/css :item-name)}
        (tr "workspace.export-selection")]
