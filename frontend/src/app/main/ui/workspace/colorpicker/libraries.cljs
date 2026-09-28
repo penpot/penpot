@@ -202,12 +202,6 @@
 
         file-id          (mf/use-ctx ctx/current-file-id)
 
-        current-colors*  (mf/use-state [])
-        current-colors   (deref current-colors*)
-
-        grouped-colors*  (mf/use-state {})
-        grouped-colors   (deref grouped-colors*)
-
         open-groups*     (mf/use-state #{})
         open-groups      (deref open-groups*)
 
@@ -221,13 +215,15 @@
           [{:value "recent" :label  (tr "workspace.libraries.colors.recent-colors") :id "recent"}
            {:value "file" :label (tr "workspace.libraries.colors.file-library") :id "file"}])
 
+        ;; Equal-stable, since `select*` resets its selection when options change
         options
-        (mf/with-memo [library-options libraries file-id]
-          (into library-options
-                (comp
-                 (map val)
-                 (map (fn [lib] {:value (d/name (:id lib)) :label (:name lib) :id (d/name (:id lib))})))
-                (dissoc libraries file-id)))
+        (h/use-equal-memo
+         (mf/with-memo [library-options libraries file-id]
+           (into library-options
+                 (comp
+                  (map val)
+                  (map (fn [lib] {:value (d/name (:id lib)) :label (:name lib) :id (d/name (:id lib))})))
+                 (dissoc libraries file-id))))
 
         on-library-change
         (mf/use-fn
@@ -281,49 +277,49 @@
                   (fn [s]
                     (if (contains? s path)
                       (disj s path)
-                      (conj s path))))))]
+                      (conj s path))))))
 
-    ;; Load library colors when the selected library (or filter options) change.
-    ;;
-    ;; flat    current-colors*  -- used for the grid view and the recent list view.
-    ;; grouped grouped-colors*  -- used for the library grouped list view.
-    ;;
-    ;; Library colors are fully converted with `library-color->color` here so
-    ;; the render path never needs to do it.  `flat-colors` is materialised as
-    ;; an eager vector so realisation does not leak into render time.
-    ;; open-groups* is reset to #{} (all groups expanded) on every library switch.
-    (mf/with-effect [selected recent-colors libraries file-id valid-color?]
-      (let [resolved-file-id (if (= selected :file) file-id selected)]
-        (reset! open-groups* #{})
-        (if (= selected :recent)
-          (let [colors (into []
-                             (comp
-                              (filter valid-color?)
-                              (map-indexed (fn [index color]
-                                             (let [color (if (map? color) color {:color color})]
-                                               (vary-meta color assoc ::id (dm/str index)))))
-                              (take-while some?))
-                             (sort ctc/sort-colors (reverse recent-colors)))]
-            (reset! current-colors* colors)
-            (reset! grouped-colors* {}))
+        resolved-file-id
+        (if (= selected :file) file-id selected)
 
-          (let [raw-colors (->> (dm/get-in libraries [resolved-file-id :data :colors])
-                                (vals)
-                                (filter valid-color?)
-                                (sort-by :name))
+        ;; Colors of the selected library; stable across unrelated commits
+        library-colors
+        (when (not= selected :recent)
+          (dm/get-in libraries [resolved-file-id :data :colors]))
 
-                ;; Eager vector for the grid view -- index-based ::id for keying.
-                flat-colors (into []
-                                  (map-indexed (fn [index color]
-                                                 (-> (ctc/library-color->color color resolved-file-id)
-                                                     (vary-meta assoc ::id (dm/str index)))))
-                                  raw-colors)
+        ;; Flat (grid and recent list) and grouped (library list) colors, converted for rendering
+        [current-colors grouped-colors]
+        (mf/with-memo [selected recent-colors library-colors resolved-file-id valid-color?]
+          (if (= selected :recent)
+            [(into []
+                   (comp
+                    (filter valid-color?)
+                    (map-indexed (fn [index color]
+                                   (let [color (if (map? color) color {:color color})]
+                                     (vary-meta color assoc ::id (dm/str index)))))
+                    (take-while some?))
+                   (sort ctc/sort-colors (reverse recent-colors)))
+             {}]
 
-                ;; Group tree with colors already converted -- no conversions at render time.
-                grouped (some-> (grp/group-assets raw-colors false)
-                                (convert-grouped-colors resolved-file-id))]
-            (reset! current-colors* flat-colors)
-            (reset! grouped-colors* (or grouped {}))))))
+            (let [raw-colors (->> (vals library-colors)
+                                  (filter valid-color?)
+                                  (sort-by :name))
+
+                  ;; Eager vector for the grid view -- index-based ::id for keying.
+                  flat-colors (into []
+                                    (map-indexed (fn [index color]
+                                                   (-> (ctc/library-color->color color resolved-file-id)
+                                                       (vary-meta assoc ::id (dm/str index)))))
+                                    raw-colors)
+
+                  ;; Group tree with colors already converted -- no conversions at render time.
+                  grouped (some-> (grp/group-assets raw-colors false)
+                                  (convert-grouped-colors resolved-file-id))]
+              [flat-colors (or grouped {})])))]
+
+    ;; Expands all groups when the selected library changes
+    (mf/with-effect [selected]
+      (reset! open-groups* #{}))
 
     [:div {:class (stl/css :libraries)}
      [:div {:class (stl/css :select-wrapper)}
