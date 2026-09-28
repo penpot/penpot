@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-20 02:51+0000\n"
-"Last-Translator: AntonPalmqvist <apq@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Swedish "
-"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
+"PO-Revision-Date: 2026-09-28 08:14+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
+"sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -369,6 +369,7 @@ msgid "dashboard.copy-suffix"
 msgstr "(kopia)"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:209, src/app/main/ui/dashboard/organization_team_switch.cljs:289
+#, fuzzy
 msgid "dashboard.create-new-organization"
 msgstr "Skapa org"
 
