@@ -190,7 +190,12 @@
         context  #js {:getExtension (fn [name]
                                       (when (= name "WEBGL_lose_context")
                                         lose-ext))
-                      :getContextAttributes (fn [] nil)
+                      :getContextAttributes (fn []
+                                              #js {"antialias" false
+                                                   "depth" true
+                                                   "stencil" false
+                                                   "alpha" false
+                                                   "preserveDrawingBuffer" false})
                       :drawingBufferWidth 1234
                       :drawingBufferHeight 5678}]
     #js {:id id
@@ -198,7 +203,6 @@
          :height 0
          :style #js {}
          :getContext (fn [_ _] context)
-         :getContextAttributes (fn [] nil)
          :addEventListener (fn [_ _] nil)
          :remove (fn [] (record! ["remove" id]) nil)}))
 
@@ -346,7 +350,11 @@
                          (t/is (= 1234 (:drawingBufferWidth graphics))
                                "drawing buffer width comes from the context")
                          (t/is (= 5678 (:drawingBufferHeight graphics))
-                               "drawing buffer height comes from the context"))
+                               "drawing buffer height comes from the context")
+                         (t/is (false? (:antialias graphics))
+                               "context attributes pass through")
+                         (t/is (true? (:depth graphics))
+                               "context attributes pass through"))
                        (let [calls (read-calls)]
                          (t/is (= 1 (effect-count calls "create")) "one canvas per load")
                          (t/is (zero? (effect-count calls "remove")) "success keeps the owner live"))
@@ -372,7 +380,7 @@
   vector, wire contract, failing fn name, fake message and WASM code."
   [cause fn-name message-pattern]
   (t/is (vector? cause) "cause is plain-data vector")
-  (t/is (core/serializable? cause) "cause satisfies wire contract")
+  (t/is (core/transit-round-trips? cause) "cause satisfies wire contract")
   (t/is (some #(= fn-name (:fn %)) cause) "cause names the failing WASM fn")
   (t/is (some #(and (string? (:message %))
                     (re-find message-pattern (:message %)))
@@ -445,7 +453,7 @@
     (t/is (= "aborted" (:phase m)))
     (t/is (= "boom" (:message m)) "top message stays as-is")
     (t/is (vector? cause) "cause is plain-data vector")
-    (t/is (core/serializable? cause) "hostile values become strings")
+    (t/is (core/transit-round-trips? cause) "hostile values become strings")
     (t/is (every? (fn [entry]
                     (every? (fn [[_ v]]
                               (or (not (string? v)) (<= (count v) 500)))
@@ -474,7 +482,7 @@
           cause     (:cause m)
           outer     (first cause)]
       (t/is (= "failed" (:status m)))
-      (t/is (core/serializable? cause) "throwing value still plain data")
+      (t/is (core/transit-round-trips? cause) "throwing value still crosses the wire")
       (t/is (= "unrenderable value" (:fn outer))
             "stringification failure falls back")))
   (t/testing "causes pr-str cannot render fall back to plain strings"
@@ -489,7 +497,7 @@
           m         (js->clj result :keywordize-keys true)
           cause     (:cause m)]
       (t/is (= "failed" (:status m)))
-      (t/is (core/serializable? cause) "throwing cause still plain data")
+      (t/is (core/transit-round-trips? cause) "throwing cause still crosses the wire")
       (t/is (= "unrenderable cause" (:message (first cause)))
             "level fallback holds"))))
 

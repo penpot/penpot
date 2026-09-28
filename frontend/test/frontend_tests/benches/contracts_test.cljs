@@ -7,6 +7,7 @@
 (ns frontend-tests.benches.contracts-test
   (:require
    [app.common.schema :as sm]
+   [app.common.transit :as transit]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.scenes.core :as core :include-macros true]
    [cljs.test :as t :include-macros true]))
@@ -83,11 +84,11 @@
   (let [collected (rect-cases)]
     (t/is (= [:rects/load :rects/pan :rects/zoom] (mapv :id collected)))))
 
-(t/deftest collected-cases-are-plain-data
+(t/deftest collected-cases-survive-the-wire
   (doseq [case-desc (rect-cases)]
     (t/is (not (contains? case-desc :run!)) (str (:id case-desc)))
     (t/is (not (contains? case-desc :ns)) (str (:id case-desc)))
-    (t/is (core/serializable? case-desc) (str (:id case-desc)))))
+    (t/is (core/transit-round-trips? case-desc) (str (:id case-desc)))))
 
 (t/deftest rects-cases-carry-declared-view-context-and-completion
   (let [collected (rect-cases)]
@@ -169,20 +170,29 @@
                  (assoc good :viewport {:width js/NaN})]]
       (t/is (false? (sm/validate core/schema:view bad)) (pr-str bad)))))
 
-(t/deftest serializable-rejects-json-lossy-values
-  (t/is (true? (core/serializable? {:id :rects/load :seed 42 :tags ["a" 1]})))
-  (t/is (false? (core/serializable? {:v js/NaN})))
-  (t/is (false? (core/serializable? {:v js/Infinity})))
-  (t/is (false? (core/serializable? {:v js/-Infinity})))
-  (t/is (false? (core/serializable? {[1 2] "k"})))
-  (t/is (false? (core/serializable? {{:a 1} "k"}))))
+(t/deftest transit-rejects-unencodable-values
+  (t/is (false? (core/transit-round-trips? {:v (fn [] 1)})))
+  (t/is (false? (core/transit-round-trips? {:point (->Point 1 2)})))
+  (t/is (false? (core/transit-round-trips? {:v js/NaN}))))
 
-(t/deftest wire-ids-round-trip-through-json
-  (doseq [id [:rects/load :rects :fresh :render-full]]
-    (let [encoded (core/encode-id id)
-          wire    (.stringify js/JSON #js {:id encoded})
-          through (unchecked-get (.parse js/JSON wire) "id")]
-      (t/is (= id (core/decode-id through)) (str id)))))
+(t/deftest transit-wire-preserves-json-lossy-shapes
+  (doseq [value [{:foo 1 "foo" 2}
+                 {:a/b 1 :c/b 2}
+                 {:id :rects/load :scene :rects}
+                 {:tags [:fresh :rects/load]}
+                 {:v js/Infinity}
+                 {:v js/-Infinity}]]
+    (t/is (= value (-> value transit/encode-str transit/decode-str))
+          (pr-str value))))
+
+(t/deftest unencodable-collected-values-are-rejected
+  (let [good (first (rect-cases))]
+    (doseq [bad [(assoc good :operation {:run (fn [] 1)})
+                 (assoc good :operation {:point (->Point 1 2)})
+                 (assoc-in good [:params :count] js/NaN)]]
+      (t/is (= ::core/non-serializable-case
+               (:type (failure-data #(core/check-collected-case! bad))))
+            (pr-str bad)))))
 
 (t/deftest duplicate-scene-id-from-another-namespace-is-rejected
   (t/is (= ::core/duplicate-scene
@@ -341,10 +351,10 @@
       (core/unregister-case! :contracts-incomplete/case)
       (core/unregister-scene! :contracts-incomplete))))
 
-(t/deftest records-are-not-plain-data
+(t/deftest records-do-not-survive-the-wire
   (let [point (->Point 1 2)]
-    (t/is (false? (core/serializable? point)))
-    (t/is (false? (core/serializable? {:point point})))))
+    (t/is (false? (core/transit-round-trips? point)))
+    (t/is (false? (core/transit-round-trips? {:point point})))))
 
 (t/deftest case-replacement-preserves-order-and-unregister-removes
   (try
@@ -396,7 +406,7 @@
     (t/is (= [:contracts-scene/case] (mapv :id collected)))
     (t/is (not (contains? (first collected) :run!)))
     (t/is (not (contains? (first collected) :body-source)))
-    (t/is (core/serializable? (first collected))))
+    (t/is (core/transit-round-trips? (first collected))))
   (t/is (empty? @body-calls))
   (let [entry (core/registered-case :contracts-scene/case)]
     (t/is (= "frontend-tests.benches.contracts-test" (:ns entry)))
