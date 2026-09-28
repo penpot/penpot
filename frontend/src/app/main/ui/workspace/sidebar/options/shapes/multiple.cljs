@@ -280,8 +280,10 @@
 
         type->token-attrs
         (memoize (fn [type]
-                   (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct))
-                         (type->editable-attrs type))))
+                   (let [editable (type->editable-attrs type)
+                         source   (if (seq editable) editable attrs)]
+                     (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct))
+                           source))))
 
         merge-attrs
         (fn [v1 v2]
