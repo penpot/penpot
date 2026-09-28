@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
+"PO-Revision-Date: 2026-09-28 08:13+0000\n"
 "Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -1795,6 +1795,7 @@ msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "无"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:117
+#, fuzzy
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "删除线"
 
@@ -1863,6 +1864,7 @@ msgid "inspect.subtitle.main"
 msgstr "主组件"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:176
+#, fuzzy
 msgid "inspect.tabs-switcher-label"
 msgstr "检查面板选项卡"
 
