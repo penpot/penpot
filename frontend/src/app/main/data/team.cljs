@@ -842,3 +842,16 @@
 (defn team->organization [team]
   (when-let [organization (:organization team)]
     (assoc organization :default-team-id (:id team))))
+
+(defn teams->organizations
+  "Returns organizations indexed by id, preferring default teams as navigation targets."
+  [teams]
+  (let [teams (vals teams)]
+    (merge
+     (->> teams
+          (keep team->organization)
+          (d/index-by :id))
+     (->> teams
+          (filter :is-default)
+          (map team->organization)
+          (d/index-by :id)))))

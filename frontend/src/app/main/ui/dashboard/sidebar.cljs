@@ -731,11 +731,7 @@
         ;; show the current selection without leaking the team into the
         ;; teams dropdown.
         organizations  (mf/with-memo [teams current-organization]
-                         (cond-> (->> teams
-                                      vals
-                                      (filter :is-default)
-                                      (map dtm/team->organization)
-                                      (d/index-by :id))
+                         (cond-> (dtm/teams->organizations teams)
                            (:id current-organization)
                            (assoc (:id current-organization) current-organization)))
 
