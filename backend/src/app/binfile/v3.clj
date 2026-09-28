@@ -808,14 +808,11 @@
          (decode-tokens-lib)
          (validate-tokens-lib))))
 
-(defn- read-file-tokens-status
-  [{:keys [::bfc/input ::entries-index] :as cfg} file-id tokens-lib]
+(defn- read-file-tokens-status-names
+  [{:keys [::bfc/input ::entries-index] :as cfg} file-id]
   (when-let [{:keys [entry]} (first (get-in entries-index [:tokens-status (str file-id)]))]
     (events/tap :progress {:section :tokens-status :file-id file-id})
-    (->> (read-entry cfg input entry nil)
-         (cfo/names->ids tokens-lib)
-         (decode-tokens-status)
-         (validate-tokens-status))))
+    (read-entry cfg input entry nil)))
 
 (defn- read-file-shapes
   [{:keys [::bfc/input ::entries-index] :as cfg} file-id page-id]
@@ -864,15 +861,10 @@
        (not-empty)))
 
 (defn- read-file-data
-  [cfg file-id tokens-source]
+  [cfg file-id]
   (let [colors               (read-file-colors cfg file-id)
         typographies         (read-file-typographies cfg file-id)
         tokens-lib           (read-file-tokens-lib cfg file-id)
-        effective-tokens-lib (if (and (some? tokens-source)
-                                      (not= tokens-source file-id))
-                               (read-file-tokens-lib cfg tokens-source)
-                               tokens-lib)
-        tokens-status        (read-file-tokens-status cfg file-id effective-tokens-lib)
         components           (read-file-components cfg file-id)
         plugin-data          (read-file-plugin-data cfg file-id)
         pages                (read-file-pages cfg file-id)]
@@ -881,16 +873,58 @@
      :colors colors
      :typographies typographies
      :tokens-lib tokens-lib
-     :tokens-status tokens-status
      :components components
      :plugin-data plugin-data}))
 
+(defn- tokens-status-from-names
+  [tokens-status-names tokens-lib]
+  (->> (or tokens-status-names {})
+       (cfo/names->ids tokens-lib)
+       (decode-tokens-status)
+       (validate-tokens-status)))
+
+(defn- imported-tokens-source
+  [{:keys [::manifest ::bfc/overwrite] :as cfg} source-id decisions]
+  (when source-id
+    (if-let [{:keys [library-id]} (get decisions source-id)]
+      (let [library (bfc/get-file cfg library-id)
+            data    (assoc (:data library) :id library-id)]
+        {:id library-id
+         :data data
+         :tokens-lib (:tokens-lib data)
+         :provider? (cfo/tokens-provider? data)})
+      (if (some #(= source-id (:id %)) (:files manifest))
+        (let [file       (read-file cfg source-id)
+              tokens-lib (read-file-tokens-lib cfg source-id)
+              data       {:id source-id
+                          :tokens-source (:tokens-source file)
+                          :tokens-lib tokens-lib}]
+          {:id (bfc/lookup-index source-id)
+           :data data
+           :tokens-lib tokens-lib
+           :provider? (cfo/tokens-provider? data)})
+        (when overwrite
+          (when-let [library (bfc/get-file cfg source-id :throw-if-not-exists false)]
+            (let [data (assoc (:data library) :id source-id)]
+              {:id source-id
+               :data data
+               :tokens-lib (:tokens-lib data)
+               :provider? (cfo/tokens-provider? data)})))))))
+
 (defn- import-file
-  [{:keys [::db/conn ::bfc/project-id ::manifest] :as cfg} {file-id :id file-name :name}]
-  (let [file-id'   (bfc/lookup-index file-id)
-        file       (read-file cfg file-id)
-        media      (read-file-media cfg file-id)
-        thumbnails (read-file-thumbnails cfg file-id)]
+  [{:keys [::db/conn ::bfc/project-id ::manifest] :as cfg} decisions
+   {file-id :id file-name :name}]
+  (let [file-id'            (bfc/lookup-index file-id)
+        file                (read-file cfg file-id)
+        tokens-source       (:tokens-source file)
+        tokens-status-names (read-file-tokens-status-names cfg file-id)
+        data                (-> (read-file-data cfg file-id)
+                                (d/without-nils)
+                                (assoc :id file-id')
+                                (cond-> (:options file)
+                                  (assoc :options (:options file))))
+        media               (read-file-media cfg file-id)
+        thumbnails          (read-file-thumbnails cfg file-id)]
 
     (l/dbg :hint "processing file"
            :id (str file-id')
@@ -942,13 +976,47 @@
 
     (events/tap :progress {:section :file :file-id file-id})
 
-    (let [data (-> (read-file-data cfg file-id (:tokens-source file))
-                   (d/without-nils)
-                   (assoc :id file-id')
-                   (cond-> (:options file)
-                     (assoc :options (:options file)))
-                   (cond-> (:tokens-source file)
-                     (assoc :tokens-source (bfc/lookup-index (:tokens-source file)))))
+    (let [external-source? (and tokens-source (not= tokens-source file-id))
+          source-info      (when external-source?
+                             (imported-tokens-source cfg tokens-source decisions))
+          local-provider?  (cfo/tokens-provider? data)
+          fallback         (if local-provider?
+                             :tokens-source-fallback-local
+                             :tokens-source-deactivated)
+          pending-source   (when (and external-source?
+                                      (nil? source-info)
+                                      (not (::bfc/overwrite cfg)))
+                             {:library-id tokens-source
+                              :status-names (or tokens-status-names {})
+                              :fallback-outcome fallback})
+          [data outcome]   (cond
+                             ;; A local source keeps its identity remapped to the imported file.
+                             (not external-source?)
+                             [(cond-> (assoc data :tokens-status
+                                             (tokens-status-from-names tokens-status-names
+                                                                       (:tokens-lib data)))
+                                tokens-source (assoc :tokens-source file-id'))
+                              nil]
+
+                             ;; Preserve the external source only when its final library can provide tokens.
+                             (:provider? source-info)
+                             [(assoc data
+                                     :tokens-source (:id source-info)
+                                     :tokens-status (tokens-status-from-names tokens-status-names
+                                                                              (:tokens-lib source-info)))
+                              :tokens-source-restored]
+
+                             ;; Otherwise use local tokens, or a valid empty status with no source.
+                             :else
+                             [(-> data
+                                  (dissoc :tokens-source)
+                                  (assoc :tokens-status
+                                         (tokens-status-from-names tokens-status-names
+                                                                   (when local-provider?
+                                                                     (:tokens-lib data))))
+                                  (cond-> pending-source
+                                    (assoc :pending-tokens-source pending-source)))
+                              (when (or source-info (nil? pending-source)) fallback)])
 
           file (-> (select-keys file bfc/file-attrs)
                    (assoc :id file-id')
@@ -966,7 +1034,9 @@
       (bfm/register-pending-migrations! cfg file)
       (bfc/save-file! cfg file)
 
-      file-id')))
+      {:file-id file-id'
+       :pending-token-source? (some? pending-source)
+       :tokens-source-outcome outcome})))
 
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
@@ -1065,7 +1135,7 @@
                           (update file key conj entry)))))
 
 (defn- compute-link-decisions
-  "Returns a map of {old-lib-id -> {:library-id ... :library ...}} for external
+  "Returns a map of {old-lib-id -> {:library-id ...}} for external
   libraries that should be auto-linked (single candidate AND importer has edit
   permission). Libraries with zero or multiple candidates, or where the importer
   lacks permission, are excluded — their refs should remain dangling."
@@ -1081,8 +1151,7 @@
              (let [library (first matching)
                    perms (bfc/get-file-permissions conn profile-id (:id library))]
                (if (:can-edit perms)
-                 (assoc acc (:id ext-lib) {:library-id (:id library)
-                                           :library library})
+                 (assoc acc (:id ext-lib) {:library-id (:id library)})
                  acc)))))))
    {}
    (:external-libraries manifest)))
@@ -1092,11 +1161,14 @@
    Auto-links single matches (creating DB rows) and builds a file-grouped
    resolution map keyed by imported file-id (new UUID)."
 
-  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/timestamp] :as cfg} files-info]
+  [{:keys [::db/conn ::manifest ::bfc/team-id ::bfc/timestamp] :as cfg} files-info decisions]
   (assert (uuid? team-id) "team-id should be provided")
 
   (let [file-ids (keys files-info)
-        decisions (compute-link-decisions cfg)]
+        tokens-source-by-file (into {}
+                                    (map (fn [{:keys [id tokens-source]}]
+                                           [(bfc/lookup-index id) tokens-source]))
+                                    (:files manifest))]
 
     (reduce
      (fn [acc ext-lib]
@@ -1145,11 +1217,93 @@
                             :name (:name ext-lib)
                             :candidates candidates}]
                  (reduce (fn [acc file-id]
-                           (add-to-file acc file-id (get files-info file-id) :pending entry))
+                           (add-to-file acc file-id (get files-info file-id) :pending
+                                         (cond-> entry
+                                           (= (:id ext-lib) (get tokens-source-by-file file-id))
+                                           (assoc :tokens-source? true))))
                          acc used-by)))))))
 
      {}
      (:external-libraries manifest))))
+
+(defn- finalize-import-token-sources
+  [cfg imported resolution]
+  (reduce
+   (fn [outcomes {:keys [file-id pending-token-source? tokens-source-outcome]}]
+     (if-not pending-token-source?
+       (cond-> outcomes
+         tokens-source-outcome (assoc file-id tokens-source-outcome))
+       (let [file (bfc/get-file cfg file-id)
+             data (:data file)
+             pending-source (:pending-tokens-source data)
+             pending-entry (some #(when (and (:tokens-source? %)
+                                             (= (:library-id pending-source) (:id %)))
+                                    %)
+                                 (get-in resolution [file-id :pending]))]
+         (if pending-entry
+           (let [data (assoc data :pending-tokens-source
+                             (assoc pending-source
+                                    :candidate-ids (into #{} (map :id) (:candidates pending-entry))))]
+             (bfc/update-file! cfg (ctf/check-file (assoc file :data data)))
+             outcomes)
+           (let [data (dissoc data :pending-tokens-source)]
+              (bfc/update-file! cfg (ctf/check-file (assoc file :data data)))
+              (assoc outcomes file-id (:fallback-outcome pending-source)))))))
+   {}
+   imported))
+
+(defn resolve-import-token-source!
+  "Resolve a pending imported token source, keeping the library link and
+  consumer token state in the same transaction."
+  [{:keys [::db/conn] :as cfg} file-id library-id]
+  (let [file           (bfc/get-file cfg file-id)
+        data           (:data file)
+        pending-source (:pending-tokens-source data)]
+    (when-not pending-source
+      (ex/raise :type :validation
+                :code :invalid-condition
+                :hint "file has no pending imported token source"
+                :file-id file-id))
+
+    (when (and library-id
+               (not (contains? (:candidate-ids pending-source) library-id)))
+      (ex/raise :type :validation
+                :code :invalid-library
+                :hint "library is not a candidate for the pending token source"
+                :file-id file-id
+                :library-id library-id))
+
+    (let [library (when library-id (bfc/get-file cfg library-id))
+          library-data (when library
+                         (assoc (:data library) :id library-id))
+          library-provider? (and library (cfo/tokens-provider? library-data))
+          local-provider? (cfo/tokens-provider? data)
+          outcome (cond
+                    library-provider? :tokens-source-restored
+                    local-provider? :tokens-source-fallback-local
+                    :else :tokens-source-deactivated)
+          tokens-lib (cond
+                       library-provider? (:tokens-lib library-data)
+                       local-provider? (:tokens-lib data))
+          data (cond-> (-> data
+                           (dissoc :tokens-source :pending-tokens-source)
+                           (assoc :tokens-status
+                                  (tokens-status-from-names (:status-names pending-source)
+                                                            tokens-lib)))
+                 library-provider? (assoc :tokens-source library-id))]
+
+      (when library
+        (let [rel-params {:file-id file-id
+                          :library-file-id library-id}]
+          (db/insert! conn :file-library-rel rel-params
+                      {::db/on-conflict-do-nothing? true})
+          (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at (ct/now)))))
+
+      (bfc/update-file! cfg (ctf/check-file (assoc file
+                                                   :data data
+                                                   :revn (inc (:revn file))
+                                                   :modified-at (ct/now))))
+      {:tokens-source-outcome outcome})))
 
 (defn- import-files*
   [{:keys [::manifest] :as cfg}]
@@ -1168,28 +1322,24 @@
       (l/trc :hint "pre-resolving external library"
              :old-id (str old-lib-id)
              :new-id (str library-id))
-      (vswap! bfc/*state* update :index assoc old-lib-id library-id)))
+      (vswap! bfc/*state* update :index assoc old-lib-id library-id))
 
-  (let [files    (get manifest :files)
-        file-ids (reduce (fn [result file]
-                           (let [name' (get file :name)
-                                 file (assoc file :name name')]
-                             (conj result (import-file cfg file))))
-                         []
-                         files)
-        ;; Build map of file-id to file-name for resolution
-        files-info (into {} (map (fn [file-id manifest-file]
-                                   [file-id (:name manifest-file)])
-                                 file-ids
-                                 files))]
+    (let [files      (:files manifest)
+          imported   (mapv #(import-file cfg decisions %) files)
+          file-ids   (mapv :file-id imported)
+          files-info (into {} (map (fn [file-id manifest-file]
+                                    [file-id (:name manifest-file)])
+                                  file-ids
+                                  files))]
 
-    (import-file-relations cfg)
+      (import-file-relations cfg)
 
-    (let [resolution (resolve-and-link-libraries cfg files-info)]
-
-      (bfm/apply-pending-migrations! cfg)
-      {:file-ids   file-ids
-       :resolution resolution})))
+      (let [resolution (resolve-and-link-libraries cfg files-info decisions)]
+        (bfm/apply-pending-migrations! cfg)
+        (let [tokens-source-outcomes (finalize-import-token-sources cfg imported resolution)]
+          {:file-ids file-ids
+           :resolution resolution
+           :tokens-source-outcomes tokens-source-outcomes})))))
 
 (defn- invalidate-thumbnails
   [cfg file-id]
@@ -1233,7 +1383,7 @@
               bfc/*reference-file* ref-file]
 
       (import-storage-objects cfg)
-      (import-file cfg file)
+      (import-file cfg {} file)
 
       (invalidate-thumbnails cfg file-id)
       (bfm/apply-pending-migrations! cfg)

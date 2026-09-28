@@ -7,6 +7,7 @@
 (ns app.rpc.commands.files
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.v3 :as bfv3]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -1141,20 +1142,8 @@
                                        :library-file-id library-id
                                        :synced-at (ct/now)}))
 
-(def ^:private
-  schema:link-file-to-library
-  [:map {:title "link-file-to-library"}
-   [:file-id ::sm/uuid]
-   [:library-id ::sm/uuid]])
-
-(sv/defmethod ::link-file-to-library
-  "Link a file to a library. Returns the recursive list of libraries used by that library"
-  {::doc/added "1.17"
-   ::webhooks/event? true
-   ::sm/params schema:link-file-to-library
-   ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
-
+(defn- check-library-link!
+  [cfg conn profile-id file-id library-id]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
@@ -1168,10 +1157,42 @@
     (when (contains? transitive-deps file-id)
       (ex/raise :type :validation
                 :code :circular-library-reference
-                :hint "linking this library would create a circular dependency")))
+                :hint "linking this library would create a circular dependency"))))
+
+(def ^:private
+  schema:link-file-to-library
+  [:map {:title "link-file-to-library"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
+
+(sv/defmethod ::link-file-to-library
+  "Link a file to a library. Returns the recursive list of libraries used by that library"
+  {::doc/added "1.17"
+   ::webhooks/event? true
+   ::sm/params schema:link-file-to-library
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
+  (check-library-link! cfg conn profile-id file-id library-id)
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
+
+(def ^:private schema:resolve-import-token-source
+  [:map {:title "resolve-import-token-source"}
+   [:file-id ::sm/uuid]
+   [:library-id {:optional true} ::sm/uuid]])
+
+(sv/defmethod ::resolve-import-token-source
+  "Resolve an imported file's pending token-source library and state."
+  {::doc/added "2.19"
+   ::webhooks/event? true
+   ::sm/params schema:resolve-import-token-source
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id]}]
+  (check-edition-permissions! conn profile-id file-id)
+  (when library-id
+    (check-library-link! cfg conn profile-id file-id library-id))
+  (bfv3/resolve-import-token-source! cfg file-id library-id))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
