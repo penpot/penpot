@@ -23,9 +23,9 @@
        :depth true
        :stencil true
        :alpha true
-       "preserveDrawingBuffer" true})
+       :preserveDrawingBuffer true})
 
-(def ^:private max-surface-size
+(def ^:const ^:private max-surface-size
   ;; Must match `gpu_state::MAX_SURFACE_SIZE`.
   8192)
 
