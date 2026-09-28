@@ -354,10 +354,13 @@
   [cfg mdata params result]
   (let [resultm      (meta result)
         request      (-> params meta ::http/request)
+        ;; SECURITY: the event belongs to whoever made the request. The only
+        ;; sanctioned override is the `::audit/profile-id` metadata, set
+        ;; explicitly by the command. Never derive it from the response:
+        ;; results can carry a `:profile-id` that belongs to somebody else
+        ;; (the owner of an error report, the inviter of an invitation, ...)
+        ;; and that silently misattributes the action.
         profile-id   (or (::profile-id resultm)
-                         (some-> (:profile-id result)
-                                 (cond-> (string? (:profile-id result))
-                                   uuid/parse*))
                          (::rpc/profile-id params)
                          uuid/zero)
 
