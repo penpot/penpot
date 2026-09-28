@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
+"PO-Revision-Date: 2026-09-16 21:00+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German "
 "<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
@@ -14,6 +14,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
 msgstr "Sie haben bereits ein Konto?"
+
+#: src/app/main/ui/auth/recovery_request.cljs:111, src/app/main/ui/auth/register.cljs:250
+msgid "auth.check-email"
+msgstr "Überprüfen Sie Ihre E-Mail!"
 
 #: src/app/main/ui/auth/recovery.cljs:83
 msgid "auth.confirm-password"
@@ -154,6 +158,10 @@ msgstr ""
 msgid "auth.terms-of-service"
 msgstr "Nutzungsbedingungen"
 
+#: src/app/main/ui/auth/register.cljs:251
+msgid "auth.verification-sent-email"
+msgstr "Wir haben eine Bestätigungs-E-Mail gesendet an:"
+
 #: src/app/main/ui/auth/login.cljs:185, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:182
 msgid "auth.work-email"
 msgstr "Geschäftliche E-Mail-Adresse"
@@ -277,6 +285,46 @@ msgstr "Hinzufügen als gemeinsam genutzte Bibliothek"
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
 msgstr "E-Mail-Adresse ändern"
+
+#: src/app/main/data/nitrate.cljs:614
+msgid "dashboard.change-organization-modal.choose"
+msgstr "Verschieben nach:"
+
+#: src/app/main/data/nitrate.cljs:615
+msgid "dashboard.change-organization-modal.select"
+msgstr "Wählen Sie eine Organisation aus"
+
+#: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
+msgid "dashboard.change-organization-modal.title"
+msgstr "Organisation des Teams ändern"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "EINE NEUE PENPOT VERSION IST VERFÜGBAR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Was ist neu - Highlights"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Installierte Version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "Letzte Version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Versuchen Sie es wieder"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "Diese Installation konnte den Penpot Releases Service nicht erreichen."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Vollständiges Changelog anzeigen"
 
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
@@ -492,6 +540,14 @@ msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "Datei wiederherstellen"
 msgstr[1] "Dateien wiederherstellen"
 
+#: src/app/main/ui/dashboard/layout_toggle.cljs:32
+msgid "dashboard.files-layout.grid"
+msgstr "Rasteransicht"
+
+#: src/app/main/ui/dashboard/layout_toggle.cljs:28
+msgid "dashboard.files-layout.list"
+msgstr "Listenansicht"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:608
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Schriftart gelöscht"
@@ -558,6 +614,10 @@ msgstr ""
 "empfehlen wir die Verwendung von [Transfonter](https://transfonter.org/), "
 "um Webfonts zu generieren und Fehler zu beheben. "
 
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Letzte Änderung %s"
+
 #: src/app/main/ui/dashboard/import.cljs:995, src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
 msgstr "Dateien importieren"
@@ -569,6 +629,14 @@ msgstr "Huch! Wir konnten diese Datei nicht importieren"
 #: src/app/main/ui/dashboard.cljs:264
 msgid "dashboard.import.bad-url"
 msgstr "Der Import ist fehlgeschlagen. Die URL der Vorlage ist falsch"
+
+#: src/app/main/ui/dashboard/import.cljs:619
+msgid "dashboard.import.import-error.check-error"
+msgstr "Wir konnten diese Datei nicht überprüfen."
+
+#: src/app/main/ui/dashboard/import.cljs:623
+msgid "dashboard.import.import-error.corrupt-file"
+msgstr "Diese Datei scheint beschädigt zu sein."
 
 #: src/app/main/ui/dashboard/import.cljs:603
 msgid "dashboard.import.import-error.disclaimer"

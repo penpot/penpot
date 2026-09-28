@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:18+0000\n"
+"PO-Revision-Date: 2026-09-20 02:51+0000\n"
 "Last-Translator: Danial Shirali <danialshirali16@gmail.com>\n"
 "Language-Team: Persian "
 "<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
@@ -292,6 +292,12 @@ msgstr "انتقال تیم"
 msgid "dashboard.change-organization-modal.choose"
 msgstr "انتقال به:"
 
+#: src/app/main/data/nitrate.cljs:613
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"پروژه‌ها و فایل‌ها برای اعضای تیم در دسترس خواهند ماند. تیم پیکربندی را از "
+"سازمان جدید دریافت خواهد کرد."
+
 #: src/app/main/data/nitrate.cljs:615
 msgid "dashboard.change-organization-modal.select"
 msgstr "انتخاب یک سازمان"
@@ -299,6 +305,60 @@ msgstr "انتخاب یک سازمان"
 #: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
 msgstr "تغییر سازمان تیم"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"نسخه‌های جدیدتر شامل بهبود عملکرد، قابلیت‌های جدید و اصلاحاتی هستند که نصب "
+"شما را به‌روز نگه می‌دارند."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "نسخهٔ جدیدی از PENPOT در دسترس است"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "چه خبر است — نکات برجسته"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "نسخهٔ نصب‌شده"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "جدیدترین نسخه"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "دوباره تلاش کنید"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "شبکه یا پیکربندی نمونه را بررسی کنید و دوباره تلاش کنید."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr "این نصب نتوانست به سرویس انتشار نسخه‌های Penpot دسترسی پیدا کند."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "امکان بررسی به‌روزرسانی‌ها وجود ندارد"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "شما در حال استفاده از جدیدترین نسخهٔ پایدار هستید:"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT به‌روز است"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "مشاهدهٔ گزارش تغییرات کامل"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "مشاهدهٔ یادداشت‌های انتشار"
 
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
@@ -583,6 +643,10 @@ msgstr ""
 msgid "dashboard.go-to-admin-console"
 msgstr "رفتن به کنسول مدیریت"
 
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "آخرین ویرایش: %s"
+
 #: src/app/main/ui/dashboard/import.cljs:995, src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
 msgstr "ایمپورت کردن فایل‌های پن‌پات"
@@ -591,9 +655,19 @@ msgstr "ایمپورت کردن فایل‌های پن‌پات"
 msgid "dashboard.import.analyze-error"
 msgstr "اوه! ما نتوانستیم این فایل را ایمپورت کنیم"
 
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "۱ کتابخانه بر اساس نام، به‌طور خودکار پیوند داده شد."
+msgstr[1] "%s کتابخانه بر اساس نام، به‌طور خودکار پیوند داده شدند."
+
 #: src/app/main/ui/dashboard.cljs:264
 msgid "dashboard.import.bad-url"
 msgstr "درون‌ریزی ناموفق بود. نشانی اینترنتی قالب نادرست است"
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "پیوندهای کتابخانه را تأیید کنید"
 
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
@@ -618,6 +692,12 @@ msgstr "فایل‌های دارای خطا بارگذاری نخواهند شد
 #: src/app/main/ui/dashboard/import.cljs:626
 msgid "dashboard.import.import-error.unknown-error"
 msgstr "هنگام پردازش فایل مشکلی پیش آمد."
+
+#: src/app/main/ui/dashboard/import.cljs:593
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "۱ فایل با موفقیت وارد شد."
+msgstr[1] "%s فایل با موفقیت وارد شدند."
 
 #: src/app/main/ui/dashboard/import.cljs:587
 msgid "dashboard.import.import-warning"
@@ -655,6 +735,24 @@ msgstr "در حال آپلود اطلاعات روی سرور (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "در حال آپلود فایل: %s"
 
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"برخی از کتابخانه‌ها به‌طور خودکار پیوند نخوردند. برای هرکدام کتابخانهٔ درست "
+"را انتخاب کنید:"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "پیش از تأیید، پیوندهای کتابخانه را بررسی کنید:"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "پیوند داده‌شده"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "هیچ کتابخانه‌ای انتخاب نشده است"
+
 #: src/app/main/ui/dashboard/team.cljs:881
 msgid "dashboard.invitation-modal.delete"
 msgstr "می‌خواهید دعوت‌نامه‌ها را برای افراد زیر حذف کنید:"
@@ -680,6 +778,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
 msgstr "دعوت به تیم"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "اجازهٔ دعوت از افراد به این تیم را ندارید"
 
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:282, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:327
 msgid "dashboard.leave-organization"
@@ -831,6 +933,10 @@ msgstr "مرتب‌سازی بر اساس وضعیت"
 msgid "dashboard.organization-deleted"
 msgstr "سازمان %s حذف شده است."
 
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:194, src/app/main/ui/dashboard/organization_team_switch.cljs:195
+msgid "dashboard.other-teams"
+msgstr "تیم‌های دیگر"
+
 #: src/app/main/ui/settings/password.cljs:112, src/app/main/ui/settings/password.cljs:126
 msgid "dashboard.password-change"
 msgstr "تغییر رمزعبور"
@@ -850,6 +956,10 @@ msgstr "اکنون در این تیم مالک هستید."
 #: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.viewer"
 msgstr "اکنون در این تیم بیننده هستید."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "پروژه‌های شخصی"
 
 #: src/app/main/ui/dashboard/files.cljs:122, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:251
 msgid "dashboard.pin-unpin"
@@ -973,6 +1083,12 @@ msgstr ""
 "در اینجا همهٔ سازمان‌هایی را می‌بینید که اجازه دارید در آن‌ها تیم بسازید یا "
 "تیم اضافه کنید."
 
+#: src/app/main/data/nitrate.cljs:521
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"در اینجا سازمان‌هایی را می‌بینید که عضو آن‌ها هستید و اجازهٔ ایجاد یا "
+"افزودن تیم در آن‌ها را دارید."
+
 #: src/app/main/data/nitrate.cljs:530
 msgid "dashboard.select-organization-modal.select"
 msgstr "انتخاب یک سازمان"
@@ -1069,9 +1185,21 @@ msgstr "نمایش همه فایل‌ها"
 msgid "dashboard.show-version-history"
 msgstr "تاریخچهٔ نسخه‌ها"
 
+#: src/app/main/ui/dashboard/file_menu.cljs:129
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "فایل شما با موفقیت حذف شد"
+msgstr[1] "فایل‌های شما با موفقیت حذف شدند"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:74
 msgid "dashboard.success-delete-project"
 msgstr "پروژه شما با موفقیت حذف شد"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:124
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "فایل شما با موفقیت تکثیر شد"
+msgstr[1] "فایل‌های شما با موفقیت تکثیر شدند"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:46
 msgid "dashboard.success-duplicate-project"
@@ -1585,6 +1713,14 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 
+#: src/app/main/errors.cljs:538
+msgid "errors.save-failed"
+msgstr ""
+"آخرین تغییرات شما هنوز به‌عنوان ذخیره‌شده تأیید نشده‌اند. ممکن است "
+"ذخیره‌سازی به‌طور خودکار از سر گرفته نشود. این زبانه را نبندید یا بارگیری "
+"مجدد نکنید؛ در غیر این صورت ممکن است تغییراتتان را از دست بدهید. برای "
+"دریافت کمک با پشتیبانی تماس بگیرید."
+
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG نامعتبر یا بدفرم است"
@@ -1775,6 +1911,35 @@ msgstr "این نسخه قفل است و دیگران نمی‌توانند آن
 msgid "errors.version-not-supported"
 msgstr "فایل شمارهٔ نسخهٔ ناسازگاری دارد"
 
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+msgid "errors.weak-password"
+msgstr "گذرواژه شرایط لازم را برآورده نمی‌کند"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "حداقل ۱ عدد"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "حداقل ۱ حرف کوچک انگلیسی"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "حداقل ۱ نویسهٔ ویژه"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "حداقل ۱ حرف بزرگ انگلیسی"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, backend
+msgid "errors.weak-password.too-short"
+msgstr "حداقل ۸ نویسه"
+
 #: src/app/main/ui/static.cljs:380
 msgid "errors.webgl-context-lost.desc-message"
 msgstr "WebGL دیگر کار نمی‌کند. لطفاً برای بازنشانی، صفحه را دوباره بارگیری کنید"
@@ -1888,6 +2053,42 @@ msgstr "مشکل"
 #: src/app/main/ui/exports/files.cljs:140
 msgid "files-download-modal.title"
 msgstr "بارگیری فایل‌ها"
+
+#: src/app/main/ui/exports/files.cljs:183
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "دارایی‌های کتابخانهٔ پیوندشده در فایل قرار نمی‌گیرند."
+
+#: src/app/main/ui/exports/files.cljs:177
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "دارایی‌ها را به‌عنوان اشیای پایه در نظر بگیرید"
+
+#: src/app/main/ui/exports/files.cljs:181
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"فایل‌های دارای کتابخانه‌های پیوندشده در خروجی قرار می‌گیرند و پیوند آن‌ها "
+"حفظ می‌شود. "
+
+#: src/app/main/ui/exports/files.cljs:175
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "خروجی گرفتن از فایل + کتابخانه‌ها"
+
+#: src/app/main/ui/exports/files.cljs:184
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"پس از وارد کردن، می‌توانید کتابخانه‌های موجود با نام‌های منطبق را پیوند "
+"دهید."
+
+#: src/app/main/ui/exports/files.cljs:178
+msgid "files-export-modal.options.link-later.title"
+msgstr "پیوند دادن کتابخانه‌های منطبق هنگام وارد کردن"
+
+#: src/app/main/ui/exports/files.cljs:182
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr "فایل شما با ادغام دارایی کتابخانه در کتابخانهٔ محلی صادر خواهد شد."
+
+#: src/app/main/ui/exports/files.cljs:176
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "دارایی‌های کتابخانه را در فایل جاسازی کنید"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
@@ -2440,6 +2641,14 @@ msgstr "لغو"
 msgid "labels.canva"
 msgstr "Canva"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:553
+msgid "labels.check-for-updates"
+msgstr "بررسی به‌روزرسانی‌ها"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:552
+msgid "labels.checking-for-updates"
+msgstr "در حال بررسی به‌روزرسانی‌ها..."
+
 #: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
 msgstr "بستن"
@@ -2794,6 +3003,24 @@ msgstr "رمزعبور جدید"
 msgid "labels.next"
 msgstr "بعدی"
 
+#: src/app/main/ui/static.cljs:362
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"این نمونه به مرحلهٔ راه‌اندازی‌ای نیاز دارد که همراه با آخرین نسخه ارائه "
+"شده است."
+
+#: src/app/main/ui/static.cljs:365
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "نگاهی به"
+
+#: src/app/main/ui/static.cljs:360
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot هنوز نمی‌تواند شروع به کار کند."
+
+#: src/app/main/ui/static.cljs:370
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "راهنمای فنی ما بیندازید"
+
 #: src/app/main/ui/static.cljs:350
 msgid "labels.nitrate-unavailable.main-message"
 msgstr ""
@@ -3065,6 +3292,20 @@ msgstr "Sketch"
 #: src/app/main/ui/dashboard/sidebar.cljs:367
 msgid "labels.sources"
 msgstr "منابع"
+
+#: src/app/main/ui/static.cljs:554
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"ورود با ارائه‌دهندهٔ هویت سازمان شما کامل نشد. ممکن است ارائه‌دهنده در "
+"دسترس نباشد یا حساب شما هنوز در فهرست آن ثبت نشده باشد."
+
+#: src/app/main/ui/static.cljs:555
+msgid "labels.sso-error.retry"
+msgstr "دوباره تلاش کنید"
+
+#: src/app/main/ui/static.cljs:553
+msgid "labels.sso-error.title"
+msgstr "ورود شما به %s ممکن نبود"
 
 #: src/app/main/ui/onboarding/questions.cljs:53
 msgid "labels.start"
@@ -3877,6 +4118,10 @@ msgstr "این کد منقضی شده است."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "کد نامعتبر است."
 
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.used-error"
+msgstr "این کد قبلاً استفاده شده است."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:58
 msgid "nitrate.activation-success.active-until"
 msgstr "طرح شما تا %s فعال است."
@@ -3897,11 +4142,19 @@ msgstr ""
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:121
 msgid "nitrate.code-activation.footer-after"
-msgstr " را دانلود و با ما تماس بگیرید:"
+msgstr "فایل را به"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
 msgid "nitrate.code-activation.footer-before"
-msgstr "کد لازم دارید؟ درخواست کد فعال‌سازی "
+msgstr "و کدتان را برای شما ارسال می‌کنیم."
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+msgid "nitrate.code-activation.footer-download"
+msgstr "درخواست بارگیری"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+msgid "nitrate.code-activation.footer-title"
+msgstr "کد لازم دارید؟"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:96
 msgid "nitrate.code-activation.input-label"
@@ -4532,6 +4785,14 @@ msgstr "حذف"
 #: src/app/main/data/workspace/path/shortcuts.cljs:68
 msgid "shortcuts.delete-node"
 msgstr "حذف گره"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:76
+msgid "shortcuts.delete-node-and-segments"
+msgstr "گره و قطعه‌ها را حذف کنید"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:157
+msgid "shortcuts.deselect-all"
+msgstr "لغو انتخاب همه"
 
 #: src/app/main/data/workspace/shortcuts.cljs:237
 msgid "shortcuts.detach-component"
@@ -6592,6 +6853,10 @@ msgstr "تغییر وضعیت تاری"
 msgid "workspace.options.blur-options.toggle-more-options"
 msgstr "نمایش/پنهان کردن گزینه‌های بیشتر"
 
+#: src/app/main/ui/exports/assets.cljs:332
+msgid "workspace.options.cancel-export"
+msgstr "لغو"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"
 msgstr "پس‌زمینهٔ بوم"
@@ -6820,6 +7085,18 @@ msgstr "حذف خروجی"
 msgid "workspace.options.export.suffix"
 msgstr "پسوند"
 
+#: src/app/main/ui/exports/assets.cljs:267
+msgid "workspace.options.exporting-busy"
+msgstr "سرویس خروجی‌گیری مشغول است؛ لطفاً بعداً دوباره تلاش کنید"
+
+#: src/app/main/ui/exports/assets.cljs:270
+msgid "workspace.options.exporting-cancelled"
+msgstr "خروجی‌گیری لغو شد"
+
+#: src/app/main/ui/exports/assets.cljs:269
+msgid "workspace.options.exporting-cancelling"
+msgstr "در حال لغو..."
+
 #: src/app/main/ui/exports/assets.cljs:272
 msgid "workspace.options.exporting-complete"
 msgstr "خروجی با موفقیت انجام شد"
@@ -6835,6 +7112,10 @@ msgstr "خروجی ناموفق بود"
 #: src/app/main/ui/exports/assets.cljs:274
 msgid "workspace.options.exporting-object-slow"
 msgstr "خروجی به‌طور غیرمنتظره‌ای کند است"
+
+#: src/app/main/ui/exports/assets.cljs:271
+msgid "workspace.options.exporting-queued"
+msgstr "در انتظار..."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:238
 msgid "workspace.options.fill"
@@ -7657,6 +7938,22 @@ msgstr "Y"
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:270
 msgid "workspace.path.actions.draw-nodes"
 msgstr "رسم گره‌ها (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+msgid "workspace.path.actions.handler-aligned"
+msgstr "هم‌راستا"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:169
+msgid "workspace.path.actions.handler-independent"
+msgstr "مستقل"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:161
+msgid "workspace.path.actions.handler-mirror"
+msgstr "برابر"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.handler-type"
+msgstr "رفتار دستگیره"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:288
 msgid "workspace.path.actions.join-nodes"
@@ -8497,7 +8794,7 @@ msgstr "فاصله‌های داخلی"
 msgid "workspace.tokens.radius"
 msgstr "شعاع"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:123, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:130, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
 msgstr "ارجاع در {%s} معتبر نیست یا در هیچ مجموعهٔ فعالی نیست."
 

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-15 17:17+0000\n"
-"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"PO-Revision-Date: 2026-09-22 10:37+0000\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French "
 "<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
@@ -296,6 +296,12 @@ msgstr "DÉPLACER L'ÉQUIPE"
 msgid "dashboard.change-organization-modal.choose"
 msgstr "Déplacer vers :"
 
+#: src/app/main/data/nitrate.cljs:613
+msgid "dashboard.change-organization-modal.description"
+msgstr ""
+"Les projets et fichiers resteront disponibles pour les membres de l'équipe. "
+"L'équipe récupérera la configuration de la nouvelle organisation."
+
 #: src/app/main/data/nitrate.cljs:615
 msgid "dashboard.change-organization-modal.select"
 msgstr "Sélectionner une organisation"
@@ -303,6 +309,63 @@ msgstr "Sélectionner une organisation"
 #: src/app/main/data/nitrate.cljs:605, src/app/main/data/nitrate.cljs:612, src/app/main/ui/dashboard/team_form.cljs:159
 msgid "dashboard.change-organization-modal.title"
 msgstr "Changer l'organisation de l'équipe"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+msgid "dashboard.check-updates.available-message"
+msgstr ""
+"Les nouvelles versions apportent des améliorations de performance, de "
+"nouvelles fonctionnalités et des correctifs qui maintiennent votre "
+"installation à jour."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+msgid "dashboard.check-updates.available-title"
+msgstr "UNE NOUVELLE VERSION DE PENPOT EST DISPONIBLE"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+msgid "dashboard.check-updates.highlights-title"
+msgstr "Nouveautés - Points forts"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+msgid "dashboard.check-updates.installed-version"
+msgstr "Version installée"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+msgid "dashboard.check-updates.latest-version"
+msgstr "Dernière version"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+msgid "dashboard.check-updates.try-again"
+msgstr "Réessayer"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+msgid "dashboard.check-updates.unable-hint"
+msgstr "Vérifiez votre réseau ou la configuration de l'instance, puis réessayez."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+msgid "dashboard.check-updates.unable-message"
+msgstr ""
+"Cette installation n'a pas pu contacter le service de publications de "
+"Penpot."
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+msgid "dashboard.check-updates.unable-title"
+msgstr "IMPOSSIBLE DE VÉRIFIER LES MISES À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "Vous utilisez la dernière version stable :"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT EST À JOUR"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+msgid "dashboard.check-updates.view-changelog"
+msgstr "Voir le journal des modifications complet"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "Voir les notes de version"
 
 #: src/app/main/ui/dashboard/deleted.cljs:322
 msgid "dashboard.clear-trash-button"
@@ -503,7 +566,7 @@ msgstr "Information sur la configuration de l'exportation dans Penpot."
 
 #: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.no-elements"
-msgstr "Aucun élément avec des paramètres d'exportation."
+msgstr "Aucun élément ne comporte de paramètres d'exportation."
 
 #: src/app/main/ui/exports/assets.cljs:189
 msgid "dashboard.export-shapes.title"
@@ -597,6 +660,10 @@ msgstr ""
 msgid "dashboard.go-to-admin-console"
 msgstr "Aller à la console d'administration"
 
+#: src/app/main/ui/dashboard/grid.cljs:252
+msgid "dashboard.grid.last-modified-at"
+msgstr "Dernière modification %s"
+
 #: src/app/main/ui/dashboard/import.cljs:995, src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
 msgstr "Importer fichiers"
@@ -605,9 +672,19 @@ msgstr "Importer fichiers"
 msgid "dashboard.import.analyze-error"
 msgstr "Oups ! Nous n'avons pas pu importer ce fichier"
 
+#: src/app/main/ui/dashboard/import.cljs:597
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "1 bibliothèque a été liée automatiquement par son nom."
+msgstr[1] "%s bibliothèques ont été liées automatiquement par leur nom."
+
 #: src/app/main/ui/dashboard.cljs:264
 msgid "dashboard.import.bad-url"
 msgstr "Échec de l'importation. L'URL du modèle est incorrect"
+
+#: src/app/main/ui/dashboard/import.cljs:733
+msgid "dashboard.import.confirm-library-links"
+msgstr "Confirmer les liens des bibliothèques"
 
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
@@ -675,6 +752,24 @@ msgstr "Envoi des données au serveur (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Envoi du fichier : %s"
 
+#: src/app/main/ui/dashboard/import.cljs:443
+msgid "dashboard.import.resolve-libraries"
+msgstr ""
+"Certaines bibliothèques n'ont pas pu être liées automatiquement. "
+"Sélectionnez la bonne bibliothèque pour chacune :"
+
+#: src/app/main/ui/dashboard/import.cljs:565
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "Vérifiez les liens des bibliothèques avant de confirmer :"
+
+#: src/app/main/ui/dashboard/import.cljs:521
+msgid "dashboard.import.summary.linked"
+msgstr "Lié"
+
+#: src/app/main/ui/dashboard/import.cljs:558
+msgid "dashboard.import.summary.no-selection"
+msgstr "Aucune bibliothèque sélectionnée"
+
 #: src/app/main/ui/dashboard/team.cljs:881
 msgid "dashboard.invitation-modal.delete"
 msgstr "Vous allez supprimer les invitations envoyées à :"
@@ -700,6 +795,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:149, src/app/main/ui/dashboard/team.cljs:860
 msgid "dashboard.invite-profile"
 msgstr "Inviter des personnes"
+
+#: src/app/main/ui/dashboard/team.cljs:152
+msgid "dashboard.invite-profile-disabled"
+msgstr "Vous n'avez pas la permission d'inviter des personnes dans cette équipe"
 
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:282, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:327
 msgid "dashboard.leave-organization"
@@ -859,6 +958,10 @@ msgstr "Classer par statut"
 msgid "dashboard.organization-deleted"
 msgstr "L'organisation %s a été supprimée."
 
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:194, src/app/main/ui/dashboard/organization_team_switch.cljs:195
+msgid "dashboard.other-teams"
+msgstr "Autres équipes"
+
 #: src/app/main/ui/settings/password.cljs:112, src/app/main/ui/settings/password.cljs:126
 msgid "dashboard.password-change"
 msgstr "Changer le mot de passe"
@@ -878,6 +981,10 @@ msgstr "Vous êtes maintenant propriétaire dans cette équipe."
 #: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.viewer"
 msgstr "Vous êtes maintenant lecteur dans cette équipe."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:46, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:50, src/app/main/ui/dashboard/projects.cljs:364, src/app/main/ui/dashboard/search.cljs:47, src/app/main/ui/dashboard/team.cljs:647, src/app/main/ui/dashboard/team.cljs:1257, src/app/main/ui/dashboard/team.cljs:1537, src/app/main/ui/dashboard/team.cljs:1644
+msgid "dashboard.personal-projects"
+msgstr "Projets personnels"
 
 #: src/app/main/ui/dashboard/files.cljs:122, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:251
 msgid "dashboard.pin-unpin"
@@ -1003,6 +1110,12 @@ msgid "dashboard.select-organization-modal.permission-info"
 msgstr ""
 "Vous trouverez ici toutes vos organisations où vous êtes autorisé à créer "
 "ou ajouter des équipes."
+
+#: src/app/main/data/nitrate.cljs:521
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr ""
+"Vous trouverez ici les organisations dont vous faites partie et où vous "
+"êtes autorisé à créer ou ajouter des équipes."
 
 #: src/app/main/data/nitrate.cljs:530
 msgid "dashboard.select-organization-modal.select"
@@ -1399,7 +1512,7 @@ msgstr ""
 #: src/app/main/ui/settings/integrations.cljs:93, src/app/util/clipboard.cljs:248
 msgid "errors.clipboard-api-unavailable"
 msgstr ""
-"L'API du presse-papiers n'est pas disponible. Servez Penpot via HTTPS pour "
+"L'API du presse-papiers n'est pas disponible. Utilisez Penpot en HTTPS pour "
 "activer l'accès au presse-papiers"
 
 #: src/app/main/data/workspace/clipboard.cljs:514
@@ -1409,8 +1522,9 @@ msgstr "Votre navigateur ne peut pas effectuer cette opération"
 #: src/app/util/clipboard.cljs:245
 msgid "errors.clipboard-permission-denied"
 msgstr ""
-"Accès au presse-papiers refusé. Veuillez autoriser les permissions du "
-"presse-papiers dans votre navigateur pour coller du contenu"
+"Accès au presse-papiers refusé. Veuillez autoriser l'accès au "
+"presse-papiers dans les paramètres de votre navigateur pour coller du "
+"contenu"
 
 #: src/app/main/errors.cljs:773
 msgid "errors.comment-error"
@@ -1645,6 +1759,14 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "L’enregistrement est actuellement désactivé."
 
+#: src/app/main/errors.cljs:538
+msgid "errors.save-failed"
+msgstr ""
+"Vos dernières modifications ne sont pas confirmées comme enregistrées. "
+"L'enregistrement ne reprendra peut-être pas automatiquement. Ne fermez pas "
+"et ne rechargez pas cet onglet : vous risquez de perdre des modifications. "
+"Contactez le support pour obtenir de l'aide."
+
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
 msgstr "Le fichier SVG n'est pas valide ou est mal formé"
@@ -1858,6 +1980,35 @@ msgstr ""
 msgid "errors.version-not-supported"
 msgstr "Le numéro de version du fichier est incompatible"
 
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+msgid "errors.weak-password"
+msgstr "Le mot de passe ne respecte pas les exigences"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "Au moins 1 chiffre"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "Au moins 1 lettre minuscule"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "Au moins 1 caractère spécial"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "Au moins 1 lettre majuscule"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, backend
+msgid "errors.weak-password.too-short"
+msgstr "Au moins 8 caractères"
+
 #: src/app/main/ui/static.cljs:380
 msgid "errors.webgl-context-lost.desc-message"
 msgstr "WebGL ne fonctionne plus. Rechargez la page pour le réinitialiser"
@@ -1972,6 +2123,46 @@ msgstr "Problème"
 #: src/app/main/ui/exports/files.cljs:140
 msgid "files-download-modal.title"
 msgstr "Télécharger les fichiers"
+
+#: src/app/main/ui/exports/files.cljs:183
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr ""
+"Les ressources des bibliothèques liées ne seront pas incluses dans le "
+"fichier."
+
+#: src/app/main/ui/exports/files.cljs:177
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "Considérer les ressources comme des objets basiques"
+
+#: src/app/main/ui/exports/files.cljs:181
+msgid "files-export-modal.options.include-libraries.message"
+msgstr ""
+"Les fichiers avec des bibliothèques liées seront inclus dans l'exportation, "
+"en conservant leur liaison. "
+
+#: src/app/main/ui/exports/files.cljs:175
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "Exporter le fichier + les bibliothèques"
+
+#: src/app/main/ui/exports/files.cljs:184
+msgid "files-export-modal.options.link-later.message"
+msgstr ""
+"Une fois importé, vous pourrez lier les bibliothèques existantes portant "
+"des noms correspondants."
+
+#: src/app/main/ui/exports/files.cljs:178
+msgid "files-export-modal.options.link-later.title"
+msgstr "Lier les bibliothèques correspondantes à l'importation"
+
+#: src/app/main/ui/exports/files.cljs:182
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr ""
+"Votre fichier sera exporté avec les ressources de la bibliothèque "
+"fusionnées dans la bibliothèque locale."
+
+#: src/app/main/ui/exports/files.cljs:176
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "Intégrer les ressources de la bibliothèque dans le fichier"
 
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
@@ -2238,10 +2429,9 @@ msgstr "Tokens d'accès personnels"
 #: src/app/main/ui/settings/integrations.cljs:611
 msgid "integrations.access-tokens.personal.description"
 msgstr ""
-"Les tokens d'accès personnels fonctionnent comme une alternative à notre "
-"système d'authentification par identifiant/mot de passe et peuvent être "
-"utilisés pour permettre à une application d'accéder à l'API interne de "
-"Penpot"
+"Les tokens d'accès personnels constituent une alternative à notre système "
+"d'authentification par identifiant/mot de passe et peuvent être utilisés "
+"pour permettre à une application d'accéder à l'API interne de Penpot"
 
 #: src/app/main/ui/settings/integrations.cljs:68
 msgid "integrations.copy-to-clipboard"
@@ -2334,8 +2524,8 @@ msgstr "Comment configurer les clients MCP"
 #: src/app/main/ui/settings/integrations.cljs:568
 msgid "integrations.mcp-server.mcp-keys.info"
 msgstr ""
-"Voici l'URL du serveur dont vous aurez besoin pour configurer votre client "
-"MCP afin de le connecter au serveur MCP de Penpot."
+"Voici l'URL du serveur à utiliser pour configurer votre client MCP et le "
+"connecter au serveur MCP de Penpot."
 
 #: src/app/main/ui/settings/integrations.cljs:548
 msgid "integrations.mcp-server.mcp-keys.regenerate"
@@ -2387,7 +2577,7 @@ msgstr "Nom"
 
 #: src/app/main/ui/settings/integrations.cljs:201
 msgid "integrations.name.placeholder"
-msgstr "Le nom peut aider à savoir à quoi sert le token"
+msgstr "Le nom permet de savoir à quoi sert le token"
 
 #: src/app/main/ui/settings/integrations.cljs:392
 msgid "integrations.no-expiration"
@@ -2526,6 +2716,14 @@ msgstr "Annuler"
 #: src/app/main/ui/onboarding/questions.cljs:160
 msgid "labels.canva"
 msgstr "Canevas"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:553
+msgid "labels.check-for-updates"
+msgstr "Rechercher des mises à jour"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:552
+msgid "labels.checking-for-updates"
+msgstr "Recherche de mises à jour…"
 
 #: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:101, src/app/main/ui/dashboard/import.cljs:997, src/app/main/ui/dashboard/projects.cljs:97, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/files.cljs:142, src/app/main/ui/exports/files.cljs:225, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:229, src/app/main/ui/viewer/login.cljs:91, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1155, src/app/main/ui/workspace/sidebar/layers.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:825, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
@@ -2881,6 +3079,24 @@ msgstr "Nouveau mot de passe"
 msgid "labels.next"
 msgstr "Suivant"
 
+#: src/app/main/ui/static.cljs:362
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr ""
+"Cette instance nécessite une étape de configuration incluse dans la "
+"dernière version."
+
+#: src/app/main/ui/static.cljs:365
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "Consultez notre"
+
+#: src/app/main/ui/static.cljs:360
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot ne peut pas encore démarrer."
+
+#: src/app/main/ui/static.cljs:370
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "guide technique"
+
 #: src/app/main/ui/static.cljs:350
 msgid "labels.nitrate-unavailable.main-message"
 msgstr ""
@@ -3152,6 +3368,21 @@ msgstr "Sketch"
 #: src/app/main/ui/dashboard/sidebar.cljs:367
 msgid "labels.sources"
 msgstr "Sources"
+
+#: src/app/main/ui/static.cljs:554
+msgid "labels.sso-error.desc-message"
+msgstr ""
+"La connexion avec le fournisseur d'identité de votre organisation n'a pas "
+"abouti. Le fournisseur est peut-être indisponible, ou votre compte n'est "
+"peut-être pas encore présent dans son annuaire."
+
+#: src/app/main/ui/static.cljs:555
+msgid "labels.sso-error.retry"
+msgstr "Réessayer"
+
+#: src/app/main/ui/static.cljs:553
+msgid "labels.sso-error.title"
+msgstr "Nous n'avons pas pu vous connecter à %s"
 
 #: src/app/main/ui/onboarding/questions.cljs:53
 msgid "labels.start"
@@ -3861,8 +4092,8 @@ msgstr "Quitter l'organisation %s ?"
 #: src/app/main/ui/delete_shared.cljs:54
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
-msgstr[0] "Déplacer"
-msgstr[1] "Déplacer"
+msgstr[0] "Déplacement"
+msgstr[1] "Déplacements"
 
 #: src/app/main/ui/delete_shared.cljs:49
 msgid "modals.move-shared-confirm.message"
@@ -3978,6 +4209,10 @@ msgstr "Ce code a expiré."
 msgid "nitrate.activation-code.invalid-error"
 msgstr "Code invalide."
 
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+msgid "nitrate.activation-code.used-error"
+msgstr "Ce code a déjà été utilisé."
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:58
 msgid "nitrate.activation-success.active-until"
 msgstr "Votre abonnement est actif jusqu'au %s."
@@ -4003,6 +4238,14 @@ msgstr " et contactez-nous :"
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
 msgid "nitrate.code-activation.footer-before"
 msgstr "Besoin d'un code ? Téléchargez votre "
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+msgid "nitrate.code-activation.footer-download"
+msgstr "Télécharger la demande"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+msgid "nitrate.code-activation.footer-title"
+msgstr "Besoin d'un code ?"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:96
 msgid "nitrate.code-activation.input-label"
@@ -4649,6 +4892,14 @@ msgstr "Supprimer"
 #: src/app/main/data/workspace/path/shortcuts.cljs:68
 msgid "shortcuts.delete-node"
 msgstr "Supprimer le nœud"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:76
+msgid "shortcuts.delete-node-and-segments"
+msgstr "Supprimer le nœud et les segments"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:157
+msgid "shortcuts.deselect-all"
+msgstr "Tout désélectionner"
 
 #: src/app/main/data/workspace/shortcuts.cljs:237
 msgid "shortcuts.detach-component"
@@ -6667,8 +6918,8 @@ msgstr "Détacher tous les tokens"
 #: src/app/main/ui/workspace/libraries.cljs:129, src/app/main/ui/workspace/libraries.cljs:158, src/app/main/ui/workspace/libraries.cljs:203
 msgid "workspace.libraries.typography"
 msgid_plural "workspace.libraries.typography"
-msgstr[0] "1 typographie"
-msgstr[1] "%s typographies"
+msgstr[0] "1 typographie"
+msgstr[1] "%s typographies"
 
 #: src/app/main/ui/workspace/libraries.cljs:469, src/app/main/ui/workspace/libraries.cljs:885
 msgid "workspace.libraries.unlink-library-btn"
@@ -6744,6 +6995,10 @@ msgstr "Activer/Désactiver le flou"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:138
 msgid "workspace.options.blur-options.toggle-more-options"
 msgstr "Afficher/masquer plus d'options"
+
+#: src/app/main/ui/exports/assets.cljs:332
+msgid "workspace.options.cancel-export"
+msgstr "Annuler"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:60, src/app/main/ui/workspace/sidebar/options/page.cljs:68
 msgid "workspace.options.canvas-background"
@@ -6887,8 +7142,8 @@ msgstr "Sont du même type."
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr ""
-"Les rectangles, ellipses, chemins et opérations booléennes comptent comme "
-"étant du même type."
+"Les rectangles, ellipses, chemins et opérations booléennes sont considérés "
+"comme étant du même type."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
@@ -6978,6 +7233,18 @@ msgstr "Supprimer l'exportation"
 msgid "workspace.options.export.suffix"
 msgstr "Suffixe"
 
+#: src/app/main/ui/exports/assets.cljs:267
+msgid "workspace.options.exporting-busy"
+msgstr "Le service d'export est occupé, veuillez réessayer plus tard"
+
+#: src/app/main/ui/exports/assets.cljs:270
+msgid "workspace.options.exporting-cancelled"
+msgstr "Export annulé"
+
+#: src/app/main/ui/exports/assets.cljs:269
+msgid "workspace.options.exporting-cancelling"
+msgstr "Annulation…"
+
 #: src/app/main/ui/exports/assets.cljs:272
 msgid "workspace.options.exporting-complete"
 msgstr "Exportation terminée"
@@ -6993,6 +7260,10 @@ msgstr "L'exportation a échoué"
 #: src/app/main/ui/exports/assets.cljs:274
 msgid "workspace.options.exporting-object-slow"
 msgstr "L'exportation est d'une lenteur inattendue"
+
+#: src/app/main/ui/exports/assets.cljs:271
+msgid "workspace.options.exporting-queued"
+msgstr "En attente…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:238
 msgid "workspace.options.fill"
@@ -7819,6 +8090,22 @@ msgstr "Axe Y"
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:270
 msgid "workspace.path.actions.draw-nodes"
 msgstr "Dessiner des nœuds (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+msgid "workspace.path.actions.handler-aligned"
+msgstr "Aligné"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:169
+msgid "workspace.path.actions.handler-independent"
+msgstr "Indépendant"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:161
+msgid "workspace.path.actions.handler-mirror"
+msgstr "Symétrique"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:148
+msgid "workspace.path.actions.handler-type"
+msgstr "Comportement des poignées"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:288
 msgid "workspace.path.actions.join-nodes"
@@ -8666,7 +8953,7 @@ msgstr "Marges intérieures"
 msgid "workspace.tokens.radius"
 msgstr "Rayons"
 
-#: src/app/main/ui/ds/controls/utilities/token_field.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:60, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:123, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:130, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:47, src/app/main/ui/workspace/tokens/management/token_pill.cljs:130
 msgid "workspace.tokens.ref-not-valid"
 msgstr ""
 "La référence dans {%s} n'est pas valide ou ne fait partie d'aucune "
@@ -8718,7 +9005,7 @@ msgstr "Vos tokens seront automatiquement renommés en %s.(suffix).(tokenName)"
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:61, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:89, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:296, src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:489, src/app/main/ui/workspace/tokens/management/forms/controls/combobox.cljs:298, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:189, src/app/main/ui/workspace/tokens/management/forms/controls/fonts_combobox.cljs:324, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:259, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:381, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:505, src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
 msgid "workspace.tokens.resolved-value"
-msgstr "Valeur déduite : %s"
+msgstr "Valeur résolue : %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:249
 msgid "workspace.tokens.save-theme"
