@@ -3,8 +3,8 @@
   "version": "1.5.0",
   "dependencies": {
     "@penpot/plugin-types": "workspace:^",
-    "ses": "^2.1.0",
-    "zod": "^3.25.76"
+    "ses": "^2.3.0",
+    "zod": "^4.6.5"
   },
   "module": "./dist/index.js",
   "typings": "./dist/index.d.ts",
