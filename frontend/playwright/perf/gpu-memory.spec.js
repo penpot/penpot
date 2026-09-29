@@ -36,6 +36,8 @@ const config = {
   outDir: env.PERF_OUT_DIR ?? "playwright/perf/results",
 };
 
+const NUDGE_COMMIT_MS = 1200;
+
 // Page sizes cycled in the resize phase. Each change reaches the workspace
 // ResizeObserver and reallocates the canvas drawing buffer and the render
 // surfaces sized from it. Applied from CSS, not `setViewportSize`: headed
@@ -150,8 +152,8 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
     const samples = [];
     const t0 = Date.now();
 
-    const sample = async (phase, iteration = 0) => {
-      await settle(page);
+    const sample = async (phase, iteration = 0, quietMs = config.settleMs) => {
+      await settle(page, quietMs);
       const [web, os] = await Promise.all([
         page.evaluate(() => globalThis.__gpuMem?.snapshot() ?? null),
         sampleOs(),
@@ -217,6 +219,9 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
     if (config.editShape) {
       await page.evaluate((id) => {
         const { app } = globalThis;
+        if (typeof app?.main?.store?.emit_BANG_ !== "function") {
+          throw new Error("PERF_EDIT_SHAPE needs a dev CLJS build");
+        }
         app.main.store.emit_BANG_(
           app.main.data.workspace.selection.select_shape(
             app.common.uuid.uuid(id),
@@ -231,7 +236,11 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
     }
     for (let i = 0; i < config.iterations; i++) {
       await page.keyboard.press(i % 2 ? "Shift+ArrowLeft" : "Shift+ArrowRight");
-      await sample("edit", i);
+      // A nudge commits 250 ms after key-up, or 1 s after the last move
+      // (`nudge-selected-shapes`). Wait that out so the commit lands in this
+      // step; once it runs it blocks the page, and the sample waits for it.
+      await page.waitForTimeout(NUDGE_COMMIT_MS);
+      await sample("edit", i, 1000);
     }
     await page.keyboard.press("Escape");
 
