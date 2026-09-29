@@ -10,7 +10,6 @@ ARG IMAGEMAGICK_VERSION=7.1.2-27
 
 RUN set -e; \
     apt-get -qq update; \
-    apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install init-system-helpers; \
     apt-get -qqy --no-install-recommends install \
         autoconf \
@@ -24,7 +23,6 @@ RUN set -e; \
         liblcms2-dev \
         libltdl-dev \
         liblzma-dev \
-        libopenexr-dev \
         libxml2-dev \
         libpng-dev \
         librsvg2-dev \
@@ -39,7 +37,7 @@ RUN set -e; \
     mkdir -p /tmp/magick; \
     cd /tmp/magick; \
     tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure --prefix=/opt/imagick; \
+    ./configure --prefix=/opt/imagick --without-openexr; \
     make -j 2; \
     make install; \
     rm -rf /opt/imagick/lib/libMagick++*; \
@@ -58,7 +56,6 @@ RUN set -ex; \
         libheif1 \
         libjpeg62-turbo \
         liblcms2-2 \
-        libopenexr-3-1-30 \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \

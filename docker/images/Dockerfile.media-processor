@@ -34,7 +34,6 @@ RUN set -ex; \
       libheif1 \
       libjpeg62-turbo \
       liblcms2-2 \
-      libopenexr-3-1-30 \
       libopenjp2-7 \
       libpng16-16 \
       librsvg2-2 \

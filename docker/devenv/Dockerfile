@@ -526,7 +526,6 @@ RUN set -ex; \
       libjpeg62-turbo \
       libtiff6 \
       libwebp7 \
-      libopenexr-3-1-30 \
       libfreetype6 \
       libfontconfig1 \
       libglib2.0-0 \
@@ -576,7 +575,7 @@ ENV LANG='C.UTF-8' \
     SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node
