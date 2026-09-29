@@ -70,7 +70,6 @@ RUN set -ex; \
       libheif1 \
       libjpeg62-turbo \
       liblcms2-2 \
-      libopenexr-3-1-30 \
       libopenjp2-7 \
       libpng16-16 \
       librsvg2-2 \
@@ -89,7 +88,7 @@ RUN set -ex; \
 
 ARG BUNDLE_PATH="./bundle-exporter/"
 COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
-COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
 
 WORKDIR /opt/penpot/exporter
 
