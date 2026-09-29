@@ -9,11 +9,11 @@ ENV LANG='C.UTF-8' \
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         binutils \
         ca-certificates \
         curl \
+        gzip \
     ; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
@@ -68,7 +68,6 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install passwd; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
         curl \
@@ -81,7 +80,6 @@ RUN set -ex; \
         libheif1 \
         libjpeg62-turbo \
         liblcms2-2 \
-        libopenexr-3-1-30 \
         libopenjp2-7 \
         libpng16-16 \
         librsvg2-2 \
@@ -108,7 +106,7 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/data;
 
 COPY --from=build /opt/jre /opt/jre
-COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
 
 COPY files/imagemagick-policy.xml /opt/imagick/etc/ImageMagick-7/policy.xml
 

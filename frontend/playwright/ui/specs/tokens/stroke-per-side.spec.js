@@ -59,7 +59,10 @@ test.describe("Tokens: stroke per side", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-feature-token-input"]);
+    await workspace.mockConfigFlags([
+      "enable-feature-token-input",
+      "disable-stroke-per-side",
+    ]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("workspace/get-file-layout-stroke-token-json");
     await workspace.goToWorkspace();
@@ -452,7 +455,10 @@ test.describe("Tokens: stroke per side", () => {
     page,
   }) => {
     const workspace = new WasmWorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-feature-token-input"]);
+    await workspace.mockConfigFlags([
+      "enable-feature-token-input",
+      "disable-stroke-per-side",
+    ]);
     await workspace.setupEmptyFile();
     await workspace.mockGetFile("workspace/get-file-layout-stroke-token-json");
     await workspace.goToWorkspace();

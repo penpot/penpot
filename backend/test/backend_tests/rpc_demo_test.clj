@@ -121,3 +121,36 @@
                                         :expires-in "yes"})]
       (t/is (th/ex-of-type? error :validation))
       (t/is (th/ex-of-code? error :params-validation)))))
+
+(t/deftest create-demo-profile-stores-wasm-renderer-when-requested
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :renderer :wasm})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (= :wasm (get-in decoded [:props :renderer])))))))
+
+(t/deftest create-demo-profile-stores-svg-renderer-when-requested
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile
+                                               :renderer :svg})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (= :svg (get-in decoded [:props :renderer])))))))
+
+(t/deftest create-demo-profile-omits-renderer-by-default
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error result]} (th/command! {::th/type :create-demo-profile})]
+      (t/is (nil? error))
+      (let [saved   (th/db-get :profile {:email (:email result)})
+            decoded (profile/decode-row saved)]
+        (t/is (false? (contains? (:props decoded) :renderer)))))))
+
+(t/deftest create-demo-profile-rejects-unknown-renderer
+  (with-redefs [cf/flags (conj cf/flags :demo-users)]
+    (let [{:keys [error]} (th/command! {::th/type :create-demo-profile
+                                        :renderer :canvas})]
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))

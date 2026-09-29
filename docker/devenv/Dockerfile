@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.5.1 \
+    PNPM_VERSION=12.6.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -77,13 +77,13 @@ RUN set -eux; \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='84e1290e82c800acd406b6db27e9650e15db3c2344d12162cc305ea1f942c6ff'; \
+         PNPM_SHA256='973af2b3eb9509416cf889a7336705062c936407d5fda07298814e7532f5dea1'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='5a397dfb6b3d4b07d3d7769586aeb471048faf04299a492e2808b95a9a1c701f'; \
+         PNPM_SHA256='3f4c66f668d0e84219679982d095b30da68325e1fac9284e7f5dc1584bd3d13e'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -109,7 +109,7 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.31
+ENV OPENCODE_VERSION=1.18.33
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -136,18 +136,18 @@ RUN set -ex; \
 
 FROM base AS setup-opencode2
 
-ENV OPENCODE2_VERSION=2.0.16
+ENV OPENCODE2_VERSION=2.0.18
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='a132a041968b0fcea18824f2f1996f1494c26ad6e4c5be5ca5b9b96a2bb7922e'; \
+         ESUM='ddc98e5c789c496dada1ecfae9fe4e0931c7ac43a46da5436b97ecda5cd0ba5d'; \
          ;; \
        amd64|x86_64) \
          BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='08221eb6a781354e9be3b3918ab5b7d91aff2f20739e7e2e0af81bcdc0822c8a'; \
+         ESUM='aa455d073b3a0733a6912f477b370f3d50ca7af44715bb7ccc41faa13b3cc2eb'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; exit 1; \
@@ -526,7 +526,6 @@ RUN set -ex; \
       libjpeg62-turbo \
       libtiff6 \
       libwebp7 \
-      libopenexr-3-1-30 \
       libfreetype6 \
       libfontconfig1 \
       libglib2.0-0 \
@@ -576,7 +575,7 @@ ENV LANG='C.UTF-8' \
     SERENA_CONTEXT="claude-code" \
     PATH="/opt/jdk/bin:/opt/gh/bin:/opt/utils/bin:/opt/clojure/bin:/opt/node/bin:/opt/imagick/bin:/opt/cargo/bin:$PATH"
 
-COPY --from=penpotapp/imagemagick:7.1.2-27 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-27-1 /opt/imagick /opt/imagick
 COPY --from=setup-jvm /opt/jdk /opt/jdk
 COPY --from=setup-jvm /opt/clojure /opt/clojure
 COPY --from=setup-node /opt/node /opt/node

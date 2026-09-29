@@ -158,9 +158,9 @@
 (defn resolve-admin-console-href
   "The admin-console link for the pinned action at the bottom of the
   organizations column: the organization-specific page when `profile`
-  owns `organization`, the generic admin-console page otherwise —
-  including when no organization is previewed at all (e.g. \"Other
-  teams\"/personal projects is selected)."
+  owns `organization` (the active team's one), the generic
+  admin-console page otherwise — including when the active team has
+  no organization at all (\"Other teams\"/personal projects)."
   [organization profile]
   (if (and (:id organization) (= (:id profile) (:owner-id organization)))
     (dnt/build-admin-console-href {:organization-id (:id organization)
@@ -171,119 +171,205 @@
   [event]
   (or (kbd/mod? event) (dom/middle-mouse? event)))
 
+(mf/defc personal-projects-icon*
+  "The \"Personal projects\" icon at the 20px size the design asks
+  for, which `icon*` has no size for."
+  {::mf/private true}
+  [{:keys [class]}]
+  [:svg {:class class :width "20px" :height "20px"}
+   [:use {:href (dm/str "#icon-" i/files) :width "20px" :height "20px"}]])
+
+(defn- use-scroll-fade
+  "Whether a column's scroll area has more content below its visible
+  part, so the fade over its bottom edge shows only then and never
+  covers the last row. Rechecks on scroll and whenever `items`
+  change."
+  [items]
+  (let [node-ref (mf/use-ref nil)
+        fade*    (mf/use-state false)
+
+        on-scroll
+        (mf/use-fn
+         (fn []
+           (when-let [node (mf/ref-val node-ref)]
+             (reset! fade* (> (- (.-scrollHeight ^js node)
+                                 (.-scrollTop ^js node)
+                                 (.-clientHeight ^js node))
+                              1)))))]
+
+    (mf/use-layout-effect (mf/deps items) #(do (on-scroll) nil))
+
+    {:ref node-ref
+     :on-scroll on-scroll
+     :fade? (deref fade*)}))
+
+(mf/defc organization-item*
+  "One row of `organizations-column*`; `organization` is nil for the
+  \"Other teams\" bucket."
+  {::mf/private true}
+  [{:keys [organization selected-id current-id on-select on-context-menu]}]
+  (let [bucket-id (organization-bucket-id organization)
+        personal? (= bucket-id personal-bucket-id)]
+    [:> dropdown-menu-item* {:data-value (str bucket-id)
+                             :class (stl/css-case :organization-item true
+                                                  :selected (= bucket-id selected-id))
+                             :on-click on-select
+                             :on-context-menu #(on-context-menu % organization)}
+     (if personal?
+       [:span {:class (stl/css :my-teams-icon)}
+        [:> raw-svg* {:id penpot-logo-icon-subtle}]]
+       [:> organization-avatar* {:organization organization :size "xxl"}])
+     [:span {:class (stl/css :organization-text-group)}
+      [:span {:class (stl/css :organization-text)
+              :title (if personal? (tr "dashboard.other-teams") (:name organization))}
+       (if personal? (tr "dashboard.other-teams") (:name organization))]
+      (when (= bucket-id current-id)
+        [:span {:class (stl/css :tick-icon)}
+         [:> icon* {:icon-id i/tick :size "s"}]])]
+     [:span {:class (stl/css :chevron-icon)}
+      [:> icon* {:icon-id i/arrow-right :size "s"}]]]))
+
 (mf/defc organizations-column*
   {::mf/private true}
   [{:keys [organizations selected-id current-id ^boolean has-organizations? on-select on-create-organization
            admin-console-href ^boolean valid-license on-context-menu on-dismiss-context-menu]}]
-  [:li {:role "presentation" :class (stl/css :organizations-column)}
-   [:div {:class (stl/css :column-label)}
-    (tr "dashboard.section.organizations")]
+  (let [;; "Other teams" is always last (see `sort-organizations`). It
+        ;; stays out of the scroll area so it sits right under a short
+        ;; list and sticks above the actions under a long one. Its
+        ;; entry is a bare `nil` (see `organization-bucket-id`), hence
+        ;; `some` rather than looking the value up.
+        listed (remove (comp nil? :id) organizations)
+        other? (some (comp nil? :id) organizations)
 
-   [:ul {:class (stl/css :column-list)}
-    (when-not has-organizations?
-      [:li {:class (stl/css :empty-state)}
-       (tr "dashboard.no-organizations-yet")])
+        {:keys [ref on-scroll fade?]} (use-scroll-fade organizations)]
 
-    (for [organization organizations]
-      (let [bucket-id (organization-bucket-id organization)
-            personal? (= bucket-id personal-bucket-id)]
-        [:* {:key (str bucket-id)}
-         ;; "Other teams" is always last (see `sort-organizations`),
-         ;; set apart from the real organizations above it the same
-         ;; way `.column-separator` sets the pinned actions apart
-         ;; from the list.
-         (when personal?
-           [:li {:role "separator" :class (stl/css :column-separator)}])
-         [:> dropdown-menu-item* {:data-value (str bucket-id)
-                                  :class (stl/css-case :organization-item true
-                                                       :selected (= bucket-id selected-id))
-                                  :on-click on-select
-                                  :on-context-menu #(on-context-menu % organization)}
-          (if personal?
-            [:span {:class (stl/css :my-teams-icon)}
-             [:> raw-svg* {:id penpot-logo-icon-subtle}]]
-            [:> organization-avatar* {:organization organization :size "xxl"}])
-          [:span {:class (stl/css :organization-text-group)}
-           [:span {:class (stl/css :organization-text)
-                   :title (if personal? (tr "dashboard.other-teams") (:name organization))}
-            (if personal? (tr "dashboard.other-teams") (:name organization))]
-           (when (= bucket-id current-id)
-             [:span {:class (stl/css :tick-icon)}
-              [:> icon* {:icon-id i/tick :size "s"}]])]
-          [:span {:class (stl/css :chevron-icon)}
-           [:> icon* {:icon-id i/arrow-right :size "s"}]]]]))]
+    [:li {:role "presentation" :class (stl/css :organizations-column)}
+     [:div {:class (stl/css-case :column-scroll true :fade fade?)
+            :ref ref
+            :on-scroll on-scroll}
+      [:div {:class (stl/css :column-label)}
+       (tr "dashboard.section.organizations")]
 
-   [:ul {:class (stl/css :column-actions)}
-    [:li {:role "separator" :class (stl/css :column-separator)}]
+      [:ul {:class (stl/css :column-list)}
+       (when-not has-organizations?
+         [:li {:class (stl/css :empty-state)}
+          (tr "dashboard.no-organizations-yet")])
 
-    [:> dropdown-menu-item* {:on-click on-create-organization
-                             :class (stl/css :organization-item :action)}
-     [:span {:class (stl/css :icon-wrapper)}
-      [:> icon* {:icon-id i/add :class (stl/css :action-icon)}]]
-     [:span {:class (stl/css :organization-text)} (tr "dashboard.create-new-organization")]]
+       (for [organization listed]
+         [:> organization-item* {:key (str (:id organization))
+                                 :organization organization
+                                 :selected-id selected-id
+                                 :current-id current-id
+                                 :on-select on-select
+                                 :on-context-menu on-context-menu}])]]
 
-    (when valid-license
-      [:> dropdown-menu-item* {:class (stl/css :organization-item :action :with-link)
-                               :on-click (fn [event]
-                                           (if (new-tab-click? event)
-                                             (dom/stop-propagation event)
-                                             (do
-                                               (dom/prevent-default event)
+     (when other?
+       [:ul {:class (stl/css :column-bucket)}
+        [:li {:role "separator" :class (stl/css :column-separator)}]
+        [:> organization-item* {:organization nil
+                                :selected-id selected-id
+                                :current-id current-id
+                                :on-select on-select
+                                :on-context-menu on-context-menu}]])
+
+     [:ul {:class (stl/css :column-actions)}
+      [:li {:role "separator" :class (stl/css :column-separator)}]
+
+      (when valid-license
+        [:> dropdown-menu-item* {:class (stl/css :organization-item :action :with-link)
+                                 :on-click (fn [event]
+                                             (if (new-tab-click? event)
                                                (dom/stop-propagation event)
-                                               (st/emit! (rt/nav-raw :href admin-console-href)))))
-                               :on-context-menu on-dismiss-context-menu}
-       [:a {:class (stl/css :item-link)
-            :href admin-console-href
-            :tab-index "-1"}
-        [:span {:class (stl/css :icon-wrapper)}
-         [:> icon* {:icon-id i/arrow-up-right :class (stl/css :action-icon)}]]
-        [:span {:class (stl/css :organization-text)} (tr "dashboard.go-to-admin-console")]]])]])
+                                               (do
+                                                 (dom/prevent-default event)
+                                                 (dom/stop-propagation event)
+                                                 (st/emit! (rt/nav-raw :href admin-console-href)))))
+                                 :on-context-menu on-dismiss-context-menu}
+         [:a {:class (stl/css :item-link)
+              :href admin-console-href
+              :tab-index "-1"}
+          [:span {:class (stl/css :icon-wrapper)}
+           [:> icon* {:icon-id i/arrow-up-right :class (stl/css :action-icon)}]]
+          [:span {:class (stl/css :organization-text)} (tr "dashboard.go-to-admin-console")]]])
+
+      [:> dropdown-menu-item* {:on-click on-create-organization
+                               :class (stl/css :organization-item :action)}
+       [:span {:class (stl/css :icon-wrapper)}
+        [:> icon* {:icon-id i/add :class (stl/css :action-icon)}]]
+       [:span {:class (stl/css :organization-text)} (tr "dashboard.create-new-organization")]]]]))
+
+(mf/defc team-item*
+  "One row of `teams-column*`."
+  {::mf/private true}
+  [{:keys [team href selected-team-id on-select on-context-menu]}]
+  (let [subscription-type (get-subscription-type (:subscription team))
+        show-badge? (show-subscription-badge? team)]
+    [:> dropdown-menu-item* {:data-value (str (:id team))
+                             :class (stl/css-case :team-item true
+                                                  :with-link true)
+                             :on-click on-select
+                             :on-context-menu on-context-menu}
+     [:a {:class (stl/css :item-link)
+          :href href
+          :tab-index "-1"}
+      (if (:is-default team)
+        [:span {:class (stl/css :team-item-personal-icon)}
+         [:> personal-projects-icon* {:class (stl/css :personal-icon)}]]
+        [:img {:src (cf/resolve-team-photo-url team)
+               :class (stl/css :team-item-picture)
+               :alt (:name team)}])
+      [:span {:class (stl/css :team-text-group)}
+       [:span {:class (stl/css :team-text)
+               :title (team-display-name team)}
+        (team-display-name team)]
+       (when show-badge?
+         [:> menu-team-icon* {:subscription-type subscription-type}])
+       (when (= (:id team) selected-team-id)
+         [:span {:class (stl/css :tick-icon)}
+          [:> icon* {:icon-id i/tick :size "s"}]])]]]))
 
 (mf/defc teams-column*
   {::mf/private true}
   [{:keys [teams selected-team-id on-select on-context-menu on-create-team
            on-create-organization]}]
-  (let [router (mf/deref refs/router)]
-    [:li {:role "presentation" :class (stl/css :teams-column)}
-     [:div {:class (stl/css :column-label)}
-      (tr "dashboard.section.teams")]
+  (let [router (mf/deref refs/router)
 
-     [:ul {:class (stl/css :column-list)}
-      (for [team teams]
-        (let [subscription-type (get-subscription-type (:subscription team))
-              show-badge? (show-subscription-badge? team)]
-          [:* {:key (str (:id team))}
-           ;; "Personal projects" is always last (see
-           ;; `sort-organization-teams`/`sort-all-teams`), set apart
-           ;; from the real teams above it the same way
-           ;; `.column-separator` sets the pinned actions apart from
-           ;; the list. Skipped when it's the only team: there's
-           ;; nothing above it to separate from.
-           (when (and (:is-default team) (> (count teams) 1))
-             [:li {:role "separator" :class (stl/css :column-separator)}])
-           [:> dropdown-menu-item* {:data-value (str (:id team))
-                                    :class (stl/css-case :team-item true
-                                                         :with-link true)
-                                    :on-click on-select
-                                    :on-context-menu on-context-menu}
-            [:a {:class (stl/css :item-link)
-                 :href (team-href router team)
-                 :tab-index "-1"}
-             (if (:is-default team)
-               [:span {:class (stl/css :team-item-personal-icon)}
-                [:> icon* {:icon-id i/files}]]
-               [:img {:src (cf/resolve-team-photo-url team)
-                      :class (stl/css :team-item-picture)
-                      :alt (:name team)}])
-             [:span {:class (stl/css :team-text-group)}
-              [:span {:class (stl/css :team-text)
-                      :title (team-display-name team)}
-               (team-display-name team)]
-              (when show-badge?
-                [:> menu-team-icon* {:subscription-type subscription-type}])
-              (when (= (:id team) selected-team-id)
-                [:span {:class (stl/css :tick-icon)}
-                 [:> icon* {:icon-id i/tick :size "s"}]])]]]]))]
+        ;; "Personal projects" is always last (see
+        ;; `sort-organization-teams`/`sort-all-teams`). It stays out of
+        ;; the scroll area so it sits right under a short list and
+        ;; sticks above the actions under a long one.
+        listed   (remove :is-default teams)
+        personal (d/seek :is-default teams)
+
+        {:keys [ref on-scroll fade?]} (use-scroll-fade teams)]
+
+    [:li {:role "presentation" :class (stl/css :teams-column)}
+     [:div {:class (stl/css-case :column-scroll true :fade fade?)
+            :ref ref
+            :on-scroll on-scroll}
+      [:div {:class (stl/css :column-label)}
+       (tr "dashboard.section.teams")]
+
+      [:ul {:class (stl/css :column-list)}
+       (for [team listed]
+         [:> team-item* {:key (str (:id team))
+                         :team team
+                         :href (team-href router team)
+                         :selected-team-id selected-team-id
+                         :on-select on-select
+                         :on-context-menu on-context-menu}])]]
+
+     (when personal
+       [:ul {:class (stl/css :column-bucket)}
+        ;; Skipped when it's the only team: there's nothing above it
+        ;; to set it apart from.
+        (when (seq listed)
+          [:li {:role "separator" :class (stl/css :column-separator)}])
+        [:> team-item* {:team personal
+                        :href (team-href router personal)
+                        :selected-team-id selected-team-id
+                        :on-select on-select
+                        :on-context-menu on-context-menu}]])
 
      [:ul {:class (stl/css :column-actions)}
       [:li {:role "separator" :class (stl/css :column-separator)}]
@@ -464,16 +550,13 @@
                  (= subscription-type "unlimited")
                  (assoc :show-contact-sales-option true)))))))
 
-        ;; "Go to admin console" targets the organization currently
-        ;; previewed on the left column (not necessarily the active
-        ;; team's organization), and only owners of that organization
-        ;; get the option at all.
-        selected-organization
-        (get organizations selected-organization-id)
-
+        ;; "Go to admin console" targets the active team's organization
+        ;; (the one with the tick), not the one previewed on the left
+        ;; column, and only its owner gets the organization-specific
+        ;; page.
         admin-console-href
-        (mf/with-memo [selected-organization profile]
-          (resolve-admin-console-href selected-organization profile))
+        (mf/with-memo [current-organization profile]
+          (resolve-admin-console-href current-organization profile))
 
         ;; "Create new team" targets the organization previewed on the
         ;; left column (`selected-organization-id`), i.e. wherever the
@@ -537,7 +620,7 @@
                 :aria-haspopup "menu"}
        (if (:is-default team)
          [:div {:class (stl/css :personal-projects-icon)}
-          [:> icon* {:icon-id i/files}]]
+          [:> personal-projects-icon* {:class (stl/css :personal-icon)}]]
 
          [:img {:src (cf/resolve-team-photo-url team)
                 :class (stl/css :team-picture)

@@ -1,4 +1,4 @@
-FROM dhi.io/nginx:1.31.1-debian13-dev
+FROM dhi.io/nginx:1.31.6-debian13-dev
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,7 +7,6 @@ USER root
 
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qq -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade; \
     apt-get -qqy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" --no-install-recommends install bash gettext-base passwd; \
     rm -rf /var/lib/apt/lists/*; \
     groupadd -f -g 1001 penpot; \
