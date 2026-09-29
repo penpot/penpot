@@ -649,9 +649,9 @@
                       :variant-container-name (:name parent))))
     (when-not (= (:variant-id component) (:variant-id shape))
       (report-error :variant-component-bad-id
-                    (str/ffmt "Variant % has adifferent variant-id than its component" (:id shape))
+                    (str/ffmt "Variant % has a :variant-id that does not point to the container" (:id shape))
                     shape file page
-                    :variant-id (:variant-id component)))))
+                    :variant-id (:parent-id shape)))))
 
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
