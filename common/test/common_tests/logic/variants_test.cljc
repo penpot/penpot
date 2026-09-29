@@ -10,13 +10,62 @@
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
-   [clojure.test :as t]))
+   [app.common.uuid :as uuid]
+   [clojure.test :as t]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+#?(:cljs
+   (defn- validation-error
+     "Apply the changes and return the ex-data of the :validate-shapes
+     error they raise, or nil if they raise none."
+     [file changes]
+     (try
+       (thf/apply-changes file changes :validate? false)
+       nil
+       (catch :default e
+         (let [data (ex-data e)]
+           (when (= :referential-integrity (:code data))
+             data))))))
+
+(defn- add-two-variants
+  "Add two variant containers, :v01 named \"Board\" and :v02 named \"Other\"."
+  [file]
+  (-> file
+      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+      (ths/update-shape :v02 :name "Other")
+      (ths/update-shape :m03 :name "Other")
+      (ths/update-shape :m04 :name "Other")
+      (thc/update-component :c03 {:name "Other"})
+      (thc/update-component :c04 {:name "Other"})))
+
+(defn- paste-changes
+  "Build the changes of pasting `shape-label` into `parent-label`, as the
+  workspace paste does: the pasted shape is re-parented before duplicating."
+  [file shape-label parent-label]
+  (let [page      (thf/current-page file)
+        shape-id  (thi/id shape-label)
+        parent-id (thi/id parent-label)
+        objects   (-> (:objects page)
+                      (update shape-id assoc :parent-id parent-id :frame-id parent-id))]
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page-id (:id page))
+        (pcb/with-library-data (:data file))
+        (pcb/with-objects (:objects page))
+        (cll/generate-duplicate-changes objects
+                                        page
+                                        #{shape-id}
+                                        (gpt/point 0 0)
+                                        {(:id file) file}
+                                        (:data file)
+                                        (:id file)))))
 
 (t/deftest test-duplicate-variant-container
   (let [;; ==== Setup
@@ -115,3 +164,52 @@
     (thf/validate-file! file')
     (t/is (some? new-shape'))
     (t/is (not= (:parent-id new-shape') (:id container)))))
+
+(t/deftest test-paste-variant-into-another-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    add-two-variants)
+
+        ;; ==== Action
+        changes (paste-changes file :m01 :v02)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        v02'    (ths/get-shape file' :v02)
+        new-id  (last (:shapes v02'))
+        new'    (ths/get-shape-by-id file' new-id)
+        c03'    (thc/get-component file' :c03)
+        newc'   (thc/get-component-by-id file' (:component-id new'))]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes v02'))))
+    (t/is (= (:id v02') (:variant-id new')))
+    (t/is (= (mapv :name (:variant-properties c03'))
+             (mapv :name (:variant-properties newc'))))))
+
+#?(:cljs
+   (t/deftest test-paste-variant-into-another-container-validates
+     (let [file    (-> (thf/sample-file :file1)
+                       add-two-variants)
+           changes (paste-changes file :m01 :v02)]
+
+       (t/is (nil? (validation-error file changes))))))
+
+#?(:cljs
+   (t/deftest test-duplicate-variant-in-same-container-validates
+     (let [file    (-> (thf/sample-file :file1)
+                       add-two-variants)
+           changes (paste-changes file :m01 :v01)]
+
+       (t/is (nil? (validation-error file changes))))))
+
+#?(:cljs
+   (t/deftest test-duplicate-variant-in-same-container-detects-errors
+     (let [file    (-> (thf/sample-file :file1)
+                       add-two-variants
+                       (ths/update-shape :m02 :variant-id (uuid/next)))
+           changes (paste-changes file :m01 :v01)
+           error   (validation-error file changes)]
+
+       ;; Ctrl+D inside the same container also updates the last property value
+       (t/is (str/includes? (:hint error) "generate-update-property-value")))))

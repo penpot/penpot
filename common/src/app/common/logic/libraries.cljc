@@ -2919,15 +2919,21 @@
 
     [shape
      (cond-> changes
+       ;; The shape may not be inside the container yet, so validate at the end
        into-new-variant?
-       (clvp/generate-make-shapes-variant [shape] parent)
+       (clvp/generate-make-shapes-variant [shape] parent :skip-validation? true)
 
        ;; If it has the same parent, update the value of the last property
        (and into-new-variant? (= (:variant-id component) (:id parent)))
        (clvp/generate-update-property-value new-component-id (-> component :variant-properties count dec) value)
 
        :always
-       (pcb/change-parent (:id parent) [shape] 0))]))
+       (pcb/change-parent (:id parent) [shape] 0)
+
+       into-new-variant?
+       (pcb/validate-shapes page-id
+                            [(:id parent)]
+                            (str "duplicate-variant: " (:id component) " into " (:id parent))))]))
 
 
 (defn generate-duplicate-component-change
