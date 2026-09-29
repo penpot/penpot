@@ -1852,14 +1852,8 @@ impl TileTextureCache {
                     continue;
                 }
 
-                self.transforms[index] = skia::RSXform::new(
-                    dest_scale,
-                    0.0,
-                    (
-                        (x as f32 * self.tile_size - offset.x).round(),
-                        (y as f32 * self.tile_size - offset.y).round(),
-                    ),
-                );
+                let (tx, ty) = tiles::tile_screen_xy(Tile(x, y), self.tile_size, offset);
+                self.transforms[index] = skia::RSXform::new(dest_scale, 0.0, (tx, ty));
 
                 let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 self.textures[index].set_ltrb(src.left, src.top, src.right, src.bottom);
@@ -1903,8 +1897,7 @@ impl TileTextureCache {
 
                 let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 let scos = doc_rect.width() * s / src.width();
-                let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
-                let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
+                let (tx, ty) = tiles::doc_rect_screen_xy(doc_rect, viewbox.pan, s);
 
                 transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
                 textures.push(src);
@@ -1932,8 +1925,7 @@ impl TileTextureCache {
             }
 
             let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
-            let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
-            let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
+            let (tx, ty) = tiles::doc_rect_screen_xy(doc_rect, viewbox.pan, s);
             let scos = doc_rect.width() * s / src.width();
 
             transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
