@@ -17,6 +17,7 @@
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.util.ssrf :as ssrf]
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
@@ -224,6 +225,78 @@
                (->> out :result (map :id) set)))
       (t/is (= #{(:name owned-team)}
                (->> out :result (map :name) set))))))
+
+(t/deftest get-member-teams-returns-all-active-memberships
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile      (th/create-profile* 1 {:is-active true})
+          other        (th/create-profile* 2 {:is-active true})
+          default-team (th/db-get :team {:id (:default-team-id profile)})
+          owned-team   (th/create-team* 1 {:profile-id (:id profile)})
+          member-team  (th/create-team* 2 {:profile-id (:id other)})
+          _            (th/create-team-role* {:team-id (:id member-team)
+                                              :profile-id (:id profile)
+                                              :role :editor})
+          deleted-team (th/create-team* 3 {:profile-id (:id profile)})
+          _            (th/db-update! :team
+                                      {:deleted-at (ct/now)}
+                                      {:id (:id deleted-team)})
+          out          (th/management-command! {::th/type :get-member-teams
+                                                ::rpc/profile-id (:id profile)})]
+      (t/is (th/success? out))
+      (let [teams-by-id (->> out :result (d/index-by :id))]
+        (t/is (= #{(:id default-team) (:id owned-team) (:id member-team)}
+                 (set (keys teams-by-id))))
+        (t/is (true? (get-in teams-by-id [(:id default-team) :is-default])))
+        (t/is (false? (get-in teams-by-id [(:id owned-team) :is-default])))
+        (t/is (false? (get-in teams-by-id [(:id member-team) :is-default])))))))
+
+(t/deftest update-profile-theme-updates-only-theme
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true
+                                         :fullname "Nitrate User"
+                                         :lang "es"
+                                         :theme "light"})
+          _       (th/db-update! :profile
+                                 {:lang "es"}
+                                 {:id (:id profile)})
+          out     (th/management-command! {::th/type :update-profile-theme
+                                           ::rpc/profile-id (:id profile)
+                                           :theme "dark"})
+          saved   (-> (th/db-get :profile {:id (:id profile)})
+                      (profile/decode-row))]
+      (t/is (th/success? out))
+      (t/is (= "dark" (:theme saved)))
+      (t/is (= "Nitrate User" (:fullname saved)))
+      (t/is (= "es" (:lang saved))))))
+
+(t/deftest update-profile-theme-rejects-invalid-theme
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :update-profile-theme
+                                           ::rpc/profile-id (:id profile)
+                                           :theme "invalid"})
+          error   (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :params-validation)))))
+
+(t/deftest update-profile-props-merges-onboarding-props
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          out     (th/management-command! {::th/type :update-profile-props
+                                           ::rpc/profile-id (:id profile)
+                                           :props {:nitrate-onboarding-viewed true
+                                                   :onboarding-questions-answered true
+                                                   :onboarding-questions
+                                                   {:role "developer"
+                                                    :company-size "2-100"}}})
+          saved   (-> (th/db-get :profile {:id (:id profile)})
+                      (profile/decode-row))]
+      (t/is (th/success? out))
+      (t/is (true? (get-in saved [:props :nitrate-onboarding-viewed])))
+      (t/is (true? (get-in saved [:props :onboarding-questions-answered])))
+      (t/is (= {:role "developer" :company-size "2-100"}
+               (get-in saved [:props :onboarding-questions]))))))
 
 (t/deftest notify-team-change-publishes-event
   (let [team-id          (uuid/random)

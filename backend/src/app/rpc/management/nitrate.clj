@@ -78,6 +78,13 @@
       AND t.is_default IS FALSE
       AND t.deleted_at IS NULL;")
 
+(def ^:private sql:get-member-teams
+  "SELECT t.id, t.name, t.is_default
+     FROM team AS t
+     JOIN team_profile_rel AS tpr ON t.id = tpr.team_id
+    WHERE tpr.profile_id = ?
+      AND t.deleted_at IS NULL;")
+
 ;; ---- API: get-penpot-version
 
 (def ^:private schema:get-penpot-version-result
@@ -107,6 +114,13 @@
 (def ^:private schema:get-teams-result
   [:vector schema:team])
 
+(def ^:private schema:get-member-teams-result
+  [:vector
+   [:map
+    [:id ::sm/uuid]
+    [:name ::sm/text]
+    [:is-default ::sm/boolean]]])
+
 (sv/defmethod ::get-teams
   "List teams for which current user is owner"
   {::doc/added "2.18"
@@ -117,6 +131,51 @@
   (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
     (->> (db/exec! cfg [sql:get-teams current-user-id])
          (map #(select-keys % [:id :name])))))
+
+(sv/defmethod ::get-member-teams
+  "List all active teams where the current user is a member"
+  {::doc/added "2.18"
+   ::sm/params [:map]
+   ::sm/result schema:get-member-teams-result
+   ::nitrate/sso false}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [current-user-id (-> (profile/get-profile cfg profile-id) :id)]
+    (db/exec! cfg [sql:get-member-teams current-user-id])))
+
+;; ---- API: update-profile-theme
+
+(def ^:private schema:update-profile-theme
+  [:map {:title "update-profile-theme"}
+   [:theme [:enum "light" "dark" "system"]]])
+
+(sv/defmethod ::update-profile-theme
+  "Update the current user's theme"
+  {::doc/added "2.18"
+   ::sm/params schema:update-profile-theme
+   ::db/transaction true
+   ::nitrate/sso false}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id theme]}]
+  (profile/get-profile conn profile-id ::db/for-update true)
+  (db/update! conn :profile
+              {:theme theme}
+              {:id profile-id}
+              {::db/return-keys false})
+  nil)
+
+;; ---- API: update-profile-props
+
+(def ^:private schema:update-profile-props
+  [:map {:title "update-profile-props"}
+   [:props profile/schema:props-writeable]])
+
+(sv/defmethod ::update-profile-props
+  "Merge writable properties into the current user's profile"
+  {::doc/added "2.18"
+   ::sm/params schema:update-profile-props
+   ::db/transaction true
+   ::nitrate/sso false}
+  [cfg {:keys [::rpc/profile-id props]}]
+  (profile/update-profile-props cfg profile-id props))
 
 ;; ---- API: upload-organization-logo
 
