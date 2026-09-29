@@ -132,13 +132,15 @@
 }
 
 .my-teams-icon {
-  height: var(--sp-xxl);
-  width: var(--sp-xxl);
+  display: flex;
+  height: $sz-24;
+  width: $sz-24;
 
   svg {
     fill: var(--icon-stroke-color);
-    width: var(--sp-xxl);
-    height: var(--sp-xxl);
+    stroke: none;
+    width: $sz-24;
+    height: $sz-24;
   }
 }
 
@@ -150,10 +152,11 @@
   width: var(--sp-xxl);
 }
 
-.team-item-personal-icon svg {
+.personal-icon {
+  flex-shrink: 0;
   color: transparent;
   fill: none;
-  stroke-width: 1px;
+  stroke-width: 1.2px;
   stroke: var(--icon-foreground);
 }
 
@@ -174,13 +177,6 @@
   width: var(--sp-xxxl);
 }
 
-.personal-projects-icon svg {
-  color: transparent;
-  fill: none;
-  stroke-width: 1px;
-  stroke: var(--icon-foreground);
-}
-
 .team-picture {
   display: flex;
   justify-content: center;
@@ -191,23 +187,28 @@
 }
 
 .organization-team-dropdown {
+  --switcher-dropdown-background: var(--color-background-tertiary);
+
+  :global(.light) & {
+    --switcher-dropdown-background: var(--color-background-primary);
+  }
+
   box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
   position: absolute;
-  padding: var(--sp-xs);
+  padding: var(--sp-s);
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
   color: var(--title-foreground-color-hover);
-  background-color: var(--menu-background-color);
+  background-color: var(--switcher-dropdown-background);
   border: $b-2 solid var(--panel-border-color);
   margin: 0;
   display: grid;
   grid-template-columns: px2rem(257) px2rem(257);
   grid-template-rows: minmax(0, 1fr);
-  gap: var(--sp-m);
+  gap: var(--sp-s);
   top: calc(var(--sp-s) + #{$sz-64} + var(--sp-xs));
   left: var(--sp-s);
-  height: fit-content;
-  max-height: px2rem(416);
+  height: px2rem(416);
   overflow: hidden;
 }
 
@@ -224,9 +225,8 @@
 
 .organizations-column,
 .teams-column {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: var(--sp-xxs);
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
   min-width: 0;
@@ -236,18 +236,39 @@
 
 .teams-column {
   border-inline-start: $b-1 solid var(--color-background-quaternary);
-  padding-inline-start: var(--sp-m);
+  padding-inline-start: var(--sp-s);
+}
+
+.column-scroll {
+  @include custom-scrollbar;
+
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  &.fade::after {
+    content: "";
+    display: block;
+    position: sticky;
+    inset-block-end: 0;
+    height: px2rem(44);
+    margin-block-start: calc(-1 * #{px2rem(44)});
+    background: linear-gradient(transparent, var(--switcher-dropdown-background));
+    pointer-events: none;
+  }
 }
 
 .column-label {
   @include t.use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
-  padding: $sz-6 $sz-6 $sz-6 var(--sp-m);
+  padding: var(--sp-s) $sz-6 $sz-6 var(--sp-m);
+  margin-block-end: var(--sp-xxs);
   text-transform: uppercase;
 }
 
 .column-list,
+.column-bucket,
 .column-actions {
   display: flex;
   flex-direction: column;
@@ -257,22 +278,25 @@
   list-style: none;
 }
 
-.column-list {
-  @include custom-scrollbar;
+.column-bucket {
+  flex-shrink: 0;
+}
 
-  overflow-y: auto;
-  min-height: 0;
-  background:
-    linear-gradient(transparent, var(--menu-background-color) 70%) 0 100% / 100% #{$sz-40} local no-repeat,
-    radial-gradient(farthest-side at 50% 100%, var(--menu-shadow-color), transparent) 0 100% / 100% #{$sz-14}
-      scroll no-repeat;
-  background-color: var(--menu-background-color);
+.column-actions {
+  flex-shrink: 0;
+  margin-block-start: auto;
 }
 
 .column-separator {
   border-block-start: $b-1 solid var(--color-background-quaternary);
   margin-block: var(--sp-xxs);
   list-style: none;
+}
+
+// The fade ends right on these lines, with no gap above them.
+.column-bucket > .column-separator,
+.column-actions > .column-separator {
+  margin-block-start: 0;
 }
 
 .empty-state {
