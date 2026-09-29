@@ -17,6 +17,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.forms :as forms]
    [app.main.ui.workspace.tokens.management.forms.controls :as token.controls]
+   [app.main.ui.workspace.tokens.management.forms.controls.utils :as csu]
    [app.main.ui.workspace.tokens.management.forms.generic-form :as generic]
    [app.main.ui.workspace.tokens.management.forms.validators :refer [check-coll-self-reference check-self-reference default-validate-token]]
    [app.util.dom :as dom]
@@ -81,33 +82,6 @@
         (:font-family value)
         (update :font-family cto/join-font-family))
       (select-keys composite-keys)))
-
-(defn- referenced-token-name
-  "Name of the token `reference` points to, when `reference` is exactly
-  one `{name}` reference."
-  [reference]
-  (when (string? reference)
-    (let [reference (str/trim reference)
-          names     (cto/find-token-value-references reference)
-          name      (first names)]
-      (when (and (= 1 (count names))
-                 (= reference (str "{" name "}")))
-        name))))
-
-(defn referenced-typography-value
-  "Composite value of the typography token that `reference` points to,
-  following chained references. Nil when the chain does not end in a
-  typography token with a composite value."
-  [tokens reference]
-  (loop [reference reference
-         visited   #{}]
-    (when-let [name (referenced-token-name reference)]
-      (let [{:keys [type value]} (get tokens name)]
-        (when (and (= :typography type)
-                   (not (contains? visited name)))
-          (cond
-            (map? value)    value
-            (string? value) (recur value (conj visited name))))))))
 
 ;; COMPONENTS
 
@@ -227,7 +201,7 @@
 
         detached-value
         (mf/with-memo [tokens reference]
-          (referenced-typography-value tokens reference))
+          (csu/referenced-token-value tokens reference :typography))
 
         on-detach-click
         (mf/use-fn

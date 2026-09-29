@@ -3397,7 +3397,7 @@ msgstr "Themes"
 msgid "labels.tutorials"
 msgstr "Tutorials"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:189
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "labels.typography"
 msgstr "Typography"
 
@@ -8691,7 +8691,7 @@ msgstr "Delete token"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Delete theme"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:252
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.detach-reference"
 msgstr "Detach reference"
 
@@ -8755,7 +8755,7 @@ msgstr "Preview:"
 msgid "workspace.tokens.export.single-file"
 msgstr "Single file"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:129
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.font-size-value-enter"
 msgstr "Font size or {alias}"
 
@@ -8839,11 +8839,11 @@ msgstr "Theme"
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Add a theme (i.e. Light)"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:153
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.letter-spacing-value-enter-composite"
 msgstr "Letter spacing or {alias}"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:145
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.line-height-value-enter"
 msgstr "Line height (multiplier, px, %) or {alias}"
 
@@ -8935,7 +8935,7 @@ msgstr "Radius"
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Reference in {%s} is not valid or is not in any active set."
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:178
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.reference-composite"
 msgstr "Enter a token typography alias"
 
@@ -9089,11 +9089,11 @@ msgstr "Description"
 msgid "workspace.tokens.token-font-family-select"
 msgstr "Select font family"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:121
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.token-font-family-value"
 msgstr "Font family"
 
-#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:120
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
 msgid "workspace.tokens.token-font-family-value-enter"
 msgstr "Font family or list of fonts separated by comma (,)"
 
