@@ -67,8 +67,8 @@
 (defn- ->bucket
   [v]
   (cond
-    (keyword? v) (d/name v)
     (string? v)  v
+    (keyword? v) (d/name v)
     :else        (str v)))
 
 (defn- normalize-metadata
@@ -85,12 +85,12 @@
         (assoc :bucket bucket))))
 
 ;; Decoder and encoder are built once per process: creating them
-;; compiles the (closed, multi-dispatch) schema, and `decode-metadata`
-;; runs on every read path (get-object, dedup probes, GC batches).
-(def ^:private decode-metadata*
+;; compiles the closed schema, and `decode-metadata` runs on every read
+;; path (get-object, dedup probes, GC batches).
+(def ^:private decode-metadata-fn
   (sm/decode-fn schema:metadata (sm/json-transformer)))
 
-(def ^:private encode-metadata*
+(def ^:private encode-metadata-fn
   (sm/encoder schema:metadata (sm/json-transformer)))
 
 (defn- transit-encoded?
@@ -115,7 +115,7 @@
         (ex/raise :type :internal
                   :code :invalid-storage-metadata
                   :hint "expected a map on storage object metadata"))
-      (decode-metadata* (normalize-metadata raw)))))
+      (decode-metadata-fn (normalize-metadata raw)))))
 
 (def ^:private check-metadata
   (sm/check-fn schema:metadata
@@ -129,7 +129,7 @@
   `:storage-metadata-as-json` config flag is unset, as plain JSON
   when it is set."
   [mdata]
-  (let [mdata (check-metadata (decode-metadata* (normalize-metadata mdata)))]
+  (let [mdata (check-metadata (normalize-metadata mdata))]
     (if (cf/get :storage-metadata-as-json)
-      (db/json (encode-metadata* mdata))
+      (db/json (encode-metadata-fn mdata))
       (db/tjson mdata))))

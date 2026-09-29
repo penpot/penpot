@@ -106,27 +106,28 @@
 
 (t/deftest encode-writes-plain-json-with-flag
   (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
-    (let [file-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"
+    (let [file-id (parse-uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d")
           encoded (stsch/encode-metadata {:bucket "file-data"
                                           :content-type "application/octet-stream"
                                           :file-id file-id
-                                          :id "83df2f92-6bd4-4e6d-9c9a-3f6d2b1a4c55"})
+                                          :id (parse-uuid "83df2f92-6bd4-4e6d-9c9a-3f6d2b1a4c55")})
           value   (.getValue ^PGobject encoded)]
       (t/is (str/includes? value "\"bucket\""))
       (t/is (not (str/includes? value "\"~:")))
       ;; uuids travel as plain strings on the JSON encoding
-      (t/is (str/includes? value file-id))
+      (t/is (str/includes? value (str file-id)))
       (let [decoded (stsch/decode-metadata encoded)]
         (t/is (uuid? (:file-id decoded)))
-        (t/is (= (parse-uuid file-id) (:file-id decoded)))))))
+        (t/is (= file-id (:file-id decoded)))))))
 
-(t/deftest encode-accepts-string-uuids
-  (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
-    (let [decoded (stsch/decode-metadata
-                   (stsch/encode-metadata {:bucket "tempfile"
-                                           :content-type "application/zip"
-                                           :profile-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"}))]
-      (t/is (uuid? (:profile-id decoded))))))
+(t/deftest encode-rejects-string-uuids
+  ;; Encoding does not coerce input types: callers must pass native UUIDs
+  ;; (every producer does; reads still coerce on the way back).
+  (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"invalid storage object metadata"
+                          (stsch/encode-metadata {:bucket "tempfile"
+                                                  :content-type "application/zip"
+                                                  :profile-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"}))))
 
 (t/deftest encode-rejects-unknown-bucket
   (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
