@@ -8,10 +8,18 @@
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
+   [app.common.test-helpers.components :as thk]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
+
+(t/use-fixtures :each thi/test-fixture)
 
 (defmethod cfm/migrate-data "test/1" [data _] (update data :sum inc))
 (defmethod cfm/migrate-data "test/2" [data _] (update data :sum inc))
@@ -459,3 +467,98 @@
     (t/is (nil? (:stroke-per-side stroke'))
           "obsolete attr removed before schema validation")
     (t/is (= 5 (:stroke-width stroke')) "stroke width preserved")))
+
+(t/deftest migration-0031-normalize-main-instance-diff-from-component
+  (let [migration-id "0031-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (tho/add-simple-component :component1 :root1 :child1
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Name"}
+                                                   :root-params {:name "Group/Subgroup   /   Name"})
+                         (tho/add-simple-component :component2 :root2 :child2
+                                                   :component-params {:path "Group / Subgroup"
+                                                                      :name "Other Name"}
+                                                   :root-params {:name "Group / Subgroup / Other Name"})
+                         (ths/add-sample-shape :shape1 :name "Other Group/Other Subgroup  /  Other Name"))
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        shape1'      (ths/get-shape file' :shape1)]
+
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Name" (:name component1')))
+    (t/is (= "Group / Subgroup / Name" (:name root1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Other Name" (:name component2')))
+    (t/is (= "Group / Subgroup / Other Name" (:name root2')))
+    (t/is (= "Other Group/Other Subgroup  /  Other Name" (:name shape1')))))
+
+(t/deftest migration-0031-normalize-variant-instance-diff-from-container
+  (let [migration-id "0031-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root1 :name "Group / Subgroup / Component")
+                         (ths/update-shape :root2 :name "Group  /  Subgroup/Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
+
+(t/deftest migration-0031-normalize-variant-name-not-normalized
+  (let [migration-id "0031-normalize-main-instance-names"
+        file         (-> (thf/sample-file :file1)
+                         (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                         (ths/update-shape :variant1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root1 :name "Group/Subgroup  /  Component")
+                         (ths/update-shape :root2 :name "Group/Subgroup  /  Component")  ;; Bad path
+                         (thk/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                         (thk/update-component :component2 {:path "Group / Subgroup" :name "Component"})
+                         (thk/instantiate-component :component2 :copy2)
+                         (ths/update-shape :copy2 :name "Group  /  Subgroup/Component"))  ;; Allowed name in copies
+
+        data         (ctf/file-data file)
+        data'        (cfm/migrate-data data migration-id)
+        file'        (assoc file :data data')
+
+        variant1'    (ths/get-shape file' :variant1)
+        root1'       (ths/get-shape file' :root1)
+        component1'  (thk/get-component file' :component1)
+        root2'       (ths/get-shape file' :root2)
+        component2'  (thk/get-component file' :component2)
+        copy2'       (ths/get-shape file' :copy2)]
+
+    (t/is (= "Group / Subgroup / Component" (:name variant1')))
+    (t/is (= "Group / Subgroup / Component" (:name root1')))
+    (t/is (= "Group / Subgroup / Component" (:name root2')))
+    (t/is (= "Group / Subgroup" (:path component1')))
+    (t/is (= "Group / Subgroup" (:path component2')))
+    (t/is (= "Component" (:name component1')))
+    (t/is (= "Component" (:name component2')))
+    (t/is (= "Group  /  Subgroup/Component" (:name copy2')))))
