@@ -221,21 +221,32 @@ export class PluginBridge implements TaskDispatchHost {
             lastHeartbeat: Date.now(),
             frozen: false,
         };
-        try {
-            connections.add(connection);
-        } catch {
-            this.logger.warn("Duplicate connection for given session ID; rejecting new connection");
-            clearInterval(connection.pingInterval);
-            ws.close(1008, "A Penpot connection with this session ID already exists.");
-            return;
-        }
+        // the same tab reconnecting reuses its session ID while its previous socket may still be half-open
+        const replaced = connections.add(connection);
         this.connectionsBySocket.set(ws, connection);
+        if (replaced) {
+            this.displaceConnection(replaced);
+        }
         await this.dispatcher.onNewConnection(connection);
         // disconnect may have removed this connection while subscriptions were pending
         if (ws.readyState === WebSocket.OPEN && this.connectionsBySocket.get(ws) === connection) {
             connection.ready = true;
             ws.send(JSON.stringify({ type: "initialized" }));
         }
+    }
+
+    /**
+     * Closes a connection superseded by a newer connection for the same session.
+     *
+     * Uses close code 1008 so that a still-running plugin behind the old socket stops
+     * reconnecting instead of competing with the newer connection for the session.
+     *
+     * @param connection - The superseded connection
+     */
+    public displaceConnection(connection: PenpotConnection): void {
+        this.logger.info("Closing connection replaced by a newer connection for the same session");
+        this.removeConnection(connection.socket);
+        connection.socket.close(1008, "Replaced by a newer connection for this Penpot session.");
     }
 
     /**

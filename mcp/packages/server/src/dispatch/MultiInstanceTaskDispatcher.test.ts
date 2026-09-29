@@ -3,7 +3,7 @@ import test from "node:test";
 import type { PenpotSession, PluginTaskRequest, PluginTaskResponse } from "@penpot/mcp-common";
 import type { PenpotConnection } from "../PenpotConnection";
 import { PluginTask, type AbstractPluginTask } from "../PluginTask";
-import type { RedisBridge, SessionDiscoveryRequest, SessionDiscoveryResponse } from "../RedisBridge";
+import type { RedisBridge, SessionClaim, SessionDiscoveryRequest, SessionDiscoveryResponse } from "../RedisBridge";
 import { UserPenpotConnections } from "../UserPenpotConnections";
 import { MultiInstanceTaskDispatcher } from "./MultiInstanceTaskDispatcher";
 import { SessionDiscoveryError, type TaskDispatchHost } from "./TaskDispatcher";
@@ -14,8 +14,11 @@ class RedisNetwork {
     readonly discovery = new Map<string, Map<RedisPeer, (request: SessionDiscoveryRequest) => void>>();
     readonly taskResponses = new Map<string, (response: PluginTaskResponse<unknown>) => void>();
     readonly discoveryResponses = new Map<string, (response: SessionDiscoveryResponse) => void>();
+    readonly claims = new Map<string, Map<RedisPeer, (claim: SessionClaim) => void>>();
     failDiscovery = false;
+    dropClaims = false;
     beforeDiscoveryPublish?: () => Promise<void>;
+    beforeClaimPublish?: () => Promise<void>;
 }
 
 /** One MCP instance's connection to the test Pub/Sub network. */
@@ -90,6 +93,22 @@ class RedisPeer {
     async unsubscribeFromDiscoveryResponses(id: string) {
         this.network.discoveryResponses.delete(id);
     }
+
+    async subscribeToSessionClaims(token: string, handler: (claim: SessionClaim) => void) {
+        const subscribers = this.network.claims.get(token) ?? new Map();
+        subscribers.set(this, handler);
+        this.network.claims.set(token, subscribers);
+    }
+
+    async unsubscribeFromSessionClaims(token: string) {
+        this.network.claims.get(token)?.delete(this);
+    }
+
+    async publishSessionClaim(token: string, claim: SessionClaim) {
+        await this.network.beforeClaimPublish?.();
+        if (this.network.dropClaims) return;
+        for (const handler of [...(this.network.claims.get(token)?.values() ?? [])]) handler(claim);
+    }
 }
 
 /** Local registry and execution endpoint used with the real dispatchers. */
@@ -98,6 +117,7 @@ class Instance implements TaskDispatchHost {
     readonly redis: RedisPeer;
     readonly dispatcher: MultiInstanceTaskDispatcher;
     readonly executions: string[] = [];
+    readonly displaced: string[] = [];
 
     constructor(network: RedisNetwork) {
         this.redis = new RedisPeer(network);
@@ -119,6 +139,11 @@ class Instance implements TaskDispatchHost {
         this.users.get(connection.userToken!)!.remove(connection);
         connection.ready = false;
         await this.dispatcher.onConnectionClosed(connection);
+    }
+
+    displaceConnection(connection: PenpotConnection) {
+        this.displaced.push(connection.session.sessionId);
+        void this.disconnect(connection);
     }
 
     getUserConnections(token: string | null) {
@@ -289,4 +314,58 @@ test("a publish completing after timeout cannot dispatch or retain its response 
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.deepEqual(owner.executions, []);
     assert.equal(network.discoveryResponses.size, 0);
+});
+
+test("a newer connection for a session on another instance displaces the older one", async () => {
+    const network = new RedisNetwork();
+    const previous = new Instance(network);
+    const current = new Instance(network);
+    await previous.connect("alice", "tab");
+    await current.connect("alice", "tab");
+    assert.deepEqual(previous.displaced, ["tab"]);
+    assert.deepEqual(current.displaced, []);
+    assert.equal((await new Instance(network).execute("alice")).data, "tab");
+    assert.deepEqual(previous.executions, []);
+    assert.deepEqual(current.executions, ["tab"]);
+});
+
+test("a claim published before a local connection's own claim does not displace it", async () => {
+    const network = new RedisNetwork();
+    const owner = new Instance(network);
+    const other = new Instance(network);
+    await owner.connect("alice", "sibling");
+    let release!: () => void;
+    network.beforeClaimPublish = () =>
+        new Promise<void>((resolve) => {
+            release = resolve;
+        });
+    const pending = owner.connect("alice", "tab");
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    network.beforeClaimPublish = undefined;
+    // the other instance's claim is delivered first, so the owner's connection is the newer one
+    await other.connect("alice", "tab");
+    release();
+    await pending;
+    assert.deepEqual(owner.displaced, []);
+    assert.deepEqual(other.displaced, ["tab"]);
+});
+
+test("discovery lists a session reported by several instances once", async () => {
+    const network = new RedisNetwork();
+    network.dropClaims = true;
+    await new Instance(network).connect("alice", "tab");
+    await new Instance(network).connect("alice", "tab");
+    const sessions = await new Instance(network).dispatcher.discoverSessions("alice");
+    assert.deepEqual(
+        sessions.map((session) => session.sessionId),
+        ["tab"]
+    );
+});
+
+test("disconnecting the last tab removes its session claim subscription", async () => {
+    const network = new RedisNetwork();
+    const owner = new Instance(network);
+    const connection = await owner.connect("alice", "only");
+    await owner.disconnect(connection);
+    assert.equal(network.claims.get("alice")?.size, 0);
 });

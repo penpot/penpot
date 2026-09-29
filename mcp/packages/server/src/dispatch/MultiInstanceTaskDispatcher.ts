@@ -3,7 +3,7 @@ import type { PenpotSession, PluginTaskRequest } from "@penpot/mcp-common";
 import type { PenpotConnection } from "../PenpotConnection";
 import type { AbstractPluginTask } from "../PluginTask";
 import { RemotePluginTask } from "../RemotePluginTask";
-import type { RedisBridge, SessionDiscoveryResponse } from "../RedisBridge";
+import type { RedisBridge, SessionClaim, SessionDiscoveryResponse } from "../RedisBridge";
 import { createLogger } from "../logger";
 import { SessionDiscoveryError, TaskDispatcher, type TaskDispatchHost } from "./TaskDispatcher";
 
@@ -14,6 +14,9 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
     private readonly subscribedUsers = new Set<string>();
     private readonly connectionChanges = new Map<string, Promise<void>>();
     private readonly pendingDiscoveries = new Map<string, () => void>();
+    private readonly claimIds = new WeakMap<PenpotConnection, string>();
+    /** local connections whose own claim has been delivered back to this instance. */
+    private readonly confirmedClaims = new WeakSet<PenpotConnection>();
 
     constructor(
         private readonly host: TaskDispatchHost,
@@ -50,7 +53,7 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
         const complete = () => {
             if (!settled && expectedResponses !== undefined && responses.size === expectedResponses) {
                 settled = true;
-                resolve([...responses.values()].flat());
+                resolve(this.uniqueSessions([...responses.values()].flat()));
             }
         };
         const timeout = setTimeout(fail, this.discoveryTimeoutMs);
@@ -98,9 +101,57 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
                         sessions: this.host.getUserConnections(token)?.getSessions() ?? [],
                     });
                 });
+                try {
+                    await this.redisBridge.subscribeToSessionClaims(token, (claim) =>
+                        this.handleSessionClaim(token, claim)
+                    );
+                } catch (error) {
+                    await this.redisBridge.unsubscribeFromDiscovery(token);
+                    throw error;
+                }
                 this.subscribedUsers.add(token);
             }
+            // announce the connection so that other instances close older connections for the session
+            const claimId = randomUUID();
+            this.claimIds.set(connection, claimId);
+            try {
+                await this.redisBridge.publishSessionClaim(token, {
+                    instanceId: this.instanceId,
+                    claimId,
+                    sessionId: connection.session.sessionId,
+                });
+            } catch (error) {
+                this.logger.error(error, "Failed to publish session claim");
+            }
         });
+    }
+
+    /**
+     * Closes the local connection for a claimed session when the claim comes from a newer connection.
+     *
+     * Claims arrive in publication order, so a foreign claim arriving after the local connection's own
+     * claim comes from a newer connection. A foreign claim arriving earlier comes from an older
+     * connection, which its instance closes when the local claim reaches it.
+     */
+    private handleSessionClaim(userToken: string, claim: SessionClaim): void {
+        const local = this.host.getUserConnections(userToken)?.getRegistered(claim.sessionId);
+        if (!local) return;
+        if (claim.instanceId === this.instanceId) {
+            if (this.claimIds.get(local) === claim.claimId) this.confirmedClaims.add(local);
+            return;
+        }
+        if (this.confirmedClaims.has(local)) {
+            this.host.displaceConnection(local);
+        }
+    }
+
+    /** Removes repeated sessions reported while a displaced connection is being closed. */
+    private uniqueSessions(sessions: PenpotSession[]): PenpotSession[] {
+        const unique = new Map<string, PenpotSession>();
+        for (const session of sessions) {
+            if (!unique.has(session.sessionId)) unique.set(session.sessionId, session);
+        }
+        return [...unique.values()];
     }
 
     async onConnectionClosed(connection: PenpotConnection): Promise<void> {
@@ -110,6 +161,7 @@ export class MultiInstanceTaskDispatcher extends TaskDispatcher {
             if (!this.host.getUserConnections(token)?.size && this.subscribedUsers.has(token)) {
                 this.subscribedUsers.delete(token);
                 await this.redisBridge.unsubscribeFromDiscovery(token);
+                await this.redisBridge.unsubscribeFromSessionClaims(token);
             }
         });
     }

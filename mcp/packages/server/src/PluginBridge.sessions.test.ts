@@ -33,7 +33,7 @@ afterEach(async () => {
     await bridge.close();
 });
 
-async function connect(sessionId: string, token = "alice", fileName = "Design") {
+async function connect(sessionId: string, token = "alice", fileName = "Design", reply = sessionId) {
     const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=${token}`);
     sockets.push(socket);
     await once(socket, "open");
@@ -43,7 +43,7 @@ async function connect(sessionId: string, token = "alice", fileName = "Design") 
     assert.equal(JSON.parse(message.toString()).type, "initialized");
     socket.on("message", (raw) => {
         const request = JSON.parse(raw.toString());
-        socket.send(JSON.stringify({ id: request.id, success: true, data: sessionId }));
+        socket.send(JSON.stringify({ id: request.id, success: true, data: reply }));
     });
     return socket;
 }
@@ -101,20 +101,29 @@ test("disconnecting one session leaves its sibling available for implicit select
     await assert.rejects(bridge.executePluginTask(new PluginTask("test", {}), "first"), /not connected/);
 });
 
-test("rejecting a duplicate session ID does not remove the original connection", async () => {
-    await connect("original");
-    const duplicate = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`);
-    sockets.push(duplicate);
-    await once(duplicate, "open");
-    const closed = once(duplicate, "close");
-    duplicate.send(
-        JSON.stringify({
-            type: "initialize",
-            session: { sessionId: "original", fileId: "file", fileName: "Duplicate" },
-        })
-    );
-    assert.equal((await closed)[0], 1008);
-    assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "original")).data, "original");
+test("a reconnect with the same session ID replaces the previous connection", async () => {
+    const previous = await connect("tab", "alice", "Design", "previous");
+    const closed = once(previous, "close");
+    await connect("tab", "alice", "Design", "current");
+    const [code] = await closed;
+    assert.equal(code, 1008);
+    assert.equal((await bridge.executePluginTask(new PluginTask("test", {}))).data, "current");
+    assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "current");
+});
+
+test("a half-open previous connection does not block a reconnect with the same session ID", async () => {
+    const previous = await connect("tab", "alice", "Design", "previous");
+    // stop answering, as a socket whose network path is gone would
+    previous.pause();
+    await connect("tab", "alice", "Design", "current");
+    assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "current");
+});
+
+test("replacing a session does not affect another user's session with the same ID", async () => {
+    await connect("tab", "bob", "Design", "bob");
+    await connect("tab", "alice", "Design", "alice");
+    userToken = "bob";
+    assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "bob");
 });
 
 test("uninitialized sockets are not candidates for discovery", async () => {

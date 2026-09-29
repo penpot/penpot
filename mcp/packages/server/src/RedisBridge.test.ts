@@ -169,7 +169,11 @@ function instance(t: TestContext) {
         await bridge.close();
         await redis.close();
     });
-    const connect = async (sessionId: string, outcome: "success" | "error" | "silent" = "success") => {
+    const connect = async (
+        sessionId: string,
+        outcome: "success" | "error" | "silent" = "success",
+        reply: string = sessionId
+    ) => {
         const socket = new WebSocket(`ws://127.0.0.1:${wsPort}?userToken=alice`);
         sockets.push(socket);
         await once(socket, "open");
@@ -183,12 +187,13 @@ function instance(t: TestContext) {
                     JSON.stringify({
                         id: request.id,
                         success: outcome === "success",
-                        data: sessionId,
+                        data: reply,
                         error: "Plugin execution failed",
                     })
                 );
             }
         });
+        return socket;
     };
     return { bridge, connect };
 }
@@ -226,4 +231,15 @@ test("forwarded task timeouts release their Redis response subscriptions", async
     await assert.rejects(requester.bridge.executePluginTask(new PluginTask("test", {}), "silent"), /timed out/);
     const responseSubscriptions = [...subscriptions].filter(([channel]) => channel.includes(".task.res."));
     assert.ok(responseSubscriptions.every(([, subscribers]) => subscribers.size === 0));
+});
+
+test("a reconnect on another instance closes the previous instance's connection for the session", async (t) => {
+    const previous = instance(t);
+    const current = instance(t);
+    const requester = instance(t);
+    const previousSocket = await previous.connect("tab", "success", "previous");
+    const closed = once(previousSocket, "close");
+    await current.connect("tab", "success", "current");
+    assert.equal((await closed)[0], 1008);
+    assert.equal((await requester.bridge.executePluginTask(new PluginTask("test", {}))).data, "current");
 });

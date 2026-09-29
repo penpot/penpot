@@ -8,6 +8,7 @@ export interface TaskDispatchHost {
     getUserConnections(userToken: string | null): UserPenpotConnections | undefined;
     sendLocalTask(task: AbstractPluginTask, connection: PenpotConnection): void;
     sendRemoteTask(task: AbstractPluginTask, userToken: string, sessionId: string): void;
+    displaceConnection(connection: PenpotConnection): void;
 }
 
 /** Session discovery, task routing, and connection subscription lifecycle. */

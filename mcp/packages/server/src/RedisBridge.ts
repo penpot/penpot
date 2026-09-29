@@ -14,6 +14,20 @@ export interface SessionDiscoveryResponse {
     sessions: PenpotSession[];
 }
 
+/** Announcement that an MCP instance holds a new connection for a Penpot session. */
+export interface SessionClaim {
+    instanceId: string;
+    /** identifies the claiming connection, so an instance can recognize its own claims. */
+    claimId: string;
+    sessionId: string;
+}
+
+const sessionClaimSchema = z.object({
+    instanceId: z.string().min(1),
+    claimId: z.string().min(1),
+    sessionId: z.string().min(1).max(128),
+});
+
 const discoveryResponseSchema = z.object({
     instanceId: z.string().min(1),
     sessions: z.array(
@@ -291,6 +305,42 @@ export class RedisBridge {
         void this.publisher
             .publish(this.discoveryResponseChannel(requestId), JSON.stringify(response))
             .catch((error) => this.logger.error(error, "Failed to publish discovery response"));
+    }
+
+    private sessionClaimChannel(userToken: string): string {
+        return `penpot.mcp.${this.tenant}.session.claim.${this.channelKey(userToken)}`;
+    }
+
+    /**
+     * Subscribes to the session claims of the given user.
+     *
+     * Claims are delivered in publication order, including the subscribing instance's own claims.
+     */
+    async subscribeToSessionClaims(userToken: string, handler: (claim: SessionClaim) => void): Promise<void> {
+        const channel = this.sessionClaimChannel(userToken);
+        this.handlers.set(channel, (raw) => {
+            try {
+                handler(sessionClaimSchema.parse(JSON.parse(raw)));
+            } catch (error) {
+                this.logger.error(error, "Invalid session claim");
+            }
+        });
+        try {
+            await this.subscriber.subscribe(channel);
+        } catch (error) {
+            await this.unsubscribeFromSessionClaims(userToken);
+            throw error;
+        }
+    }
+
+    async unsubscribeFromSessionClaims(userToken: string): Promise<void> {
+        const channel = this.sessionClaimChannel(userToken);
+        this.handlers.delete(channel);
+        await this.subscriber.unsubscribe(channel);
+    }
+
+    async publishSessionClaim(userToken: string, claim: SessionClaim): Promise<void> {
+        await this.publisher.publish(this.sessionClaimChannel(userToken), JSON.stringify(claim));
     }
 
     /** Closes both Redis connections. Call on server shutdown. */

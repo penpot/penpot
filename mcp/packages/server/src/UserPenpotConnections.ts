@@ -10,12 +10,12 @@ export class UserPenpotConnections {
         return this.connectionsBySessionId.size;
     }
 
-    add(connection: PenpotConnection): void {
+    /** Registers a connection, returning the connection it replaces for the same session, if any. */
+    add(connection: PenpotConnection): PenpotConnection | undefined {
         const { sessionId } = connection.session;
-        if (this.connectionsBySessionId.has(sessionId)) {
-            throw new Error("A Penpot connection with this session ID already exists.");
-        }
+        const replaced = this.connectionsBySessionId.get(sessionId);
         this.connectionsBySessionId.set(sessionId, connection);
+        return replaced;
     }
 
     remove(connection: PenpotConnection): void {
@@ -23,6 +23,11 @@ export class UserPenpotConnections {
         if (this.connectionsBySessionId.get(sessionId) === connection) {
             this.connectionsBySessionId.delete(sessionId);
         }
+    }
+
+    /** Returns the registered connection for a session, whether or not it is ready. */
+    getRegistered(sessionId: string): PenpotConnection | undefined {
+        return this.connectionsBySessionId.get(sessionId);
     }
 
     get(sessionId: string): PenpotConnection | undefined {
