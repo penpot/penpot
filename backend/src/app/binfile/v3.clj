@@ -890,7 +890,6 @@
       (let [library (bfc/get-file cfg library-id)
             data    (assoc (:data library) :id library-id)]
         {:id library-id
-         :data data
          :tokens-lib (:tokens-lib data)
          :provider? (cfo/tokens-provider? data)})
       (if (some #(= source-id (:id %)) (:files manifest))
@@ -900,14 +899,12 @@
                           :tokens-source (:tokens-source file)
                           :tokens-lib tokens-lib}]
           {:id (bfc/lookup-index source-id)
-           :data data
            :tokens-lib tokens-lib
            :provider? (cfo/tokens-provider? data)})
         (when overwrite
           (when-let [library (bfc/get-file cfg source-id :throw-if-not-exists false)]
             (let [data (assoc (:data library) :id source-id)]
               {:id source-id
-               :data data
                :tokens-lib (:tokens-lib data)
                :provider? (cfo/tokens-provider? data)})))))))
 

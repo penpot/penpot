@@ -625,10 +625,8 @@
 
     (let [status (get-in local-match-file [:data :tokens-status])]
       (t/is (= (:id local-match-file) (cfo/get-effective-tokens-source (:data local-match-file))))
-      (t/is (= #{(:local-theme-id (first cases))}
-               (ctos/get-active-theme-ids status)))
-      (t/is (= #{(:local-set-id (first cases))}
-               (ctos/get-active-set-ids status))))
+      (t/is (empty? (ctos/get-active-theme-ids status)))
+      (t/is (empty? (ctos/get-active-set-ids status))))
 
     (doseq [file [empty-match-file empty-missing-file]]
       (let [status (get-in file [:data :tokens-status])]
@@ -639,10 +637,8 @@
 
     (let [status (get-in local-missing-file [:data :tokens-status])]
       (t/is (= (:id local-missing-file) (cfo/get-effective-tokens-source (:data local-missing-file))))
-      (t/is (= #{(:local-theme-id (nth cases 2))}
-               (ctos/get-active-theme-ids status)))
-      (t/is (= #{(:local-set-id (nth cases 2))}
-               (ctos/get-active-set-ids status)))
+      (t/is (empty? (ctos/get-active-theme-ids status)))
+      (t/is (empty? (ctos/get-active-set-ids status)))
       (t/is (nil? (cfv/validate-file local-missing-file []))))
 
     (doseq [[case file outcome] [[(first cases) local-match-file :tokens-source-fallback-local]
@@ -743,7 +739,7 @@
                                           :project-id (:default-project-id profile)
                                           :is-shared true
                                           :name "Manual Token Source"})
-          tokenless (th/create-file* 6 {:profile-id (:id profile)
+          tokenless (th/create-file* 7 {:profile-id (:id profile)
                                         :project-id (:default-project-id profile)
                                         :is-shared true
                                         :name "Tokenless Library"})

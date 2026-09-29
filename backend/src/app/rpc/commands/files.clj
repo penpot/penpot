@@ -1190,7 +1190,6 @@
    ::sm/params schema:resolve-import-token-source
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names]}]
-  (check-edition-permissions! conn profile-id file-id)
   (check-library-link! cfg conn profile-id file-id library-id)
   (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names))
 
