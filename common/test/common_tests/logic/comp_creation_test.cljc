@@ -19,6 +19,7 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -250,10 +251,15 @@
         component (thc/get-component file :component1)
 
         ;; ==== Action
-        changes   (cll/generate-rename-component (pcb/empty-changes)
-                                                 (:id component)
-                                                 "Test component after"
-                                                 (:data file))
+        changes   (-> (pcb/empty-changes nil (thf/current-page-id file))
+                      (pcb/with-file-data (ctf/file-data file))
+                      (cll/generate-rename-component
+                       (:id component)
+                       "Test component after"
+                       (:data file))
+                      (pcb/update-shapes
+                       [(thi/id :main1-root)]
+                       #(assoc % :name "Test component after")))
 
         file' (thf/apply-changes file changes)
 
