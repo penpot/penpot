@@ -41,8 +41,8 @@
                                         {:apply-changes-local-library? true}))
                                      changes
                                      related-components)
-                  
-                  ids-to-validate (map :main-instance-id related-components)
+
+                  ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)
 
                   changes (pcb/validate-shapes changes
                                                (pcb/get-page-id changes)
@@ -74,7 +74,7 @@
                               changes
                               related-components)
 
-              ids-to-validate (map :main-instance-id related-components)
+              ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)
 
               changes (pcb/validate-shapes changes
                                            (pcb/get-page-id changes)

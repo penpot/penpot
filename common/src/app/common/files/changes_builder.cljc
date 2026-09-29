@@ -197,6 +197,8 @@
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
+                               ;; Validation only makes sense on the real file data
+                               (remove #(= :validate-shapes (:type %)))
                                (map #(-> %
                                          (assoc :page-id uuid/zero)
                                          (dissoc :component-id))))

@@ -15,9 +15,28 @@
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.uuid :as uuid]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+#?(:cljs
+   (defn- validation-error
+     "Apply the changes and return the ex-data of the :validate-shapes
+     error they raise, or nil if they raise none."
+     [file changes]
+     (try
+       (thf/apply-changes file changes :validate? false)
+       nil
+       (catch :default e
+         (let [data (ex-data e)]
+           (when (= :referential-integrity (:code data))
+             data))))))
+
+#?(:cljs
+   (defn- error-codes
+     [error]
+     (into #{} (map :code) (:details error))))
 
 ;; =============================================================================
 ;; generate-update-property-name tests
@@ -655,3 +674,85 @@
     (t/is (= "Property 1" (-> c03' :variant-properties first :name)))
     (t/is (= "Frame1" (-> c03' :variant-properties first :value)))
     (t/is (= "Frame1" (-> m03' :variant-name)))))
+
+;; =============================================================================
+;; validate-shapes failure tests (only run on CLJS, where validation runs)
+;; =============================================================================
+
+#?(:cljs
+   (t/deftest test-update-property-name-validates-main
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-update-property-name v-id 0 "NewName"))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-update-property-name"))
+       (t/is (contains? (error-codes error) :variant-component-bad-id)))))
+
+#?(:cljs
+   (t/deftest test-update-property-name-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (thc/update-component :c02 {:variant-properties [{:name "Other" :value "p1v2"}
+                                                                        {:name "Property 2" :value "p2v2"}]}))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-update-property-name v-id 1 "NewName"))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-update-property-name"))
+       (t/is (contains? (error-codes error) :invalid-variant-properties)))))
+
+#?(:cljs
+   (t/deftest test-remove-property-validates-main
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-remove-property v-id 1))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-remove-property"))
+       (t/is (contains? (error-codes error) :variant-component-bad-id)))))
+
+#?(:cljs
+   (t/deftest test-remove-property-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (thc/update-component :c02 {:variant-properties [{:name "Other" :value "p1v2"}
+                                                                        {:name "Property 2" :value "p2v2"}]}))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-remove-property v-id 1))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-remove-property"))
+       (t/is (contains? (error-codes error) :invalid-variant-properties)))))
