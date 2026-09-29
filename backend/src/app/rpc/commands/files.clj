@@ -1111,27 +1111,22 @@
 
 ;; --- Library relation helpers
 
-(def ^:private sql:same-team?
-  "SELECT EXISTS (
-     SELECT 1 FROM file AS f
-     JOIN project AS fp ON (fp.id = f.project_id)
-     JOIN file AS l ON (l.id = ?)
-     JOIN project AS lp ON (lp.id = l.project_id)
-     WHERE f.id = ? AND fp.team_id = lp.team_id
-   ) AS ok")
-
-(defn- same-team?
-  [conn file-id library-id]
-  (boolean (:ok (db/exec-one! conn [sql:same-team? library-id file-id]))))
-
 (defn- check-library-team-ownership!
   "Verify that file and library belong to the same team.
-   Prevents cross-team library relation injection."
+  Prevents cross-team library relation injection."
   [conn file-id library-id]
-  (when-not (same-team? conn file-id library-id)
-    (ex/raise :type :not-found
-              :code :object-not-found
-              :hint "file and library must belong to the same team")))
+  (let [sql "SELECT EXISTS (
+               SELECT 1 FROM file AS f
+               JOIN project AS fp ON (fp.id = f.project_id)
+               JOIN file AS l ON (l.id = ?)
+               JOIN project AS lp ON (lp.id = l.project_id)
+               WHERE f.id = ? AND fp.team_id = lp.team_id
+             ) AS ok"
+        row (db/exec-one! conn [sql library-id file-id])]
+    (when-not (:ok row)
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "file and library must belong to the same team"))))
 
 ;; --- MUTATION COMMAND: link-file-to-library
 

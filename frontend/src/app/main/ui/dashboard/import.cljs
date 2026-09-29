@@ -193,16 +193,21 @@
      :params {:file-id file-id
               :library-id library-id}}))
 
-(defn- notify-token-source-outcome
+(defn token-source-outcome-message
   [outcome]
   (case outcome
     :tokens-source-fallback-local
-    (st/emit! (ntf/info "Current Tokens Source has no tokens/sets or themes. Tokens source has been set to the local file"))
+    (tr "dashboard.import.tokens-source-fallback-local")
 
     :tokens-source-deactivated
-    (st/emit! (ntf/info "There are no tokens in the file or in the attached libraries. Tokens source has been deactivated."))
+    (tr "dashboard.import.tokens-source-deactivated")
 
     nil))
+
+(defn- notify-token-source-outcome
+  [outcome]
+  (when-let [message (token-source-outcome-message outcome)]
+    (st/emit! (ntf/info message))))
 
 (defn- analyze-entries
   [state entries]

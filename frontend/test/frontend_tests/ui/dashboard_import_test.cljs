@@ -55,3 +55,9 @@
                {:id "original-library" :tokens-source? true})))
   (t/is (nil? (dashboard-import/skipped-token-source-outcome
                {:id "ordinary-library"}))))
+
+(t/deftest token-source-fallback-messages-are-translated
+  (t/is (not= "dashboard.import.tokens-source-fallback-local"
+             (dashboard-import/token-source-outcome-message :tokens-source-fallback-local)))
+  (t/is (not= "dashboard.import.tokens-source-deactivated"
+             (dashboard-import/token-source-outcome-message :tokens-source-deactivated))))
