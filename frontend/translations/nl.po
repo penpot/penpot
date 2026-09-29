@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:14+0000\n"
+"PO-Revision-Date: 2026-09-30 16:51+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
+"nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2235,7 +2235,7 @@ msgstr "Geen"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:117
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr ""
+msgstr "Doorhalen"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:115
 msgid "inspect.attributes.typography.text-decoration.underline"
@@ -4204,11 +4204,11 @@ msgstr ""
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:121
 msgid "nitrate.code-activation.footer-after"
-msgstr " en neem contact met ons op:"
+msgstr "Stuur het bestand naar"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
 msgid "nitrate.code-activation.footer-before"
-msgstr "Een code nodig? Download je "
+msgstr "en wij sturen je je code."
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
 msgid "nitrate.code-activation.footer-download"
@@ -6945,7 +6945,7 @@ msgstr "Annuleren"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
-msgstr "Canvasachtergrond"
+msgstr "Doekachtergrond"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:722
 msgid "workspace.options.clip-content"
@@ -9447,3 +9447,180 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
+
+#: src/app/main/ui/dashboard/import.cljs:709
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "Geselecteerde bibliotheken verbinden"
+
+#: src/app/main/ui/dashboard/import.cljs:296
+msgid "dashboard.import.file-name-label"
+msgstr "Bestandsnaam"
+
+#: src/app/main/ui/dashboard/import.cljs:710
+msgid "dashboard.import.next-file"
+msgstr "Volgende bestand"
+
+#: src/app/main/ui/dashboard/import.cljs:459
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "verbinden met"
+
+#: src/app/main/ui/dashboard/import.cljs:453
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "originele bibliotheek"
+
+#: src/app/main/ui/dashboard/import.cljs:529
+msgid "dashboard.import.summary.manually-linked"
+msgstr "handmatig gekoppeld"
+
+#: src/app/main/ui/dashboard/import.cljs:537
+msgid "dashboard.import.summary.new"
+msgstr "Nieuw"
+
+#: src/app/main/ui/dashboard/import.cljs:534
+msgid "dashboard.import.summary.original"
+msgstr "Origineel"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:185
+msgid "dashboard.no-organizations-yet"
+msgstr "Nog geen organisaties."
+
+#: src/app/main/ui/auth/login.cljs:113
+msgid "errors.account-locked"
+msgstr ""
+"Te veel mislukte pogingen. Uw account is voor %s minuten vergrendeld. "
+"Probeer het later nog eens."
+
+#: src/app/main/errors.cljs:499
+msgid "errors.connection-error"
+msgstr ""
+"Kan de server niet bereiken Controleer uw verbinding en probeer het opnieuw."
+
+#: src/app/main/data/persistence.cljs:307
+msgid "errors.save-retrying"
+msgstr "Verbinding verbroken. Opnieuw proberen om uw wijzigingen op te slaan."
+
+#: src/app/main/ui/dashboard/import.cljs:703
+msgid "labels.skip"
+msgstr "Overslaan"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:562
+msgid "labels.team-management"
+msgstr "Team management"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:447
+msgid "workspace.colorpicker.color-picker"
+msgstr "Kies kleur van scherm"
+
+#: src/app/main/ui/workspace/left_header.cljs:125
+msgid "workspace.header.retrying"
+msgstr "Opnieuw proberen op te slaan"
+
+#: src/app/main/ui/workspace/libraries.cljs:842
+msgid "workspace.libraries.connected-libraries"
+msgstr "Verbonden bibliotheek"
+
+#: src/app/main/ui/workspace/libraries.cljs:183
+msgid "workspace.libraries.connected-through"
+msgstr "Verbinden door"
+
+#: src/app/main/ui/workspace/libraries.cljs:812
+msgid "workspace.libraries.empty.no-assets"
+msgstr "Nog geen activa"
+
+#: src/app/main/ui/workspace/libraries.cljs:895
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "Nog geen verbonden bibliotheken."
+
+#: src/app/main/ui/workspace/libraries.cljs:827, src/app/main/ui/workspace/libraries.cljs:874
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "Instellen als tokensbron"
+
+#: src/app/main/ui/workspace/libraries.cljs:621
+msgid "workspace.libraries.shared-library-added"
+msgstr "Toegevoegd"
+
+#: src/app/main/ui/workspace/libraries.cljs:167, src/app/main/ui/workspace/libraries.cljs:211
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 set"
+msgstr[1] "%s sets"
+
+#: src/app/main/ui/workspace/libraries.cljs:170, src/app/main/ui/workspace/libraries.cljs:215
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 thema"
+msgstr[1] "%s thema's"
+
+#: src/app/main/ui/workspace/libraries.cljs:164, src/app/main/ui/workspace/libraries.cljs:207
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 token"
+msgstr[1] "%s tokens"
+
+#: src/app/main/ui/workspace/libraries.cljs:820, src/app/main/ui/workspace/libraries.cljs:866
+msgid "workspace.libraries.tokens-source"
+msgstr "Tokensbron"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+msgid "workspace.options.canvas-background-section"
+msgstr "Doekachtergrond-sectie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr ""
+"Het lettertype dat door deze tekst wordt gebruikt (%s) is niet langer "
+"beschikbaar. Upload het lettertype opnieuw om een typografiestijl te maken"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
+msgid "workspace.options.pixel-grid-color"
+msgstr "Pixelrasterkleur"
+
+#: src/app/main/data/plugins.cljs:158
+msgid "workspace.plugins.error.unreachable"
+msgstr "De URL van de plugin kon niet worden bereikt."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:106
+msgid "workspace.tokens.add-set"
+msgstr "Set toevoegen"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:98
+msgid "workspace.tokens.change-token-source"
+msgstr "Tokenbron wijzigen"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:101
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "Dit is de huidige tokensbron"
+
+#: src/app/main/data/workspace/libraries.cljs:847
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "Tokensbronnensets of thema's zijn aangepast"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:67
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr ""
+"Ontwerptokens kunnen alleen worden toegepast op de eerste vulling of streek "
+"in de lijst."
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "Open de tokensbron in een nieuw tabblad"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
+msgid "workspace.tokens.source"
+msgstr "Bron:"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+msgid "workspace.tokens.stroke-width"
+msgstr "Streekdikte"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:80
+msgid "workspace.tokens.this-file"
+msgstr "Dit bestand"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:413
+msgid "workspace.toolbar.label"
+msgstr "Tekenhulpmiddelen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+msgid "inspect.tabs-switcher-label"
+msgstr "Inspectietabblad schakelen"
