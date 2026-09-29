@@ -6,6 +6,7 @@
 
 (ns common-tests.logic.variant-properties-test
   (:require
+   [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
@@ -358,6 +359,20 @@
         main01' (ths/get-shape file' :m01)]
 
     (t/is (nil? (:variant-error main01')))))
+
+(t/deftest test-set-variant-error-non-variant-component
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :sh01))
+        page    (thf/current-page file)
+        c01-id  (:id (thc/get-component file :c01))
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-set-variant-error c01-id "bad=value"))]
+
+    (t/is (cfc/check-changes (:redo-changes changes)))))
 
 ;; =============================================================================
 ;; generate-reorder-variant-poperties tests

@@ -42,7 +42,7 @@
                                      changes
                                      related-components)
 
-                  ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)
+                  ids-to-validate [variant-id]
 
                   changes (pcb/validate-shapes changes
                                                (pcb/get-page-id changes)
@@ -74,7 +74,7 @@
                               changes
                               related-components)
 
-              ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)
+              ids-to-validate [variant-id]
 
               changes (pcb/validate-shapes changes
                                            (pcb/get-page-id changes)
@@ -97,7 +97,9 @@
                             (update pos assoc :value value)
                             ctv/properties-to-name)
 
-              ids-to-validate [main-id (:variant-id component)]]
+              ids-to-validate (if-let [variant-id (:variant-id component)]
+                                [variant-id]
+                                [main-id])]
           (-> changes
               (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
                                     {:apply-changes-local-library? true})
@@ -118,7 +120,9 @@
           component (ctcl/get-component data component-id true)]
       (if component
         (let [main-id         (:main-instance-id component)
-              ids-to-validate [main-id (:variant-id component)]]
+              ids-to-validate (if-let [variant-id (:variant-id component)]
+                                [variant-id]
+                                [main-id])]
           (-> changes
               (pcb/update-shapes [main-id] (if (nil? value)
                                              #(dissoc % :variant-error)
@@ -157,7 +161,7 @@
                                      related-components)]
       (if (identical? changes changes')
         changes
-        (let [ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)]
+        (let [ids-to-validate [variant-id]]
           (pcb/validate-shapes changes'
                                (pcb/get-page-id changes')
                                ids-to-validate
@@ -220,7 +224,7 @@
 
     (if (or skip-validation? (empty? related-components))
       changes
-      (let [ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)]
+      (let [ids-to-validate [variant-id]]
         (pcb/validate-shapes changes
                              (pcb/get-page-id changes)
                              ids-to-validate
@@ -360,7 +364,7 @@
 
     (if (or skip-validation? (zero? num-shapes) (empty? shapes))
       changes
-      (let [ids-to-validate (conj (mapv :id shapes) variant-id)]
+      (let [ids-to-validate [variant-id]]
         (pcb/validate-shapes changes
                              (pcb/get-page-id changes)
                              ids-to-validate
