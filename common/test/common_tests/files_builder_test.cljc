@@ -70,3 +70,20 @@
     (t/is (= "Image" (:name media)))
     (t/is (= 128 (:width media)))
     (t/is (= 64 (:height media)))))
+
+(t/deftest add-shape-normalizes-path-name
+  (let [file-id (uuid/next)
+        page-id (uuid/next)
+        shape-id (uuid/next)
+        state (-> (fb/create-state)
+                  (fb/add-file {:id file-id :name "Test file"})
+                  (fb/add-page {:id page-id :name "Page 1"})
+                  (fb/add-shape {:id shape-id
+                                 :type :frame
+                                 :name "Group/Subgroup   /   Name"
+                                 :x 0
+                                 :y 0
+                                 :width 10
+                                 :height 10}))
+        shape (fb/get-shape state shape-id)]
+    (t/is (= "Group / Subgroup / Name" (:name shape)))))

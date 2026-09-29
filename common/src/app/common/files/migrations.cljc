@@ -21,10 +21,12 @@
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.types.color :as types.color]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.fills :as types.fills]
@@ -2179,6 +2181,63 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
+(defmethod migrate-data "0032-normalize-main-instance-names"
+  [data _]
+  ;; In penpot shape names always have "/" characters normalized with one space between and after,
+  ;; to form paths. But this is not enforced and may be places that still admit names like
+  ;; "Group/Name" or "Group   /   Name". With normal shapes this is not a problem. But for main
+  ;; instances, the name of the root shape must match exactly the path+name of the component.
+  ;; Here we normalize the names of all main instances, and a new file integrity validation has
+  ;; been added to enforce this from now on.
+  ;; Main instances in variants are a special case because they need to match the variant name.
+  (letfn [(update-shape [container shape-id]
+            (let [shape (ctn/get-shape container shape-id)
+
+                  shape (cond
+                          ;; Variant container must have a normalized name
+                          (ctk/is-variant-container? shape)
+                          (let [name       (:name shape)
+                                clean-name (cpn/clean-path name)]
+                            (if (= name clean-name)
+                              shape
+                              (assoc shape :name clean-name)))
+
+                          ;; Main instance inside a variant must have the same name as the container
+                          (ctk/main-instance? shape)
+                          (if (ctk/is-variant? shape)
+                            (let [variant-container (ctn/get-shape container (:parent-id shape))]
+                              (if (or (= (:name shape) (:name variant-container))
+                                      (nil? variant-container))
+                                shape
+                                (assoc shape :name (:name variant-container))))
+
+                            ;; Other main instances must have the same name as the path+name of the component
+                            (let [component     (ctkl/get-component data (:component-id shape) true)
+                                  expected-name (when component
+                                                  (cpn/merge-path-item (:path component) (:name component)))]
+                              (if (or (= expected-name (:name shape))
+                                      (nil? expected-name))
+                                shape
+                                (assoc shape :name expected-name))))
+
+                          ;; Any other shape does not need processing
+                          :else shape)]
+
+              (reduce update-shape
+                      (ctn/set-shape container shape)
+                      (:shapes shape))))
+
+          (update-container
+            [container]
+            (let [root (ctn/get-container-root container)]
+              (if root
+                (update-shape container (:id root))
+                container)))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2267,4 +2326,5 @@
          "0028-normalize-constrained-values"
          "0029-move-background-blur-out-of-blur"
          "0030-remove-stroke-per-side-attr"
-         "0031-migrate-stroke-width-token-attr"]))
+         "0031-migrate-stroke-width-token-attr"
+         "0032-normalize-main-instance-names"]))
