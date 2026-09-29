@@ -242,10 +242,22 @@
                                 (assoc :name new-name))))))
 
 (defn generate-make-shapes-no-variant
-  "Extract some components from a variant, removing the variant-id and variant-name from the 
-   main instances and the variant-id and variant-properties from the components."
-  [changes shapes]
-  (reduce generate-make-shape-no-variant changes shapes))
+  "Extract some components from a variant, removing the variant-id and variant-name from the
+   main instances and the variant-id and variant-properties from the components.
+
+   The skip-validation? flag, if set, avoids validating the shapes. Use it when the shapes
+   are still inside the variant container, and validate after moving them."
+  [changes shapes & {:keys [skip-validation?]}]
+  (let [changes' (reduce generate-make-shape-no-variant changes shapes)]
+    (if (or skip-validation? (empty? shapes))
+      changes'
+      (let [ids-to-validate (into (mapv :id shapes)
+                                  (comp (keep :variant-id) (distinct))
+                                  shapes)]
+        (pcb/validate-shapes changes'
+                             (pcb/get-page-id changes')
+                             ids-to-validate
+                             (str "generate-make-shapes-no-variant: " (mapv :id shapes)))))))
 
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]

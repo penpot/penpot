@@ -7,6 +7,7 @@
 (ns common-tests.logic.variant-properties-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
@@ -607,7 +608,9 @@
                     (pcb/with-page-id (:id page))
                     (pcb/with-library-data (:data file))
                     (pcb/with-objects (:objects page))
-                    (clvp/generate-make-shapes-no-variant [main01]))
+                    ;; main01 is still inside the variant container, as happens in
+                    ;; generate-relocate before moving it, so this state is not valid
+                    (clvp/generate-make-shapes-no-variant [main01] :skip-validation? true))
 
         file'   (thf/apply-changes file changes :validate? false)
 
@@ -674,6 +677,27 @@
     (t/is (= "Property 1" (-> c03' :variant-properties first :name)))
     (t/is (= "Frame1" (-> c03' :variant-properties first :value)))
     (t/is (= "Frame1" (-> m03' :variant-name)))))
+
+(t/deftest test-relocate-variant-outside-container
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        main01  (ths/get-shape file :m01)
+
+        changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                           (pcb/with-page-id (:id page))
+                                           (pcb/with-library-data (:data file))
+                                           (pcb/with-objects (:objects page)))
+                                       uuid/zero 0 #{(:id main01)})
+
+        file'   (thf/apply-changes file changes)
+
+        comp01' (thc/get-component file' :c01)
+        main01' (ths/get-shape file' :m01)]
+
+    (t/is (= uuid/zero (:parent-id main01')))
+    (t/is (nil? (:variant-id comp01')))
+    (t/is (nil? (:variant-id main01')))))
 
 ;; This makes generate-make-shapes-variant call generate-add-new-property
 ;; several times before the new shape joins the variant
@@ -958,3 +982,41 @@
                        (clvp/generate-add-new-property v-id :skip-validation? true))]
 
        (t/is (nil? (validation-error file changes))))))
+
+#?(:cljs
+   (t/deftest test-make-shapes-no-variant-validates-shape
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :component-file (uuid/next)))
+           page    (thf/current-page file)
+           main01  (ths/get-shape file :m01)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-no-variant [main01]))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-make-shapes-no-variant"))
+       (t/is (contains? (error-codes error) :component-main-external)))))
+
+#?(:cljs
+   (t/deftest test-relocate-variant-outside-container-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m02 :variant-id (uuid/next)))
+           page    (thf/current-page file)
+           main01  (ths/get-shape file :m01)
+
+           changes (cls/generate-relocate (-> (pcb/empty-changes nil)
+                                              (pcb/with-page-id (:id page))
+                                              (pcb/with-library-data (:data file))
+                                              (pcb/with-objects (:objects page)))
+                                          uuid/zero 0 #{(:id main01)})
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-relocate"))
+       (t/is (contains? (error-codes error) :main-instance-invalid-variant-id)))))

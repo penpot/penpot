@@ -585,7 +585,18 @@
                                   (conj to-delete (:id parent))
                                   to-delete)))
                             #{}
-                            (remove #(= % parent-id) all-parents))]
+                            (remove #(= % parent-id) all-parents))
+
+        ;; The old and new variant containers, and the moved variants when they
+        ;; end up outside any component (inside one, they are not roots anymore
+        ;; and can't be validated on their own)
+        variant-ids-to-validate
+        (cond-> (into #{} (keep :variant-id) variant-shapes)
+          (ctk/is-variant-container? parent)
+          (conj parent-id)
+
+          (nil? (ctn/get-instance-root objects parent))
+          (into (map :id) variant-shapes))]
 
     (-> changes
         ;; Remove layout-item properties and tokens when moving a shape outside a layout
@@ -614,8 +625,9 @@
           (pcb/update-shapes child-heads-ids #(assoc % :component-root true)))
 
         ;; Remove variant info and rename when moving outside a variant-container
+        ;; The shapes are still inside the container, so validate at the end
         (cond-> (not (ctk/is-variant-container? parent))
-          (clvp/generate-make-shapes-no-variant variant-shapes))
+          (clvp/generate-make-shapes-no-variant variant-shapes :skip-validation? true))
 
         ;; Add variant info and rename when moving into a different variant-container
         (cond-> (ctk/is-variant-container? parent)
@@ -698,7 +710,13 @@
 
         ;; Remove parents when are a variant-container that becomes empty
         (cond-> (seq empty-variant-cont)
-          (#(second (generate-delete-shapes % empty-variant-cont {})))))))
+          (#(second (generate-delete-shapes % empty-variant-cont {}))))
+
+        ;; Validate the variants once the shapes are in their new parent
+        (cond-> (seq variant-ids-to-validate)
+          (pcb/validate-shapes (pcb/get-page-id changes)
+                               variant-ids-to-validate
+                               (str "generate-relocate: " (vec ids) " to parent " parent-id))))))
 
 (defn change-show-in-viewer
   [shape hide?]
