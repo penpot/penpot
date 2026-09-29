@@ -256,31 +256,41 @@
 
 ;; --- Audit event tests
 
-(t/deftest get-error-report-audit-event-has-uuid-profile-id
-  ;; When get-error-report returns a report with string profile-id in content,
-  ;; the audit event must have a proper UUID profile-id (not a string).
-  ;; This tests the prepare-rpc-event function directly since the test RPC
-  ;; flow doesn't include the audit middleware wrapper.
-  (let [profile  (th/create-profile* 1 {:is-active true})
-        id       (uuid/next)
-        orig-pid "33601240-a00b-11ea-ba1b-c554cc60e361"
-        ;; Simulate the result from get-error-report with string profile-id
-        result   {:id id
-                  :source "logging"
-                  :hint "test error"
-                  :profile-id orig-pid}
-        mdata    {::sv/name "get-error-report"}
-        params   {::rpc/profile-id (:id profile)
-                  ::rpc/request-id (uuid/next)
-                  ::rpc/request-at (ct/now)}
-        mock-req (reify yetti.request/IRequest
-                   (get-header [_ _] nil)
-                   (remote-addr [_] "127.0.0.1"))
-        params   (with-meta params {:app.http/request mock-req})
-        event    (audit/prepare-rpc-event th/*system* mdata params result)]
-    ;; profile-id must be a UUID, not a string
-    (t/is (uuid? (:profile-id event)))
-    (t/is (= #uuid "33601240-a00b-11ea-ba1b-c554cc60e361" (:profile-id event)))))
+(t/deftest get-error-report-audit-event-attributes-the-caller
+  ;; The report content carries the profile that owned the report and the
+  ;; handler merges that content into the response, so the response holds a
+  ;; `:profile-id` that does not belong to the caller. The audit event must
+  ;; still belong to the caller: deriving it from the response attributed
+  ;; privileged reads to the users whose crashes were being inspected.
+  (let [caller (th/create-profile* 1 {:is-active true})
+        owner  "33601240-a00b-11ea-ba1b-c554cc60e361"
+        id     (uuid/next)]
+    (insert-report! th/*system*
+                    {:id id
+                     :source 4
+                     :content {:profile-id owner
+                               :hint "test error"}})
+
+    (let [out (token-cmd caller {::th/type :get-error-report :id id})]
+      (t/is (th/success? out))
+
+      (let [result (:result out)
+            event  (audit/prepare-rpc-event
+                    th/*system*
+                    {::sv/name "get-error-report"}
+                    (with-meta {::rpc/profile-id (:id caller)
+                                ::rpc/request-id (uuid/next)
+                                ::rpc/request-at (ct/now)
+                                :id id}
+                      {:app.http/request (reify
+                                           yetti.request/IRequest
+                                           (get-header [_ _] nil)
+                                           (remote-addr [_] "127.0.0.1"))})
+                    result)]
+        ;; the response does expose the report owner's profile...
+        (t/is (= owner (get result :profile-id)))
+        ;; ...but the audit event belongs to whoever called the command
+        (t/is (= (:id caller) (:profile-id event)))))))
 
 ;; Note: The integration of access token middleware with audit context is tested
 ;; via unit tests in rpc_audit_test.clj and http_middleware_test.clj.

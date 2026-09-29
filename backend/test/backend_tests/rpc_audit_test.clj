@@ -515,46 +515,83 @@
       (t/is (= {} (:props row)))
       (t/is (= {} (:context row))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PREPARE-RPC-EVENT PROFILE-ID CONVERSION
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREPARE-RPC-EVENT PROFILE-ID RESOLUTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest prepare-rpc-event-converts-string-profile-id-to-uuid
-  ;; When result contains a string :profile-id (e.g. from error reports),
-  ;; prepare-rpc-event must convert it to a UUID for audit schema compliance.
-  (let [prof       (th/create-profile* 1 {:is-active true})
-        string-pid "33601240-a00b-11ea-ba1b-c554cc60e361"
-        expected   #uuid "33601240-a00b-11ea-ba1b-c554cc60e361"
-        mdata      {::sv/name "test-cmd"}
-        params     {::rpc/profile-id (:id prof)
-                    ::rpc/request-id (uuid/next)
-                    ::rpc/request-at (ct/now)}
-        mock-req   (reify
-                     yetti.request/IRequest
-                     (get-header [_ _] nil)
-                     (remote-addr [_] "127.0.0.1"))
-        params     (with-meta params {:app.http/request mock-req})
-        result     {:profile-id string-pid :some-data "value"}
-        event      (audit/prepare-rpc-event th/*system* mdata params result)]
-    ;; profile-id must be a UUID, not a string
-    (t/is (uuid? (:profile-id event)))
-    (t/is (= expected (:profile-id event)))))
-
-(t/deftest prepare-rpc-event-handles-invalid-string-profile-id
-  ;; When result contains an invalid string :profile-id, it should fall back
-  ;; to the RPC params profile-id (which is always a valid UUID).
-  (let [prof   (th/create-profile* 1 {:is-active true})
-        mdata  {::sv/name "test-cmd"}
-        params {::rpc/profile-id (:id prof)
-                ::rpc/request-id (uuid/next)
-                ::rpc/request-at (ct/now)}
+(defn- prepare-event
+  "Call prepare-rpc-event with a bare request, returning the built event."
+  [caller result]
+  (let [mdata    {::sv/name "test-cmd"}
+        params   {::rpc/profile-id caller
+                  ::rpc/request-id (uuid/next)
+                  ::rpc/request-at (ct/now)}
         mock-req (reify
                    yetti.request/IRequest
                    (get-header [_ _] nil)
                    (remote-addr [_] "127.0.0.1"))
-        params (with-meta params {:app.http/request mock-req})
-        result {:profile-id "not-a-valid-uuid"}
-        event  (audit/prepare-rpc-event th/*system* mdata params result)]
-    ;; profile-id must fall back to the RPC params profile-id
-    (t/is (uuid? (:profile-id event)))
-    (t/is (= (:id prof) (:profile-id event)))))
+        params   (with-meta params {:app.http/request mock-req})]
+    (audit/prepare-rpc-event th/*system* mdata params result)))
+
+(t/deftest prepare-rpc-event-ignores-profile-id-from-result
+  ;; An audit event belongs to the caller, never to whatever `:profile-id`
+  ;; the response carries. `get-error-report` returns the report with its
+  ;; decoded content merged in, and that content can hold the profile that
+  ;; owned the report, so honoring it attributed the call to somebody who
+  ;; never made it.
+  (let [caller (th/create-profile* 1 {:is-active true})]
+    (t/is (= (:id caller)
+             (:profile-id (prepare-event (:id caller)
+                                         {:profile-id "33601240-a00b-11ea-ba1b-c554cc60e361"
+                                          :some-data "value"}))))
+    ;; an unparseable one must not break the event either
+    (t/is (= (:id caller)
+             (:profile-id (prepare-event (:id caller)
+                                         {:profile-id "not-a-valid-uuid"}))))))
+
+(t/deftest prepare-rpc-event-uses-metadata-profile-id
+  ;; `::audit/profile-id` metadata is the only sanctioned override: it is
+  ;; how commands that authenticate somebody else (login, verify-token)
+  ;; attribute the event to the right profile.
+  (let [caller (th/create-profile* 1 {:is-active true})
+        target (th/create-profile* 2 {:is-active true})
+        result (with-meta {:some-data "value"}
+                 {::audit/profile-id (:id target)})]
+    (t/is (= (:id target)
+             (:profile-id (prepare-event (:id caller) result))))))
+
+(t/deftest prepare-rpc-event-falls-back-to-zero-for-anonymous-callers
+  ;; With no metadata and no authenticated caller there is nobody to
+  ;; attribute the event to, so it lands on the zero uuid.
+  (t/is (= uuid/zero
+           (:profile-id (prepare-event nil {:some-data "value"})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PREPARE-RPC-EVENT PROFILE-ID COERCION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest prepare-rpc-event-coerces-string-metadata-profile-id
+  ;; `::audit/profile-id` is set by hand in a dozen commands, and some of
+  ;; them read the value from token claims or other stringly-typed sources.
+  ;; The audit schema demands a uuid, and `submit*` swallows the validation
+  ;; error, so an unconverted string would drop the event on the floor.
+  (let [caller (th/create-profile* 1 {:is-active true})
+        target "33601240-a00b-11ea-ba1b-c554cc60e361"
+        result (with-meta {:some-data "value"}
+                 {::audit/profile-id target})]
+    (t/is (= #uuid "33601240-a00b-11ea-ba1b-c554cc60e361"
+             (:profile-id (prepare-event (:id caller) result))))
+    (t/is (uuid? (:profile-id (prepare-event (:id caller) result))))))
+
+(t/deftest prepare-rpc-event-discards-unusable-metadata-profile-id
+  ;; An override that cannot be turned into a uuid is dropped, not honoured
+  ;; and not propagated: the event falls back to the caller, which is always
+  ;; a valid uuid, instead of failing the schema check and losing the row.
+  (let [caller (th/create-profile* 1 {:is-active true})]
+    (doseq [bad ["not-a-valid-uuid" "" "  " 42 {} [] :whatever nil false]]
+      (let [result (with-meta {:some-data "value"}
+                     (cond-> {::audit/profile-id bad}
+                       (nil? bad) (dissoc ::audit/profile-id)))]
+        (t/is (= (:id caller)
+                 (:profile-id (prepare-event (:id caller) result)))
+              (str "override " (pr-str bad) " must fall back to the caller"))))))

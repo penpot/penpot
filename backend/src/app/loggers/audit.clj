@@ -350,14 +350,44 @@
                   {})]
     (assoc params :context context)))
 
+(defn- coerce-profile-id
+  "Normalize a hand-written `::audit/profile-id` override to a uuid.
+
+  `schema:event` requires a uuid and `submit*` swallows the validation
+  error, so a value that is not a uuid loses the event instead of
+  failing loudly. Commands read the override from places that are not
+  typed by us (token claims, stringly-typed drivers), so a string has
+  to be accepted. Anything that cannot become a uuid is discarded, and
+  the event falls back to the caller, which is always a valid uuid."
+  [v]
+  (let [coerced (cond
+                  ;; Fast path: the override comes straight from a `profile`
+                  ;; row in almost every command, so it is already a uuid.
+                  (uuid? v)
+                  v
+
+                  (string? v)
+                  (uuid/parse* v)
+
+                  :else
+                  nil)]
+    (when (and (nil? coerced) (some? v))
+      (l/error :hint "ignoring unusable ::audit/profile-id"
+               :profile-id v))
+
+    coerced))
+
 (defn prepare-rpc-event
   [cfg mdata params result]
   (let [resultm      (meta result)
         request      (-> params meta ::http/request)
-        profile-id   (or (::profile-id resultm)
-                         (some-> (:profile-id result)
-                                 (cond-> (string? (:profile-id result))
-                                   uuid/parse*))
+        ;; SECURITY: the event belongs to whoever made the request. The only
+        ;; sanctioned override is the `::audit/profile-id` metadata, set
+        ;; explicitly by the command. Never derive it from the response:
+        ;; results can carry a `:profile-id` that belongs to somebody else
+        ;; (the owner of an error report, the inviter of an invitation, ...)
+        ;; and that silently misattributes the action.
+        profile-id   (or (coerce-profile-id (::profile-id resultm))
                          (::rpc/profile-id params)
                          uuid/zero)
 

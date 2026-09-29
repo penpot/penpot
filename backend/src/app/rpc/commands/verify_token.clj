@@ -97,7 +97,11 @@
                     (profile/strip-private-attrs)
                     (update :props profile/filter-props)
                     (with-nitrate-licence cfg))]
-    (assoc claims :profile profile)))
+    ;; The command is anonymous, so the audit event has no caller to fall
+    ;; back on and the profile must be declared here. The claims also carry
+    ;; a `:profile-id`, but the audit layer ignores the response on purpose.
+    (-> (assoc claims :profile profile)
+        (rph/with-meta {::audit/profile-id (:id profile)}))))
 
 ;; --- Team Invitation
 
@@ -313,25 +317,29 @@
                                        :user-who-send-invitation (:created-by invitation))
                                 (audit/clean-props))))))
 
-              (cond-> (assoc claims :state :created)
-                ;; when the invitation is to an organization, instead of a team, add the
-                ;; accepted-team-id as :organization-team-id
-                (:organization-id claims)
-                (assoc :organization-team-id accepted-team-id)
+              (-> (cond-> (assoc claims :state :created)
+                    ;; when the invitation is to an organization, instead of a team, add the
+                    ;; accepted-team-id as :organization-team-id
+                    (:organization-id claims)
+                    (assoc :organization-team-id accepted-team-id)
 
-                organization-id-on-add
-                (assoc :organization-invitation-audit
-                       {:origin organization-event-origin
-                        :props
-                        (-> props
-                            (assoc :organization-id organization-id-on-add
-                                   :organization-member-add-source organization-add-source
-                                   :belongs-to-team-on-add (boolean team-id)
-                                   :user-id (:id profile)
-                                   :user-who-send-invitation (:created-by invitation)
-                                   :organization-member-count-before
-                                   organization-member-count-before)
-                            (audit/clean-props))}))))))
+                    organization-id-on-add
+                    (assoc :organization-invitation-audit
+                           {:origin organization-event-origin
+                            :props
+                            (-> props
+                                (assoc :organization-id organization-id-on-add
+                                       :organization-member-add-source organization-add-source
+                                       :belongs-to-team-on-add (boolean team-id)
+                                       :user-id (:id profile)
+                                       :user-who-send-invitation (:created-by invitation)
+                                       :organization-member-count-before
+                                       organization-member-count-before)
+                                (audit/clean-props))}))
+                  ;; The response carries the inviter's profile-id, so the
+                  ;; audit event has to name the accepting profile explicitly
+                  ;; or the invitation gets logged against the wrong user.
+                  (rph/with-meta {::audit/profile-id (:id profile)}))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled

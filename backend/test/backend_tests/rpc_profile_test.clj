@@ -1385,3 +1385,56 @@
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
     (t/is (th/ex-of-code? (:error out) :weak-password))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; VERIFY-TOKEN AUDIT ATTRIBUTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(t/deftest verify-token-auth-audit-event-attributes-the-authenticated-profile
+  ;; `verify-token` is anonymous, so the audit event cannot infer the profile
+  ;; from the caller: the handler must declare it in the result metadata.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        token   (tokens/generate th/*system*
+                                 {:iss :auth
+                                  :exp (ct/in-future "1h")
+                                  :profile-id (:id profile)})
+        out     (th/command! {::th/type :verify-token
+                              :token token})]
+    (t/is (th/success? out))
+    (t/is (= (:id profile)
+             (get-in (meta (:result out)) [:app.loggers.audit/profile-id])))))
+
+(t/deftest verify-token-invitation-audit-event-attributes-the-accepting-profile
+  ;; Both the invitation claims and the response carry the inviter's
+  ;; profile-id, so the event must not end up on the inviter: the member who
+  ;; clicked the link is the one who accepted the invitation.
+  (with-redefs [app.config/flags #{:login-with-password}]
+    (let [owner  (th/create-profile* 1 {:is-active true})
+          team   (th/create-team* 1 {:profile-id (:id owner)})
+          member (th/create-profile* 2 {:is-active true
+                                        :email "invited@example.com"})
+          email  (:email member)
+          token  (tokens/generate th/*system*
+                                  {:iss :team-invitation
+                                   :exp (ct/in-future "48h")
+                                   :role :editor
+                                   :profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-email email
+                                   :member-id (:id member)})]
+      (th/db-insert! :team-invitation
+                     {:id (uuid/random)
+                      :team-id (:id team)
+                      :email-to email
+                      :created-by (:id owner)
+                      :role "editor"
+                      :valid-until (ct/in-future "48h")})
+
+      (let [out     (th/command! {::th/type :verify-token
+                                  :token token
+                                  ::rpc/profile-id (:id member)
+                                  ::rpc/auth-type :session})
+            event-pid (get-in (meta (:result out)) [:app.loggers.audit/profile-id])]
+        (t/is (th/success? out))
+        (t/is (= (:id member) event-pid))
+        (t/is (not= (:id owner) event-pid))))))
