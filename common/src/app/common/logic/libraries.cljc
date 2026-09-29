@@ -241,8 +241,8 @@
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id params]
    (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {} params))
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id ids-map
-    {:keys [force-frame?]
-     :or {force-frame? false}}]
+    {:keys [force-frame? skip-validation?]
+     :or {force-frame? false skip-validation? false}}]
 
    (let [component     (ctf/get-component libraries file-id component-id)
          library       (get libraries file-id)
@@ -317,12 +317,17 @@
          (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                  changes
                  (rest new-shapes))
-         
-         ids-to-validate (cond-> [(:id first-shape)]
-                           grid-parent?
-                           (conj (:parent-id first-shape)))
 
-         changes (if (seq ids-to-validate)
+         ;; A copy nested inside another component can't be validated on
+         ;; its own, as the validator needs the context of its ancestors.
+         ;; Validate the root of the enclosing component instead.
+         ids-to-validate (if (ctk/instance-root? first-shape)
+                           (cond-> [(:id first-shape)]
+                             grid-parent?
+                             (conj (:parent-id first-shape)))
+                           (ctn/get-all-instance-roots objects [(:parent-id first-shape)]))
+
+         changes (if (and (not skip-validation?) (seq ids-to-validate))
                    (pcb/validate-shapes changes
                                         (:id page)
                                         ids-to-validate
@@ -2721,7 +2726,9 @@
                                         (:parent-id shape)
                                         (:frame-id shape)
                                         {(:id shape) (:id shape)} ;; keep the id of the original shape
-                                        {:force-frame? true})
+                                        ;; The swap slot is set below, so validate at the end
+                                        {:force-frame? true
+                                         :skip-validation? true})
 
         new-shape (cond-> new-shape
                     ;; if the shape isn't inside a main component, it shouldn't have a swap slot
@@ -2743,7 +2750,13 @@
                    (change-touched new-shape
                                    shape
                                    (ctn/make-container page :page)
-                                   {}))]))
+                                   {})
+                   ;; The new shape keeps the id of the old one, so this finds the
+                   ;; new shape itself or the root of the component that holds it
+                   (pcb/validate-shapes (:id page)
+                                        (ctn/get-all-instance-roots objects [(:id shape)])
+                                        (str "generate-new-shape-for-swap: " (:id shape)
+                                             " to component " id-new-component)))]))
 
 (defn generate-component-swap
   [changes objects shape file page libraries id-new-component
