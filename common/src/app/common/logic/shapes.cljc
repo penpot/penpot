@@ -630,8 +630,9 @@
           (clvp/generate-make-shapes-no-variant variant-shapes :skip-validation? true))
 
         ;; Add variant info and rename when moving into a different variant-container
+        ;; The shapes are not inside the container yet, so validate at the end
         (cond-> (ctk/is-variant-container? parent)
-          (clvp/generate-make-shapes-variant child-heads parent))
+          (clvp/generate-make-shapes-variant child-heads parent :skip-validation? true))
 
         ;; Move the shapes
         (pcb/change-parent parent-id

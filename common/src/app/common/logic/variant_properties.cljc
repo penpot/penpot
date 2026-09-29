@@ -283,8 +283,11 @@
 
 (defn generate-make-shapes-variant
   "Introduce some components into a variant, adding the variant-id and variant-name to the
-   main instances and the variant-id and variant-properties to the components."
-  [changes shapes variant-container]
+   main instances and the variant-id and variant-properties to the components.
+
+   The skip-validation? flag, if set, avoids validating the shapes. Use it when the shapes
+   are not inside the variant container yet, and validate after moving them."
+  [changes shapes variant-container & {:keys [skip-validation?]}]
   (let [data           (pcb/get-library-data changes)
         objects        (pcb/get-objects changes)
         variant-id     (:id variant-container)
@@ -331,24 +334,35 @@
 
         changes        (pcb/update-shapes changes (map :id shapes)
                                           #(assoc % :variant-id variant-id
-                                                  :name (:name variant-container)))]
-    (reduce
-     (fn [changes shape]
-       (let [component (ctcl/get-component data (:component-id shape) true)]
-         (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
-                 (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
-                      (not (:deleted component))))       ;; the same parent and the component isn't deleted)
-           changes
-           (let [props               (create-new-properties shape total-props)
-                 variant-name        (ctv/properties-to-name props)]
-             (-> (pcb/update-component changes
-                                       (:component-id shape)
-                                       #(assoc % :variant-id variant-id
-                                               :variant-properties props
-                                               :name cname
-                                               :path cpath)
-                                       {:apply-changes-local-library? true})
-                 (pcb/update-shapes [(:id shape)]
-                                    #(assoc % :variant-name variant-name)))))))
-     changes
-     shapes)))
+                                                  :name (:name variant-container)))
+
+        changes
+        (reduce
+         (fn [changes shape]
+           (let [component (ctcl/get-component data (:component-id shape) true)]
+             (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
+                     (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
+                          (not (:deleted component))))       ;; the same parent and the component isn't deleted)
+               changes
+               (let [props               (create-new-properties shape total-props)
+                     variant-name        (ctv/properties-to-name props)]
+                 (-> (pcb/update-component changes
+                                           (:component-id shape)
+                                           #(assoc % :variant-id variant-id
+                                                   :variant-properties props
+                                                   :name cname
+                                                   :path cpath)
+                                           {:apply-changes-local-library? true})
+                     (pcb/update-shapes [(:id shape)]
+                                        #(assoc % :variant-name variant-name)))))))
+         changes
+         shapes)]
+
+    (if (or skip-validation? (zero? num-shapes) (empty? shapes))
+      changes
+      (let [ids-to-validate (conj (mapv :id shapes) variant-id)]
+        (pcb/validate-shapes changes
+                             (pcb/get-page-id changes)
+                             ids-to-validate
+                             (str "generate-make-shapes-variant: " variant-id
+                                  " shapes: " (mapv :id shapes)))))))

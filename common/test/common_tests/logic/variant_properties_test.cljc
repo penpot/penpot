@@ -1020,3 +1020,66 @@
 
        (t/is (str/includes? (:hint error) "generate-relocate"))
        (t/is (contains? (error-codes error) :main-instance-invalid-variant-id)))))
+
+#?(:cljs
+   (t/deftest test-make-shapes-variant-validates-shape
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (tho/add-simple-component :c03 :m03 :sh03
+                                                 :root-params {:parent-label :v01})
+                       (ths/update-shape :m03 :component-file (uuid/next)))
+           container (ths/get-shape file :v01)
+           m03     (ths/get-shape file :m03)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-variant [m03] container))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-make-shapes-variant"))
+       (t/is (contains? (error-codes error) :component-main-external)))))
+
+#?(:cljs
+   (t/deftest test-make-shapes-variant-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (tho/add-simple-component :c03 :m03 :sh03
+                                                 :root-params {:parent-label :v01})
+                       (ths/update-shape :m02 :variant-id (uuid/next)))
+           container (ths/get-shape file :v01)
+           m03     (ths/get-shape file :m03)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-variant [m03] container))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-make-shapes-variant"))
+       (t/is (contains? (error-codes error) :main-instance-invalid-variant-id)))))
+
+#?(:cljs
+   (t/deftest test-make-shapes-variant-skip-validation
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (tho/add-simple-component :c03 :m03 :sh03
+                                                 :root-params {:parent-label :v01})
+                       (ths/update-shape :m02 :variant-id (uuid/next)))
+           container (ths/get-shape file :v01)
+           m03     (ths/get-shape file :m03)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-make-shapes-variant [m03] container :skip-validation? true))]
+
+       (t/is (nil? (validation-error file changes))))))
