@@ -834,3 +834,42 @@
 
        (t/is (str/includes? (:hint error) "generate-set-variant-error"))
        (t/is (contains? (error-codes error) :invalid-variant-properties)))))
+
+#?(:cljs
+   (t/deftest test-reorder-variant-properties-validates-main
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-reorder-variant-poperties v-id 0 2))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-reorder-variant-poperties"))
+       (t/is (contains? (error-codes error) :variant-component-bad-id)))))
+
+#?(:cljs
+   (t/deftest test-reorder-variant-properties-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (thc/update-component :c02 {:variant-properties [{:name "Other" :value "p1v2"}
+                                                                        {:name "Property 2" :value "p2v2"}]}))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-reorder-variant-poperties v-id 0 2))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-reorder-variant-poperties"))
+       (t/is (contains? (error-codes error) :invalid-variant-properties)))))
