@@ -117,11 +117,16 @@
     (let [data      (pcb/get-library-data changes)
           component (ctcl/get-component data component-id true)]
       (if component
-        (let [main-id   (:main-instance-id component)]
+        (let [main-id         (:main-instance-id component)
+              ids-to-validate [main-id (:variant-id component)]]
           (-> changes
               (pcb/update-shapes [main-id] (if (nil? value)
                                              #(dissoc % :variant-error)
-                                             #(assoc % :variant-error value)))))
+                                             #(assoc % :variant-error value)))
+              (pcb/validate-shapes (pcb/get-page-id changes)
+                                   ids-to-validate
+                                   (str "generate-set-variant-error: " component-id
+                                        " value: " value))))
         changes))))
 
 (defn generate-reorder-variant-poperties

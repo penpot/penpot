@@ -795,3 +795,42 @@
 
        (t/is (str/includes? (:hint error) "generate-update-property-value"))
        (t/is (contains? (error-codes error) :invalid-variant-properties)))))
+
+#?(:cljs
+   (t/deftest test-set-variant-error-validates-main
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           page    (thf/current-page file)
+           c01-id  (:id (thc/get-component file :c01))
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-set-variant-error c01-id "bad=value"))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-set-variant-error"))
+       (t/is (contains? (error-codes error) :variant-component-bad-id)))))
+
+#?(:cljs
+   (t/deftest test-set-variant-error-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (thc/update-component :c02 {:variant-properties [{:name "Other" :value "p1v2"}
+                                                                        {:name "Property 2" :value "p2v2"}]}))
+           page    (thf/current-page file)
+           c01-id  (:id (thc/get-component file :c01))
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-set-variant-error c01-id "bad=value"))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-set-variant-error"))
+       (t/is (contains? (error-codes error) :invalid-variant-properties)))))
