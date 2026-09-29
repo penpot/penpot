@@ -95,11 +95,17 @@
               props     (:variant-properties component)
               name      (-> props
                             (update pos assoc :value value)
-                            ctv/properties-to-name)]
+                            ctv/properties-to-name)
+
+              ids-to-validate [main-id (:variant-id component)]]
           (-> changes
               (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
                                     {:apply-changes-local-library? true})
-              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))
+              (pcb/validate-shapes (pcb/get-page-id changes)
+                                   ids-to-validate
+                                   (str "generate-update-property-value: " component-id
+                                        " pos: " pos " value: " value))))
         changes))))
 
 (defn generate-set-variant-error
