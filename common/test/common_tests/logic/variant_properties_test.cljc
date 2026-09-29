@@ -744,6 +744,30 @@
     (t/is (= (mapv :name (:variant-properties c01'))
              (mapv :name (:variant-properties c03'))))))
 
+;; The chain that update-properties-names-and-values runs in the workspace
+;; when the user adds a property with a value
+(t/deftest test-add-new-property-then-set-its-value
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+        c01-id  (:id (thc/get-component file :c01))
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id :property-name "Color")
+                    (clvp/generate-update-property-value c01-id 1 "Red"))
+
+        file'   (thf/apply-changes file changes)
+
+        comp01' (thc/get-component file' :c01)
+        comp02' (thc/get-component file' :c02)]
+
+    (t/is (= {:name "Color" :value "Red"} (-> comp01' :variant-properties second)))
+    (t/is (= {:name "Color" :value ""} (-> comp02' :variant-properties second)))))
+
 ;; =============================================================================
 ;; validate-shapes failure tests (only run on CLJS, where validation runs)
 ;; =============================================================================

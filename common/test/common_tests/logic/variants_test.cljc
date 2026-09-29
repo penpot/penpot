@@ -271,3 +271,83 @@
 
        (t/is (str/includes? (:hint error) "generate-relocate"))
        (t/is (contains? (error-codes error) :component-main-external)))))
+
+(defn- delete-shapes
+  [file labels]
+  (let [page    (thf/current-page file)
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page page)
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (#(second (cls/generate-delete-shapes % (into #{} (map thi/id) labels) {}))))]
+    (thf/apply-changes file changes)))
+
+(defn- restore-changes
+  [file component-label]
+  (let [page (thf/current-page file)]
+    (cll/generate-restore-component (-> (pcb/empty-changes)
+                                        (pcb/with-library-data (:data file))
+                                        (pcb/with-objects (:objects page)))
+                                    (:data file)
+                                    (thi/id component-label)
+                                    (:id file)
+                                    page
+                                    (:objects page))))
+
+(t/deftest test-restore-variant-into-its-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:m01]))
+
+        ;; ==== Action
+        changes (restore-changes file :c01)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        m01'    (ths/get-shape file' :m01)
+        c01'    (thc/get-component file' :c01)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v01) (:parent-id m01')))
+    (t/is (= (thi/id :v01) (:variant-id m01')))
+    (t/is (= (thi/id :v01) (:variant-id c01')))))
+
+#?(:cljs
+   (t/deftest test-restore-variant-into-its-container-validates
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (delete-shapes [:m01]))
+           changes (restore-changes file :c01)]
+
+       (t/is (nil? (validation-error file changes))))))
+
+(t/deftest test-restore-variant-after-deleting-its-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:m01 :m02]))
+
+        ;; ==== Action
+        changes (restore-changes file :c01)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        v01'    (ths/get-shape file' :v01)
+        m01'    (ths/get-shape file' :m01)
+        c01'    (thc/get-component file' :c01)]
+
+    ;; ==== Check
+    (t/is (nil? v01'))
+    (t/is (some? m01'))
+    (t/is (nil? (:variant-id m01')))
+    (t/is (nil? (:variant-id c01')))))
+
+#?(:cljs
+   (t/deftest test-restore-variant-after-deleting-its-container-validates
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (delete-shapes [:m01 :m02]))
+           changes (restore-changes file :c01)]
+
+       (t/is (nil? (validation-error file changes))))))
