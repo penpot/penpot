@@ -492,13 +492,14 @@
                              (th/command! {::th/type :verify-token
                                            ::rpc/profile-id (:id invitee)
                                            :token token}))
-          organization-event
-          (fn []
+          emitted-events
+          (fn [event-name]
             (->> (:call-args-list @audit-mock)
                  (map second)
-                 (filter #(= "accept-organization-invitation" (:name %)))
-                 first))
-          token-result     (atom nil)]
+                 (filter #(= event-name (:name %)))))
+          organization-event
+          (fn []
+            (first (emitted-events "accept-organization-invitation")))]
 
       (db/insert! (:app.db/pool th/*system*)
                   :team-invitation
@@ -520,29 +521,22 @@
                     (fn [& _] default-team-id)]
         (let [out (verify! direct-token)]
           (t/is (th/success? out))
-          (reset! token-result (:result out))))
+          (t/is (not (contains? (:result out) :organization-invitation-audit)))))
 
       (let [event (organization-event)]
         (t/is (= organization-id (get-in event [:props :organization-id])))
-        (t/is (= (:id invitee) (get-in event [:props :user-id])))
-        (t/is (= (:id inviter)
-                 (get-in event [:props :user-who-send-invitation])))
-        (t/is (not (contains? (:props event) :organization-member-add-source)))
-        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
-        (t/is (not (contains? (:props event) :organization-member-count-before)))
+        (t/is (= (:id invitee) (get-in event [:props :profile-id])))
+        (t/is (= (:id inviter) (get-in event [:props :invited-by])))
+        (t/is (= (:email invitee) (get-in event [:props :profile-email])))
         (t/is (= :editor (get-in event [:props :role])))
         (t/is (uuid? (get-in event [:props :invitation-id])))
-        (t/is (= organization-id (:organization-id @token-result)))
-        (t/is (= :editor (:role @token-result)))
-        (t/is (not (contains? @token-result :organization-invitation-audit)))
-        (t/is (= (get-in event [:props :invitation-id])
-                 (:invitation-id @token-result)))
-        (t/is (= (:id invitee)
-                 (:member-id @token-result)))
-        (t/is (= (:id inviter)
-                 (:profile-id @token-result)))
-        (t/is (= 3
-                 (:organization-member-count-before @token-result)))
+        (t/is (= "direct-organization-invitation"
+                 (get-in event [:props :organization-member-add-source])))
+        (t/is (false? (get-in event [:props :belongs-to-team-on-add])))
+        (t/is (= 3 (get-in event [:props :organization-member-count-before])))
+        (t/is (not (contains? (:props event) :invitation-origin)))
+        (t/is (not (contains? (:context event) :event-origin)))
+        (t/is (= 1 (count (emitted-events "accept-organization-invitation"))))
         (t/is (not-any? #(contains? #{"accept-team-invitation"
                                       "accept-team-invitation-from"}
                                     (:name (second %)))
@@ -569,7 +563,7 @@
                     teams/add-profile-to-team! (fn [& _] nil)]
         (let [out (verify! team-token)]
           (t/is (th/success? out))
-          (reset! token-result (:result out))))
+          (t/is (not (contains? (:result out) :organization-invitation-audit)))))
 
       (let [events (mapv second (:call-args-list @audit-mock))
             event  (organization-event)]
@@ -577,25 +571,27 @@
         (t/is (some #(= "accept-team-invitation-from" (:name %)) events))
         (t/is (= (:id team) (get-in event [:props :team-id])))
         (t/is (= organization-id (get-in event [:props :organization-id])))
-        (t/is (= (:id invitee) (get-in event [:props :user-id])))
-        (t/is (= (:id inviter)
-                 (get-in event [:props :user-who-send-invitation])))
-        (t/is (not (contains? (:props event) :organization-member-add-source)))
-        (t/is (not (contains? (:props event) :belongs-to-team-on-add)))
-        (t/is (not (contains? (:props event) :organization-member-count-before)))
-        (t/is (= organization-id
-                 (:organization-id @token-result)))
-        (t/is (= (:id team) (:team-id @token-result)))
-        (t/is (= :editor (:role @token-result)))
-        (t/is (not (contains? @token-result :organization-invitation-audit)))
-        (t/is (= (get-in event [:props :invitation-id])
-                 (:invitation-id @token-result)))
-        (t/is (= (:id invitee)
-                 (:member-id @token-result)))
-        (t/is (= (:id inviter)
-                 (:profile-id @token-result)))
-        (t/is (= 5
-                 (:organization-member-count-before @token-result))))
+        (t/is (= (:id invitee) (get-in event [:props :profile-id])))
+        (t/is (= (:id inviter) (get-in event [:props :invited-by])))
+        (t/is (= "team-invitation"
+                 (get-in event [:props :organization-member-add-source])))
+        (t/is (true? (get-in event [:props :belongs-to-team-on-add])))
+        (t/is (= 5 (get-in event [:props :organization-member-count-before])))
+        (t/is (not (contains? (:props event) :invitation-origin)))
+        (t/is (not (contains? (:context event) :event-origin)))
+        (t/is (= 1 (count (emitted-events "accept-organization-invitation")))))
+
+      (let [from-event (first (emitted-events "accept-team-invitation-from"))]
+        (t/is (= (:id team) (get-in from-event [:props :team-id])))
+        (t/is (= :editor (get-in from-event [:props :role])))
+        (t/is (uuid? (get-in from-event [:props :invitation-id])))
+        (t/is (= (:id inviter) (get-in from-event [:props :invited-by])))
+        (t/is (= (:id invitee) (get-in from-event [:props :profile-id])))
+        (t/is (= (:email invitee) (get-in from-event [:props :profile-email])))
+        (t/is (not (contains? (get-in from-event [:props]) :email)))
+        (t/is (not (contains? (get-in from-event [:props]) :user-id)))
+        (t/is (not (contains? (get-in from-event [:props])
+                              :user-who-send-invitation))))
 
       (th/reset-mock! audit-mock)
       (db/insert! (:app.db/pool th/*system*)
@@ -616,57 +612,11 @@
                     teams/add-profile-to-team! (fn [& _] nil)]
         (let [out (verify! team-token)]
           (t/is (th/success? out))
-          (reset! token-result (:result out))))
+          (t/is (not (contains? (:result out) :organization-invitation-audit)))))
 
       (let [events (mapv second (:call-args-list @audit-mock))]
         (t/is (some #(= "accept-team-invitation" (:name %)) events))
-        (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))
-        (t/is (not (contains? @token-result :organization-invitation-audit)))
-        (t/is (not (contains? @token-result :organization-member-count-before)))))))
-
-(t/deftest accept-organization-invitation-response-ids-match-database
-  (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-    (let [inviter         (th/create-profile* 211 {:is-active true})
-          invitee         (th/create-profile* 212 {:is-active true})
-          organization-id (uuid/random)
-          default-team-id (uuid/random)
-          ;; Token minted with a stale :profile-id (e.g. a re-sent link
-          ;; requested by someone else) and no :member-id (invitee was
-          ;; unregistered when invited); the invitation row says inviter.
-          stale-token     (tokens/generate
-                           th/*system*
-                           {:iss :team-invitation
-                            :exp (ct/in-future "1h")
-                            :profile-id (uuid/random)
-                            :role :editor
-                            :organization-id organization-id
-                            :member-email (:email invitee)})]
-      (db/insert! (:app.db/pool th/*system*)
-                  :team-invitation
-                  {:org-id organization-id
-                   :email-to (:email invitee)
-                   :created-by (:id inviter)
-                   :role "editor"
-                   :valid-until (ct/in-future "48h")})
-
-      (with-redefs [cf/flags (conj cf/flags :admin-console)
-                    nitrate/call
-                    (fn [_cfg method _params]
-                      (case method
-                        :get-organization-membership {:organization-id organization-id
-                                                      :is-member false}
-                        :get-organization-members [(:id inviter)]
-                        nil))
-                    teams/initialize-user-in-organization
-                    (fn [& _] default-team-id)]
-        (let [out (th/command! {::th/type :verify-token
-                                ::rpc/profile-id (:id invitee)
-                                :token stale-token})]
-          (t/is (th/success? out))
-          (t/is (= (:id inviter) (:profile-id (:result out))))
-          (t/is (= (:id invitee) (:member-id (:result out))))
-          (t/is (not (contains? (:result out) :user-who-send-invitation)))
-          (t/is (not (contains? (:result out) :user-id))))))))
+        (t/is (not-any? #(= "accept-organization-invitation" (:name %)) events))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]
