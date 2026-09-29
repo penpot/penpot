@@ -230,9 +230,9 @@
      :file-id #uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d"
      :id #uuid "83df2f92-6bd4-4e6d-9c9a-3f6d2b1a4c55"}]
    ["file-data-fragment"
-    {:bucket "file-data-fragment"}]
+    {:bucket "file-data-fragment" :content-type "application/octet-stream"}]
    ["file-change"
-    {:bucket "file-change"}]])
+    {:bucket "file-change" :content-type "application/octet-stream"}]])
 
 (t/deftest encode-decode-roundtrips-every-bucket
   (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]

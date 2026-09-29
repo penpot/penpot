@@ -42,11 +42,11 @@
 
 (def tempfile-bucket
   "Bucket name for temporary file uploads (10-minute expiry)."
-  "tempfile")
+  stsch/tempfile-bucket)
 
 (def upload-session-bucket
   "Bucket name for chunked-upload chunks."
-  "upload-session")
+  stsch/upload-session-bucket)
 
 (def valid-buckets
   stsch/metadata-buckets)

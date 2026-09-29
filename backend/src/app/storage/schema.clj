@@ -25,84 +25,51 @@
 (def default-bucket
   "file-media-object")
 
-(def schema:metadata
-  [:multi {:dispatch :bucket}
-   ["file-media-object"
-    [:map {:closed true}
-     [:bucket [:= "file-media-object"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["team-font-variant"
-    [:map {:closed true}
-     [:bucket [:= "team-font-variant"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["file-object-thumbnail"
-    [:map {:closed true}
-     [:bucket [:= "file-object-thumbnail"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["file-thumbnail"
-    [:map {:closed true}
-     [:bucket [:= "file-thumbnail"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["profile"
-    [:map {:closed true}
-     [:bucket [:= "profile"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["organization"
-    [:map {:closed true}
-     [:bucket [:= "organization"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]
-     ;; Provenance only: no reader depends on it (organization
-     ;; objects have no reference scan), so it stays optional.
-     [:organization-id {:optional true} ::sm/uuid]]]
-   ["tempfile"
-    [:map {:closed true}
-     [:bucket [:= "tempfile"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]
-     [:profile-id {:optional true} ::sm/uuid]]]
-   ["upload-session"
-    [:map {:closed true}
-     [:bucket [:= "upload-session"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]]]
-   ["file-data"
-    [:map {:closed true}
-     [:bucket [:= "file-data"]]
-     [:content-type :string]
-     [:hash {:optional true} :string]
-     [:file-id ::sm/uuid]
-     [:id ::sm/uuid]]]
-   ["file-data-fragment"
-    [:map {:closed true}
-     [:bucket [:= "file-data-fragment"]]
-     [:content-type {:optional true} :string]
-     [:hash {:optional true} :string]]]
-   ["file-change"
-    [:map {:closed true}
-     [:bucket [:= "file-change"]]
-     [:content-type {:optional true} :string]
-     [:hash {:optional true} :string]]]])
+(def tempfile-bucket
+  "Bucket name for temporary file uploads (10-minute expiry)."
+  "tempfile")
 
-(sm/register! ::metadata schema:metadata)
+(def upload-session-bucket
+  "Bucket name for chunked-upload chunks."
+  "upload-session")
 
 (def metadata-buckets
-  "Canonical bucket set, derived from the schema dispatch entries
-  (`nnext` skips `:multi` and its options map). `app.storage/valid-buckets`
-  aliases it so the list lives in exactly one place."
-  (into #{} (map first) (nnext schema:metadata)))
+  "Canonical bucket set. `app.storage/valid-buckets` aliases it so the
+  list lives in exactly one place."
+  #{"file-media-object" "team-font-variant" "file-object-thumbnail"
+    "file-thumbnail" "profile" "organization" tempfile-bucket
+    upload-session-bucket "file-data" "file-data-fragment" "file-change"})
+
+(defn- file-data-ids-present?
+  "`file-data` rows are resolved by `has-file-data-refs?` in the GC
+  through `:file-id` and `:id`; require both for that bucket."
+  [{:keys [bucket file-id id]}]
+  (or (not= bucket "file-data")
+      (and (some? file-id) (some? id))))
+
+(def schema:metadata
+  "Closed schema for `storage_object.metadata`. A single shape shared by
+  every bucket: `:bucket` is checked against `metadata-buckets` and the
+  rest are typed optional keys. Per-bucket requirements are limited to
+  `file-data`, which needs both ids so the GC can resolve its references."
+  [:and
+   [:map {:closed true}
+    [:bucket          [::sm/one-of {:format :string} metadata-buckets]]
+    [:content-type    :string]
+    [:hash            {:optional true} :string]
+    [:profile-id      {:optional true} ::sm/uuid]
+    [:organization-id {:optional true} ::sm/uuid]
+    [:file-id         {:optional true} ::sm/uuid]
+    [:id              {:optional true} ::sm/uuid]]
+   [:fn {:error/message "file-data metadata requires :file-id and :id"}
+    file-data-ids-present?]])
 
 (defn- ->bucket
   [v]
   (cond
     (keyword? v) (d/name v)
     (string? v)  v
-    (some? v)    (str v)))
+    :else        (str v)))
 
 (defn- normalize-metadata
   "Bring decoded (or incoming) metadata to its canonical shape:
