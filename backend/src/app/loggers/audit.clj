@@ -204,7 +204,7 @@
         token-id            (::actoken/id request)
         token-type          (::actoken/type request)]
     {:external-session-id session-id
-     :initiator (or key-id "app")
+     :initiator (or (d/name key-id) "app")
      :access-token-id (some-> token-id str)
      :access-token-type (some-> token-type str)
      :client-event-origin client-event-origin

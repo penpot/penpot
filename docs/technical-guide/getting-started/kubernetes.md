@@ -1,5 +1,5 @@
 ---
-title: 1.4 Install with Kubernetes
+title: 1.3 Install with Kubernetes
 desc: Learn how to install and configure Penpot on your Kubernetes cluster using Helm. Our technical guide provides step-by-step instructions for setup.
 ---
 

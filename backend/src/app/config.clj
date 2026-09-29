@@ -49,6 +49,9 @@
 
    :host "localhost"
    :tenant "default"
+   ;; The SaaS host also sets penpotIsSaas in the browser. Keep this server
+   ;; value in sync so Admin Console can query the same deployment type.
+   :is-saas false
 
    :redis-uri "redis://redis/0"
 
@@ -69,6 +72,9 @@
 
    :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
+
+   :login-lockout-max-attempts 5
+   :login-lockout-window (ct/duration "15m")
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
@@ -96,11 +102,7 @@
 
    ;; SSRF protection
    :ssrf-allowed-hosts #{}
-   :ssrf-extra-blocked-cidrs #{}
-
-   ;; Binfile import limits
-   :binfile-import-max-object-size (* 1024 1024 100) ;; 100 MiB
-   :binfile-import-max-zip-entries (* 500 1000)})    ;; 500,000
+   :ssrf-extra-blocked-cidrs #{}})
 
 (def schema:config
   (do #_sm/optional-keys
@@ -110,6 +112,7 @@
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} :string]
+    [:is-saas ::sm/boolean]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
 
@@ -158,8 +161,13 @@
     [:media-processing-service-timeout {:optional true} ::sm/int]
 
     ;; Binfile import limits (PENPOT_BINFILE_IMPORT_*)
-    [:binfile-import-max-object-size {:optional true} ::sm/int]
+    [:binfile-import-max-binary-entry-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-entry-size {:optional true} ::sm/int]
+    [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
+
+    [:login-lockout-max-attempts {:optional true} ::sm/int]
+    [:login-lockout-window {:optional true} ::ct/duration]
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]

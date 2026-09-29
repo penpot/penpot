@@ -7,6 +7,7 @@
 (ns backend-tests.http-assets-test
   (:require
    [app.common.time :as ct]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -14,13 +15,21 @@
    [app.http.access-token :as actoken]
    [app.http.assets :as assets]
    [app.http.session :as session]
+   [app.main :as main]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token :as access-token]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
-   [yetti.response :as-alias yres]))
+   [integrant.core :as ig]
+   [mockery.core :refer [with-mocks]]
+   [yetti.response :as-alias yres])
+  (:import
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each (th/serial
@@ -49,11 +58,31 @@
                               (some? profile-id)
                               (assoc :profile-id profile-id)))))
 
+(defn- make-metrics
+  []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:storage-asset-requests])}))
+
 (defn- make-handler-cfg
-  "Build a minimal cfg map for the assets handlers."
+  "Build a minimal cfg map for the assets handlers. It carries a metrics
+  instance because the handlers require one."
   [storage]
   {::sto/storage storage
+   ::mtx/metrics (make-metrics)
    ::assets/path "/assets"})
+
+(defn- make-metrics-cfg
+  "Build a handler cfg map with an isolated metrics instance."
+  [storage metrics]
+  (assoc (make-handler-cfg storage) ::mtx/metrics metrics))
+
+(defn- counter-value
+  [metrics labels]
+  (let [collector (mtx/get-collector metrics :storage-asset-requests)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
 
 ;; ----------------------------------------------------------------
 ;; Tests: get-id
@@ -847,3 +876,319 @@
                    ::session/profile-id (:id stranger)}
         response  (assets/objects-handler cfg request)]
     (t/is (= 204 (::yres/status response)))))
+
+;; ----------------------------------------------------------------
+;; Tests: asset request metrics
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-emits-served-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        object   (create-storage-object! storage "file-media-object" "file content")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest objects-handler-emits-not-found-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        request  {:path-params {:id (str (uuid/next))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "unknown" "unknown" "not-found"])))))
+
+(t/deftest objects-handler-emits-unauthorized-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        object   (create-storage-object! storage "profile" "profile photo")
+        request  {:path-params {:id (str (:id object))}}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 401 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "profile" "unauthorized"])))))
+
+(t/deftest file-objects-handler-emits-route-metric
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest file-objects-handler-no-perms-emits-unauthorized-metric
+  ;; Permission-denied file-media requests answer 404 but are counted as
+  ;; unauthorized (no existence is leaked over HTTP).
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        stranger (th/create-profile* 2)
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id stranger)}
+        response (assets/file-objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "unknown" "unknown" "unauthorized"])))
+    (t/is (= 0.0 (counter-value metrics ["by-file-media-id" "unknown" "unknown" "not-found"])))))
+
+(t/deftest asset-requests-default-metrics-definition
+  (let [defs main/default-metrics]
+    (t/is (= "penpot_storage_asset_requests_total" (::mdef/name (:storage-asset-requests defs))))
+    (t/is (= ["route" "backend" "bucket" "result"] (::mdef/labels (:storage-asset-requests defs))))))
+
+(t/deftest objects-handler-serve-failure-emits-error-and-rethrows
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        object   (create-storage-object! storage "file-media-object" "file content")
+        request  {:path-params {:id (str (:id object))}}]
+    (with-mocks [_mock {:target 'app.storage/object->relative-path
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (assets/objects-handler cfg request))))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "file-media-object" "error"])))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest objects-handler-s3-backend-emits-served-metric
+  ;; The S3 path is exercised without a real object store: the row is
+  ;; inserted directly and the presigned URL is mocked.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        id       (uuid/next)]
+    (db/insert! th/*pool* :storage-object
+                {:id id
+                 :size 9
+                 :backend "s3"
+                 :metadata (db/tjson {:bucket "file-media-object"
+                                      :content-type "text/plain"})
+                 :status "valid"})
+    (with-mocks [_mock {:target 'app.storage/get-object-url
+                        :return (fn [_ _ & _] (u/uri "https://example.invalid/object"))}]
+      (let [response (assets/objects-handler cfg {:path-params {:id (str id)}})]
+        (t/is (= 307 (::yres/status response)))))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "s3" "file-media-object" "served"])))))
+
+(t/deftest objects-handler-unknown-backend-raises-and-emits-error
+  ;; A row with an unexpected backend fails explicitly instead of
+  ;; returning nil to the router; the failure is counted and rethrown.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        id       (uuid/next)]
+    (db/insert! th/*pool* :storage-object
+                {:id id
+                 :size 9
+                 :backend "bogus"
+                 :metadata (db/tjson {:bucket "file-media-object"
+                                      :content-type "text/plain"})
+                 :status "valid"})
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (assets/objects-handler cfg {:path-params {:id (str id)}})))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "bogus" "file-media-object" "error"])))))
+
+(t/deftest file-thumbnails-handler-emits-thumbnail-route-metric
+  ;; Served through the real thumbnail-id path (not the media-id fallback).
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        thumb-storage (create-storage-object! storage "file-object-thumbnail" "thumb data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})]
+    (th/db-update! :file-media-object
+                   {:thumbnail-id (:id thumb-storage)}
+                   {:id (:id media-obj)})
+    (let [request  {:path-params {:id (str (:id media-obj))}
+                    ::session/profile-id (:id owner)}
+          response (assets/file-thumbnails-handler cfg request)]
+      (t/is (= 204 (::yres/status response)))
+      (t/is (= 1.0 (counter-value metrics ["thumbnail" "fs" "file-object-thumbnail" "served"]))))))
+
+(t/deftest file-thumbnails-handler-fallback-emits-thumbnail-route-metric
+  ;; Served through the media-id fallback (no thumbnail-id set).
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}
+        response (assets/file-thumbnails-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["thumbnail" "fs" "file-media-object" "served"])))))
+
+(t/deftest file-thumbnails-handler-missing-storage-emits-not-found-metric
+  ;; Media row exists but the storage object is gone: 404 with unknown labels.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}]
+    (with-mocks [_mock {:target 'app.storage/get-object
+                        :return (fn [_ _] nil)}]
+      (let [response (assets/file-thumbnails-handler cfg request)]
+        (t/is (= 404 (::yres/status response)))))
+    (t/is (= 1.0 (counter-value metrics ["thumbnail" "unknown" "unknown" "not-found"])))))
+
+(t/deftest objects-handler-tempfile-mismatch-emits-unauthorized-metric
+  ;; The response stays 404 to avoid leaking existence, but the metric
+  ;; records the internal auth outcome.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        stranger (th/create-profile* 2)
+        object   (create-storage-object! storage "tempfile" "temp data" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id stranger)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))
+    (t/is (= 1.0 (counter-value metrics ["by-id" "fs" "tempfile" "unauthorized"])))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "fs" "tempfile" "not-found"])))))
+
+(t/deftest handlers-require-metrics
+  ;; Metrics is no longer optional: a handler wired without it must fail
+  ;; loudly instead of silently dropping the measurement.
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (dissoc (make-handler-cfg storage) ::mtx/metrics)
+        owner     (th/create-profile* 1)
+        team      (th/create-team* 1 {:profile-id (:id owner)})
+        project   (th/create-project* 1 {:profile-id (:id owner)
+                                         :team-id (:id team)})
+        file      (th/create-file* 1 {:profile-id (:id owner)
+                                      :project-id (:id project)})
+        object    (create-storage-object! storage "file-media-object" "file content")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id object)})]
+    (t/is (thrown? Throwable
+                   (assets/objects-handler
+                    cfg {:path-params {:id (str (:id object))}})))
+    (t/is (thrown? Throwable
+                   (assets/file-objects-handler
+                    cfg {:path-params {:id (str (:id media-obj))}
+                         ::session/profile-id (:id owner)})))
+    (t/is (thrown? Throwable
+                   (assets/file-thumbnails-handler
+                    cfg {:path-params {:id (str (:id media-obj))}
+                         ::session/profile-id (:id owner)})))
+    (t/is (thrown? Throwable
+                   (assets/objects-handler
+                    cfg {:path-params {:id (str (uuid/next))}})))))
+
+(t/deftest malformed-uuid-emits-nothing
+  ;; get-id raises before any metric emission point is reached.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        request  {:path-params {:id "not-a-uuid"}}]
+    (t/is (thrown? clojure.lang.ExceptionInfo
+                   (assets/objects-handler cfg request)))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "fs" "file-media-object" "served"])))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "unknown" "unknown" "not-found"])))
+    (t/is (= 0.0 (counter-value metrics ["by-id" "unknown" "unknown" "error"])))))
+
+(t/deftest assets-handler-survives-metrics-failure
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        object   (create-storage-object! storage "file-media-object" "file content")
+        request  {:path-params {:id (str (:id object))}}]
+    (with-mocks [_mock {:target 'app.metrics/run-collector!
+                        :throw (ex-info "boom" {})}]
+      (let [response (assets/objects-handler cfg request)]
+        (t/is (= 204 (::yres/status response)))))))
+
+(t/deftest file-objects-handler-serve-failure-emits-error-and-rethrows
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        metrics  (make-metrics)
+        cfg      (make-metrics-cfg storage metrics)
+        owner    (th/create-profile* 1)
+        team     (th/create-team* 1 {:profile-id (:id owner)})
+        project  (th/create-project* 1 {:profile-id (:id owner)
+                                        :team-id (:id team)})
+        file     (th/create-file* 1 {:profile-id (:id owner)
+                                     :project-id (:id project)})
+        media-storage (create-storage-object! storage "file-media-object" "image data")
+        media-obj (th/create-file-media-object* {:file-id (:id file)
+                                                 :media-id (:id media-storage)})
+        request  {:path-params {:id (str (:id media-obj))}
+                  ::session/profile-id (:id owner)}]
+    (with-mocks [_mock {:target 'app.storage/object->relative-path
+                        :throw (ex-info "boom" {})}]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (assets/file-objects-handler cfg request))))
+    (t/is (= 1.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "error"])))
+    (t/is (= 0.0 (counter-value metrics ["by-file-media-id" "fs" "file-media-object" "served"])))))
+
+(t/deftest result-label-mapping
+  (t/are [status expected]
+         (= expected (#'app.http.assets/result-label status))
+    nil  "error"
+    200  "served"
+    204  "served"
+    307  "served"
+    401  "unauthorized"
+    403  "unauthorized"
+    404  "not-found"
+    429  "error"
+    500  "error"))

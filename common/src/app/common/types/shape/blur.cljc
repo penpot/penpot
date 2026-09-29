@@ -12,5 +12,5 @@
   [:map {:title "Blur"}
    [:id ::sm/uuid]
    [:type [:enum :layer-blur]]
-   [:value ::sm/safe-number]
+   [:value ::sm/non-negative-safe-number]
    [:hidden :boolean]])

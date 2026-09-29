@@ -15,6 +15,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer.shortcuts :as vsc]
+   [app.main.data.workspace.grid-layout.shortcuts :as gsc]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
    [app.main.store :as st]
@@ -45,60 +46,132 @@
    "Tab"        "tab"
    " "          "space"})
 
+;; Mousetrap (the runtime shortcut matcher, vendored at
+;; frontend/packages/mousetrap) resolves a keydown positionally - via keyCode
+;; - ONLY for this punctuation set (its _KEYCODE_MAP); it falls back to
+;; `event.key.toLowerCase()` (glyph-based) for letters and digits, which
+;; aren't in that map. Recording punctuation from `code` therefore matches
+;; what Mousetrap triggers regardless of layout (e.g. the key next to Right
+;; Shift on a US layout is always "Period", whatever glyph it types on a
+;; given ISO layout). Letters/digits must stay glyph-based to match
+;; Mousetrap's own resolution for them.
+(def ^:private code-name-map
+  {"Minus"        "-"
+   "Equal"        "="
+   "BracketLeft"  "["
+   "BracketRight" "]"
+   "Backslash"    "\\"
+   "Semicolon"    ";"
+   "Quote"        "'"
+   "Backquote"    "`"
+   "Comma"        ","
+   "Period"       "."
+   "Slash"        "/"})
+
+(defn- event->native
+  "Unwraps a goog.events.BrowserEvent to the native event, since the
+   wrapper copies `key` but not `code`."
+  [^js event]
+  (if (fn? (.-getBrowserEvent event))
+    (or (.getBrowserEvent event) event)
+    event))
+
+(defn- normalize-key
+  [^js event]
+  (let [key  (.-key event)]
+    (when (and key (not (contains? modifier-keys key)))
+      (or (get key-name-map key)
+          (get code-name-map (.-code (event->native event)))
+          (some-> key .toLowerCase)))))
+
+(defn- event->modifier-parts
+  [^js event]
+  (cond-> []
+    (and (.-ctrlKey event)
+         (not (cf/check-platform? :macos)))
+    (conj "ctrl")
+
+    (and (.-metaKey event)
+         (cf/check-platform? :macos))
+    (conj "command")
+
+    (.-altKey event)
+    (conj "alt")
+
+    (.-shiftKey event)
+    (conj "shift")))
+
 (defn- keyboard-event->mousetrap
   [^js event]
-  (let [parts (cond-> []
-                (and (.-ctrlKey event)
-                     (not (cf/check-platform? :macos)))
-                (conj "ctrl")
-
-                (and (.-metaKey event)
-                     (cf/check-platform? :macos))
-                (conj "command")
-
-                (.-altKey event)
-                (conj "alt")
-
-                (.-shiftKey event)
-                (conj "shift"))
-        key   (.-key event)
-        key   (if (contains? modifier-keys key)
-                nil
-                (or (get key-name-map key)
-                    (.toLowerCase key)))]
+  (let [parts (event->modifier-parts event)
+        key   (normalize-key event)]
     (when key
       (str/join "+" (conj parts key)))))
 
 (defn- keyboard-event->display-parts
   [^js event]
-  (let [parts (cond-> []
-                (and (.-ctrlKey event)
-                     (not (cf/check-platform? :macos)))
-                (conj "ctrl")
-
-                (and (.-metaKey event)
-                     (cf/check-platform? :macos))
-                (conj "command")
-
-                (.-altKey event)
-                (conj "alt")
-
-                (.-shiftKey event)
-                (conj "shift"))
+  (let [parts (event->modifier-parts event)
         key   (.-key event)]
     (if (contains? modifier-keys key)
       {:modifiers parts :finalized? false}
       {:modifiers parts
-       :final-key (or (get key-name-map key) (.toLowerCase key))
+       :final-key (normalize-key event)
        :finalized? true})))
+
+;; Shortcut labels live on the command definitions themselves as :label
+;; fns (see the app.main.data.*.shortcuts namespaces), so every key stays
+;; a static tr string literal visible to rehash with no declaration needed.
+
+(def ^:private section-labels
+  {:basics    (fn [] (tr "shortcuts.section.basics"))
+   :workspace (fn [] (tr "shortcuts.section.workspace"))
+   :dashboard (fn [] (tr "shortcuts.section.dashboard"))
+   :viewer    (fn [] (tr "shortcuts.section.viewer"))})
+
+(def ^:private subsection-labels
+  {:alignment            (fn [] (tr "shortcuts.subsection.alignment"))
+   :edit                 (fn [] (tr "shortcuts.subsection.edit"))
+   :generic              (fn [] (tr "shortcuts.subsection.generic"))
+   :main-menu            (fn [] (tr "shortcuts.subsection.main-menu"))
+   :modify-layers        (fn [] (tr "shortcuts.subsection.modify-layers"))
+   :navigation-dashboard (fn [] (tr "shortcuts.subsection.navigation-dashboard"))
+   :navigation-viewer    (fn [] (tr "shortcuts.subsection.navigation-viewer"))
+   :navigation-workspace (fn [] (tr "shortcuts.subsection.navigation-workspace"))
+   :panels               (fn [] (tr "shortcuts.subsection.panels"))
+   :path-editor          (fn [] (tr "shortcuts.subsection.path-editor"))
+   :shape                (fn [] (tr "shortcuts.subsection.shape"))
+   :text-editor          (fn [] (tr "shortcuts.subsection.text-editor"))
+   :tools                (fn [] (tr "shortcuts.subsection.tools"))
+   :zoom-viewer          (fn [] (tr "shortcuts.subsection.zoom-viewer"))
+   :zoom-workspace       (fn [] (tr "shortcuts.subsection.zoom-workspace"))})
+
+(def ^:private command-labels
+  "id -> :label fn index over every command definition map. Labels are
+  defined once on the definitions; this is only an index."
+  (into {}
+        (map (fn [[k v]] [k (:label v)]))
+        (concat wsc/shortcuts
+                psc/shortcuts
+                dsc/shortcuts
+                dsc/shortcuts-sidebar-navigation
+                dsc/shortcut-search
+                dsc/shortcut-create-new-project
+                vsc/shortcuts
+                gsc/shortcuts)))
 
 (defn translation-keyname
   [type keyname]
-  (let [translat-pre (case type
-                       :sc      "shortcuts."
-                       :sec     "shortcut-section."
-                       :sub-sec "shortcut-subsection.")]
-    (tr (str translat-pre (d/name keyname)))))
+  (let [label-fn (case type
+                   :sc (get command-labels keyname)
+                   :sec (get section-labels keyname)
+                   :sub-sec (get subsection-labels keyname))]
+    (if (fn? label-fn)
+      (label-fn)
+      (str (case type
+             :sc "shortcuts."
+             :sec "shortcuts.section."
+             :sub-sec "shortcuts.subsection.")
+           (d/name keyname)))))
 
 (defn- find-conflict
   [new-command all-shortcuts current-key]
@@ -122,9 +195,10 @@
     (into {} (filter (fn [[k _]] (contains? known-keys k))) all-shortcuts)))
 
 (defn- import-context-group
-  "Imports a single context group from the payload, disabling any default
-   shortcut whose command collides with a newly imported one, and any
-   previously-imported entry in the same batch with a duplicate command."
+  "Builds the custom-shortcuts map for one imported context group, disabling
+   any default shortcut (from `context-shortcuts`) whose command collides
+   with an imported one, and any earlier entry in the same batch with a
+   duplicate command."
   [group context-shortcuts]
   (reduce
    (fn [acc [command recorded-command]]
@@ -163,11 +237,10 @@
   (map (fn [[k v]] [k (assoc v :translation (translation-keyname type k))]) item))
 
 (defn shortcut->command-string
-  "Extract a lowercase searchable string from a shortcut entry's key combo(s).
-  Prefers `:show-command` (display override) over `:command` (Mousetrap format),
-  matching what the keycap UI renders. Joins vector commands (key sequences)
-  with a space so every token is searchable. Returns \"\" when there is no
-  command (e.g. a section/subsection node)."
+  "Returns a lowercase, searchable string for a shortcut's key combo(s).
+  Prefers `:show-command` over `:command`; joins a vector command (key
+  sequence) with spaces so each token is searchable; returns \"\" when
+  there is no command (e.g. a section/subsection node)."
   [shortcut]
   (let [cmd (or (:show-command shortcut) (:command shortcut))]
     (-> (cond
@@ -222,13 +295,13 @@
         db-subs (dissoc db-subs :basics)
         vw-subs (dissoc vw-subs :basics)
         all     {:basics    {:children {:none {:children basics}}
-                             :translation (tr "shortcut-section.basics")}
+                             :translation (tr "shortcuts.section.basics")}
                  :workspace {:children ws-subs
-                             :translation (tr "shortcut-section.workspace")}
+                             :translation (tr "shortcuts.section.workspace")}
                  :dashboard {:children db-subs
-                             :translation (tr "shortcut-section.dashboard")}
+                             :translation (tr "shortcuts.section.dashboard")}
                  :viewer    {:children vw-subs
-                             :translation (tr "shortcut-section.viewer")}}
+                             :translation (tr "shortcuts.section.viewer")}}
         all     (walk all nil)
         all-sc-names (map #(translation-keyname :sc %)
                           (concat (keys workspace-sc)
@@ -291,11 +364,11 @@
         vw-subs  (dissoc vw-subs :basics)
         ws-subs  (merge ws-subs pt-subs)
         all      {:workspace {:children ws-subs
-                              :translation (tr "shortcut-section.workspace")}
+                              :translation (tr "shortcuts.section.workspace")}
                   :dashboard {:children db-subs
-                              :translation (tr "shortcut-section.dashboard")}
+                              :translation (tr "shortcuts.section.dashboard")}
                   :viewer    {:children vw-subs
-                              :translation (tr "shortcut-section.viewer")}}
+                              :translation (tr "shortcuts.section.viewer")}}
         all      (walk all nil)
         all-sc-names (map #(translation-keyname :sc %)
                           (concat (keys workspace-sc)

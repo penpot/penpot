@@ -65,7 +65,8 @@
    [::password {:optional true} :string]
    [::username {:optional true} :string]
    [::validation-timeout {:optional true} ::sm/int]
-   [::read-only {:optional true} ::sm/boolean]])
+   [::read-only {:optional true} ::sm/boolean]
+   [::mtx/metrics ::mtx/metrics]])
 
 (def defaults
   {::name :main
@@ -130,11 +131,9 @@
       (.setConnectionInitSql initsql)
       (.setInitializationFailTimeout -1))
 
-    ;; When metrics namespace is provided
-    (when-let [instance (::mtx/metrics cfg)]
-      (->> (mtx/get-registry instance)
-           (PrometheusMetricsTrackerFactory.)
-           (.setMetricsTrackerFactory config)))
+    (->> (mtx/get-registry (::mtx/metrics cfg))
+         (PrometheusMetricsTrackerFactory.)
+         (.setMetricsTrackerFactory config))
 
     (some->> ^String (::username cfg) (.setUsername config))
     (some->> ^String (::password cfg) (.setPassword config))

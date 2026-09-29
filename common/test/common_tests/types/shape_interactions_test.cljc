@@ -1138,3 +1138,21 @@
         (t/testing (str "overlay position ignores filter bounds for " pos-type)
           (t/is (= pos-plain pos-shadow))
           (t/is (= snap-plain snap-shadow)))))))
+
+(t/deftest normalize-url
+  (t/testing "adds http to urls without a scheme, including host:port"
+    (t/is (= "http://example.com" (ctsi/normalize-url "example.com")))
+    (t/is (= "http://localhost:3000" (ctsi/normalize-url "localhost:3000")))
+    (t/is (= "http://example.com:8080/x" (ctsi/normalize-url " example.com:8080/x "))))
+
+  (t/testing "keeps http and https urls"
+    (t/is (= "https://a.example" (ctsi/normalize-url "https://a.example")))
+    (t/is (= "http://a.example/p?q=1" (ctsi/normalize-url "http://a.example/p?q=1"))))
+
+  (t/testing "rejects other schemes and malformed urls"
+    (t/is (nil? (ctsi/normalize-url "javascript:alert(1)")))
+    (t/is (nil? (ctsi/normalize-url "mailto:someone@example.com")))
+    (t/is (nil? (ctsi/normalize-url "ftp://example.com")))
+    (t/is (nil? (ctsi/normalize-url "www.example.com/a b")))
+    (t/is (nil? (ctsi/normalize-url "")))
+    (t/is (nil? (ctsi/normalize-url nil)))))

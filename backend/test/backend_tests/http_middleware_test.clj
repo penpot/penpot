@@ -139,7 +139,8 @@
     (t/is (= "https://trusted.example" (get headers "access-control-allow-origin")))
     (t/is (= "true" (get headers "access-control-allow-credentials")))
     (t/is (= "Origin" (get headers "vary")))
-    (t/is (= "content-type" (get headers "access-control-expose-headers")))
+    (t/is (= "content-type, retry-after, x-rate-limit-remaining, x-rate-limit-reset"
+             (get headers "access-control-expose-headers")))
     (t/is (not (str/includes?
                 (get headers "access-control-allow-headers" "")
                 "cookie")))))

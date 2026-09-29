@@ -10,7 +10,6 @@ To view this site locally, first set up the environment:
 # only if necessary
 nvm install
 nvm use
-corepack enable
 
 pnpm install
 ```

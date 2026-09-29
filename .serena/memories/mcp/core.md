@@ -94,3 +94,9 @@ In the normal Penpot devenv MCP path, the browser plugin does not discover or ro
 The live plugin connection registry is in-memory inside each MCP server process (`PluginBridge.connectedClients` / `clientsByToken`). The database only stores MCP access tokens and profile props such as `mcp-enabled`; it does not manage which plugin is connected to which MCP server.
 
 For parallel devenvs, prefer same-origin MCP routing: each Penpot instance should expose `/mcp/ws` through its own nginx/Caddy path to the MCP server running inside the same main container. Keep container-internal ports fixed (MCP defaults `4401/4402/4403`, backend/exporter/frontend defaults, etc.) and only offset host-side published ports per instance. If internal ports are offset, hardcoded local proxy config such as `docker/devenv/files/nginx.conf` will misroute unless templated too.
+
+## Plugin reconnect policy
+
+- The plugin treats WebSocket close code `1008` (policy violation) as terminal: it stops auto-reconnecting and stays disconnected until the user explicitly reconnects. Other close codes keep the capped-backoff retry. The decision lives in `ReconnectPolicy.ts` (`shouldReconnectAfterClose`), kept as a pure module so it is unit-testable without DOM/CSS.
+- The MCP server emits `1008` for a duplicate connection on the same user token (`PluginBridge`) and for a missing `userToken` in multi-user mode.
+- A tab rejected with `1008` never reaches `connected`, so the frontend's 60s reconnect watcher (`start-reconnect-watcher` in `app.main.data.workspace.mcp`, started only on `connected`) does not engage; recovery is manual via "Connect here".

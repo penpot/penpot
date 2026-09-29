@@ -21,8 +21,9 @@
 (defn font-variant-proxy? [p]
   (obj/type-of? p "FontVariantProxy"))
 
-(defn font-variant-proxy [name id weight style]
+(defn font-variant-proxy [font-id name id weight style]
   (obj/reify {:name "FontVariantProxy"}
+    :$font-id {:enumerable false :get (constantly font-id)}
     :name {:get (fn [] name)}
     :fontVariantId {:get (fn [] id)}
     :fontWeight {:get (fn [] weight)}
@@ -47,8 +48,8 @@
         {:get
          (fn []
            (format/format-array
-            (fn [{:keys [id name style weight]}]
-              (font-variant-proxy name id weight style))
+            (fn [{variant-id :id :keys [name style weight]}]
+              (font-variant-proxy id name variant-id weight style))
             variants))}
 
         :applyToText
@@ -62,6 +63,11 @@
 
             (not (u/page-active? (obj/get text "$page")))
             (u/not-valid plugin-id :applyToText "Cannot modify a page that is not currently active")
+
+            (and (some? variant)
+                 (or (not (font-variant-proxy? variant))
+                     (not= id (obj/get variant "$font-id"))))
+            (u/not-valid plugin-id :applyToText variant)
 
             :else
             (let [text-id (obj/get text "$id")
@@ -83,6 +89,11 @@
 
             (not (u/page-active? (obj/get range "$page")))
             (u/not-valid plugin-id :applyToRange "Cannot modify a page that is not currently active")
+
+            (and (some? variant)
+                 (or (not (font-variant-proxy? variant))
+                     (not= id (obj/get variant "$font-id"))))
+            (u/not-valid plugin-id :applyToRange variant)
 
             :else
             (let [range-id (obj/get range "$id")

@@ -2,7 +2,5 @@
 
 set -e;
 
-corepack enable;
-corepack install;
 pnpm install;
 pnpm exec playwright install chromium

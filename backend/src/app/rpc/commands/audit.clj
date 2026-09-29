@@ -178,13 +178,45 @@
     (rph/wrap nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; GET-ENABLED-FLAGS
+;; GET-ENVIRONMENT-DATA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sv/defmethod ::get-enabled-flags
+(def ^:private enabled-flags
+  "Subset of the backend flags that are safe to expose publicly and that
+  drive frontend event collection."
+  #{:audit-log :telemetry})
+
+(defn- environment-data
+  []
+  {:deployment (if (cf/get :is-saas) "saas" "selfhost")
+   :flags      (set/intersection cf/flags enabled-flags)})
+
+(def ^:private schema:get-environment-data-result
+  [:map
+   [:deployment [:enum "saas" "selfhost"]]
+   [:flags [::sm/set [:enum :audit-log :telemetry]]]])
+
+(sv/defmethod ::get-environment-data
+  "Returns the deployment type and the enabled environment flags."
   {::audit/skip true
    ::rpc/auth false
    ::doc/skip true
+   ::doc/added "2.19"
+   ::sm/params [:map]
+   ::sm/result schema:get-environment-data-result}
+  [_cfg _params]
+  (environment-data))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GET-ENABLED-FLAGS (DEPRECATED)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(sv/defmethod ::get-enabled-flags
+  "Deprecated. Use `get-environment-data` instead."
+  {::audit/skip true
+   ::rpc/auth false
+   ::doc/skip true
+   ::doc/deprecated true
    ::doc/added "1.20"}
   [_cfg _params]
-  (set/intersection cf/flags #{:audit-log :telemetry}))
+  (:flags (environment-data)))

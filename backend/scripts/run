@@ -8,6 +8,9 @@ if [ -f $SCRIPT_DIR/_env.local ]; then
     source $SCRIPT_DIR/_env.local;
 fi
 
+# Ensure the object storage bucket exists.
+setup_s3_bucket;
+
 export OPTIONS="-A:dev"
 
 entrypoint=${1:-app.main};

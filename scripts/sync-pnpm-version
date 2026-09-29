@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+# Sync the `packageManager` field of every first-party package.json to the
+# system pnpm version.
+#
+# Only `pnpm` and `node` are required (plus registry access to resolve the
+# integrity hash, unless --field is given).
+#
+# Run it from the repo root with the log redirected to a file (never pipe
+# tool output through filters).
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/sync-pnpm-version [options] [version]
+
+Stamp every first-party package.json's `packageManager` field with the
+system pnpm version (default: `pnpm --version`).
+
+Options:
+  --field FIELD    Use FIELD verbatim, skip the registry lookup.
+                   For tests and offline use.
+  --check          Verify all fields match; do not write. Exit 1 on drift.
+  --install        After stamping, run `pnpm install` in each workspace
+                   root to refresh lockfile metadata.
+  --root DIR       Scan DIR instead of the repo root. For tests.
+  -h, --help       Show this help.
+
+external/ (vendored trees with their own lifecycles), .opencode/,
+.pnpm-store/, bundles/ and docker build-context copies are never stamped.
+EOF
+}
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FIELD=""
+CHECK=0
+INSTALL=0
+VERSION=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --field) FIELD="$2"; shift 2 ;;
+    --field=*) FIELD="${1#--field=}"; shift ;;
+    --check) CHECK=1; shift ;;
+    --install) INSTALL=1; shift ;;
+    --root) ROOT="$2"; shift 2 ;;
+    --root=*) ROOT="${1#--root=}"; shift ;;
+    -h | --help) usage; exit 0 ;;
+    -*) {
+      echo "error: unknown option: $1" >&2
+      usage >&2
+      exit 64
+    } ;;
+    *)
+      if [[ -n "$VERSION" ]]; then
+        echo "error: only one version argument allowed" >&2
+        usage >&2
+        exit 64
+      fi
+      VERSION="$1"; shift ;;
+  esac
+done
+
+if [[ -z "$FIELD" ]]; then
+  if [[ -z "$VERSION" ]]; then
+    VERSION="$(pnpm --version | tr -d '[:space:]')"
+  fi
+  if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$ ]]; then
+    echo "error: invalid pnpm version: $VERSION" >&2
+    exit 64
+  fi
+  # Same value `npm view pnpm@<v> dist.integrity` returns; pnpm is the one
+  # tool guaranteed to exist everywhere, so no npm needed.
+  integrity="$(pnpm view "pnpm@${VERSION}" dist.integrity | tr -d '[:space:]')"
+  b64="${integrity#sha512-}"
+  if ! [[ "$b64" =~ ^[A-Za-z0-9+/=]+$ ]]; then
+    echo "error: unexpected integrity for pnpm@${VERSION}: ${integrity}" >&2
+    exit 1
+  fi
+  # node ships with every pnpm, so no python3 needed for base64 -> hex.
+  hex="$(node -p "Buffer.from('${b64}','base64').toString('hex')")"
+  FIELD="pnpm@${VERSION}+sha512.${hex}"
+fi
+
+cd "$ROOT"
+
+# Same exclusions as scripts/clean-node-modules, plus build-context copies
+# (bundles/, docker/images/bundle-*) which builds regenerate from the
+# stamped sources.
+mapfile -t files < <(
+  find . \
+    \( -name .git -o -name node_modules -o -name .pnpm-store \
+       -o -name external -o -name .opencode -o -name bundles \
+       -o -name .angular \) -type d -prune \
+    -o -path './docker/images/bundle-*' -prune \
+    -o -name package.json -type f -print | sort
+)
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "error: no package.json files found under $ROOT" >&2
+  exit 1
+fi
+
+# Stamp one file with node: replaces only the packageManager value when the
+# key exists (indent, key order and the rest stay byte-identical), else
+# inserts the key after "name" using the file's own indent. Prints
+# "updated <rel>" / "unchanged <rel>" / "missing <rel>" / "mismatch <rel>".
+stamp_one() {
+  node -e '
+    const fs = require("fs");
+    const [file, field, check] = process.argv.slice(1);
+    const raw = fs.readFileSync(file, "utf8");
+    const data = JSON.parse(raw);
+    const rel = file.replace(/^\.\//, "");
+    if (data.packageManager === field) {
+      console.log(`unchanged ${rel}`);
+    } else if (check === "1") {
+      console.log(`${data.packageManager === undefined ? "missing" : "mismatch"} ${rel}`);
+      process.exit(3);
+    } else {
+      let out;
+      const valueRe = /("packageManager"\s*:\s*")[^"]*(")/;
+      if (valueRe.test(raw)) {
+        out = raw.replace(valueRe, `$1${field}$2`);
+      } else {
+        const anchor = raw.match(/^(\s*)"(name|version)"\s*:\s*"[^"]*",\s*$/m);
+        if (!anchor) {
+          console.error(`error: cannot find insertion point in ${rel}`);
+          process.exit(1);
+        }
+        out = raw.replace(
+          anchor[0],
+          `${anchor[0]}\n${anchor[1]}"packageManager": "${field}",`
+        );
+      }
+      JSON.parse(out); // refuse to write invalid JSON
+      fs.writeFileSync(file, out);
+      console.log(`updated ${rel}`);
+    }
+  ' "$1" "$FIELD" "$CHECK"
+}
+
+failures=0
+updated=0
+unchanged=0
+for file in "${files[@]}"; do
+  if [[ "$CHECK" -eq 1 ]]; then
+    if stamp_one "$file"; then
+      unchanged=$((unchanged + 1))
+    else
+      rc=$?
+      if [[ "$rc" -eq 3 ]]; then
+        failures=$((failures + 1))
+      else
+        exit "$rc"
+      fi
+    fi
+  else
+    if [[ "$(stamp_one "$file")" == updated* ]]; then
+      updated=$((updated + 1))
+    else
+      unchanged=$((unchanged + 1))
+    fi
+  fi
+done
+
+if [[ "$CHECK" -eq 1 ]]; then
+  if [[ "$failures" -gt 0 ]]; then
+    echo "check failed: ${failures} file(s) differ from ${FIELD}" >&2
+    exit 1
+  fi
+  echo "all ${unchanged} package.json files match ${FIELD}"
+  exit 0
+fi
+
+echo "stamped ${FIELD}: ${updated} updated, ${unchanged} unchanged"
+
+if [[ "$INSTALL" -eq 1 ]]; then
+  # The 11 pnpm workspaces: repo root plus one per module. Members resolve
+  # through their parent workspace lockfile, so no per-member install.
+  for dir in . backend common docs exporter frontend library mcp media-processor plugins render-wasm; do
+    echo "--- pnpm install in ${dir}"
+    (cd "$dir" && pnpm install)
+  done
+fi

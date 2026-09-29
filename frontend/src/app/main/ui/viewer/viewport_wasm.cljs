@@ -49,7 +49,9 @@
   (let [{:keys [width height]} (canvas-dimensions scale size)]
     [:div {:style {:position "absolute"
                    :top 0
-                   :left 0}}
+                   :left 0
+                   :width (:width size)
+                   :height (:height size)}}
      [:canvas {:ref canvas-ref :width width :height height :style {:width "100%"
                                                                    :height "100%"
                                                                    :background "transparent"

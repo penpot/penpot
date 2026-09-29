@@ -50,4 +50,4 @@ that breaks them is wrong, even if the code is right.
 
 ## Referencing Issues
 
-Use `Closes #NNNN` (not `Fixes #NNNN`) to link a commit to a GitHub issue.
+Use `Closes #NNNN` (not `Fixes #NNNN`) in commit and PR body text for readable context. The explicit issue-to-PR link is assigned with `python3 scripts/gh.py link-issue <ISSUE_NUMBER> <PR_NUMBER>` as described in `mem:workflow/creating-prs`; do not rely on the keyword to create that link.

@@ -853,7 +853,7 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          (process-shape [file-id frame-id parent-id shape]
+          (process-shape [valid-file-ids frame-id parent-id shape]
             (cond-> shape
               :always
               (assoc :frame-id frame-id :parent-id parent-id)
@@ -864,7 +864,7 @@
               (assoc :shapes [])
 
               (cfh/text-shape? shape)
-              (ctt/remove-external-typographies file-id)))]
+              (ctt/remove-external-typographies valid-file-ids)))]
 
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
@@ -915,7 +915,9 @@
                              (into (d/ordered-set) (reverse selected))
                              selected)
 
-              objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
+              valid-file-ids (conj (set (keys libraries)) file-id)
+
+              objects      (update-vals objects (partial process-shape valid-file-ids frame-id parent-id))
 
               all-objects  (merge page-objects objects)
 
@@ -1168,8 +1170,7 @@
          (rx/of (ntf/info (tr "workspace.clipboard.copying")))
 
          ;; Call exporter to get image URI, then fetch blob and resolve the deferred.
-         (->> (if (and (features/active-feature? state "render-wasm/v1")
-                       (contains? cf/flags :wasm-export))
+         (->> (if (features/active-feature? state "render-wasm/v1")
                 (rx/of {:uri (wasm.exports/export-image-uri export)})
                 (rp/cmd! :export
                          {:exports [export]

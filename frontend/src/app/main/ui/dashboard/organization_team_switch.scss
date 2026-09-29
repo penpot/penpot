@@ -1,0 +1,405 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/z-index.scss" as *;
+@use "ds/mixins.scss" as *;
+
+.organization-team-switch {
+  position: relative;
+  width: 100%;
+  padding: var(--sp-s);
+}
+
+.switch-button-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-xxs);
+  height: $sz-64;
+  width: 100%;
+  border-radius: $br-8;
+}
+
+.current-selection {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-s);
+  height: 100%;
+  width: 100%;
+  padding: 0 var(--sp-m) 0 var(--sp-l);
+  border-radius: $br-8 0 0 $br-8;
+  background-color: var(--menu-background-color);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.current-selection.no-options-button {
+  border-radius: $br-8;
+}
+
+.options-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: $sz-40;
+  padding: 0;
+  border-radius: 0 $br-8 $br-8 0;
+  color: var(--icon-foreground);
+  background-color: var(--menu-background-color);
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--color-accent-primary);
+  }
+}
+
+.options-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--icon-foreground);
+}
+
+.current-selection-text {
+  min-width: 0;
+}
+
+.current-team-name-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.current-team-name {
+  @include text-ellipsis;
+  @include t.use-typography("body-large");
+
+  min-width: 0;
+  flex-shrink: 1;
+  color: var(--menu-foreground-color-hover);
+}
+
+.current-organization-name {
+  @include text-ellipsis;
+  @include t.use-typography("body-small");
+
+  max-width: 100%;
+  color: var(--color-foreground-secondary);
+  text-align: left;
+}
+
+.tick-icon,
+.chevron-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+}
+
+.tick-icon svg,
+.chevron-icon svg {
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--icon-foreground);
+}
+
+.my-teams-icon {
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+
+  svg {
+    fill: var(--icon-stroke-color);
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
+  }
+}
+
+.team-item-personal-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+}
+
+.team-item-personal-icon svg {
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--icon-foreground);
+}
+
+.team-item-picture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: $br-circle;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
+}
+
+.personal-projects-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+}
+
+.personal-projects-icon svg {
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--icon-foreground);
+}
+
+.team-picture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: $br-circle;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+}
+
+.organization-team-dropdown {
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  margin: 0;
+  display: grid;
+  grid-template-columns: px2rem(257) px2rem(257);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--sp-m);
+  top: calc(var(--sp-s) + #{$sz-64} + var(--sp-xs));
+  left: var(--sp-s);
+  height: fit-content;
+  max-height: px2rem(416);
+  overflow: hidden;
+}
+
+.organization-team-dropdown.single-column {
+  grid-template-columns: px2rem(267);
+  max-height: $sz-520;
+  overflow-y: auto;
+
+  .teams-column {
+    border-inline-start: none;
+    padding-inline-start: 0;
+  }
+}
+
+.organizations-column,
+.teams-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  list-style: none;
+}
+
+.teams-column {
+  border-inline-start: $b-1 solid var(--color-background-quaternary);
+  padding-inline-start: var(--sp-m);
+}
+
+.column-label {
+  @include t.use-typography("headline-small");
+
+  color: var(--color-foreground-secondary);
+  padding: $sz-6 $sz-6 $sz-6 var(--sp-m);
+  text-transform: uppercase;
+}
+
+.column-list,
+.column-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.column-list {
+  @include custom-scrollbar;
+
+  overflow-y: auto;
+  min-height: 0;
+  background:
+    linear-gradient(transparent, var(--menu-background-color) 70%) 0 100% / 100% #{$sz-40} local no-repeat,
+    radial-gradient(farthest-side at 50% 100%, var(--menu-shadow-color), transparent) 0 100% / 100% #{$sz-14}
+      scroll no-repeat;
+  background-color: var(--menu-background-color);
+}
+
+.column-separator {
+  border-block-start: $b-1 solid var(--color-background-quaternary);
+  margin-block: var(--sp-xxs);
+  list-style: none;
+}
+
+.empty-state {
+  @include t.use-typography("body-medium");
+
+  padding: var(--sp-m);
+  color: var(--color-foreground-secondary);
+  list-style: none;
+}
+
+.organization-item {
+  padding-inline-end: var(--sp-m);
+}
+
+.team-item {
+  padding-inline-end: var(--sp-s);
+}
+
+.organization-item,
+.team-item {
+  @include t.use-typography("body-small");
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-s);
+  height: $sz-40;
+  flex-shrink: 0;
+  padding-inline-start: var(--sp-m);
+  border-radius: $br-8;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.organization-item.with-link,
+.team-item.with-link {
+  display: block;
+  padding-inline-start: 0;
+}
+
+.item-link,
+.item-link:hover {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-s);
+  height: 100%;
+  padding-inline-start: var(--sp-m);
+  text-decoration: none;
+  color: inherit;
+}
+
+.organization-text-group,
+.team-text-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-width: 0;
+}
+
+.organization-text,
+.team-text {
+  @include text-ellipsis;
+
+  min-width: 0;
+  text-align: left;
+  color: var(--menu-foreground-color-hover);
+}
+
+.organization-text,
+.team-text {
+  flex-shrink: 1;
+}
+
+.selected {
+  background-color: var(--menu-background-color-hover);
+}
+
+.action {
+  --sidebar-action-icon-color: var(--icon-foreground);
+  --sidebar-icon-backgroun-color: var(--color-background-secondary);
+
+  &:hover {
+    --sidebar-action-icon-color: var(--color-background-secondary);
+    --sidebar-icon-backgroun-color: var(--color-accent-primary);
+  }
+}
+
+.icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--sp-xxl);
+  height: var(--sp-xxl);
+  border-radius: $br-circle;
+  background-color: var(--sidebar-icon-backgroun-color);
+}
+
+.action-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: 1px;
+  stroke: var(--sidebar-action-icon-color);
+}
+
+.options-dropdown {
+  box-shadow: 0 0 var(--sp-m) 0 var(--menu-shadow-color);
+  position: absolute;
+  padding: var(--sp-xs);
+  border-radius: $br-8;
+  z-index: var(--z-index-dropdown);
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $b-2 solid var(--panel-border-color);
+  margin: 0;
+  top: calc(var(--sp-s) + #{$sz-64} + var(--sp-xs));
+  right: var(--sp-s);
+  min-width: $sz-192;
+  height: fit-content;
+  max-height: $sz-480;
+  overflow-y: auto;
+}

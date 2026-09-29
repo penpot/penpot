@@ -31,8 +31,10 @@ jobs:
     steps:
       - name: Extract some useful variables
         id: vars
+        env:
+          GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
-          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -41,17 +43,12 @@ jobs:
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # START: Setup Node and PNPM enabling cache
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Setup pnpm + Node.js
+        uses: pnpm/setup@v2
         with:
-          node-version-file: .nvmrc
-
-      - name: Enable PNPM
-        working-directory: ./plugins
-        shell: bash
-        run: |
-          corepack enable;
-          corepack install;
+          working-directory: plugins
+          runtime: node@24.21.0
+          install: false
 
       - name: Get pnpm store path
         id: pnpm-store
@@ -81,8 +78,9 @@ jobs:
         run: pnpm run build:styles-example
 
       - name: Select Worker name
+        env:
+          REF: ${{ steps.vars.outputs.gh_ref }}
         run: |
-          REF="${{ steps.vars.outputs.gh_ref }}"
           case "$REF" in
             main)
               echo "WORKER_NAME=penpot-plugins-styles-doc-pro" >> $GITHUB_ENV
@@ -100,7 +98,7 @@ jobs:
         working-directory: plugins
         shell: bash
         run: |
-          sed -i "s/WORKER_URI/${{ env.WORKER_URI }}/g" wrangler-penpot-plugins-styles-doc.toml
+          sed -i "s/WORKER_URI/${WORKER_URI}/g" wrangler-penpot-plugins-styles-doc.toml
 
       - name: Add noindex header and robots.txt files for non-production environments
         if: ${{ steps.vars.outputs.gh_ref != 'main' }}

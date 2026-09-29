@@ -140,6 +140,7 @@
 (def ^:icon-id eye-off "eye-off")
 (def ^:icon-id feedback "feedback")
 (def ^:icon-id fill-content "fill-content")
+(def ^:icon-id files "files")
 (def ^:icon-id filter "filter")
 (def ^:icon-id fixed-width "fixed-width")
 (def ^:icon-id fit-content "fit-content")
@@ -313,7 +314,8 @@
   "A collection of all icons"
   (collect-icons))
 
-(def ^:private ^:const icon-size-l 32)
+(def ^:private ^:const icon-size-xl 32)
+(def ^:private ^:const icon-size-l 24)
 (def ^:private ^:const icon-size-m 16)
 (def ^:private ^:const icon-size-s 12)
 
@@ -322,12 +324,13 @@
    [:class {:optional true} [:maybe :string]]
    [:icon-id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
-    [:maybe [:enum "s" "m" "l"]]]])
+    [:maybe [:enum "s" "m" "l" "xl"]]]])
 
 (mf/defc icon*
   {::mf/schema schema:icon}
   [{:keys [icon-id size class] :rest props}]
-  (let [size-px (cond (= size "l") icon-size-l
+  (let [size-px (cond (= size "xl") icon-size-xl
+                      (= size "l") icon-size-l
                       (= size "s") icon-size-s
                       :else        icon-size-m)
         offset  (if (or (= size "s") (= size "m"))

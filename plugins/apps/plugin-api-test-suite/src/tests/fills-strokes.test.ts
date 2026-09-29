@@ -267,14 +267,16 @@ describe('Fills & strokes', () => {
       ]);
     });
 
-    test('negative strokeWidth is accepted (currently unvalidated)', (ctx) => {
-      // The plugin API does not constrain strokeWidth to be non-negative, so a
-      // negative value is stored as-is rather than rejected. This pins the current
-      // (lenient) behaviour.
+    test('negative strokeWidth throws', (ctx) => {
       const r = rect(ctx);
-      r.strokes = [{ strokeColor: '#000000', strokeWidth: -3 }];
-      expect(r.strokes).toHaveLength(1);
-      expect(typeof r.strokes[0].strokeWidth).toBe('number');
+      expect(() => {
+        r.strokes = [{ strokeColor: '#000000', strokeWidth: -3 }];
+      }).toThrow();
+
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+      expect(() => {
+        r.strokes[0].strokeWidth = -1;
+      }).toThrow();
     });
 
     test('invalid strokeStyle throws', (ctx) => {

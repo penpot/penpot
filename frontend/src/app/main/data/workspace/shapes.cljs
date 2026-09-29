@@ -109,7 +109,7 @@
    (update-shapes-buffer ids update-fn nil))
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
             translation? skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
@@ -148,6 +148,7 @@
                          nil
                          {:attrs attrs
                           :changed-sub-attr changed-sub-attr
+                          :changed-item-index changed-item-index
                           :ignore-tree ignore-tree
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?
@@ -189,7 +190,7 @@
   ([ids update-fn
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
-            ignore-touched undo-group with-objects? changed-sub-attr translation?
+            ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
             skip-grid-reassignment? skip-component-sync?]
      :or {reg-objects? false
           save-undo? true
@@ -220,6 +221,7 @@
                                                objects
                                                {:attrs attrs
                                                 :changed-sub-attr changed-sub-attr
+                                                :changed-item-index changed-item-index
                                                 :ignore-tree ignore-tree
                                                 :ignore-touched ignore-touched
                                                 :with-objects? with-objects?

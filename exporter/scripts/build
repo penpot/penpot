@@ -5,8 +5,6 @@ set -ex
 export CURRENT_VERSION=$1;
 export NODE_ENV=production;
 
-corepack enable;
-corepack install || exit 1;
 pnpm install || exit 1;
 pnpm run build:wasm;
 
@@ -35,8 +33,7 @@ cp "$WASM_SRC/render-wasm.js" "$WASM_SRC/render-wasm.wasm" target/$WASM_SRC/;
 cat <<EOF | tee target/setup
 #/usr/bin/env bash
 set -e;
-corepack enable;
-corepack install;
+command -v pnpm >/dev/null || { echo "error: pnpm not found in PATH" >&2; exit 1; };
 pnpm install
 pnpm exec playwright install chromium;
 EOF

@@ -69,9 +69,9 @@
        [:div {:class (stl/css :warning-notice)}
         [:& context-notification
          {:level :warning
-          :content (tr (if has-organizations?
-                         "modals.delete-account.info.with-organizations"
-                         "modals.delete-account.info"))}]]
+          :content (if has-organizations?
+                     (tr "modals.delete-account.info.with-organizations")
+                     (tr "modals.delete-account.info"))}]]
 
        (when has-organizations?
          [:div {:class (stl/css :organizations-section)}

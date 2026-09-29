@@ -14,6 +14,7 @@
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts-events :as dwte]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as vth]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
@@ -312,7 +313,7 @@
           store     (ths/setup-store file)
           events    [;; Pre-select the text shape so add-typography can find it
                      (fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -339,7 +340,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -366,7 +367,7 @@
           file-id   (:id file)
           store     (ths/setup-store file)
           events    [(fn [state] (assoc-in state [:workspace-local :selected] #{shape-id}))
-                     (dwt/add-typography file-id)]]
+                     (dwte/add-typography file-id)]]
 
       (ths/run-store
        store done events
@@ -512,3 +513,53 @@
   (t/testing "a non-root content (e.g. paragraph) is left alone"
     (let [node {:type "paragraph" :children []}]
       (t/is (= node (dwt/ensure-valid-text-content node))))))
+
+;; ---------------------------------------------------------------------------
+;; txt/rtl-content?
+;; ---------------------------------------------------------------------------
+
+(defn- make-content
+  "Text content whose paragraphs carry the given `:text-direction` values; a
+  `nil` entry leaves the attribute out entirely."
+  [& directions]
+  {:type "root"
+   :children [{:type "paragraph-set"
+               :children (vec (for [direction directions]
+                                (cond-> {:type "paragraph"
+                                         :children [{:text "hello"}]}
+                                  (some? direction)
+                                  (assoc :text-direction direction))))}]})
+
+(t/deftest rtl-content-single-rtl-paragraph
+  (t/testing "a lone rtl paragraph makes the content rtl"
+    (t/is (true? (txt/rtl-content? (make-content "rtl"))))))
+
+(t/deftest rtl-content-every-paragraph-rtl
+  (t/testing "several paragraphs, all rtl"
+    (t/is (true? (txt/rtl-content? (make-content "rtl" "rtl" "rtl"))))))
+
+(t/deftest rtl-content-mixed-directions
+  (t/testing "a mix of rtl and ltr is not rtl"
+    (t/is (false? (txt/rtl-content? (make-content "rtl" "ltr"))))))
+
+(t/deftest rtl-content-missing-direction-on-one-paragraph
+  (t/testing "a paragraph without :text-direction defaults to ltr, so the
+              content is not rtl"
+    (t/is (false? (txt/rtl-content? (make-content "rtl" nil))))))
+
+(t/deftest rtl-content-all-ltr
+  (t/testing "all-ltr content is not rtl"
+    (t/is (false? (txt/rtl-content? (make-content "ltr" "ltr"))))))
+
+(t/deftest rtl-content-none-direction-is-ltr
+  (t/testing "\"none\" (the sidebar's un-toggled value) is ltr, matching what
+              translate-text-direction sends to the renderer"
+    (t/is (false? (txt/rtl-content? (make-content "none"))))))
+
+(t/deftest rtl-content-without-paragraphs
+  (t/testing "a root with no paragraph nodes is not rtl"
+    (t/is (false? (txt/rtl-content? {:type "root" :children []})))))
+
+(t/deftest rtl-content-nil
+  (t/testing "nil content is not rtl and does not throw"
+    (t/is (false? (txt/rtl-content? nil)))))

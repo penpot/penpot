@@ -101,10 +101,11 @@
   (dissoc node :typography-ref-file :typography-ref-id))
 
 (defn remove-external-typographies
-  "Change the shape so that any use of an external typography now is removed"
-  [shape file-id]
+  "Change the shape so that any use of a typography that isn't available
+  in the given file-id or set of libraries now is removed"
+  [shape valid-file-ids]
   (update shape :content
           (fn [content]
-            (txt/transform-nodes #(not= (:typography-ref-file %) file-id)
+            (txt/transform-nodes #(not (contains? valid-file-ids (:typography-ref-file %)))
                                  remove-typography-from-node
                                  content))))

@@ -30,6 +30,12 @@
 
       :weak-password
       (let [details (:details data)
+            ;; Execution time translation strings (keys sent by the backend):
+            ;;   (tr "errors.weak-password.too-short")
+            ;;   (tr "errors.weak-password.insufficient-digits")
+            ;;   (tr "errors.weak-password.insufficient-lowercase")
+            ;;   (tr "errors.weak-password.insufficient-uppercase")
+            ;;   (tr "errors.weak-password.insufficient-special")
             options (when (seq details)
                       (mapv tr details))]
         (swap! form assoc-in [:extra-errors :password-1]
@@ -64,7 +70,7 @@
     ;; The old password is validated by the backend, so it only needs to be
     ;; present here; it may predate the current minimum length policy.
     [:password-old [::sm/text {:max 500}]]]
-   [:fn {:error/code "errors.password-invalid-confirmation"
+   [:fn {:error/fn #(tr "errors.password-invalid-confirmation")
          :error/field :password-2}
     (fn [{:keys [password-1 password-2]}]
       (= password-1 password-2))]])

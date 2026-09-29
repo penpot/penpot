@@ -43,7 +43,19 @@ pub(crate) struct CachedDropShadowFilter {
 }
 
 impl CachedDropShadowFilter {
-    pub(crate) fn new(bounds: Rect, filter_scale: f32, image: skia::Image) -> Self {
+    pub(crate) fn new(bounds: Rect, filter_scale: f32, surface: &mut skia::Surface) -> Self {
+        // The reusable filter surface can be viewport-sized. Retaining all of it
+        // for every shadow keeps large, mostly transparent textures alive.
+        // Filter drawing translates bounds to the origin before applying scale.
+        let width = (bounds.width() * filter_scale)
+            .ceil()
+            .clamp(1.0, surface.width() as f32) as i32;
+        let height = (bounds.height() * filter_scale)
+            .ceil()
+            .clamp(1.0, surface.height() as f32) as i32;
+        let image = surface
+            .image_snapshot_with_bounds(skia::IRect::from_wh(width, height))
+            .expect("shadow filter bounds must intersect its surface");
         Self {
             bounds,
             filter_scale,
@@ -340,11 +352,7 @@ fn render_cached_filter_frame_shadow(
     )?;
 
     if let Some((mut surface, filter_scale)) = filter_result {
-        let cached = CachedDropShadowFilter {
-            bounds,
-            filter_scale,
-            image: surface.image_snapshot(),
-        };
+        let cached = CachedDropShadowFilter::new(bounds, filter_scale, &mut surface);
         blit_cached_drop_shadow_filter(&mut state.surfaces, &cached, None);
         state.drop_shadow_filter_cache.store(key, cached);
     }
@@ -569,4 +577,45 @@ pub fn render_text_shadows(
         canvas.restore();
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cached_shadow_retains_only_its_scaled_bounds() {
+        for (bounds, scale, expected) in [
+            (Rect::from_xywh(100.0, 200.0, 50.5, 40.5), 1.0, (51, 41)),
+            (Rect::from_xywh(100.0, 200.0, 50.5, 40.5), 0.5, (26, 21)),
+            (Rect::from_xywh(0.0, 0.0, 2000.0, 1500.0), 1.0, (1024, 768)),
+        ] {
+            let mut surface = skia::surfaces::raster_n32_premul((1024, 768)).unwrap();
+            let cached = CachedDropShadowFilter::new(bounds, scale, &mut surface);
+
+            assert_eq!(cached.image.dimensions(), skia::ISize::from(expected));
+        }
+    }
+
+    #[test]
+    fn cached_shadow_survives_filter_surface_reuse() {
+        let mut surface = skia::surfaces::raster_n32_premul((1024, 768)).unwrap();
+        surface.canvas().clear(skia::Color::TRANSPARENT);
+        let mut paint = Paint::default();
+        paint.set_color(skia::Color::RED);
+        surface
+            .canvas()
+            .draw_rect(Rect::from_xywh(4.0, 5.0, 10.0, 10.0), &paint);
+        let cached = CachedDropShadowFilter::new(
+            Rect::from_xywh(100.0, 200.0, 50.5, 40.5),
+            1.0,
+            &mut surface,
+        );
+
+        surface.canvas().clear(skia::Color::BLUE);
+
+        let pixels = cached.image.peek_pixels().unwrap();
+        assert_eq!(pixels.get_color((5, 6)), skia::Color::RED);
+        assert_eq!(pixels.get_color((0, 0)), skia::Color::TRANSPARENT);
+    }
 }

@@ -1,6 +1,7 @@
 ---
 name: review-code
 description: Code review flow — review a diff, PR, or code change, delegating the review to a subagent that follows the code-review-criteria skill. Use it when the user asks to review code or a PR, in any phrasing.
+slash: true
 ---
 
 # Review Code
@@ -66,8 +67,6 @@ agent again.
 6. Skip generated files, lockfile-only changes, and unrelated modifications
    unless they introduce security risks.
 
-## User context
+## User input, overrides and additional context
 
-Extra context in the user's invocation (the message that triggered this skill)
-plays the role command arguments play elsewhere: for example, a PR number or
-URL, a commit range, specific files, or a different agent to run the review.
+$ARGUMENTS

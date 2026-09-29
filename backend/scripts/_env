@@ -48,6 +48,7 @@ export PENPOT_FLAGS="\
        enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
+       enable-account-lockout \
        enable-prepl-server \
        enable-urepl-server \
        enable-nrepl-server \
@@ -97,13 +98,31 @@ export JAVA_OPTS="\
        --enable-native-access=ALL-UNNAMED \
        --add-opens=java.base/java.nio=ALL-UNNAMED";
 
-function setup_minio() {
+function setup_s3_bucket() {
     if [ "${PENPOT_OBJECTS_STORAGE_BACKEND}" != "s3" ]; then
         return 0
     fi
 
-    # Shared MinIO user/policy provisioning is handled by docker-compose.infra.yml.
-    # Per process startup only ensures that the configured bucket exists.
-    mc alias set penpot-s3/ "${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}" minioadmin minioadmin -q
-    mc mb "penpot-s3/${PENPOT_OBJECTS_STORAGE_S3_BUCKET}" -p -q
+    local attempts=0
+    local endpoint="${PENPOT_OBJECTS_STORAGE_S3_ENDPOINT}"
+    local bucket="${PENPOT_OBJECTS_STORAGE_S3_BUCKET}"
+    local region="${PENPOT_OBJECTS_STORAGE_S3_REGION}"
+
+    until aws s3api head-bucket \
+        --endpoint-url "$endpoint" \
+        --region "$region" \
+        --bucket "$bucket" >/dev/null 2>&1; do
+        if aws s3 mb "s3://${bucket}" \
+            --endpoint-url "$endpoint" \
+            --region "$region" >/dev/null 2>&1; then
+            return 0
+        fi
+
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge 30 ]; then
+            echo "setup_s3_bucket: unable to create s3://${bucket} after ${attempts} attempts" >&2
+            return 1
+        fi
+        sleep 1
+    done
 }

@@ -94,7 +94,7 @@ export class PluginBridge {
         private readonly taskTimeoutSecs: number,
         private readonly redisBridge?: RedisBridge
     ) {
-        this.wsServer = new WebSocketServer({ port: port });
+        this.wsServer = new WebSocketServer({ port: port, host: mcpServer.host });
         this.setupWebSocketHandlers();
     }
 

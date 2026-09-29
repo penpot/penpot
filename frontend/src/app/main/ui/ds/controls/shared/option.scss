@@ -44,6 +44,8 @@
 }
 
 .option-text {
+  @include use-typography("body-small");
+
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

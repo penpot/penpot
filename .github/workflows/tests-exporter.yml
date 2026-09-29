@@ -9,6 +9,7 @@ on:
     paths:
       - 'exporter/**'
       - 'common/**'
+      - 'render-wasm/**'
 
     types:
       - opened
@@ -23,6 +24,7 @@ on:
     paths:
       - 'exporter/**'
       - 'common/**'
+      - 'render-wasm/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -46,8 +48,6 @@ jobs:
       - name: Lint
         working-directory: ./exporter
         run: |
-          corepack enable;
-          corepack install;
           pnpm install;
           pnpm run check-fmt:clj
           pnpm run lint:clj

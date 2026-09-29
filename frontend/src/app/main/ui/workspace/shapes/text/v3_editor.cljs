@@ -214,7 +214,7 @@
                                  (font-family-from-font-id (:font-id font))) fallback-fonts)
 
         [{:keys [x y width height]} transform]
-        (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
+        (let [{text-x :x :keys [width height]} (wasm.api/get-text-dimensions shape-id)
               selrect-transform (mf/deref refs/workspace-selrect)
               vbox (mf/deref refs/vbox)
               [selrect transform] (dsh/get-selrect selrect-transform shape)
@@ -231,13 +231,20 @@
               overlay-width (if (= (:grow-type shape) :auto-width)
                               (+ max-width viewport-width)
                               max-width)
+              ;; `on-pointer-down` feeds offsets within this element to wasm as
+              ;; paragraph-local coords, so this edge must sit on the text's.
+              x (if (and (= (:grow-type shape) :auto-width)
+                         (some? text-x)
+                         (pos? width))
+                  text-x
+                  (:x selrect))
               valign (-> shape :content :vertical-align)
               y (:y selrect)
               y (case valign
                   "bottom" (+ y (- selrect-height height))
                   "center" (+ y (/ (- selrect-height height) 2))
                   y)]
-          [(assoc selrect :y y :width overlay-width :height max-height) transform])
+          [(assoc selrect :x x :y y :width overlay-width :height max-height) transform])
 
         on-composition-start
         (mf/use-fn

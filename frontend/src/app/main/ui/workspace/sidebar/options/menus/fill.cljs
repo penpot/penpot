@@ -236,6 +236,7 @@
                                :key index
                                :index index
                                :title (tr "workspace.options.fill")
+                               :tokens-first-only true
                                :on-change on-change
                                :on-reorder on-reorder
                                :on-detach on-detach

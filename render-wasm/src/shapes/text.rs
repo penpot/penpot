@@ -476,16 +476,24 @@ impl TextContent {
     /// [`cached_layout_paint_offset`] on the canvas so both move together.
     pub fn cached_layout_paint_anchor(&self, selrect: &Rect) -> Point {
         self.layout_paint_origin
-            .unwrap_or_else(|| Point::new(selrect.x(), selrect.y()))
+            .unwrap_or_else(|| Point::new(self.selrect_origin_x(selrect), selrect.y()))
     }
 
     /// Canvas translation from the baked paint origin to the current selrect.
     /// Zero when there is no recorded origin (fall back to painting at selrect).
     pub fn cached_layout_paint_offset(&self, selrect: &Rect) -> Point {
         match self.layout_paint_origin {
-            Some(origin) => Point::new(selrect.x() - origin.x, selrect.y() - origin.y),
+            Some(origin) => Point::new(
+                self.selrect_origin_x(selrect) - origin.x,
+                selrect.y() - origin.y,
+            ),
             None => Point::new(0.0, 0.0),
         }
+    }
+
+    /// [`layout_origin_x`] for this content's own measured width.
+    fn selrect_origin_x(&self, selrect: &Rect) -> f32 {
+        self.layout_origin_x(selrect, self.size.width)
     }
 
     /// Text content for paint when [`Rect`] size may differ from stored bounds
@@ -565,6 +573,26 @@ impl TextContent {
         if self.grow_type != grow_type {
             self.grow_type = grow_type;
             self.content_version = self.content_version.wrapping_add(1);
+        }
+    }
+
+    /// Non-empty and every paragraph RTL. Mixed content counts as LTR, mirroring
+    /// `app.common.types.text/rtl-content?` on the ClojureScript side.
+    pub fn is_rtl(&self) -> bool {
+        !self.paragraphs.is_empty()
+            && self
+                .paragraphs
+                .iter()
+                .all(|paragraph| paragraph.text_direction() == TextDirection::RTL)
+    }
+
+    /// Left edge of the laid-out text of `width` inside `selrect`. RTL auto-width
+    /// text anchors right so the box extends leftward as it grows.
+    pub fn layout_origin_x(&self, selrect: &Rect, width: f32) -> f32 {
+        if self.grow_type() == GrowType::AutoWidth && self.is_rtl() {
+            selrect.right() - width
+        } else {
+            selrect.x()
         }
     }
 
@@ -720,7 +748,6 @@ impl TextContent {
     }
 
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
-        let x = selrect.x();
         let mut y = selrect.y();
 
         let width = if self.grow_type() == GrowType::AutoWidth {
@@ -728,6 +755,8 @@ impl TextContent {
         } else {
             selrect.width()
         };
+
+        let x = self.layout_origin_x(selrect, width);
 
         let height = if self.size.width.round() != width.round() {
             self.get_height(width)
@@ -1153,8 +1182,8 @@ impl TextContent {
         self.layout.set(result.0, result.1);
         self.size
             .copy_finite_size(result.2, default_width, default_height);
-        // Paragraph paints (incl. absolute image/gradient shaders) were built
-        // against `self.bounds()` in `paragraph_builder_group_from_text`.
+        // Absolute image/gradient shaders are built against `self.bounds()`, so the
+        // origin matches them and `cached_layout_paint_offset` carries any rtl shift.
         self.layout_paint_origin = Some(Point::new(self.bounds.x(), self.bounds.y()));
     }
 
@@ -1824,7 +1853,7 @@ pub fn calculate_text_layout_data(
     let selrect_width = shape.selrect().width();
     let text_width = text_content.get_width(selrect_width);
     let selrect_height = shape.selrect().height();
-    let x = shape.selrect.x();
+    let x = text_content.layout_origin_x(&shape.selrect, text_width);
     let base_y = shape.selrect.y();
     let mut position_data: Vec<PositionData> = Vec::new();
     let mut previous_line_height = text_content.normalized_line_height();
@@ -2382,5 +2411,171 @@ mod tests {
         layout.paragraphs = Rc::new(vec![vec![]]);
         layout.clear();
         assert!(layout.needs_update());
+    }
+
+    // -----------------------------------------------------------------------
+    // RTL auto-width growth anchor
+    // -----------------------------------------------------------------------
+
+    fn directed_paragraph(direction: TextDirection) -> Paragraph {
+        let span = TextSpan::new(
+            "hello".to_string(),
+            FontFamily::new(Uuid::nil(), 400, crate::shapes::FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            direction,
+            400,
+            Uuid::nil(),
+            vec![],
+        );
+        Paragraph::new(TextAlign::Left, direction, None, None, 1.2, 0.0, vec![span])
+    }
+
+    /// Auto-width content measured wider than its stale selrect: mid-edit, where
+    /// the anchor is observable.
+    fn grown_content(directions: &[TextDirection], measured_width: f32) -> TextContent {
+        let bounds = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let mut content = TextContent::new(bounds, GrowType::AutoWidth);
+        for direction in directions {
+            content.add_paragraph(directed_paragraph(*direction));
+        }
+        content.size.width = measured_width;
+        content.size.height = 20.0;
+        content
+    }
+
+    #[test]
+    fn is_rtl_false_when_no_paragraphs() {
+        let content = TextContent::new(Rect::from_xywh(0.0, 0.0, 10.0, 10.0), GrowType::AutoWidth);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_true_when_every_paragraph_is_rtl() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::RTL], 120.0);
+        assert!(content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_false_when_directions_are_mixed() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::LTR], 120.0);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn is_rtl_false_when_every_paragraph_is_ltr() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        assert!(!content.is_rtl());
+    }
+
+    #[test]
+    fn layout_origin_x_right_anchors_rtl_auto_width() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        // right edge (160) minus the measured width (120)
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 40.0);
+    }
+
+    #[test]
+    fn layout_origin_x_left_anchors_ltr_auto_width() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+    }
+
+    #[test]
+    fn layout_origin_x_left_anchors_mixed_direction_auto_width() {
+        let content = grown_content(&[TextDirection::RTL, TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+    }
+
+    #[test]
+    fn layout_origin_x_ignores_direction_for_fixed_and_auto_height() {
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        for grow_type in [GrowType::Fixed, GrowType::AutoHeight] {
+            let mut content = grown_content(&[TextDirection::RTL], 120.0);
+            content.set_grow_type(grow_type);
+            assert_eq!(content.layout_origin_x(&selrect, 120.0), 100.0);
+        }
+    }
+
+    #[test]
+    fn layout_origin_x_is_selrect_x_once_the_selrect_is_committed() {
+        let content = grown_content(&[TextDirection::RTL], 60.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_origin_x(&selrect, 60.0), selrect.x());
+    }
+
+    #[test]
+    fn content_rect_right_anchors_grown_rtl_auto_width() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), 40.0);
+        assert_eq!(rect.right(), selrect.right());
+        assert_eq!(rect.width(), 120.0);
+        assert_eq!(rect.y(), selrect.y());
+    }
+
+    #[test]
+    fn content_rect_left_anchors_grown_ltr_auto_width() {
+        let content = grown_content(&[TextDirection::LTR], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), selrect.x());
+        assert_eq!(rect.width(), 120.0);
+    }
+
+    #[test]
+    fn content_rect_unchanged_for_fixed_rtl_content() {
+        // A mismatch sends `content_rect` into `get_height`, which needs global
+        // font state tests do not have.
+        let mut content = grown_content(&[TextDirection::RTL], 60.0);
+        content.set_grow_type(GrowType::Fixed);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let rect = content.content_rect(&selrect, VerticalAlign::Top);
+        assert_eq!(rect.x(), selrect.x());
+        assert_eq!(rect.width(), selrect.width());
+    }
+
+    #[test]
+    fn cached_paint_anchor_plus_offset_lands_on_the_layout_origin() {
+        let mut content = grown_content(&[TextDirection::RTL], 120.0);
+        content.layout_paint_origin = Some(Point::new(100.0, 50.0));
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let anchor = content.cached_layout_paint_anchor(&selrect);
+        let offset = content.cached_layout_paint_offset(&selrect);
+        assert_eq!(
+            anchor.x + offset.x,
+            content.layout_origin_x(&selrect, 120.0)
+        );
+    }
+
+    #[test]
+    fn cached_paint_offset_stays_a_pure_translation_when_the_shape_moves() {
+        let mut content = grown_content(&[TextDirection::RTL], 120.0);
+        content.layout_paint_origin = Some(Point::new(100.0, 50.0));
+        let before = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        let after = Rect::from_xywh(130.0, 70.0, 60.0, 20.0);
+        let moved_by = Point::new(
+            content.cached_layout_paint_offset(&after).x
+                - content.cached_layout_paint_offset(&before).x,
+            content.cached_layout_paint_offset(&after).y
+                - content.cached_layout_paint_offset(&before).y,
+        );
+        assert_eq!(moved_by, Point::new(30.0, 20.0));
+    }
+
+    #[test]
+    fn cached_paint_anchor_right_anchors_when_no_origin_was_baked() {
+        let content = grown_content(&[TextDirection::RTL], 120.0);
+        let selrect = Rect::from_xywh(100.0, 50.0, 60.0, 20.0);
+        assert_eq!(content.layout_paint_origin, None);
+        assert_eq!(content.cached_layout_paint_anchor(&selrect).x, 40.0);
+        assert_eq!(content.cached_layout_paint_offset(&selrect).x, 0.0);
     }
 }

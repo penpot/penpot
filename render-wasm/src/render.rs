@@ -349,6 +349,26 @@ fn sort_z_index(tree: ShapesPoolRef, element: &Shape, children_ids: Vec<Uuid>) -
     }
 }
 
+/// Whether this `render_shape_exit` pass closes the shape's focus scope. A
+/// masked group keeps it open across the mask pass.
+fn exit_closes_focus_scope(element: &Shape, visited_mask: bool) -> bool {
+    visited_mask || !element.is_masked_group()
+}
+
+/// Whether this pass pops the nested fill/blur/shadow stacks, pushed once on
+/// enter. The mask pass skips them.
+fn exit_pops_nested_stacks(element: &Shape, visited_mask: bool) -> bool {
+    !(visited_mask && element.is_masked_group())
+}
+
+/// Whether this pass draws strokes over the children: all of them for a
+/// clipped frame, only the inner one otherwise.
+fn exit_draws_strokes_over_children(element: &Shape, visited_mask: bool) -> bool {
+    !visited_mask
+        && (element.clip()
+            || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke()))
+}
+
 struct RenderStats {
     pub counts: HashMap<Uuid, i32>,
 }
@@ -411,6 +431,9 @@ pub(crate) struct RenderState {
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub nested_shadows: Vec<Vec<Shadow>>,
+    /// Cumulative [`Shape::masked_group_filter_reach`] of the masked groups
+    /// being walked: their children cast into tiles they don't touch.
+    masked_group_reach: Vec<f32>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     /// Viewer-only whitelist for fixed-scroll layer passes.
@@ -636,6 +659,7 @@ impl RenderState {
             nested_fills: vec![],
             nested_blurs: vec![],
             nested_shadows: vec![],
+            masked_group_reach: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
             include_filter: None,
@@ -707,12 +731,9 @@ impl RenderState {
         shape.frame_clip_layer_blur()
     }
 
-    /// Builds the background-blur clip region for a shape whose strokes
-    /// extend beyond the fill geometry: the fill path expanded (via union)
-    /// with a solid stroke coverage of the maximum outward stroke reach.
-    /// Dash/dot stroke styles are treated as solid, so dash gaps also get
-    /// a blurred backdrop.
-    fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
+    /// Fill ∪ stroke-outset silhouette for background blur (GPU, vector, SVG).
+    /// Dash/dot strokes are treated as solid so gaps still get a blurred backdrop.
+    pub(crate) fn background_blur_clip_path(shape: &Shape, stroke_outset: f32) -> skia::Path {
         let base = match &shape.shape_type {
             Type::Rect(data) if data.corners.is_some() => {
                 let rrect = RRect::new_rect_radii(shape.selrect, data.corners.as_ref().unwrap());
@@ -729,9 +750,16 @@ impl RenderState {
                 .unwrap_or_else(|| skia::Path::rect(shape.selrect, None)),
         };
 
-        // Expand outward by the max stroke reach: a centered stroke of
-        // 2× the outset covers exactly `stroke_outset` beyond the path
-        // (the inward half disappears in the union with the fill).
+        Self::union_stroke_outset(base, stroke_outset)
+    }
+
+    /// Unions a centered stroke of width `2 * stroke_outset` into `base`.
+    /// The inward half disappears in the union, leaving `stroke_outset` beyond
+    /// the fill outline.
+    pub(crate) fn union_stroke_outset(base: skia::Path, stroke_outset: f32) -> skia::Path {
+        if stroke_outset <= 0.0 {
+            return base;
+        }
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_stroke_width(stroke_outset * 2.0);
@@ -2045,14 +2073,7 @@ impl RenderState {
 
                 let shape = &shape;
 
-                if shape.fills.is_empty()
-                    && !matches!(shape.shape_type, Type::Group(_))
-                    && !matches!(shape.shape_type, Type::Frame(_))
-                    && !shape
-                        .svg_attrs
-                        .as_ref()
-                        .is_some_and(|attrs| attrs.fill_none)
-                {
+                if shape.inherits_fills() {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         fills::render(
@@ -2411,6 +2432,7 @@ impl RenderState {
         self.nested_fills.clear();
         self.nested_blurs.clear();
         self.nested_shadows.clear();
+        self.masked_group_reach.clear();
 
         // reorder by distance to the center.
         self.current_tile = None;
@@ -2707,6 +2729,7 @@ impl RenderState {
         let saved_nested_fills = std::mem::take(&mut self.nested_fills);
         let saved_nested_blurs = std::mem::take(&mut self.nested_blurs);
         let saved_nested_shadows = std::mem::take(&mut self.nested_shadows);
+        let saved_masked_group_reach = std::mem::take(&mut self.masked_group_reach);
         let saved_ignore_nested_blurs = self.ignore_nested_blurs;
         let saved_preview_mode = self.preview_mode;
 
@@ -2724,6 +2747,7 @@ impl RenderState {
                 // FIXME
                 return Ok((Vec::new(), 0, 0));
             };
+            self.nested_fills.push(shape.inherited_fills(tree));
             let mut extrect = shape.extrect(tree, scale);
             self.export_context = Some((extrect, scale));
             let margins = self.surfaces.margins;
@@ -2778,6 +2802,7 @@ impl RenderState {
         self.nested_fills = saved_nested_fills;
         self.nested_blurs = saved_nested_blurs;
         self.nested_shadows = saved_nested_shadows;
+        self.masked_group_reach = saved_masked_group_reach;
         self.ignore_nested_blurs = saved_ignore_nested_blurs;
         self.preview_mode = saved_preview_mode;
 
@@ -2930,6 +2955,10 @@ impl RenderState {
             }
 
             if group.masked {
+                let reach = self.masked_group_reach.last().copied().unwrap_or(0.0)
+                    + element.masked_group_filter_reach();
+                self.masked_group_reach.push(reach);
+
                 // A masked group's blur and shadows are applied as a single
                 // image filter over the whole masked result.
                 let scale = self.get_scale();
@@ -3028,6 +3057,7 @@ impl RenderState {
                 // the blend mode 'destination-in') the content
                 // of the group and the mask.
                 if group.masked {
+                    self.masked_group_reach.pop();
                     self.pending_nodes.push(NodeRenderState {
                         id: element.id,
                         visited_children: true,
@@ -3050,22 +3080,21 @@ impl RenderState {
             }
         }
 
-        match element.shape_type {
-            Type::Frame(_) | Type::Group(_) => {
-                self.nested_fills.pop();
-                self.nested_blurs.pop();
-                self.nested_shadows.pop();
+        if exit_pops_nested_stacks(element, visited_mask) {
+            match element.shape_type {
+                Type::Frame(_) | Type::Group(_) => {
+                    self.nested_fills.pop();
+                    self.nested_blurs.pop();
+                    self.nested_shadows.pop();
+                }
+                _ => {}
             }
-            _ => {}
         }
 
-        // Strokes are drawn over children for clipped frames (all strokes), and for non-clipped
-        // frames with inner strokes (inner strokes only — non-inner were rendered before children).
-        // Skip when focus mode excludes this subtree (focus_mode.exit runs after this, so
-        // is_active() still reflects this element's focus state here).
-        let needs_exit_strokes = self.focus_mode.is_active()
-            && (element.clip()
-                || (matches!(element.shape_type, Type::Frame(_)) && element.has_inner_stroke()));
+        // Skip when focus mode excludes this subtree (the focus scope closes after this,
+        // so is_active() still reflects this element's focus state here).
+        let needs_exit_strokes =
+            self.focus_mode.is_active() && exit_draws_strokes_over_children(element, visited_mask);
 
         if needs_exit_strokes {
             let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
@@ -3117,7 +3146,9 @@ impl RenderState {
             self.surfaces.canvas(target_surface).restore();
         }
 
-        self.focus_mode.exit(&element.id);
+        if exit_closes_focus_scope(element, visited_mask) {
+            self.focus_mode.exit(&element.id);
+        }
         Ok(())
     }
 
@@ -3505,6 +3536,13 @@ impl RenderState {
         // (which defers strokes to render_shape_exit for clipped frames).
         plain_shape_mut.clip_content = false;
 
+        let spread_outset = if shadow.spread > 0.0 && shape.spreads_through_strokes() {
+            plain_shape_mut.apply_shadow_spread(shadow.spread);
+            None
+        } else {
+            Some(shadow.spread)
+        };
+
         let Some(drop_filter) = transformed_shadow.get_drop_shadow_filter() else {
             return Ok(());
         };
@@ -3536,7 +3574,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset),
                     None,
-                    Some(shadow.spread),
+                    spread_outset,
                     target_surface,
                     false,
                 )
@@ -3580,7 +3618,7 @@ impl RenderState {
                     false,
                     Some(shadow.offset), // Offset is geometric
                     None,
-                    Some(shadow.spread),
+                    spread_outset,
                     target_surface,
                     false,
                 )
@@ -3644,7 +3682,7 @@ impl RenderState {
                         false,
                         Some(shadow.offset), // Offset is geometric
                         None,
-                        Some(shadow.spread),
+                        spread_outset,
                         target_surface,
                         false,
                     )
@@ -3656,11 +3694,7 @@ impl RenderState {
         )?;
 
         if let Some((mut surface, filter_scale)) = filter_result {
-            let cached = shadows::CachedDropShadowFilter::new(
-                bounds,
-                filter_scale,
-                surface.image_snapshot(),
-            );
+            let cached = shadows::CachedDropShadowFilter::new(bounds, filter_scale, &mut surface);
             shadows::blit_cached_drop_shadow_filter(
                 &mut self.surfaces,
                 &cached,
@@ -3923,17 +3957,21 @@ impl RenderState {
                 );
 
                 let has_effects = transformed_element.has_effects_that_extend_bounds();
+                let area = match self.masked_group_reach.last() {
+                    Some(&reach) => self.render_area_with_margins.with_outset((reach, reach)),
+                    None => self.render_area_with_margins,
+                };
 
                 let is_visible = export
                     || mask
                     || if is_container || has_effects {
                         let element_extrect =
                             extrect.get_or_insert_with(|| transformed_element.extrect(tree, scale));
-                        element_extrect.intersects(self.render_area_with_margins)
+                        element_extrect.intersects(area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     } else {
                         let selrect = transformed_element.selrect();
-                        selrect.intersects(self.render_area_with_margins)
+                        selrect.intersects(area)
                             && !transformed_element.visually_insignificant(scale, tree)
                     };
 
@@ -4322,6 +4360,9 @@ impl RenderState {
                 self.current_tile_had_shapes = false;
                 self.tile_atlas_flushed = false;
                 self.drop_shadows_ops_warmed = false;
+                // Every tile walks from the root shapes with depth zero. Only a
+                // drained walk reaches here; an interrupted one returns Partial.
+                self.focus_mode.reset();
 
                 let viewer_masked_pass = self.viewer_masked_pass();
                 let current_scale = self.get_scale();
@@ -4844,6 +4885,132 @@ mod tests {
         shape.set_selrect(10.0, 20.0, 110.0, 120.0);
         shape.clip_content = clip;
         shape
+    }
+
+    fn group(masked: bool) -> Shape {
+        let mut shape = Shape::new(Uuid::new_v4());
+        shape.set_shape_type(Type::Group(Group { masked }));
+        shape.set_selrect(10.0, 20.0, 110.0, 120.0);
+        shape
+    }
+
+    fn rect() -> Shape {
+        let mut shape = Shape::new(Uuid::new_v4());
+        shape.set_shape_type(Type::Rect(RectType::default()));
+        shape.set_selrect(10.0, 20.0, 110.0, 120.0);
+        shape
+    }
+
+    /// Both exit passes of a masked group, in walker order.
+    fn exit_masked_group(focus: &mut FocusMode, group: &Shape) {
+        for visited_mask in [false, true] {
+            if exit_closes_focus_scope(group, visited_mask) {
+                focus.exit(&group.id);
+            }
+        }
+    }
+
+    #[test]
+    fn a_masked_group_closes_its_focus_scope_on_the_mask_pass_only() {
+        let masked = group(true);
+
+        assert!(!exit_closes_focus_scope(&masked, false));
+        assert!(exit_closes_focus_scope(&masked, true));
+    }
+
+    #[test]
+    fn every_other_shape_closes_its_focus_scope_on_its_single_exit() {
+        for shape in [frame(true), frame(false), group(false), rect()] {
+            assert!(
+                exit_closes_focus_scope(&shape, false),
+                "{:?} exits once and must close its scope there",
+                shape.shape_type
+            );
+        }
+    }
+
+    /// The mask shape renders between the two exit passes, so it must still be
+    /// inside the group's focus scope.
+    #[test]
+    fn a_masked_group_leaves_the_focus_depth_as_it_found_it() {
+        let masked = group(true);
+        let mut focus = FocusMode::new();
+
+        focus.enter(&masked.id);
+        if exit_closes_focus_scope(&masked, false) {
+            focus.exit(&masked.id);
+        }
+        assert!(focus.is_active(), "the mask pass renders inside the group");
+
+        if exit_closes_focus_scope(&masked, true) {
+            focus.exit(&masked.id);
+        }
+        assert!(!focus.is_active());
+    }
+
+    /// GH-11805: a clipped frame paints its border on exit, gated on the focus
+    /// depth, so a masked group sibling must not eat a level of it.
+    #[test]
+    fn a_frame_keeps_its_focus_scope_after_a_masked_group_sibling() {
+        let board = frame(true);
+        let first = (frame(true), group(true));
+        let second = (frame(true), group(true));
+
+        let mut focus = FocusMode::new();
+        focus.enter(&board.id);
+
+        for (container, masked) in [&first, &second] {
+            focus.enter(&container.id);
+            focus.enter(&masked.id);
+            exit_masked_group(&mut focus, masked);
+
+            assert!(
+                focus.is_active(),
+                "the frame must still be in focus to draw its border"
+            );
+            focus.exit(&container.id);
+        }
+
+        assert!(focus.is_active(), "the board is still open");
+        focus.exit(&board.id);
+        assert!(!focus.is_active());
+    }
+
+    /// The mask shape is an alpha silhouette and must not inherit the group's
+    /// fills, so the content pass is the one that pops.
+    #[test]
+    fn a_masked_group_pops_the_nested_stacks_on_the_content_pass_only() {
+        let masked = group(true);
+
+        assert!(exit_pops_nested_stacks(&masked, false));
+        assert!(!exit_pops_nested_stacks(&masked, true));
+    }
+
+    #[test]
+    fn a_masked_group_leaves_the_nested_stacks_as_it_found_them() {
+        let board = frame(true);
+        let masked = group(true);
+        let mut nested_fills: Vec<Vec<Fill>> = vec![];
+
+        nested_fills.push(board.fills.to_vec());
+        let depth_inside_the_board = nested_fills.len();
+
+        nested_fills.push(masked.fills.to_vec());
+        for visited_mask in [false, true] {
+            if exit_pops_nested_stacks(&masked, visited_mask) {
+                nested_fills.pop();
+            }
+        }
+
+        assert_eq!(nested_fills.len(), depth_inside_the_board);
+    }
+
+    #[test]
+    fn only_the_content_pass_draws_strokes_over_children() {
+        let masked = group(true);
+
+        assert!(exit_draws_strokes_over_children(&masked, false));
+        assert!(!exit_draws_strokes_over_children(&masked, true));
     }
 
     #[test]

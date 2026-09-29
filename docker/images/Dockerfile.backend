@@ -18,6 +18,11 @@ RUN set -ex; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
+# NOTE: jdk.management is required by the prometheus client hotspot
+# exports. Without it the OS MXBean is sun.management.BaseOperatingSystemImpl,
+# which has no getOpenFileDescriptorCount, getMaxFileDescriptorCount nor
+# getProcessCpuTime, so process_open_fds, process_max_fds and
+# process_cpu_seconds_total silently disappear from /metrics.
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
@@ -44,7 +49,7 @@ RUN set -eux; \
        --no-header-files \
        --no-man-pages \
        --strip-debug \
-       --add-modules java.base,jdk.net,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
+       --add-modules java.base,jdk.net,jdk.management,jdk.management.agent,java.se,jdk.compiler,jdk.javadoc,jdk.attach,jdk.unsupported,jdk.jfr,jdk.jcmd \
        --output /opt/jre;
 
 
