@@ -334,6 +334,13 @@
 
     nil))
 
+(defn token-source-fallback-notification-outcome
+  [response]
+  (when (map? response)
+    (let [outcome (:tokens-source-fallback-notification response)]
+      (when (#{:tokens-source-fallback-local :tokens-source-deactivated} outcome)
+        outcome))))
+
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails tokens-source-fallback-notification] :as bundle}]
   (ptk/reify ::bundle-fetched
@@ -380,25 +387,33 @@
       (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
 
       (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
-        (->> (rp/cmd! :consume-tokens-source-fallback-notification
-                      {:file-id file-id})
+        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+                     (get-file-object-thumbnails file-id))
              (rx/take 1)
              (rx/mapcat
-              (fn [tokens-source-fallback-notification]
-                (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                             (get-file-object-thumbnails file-id))
-                     (rx/take 1)
+              (fn [[file thumbnails]]
+                (->> (resolve-file file)
                      (rx/mapcat
-                      (fn [[file thumbnails]]
-                        (->> (resolve-file file)
-                             (rx/map (fn [file]
-                                       (log/trace :hint "file resolved" :file-id file-id)
-                                       {:file file
-                                        :file-id file-id
-                                        :features features
-                                        :thumbnails thumbnails
-                                        :tokens-source-fallback-notification
-                                        tokens-source-fallback-notification}))))))))
+                      (fn [resolved-file]
+                        (let [bundle {:file resolved-file
+                                      :file-id file-id
+                                      :features features
+                                      :thumbnails thumbnails}]
+                          (if (#{:tokens-source-fallback-local :tokens-source-deactivated}
+                               (get-in file [:metadata :tokens-source-fallback-notification]))
+                            (->> (rp/cmd! :consume-tokens-source-fallback-notification
+                                          {:file-id file-id})
+                                 (rx/take 1)
+                                 (rx/map (fn [response]
+                                           (assoc bundle
+                                                  :tokens-source-fallback-notification
+                                                  (token-source-fallback-notification-outcome response))))
+                                 (rx/catch (fn [cause]
+                                             (log/warn :hint "failed to consume token source fallback notification"
+                                                       :file-id (dm/str file-id)
+                                                       :cause cause)
+                                             (rx/of bundle))))
+                            (rx/of bundle))))))))
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 

@@ -173,8 +173,7 @@
   [{:keys [project-id files]}]
   (let [binfile-v1  (filter #(= :binfile-v1 (:type %)) files)
         binfile-v3  (filter #(= :binfile-v3 (:type %)) files)
-        resolutions (volatile! {})
-        source-outcomes* (volatile! {})]
+        resolutions (volatile! {})]
 
     (rx/merge
      (->> (rx/from binfile-v1)
@@ -231,12 +230,10 @@
                                  (log/dbg :hint "import-binfile: end")))))
                    (rx/filter sse/end-of-stream?)
                    (rx/mapcat (fn [message]
-                                (let [{:keys [resolution tokens-source-outcomes]}
+                                (let [{:keys [resolution]}
                                       (sse/get-payload message)]
                                   (when (seq resolution)
                                     (vswap! resolutions merge resolution))
-                                  (when (seq tokens-source-outcomes)
-                                    (vswap! source-outcomes* merge tokens-source-outcomes))
                                   (->> (rx/from entries)
                                        (rx/map (fn [entry]
                                                  {:status :finish
@@ -254,5 +251,4 @@
                                                  :file-id (:file-id entry)}))))))))))
       (->> (rx/defer #(rx/of @resolutions))
            (rx/map (fn [resolutions]
-                     {:libraries-resolution resolutions
-                      :tokens-source-outcomes @source-outcomes*})))))))
+                     {:libraries-resolution resolutions})))))))

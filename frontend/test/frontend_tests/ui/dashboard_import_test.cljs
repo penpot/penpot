@@ -44,6 +44,18 @@
                {:id "ordinary-library"}
                nil))))
 
+(t/deftest token-source-fallback-outcome-uses-rpc-response-map
+  (t/is (= :tokens-source-fallback-local
+           (workspace/token-source-fallback-notification-outcome
+            {:tokens-source-fallback-notification :tokens-source-fallback-local})))
+  (t/is (= :tokens-source-deactivated
+           (workspace/token-source-fallback-notification-outcome
+            {:tokens-source-fallback-notification :tokens-source-deactivated})))
+  (t/is (nil? (workspace/token-source-fallback-notification-outcome
+               {:tokens-source-fallback-notification nil})))
+  (t/is (nil? (workspace/token-source-fallback-notification-outcome
+               :tokens-source-fallback-local))))
+
 (t/deftest token-source-fallback-messages-are-translated
   (let [keys (atom [])]
     (with-redefs [i18n/tr (fn [key]
