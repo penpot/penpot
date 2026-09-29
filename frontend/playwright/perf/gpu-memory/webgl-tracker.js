@@ -5,8 +5,12 @@
 // running totals of the bytes backing textures, renderbuffers and buffers,
 // plus counters for every storage (re)allocation. Sizes are what WebGL was
 // asked for; drivers add padding, alignment and their own copies on top.
-export function installWebGLMemoryTracker() {
+export function installWebGLMemoryTracker(options = {}) {
   if (globalThis.__gpuMem) return;
+  // Allocation size ("WxH") whose call stacks are recorded, for finding
+  // which render path creates it.
+  const traceSize = options.traceSize ?? null;
+  const traces = new Map();
 
   const protos = [
     globalThis.WebGL2RenderingContext?.prototype,
@@ -105,6 +109,14 @@ export function installWebGLMemoryTracker() {
   const allocsBySize = new Map();
 
   function logAlloc(kind, w, h, bytes) {
+    if (traceSize === `${w}x${h}`) {
+      const stack = (new Error().stack ?? "")
+        .split("\n")
+        .slice(3, 30)
+        .map((l) => l.trim())
+        .join("\n");
+      traces.set(stack, (traces.get(stack) ?? 0) + 1);
+    }
     const key = `${kind} ${w}x${h}`;
     const entry = allocsBySize.get(key) ?? { count: 0, bytes: 0 };
     entry.count++;
@@ -443,6 +455,12 @@ export function installWebGLMemoryTracker() {
         },
         allocatedBytesTotal,
         allocsBySize: bySize,
+        traces: traceSize
+          ? [...traces.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 8)
+              .map(([stack, count]) => ({ count, stack }))
+          : undefined,
         contexts: contexts.length,
         contextLosses,
         wasmHeapBytes: wasmHeapBytes(),

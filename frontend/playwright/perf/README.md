@@ -27,12 +27,15 @@ Projects: `gpu-memory-chromium`, `gpu-memory-firefox`, `gpu-memory-webkit`.
 | Variable | Default | Meaning |
 |---|---|---|
 | `PERF_LABEL` | `git describe --dirty` | Name of the build under test; results go to `results/<label>/` |
-| `PERF_FIXTURE` | `render-wasm/get-file-shadows.json` | `get-file` fixture under `playwright/data/` |
+| `PERF_FIXTURE` | `render-wasm/get-file-shadows.json` | `get-file` fixture under `playwright/data/`; served over local HTTP, so size is no limit |
 | `PERF_REPEATS` | `3` | Runs per engine; repeat 0 is dropped as warm-up |
 | `PERF_ITERATIONS` | `12` | Steps per phase |
 | `PERF_DPR` | `2` | Device pixel ratio |
+| `PERF_EDIT_TARGET` | select all | `x,y` in CSS px: the edit phase selects the element there instead of everything |
 | `PERF_SKIA_CACHE_MB` | build default | Skia resource cache budget, set after the first render (needs `set_resource_cache_limit_mb` in the wasm build) |
 | `PERF_PURGE_PROBE` | off | `1` calls `free_gpu_resources` at the end and samples again |
+| `PERF_TIMEOUT_MIN` | `15` | Time limit per run; heavy fixtures in Firefox need more |
+| `PERF_TRACE_SIZE` | off | `WxH`: record the call stacks of allocations of that size (in each sample's `web.traces`) |
 | `PERF_PROC_MATCH` | `ms-playwright` | Substring of the browser binary path used to find its processes |
 
 Report flags: `--baseline <label>` (default `develop`, else the oldest

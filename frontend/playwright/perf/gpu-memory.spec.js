@@ -1,6 +1,8 @@
 import { test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { WasmWorkspacePage } from "../ui/pages/WasmWorkspacePage";
 import { installWebGLMemoryTracker } from "./gpu-memory/webgl-tracker.js";
@@ -23,7 +25,11 @@ const config = {
   iterations: Number(env.PERF_ITERATIONS ?? 12),
   settleMs: Number(env.PERF_SETTLE_MS ?? 300),
   purgeProbe: env.PERF_PURGE_PROBE === "1",
+  // "x,y" in CSS px: select the element there instead of everything. On a
+  // big page, moving every shape at once takes minutes per step.
+  editTarget: env.PERF_EDIT_TARGET?.split(",").map(Number) ?? null,
   skiaCacheMb: env.PERF_SKIA_CACHE_MB ? Number(env.PERF_SKIA_CACHE_MB) : null,
+  timeoutMin: Number(env.PERF_TIMEOUT_MIN ?? 15),
   outDir: env.PERF_OUT_DIR ?? "playwright/perf/results",
 };
 
@@ -50,6 +56,36 @@ async function setPageSize(page, size) {
       root.style.setProperty(prop, size ? `${value}px` : "");
     }
   }, size);
+}
+
+// Serves the fixture over plain HTTP. `route.fulfill` sends the body through
+// the DevTools protocol, and a large fixture (tens of MB) drops the browser
+// session.
+let fixtureServer;
+
+async function fixtureUrl() {
+  if (!fixtureServer) {
+    fixtureServer = createServer((_req, res) => {
+      res.writeHead(200, {
+        "content-type": "application/transit+json",
+        "access-control-allow-origin": "*",
+      });
+      createReadStream(`playwright/data/${config.fixture}`).pipe(res);
+    });
+    await new Promise((resolve) =>
+      fixtureServer.listen(0, "127.0.0.1", resolve),
+    );
+  }
+  return `http://127.0.0.1:${fixtureServer.address().port}/get-file`;
+}
+
+test.afterAll(() => fixtureServer?.close());
+
+// goToWorkspace waits for the page name, which differs per fixture.
+async function fixturePageName(fixture) {
+  const data = JSON.parse(await readFile(`playwright/data/${fixture}`, "utf8"));
+  const pages = data["~:data"]?.["~:pages-index"] ?? {};
+  return Object.values(pages)[0]?.["~:name"] ?? "Page 1";
 }
 
 async function wasmHash() {
@@ -83,10 +119,12 @@ async function settle(page, quietMs = config.settleMs, maxMs = 10000) {
   );
 }
 
-test.describe.configure({ mode: "serial" });
-
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(installWebGLMemoryTracker);
+  page.on("crash", () => console.error("[gpu-memory] page crashed"));
+  page.on("pageerror", (e) => console.error(`[gpu-memory] ${e.message}`));
+  await page.addInitScript(installWebGLMemoryTracker, {
+    traceSize: env.PERF_TRACE_SIZE ?? null,
+  });
   await WasmWorkspacePage.init(page);
   await WasmWorkspacePage.mockRPC(
     page,
@@ -101,7 +139,7 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
     browser,
     browserName,
   }, testInfo) => {
-    test.setTimeout(15 * 60 * 1000);
+    test.setTimeout(config.timeoutMin * 60 * 1000);
 
     const workspace = new WasmWorkspacePage(page);
     const dir = `${config.outDir}/${config.label}`;
@@ -120,7 +158,12 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
 
     await workspace.setupEmptyFile();
     await workspace.mockGetFile(config.fixture);
-    await workspace.goToWorkspace();
+    const url = await fixtureUrl();
+    // Registered last, so it wins over the fulfill route mockGetFile added.
+    await page.route(/get-file\?/, (route) => route.continue({ url }));
+    await workspace.goToWorkspace({
+      pageName: await fixturePageName(config.fixture),
+    });
     await workspace.waitForFirstRenderWithoutUI();
     if (config.skiaCacheMb) {
       // Set after the first render, so the load phase still runs on the
@@ -168,7 +211,12 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
       await sample("pan", i);
     }
 
-    await page.keyboard.press("ControlOrMeta+a");
+    if (config.editTarget) {
+      const [ex, ey] = config.editTarget;
+      await page.mouse.click(ex, ey);
+    } else {
+      await page.keyboard.press("ControlOrMeta+a");
+    }
     for (let i = 0; i < config.iterations; i++) {
       await page.keyboard.press(i % 2 ? "Shift+ArrowLeft" : "Shift+ArrowRight");
       await sample("edit", i);
@@ -201,6 +249,7 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
         fixture: config.fixture,
         iterations: config.iterations,
         skiaCacheMb: config.skiaCacheMb,
+        editTarget: config.editTarget,
         viewport: base,
         dpr: testInfo.project.use.deviceScaleFactor ?? 1,
         renderer,
