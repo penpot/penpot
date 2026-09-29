@@ -1133,18 +1133,6 @@
               :code :object-not-found
               :hint "file and library must belong to the same team")))
 
-(defn- can-unlink-candidate?
-  "Whether profile may drop the relation between file and a superseded
-  candidate: same bar as the unlink command (edit permission on the
-  candidate library plus same team), checked without raising so one
-  foreign id in client input can neither block the resolution nor cut
-  a relation it has no rights over."
-  [conn profile-id file-id library-id]
-  (boolean
-   (and (not= file-id library-id)
-        (:can-edit (bfc/get-file-permissions conn profile-id library-id))
-        (same-team? conn file-id library-id))))
-
 ;; --- MUTATION COMMAND: link-file-to-library
 
 (def sql:link-file-to-library
@@ -1198,9 +1186,7 @@
   [:map {:title "resolve-import-token-source"}
    [:file-id ::sm/uuid]
    [:library-id ::sm/uuid]
-   [:tokens-status-names {:optional true} [:map]]
-   [:candidate-ids {:optional true} [:vector ::sm/uuid]]
-   [:preserve-ids {:optional true} [:vector ::sm/uuid]]])
+   [:tokens-status-names {:optional true} [:map]]])
 
 (sv/defmethod ::resolve-import-token-source
   "Resolve the chosen token-source library and state of an imported file in one step."
@@ -1208,14 +1194,10 @@
    ::webhooks/event? true
    ::sm/params schema:resolve-import-token-source
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names candidate-ids preserve-ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names]}]
   (check-edition-permissions! conn profile-id file-id)
   (check-library-link! cfg conn profile-id file-id library-id)
-  (let [preserved (set (or preserve-ids []))
-        unlinkable (filterv #(and (not (contains? preserved %))
-                                   (can-unlink-candidate? conn profile-id file-id %))
-                            (distinct (remove #{library-id} (or candidate-ids []))))]
-    (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names unlinkable)))
+  (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 

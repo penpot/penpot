@@ -1006,14 +1006,12 @@
                                                                               (:tokens-lib source-info)))
                               :tokens-source-restored]
 
-                             ;; Otherwise use local tokens, or a valid empty status with no source.
+                             ;; Otherwise clear the source and store an empty
+                             ;; status (matches generate-set-tokens-source).
                              :else
                              [(-> data
                                   (dissoc :tokens-source)
-                                  (assoc :tokens-status
-                                         (tokens-status-from-names tokens-status-names
-                                                                   (when local-provider?
-                                                                     (:tokens-lib data)))))
+                                  (assoc :tokens-status (ctos/make-tokens-status)))
                               fallback])
           file (-> (select-keys file bfc/file-attrs)
                    (assoc :id file-id')
@@ -1225,11 +1223,11 @@
 (defn resolve-import-token-source!
   "Link the chosen replacement library and finalize the consumer token
   source and status in the same transaction. Activation names resolve
-  against the final library; missing names become inactive. Links to
-  other candidates of the same pending resolution are removed, so only
-  the chosen library stays linked. Repeated calls with the same choice
-  leave persisted file state untouched."
-  [{:keys [::db/conn] :as cfg} file-id library-id status-names candidate-ids]
+  against the final library; missing names become inactive. A chosen
+  library without tokens clears the source and stores an empty status.
+  Only the selected library is linked; no other relations are touched.
+  Repeated calls with the same choice leave persisted file state untouched."
+  [{:keys [::db/conn] :as cfg} file-id library-id status-names]
   (let [file           (bfc/get-file cfg file-id :lock-for-update? true)
         file-data      (:data file)
         library        (bfc/get-file cfg library-id)
@@ -1245,7 +1243,7 @@
                           (assoc :tokens-status
                                  (if provider?
                                    (tokens-status-from-names status-names (:tokens-lib library-data))
-                                   (or (:tokens-status file-data) (ctos/make-tokens-status)))))
+                                   (ctos/make-tokens-status))))
         stored-status  (:tokens-status file-data)
         unchanged?     (and (= (cfo/get-tokens-source file-data)
                                (when provider? library-id))
@@ -1258,11 +1256,7 @@
                       :library-file-id library-id}]
       (db/insert! conn :file-library-rel rel-params
                 {::db/on-conflict-do-nothing? true})
-      (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at (ct/now)))
-      (doseq [other-id (remove #{library-id} (or candidate-ids []))]
-        (db/delete! conn :file-library-rel
-                    {:file-id file-id
-                     :library-file-id other-id})))
+      (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at (ct/now))))
     (when-not unchanged?
       (bfc/update-file! cfg (ctf/check-file (assoc file
                                                    :data data
