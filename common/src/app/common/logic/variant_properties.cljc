@@ -249,8 +249,9 @@
   "Extract some components from a variant, removing the variant-id and variant-name from the
    main instances and the variant-id and variant-properties from the components.
 
-   The skip-validation? flag, if set, avoids validating the shapes. Use it when the shapes
-   are still inside the variant container, and validate after moving them."
+   By default it validates the shapes and their old variant containers, so the shapes
+   must already be outside the container. If they are still inside it, set the
+   skip-validation? flag and validate after moving them."
   [changes shapes & {:keys [skip-validation?]}]
   (let [changes' (reduce generate-make-shape-no-variant changes shapes)]
     (if (or skip-validation? (empty? shapes))

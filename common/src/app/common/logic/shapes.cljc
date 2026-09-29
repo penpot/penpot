@@ -587,16 +587,22 @@
                             #{}
                             (remove #(= % parent-id) all-parents))
 
-        ;; The old and new variant containers, and the moved variants when they
-        ;; end up outside any component (inside one, they are not roots anymore
-        ;; and can't be validated on their own)
+        ;; The old and new variant containers, and the moved variants. Inside a
+        ;; component they are not roots anymore and can't be validated on their
+        ;; own, so validate the root of that component instead
+        parent-root
+        (ctn/get-instance-root objects parent)
+
         variant-ids-to-validate
         (cond-> (into #{} (keep :variant-id) variant-shapes)
           (ctk/is-variant-container? parent)
           (conj parent-id)
 
-          (nil? (ctn/get-instance-root objects parent))
-          (into (map :id) variant-shapes))]
+          (and (seq variant-shapes) (nil? parent-root))
+          (into (map :id) variant-shapes)
+
+          (and (seq variant-shapes) (some? parent-root))
+          (conj (:id parent-root)))]
 
     (-> changes
         ;; Remove layout-item properties and tokens when moving a shape outside a layout

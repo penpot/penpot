@@ -11,6 +11,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -20,6 +21,11 @@
    [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+#?(:cljs
+   (defn- error-codes
+     [error]
+     (into #{} (map :code) (:details error))))
 
 #?(:cljs
    (defn- validation-error
@@ -213,3 +219,55 @@
 
        ;; Ctrl+D inside the same container also updates the last property value
        (t/is (str/includes? (:hint error) "generate-update-property-value")))))
+
+(defn- relocate-changes
+  [file shape-label parent-label]
+  (let [page (thf/current-page file)]
+    (cls/generate-relocate (-> (pcb/empty-changes nil)
+                               (pcb/with-page-id (:id page))
+                               (pcb/with-library-data (:data file))
+                               (pcb/with-objects (:objects page)))
+                           (thi/id parent-label) 0 #{(thi/id shape-label)})))
+
+(t/deftest test-relocate-variant-into-another-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    add-two-variants)
+
+        ;; ==== Action
+        changes (relocate-changes file :m01 :v02)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        m01'    (ths/get-shape file' :m01)
+        c01'    (thc/get-component file' :c01)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v02) (:parent-id m01')))
+    (t/is (= (thi/id :v02) (:variant-id m01')))
+    (t/is (= (thi/id :v02) (:variant-id c01')))))
+
+#?(:cljs
+   (t/deftest test-relocate-variant-into-another-container-validates
+     (let [file    (-> (thf/sample-file :file1)
+                       add-two-variants)
+           changes (relocate-changes file :m01 :v02)]
+
+       (t/is (nil? (validation-error file changes))))))
+
+;; The workspace does not allow moving a main instance inside a component
+;; (see ctn/invalid-structure-for-component?), but relocate may be called
+;; directly. The moved variant is not a root anymore, so relocate validates
+;; the root of the component that holds it.
+#?(:cljs
+   (t/deftest test-relocate-variant-into-component-validates-root
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                       (tho/add-simple-component :c03 :m03 :b03
+                                                 :child-params {:type :frame})
+                       (ths/update-shape :m03 :component-file (uuid/next)))
+           changes (relocate-changes file :m01 :b03)
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-relocate"))
+       (t/is (contains? (error-codes error) :component-main-external)))))
