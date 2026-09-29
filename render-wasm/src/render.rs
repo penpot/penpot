@@ -1202,7 +1202,9 @@ impl RenderState {
         // This avoids clearing Cache on renders that don't actually paint tiles (e.g. hover/UI),
         // while still preventing stale pixels from surviving across full-quality renders.
         if !self.cache_cleared_this_render {
-            self.surfaces.clear_cache(self.background_color);
+            if self.options.is_debug_visible() {
+                self.surfaces.clear_cache(self.background_color);
+            }
             self.cache_cleared_this_render = true;
         }
         let tile_rect = self.get_current_aligned_tile_bounds()?;
@@ -1220,7 +1222,7 @@ impl RenderState {
             &self.tile_viewbox,
             &current_tile,
             &tile_rect,
-            false,
+            !self.options.is_debug_visible(),
             self.render_area,
             self.get_scale(),
             self.viewbox.area,
@@ -2333,10 +2335,7 @@ impl RenderState {
                     .is_none_or(|s| s.width() < win_w || s.height() < win_h);
                 if needs_alloc {
                     scratch_surface = get_gpu_state()
-                        .create_surface_with_isize(
-                            "drag_crop_scratch".to_string(),
-                            skia::ISize::new(win_w, win_h),
-                        )
+                        .create_surface_with_isize(skia::ISize::new(win_w, win_h))
                         .ok();
                 }
                 let Some(scratch) = scratch_surface.as_mut() else {
@@ -2512,11 +2511,13 @@ impl RenderState {
             s.canvas().scale((scale, scale));
         });
 
-        self.surfaces.resize_cache_from_viewbox(
-            &self.viewbox,
-            &self.cached_viewbox,
-            self.options.dpr_viewport_interest_area_threshold,
-        )?;
+        if self.options.is_debug_visible() {
+            self.surfaces.resize_cache_from_viewbox(
+                &self.viewbox,
+                &self.cached_viewbox,
+                self.options.dpr_viewport_interest_area_threshold,
+            )?;
+        }
 
         // FIXME - review debug
         // debug::render_debug_tiles_for_viewbox(self);
@@ -4319,11 +4320,16 @@ impl RenderState {
                     if !is_empty || self.current_tile_had_shapes {
                         if self.options.is_interactive_transform() {
                             // During drag, avoid snapshot-based caching. Draw Current directly
-                            // into Target (and Cache) to reduce stalls.
+                            // into Target (and Cache, for the debug views) to reduce stalls.
+                            let draw_on_cache = if self.options.is_debug_visible() {
+                                surfaces::DrawOnCache::Yes
+                            } else {
+                                surfaces::DrawOnCache::No
+                            };
                             self.surfaces.draw_current_tile_into_backbuffer(
                                 &tile_rect,
                                 self.background_color,
-                                surfaces::DrawOnCache::Yes,
+                                draw_on_cache,
                             );
                         } else {
                             self.apply_render_to_final_canvas()?;

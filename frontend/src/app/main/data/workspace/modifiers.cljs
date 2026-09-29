@@ -20,7 +20,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -884,6 +883,18 @@
                 ids
                 (into (set (keys modif-tree)) xf:without-uuid-zero (keys transforms))
 
+                options
+                (cond-> options
+                  translation?
+                  (assoc :resize-ids
+                         (into []
+                               (remove (fn [id]
+                                         (let [parent-id (dm/get-in objects [id :parent-id])]
+                                           (and (contains? ids parent-id)
+                                                (= (get transforms id)
+                                                   (get transforms parent-id))))))
+                               ids)))
+
                 update-shape
                 (fn [shape]
                   (let [shape-id  (dm/get-prop shape :id)
@@ -892,14 +903,6 @@
                     (-> shape
                         (gsh/apply-transform transform)
                         (ctm/apply-structure-modifiers modifiers))))
-
-                bool-ids
-                (into #{}
-                      (comp
-                       (mapcat (partial cfh/get-parents-with-self objects))
-                       (filter cfh/bool-shape?)
-                       (map :id))
-                      ids)
 
                 undo-id (js/Symbol)]
 
@@ -911,16 +914,7 @@
               (clear-local-transform)
               (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
               (ptk/event ::dwcm/move-frame-comment-threads transforms)
-              (dwsh/update-shapes ids update-shape options)
-
-              ;; The update to the bool path needs to be in a different operation because it
-              ;; needs to have the updated children info.
-              ;; `update-layout? false`: recalculating a bool path can never change
-              ;; `:hidden`, and the layout check would recompute the whole boolean
-              ;; path in WASM once per bool shape just to find that out.
-              (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options
-                                                                         :with-objects? true
-                                                                         :update-layout? false)))
+              (dwsh/update-shapes ids update-shape options))
 
              (if undo-transation?
                (rx/of (dwu/commit-undo-transaction undo-id))
