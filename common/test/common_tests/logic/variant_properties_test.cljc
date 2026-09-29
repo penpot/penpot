@@ -675,6 +675,36 @@
     (t/is (= "Frame1" (-> c03' :variant-properties first :value)))
     (t/is (= "Frame1" (-> m03' :variant-name)))))
 
+;; This makes generate-make-shapes-variant call generate-add-new-property
+;; several times before the new shape joins the variant
+(t/deftest test-make-shapes-variant-convert-adding-properties
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+
+        container (ths/get-shape file :v01)
+
+        file (tho/add-simple-component file :c03 :m03 :sh03
+                                       :root-params {:parent-label :v01
+                                                     :name "A / B / C"})
+
+        m03  (ths/get-shape file :m03)
+        page (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-make-shapes-variant [m03] container))
+
+        file'   (thf/apply-changes file changes :validate? false)
+
+        c01'    (thc/get-component file' :c01)
+        c03'    (thc/get-component file' :c03)]
+
+    (t/is (= 3 (count (:variant-properties c03'))))
+    (t/is (= (mapv :name (:variant-properties c01'))
+             (mapv :name (:variant-properties c03'))))))
+
 ;; =============================================================================
 ;; validate-shapes failure tests (only run on CLJS, where validation runs)
 ;; =============================================================================
@@ -873,3 +903,58 @@
 
        (t/is (str/includes? (:hint error) "generate-reorder-variant-poperties"))
        (t/is (contains? (error-codes error) :invalid-variant-properties)))))
+
+#?(:cljs
+   (t/deftest test-add-new-property-validates-main
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-add-new-property v-id))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-add-new-property"))
+       (t/is (contains? (error-codes error) :variant-component-bad-id)))))
+
+#?(:cljs
+   (t/deftest test-add-new-property-validates-container
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (thc/update-component :c02 {:variant-properties [{:name "Other" :value "p1v2"}
+                                                                        {:name "Property 2" :value "p2v2"}]}))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-add-new-property v-id))
+
+           error   (validation-error file changes)]
+
+       (t/is (str/includes? (:hint error) "generate-add-new-property"))
+       (t/is (contains? (error-codes error) :invalid-variant-properties)))))
+
+#?(:cljs
+   (t/deftest test-add-new-property-skip-validation
+     (let [file    (-> (thf/sample-file :file1)
+                       (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02)
+                       (ths/update-shape :m01 :variant-id (uuid/next)))
+           v-id    (-> (ths/get-shape file :v01) :id)
+           page    (thf/current-page file)
+
+           changes (-> (pcb/empty-changes nil)
+                       (pcb/with-page-id (:id page))
+                       (pcb/with-library-data (:data file))
+                       (pcb/with-objects (:objects page))
+                       (clvp/generate-add-new-property v-id :skip-validation? true))]
+
+       (t/is (nil? (validation-error file changes))))))

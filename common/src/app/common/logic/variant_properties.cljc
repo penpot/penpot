@@ -173,8 +173,11 @@
    The value may also be given, or else it will be an empty value, unless fill-values? is true, in
    which case the value will be set to a default value based on the property number.
 
-   The editing? flag, if set, will be added to the metadata of the properties, for later use."
-  [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
+   The editing? flag, if set, will be added to the metadata of the properties, for later use.
+
+   The skip-validation? flag, if set, avoids validating the shapes. Use it when the caller
+   leaves the variant in an intermediate state and validates at the end."
+  [changes variant-id & {:keys [fill-values? editing? property-name property-value skip-validation?]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -214,7 +217,15 @@
                          (pcb/update-shapes [main-id] #(update % :variant-name update-name)))]))
                 [1 changes]
                 related-components)]
-    changes))
+
+    (if (or skip-validation? (empty? related-components))
+      changes
+      (let [ids-to-validate (conj (mapv :main-instance-id related-components) variant-id)]
+        (pcb/validate-shapes changes
+                             (pcb/get-page-id changes)
+                             ids-to-validate
+                             (str "generate-add-new-property: " variant-id
+                                  " name: " property-name))))))
 
 (defn- generate-make-shape-no-variant
   [changes shape]
@@ -302,7 +313,8 @@
                          (- total-props num-base-props))
 
         changes        (nth
-                        (iterate #(generate-add-new-property % variant-id) changes)
+                        ;; The shapes are not variants yet, so validate at the end
+                        (iterate #(generate-add-new-property % variant-id :skip-validation? true) changes)
                         num-new-props)
 
         changes        (pcb/update-shapes changes (map :id shapes)
