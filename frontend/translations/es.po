@@ -8763,6 +8763,10 @@ msgstr "Eliminar token"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Borrar theme"
 
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:252
+msgid "workspace.tokens.detach-reference"
+msgstr "Desvincular referencia"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicar token"

@@ -8691,6 +8691,10 @@ msgstr "Delete token"
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Delete theme"
 
+#: src/app/main/ui/workspace/tokens/management/forms/typography.cljs:252
+msgid "workspace.tokens.detach-reference"
+msgstr "Detach reference"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicate token"
