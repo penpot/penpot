@@ -32,6 +32,7 @@ Projects: `gpu-memory-chromium`, `gpu-memory-firefox`, `gpu-memory-webkit`.
 | `PERF_ITERATIONS` | `12` | Steps per phase |
 | `PERF_DPR` | `2` | Device pixel ratio |
 | `PERF_EDIT_TARGET` | select all | `x,y` in CSS px: the edit phase selects the element there instead of everything |
+| `PERF_EDIT_SHAPE` | off | Shape id to select for the edit phase; wins over `PERF_EDIT_TARGET` and doesn't depend on the view |
 | `PERF_SKIA_CACHE_MB` | build default | Skia resource cache budget, set after the first render (needs `set_resource_cache_limit_mb` in the wasm build) |
 | `PERF_PURGE_PROBE` | off | `1` calls `free_gpu_resources` at the end and samples again |
 | `PERF_TIMEOUT_MIN` | `15` | Time limit per run; heavy fixtures in Firefox need more |

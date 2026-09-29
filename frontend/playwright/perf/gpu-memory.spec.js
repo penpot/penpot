@@ -28,6 +28,9 @@ const config = {
   // "x,y" in CSS px: select the element there instead of everything. On a
   // big page, moving every shape at once takes minutes per step.
   editTarget: env.PERF_EDIT_TARGET?.split(",").map(Number) ?? null,
+  // Shape id to select for the edit phase. Unlike PERF_EDIT_TARGET it does
+  // not depend on where zoom and pan left the view.
+  editShape: env.PERF_EDIT_SHAPE ?? null,
   skiaCacheMb: env.PERF_SKIA_CACHE_MB ? Number(env.PERF_SKIA_CACHE_MB) : null,
   timeoutMin: Number(env.PERF_TIMEOUT_MIN ?? 15),
   outDir: env.PERF_OUT_DIR ?? "playwright/perf/results",
@@ -211,7 +214,16 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
       await sample("pan", i);
     }
 
-    if (config.editTarget) {
+    if (config.editShape) {
+      await page.evaluate((id) => {
+        const { app } = globalThis;
+        app.main.store.emit_BANG_(
+          app.main.data.workspace.selection.select_shape(
+            app.common.uuid.uuid(id),
+          ),
+        );
+      }, config.editShape);
+    } else if (config.editTarget) {
       const [ex, ey] = config.editTarget;
       await page.mouse.click(ex, ey);
     } else {
@@ -250,6 +262,7 @@ for (let repeat = 0; repeat < config.repeats; repeat++) {
         iterations: config.iterations,
         skiaCacheMb: config.skiaCacheMb,
         editTarget: config.editTarget,
+        editShape: config.editShape,
         viewport: base,
         dpr: testInfo.project.use.deviceScaleFactor ?? 1,
         renderer,
