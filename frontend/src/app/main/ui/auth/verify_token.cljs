@@ -9,7 +9,6 @@
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
@@ -44,14 +43,8 @@
   (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
-  [{:keys [state team-id organization-team-id organization-name invitation-token] :as tdata}]
-  (when-let [{:keys [origin props]} (:organization-invitation-audit tdata)]
-    (st/emit!
-     (ev/event
-      (assoc props
-             ::ev/name "accept-organization-invitation"
-             ::ev/origin origin))))
-
+  [{:keys [state team-id organization-team-id organization-name invitation-token
+           redirect-to]}]
   (case state
     :created
     (if organization-team-id
@@ -65,7 +58,7 @@
        (ntf/success (tr "auth.notifications.team-invitation-accepted"))))
 
     :pending
-    (let [route-id (:redirect-to tdata :auth-register)]
+    (let [route-id (or redirect-to :auth-register)]
       (st/emit! (rt/nav route-id {:invitation-token invitation-token})))))
 
 (defmethod handle-token :default

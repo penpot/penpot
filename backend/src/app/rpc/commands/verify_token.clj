@@ -254,12 +254,6 @@
                   "direct-organization-invitation"
                   "team-invitation"))
 
-              organization-event-origin
-              (when organization-id-on-add
-                (if organization-id
-                  "organization-invitation-acceptance"
-                  "team-invitation-acceptance"))
-
               organization-member-count-before
               (when organization-id-on-add
                 (count
@@ -300,46 +294,45 @@
                               (-> (audit/event-from-rpc-params params)
                                   (assoc :profile-id created-by)
                                   (assoc :name "accept-team-invitation-from")
-                                  (assoc :props (assoc props
-                                                       :profile-id (:id profile)
-                                                       :email (:email profile)))))))
+                                  (assoc :props (-> props
+                                                    (assoc :invited-by (:created-by invitation))
+                                                    (assoc :profile-id (:id profile))
+                                                    (assoc :profile-email (:email profile))
+                                                    (audit/clean-props)))))))
 
             (let [accepted-team-id (accept-invitation cfg claims invitation profile)]
+              ;; NOTE: the browser used to re-submit a copy of this event from
+              ;; the `:organization-invitation-audit` payload of this response,
+              ;; which wrote two rows per acceptance with two prop vocabularies
+              ;; for the same name, and tied the record to the browser finishing
+              ;; the flow. Everything the copy carried is computed above.
               (when organization-id-on-add
-                (audit/submit
-                 cfg
-                 (-> (audit/event-from-rpc-params params)
-                     (assoc :name "accept-organization-invitation")
-                     (assoc :props
-                            (-> props
-                                (assoc :organization-id organization-id-on-add
-                                       :user-id (:id profile)
-                                       :user-who-send-invitation (:created-by invitation))
-                                (audit/clean-props))))))
+                (audit/submit cfg (-> (audit/event-from-rpc-params params)
+                                      (assoc :name "accept-organization-invitation")
+                                      (assoc :props
+                                             (-> props
+                                                 (assoc :organization-id organization-id-on-add)
+                                                 (assoc :invited-by (:created-by invitation))
+                                                 (assoc :profile-id (:id profile))
+                                                 (assoc :profile-email (:email profile))
+                                                 (assoc :organization-member-add-source
+                                                        organization-add-source)
+                                                 (assoc :belongs-to-team-on-add
+                                                        (boolean team-id))
+                                                 (assoc :organization-member-count-before
+                                                        organization-member-count-before)
+                                                 (audit/clean-props))))))
 
-              (-> (cond-> (assoc claims :state :created)
-                    ;; when the invitation is to an organization, instead of a team, add the
-                    ;; accepted-team-id as :organization-team-id
-                    (:organization-id claims)
-                    (assoc :organization-team-id accepted-team-id)
-
-                    organization-id-on-add
-                    (assoc :organization-invitation-audit
-                           {:origin organization-event-origin
-                            :props
-                            (-> props
-                                (assoc :organization-id organization-id-on-add
-                                       :organization-member-add-source organization-add-source
-                                       :belongs-to-team-on-add (boolean team-id)
-                                       :user-id (:id profile)
-                                       :user-who-send-invitation (:created-by invitation)
-                                       :organization-member-count-before
-                                       organization-member-count-before)
-                                (audit/clean-props))}))
-                  ;; The response carries the inviter's profile-id, so the
-                  ;; audit event has to name the accepting profile explicitly
-                  ;; or the invitation gets logged against the wrong user.
-                  (rph/with-meta {::audit/profile-id (:id profile)}))))))
+              (cond-> (assoc claims :state :created)
+                ;; when the invitation is to an organization, instead of a team, add the
+                ;; accepted-team-id as :organization-team-id
+                (:organization-id claims)
+                (assoc :organization-team-id accepted-team-id)
+                ;; The response carries the inviter's profile-id, so the
+                ;; audit event has to name the accepting profile explicitly
+                ;; or the invitation gets logged against the wrong user.
+                :always
+                (rph/with-meta {::audit/profile-id (:id profile)}))))))
 
       (do
         ;; If the user is not logged-in and the invitation has been canceled

@@ -11,8 +11,6 @@
    [app.main.data.event :as ev]
    [app.main.data.nitrate :as dnt]
    [app.main.data.nitrate-audit :as nitrate-audit]
-   [app.main.store :as st]
-   [app.main.ui.auth.verify-token :as verify-token]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest account-age-days-test
@@ -114,33 +112,6 @@
                      :subscription-status "active"})]
         (t/is (contains? event :days-since-member-added))
         (t/is (nil? (:days-since-member-added event)))))))
-
-(t/deftest accept-organization-invitation-audit-event-test
-  (let [emitted (atom [])
-        props   {:team-id "team-1"
-                 :organization-id "organization-1"
-                 :role :editor
-                 :invitation-id "invitation-1"
-                 :organization-member-add-source "team-invitation"
-                 :belongs-to-team-on-add true
-                 :organization-member-count-before 4}]
-    (with-redefs [st/emit! (fn
-                             ([event]
-                              (swap! emitted conj event))
-                             ([event & events]
-                              (swap! emitted into (cons event events))))]
-      (verify-token/handle-token
-       {:iss :team-invitation
-        :state :created
-        :team-id "team-1"
-        :organization-invitation-audit
-        {:origin "team-invitation-acceptance"
-         :props props}}))
-
-    (let [event @(first @emitted)]
-      (t/is (= "accept-organization-invitation" (::ev/name event)))
-      (t/is (= "team-invitation-acceptance" (::ev/origin event)))
-      (t/is (= props (dissoc event ::ev/name ::ev/origin))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"
