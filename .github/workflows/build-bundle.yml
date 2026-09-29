@@ -20,7 +20,6 @@ on:
         description: 'Name of the branch or ref'
         type: string
         required: true
-        default: 'develop'
       force:
         description: 'Rebuild and overwrite even if this version already exists in S3'
         type: boolean

@@ -64,7 +64,7 @@ jobs:
 
           # Locate the dispatched run using the correlation id embedded in its run-name
           RUN_ID=""
-          for i in $(seq 1 24); do
+          for _ in $(seq 1 24); do
             sleep 5
             RUN_ID=$(gh run list --repo "$REPO" --workflow "$WORKFLOW" \
               --limit 10 --json databaseId,displayTitle \
