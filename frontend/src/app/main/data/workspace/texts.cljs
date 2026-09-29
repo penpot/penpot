@@ -1265,6 +1265,18 @@
                                    geom-keys)
       base)))
 
+(defn- commit-finalized-text
+  "Commits the text finalization, taking the final geometry from the state at
+  emit time so it keeps what the parent layout set; the rest comes from `state`."
+  [it state id opts]
+  (ptk/reify ::commit-finalized-text
+    ptk/WatchEvent
+    (watch [_ current-state _]
+      (let [resize-geom (some-> (dsh/lookup-shape current-state id)
+                                (select-keys [:selrect :points :width :height]))
+            opts        (assoc opts :resize-geom resize-geom)]
+        (rx/of (dch/commit-changes (build-finalize-commit-changes it state id opts)))))))
+
 (defn v2-update-text-shape-content
   [id content & {:keys [update-name? name finalize? save-undo? original-content]
                  :or {update-name? false name nil finalize? false save-undo? true original-content nil}}]
@@ -1303,13 +1315,8 @@
                 ;; modifier machinery, made auto-width typing very laggy.
                 new-size (when (and finalize? (not= :fixed (:grow-type shape)))
                            (dwwt/get-wasm-text-new-size shape content))
-                ;; Also compute the resized geometry for the finalize commit; the
-                ;; async `apply-wasm-modifiers` below never updates this `state`.
                 resize-modifiers (when (some? new-size)
                                    (dwwt/resize-wasm-text-modifiers shape content))
-                resize-geom (when resize-modifiers
-                              (-> (gsh/transform-shape shape (get-in resize-modifiers [id :modifiers]))
-                                  (select-keys [:selrect :points :width :height])))
                 ;; New shapes: single undo on finalize only (no per-keystroke undo)
                 effective-save-undo? (if new-shape? finalize? save-undo?)
                 effective-stack-undo? (and new-shape? finalize?)
@@ -1358,7 +1365,8 @@
                 :stack-undo? effective-stack-undo?
                 :undo-group (when new-shape? id)})
 
-              ;; Push the auto-grow geometry to WASM/app state; the commit persists it via `resize-geom`.
+              ;; Push the auto-grow geometry to WASM/app state, reflowing any parent
+              ;; layout; `commit-finalized-text` reads the result back to persist it.
               ;; Skipped for a no-op finalize: applying it would record an undo transaction.
               (when (and (some? resize-modifiers) (not finalize-no-op?))
                 (dwm/apply-wasm-modifiers resize-modifiers {:undo-group (when new-shape? id)})))
@@ -1380,22 +1388,20 @@
                 (rx/concat
                  (if (and content-has-text? (not finalize-no-op?))
                    (rx/of
-                    (dch/commit-changes
-                     (build-finalize-commit-changes it state id
-                                                    {:new-shape? new-shape?
-                                                     :content-has-text? content-has-text?
-                                                     :content content
-                                                     ;; Undo baseline for the finalize commit: restore the
-                                                     ;; content as it was right before this commit. For existing
-                                                     ;; shapes that's `prev-content`; using the (unset, nil)
-                                                     ;; `original-content` here wiped `:content` to nil on undo,
-                                                     ;; which emptied the shape and crashed the WASM editor's
-                                                     ;; select-all on 0 paragraphs. New shapes keep the previous
-                                                     ;; behavior (their create is bundled in the undo group).
-                                                     :original-content (if new-shape? original-content prev-content)
-                                                     :update-name? update-name?
-                                                     :name name
-                                                     :resize-geom resize-geom})))
+                    (commit-finalized-text it state id
+                                           {:new-shape? new-shape?
+                                            :content-has-text? content-has-text?
+                                            :content content
+                                            ;; Undo baseline for the finalize commit: restore the
+                                            ;; content as it was right before this commit. For existing
+                                            ;; shapes that's `prev-content`; using the (unset, nil)
+                                            ;; `original-content` here wiped `:content` to nil on undo,
+                                            ;; which emptied the shape and crashed the WASM editor's
+                                            ;; select-all on 0 paragraphs. New shapes keep the previous
+                                            ;; behavior (their create is bundled in the undo group).
+                                            :original-content (if new-shape? original-content prev-content)
+                                            :update-name? update-name?
+                                            :name name}))
                    (rx/empty))
                  (rx/of (dwt/finish-transform)
                         (fn [state]

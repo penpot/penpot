@@ -451,6 +451,7 @@ fn reflow_shape(
     reflown: &mut HashSet<Uuid>,
     entries: &mut VecDeque<Modifier>,
     bounds: &mut HashMap<Uuid, Bounds>,
+    grow_from_right: bool,
 ) -> Result<()> {
     let Some(shape) = state.shapes.get(id) else {
         return Ok(());
@@ -463,16 +464,59 @@ fn reflow_shape(
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
-        let mut children =
-            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds)?;
+        let mut children = flex_layout::reflow_flex_layout(
+            shape,
+            layout_data,
+            flex_data,
+            shapes,
+            bounds,
+            grow_from_right,
+        )?;
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-        let mut children =
-            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds)?;
+        let mut children = grid_layout::reflow_grid_layout(
+            shape,
+            layout_data,
+            grid_data,
+            shapes,
+            bounds,
+            grow_from_right,
+        )?;
         entries.append(&mut children);
     }
     reflown.insert(*id);
     Ok(())
+}
+
+/// Layouts that auto-size from their right edge: the ancestors of the resized
+/// texts, when every text resized inside them is rtl auto-width.
+fn rtl_grow_layouts(state: &State, modifiers: &[TransformEntry]) -> HashSet<Uuid> {
+    let mut rtl = HashSet::new();
+    let mut ltr = HashSet::new();
+
+    for entry in modifiers {
+        let Some(shape) = state.shapes.get(&entry.id) else {
+            continue;
+        };
+        let Type::Text(text_content) = &shape.shape_type else {
+            continue;
+        };
+        let Some(parent_id) = shape.parent_id else {
+            continue;
+        };
+        let target = if text_content.grow_type() == GrowType::AutoWidth && text_content.is_rtl() {
+            &mut rtl
+        } else {
+            &mut ltr
+        };
+        target.extend(shapes::all_with_ancestors(
+            &[parent_id],
+            &state.shapes,
+            true,
+        ));
+    }
+
+    rtl.difference(&ltr).copied().collect()
 }
 
 /// Propagates a set of transforms through the shape tree, returning one
@@ -498,6 +542,7 @@ pub fn propagate_modifiers(
         .collect();
 
     let shapes = &state.shapes;
+    let rtl_layouts = rtl_grow_layouts(state, modifiers);
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
     let mut reflown = HashSet::<Uuid>::new();
@@ -569,7 +614,14 @@ pub fn propagate_modifiers(
             if reflown.contains(id) {
                 continue;
             }
-            reflow_shape(id, state, &mut reflown, &mut entries, &mut bounds_temp)?;
+            reflow_shape(
+                id,
+                state,
+                &mut reflown,
+                &mut entries,
+                &mut bounds_temp,
+                rtl_layouts.contains(id),
+            )?;
         }
     }
 
@@ -933,5 +985,157 @@ mod tests {
 
         assert_eq!(bounds.width(), 4.0);
         assert_eq!(bounds.height(), 4.0);
+    }
+
+    fn directed_text(direction: skia_safe::textlayout::TextDirection, width: f32) -> Type {
+        let span = TextSpan::new(
+            "hello".to_string(),
+            FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            14.0,
+            1.2,
+            0.0,
+            None,
+            None,
+            direction,
+            400,
+            Uuid::nil(),
+            vec![],
+        );
+        let mut content = TextContent::new(
+            math::Rect::from_xywh(100.0, 50.0, 60.0, 20.0),
+            GrowType::AutoWidth,
+        );
+        content.add_paragraph(Paragraph::new(
+            TextAlign::Right,
+            direction,
+            None,
+            None,
+            1.2,
+            0.0,
+            vec![span],
+        ));
+        // The renderer has already measured the grown text.
+        content.size.width = width;
+        content.size.height = 20.0;
+        Type::Text(content)
+    }
+
+    /// An auto-width flex board wrapping one auto-width text, both at
+    /// x = 100..160, after the text grows to 120: returns (board, text) bounds.
+    fn grow_text_in_auto_board(
+        direction: skia_safe::textlayout::TextDirection,
+    ) -> (Bounds, Bounds) {
+        let board_id = Uuid::new_v4();
+        let text_id = Uuid::new_v4();
+        let mut state = State::new();
+        state.shapes.initialize(10);
+        {
+            let text = state.shapes.add_shape(text_id);
+            text.set_selrect(100.0, 50.0, 160.0, 70.0);
+            text.set_shape_type(directed_text(direction, 120.0));
+            text.set_parent(board_id);
+        }
+        {
+            let board = state.shapes.add_shape(board_id);
+            board.set_shape_type(Type::Frame(Frame::default()));
+            board.set_selrect(100.0, 50.0, 160.0, 70.0);
+            board.add_child(text_id);
+            board.set_flex_layout_data(
+                FlexDirection::Row,
+                0.0,
+                0.0,
+                AlignItems::Start,
+                AlignContent::Start,
+                JustifyItems::Start,
+                JustifyContent::Start,
+                WrapType::NoWrap,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            );
+            board.set_flex_layout_child_data(
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                Sizing::Auto,
+                Sizing::Auto,
+                None,
+                None,
+                None,
+                None,
+                None,
+                false,
+                None,
+            );
+        }
+
+        // The resize the frontend sends: rtl grows from the top-right corner.
+        let text_bounds = state.shapes.get(&text_id).unwrap().bounds();
+        let anchor = if direction == skia_safe::textlayout::TextDirection::RTL {
+            text_bounds.ne
+        } else {
+            text_bounds.nw
+        };
+        let resize = math::resize_matrix_from(&text_bounds, &text_bounds, 120.0, 20.0, anchor);
+        let entry = TransformEntry::from_input(text_id, resize);
+        let result = propagate_modifiers(&state, &[entry], PixelPrecision::Disabled).unwrap();
+
+        let bounds_of = |id: Uuid| {
+            let transform = result
+                .iter()
+                .find(|entry| entry.id == id)
+                .map(|entry| entry.transform)
+                .unwrap_or_default();
+            state
+                .shapes
+                .get(&id)
+                .unwrap()
+                .bounds()
+                .transform(&transform)
+        };
+        (bounds_of(board_id), bounds_of(text_id))
+    }
+
+    #[test]
+    fn test_auto_board_grows_left_with_rtl_text() {
+        let (board, text) = grow_text_in_auto_board(skia_safe::textlayout::TextDirection::RTL);
+        assert!(
+            is_close_to(board.ne.x, 160.0),
+            "board right edge {}",
+            board.ne.x
+        );
+        assert!(
+            is_close_to(board.nw.x, 40.0),
+            "board left edge {}",
+            board.nw.x
+        );
+        assert!(is_close_to(text.nw.x, 40.0), "text left edge {}", text.nw.x);
+        assert!(
+            is_close_to(text.ne.x, 160.0),
+            "text right edge {}",
+            text.ne.x
+        );
+    }
+
+    #[test]
+    fn test_auto_board_grows_right_with_ltr_text() {
+        let (board, text) = grow_text_in_auto_board(skia_safe::textlayout::TextDirection::LTR);
+        assert!(
+            is_close_to(board.nw.x, 100.0),
+            "board left edge {}",
+            board.nw.x
+        );
+        assert!(
+            is_close_to(board.ne.x, 220.0),
+            "board right edge {}",
+            board.ne.x
+        );
+        assert!(
+            is_close_to(text.nw.x, 100.0),
+            "text left edge {}",
+            text.nw.x
+        );
     }
 }
