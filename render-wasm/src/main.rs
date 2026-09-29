@@ -817,6 +817,26 @@ pub fn free_gpu_resources() {
 }
 
 #[no_mangle]
+pub extern "C" fn set_resource_cache_limit_mb(mb: u32) {
+    get_gpu_state()
+        .context
+        .set_resource_cache_limit(mb as usize * 1024 * 1024);
+}
+
+#[no_mangle]
+pub extern "C" fn resource_cache_bytes() -> f64 {
+    get_gpu_state()
+        .context
+        .resource_cache_usage()
+        .resource_bytes as f64
+}
+
+#[no_mangle]
+pub extern "C" fn resource_cache_purgeable_bytes() -> f64 {
+    get_gpu_state().context.resource_cache_purgeable_bytes() as f64
+}
+
+#[no_mangle]
 #[wasm_error]
 pub extern "C" fn render_shape_pdf(a: u32, b: u32, c: u32, d: u32, scale: f32) -> Result<*mut u8> {
     let id = uuid_from_u32_quartet(a, b, c, d);
