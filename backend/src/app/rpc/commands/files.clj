@@ -1193,6 +1193,34 @@
   (check-library-link! cfg conn profile-id file-id library-id)
   (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names))
 
+;; --- QUERY COMMAND: consume-tokens-source-fallback-notification
+
+(def ^:private sql:consume-tokens-source-fallback-notification
+  "SELECT metadata FROM file_data WHERE file_id = ? AND id = ? FOR UPDATE")
+
+(def ^:private schema:consume-tokens-source-fallback-notification
+  [:map {:title "consume-tokens-source-fallback-notification"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::consume-tokens-source-fallback-notification
+  "Consume the one-shot tokens-source fallback notification stored on import/resolution. Checks read permissions, row-locks the file data, returns the fallback outcome once and clears it. Metadata-only change: revn and modified-at are untouched."
+  {::doc/added "2.19"
+   ::sm/params schema:consume-tokens-source-fallback-notification
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id]}]
+  (check-read-permissions! cfg profile-id file-id)
+  (let [row (first (db/exec! conn [sql:consume-tokens-source-fallback-notification file-id file-id]))
+        metadata (feat.fdata/decode-metadata (:metadata row))
+        outcome (:tokens-source-fallback-notification metadata)]
+    (if (#{:tokens-source-fallback-local :tokens-source-deactivated} outcome)
+      (do
+        (db/update! conn :file-data
+                     {:metadata (db/json (dissoc metadata :tokens-source-fallback-notification))}
+                     {:file-id file-id :id file-id}
+                     {::db/return-keys false})
+        {:tokens-source-fallback-notification outcome})
+      {:tokens-source-fallback-notification nil})))
+
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
 (defn unlink-file-from-library

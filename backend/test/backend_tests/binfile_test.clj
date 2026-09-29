@@ -2891,3 +2891,133 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+(t/deftest link-later-fallback-notification-consumed-once
+  "Fallback import/resolution persists a one-shot workspace marker that a
+  read-permission + row-lock consume RPC returns and clears atomically."
+  (let [profile       (th/create-profile* 1)
+        stranger      (th/create-profile* 2)
+        local-case    (create-token-source-consumer! profile 1 2 "Notify Local" true)
+        empty-case    (create-token-source-consumer! profile 3 4 "Notify Empty" false)
+        restored-case (create-token-source-consumer! profile 5 6 "Notify Restored" true)
+        output        (export-link-later! (mapv :id [(:file local-case)
+                                                    (:file empty-case)
+                                                    (:file restored-case)]))]
+    (doseq [{:keys [source]} [local-case empty-case restored-case]]
+      (db/update! th/*system* :file
+                   {:deleted-at (ct/now)}
+                   {:id (:id source)}))
+    (let [tokenless-local (th/create-file* 11 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Local"})
+          tokenless-empty (th/create-file* 12 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Empty"})
+          provider        (th/create-file* 13 {:profile-id (:id profile)
+                                               :project-id (:default-project-id profile)
+                                               :is-shared true
+                                               :name "Notify Restored"})
+          _ (update-file! :file-id (:id provider)
+                           :profile-id (:id profile)
+                           :changes [{:type :set-tokens-lib
+                                      :tokens-lib (make-token-lib-with-activation
+                                                   (uuid/next) (uuid/next) "shared" "Dark")}])
+          result (import-link-later! profile output)
+          by-name (into {}
+                          (map (fn [file-id]
+                                 (let [file (bfc/get-file th/*system* file-id)]
+                                   [(:name file) file])))
+                          (:file-ids result))
+          local-file (get by-name "Notify Local Consumer")
+          empty-file (get by-name "Notify Empty Consumer")
+          restored-file (get by-name "Notify Restored Consumer")]
+      ;; Import persists the marker only on the two fallback outcomes.
+      (t/is (= :tokens-source-fallback-local
+                (get-in local-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (= :tokens-source-deactivated
+                (get-in empty-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (nil? (get-in restored-file [:metadata :tokens-source-fallback-notification])))
+      (t/is (= (:id provider) (cfo/get-tokens-source (:data restored-file))))
+      (doseq [file [local-file empty-file]]
+        (t/is (nil? (cfo/get-tokens-source (:data file))))
+        (t/is (ctos/tokens-status? (get-in file [:data :tokens-status])))
+        (t/is (nil? (cfv/validate-file file []))))
+      ;; Consume returns the marker once without touching revn/source/status.
+      (let [revn-before (:revn local-file)
+            out (th/command! {::th/type :consume-tokens-source-fallback-notification
+                               ::rpc/profile-id (:id profile)
+                               :file-id (:id local-file)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :tokens-source-fallback-local
+                   (get-in out [:result :tokens-source-fallback-notification])))
+        (let [cleared (bfc/get-file th/*system* (:id local-file))]
+          (t/is (nil? (get-in cleared [:metadata :tokens-source-fallback-notification])))
+          (t/is (= revn-before (:revn cleared)))
+          (t/is (nil? (cfo/get-tokens-source (:data cleared))))
+          (t/is (ctos/tokens-status? (get-in cleared [:data :tokens-status]))))
+        (let [again (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                   ::rpc/profile-id (:id profile)
+                                   :file-id (:id local-file)})]
+          (t/is (nil? (:error again)))
+          (t/is (nil? (get-in again [:result :tokens-source-fallback-notification])))))
+      ;; A stranger without read access cannot consume or clear the marker.
+      (let [denied (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                  ::rpc/profile-id (:id stranger)
+                                  :file-id (:id empty-file)})]
+        (t/is (some? (:error denied)))
+        (t/is (= :tokens-source-deactivated
+                  (get-in (bfc/get-file th/*system* (:id empty-file))
+                            [:metadata :tokens-source-fallback-notification]))))
+      (let [out (th/command! {::th/type :consume-tokens-source-fallback-notification
+                               ::rpc/profile-id (:id profile)
+                               :file-id (:id empty-file)})]
+        (t/is (nil? (:error out)))
+        (t/is (= :tokens-source-deactivated
+                   (get-in out [:result :tokens-source-fallback-notification])))
+        (t/is (nil? (get-in (bfc/get-file th/*system* (:id empty-file))
+                              [:metadata :tokens-source-fallback-notification]))))
+      ;; Resolution to a tokenless library sets the marker; resolution to a
+      ;; provider clears it. Ordinary linking stays untouched.
+      (let [extra-tokenless (th/create-file* 14 {:profile-id (:id profile)
+                                                 :project-id (:default-project-id profile)
+                                                 :is-shared true
+                                                 :name "Notify Extra Tokenless"})
+            extra-provider (th/create-file* 15 {:profile-id (:id profile)
+                                                :project-id (:default-project-id profile)
+                                                :is-shared true
+                                                :name "Notify Extra Provider"})
+            _ (update-file! :file-id (:id extra-provider)
+                             :profile-id (:id profile)
+                             :changes [{:type :set-tokens-lib
+                                        :tokens-lib (make-token-lib-with-activation
+                                                     (uuid/next) (uuid/next) "shared" "Dark")}])
+            fell-back (th/command! {::th/type :resolve-import-token-source
+                                     ::rpc/profile-id (:id profile)
+                                     :file-id (:id restored-file)
+                                     :library-id (:id extra-tokenless)
+                                     :tokens-status-names {}})]
+        (t/is (nil? (:error fell-back)))
+        (t/is (= :tokens-source-fallback-local
+                   (get-in fell-back [:result :tokens-source-outcome])))
+        (t/is (= :tokens-source-fallback-local
+                  (get-in (bfc/get-file th/*system* (:id restored-file))
+                            [:metadata :tokens-source-fallback-notification])))
+        (let [consumed (th/command! {::th/type :consume-tokens-source-fallback-notification
+                                      ::rpc/profile-id (:id profile)
+                                      :file-id (:id restored-file)})]
+          (t/is (nil? (:error consumed)))
+          (t/is (= :tokens-source-fallback-local
+                     (get-in consumed [:result :tokens-source-fallback-notification]))))
+        (let [restored (th/command! {::th/type :resolve-import-token-source
+                                      ::rpc/profile-id (:id profile)
+                                      :file-id (:id local-file)
+                                      :library-id (:id extra-provider)
+                                      :tokens-status-names {}})]
+          (t/is (nil? (:error restored)))
+          (t/is (= :tokens-source-restored
+                     (get-in restored [:result :tokens-source-outcome])))
+          (let [file (bfc/get-file th/*system* (:id local-file))]
+            (t/is (= (:id extra-provider) (cfo/get-tokens-source (:data file))))
+            (t/is (nil? (get-in file [:metadata :tokens-source-fallback-notification])))))))))

@@ -781,13 +781,13 @@ msgstr "No library selected"
 msgid "dashboard.import.summary.original"
 msgstr "Original"
 
-#: src/app/main/ui/dashboard/import.cljs:203
+#: src/app/main/data/workspace.cljs:333
 msgid "dashboard.import.tokens-source-deactivated"
 msgstr ""
 "There are no tokens in the file or in the attached libraries. Tokens source "
 "has been deactivated."
 
-#: src/app/main/ui/dashboard/import.cljs:200
+#: src/app/main/data/workspace.cljs:330
 msgid "dashboard.import.tokens-source-fallback-local"
 msgstr ""
 "Current Tokens Source has no tokens/sets or themes. Tokens source has been "

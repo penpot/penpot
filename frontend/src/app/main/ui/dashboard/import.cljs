@@ -193,22 +193,6 @@
      :params {:file-id file-id
               :library-id library-id}}))
 
-(defn token-source-outcome-message
-  [outcome]
-  (case outcome
-    :tokens-source-fallback-local
-    (tr "dashboard.import.tokens-source-fallback-local")
-
-    :tokens-source-deactivated
-    (tr "dashboard.import.tokens-source-deactivated")
-
-    nil))
-
-(defn- notify-token-source-outcome
-  [outcome]
-  (when-let [message (token-source-outcome-message outcome)]
-    (st/emit! (ntf/info message))))
-
 (defn- analyze-entries
   [state entries]
   (let [features (get @st/state :features)]
@@ -241,8 +225,6 @@
           (fn [message]
             ;; Capture library-resolution data if present (same for all
             ;; entries from the same zip, so first one wins)
-            (doseq [outcome (vals (:tokens-source-outcomes message))]
-              (notify-token-source-outcome outcome))
             (if-let [resolution  (-> (:libraries-resolution message)
                                      (not-empty))]
               (reset! library-resolution-data* resolution)
@@ -409,31 +391,19 @@
   (fn []
     (mapv #(assoc % :status :analyze) entries)))
 
-(defn skipped-token-source-outcome
-  "Outcome to notify when a pending token-source resolution is skipped
-  without choosing a replacement. The imported file already persists the
-  fallback state, so the matching notice keeps state and message aligned."
-  [pending-entry]
-  (when (:tokens-source? pending-entry)
-    (:tokens-source-fallback pending-entry)))
-
 (defn- resolve-library-link!
   [file-id pending-entry library-id]
   (if-let [{:keys [command params]} (pending-library-resolution-request file-id
                                                                         pending-entry
                                                                         library-id)]
     (->> (rp/cmd! command params)
-         (rx/tap #(notify-token-source-outcome (:tokens-source-outcome %)))
          (rx/catch (fn [cause]
                      (log/error :hint "failed to resolve imported library"
                                 :file-id file-id
                                 :library-id library-id
                                 :cause cause)
                      (rx/of nil))))
-     (do
-       (when-let [outcome (skipped-token-source-outcome pending-entry)]
-         (notify-token-source-outcome outcome))
-       (rx/of nil))))
+     (rx/of nil)))
 
 (mf/defc library-resolution*
   {::mf/private true}

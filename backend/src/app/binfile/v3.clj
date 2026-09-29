@@ -1017,7 +1017,12 @@
                    (assoc :project-id project-id)
                    (assoc :metadata (d/without-nils
                                      {:generated-by (get manifest :generated-by)
-                                      :referer (or (get manifest :referer) (get manifest :refer))}))
+                                      :referer (or (get manifest :referer) (get manifest :refer))
+                                      ;; One-shot workspace toast marker; only the two
+                                      ;; fallback outcomes are stored, restored/nil drop it.
+                                      :tokens-source-fallback-notification
+                                      (when (#{:tokens-source-fallback-local :tokens-source-deactivated} outcome)
+                                        outcome)}))
                    (dissoc :options)
                    (dissoc :tokens-source))
           file  (bfc/process-file cfg file)
@@ -1242,13 +1247,17 @@
                                    (tokens-status-from-names status-names (:tokens-lib library-data))
                                    (ctos/make-tokens-status))))
         stored-status  (:tokens-status file-data)
+        marker         (when-not provider? outcome)
+        stored-marker  (get-in file [:metadata :tokens-source-fallback-notification])
+        marker-changed? (not= stored-marker marker)
         unchanged?     (and (= (cfo/get-tokens-source file-data)
                                (when provider? library-id))
                             (some? stored-status)
                             (= (ctos/get-active-theme-ids stored-status)
                                (ctos/get-active-theme-ids (:tokens-status data)))
                             (= (ctos/get-active-set-ids stored-status)
-                               (ctos/get-active-set-ids (:tokens-status data))))]
+                               (ctos/get-active-set-ids (:tokens-status data)))
+                            (not marker-changed?))]
     (let [rel-params {:file-id file-id
                       :library-file-id library-id}]
       (db/insert! conn :file-library-rel rel-params
@@ -1257,6 +1266,9 @@
     (when-not unchanged?
       (bfc/update-file! cfg (ctf/check-file (assoc file
                                                    :data data
+                                                   :metadata (if marker
+                                                               (assoc (:metadata file) :tokens-source-fallback-notification marker)
+                                                               (dissoc (:metadata file) :tokens-source-fallback-notification))
                                                    :revn (inc (:revn file))
                                                    :modified-at (ct/now)))))
     {:tokens-source-outcome outcome}))

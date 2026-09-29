@@ -83,6 +83,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
+   [app.util.i18n :as i18n]
    [app.util.perf :as perf]
    [app.util.storage :as storage]
    [app.util.timers :as tm]
@@ -322,8 +323,19 @@
                                 :file-id file-id
                                 :team-id team-id)))))))
 
+(defn token-source-fallback-notification-message
+  [outcome]
+  (case outcome
+    :tokens-source-fallback-local
+    (i18n/tr "dashboard.import.tokens-source-fallback-local")
+
+    :tokens-source-deactivated
+    (i18n/tr "dashboard.import.tokens-source-deactivated")
+
+    nil))
+
 (defn- bundle-fetched
-  [{:keys [file file-id thumbnails] :as bundle}]
+  [{:keys [file file-id thumbnails tokens-source-fallback-notification] :as bundle}]
   (ptk/reify ::bundle-fetched
     IDeref
     (-deref [_] bundle)
@@ -333,7 +345,14 @@
     (update [_ state]
       (-> state
           (assoc :thumbnails (d/update-vals thumbnails (fn [uri] {:uri uri :rendered-at nil})))
-          (update :files assoc file-id file)))))
+          (update :files assoc file-id file)))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if-let [message (token-source-fallback-notification-message
+                        tokens-source-fallback-notification)]
+        (rx/of (ntf/info message))
+        (rx/empty))))
 
 (defn zoom-to-frame
   []
@@ -361,18 +380,25 @@
       (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
 
       (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
-        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                     (get-file-object-thumbnails file-id))
+        (->> (rp/cmd! :consume-tokens-source-fallback-notification
+                      {:file-id file-id})
              (rx/take 1)
              (rx/mapcat
-              (fn [[file thumbnails]]
-                (->> (resolve-file file)
-                     (rx/map (fn [file]
-                               (log/trace :hint "file resolved" :file-id file-id)
-                               {:file file
-                                :file-id file-id
-                                :features features
-                                :thumbnails thumbnails})))))
+              (fn [tokens-source-fallback-notification]
+                (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+                             (get-file-object-thumbnails file-id))
+                     (rx/take 1)
+                     (rx/mapcat
+                      (fn [[file thumbnails]]
+                        (->> (resolve-file file)
+                             (rx/map (fn [file]
+                                       (log/trace :hint "file resolved" :file-id file-id)
+                                       {:file file
+                                        :file-id file-id
+                                        :features features
+                                        :thumbnails thumbnails
+                                        :tokens-source-fallback-notification
+                                        tokens-source-fallback-notification}))))))))
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 
