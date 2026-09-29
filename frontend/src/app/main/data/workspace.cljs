@@ -342,7 +342,7 @@
         outcome))))
 
 (defn- bundle-fetched
-  [{:keys [file file-id thumbnails tokens-source-fallback-notification] :as bundle}]
+  [{:keys [file file-id thumbnails] :as bundle}]
   (ptk/reify ::bundle-fetched
     IDeref
     (-deref [_] bundle)
@@ -356,10 +356,20 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (if-let [message (token-source-fallback-notification-message
-                        tokens-source-fallback-notification)]
-        (rx/of (ntf/info message))
-        (rx/empty))))
+      (if (token-source-fallback-notification-outcome (:metadata file))
+        (->> (rp/cmd! :consume-tokens-source-fallback-notification
+                      {:file-id file-id})
+             (rx/take 1)
+             (rx/map token-source-fallback-notification-outcome)
+             (rx/map token-source-fallback-notification-message)
+             (rx/filter some?)
+             (rx/map ntf/info)
+             (rx/catch (fn [cause]
+                         (log/warn :hint "failed to consume token source fallback notification"
+                                   :file-id (dm/str file-id)
+                                   :cause cause)
+                         (rx/empty))))
+        (rx/empty)))))
 
 (defn zoom-to-frame
   []
@@ -393,27 +403,11 @@
              (rx/mapcat
               (fn [[file thumbnails]]
                 (->> (resolve-file file)
-                     (rx/mapcat
-                      (fn [resolved-file]
-                        (let [bundle {:file resolved-file
-                                      :file-id file-id
-                                      :features features
-                                      :thumbnails thumbnails}]
-                          (if (#{:tokens-source-fallback-local :tokens-source-deactivated}
-                               (get-in file [:metadata :tokens-source-fallback-notification]))
-                            (->> (rp/cmd! :consume-tokens-source-fallback-notification
-                                          {:file-id file-id})
-                                 (rx/take 1)
-                                 (rx/map (fn [response]
-                                           (assoc bundle
-                                                  :tokens-source-fallback-notification
-                                                  (token-source-fallback-notification-outcome response))))
-                                 (rx/catch (fn [cause]
-                                             (log/warn :hint "failed to consume token source fallback notification"
-                                                       :file-id (dm/str file-id)
-                                                       :cause cause)
-                                             (rx/of bundle))))
-                            (rx/of bundle))))))))
+                     (rx/map (fn [resolved-file]
+                               {:file resolved-file
+                                :file-id file-id
+                                :features features
+                                :thumbnails thumbnails})))))
              (rx/map bundle-fetched)
              (rx/take-until stopper-s))))))
 

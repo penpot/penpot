@@ -54,6 +54,9 @@
   (t/is (nil? (workspace/token-source-fallback-notification-outcome
                {:tokens-source-fallback-notification nil})))
   (t/is (nil? (workspace/token-source-fallback-notification-outcome
+               {:tokens-source-fallback-notification :tokens-source-restored})))
+  (t/is (nil? (workspace/token-source-fallback-notification-outcome {})))
+  (t/is (nil? (workspace/token-source-fallback-notification-outcome
                :tokens-source-fallback-local))))
 
 (t/deftest token-source-fallback-messages-are-translated
@@ -68,7 +71,9 @@
                (workspace/token-source-fallback-notification-message
                 :tokens-source-deactivated)))
       (t/is (nil? (workspace/token-source-fallback-notification-message
-                   :tokens-source-restored))))
+                   :tokens-source-restored)))
+      (t/is (nil? (workspace/token-source-fallback-notification-message
+                   {:tokens-source-fallback-notification :tokens-source-fallback-local}))))
     (t/is (= ["dashboard.import.tokens-source-fallback-local"
               "dashboard.import.tokens-source-deactivated"]
              @keys)))
