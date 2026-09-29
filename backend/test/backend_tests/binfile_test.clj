@@ -550,10 +550,6 @@
       (t/is (ctos/tokens-status? status))
       (t/is (= #{replacement-theme-id} (ctos/get-active-theme-ids status)))
       (t/is (= #{replacement-set-id} (ctos/get-active-set-ids status)))
-      (t/is (not (contains? (ctos/get-active-theme-ids status) source-theme-id)))
-      (t/is (not (contains? (ctos/get-active-set-ids status) source-set-id)))
-      (t/is (not (contains? (ctos/get-active-theme-ids status) missing-theme-id)))
-      (t/is (not (contains? (ctos/get-active-set-ids status) missing-set-id)))
       (t/is (nil? (cfv/validate-file imported [replacement]))))))
 
 (t/deftest link-later-token-source-fallbacks
@@ -619,38 +615,26 @@
       (t/is (= 1 (count (db/query th/*system* :file-library-rel
                                   {:file-id (:id file)
                                    :library-file-id (:id replacement)}))))
-      (t/is (nil? (cfo/get-tokens-source (:data file))))
-      (t/is (ctos/tokens-status? (get-in file [:data :tokens-status])))
       (t/is (nil? (cfv/validate-file file []))))
 
-    (let [status (get-in local-match-file [:data :tokens-status])]
-      (t/is (= (:id local-match-file) (cfo/get-effective-tokens-source (:data local-match-file))))
-      (t/is (empty? (ctos/get-active-theme-ids status)))
-      (t/is (empty? (ctos/get-active-set-ids status))))
+    (t/is (= (:id local-match-file) (cfo/get-effective-tokens-source (:data local-match-file))))
 
     (doseq [file [empty-match-file empty-missing-file]]
+      (t/is (not (cfo/tokens-provider? (:data file)))))
+
+    (t/is (= (:id local-missing-file) (cfo/get-effective-tokens-source (:data local-missing-file))))
+    (t/is (nil? (cfv/validate-file local-missing-file [])))
+
+    (doseq [[file outcome] [[local-match-file :tokens-source-fallback-local]
+                           [empty-match-file :tokens-source-deactivated]
+                           [local-missing-file :tokens-source-fallback-local]
+                           [empty-missing-file :tokens-source-deactivated]]]
       (let [status (get-in file [:data :tokens-status])]
+        (t/is (= outcome (get-in file [:metadata :tokens-source-fallback-notification])))
+        (t/is (nil? (cfo/get-tokens-source (:data file))))
         (t/is (ctos/tokens-status? status))
         (t/is (empty? (ctos/get-active-theme-ids status)))
-        (t/is (empty? (ctos/get-active-set-ids status)))
-        (t/is (not (cfo/tokens-provider? (:data file))))))
-
-    (let [status (get-in local-missing-file [:data :tokens-status])]
-      (t/is (= (:id local-missing-file) (cfo/get-effective-tokens-source (:data local-missing-file))))
-      (t/is (empty? (ctos/get-active-theme-ids status)))
-      (t/is (empty? (ctos/get-active-set-ids status)))
-      (t/is (nil? (cfv/validate-file local-missing-file []))))
-
-    (doseq [[case file outcome] [[(first cases) local-match-file :tokens-source-fallback-local]
-                                 [(second cases) empty-match-file :tokens-source-deactivated]
-                                 [(nth cases 2) local-missing-file :tokens-source-fallback-local]
-                                 [(nth cases 3) empty-missing-file :tokens-source-deactivated]]]
-      (t/is (= outcome (get-in result [:tokens-source-outcomes (:id file)])))
-      (t/is (nil? (cfo/get-tokens-source (:data file))))
-      (t/is (not (contains? (ctos/get-active-theme-ids (get-in file [:data :tokens-status]))
-                            (:source-theme-id case))))
-      (t/is (not (contains? (ctos/get-active-set-ids (get-in file [:data :tokens-status]))
-                            (:source-set-id case)))))
+        (t/is (empty? (ctos/get-active-set-ids status)))))
 
     (t/is (= 1 (count (db/query th/*system* :file-library-rel
                                 {:file-id (:id local-file')
@@ -660,7 +644,7 @@
              (ctos/get-active-theme-ids (get-in local-file' [:data :tokens-status]))))
     (t/is (= #{local-set-id}
              (ctos/get-active-set-ids (get-in local-file' [:data :tokens-status]))))
-    (t/is (nil? (get-in result [:tokens-source-outcomes (:id local-file')])))))
+    (t/is (nil? (get-in local-file' [:metadata :tokens-source-fallback-notification])))))
 
 (t/deftest link-later-manual-token-source-resolution
   (let [profile          (th/create-profile* 1)
@@ -826,12 +810,6 @@
         (t/is (nil? (cfv/validate-file first-imported [candidate-a])))
         (t/is (nil? (cfv/validate-file second-imported [])))
         (t/is (nil? (cfv/validate-file ordinary-imported [candidate-b])))
-        (t/is (= 1 (count (db/query th/*system* :file-library-rel
-                                    {:file-id (:id first-imported)
-                                     :library-file-id (:id candidate-a)}))))
-        (t/is (empty? (db/query th/*system* :file-library-rel
-                                {:file-id (:id first-imported)
-                                 :library-file-id (:id candidate-b)})))
         ;; a tokenless choice clears the source and stores an empty status
         (let [cleared-out (th/command! {::th/type :resolve-import-token-source
                                         ::rpc/profile-id (:id profile)

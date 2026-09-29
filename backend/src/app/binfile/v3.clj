@@ -1032,8 +1032,7 @@
       (bfc/save-file! cfg file)
 
       {:file-id file-id'
-       :pending-token-source pending-source
-       :tokens-source-outcome outcome})))
+       :pending-token-source pending-source})))
 
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
@@ -1303,20 +1302,10 @@
       (import-file-relations cfg)
 
       (let [pending-by-file (into {} (map (juxt :file-id :pending-token-source)) (filter :pending-token-source imported))
-            resolution      (resolve-and-link-libraries cfg files-info decisions pending-by-file)
-            outcomes        (reduce
-                             (fn [m {:keys [file-id tokens-source-outcome]}]
-                                (let [deferred? (some :tokens-source?
-                                               (:pending (get resolution file-id)))]
-                                (if (and tokens-source-outcome (not deferred?))
-                                  (assoc m file-id tokens-source-outcome)
-                                  m)))
-                             {}
-                             imported)]
+            resolution      (resolve-and-link-libraries cfg files-info decisions pending-by-file)]
         (bfm/apply-pending-migrations! cfg)
         {:file-ids   file-ids
-         :resolution resolution
-         :tokens-source-outcomes outcomes}))))
+         :resolution resolution}))))
 
 (defn- invalidate-thumbnails
   [cfg file-id]
