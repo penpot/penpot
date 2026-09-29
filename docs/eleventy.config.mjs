@@ -70,9 +70,10 @@ export default function (eleventyConfig) {
     linkify: true,
   })
     .use(markdownItAnchor, {
-      permalink: true,
-      permalinkClass: "direct-link",
-      permalinkSymbol: "#",
+      permalink: markdownItAnchor.permalink.linkInsideHeader({
+        symbol: "#",
+        class: "direct-link",
+      }),
     })
     .use(markdownItPlantUML, {});
   eleventyConfig.setLibrary("md", markdownLibrary);
