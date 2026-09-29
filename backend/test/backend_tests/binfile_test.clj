@@ -24,6 +24,7 @@
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :as stt]
+   [clojure.java.io :as jio]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -187,6 +188,57 @@
       ;; ...so the imported file passes referential integrity instead
       ;; of failing with :child-not-found on the next update-file.
       (t/is (nil? (cfv/validate-file imported []))))))
+
+(defn- import-svg-attrs-asset
+  "Imports the `svg-attrs-camel-case.penpot` asset, a real penpot export
+  whose shapes carry `:svg-attrs` keys in camelCase (the format the
+  binary export writes), and returns the imported file."
+  [profile]
+  (let [input  (-> "backend_tests/test_files/svg-attrs-camel-case.penpot"
+                   io/resource
+                   jio/file)
+        result (-> th/*system*
+                   (assoc ::bfc/project-id (:default-project-id profile))
+                   (assoc ::bfc/profile-id (:id profile))
+                   (assoc ::bfc/input input)
+                   (v3/import-files!))]
+    (bfc/get-file th/*system* (first result))))
+
+(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs
+  ;; The json reader used by the v3 import rewrites every key of every
+  ;; zip entry to kebab-case, and `:svg-attrs` is the one shape map
+  ;; whose keys are camelCase react prop names. A shape exported with
+  ;; `fillRule: "evenodd"` must not come back as `:fill-rule`, or the
+  ;; renderer falls back to the default fill rule and the shape is
+  ;; painted without its hole.
+  (let [profile (th/create-profile* 1)
+        file    (import-svg-attrs-asset profile)
+        shape   (get-in file [:data :pages-index
+                              (uuid/uuid "fc80ab5f-1bf2-817c-8008-b5408f039100")
+                              :objects
+                              (uuid/uuid "ce3641bd-48c8-804c-8008-b54d35cc6f80")])]
+
+    (t/is (= {:fillRule "evenodd"}
+             (:svg-attrs shape)))))
+
+(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs-on-components
+  ;; Same guarantee for shapes stored inside a component: the v3 import
+  ;; cleans those in a different code path than page shapes.
+  (let [profile (th/create-profile* 1)
+        file    (import-svg-attrs-asset profile)
+        shape   (fn [component-id shape-id]
+                  (-> file
+                      (get-in [:data :components (uuid/uuid component-id) :objects])
+                      (get (uuid/uuid shape-id))
+                      :svg-attrs))]
+
+    (t/is (= {:fillRule "evenodd"}
+             (shape "fae4bc76-0cc2-8057-8008-b540912cdf78"
+                    "fae4bc76-0cc2-8057-8008-b540912774cb")))
+
+    (t/is (= {:fillRule "nonzero"}
+             (shape "fae4bc76-0cc2-8057-8008-b540912c917b"
+                    "fae4bc76-0cc2-8057-8008-b540912774c8")))))
 
 (t/deftest export-binfile-v3
   (let [profile (th/create-profile* 1)
