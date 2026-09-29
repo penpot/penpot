@@ -826,14 +826,21 @@
         (fn [shape]
           (let [variant-id (:variant-id args)]
             ;; Set the desired variant-id
-            (log/debug :hint (str "  -> set variant-id to " variant-id))
-            (assoc shape
-                   :variant-id variant-id)))]
+            (log/debug :hint (str "  -> set variant-id in shape to " variant-id))
+            (assoc shape :variant-id variant-id)))
+
+        repair-component
+        (fn [component]
+          (let [variant-id (:variant-id args)]
+            ;; Set the desired variant-id
+            (log/debug :hint (str "  -> set variant-id in component to " variant-id))
+            (assoc component :variant-id variant-id)))]
 
     (log/debug :hint "repairing shape :variant-component-bad-id" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
-        (pcb/update-shapes [(:id shape)] repair-shape))))
+        (pcb/update-shapes [(:id shape)] repair-shape)
+        (pcb/update-component (:component-id shape) repair-component))))
 
 (defmethod repair-error :missing-tokens-status
   [_ _ file-data _]
