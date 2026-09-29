@@ -30,6 +30,9 @@ export interface PluginTaskRequest {
      * The parameters for task execution.
      */
     params: any;
+
+    /** Optional authenticated browser-tab target for multi-instance routing. */
+    pluginInstanceId?: string;
 }
 
 /**

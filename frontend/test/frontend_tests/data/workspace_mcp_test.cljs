@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.profile :as du]
    [app.main.data.workspace.mcp :as mcp]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [potok.v2.core :as ptk]))
 
@@ -36,6 +37,22 @@
     (let [state  {:mcp {:connection-status "connected"}}
           result (ptk/update (mcp/update-mcp-connection-status "disconnected") state)]
       (t/is (= "disconnected" (get-in result [:mcp :connection-status]))))))
+
+(t/deftest test-mcp-connect-does-not-disconnect-other-tabs
+  (t/testing "connecting a tab emits only its local plugin-connect event"
+    (let [result (atom [])]
+      (when-let [out (ptk/watch (mcp/connect-mcp) {} (rx/empty))]
+        (->> out (rx/subs! (fn [e] (swap! result conj e)))))
+      (t/is (= 1 (count @result)))
+      (t/is (not= :mcp/force-disconnect (:type (first @result))))))
+
+  (t/testing "a connected status emits no cross-tab disconnect"
+    (let [result (atom [])]
+      ;; watch returns nil when the event emits nothing — that itself proves
+      ;; no force-disconnect is broadcast to sibling tabs.
+      (when-let [out (ptk/watch (mcp/update-mcp-connection-status "connected") {} nil)]
+        (->> out (rx/subs! (fn [e] (swap! result conj e)))))
+      (t/is (empty? @result)))))
 
 (t/deftest test-init-sets-enabled
   (t/testing "init sets :mcp :enabled to true when profile has mcp-enabled"

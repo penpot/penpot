@@ -14,6 +14,10 @@ import sharp from "sharp";
  */
 export class ExportShapeArgs {
     static schema = {
+        pluginInstanceId: z
+            .string()
+            .optional()
+            .describe("Optional ID from list_plugin_instances for the Penpot browser tab to export from."),
         shapeId: z
             .string()
             .min(1, "shapeId cannot be empty")
@@ -39,6 +43,8 @@ export class ExportShapeArgs {
     };
 
     shapeId!: string;
+
+    pluginInstanceId?: string;
 
     format: "svg" | "png" = "png";
 
@@ -151,7 +157,7 @@ export class ExportShapeTool extends Tool<ExportShapeArgs> {
 
         // execute the code and obtain the image data
         const task = new ExecuteCodePluginTask({ code: code });
-        const result = await this.mcpServer.pluginBridge.executePluginTask(task);
+        const result = await this.mcpServer.pluginBridge.executePluginTask(task, args.pluginInstanceId);
         const imageData = result.data!.result;
 
         // handle output and return response

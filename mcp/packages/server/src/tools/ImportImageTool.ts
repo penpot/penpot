@@ -13,6 +13,10 @@ import * as path from "path";
  */
 export class ImportImageArgs {
     static schema = {
+        pluginInstanceId: z
+            .string()
+            .optional()
+            .describe("Optional ID from list_plugin_instances for the Penpot browser tab to import into."),
         filePath: z.string().min(1, "filePath cannot be empty").describe("Absolute path to the image file to import."),
         x: z.number().optional().describe("Optional X coordinate for the rectangle's position."),
         y: z.number().optional().describe("Optional Y coordinate for the rectangle's position."),
@@ -33,6 +37,8 @@ export class ImportImageArgs {
     };
 
     filePath!: string;
+
+    pluginInstanceId?: string;
 
     x?: number;
 
@@ -116,7 +122,7 @@ export class ImportImageTool extends Tool<ImportImageArgs> {
             return { shapeId: rectangle.id };
             `;
         const task = new ExecuteCodePluginTask({ code: code });
-        const executionResult = await this.mcpServer.pluginBridge.executePluginTask(task);
+        const executionResult = await this.mcpServer.pluginBridge.executePluginTask(task, args.pluginInstanceId);
 
         return new TextResponse(JSON.stringify(executionResult.data?.result, null, 2));
     }

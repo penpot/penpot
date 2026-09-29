@@ -12,6 +12,10 @@ import { ExecuteCodeTaskParams } from "@penpot/mcp-common";
  */
 export class ExecuteCodeArgs {
     static schema = {
+        pluginInstanceId: z
+            .string()
+            .optional()
+            .describe("Optional ID from list_plugin_instances for the Penpot browser tab to execute in."),
         code: z
             .string()
             .min(1, "Code cannot be empty")
@@ -22,6 +26,8 @@ export class ExecuteCodeArgs {
      * The JavaScript code to execute in the plugin context.
      */
     code!: string;
+
+    pluginInstanceId?: string;
 }
 
 /**
@@ -60,14 +66,15 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
             "to track what your code is doing, but you should *only* do so only if there is an ACTUAL NEED for this! " +
             "VERY IMPORTANT: Don't use logging prematurely! NEVER log the data you are returning, as you will otherwise receive it twice!\n" +
             "VERY IMPORTANT: In general, try a simple approach first, and only if it fails, try more complex code that involves " +
-            "handling different cases (in particular error cases) and that applies logging."
+            "handling different cases (in particular error cases) and that applies logging.\n" +
+            "When more than one Penpot tab is connected, call list_plugin_instances first and pass its pluginInstanceId here."
         );
     }
 
     protected async executeCore(args: ExecuteCodeArgs): Promise<ToolResponse> {
         const taskParams: ExecuteCodeTaskParams = { code: args.code };
         const task = new ExecuteCodePluginTask(taskParams);
-        const result = await this.mcpServer.pluginBridge.executePluginTask(task);
+        const result = await this.mcpServer.pluginBridge.executePluginTask(task, args.pluginInstanceId);
 
         if (result.data !== undefined) {
             return new TextResponse(JSON.stringify(result.data, null, 2));

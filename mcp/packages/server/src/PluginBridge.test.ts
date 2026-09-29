@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS } from "./PluginBridge";
+import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS, PluginBridge } from "./PluginBridge";
+import { PluginInstanceRegistry } from "./PluginInstanceRegistry";
 
 test("passes for a responsive connection with a recent heartbeat", () => {
     const now = 1_000_000;
@@ -42,4 +43,44 @@ test("honours a custom stale threshold", () => {
         () => assertPluginResponsive({ frozen: false, lastHeartbeat }, now, 1_000),
         /appears to be suspended by the browser/
     );
+});
+
+test("routes authenticated plugin tasks to the requested Penpot tab", () => {
+    const registry = new PluginInstanceRegistry<{
+        pluginInstanceId: string;
+        userToken: string | null;
+        fileName?: string;
+        pageName?: string;
+    }>();
+    const first = { pluginInstanceId: "tab-a", userToken: "user-a" };
+    const second = { pluginInstanceId: "tab-b", userToken: "user-a" };
+    registry.register(first);
+    registry.register(second);
+
+    assert.equal(registry.resolve("user-a", "tab-b"), second);
+    assert.notEqual(registry.resolve("user-a", "tab-a"), second);
+});
+
+test("keeps registration separate for identical tab IDs from different users", () => {
+    const registry = new PluginInstanceRegistry<{
+        pluginInstanceId: string;
+        userToken: string | null;
+        fileName?: string;
+        pageName?: string;
+    }>();
+    const aliceTab = { pluginInstanceId: "tab-a", userToken: "alice" };
+    const bobTab = { pluginInstanceId: "tab-a", userToken: "bob" };
+    registry.register(aliceTab);
+    registry.register(bobTab);
+
+    assert.equal(registry.resolve("alice", "tab-a"), aliceTab);
+    assert.equal(registry.resolve("bob", "tab-a"), bobTab);
+});
+
+test("does not allow an MCP caller to route to another user's tab", () => {
+    const registry = new PluginInstanceRegistry<{ pluginInstanceId: string; userToken: string | null }>();
+    registry.register({ pluginInstanceId: "tab-a", userToken: "user-a" });
+
+    assert.throws(() => registry.resolve("user-b", "tab-a"), /not connected for this user/);
+    assert.equal(PluginBridge.MULTIUSER_CONNECTION_ERROR_MESSAGE.includes("user token"), true);
 });

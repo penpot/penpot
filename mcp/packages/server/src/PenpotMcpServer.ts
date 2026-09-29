@@ -12,6 +12,7 @@ import { HighLevelOverviewTool } from "./tools/HighLevelOverviewTool";
 import { PenpotApiInfoTool } from "./tools/PenpotApiInfoTool";
 import { ExportShapeTool } from "./tools/ExportShapeTool";
 import { ImportImageTool } from "./tools/ImportImageTool";
+import { ListPluginInstancesTool } from "./tools/ListPluginInstancesTool";
 import { CljsReplTool } from "./tools/CljsReplTool";
 import { ImportPenpotFileTool } from "./tools/ImportPenpotFileTool";
 import { CljsCompilerOutputTool } from "./tools/CljsCompilerOutputTool";
@@ -275,6 +276,7 @@ export class PenpotMcpServer {
             new HighLevelOverviewTool(this),
             new PenpotApiInfoTool(this, this.apiDocs),
             new ExportShapeTool(this),
+            new ListPluginInstancesTool(this),
         ];
         if (this.isFileSystemAccessEnabled()) {
             toolInstances.push(new ImportImageTool(this));

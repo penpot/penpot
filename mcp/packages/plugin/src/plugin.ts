@@ -59,7 +59,12 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
                 type: "start-server",
                 url: mcp?.getServerUrl(),
                 token: mcp?.getToken(),
+                pluginInstanceId: mcp?.getClientId(),
+                fileId: penpot.currentFile?.id ?? null,
+                fileName: penpot.currentFile?.name ?? "Untitled",
+                pageName: penpot.currentPage?.name ?? "Unknown page",
             });
+            sendCurrentInstanceContext();
         }
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown");
@@ -70,6 +75,18 @@ penpot.ui.onMessage<string | { id: string; type?: string; status?: string; task:
         });
     }
 });
+
+function sendCurrentInstanceContext(): void {
+    penpot.ui.sendMessage({
+        type: "update-instance-context",
+        fileId: penpot.currentFile?.id ?? null,
+        fileName: penpot.currentFile?.name ?? "Untitled",
+        pageName: penpot.currentPage?.name ?? "Unknown page",
+    });
+}
+
+penpot.on("filechange", sendCurrentInstanceContext);
+penpot.on("pagechange", sendCurrentInstanceContext);
 
 /**
  * Handles plugin task requests received from the MCP server via WebSocket.
@@ -117,6 +134,10 @@ if (mcp) {
             type: "start-server",
             url: mcp?.getServerUrl(),
             token: mcp?.getToken(),
+            pluginInstanceId: mcp?.getClientId(),
+            fileId: penpot.currentFile?.id ?? null,
+            fileName: penpot.currentFile?.name ?? "Untitled",
+            pageName: penpot.currentPage?.name ?? "Unknown page",
         });
     });
 }

@@ -70,8 +70,8 @@ export class RedisBridge {
     }
 
     /** Builds the Redis Pub/Sub channel name for a task request addressed to a user token. */
-    private requestChannel(userToken: string): string {
-        return `penpot.mcp.${this.tenant}.task.req.${userToken}`;
+    private requestChannel(userToken: string, pluginInstanceId?: string): string {
+        return `penpot.mcp.${this.tenant}.task.req.${userToken}.${pluginInstanceId ?? "default"}`;
     }
 
     /** Builds the Redis Pub/Sub channel name for a task response keyed by task ID. */
@@ -98,11 +98,12 @@ export class RedisBridge {
      */
     async sendTaskRequest(
         userToken: string,
+        pluginInstanceId: string | undefined,
         request: PluginTaskRequest,
         onResponse: TaskResponseHandler
     ): Promise<number> {
         const responseChannel = this.responseChannel(request.id);
-        const requestChannel = this.requestChannel(userToken);
+        const requestChannel = this.requestChannel(userToken, pluginInstanceId);
 
         this.handlers.set(responseChannel, (rawMessage) => {
             // a response channel is single-use: remove the handler and unsubscribe on delivery
@@ -169,8 +170,8 @@ export class RedisBridge {
      * @param userToken - The user token whose request channel to subscribe to
      * @param handler - The handler to invoke for incoming requests
      */
-    async subscribeToTasks(userToken: string, handler: TaskRequestHandler): Promise<void> {
-        const requestChannel = this.requestChannel(userToken);
+    async subscribeToTasks(userToken: string, pluginInstanceId: string, handler: TaskRequestHandler): Promise<void> {
+        const requestChannel = this.requestChannel(userToken, pluginInstanceId);
         this.handlers.set(requestChannel, (rawMessage) => {
             try {
                 handler(JSON.parse(rawMessage) as PluginTaskRequest);
@@ -186,8 +187,8 @@ export class RedisBridge {
      *
      * @param userToken - The user token whose request channel to unsubscribe from
      */
-    async unsubscribeFromTasks(userToken: string): Promise<void> {
-        const requestChannel = this.requestChannel(userToken);
+    async unsubscribeFromTasks(userToken: string, pluginInstanceId: string): Promise<void> {
+        const requestChannel = this.requestChannel(userToken, pluginInstanceId);
         this.handlers.delete(requestChannel);
         await this.subscriber.unsubscribe(requestChannel);
     }

@@ -1,11 +1,14 @@
 import { WebSocket, WebSocketServer } from "ws";
 import * as http from "http";
+import { randomUUID } from "crypto";
 import { AbstractPluginTask, PluginTask } from "./PluginTask";
 import { RemotePluginTask } from "./RemotePluginTask";
 import { PluginTaskRequest, PluginTaskResponse, PluginTaskResult } from "@penpot/mcp-common";
 import { createLogger } from "./logger";
 import type { PenpotMcpServer } from "./PenpotMcpServer";
 import type { RedisBridge } from "./RedisBridge";
+import { PerInstanceTaskQueue } from "./PerInstanceTaskQueue";
+import { PluginInstanceRegistry } from "./PluginInstanceRegistry";
 
 const KEEP_ALIVE_TIME = 30000; // 30 seconds
 
@@ -30,6 +33,10 @@ export interface PluginLivenessState {
 interface ClientConnection extends PluginLivenessState {
     socket: WebSocket;
     userToken: string | null;
+    pluginInstanceId: string;
+    fileId: string | null;
+    fileName: string;
+    pageName: string;
     pingInterval: NodeJS.Timeout;
 }
 
@@ -72,7 +79,8 @@ export class PluginBridge {
     private readonly wsServer: WebSocketServer;
 
     private readonly connectedClients: Map<WebSocket, ClientConnection> = new Map();
-    private readonly clientsByToken: Map<string, ClientConnection> = new Map();
+    private readonly clientsByInstance = new PluginInstanceRegistry<ClientConnection>();
+    private readonly taskQueue = new PerInstanceTaskQueue();
     private readonly pendingTasks: Map<string, AbstractPluginTask<any, any>> = new Map();
     private readonly taskTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
@@ -109,11 +117,19 @@ export class PluginBridge {
             // extract userToken from query parameters
             const url = new URL(request.url!, `ws://${request.headers.host}`);
             const userToken = url.searchParams.get("userToken");
+            const requestedInstanceId = url.searchParams.get("pluginInstanceId");
+            const pluginInstanceId = requestedInstanceId ?? randomUUID();
 
             // require userToken if running in multi-user mode
             if (this.mcpServer.isMultiUserMode() && !userToken) {
                 this.logger.warn("Connection attempt without userToken in multi-user mode - rejecting");
                 ws.close(1008, "Missing userToken parameter");
+                return;
+            }
+
+            if (!/^[A-Za-z0-9._-]{1,128}$/.test(pluginInstanceId)) {
+                this.logger.warn("Connection attempt with invalid pluginInstanceId; rejecting");
+                ws.close(1008, "Invalid pluginInstanceId parameter");
                 return;
             }
 
@@ -132,29 +148,30 @@ export class PluginBridge {
             const connection: ClientConnection = {
                 socket: ws,
                 userToken,
+                pluginInstanceId,
+                fileId: null,
+                fileName: "Untitled",
+                pageName: "Unknown page",
                 pingInterval,
                 lastHeartbeat: Date.now(),
                 frozen: false,
             };
             this.connectedClients.set(ws, connection);
+            // Replace a stale socket for the same browser tab without affecting other tabs.
+            const replaced = this.clientsByInstance.register(connection);
+            if (replaced) {
+                this.logger.info("Replacing existing plugin socket for the same instance");
+                replaced.socket.close(1000, "Reconnected from the same Penpot tab");
+            }
+
             if (userToken) {
-                // ensure only one connection per userToken
-                if (this.clientsByToken.has(userToken)) {
-                    this.logger.warn("Duplicate connection for given user token; rejecting new connection");
-                    this.removeConnection(ws);
-                    ws.close(1008, "Duplicate connection for given user token; close previous connection first.");
-                    return;
-                }
-
-                this.clientsByToken.set(userToken, connection);
-
                 // In multi-instance mode, subscribe to this token's Redis request channel so
                 // that task requests issued by other instances are dispatched to this plugin.
                 if (this.redisBridge) {
                     const tokenForSubscription = userToken;
                     this.redisBridge
-                        .subscribeToTasks(userToken, (request) =>
-                            this.dispatchForwardedTask(tokenForSubscription, request)
+                        .subscribeToTasks(userToken, pluginInstanceId, (request) =>
+                            this.dispatchForwardedTask(tokenForSubscription, pluginInstanceId, request)
                         )
                         .catch((error) => this.logger.error(error, "Failed to subscribe to Redis task channel"));
                 }
@@ -174,6 +191,12 @@ export class PluginBridge {
                     }
                     connection.frozen = false;
                     if (message?.type === "heartbeat") {
+                        return;
+                    }
+                    if (message?.type === "instance-context") {
+                        connection.fileId = typeof message.fileId === "string" ? message.fileId : null;
+                        connection.fileName = String(message.fileName || "Untitled");
+                        connection.pageName = String(message.pageName || "Unknown page");
                         return;
                     }
                     this.handlePluginTaskResponse(message as PluginTaskResponse<any>);
@@ -200,7 +223,7 @@ export class PluginBridge {
      * Removes a client connection and releases all resources associated with it.
      *
      * Clears the per-connection keep-alive interval and removes the connection from the
-     * socket-keyed index. The token-keyed index entry (and, in multi-instance mode, the
+     * socket-keyed index. The instance-keyed registration (and, in multi-instance mode, the
      * token's Redis task subscription) is removed only if it is owned by the given
      * connection. Safe to call with a socket that is not (or no longer) registered.
      *
@@ -213,20 +236,13 @@ export class PluginBridge {
         }
         clearInterval(connection.pingInterval);
         this.connectedClients.delete(ws);
-        if (connection.userToken) {
-            // Perform the token-keyed cleanup only if this connection owns the token registration.
-            // A connection rejected as a duplicate carries the same token but must not remove token associations.
-            if (this.clientsByToken.get(connection.userToken) !== connection) {
-                this.logger.debug("Removed connection does not own its token registration; skipping token cleanup");
-            } else {
-                this.clientsByToken.delete(connection.userToken);
-
-                if (this.redisBridge) {
-                    this.redisBridge
-                        .unsubscribeFromTasks(connection.userToken)
-                        .catch((error) => this.logger.error(error, "Failed to unsubscribe from Redis task channel"));
-                }
-            }
+        // Perform instance cleanup only if this socket still owns its user/tab registration.
+        if (!this.clientsByInstance.unregister(connection)) {
+            this.logger.debug("Removed connection does not own its token registration; skipping token cleanup");
+        } else if (connection.userToken && this.redisBridge) {
+            this.redisBridge
+                .unsubscribeFromTasks(connection.userToken, connection.pluginInstanceId)
+                .catch((error) => this.logger.error(error, "Failed to unsubscribe from Redis task channel"));
         }
     }
 
@@ -302,36 +318,63 @@ export class PluginBridge {
      * @returns The client connection to use
      * @throws Error if no suitable connection is found or if configuration is invalid
      */
-    private getClientConnection(): ClientConnection {
+    public listClientConnections(userToken?: string): ClientConnection[] {
+        if (this.mcpServer.isMultiUserMode()) {
+            if (!userToken) {
+                throw new Error("No userToken found in session context. Multi-user mode requires authentication.");
+            }
+            return this.clientsByInstance.list(userToken);
+        }
+
+        return Array.from(this.connectedClients.values());
+    }
+
+    /** Resolves a plugin connection using the current user's optional tab target. */
+    public getClientConnection(pluginInstanceId?: string): ClientConnection {
         if (this.mcpServer.isMultiUserMode()) {
             const sessionContext = this.mcpServer.getSessionContext();
             if (!sessionContext?.userToken) {
                 throw new Error("No userToken found in session context. Multi-user mode requires authentication.");
             }
 
-            const connection = this.clientsByToken.get(sessionContext.userToken);
-            if (!connection) {
+            if (!pluginInstanceId) {
+                const instances = this.clientsByInstance.list(sessionContext.userToken);
+                if (instances.length > 1) {
+                    throw new Error("Multiple Penpot tabs are connected. Pass pluginInstanceId to select one.");
+                }
+                if (instances.length === 1) {
+                    return instances[0];
+                }
                 throw new Error(PluginBridge.MULTIUSER_CONNECTION_ERROR_MESSAGE);
             }
 
-            return connection;
+            return this.clientsByInstance.resolve(sessionContext.userToken, pluginInstanceId);
         } else {
-            // single-user mode: return the single connected client
+            // Local mode does not authenticate users, but still permits explicit tab selection.
             if (this.connectedClients.size === 0) {
                 throw new Error(
                     `No Penpot plugin instances are currently connected. Please ensure the plugin is running and connected.`
                 );
             }
+            if (pluginInstanceId) {
+                const connection = Array.from(this.connectedClients.values()).find(
+                    (client) => client.pluginInstanceId === pluginInstanceId
+                );
+                if (!connection) {
+                    throw new Error(`Penpot plugin instance '${pluginInstanceId}' is not connected.`);
+                }
+                return connection;
+            }
+
             if (this.connectedClients.size > 1) {
                 throw new Error(
                     `Multiple (${this.connectedClients.size}) Penpot MCP Plugin instances are connected. ` +
-                        `Ask the user to ensure that only one instance is connected at a time.`
+                        `Pass pluginInstanceId to select one.`
                 );
             }
 
             // return the first (and only) connection
-            const connection = this.connectedClients.values().next().value;
-            return <ClientConnection>connection;
+            return this.connectedClients.values().next().value as ClientConnection;
         }
     }
 
@@ -344,10 +387,21 @@ export class PluginBridge {
      * @throws Error if no plugin instances are connected or available
      */
     public async executePluginTask<TResult extends PluginTaskResult<any>>(
-        task: PluginTask<any, TResult>
+        task: PluginTask<any, TResult>,
+        pluginInstanceId?: string
     ): Promise<TResult> {
-        this.sendPluginTask(task, this.redisBridge !== undefined);
-        return await task.getResultPromise();
+        const connection = this.getClientConnection(pluginInstanceId);
+        const queuedFileId = connection.fileId;
+        const queueKey = this.taskQueueKey(connection);
+        return await this.taskQueue.run(queueKey, async () => {
+            if (queuedFileId && connection.fileId !== queuedFileId) {
+                throw new Error(
+                    `Penpot tab '${connection.pluginInstanceId}' switched files while the task was queued. Select the current tab and retry.`
+                );
+            }
+            this.sendPluginTask(task, this.redisBridge !== undefined, connection);
+            return await task.getResultPromise();
+        });
     }
 
     /**
@@ -380,13 +434,19 @@ export class PluginBridge {
                 throw new Error("No userToken found in session context. Multi-user mode requires authentication.");
             }
             const userToken = sessionContext.userToken;
+            const target = connection ?? this.getClientConnection();
             const redisBridge = this.redisBridge!;
             this.logger.debug("Dispatching task %s via Redis", task.id);
 
             // register the task for result correlation, then publish the request via Redis
             this.pendingTasks.set(task.id, task);
             void redisBridge
-                .sendTaskRequest(userToken, task.toRequest(), (response) => this.handlePluginTaskResponse(response))
+                .sendTaskRequest(
+                    userToken,
+                    target.pluginInstanceId,
+                    { ...task.toRequest(), pluginInstanceId: target.pluginInstanceId },
+                    (response) => this.handlePluginTaskResponse(response)
+                )
                 .then((receiverCount) => {
                     // fail fast when no instance received the request (no connection with matching user token in any instance)
                     if (receiverCount === 0) {
@@ -446,7 +506,7 @@ export class PluginBridge {
      *   identifies the locally-connected plugin to dispatch to
      * @param request - The serialized task request, passed through from Redis
      */
-    private dispatchForwardedTask(userToken: string, request: PluginTaskRequest): void {
+    private dispatchForwardedTask(userToken: string, pluginInstanceId: string, request: PluginTaskRequest): void {
         if (!this.redisBridge) {
             return;
         }
@@ -455,17 +515,43 @@ export class PluginBridge {
         const task = new RemotePluginTask(request.task, request.params, this.redisBridge, request.id);
         this.logger.debug("Dispatching remote task %s as %s to Penpot via WebSocket", request.id, task.id);
 
-        const connection = this.clientsByToken.get(userToken);
-        if (!connection) {
-            task.rejectWithError(new Error("Plugin not connected on the receiving instance"));
+        let connection: ClientConnection;
+        try {
+            connection = this.clientsByInstance.resolve(userToken, pluginInstanceId);
+        } catch (error) {
+            task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
             return;
         }
 
-        try {
-            this.sendPluginTask(task, false, connection);
-        } catch (error) {
-            task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
-        }
+        const queueKey = this.taskQueueKey(connection);
+        void this.taskQueue
+            .run(queueKey, async () => {
+                this.sendPluginTask(task, false, connection);
+                await this.pendingTaskPromise(task);
+            })
+            .catch((error) => {
+                task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
+            });
+    }
+
+    private pendingTaskPromise(task: AbstractPluginTask<any, any>): Promise<void> {
+        return new Promise<void>((resolve) => {
+            const originalResolve = task.resolveWithResult.bind(task);
+            const originalReject = task.rejectWithError.bind(task);
+            task.resolveWithResult = (result) => {
+                originalResolve(result);
+                resolve();
+            };
+            task.rejectWithError = (error) => {
+                originalReject(error);
+                resolve();
+            };
+        });
+    }
+
+    private taskQueueKey(connection: ClientConnection): string {
+        const owner = connection.userToken ?? "local";
+        return connection.fileId ? `${owner}:file:${connection.fileId}` : `${owner}:tab:${connection.pluginInstanceId}`;
     }
 
     /**

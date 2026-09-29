@@ -11,6 +11,10 @@ VERY IMPORTANT: When writing code, NEVER LOG INFORMATION YOU ARE ALSO RETURNING.
 To execute code correctly, you need to understand the Penpot Plugin API. You can retrieve API documentation via
 the `penpot_api_info` tool.
 
+When multiple Penpot tabs are connected, call `list_plugin_instances` first and pass the selected tab's
+`pluginInstanceId` to `execute_code`, `export_shape`, or `import_image`. Calls to the same open file are FIFO serialized
+across tabs; different files may run at the same time. This does not provide rollback or a transaction across tasks.
+
 This is the full list of types/interfaces in the Penpot API: $api_types
 
 You use the `storage` object extensively to store data and utility functions you define across tool calls.

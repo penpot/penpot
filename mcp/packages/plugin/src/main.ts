@@ -25,6 +25,10 @@ const RECONNECT_MAX_DELAY_MS = 30_000;
 let shouldReconnect = false;
 let lastConnectionUrl: string | undefined;
 let lastConnectionToken: string | undefined;
+let lastPluginInstanceId: string | undefined;
+let currentFileId: string | null = null;
+let currentFileName = "Untitled";
+let currentPageName = "Unknown page";
 let reconnectAttempts = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
@@ -98,6 +102,20 @@ function updateExecutedCode(code: string | null): void {
     }
     if (copyCodeBtn) {
         copyCodeBtn.disabled = !code;
+    }
+}
+
+/** Sends the current Penpot file and page labels to the MCP server. */
+function sendInstanceContext(): void {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+            JSON.stringify({
+                type: "instance-context",
+                fileId: currentFileId,
+                fileName: currentFileName,
+                pageName: currentPageName,
+            })
+        );
     }
 }
 
@@ -177,7 +195,7 @@ function scheduleReconnect(): void {
     reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         if (shouldReconnect && ws?.readyState !== WebSocket.OPEN && ws?.readyState !== WebSocket.CONNECTING) {
-            connectToMcpServer(lastConnectionUrl, lastConnectionToken);
+            connectToMcpServer(lastConnectionUrl, lastConnectionToken, lastPluginInstanceId);
         }
     }, delay);
 }
@@ -194,10 +212,11 @@ function cancelReconnect(): void {
 /**
  * Establishes a WebSocket connection to the MCP server.
  */
-function connectToMcpServer(baseUrl?: string, token?: string): void {
+function connectToMcpServer(baseUrl?: string, token?: string, pluginInstanceId?: string): void {
     shouldReconnect = true;
     lastConnectionUrl = baseUrl;
     lastConnectionToken = token;
+    lastPluginInstanceId = pluginInstanceId;
 
     if (ws?.readyState === WebSocket.OPEN) {
         updateConnectionStatus("connected", "Connected");
@@ -211,8 +230,20 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         let wsUrl = baseUrl || PENPOT_MCP_WEBSOCKET_URL;
         let wsError: unknown | undefined;
 
+        const query = new URLSearchParams();
         if (token) {
-            wsUrl += `?userToken=${encodeURIComponent(token)}`;
+            query.set("userToken", token);
+        }
+        // The id may cross the CLJS->JS bridge as a non-string; only send ids
+        // matching the server's accepted charset, otherwise let the server
+        // mint a fallback id for this connection.
+        const rawInstanceId = pluginInstanceId === undefined ? "" : String(pluginInstanceId);
+        if (/^[A-Za-z0-9._-]{1,128}$/.test(rawInstanceId)) {
+            query.set("pluginInstanceId", rawInstanceId);
+        }
+        const queryString = query.toString();
+        if (queryString) {
+            wsUrl += `${wsUrl.includes("?") ? "&" : "?"}${queryString}`;
         }
 
         ws = new WebSocket(wsUrl);
@@ -221,6 +252,10 @@ function connectToMcpServer(baseUrl?: string, token?: string): void {
         ws.onopen = () => {
             cancelReconnect();
             startHeartbeat();
+            currentFileId = null;
+            currentFileName = "Untitled";
+            currentPageName = "Unknown page";
+            sendInstanceContext();
             setTimeout(() => {
                 if (ws) {
                     console.log("Connected to MCP server");
@@ -304,7 +339,16 @@ window.addEventListener("message", (event) => {
         isIntegratedRemoteMcp = event.data.integratedRemoteMcp;
     }
     if (event.data.type === "start-server") {
-        connectToMcpServer(event.data.url, event.data.token);
+        currentFileId = typeof event.data.fileId === "string" ? event.data.fileId : null;
+        currentFileName = String(event.data.fileName || "Untitled");
+        currentPageName = String(event.data.pageName || "Unknown page");
+        connectToMcpServer(event.data.url, event.data.token, event.data.pluginInstanceId);
+    }
+    if (event.data.type === "update-instance-context") {
+        currentFileId = typeof event.data.fileId === "string" ? event.data.fileId : null;
+        currentFileName = String(event.data.fileName || "Untitled");
+        currentPageName = String(event.data.pageName || "Unknown page");
+        sendInstanceContext();
     }
     if (event.data.type === "version-mismatch") {
         if (versionWarningEl && versionWarningTextEl) {
@@ -334,7 +378,7 @@ function handleTabResumed(): void {
         sendHeartbeat();
     } else if (ws?.readyState !== WebSocket.CONNECTING) {
         cancelReconnect();
-        connectToMcpServer(lastConnectionUrl, lastConnectionToken);
+        connectToMcpServer(lastConnectionUrl, lastConnectionToken, lastPluginInstanceId);
     }
 }
 

@@ -49,8 +49,7 @@
   (ptk/reify ::connect-mcp
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (mbc/event :mcp/force-disconnect {})
-             (ptk/data-event ::connect)))))
+      (rx/of (ptk/data-event ::connect)))))
 
 (defn- start-reconnect-watcher
   []
@@ -100,13 +99,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      ;; Only one MCP plugin instance may be active across browser tabs.
-      ;; When this tab becomes connected, tell every other tab to
-      ;; disconnect (which also stops their reconnect watcher). Otherwise
-      ;; several tabs stay connected at once and the MCP server reports
-      ;; "multiple instances connected" and the agent fails.
-      (when (= "connected" value)
-        (rx/of (mbc/event :mcp/force-disconnect {}))))))
+      nil)))
 
 ;; This event will arrive when the user selects disconnect on the menu
 ;; or there is a broadcast message for disconnection
@@ -137,6 +130,7 @@
                        (rx/filter (ptk/type? ::stop-mcp-plugin) stream))
 
             extension #js {:getToken (constantly token)
+                           :getClientId (constantly (str (:session-id @st/state)))
                            :getServerUrl #(str cf/mcp-ws-uri)
                            :setMcpStatus
                            (fn [status]
@@ -206,7 +200,6 @@
                         (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
                         (rx/filter (ptk/type? ::init) stream))
 
-            session-id (get state :session-id)
             mcp-state  (get state :mcp)]
 
         (->> (rx/merge
@@ -230,18 +223,10 @@
                 (rx/empty))
 
               (->> mbc/stream
-                   (rx/filter (mbc/type? :mcp/force-disconnect))
-                   (rx/filter (fn [{:keys [id]}]
-                                (not= session-id id)))
-                   (rx/map deref)
-                   (rx/map (fn [] (user-disconnect-mcp))))
-
-              (->> mbc/stream
                    (rx/filter (mbc/type? :mcp/enable))
                    (rx/mapcat (fn [_]
-                                ;; Re-init so the force-disconnect
-                                ;; listener is set up now that MCP
-                                ;; is enabled.
+                                ;; Re-init so the profile MCP setting is
+                                ;; picked up now that MCP is enabled.
                                 (rx/of (update-mcp-status true)
                                        (init)))))
 
