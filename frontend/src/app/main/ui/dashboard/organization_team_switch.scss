@@ -262,7 +262,7 @@
   @include t.use-typography("headline-small");
 
   color: var(--color-foreground-secondary);
-  padding: $sz-16 $sz-6 $sz-6 var(--sp-m);
+  padding: var(--sp-s) $sz-6 $sz-6 var(--sp-m);
   margin-block-end: var(--sp-xxs);
   text-transform: uppercase;
 }
