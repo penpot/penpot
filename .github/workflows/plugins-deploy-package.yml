@@ -23,7 +23,6 @@ on:
         description: 'Name of the branch'
         type: string
         required: true
-        default: 'develop'
       plugin_name:
         description: 'Publig name (from plugins/apps/<plugin_name>-plugin)'
         type: string

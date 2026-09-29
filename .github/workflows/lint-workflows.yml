@@ -1,0 +1,78 @@
+name: "CI: Workflows"
+
+# Static analysis of the GitHub Actions workflows themselves:
+# - actionlint: syntax, expressions, runner labels, job/step references,
+#   and shellcheck on every `run:` block.
+# - zizmor: security audits (template injection, dangerous triggers,
+#   credential persistence, ...). Configured in .github/zizmor.yml.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/actionlint.yaml'
+      - '.github/zizmor.yml'
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/actionlint.yaml'
+      - '.github/zizmor.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: lint-workflows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  ACTIONLINT_VERSION: '1.7.12'
+  ZIZMOR_VERSION: '1.30.1'
+
+jobs:
+  lint:
+    name: Lint workflows
+    if: ${{ !github.event.pull_request.draft }}
+    # PR code is untrusted: never run this on the self-hosted runners.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        run: |
+          curl -fsSL --retry 3 \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" actionlint
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      # Each finding is emitted as a `::error` annotation on the PR diff.
+      - name: Run actionlint
+        run: |
+          # shellcheck disable=SC2016  # Go template, not shell expansion.
+          actionlint -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}},title=actionlint ({{$err.Kind}})::{{$err.Message}}\n{{end}}'
+
+      - name: Run zizmor
+        if: ${{ !cancelled() }}
+        env:
+          # Enables the online audits (known-vulnerable-actions,
+          # impostor-commit, ref-confusion, ...).
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pipx run "zizmor==${ZIZMOR_VERSION}" \
+            --config .github/zizmor.yml \
+            --format github \
+            .github/workflows

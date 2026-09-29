@@ -1,0 +1,123 @@
+# zizmor configuration — https://docs.zizmor.sh/configuration/
+#
+# Every audit is enforced for every workflow. The per-file ignores below are
+# the findings that already existed when this check was introduced: each one
+# is a pending clean-up, not an accepted risk. New workflows are checked
+# with no exceptions. Remove a file from a list in the same PR that fixes it,
+# and the whole rule entry once its list is empty.
+rules:
+  # Avoid installing packages ad hoc inside `run:`.
+  adhoc-packages:
+    ignore:
+      - plugins-deploy-api-doc.yml
+      - plugins-deploy-package.yml
+      - plugins-deploy-styles-doc.yml
+  # Use `persist-credentials: false` in actions/checkout.
+  artipacked:
+    ignore:
+      - build-bundle.yml
+      - build-docker-devenv.yml
+      - build-docker.yml
+      - plugins-deploy-api-doc.yml
+      - plugins-deploy-package.yml
+      - plugins-deploy-packages.yml
+      - plugins-deploy-styles-doc.yml
+      - release.yml
+      - tests-backend.yml
+      - tests-common.yml
+      - tests-e2e.yml
+      - tests-exporter.yml
+      - tests-frontend.yml
+      - tests-library.yml
+      - tests-mcp.yml
+      - tests-plugins.yml
+      - tests-wasm.yml
+  # Avoid restoring caches in release/publish workflows.
+  cache-poisoning:
+    ignore:
+      - plugins-deploy-api-doc.yml
+      - plugins-deploy-styles-doc.yml
+  # Review `pull_request_target` usage.
+  dangerous-triggers:
+    ignore:
+      - auto-label.yml
+      - commit-checker.yml
+  # Declare least-privilege `permissions:` per workflow/job.
+  excessive-permissions:
+    ignore:
+      - auto-label.yml
+      - build-adhoc.yml
+      - build-bundle.yml
+      - build-develop.yml
+      - build-docker-admin-console.yml
+      - build-docker-devenv.yml
+      - build-docker.yml
+      - build-staging.yml
+      - build-tag.yml
+      - build-tmp-tokens.yml
+      - commit-checker.yml
+      - plugins-deploy-packages.yml
+      - tests-backend.yml
+      - tests-common.yml
+      - tests-e2e.yml
+      - tests-exporter.yml
+      - tests-frontend.yml
+      - tests-library.yml
+      - tests-mcp.yml
+      - tests-plugins.yml
+      - tests-wasm.yml
+  # Scope GitHub App tokens.
+  github-app:
+    ignore:
+      - auto-label.yml
+  # Pass only the secrets each reusable workflow needs.
+  secrets-inherit:
+    ignore:
+      - build-adhoc.yml
+      - build-develop.yml
+      - build-staging.yml
+      - build-tag.yml
+      - build-tmp-tokens.yml
+      - plugins-deploy-packages.yml
+  # Style nudge towards the `$/...` syntax; not worth enforcing.
+  self-repository:
+    disable: true
+  # Replace actions that duplicate built-in runner tools.
+  superfluous-actions:
+    ignore:
+      - release.yml
+  # Pin container images to a digest.
+  unpinned-images:
+    ignore:
+      - plugins-deploy-package.yml
+      - tests-backend.yml
+      - tests-common.yml
+      - tests-e2e.yml
+      - tests-exporter.yml
+      - tests-frontend.yml
+      - tests-library.yml
+      - tests-mcp.yml
+      - tests-plugins.yml
+      - tests-wasm.yml
+  # Pin actions to a full commit SHA.
+  unpinned-uses:
+    ignore:
+      - auto-label.yml
+      - build-bundle.yml
+      - build-docker-devenv.yml
+      - build-docker.yml
+      - commit-checker.yml
+      - plugins-deploy-api-doc.yml
+      - plugins-deploy-package.yml
+      - plugins-deploy-packages.yml
+      - plugins-deploy-styles-doc.yml
+      - release.yml
+      - tests-backend.yml
+      - tests-common.yml
+      - tests-e2e.yml
+      - tests-exporter.yml
+      - tests-frontend.yml
+      - tests-library.yml
+      - tests-mcp.yml
+      - tests-plugins.yml
+      - tests-wasm.yml
