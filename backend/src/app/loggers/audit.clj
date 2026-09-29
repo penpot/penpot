@@ -20,6 +20,7 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.loggers.audit.tasks :as-alias tasks]
+   [app.loggers.nitrate-actions :as nitrate-actions]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.setup :as-alias setup]
@@ -289,6 +290,8 @@
                                                (dissoc :context)
                                                (dissoc :ip-addr)
                                                (dissoc :type)))))))
+
+  (nitrate-actions/handle-event! cfg event)
   event)
 
 (defn submit*

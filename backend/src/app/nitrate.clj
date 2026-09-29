@@ -7,6 +7,7 @@
 (ns app.nitrate
   "Module that make calls to the external nitrate aplication"
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.json :as json]
@@ -496,6 +497,31 @@
                       schema:redeem-result
                       (assoc params :throw-on-error? true)))
 
+(defn- ingest-audit-log-api
+  "POST one audit event to Admin Console `/api/audit-log`.
+  Expects HTTP 204; returns nil on success. 4xx raises when
+  `:throw-on-error?` is set."
+  [cfg {:keys [name type profile-id props context
+               created-at tracked-at source ip-addr] :as params}]
+  (let [request-params (-> {:name name
+                            :type type
+                            :profile-id profile-id
+                            :props props
+                            :context context
+                            :created-at created-at
+                            :tracked-at tracked-at
+                            :source source
+                            :ip-addr ip-addr}
+                           (d/without-nils))
+        params (assoc params
+                      :request-params request-params
+                      ::rpc/profile-id profile-id
+                      :throw-on-error? true)]
+    (request-to-nitrate cfg :post
+                        (generate-nitrate-uri "api/audit-log")
+                        nil
+                        params)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -526,7 +552,8 @@
      :get-subscription-warning     (partial get-subscription-warning-api cfg)
      :connectivity                 (partial get-connectivity-api cfg)
      :get-identity                 (partial get-identity-api cfg)
-     :redeem-activation-code       (partial redeem-activation-code-api cfg)}))
+     :redeem-activation-code       (partial redeem-activation-code-api cfg)
+     :ingest-audit-log             (partial ingest-audit-log-api cfg)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UTILS

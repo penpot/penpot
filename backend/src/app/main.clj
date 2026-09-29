@@ -25,6 +25,7 @@
    [app.http.session :as session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
+   [app.loggers.nitrate-actions :as-alias nitrate-actions]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -482,7 +483,9 @@
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
-     (ig/ref ::webhooks/run-webhook-handler)}}
+     (ig/ref ::webhooks/run-webhook-handler)
+     :process-nitrate-action
+     (ig/ref ::nitrate-actions/handler)}}
 
    ::email/blacklist
    {}
@@ -581,6 +584,9 @@
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
+   ::nitrate-actions/handler
+   {:app.nitrate/client (ig/ref :app.nitrate/client)}
+
    :app.loggers.mattermost/reporter
    {::http.client/client (ig/ref ::http.client/client)}
 
@@ -673,6 +679,15 @@
    [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}
+
+   [::admin-console ::wrk/runner]
+   {::wrk/parallelism (cf/get ::worker-admin-console-parallelism 1)
+    ::wrk/queue       :admin-console
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
     ::wrk/registry    (ig/ref ::wrk/registry)
