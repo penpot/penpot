@@ -153,9 +153,9 @@ export class PluginBridge {
                 if (this.redisBridge) {
                     const tokenForSubscription = userToken;
                     this.redisBridge
-                        .subscribeToTasks(userToken, (request) =>
-                            this.dispatchForwardedTask(tokenForSubscription, request)
-                        )
+                        .subscribeToTasks(userToken, (request) => {
+                            void this.dispatchForwardedTask(tokenForSubscription, request);
+                        })
                         .catch((error) => this.logger.error(error, "Failed to subscribe to Redis task channel"));
                 }
             }
@@ -391,6 +391,13 @@ export class PluginBridge {
                     // fail fast when no instance received the request (no connection with matching user token in any instance)
                     if (receiverCount === 0) {
                         this.rejectPendingTask(task.id, new Error(PluginBridge.MULTIUSER_CONNECTION_ERROR_MESSAGE));
+                    } else if (receiverCount > 1) {
+                        // several instances hold a connection for this token; only the one that claims the task runs it
+                        this.logger.warn(
+                            "Task %s reached %d instances; the same user has several plugin connections",
+                            task.id,
+                            receiverCount
+                        );
                     }
                 })
                 .catch((error) => {
@@ -442,11 +449,16 @@ export class PluginBridge {
      * On failure to dispatch (e.g. the plugin is not connected here), an error response
      * is published immediately so the requester need not wait for its timeout.
      *
+     * When several instances hold a plugin connection for the same user token, each of
+     * them receives the request. The request is claimed first, and only the instance
+     * that obtains the claim dispatches it; the others ignore it, so the task is
+     * executed exactly once.
+     *
      * @param userToken - The user token on whose request channel the request arrived;
      *   identifies the locally-connected plugin to dispatch to
      * @param request - The serialized task request, passed through from Redis
      */
-    private dispatchForwardedTask(userToken: string, request: PluginTaskRequest): void {
+    private async dispatchForwardedTask(userToken: string, request: PluginTaskRequest): Promise<void> {
         if (!this.redisBridge) {
             return;
         }
@@ -458,6 +470,17 @@ export class PluginBridge {
         const connection = this.clientsByToken.get(userToken);
         if (!connection) {
             task.rejectWithError(new Error("Plugin not connected on the receiving instance"));
+            return;
+        }
+
+        try {
+            const claimed = await this.redisBridge.claimTask(request.id, this.taskTimeoutSecs * 1000);
+            if (!claimed) {
+                this.logger.info("Task %s was claimed by another instance; not dispatching it here", request.id);
+                return;
+            }
+        } catch (error) {
+            task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
             return;
         }
 

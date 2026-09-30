@@ -79,6 +79,11 @@ export class RedisBridge {
         return `penpot.mcp.${this.tenant}.task.res.${taskId}`;
     }
 
+    /** Builds the Redis key used to claim the execution of a task request. */
+    private claimKey(taskId: string): string {
+        return `penpot.mcp.${this.tenant}.task.claim.${taskId}`;
+    }
+
     /**
      * Subscribes to the response channel for the given task ID and publishes the task
      * request to the given user token's request channel.
@@ -179,6 +184,25 @@ export class RedisBridge {
             }
         });
         await this.subscriber.subscribe(requestChannel);
+    }
+
+    /**
+     * Atomically claims the execution of a task request.
+     *
+     * A request published on a user token's channel reaches every instance subscribed
+     * to it. Two instances are subscribed at once when the same user has plugin
+     * connections on two instances (for example, two open Penpot tabs routed to
+     * different instances), since only one connection per token is enforced per
+     * instance. Claiming ensures that only one of them dispatches the request, so the
+     * task is not executed twice.
+     *
+     * @param taskId - The ID of the task request to claim
+     * @param ttlMs - How long the claim is kept, in milliseconds; should cover the task timeout
+     * @returns true if this call obtained the claim, false if another instance already holds it
+     */
+    async claimTask(taskId: string, ttlMs: number): Promise<boolean> {
+        const result = await this.publisher.set(this.claimKey(taskId), "1", "PX", ttlMs, "NX");
+        return result === "OK";
     }
 
     /**
