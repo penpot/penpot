@@ -341,17 +341,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn transit-round-trips?
-  "True when `value` survives the descriptor wire: transit encode then decode
-  yields an equal value. Namespaced keywords, mixed string/keyword keys and
-  other tagged values survive. Unhandled values (functions, records, most
-  host objects) make the writer throw and fail; NaN fails the equality check.
-
-  ±Infinity survives the wire and is accepted. It can enter through open
-  :params/:operation/:preparation maps or future measurement fields; ticket
-  09 gives non-finite measurements explicit invalid-reason forms."
+  "True when `value` survives Transit encoding and decoding without changing
+  its wire representation. This permits NaN and infinities while still
+  rejecting values that Transit cannot encode."
   [value]
   (try
-    (= value (-> value t/encode-str t/decode-str))
+    (let [encoded (t/encode-str value)]
+      (= encoded (-> encoded t/decode-str t/encode-str)))
     (catch :default _ false)))
 
 (defn project-case
