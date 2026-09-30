@@ -223,18 +223,34 @@
 (defn parse-stroke
   [^js stroke]
   (when (some? stroke)
-    (d/without-nils
-     {:stroke-color (-> (obj/get stroke "strokeColor") parse-hex)
-      :stroke-color-ref-file (-> (obj/get stroke "strokeColorRefFile") parse-id)
-      :stroke-color-ref-id (-> (obj/get stroke "strokeColorRefId") parse-id)
-      :stroke-opacity (obj/get stroke "strokeOpacity")
-      :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
-      :stroke-width (obj/get stroke "strokeWidth")
-      :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
-      :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
-      :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
-      :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
-      :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)})))
+    ;; A live `StrokeProxy` exposes its raw stroke map through the hidden
+    ;; `$state` member. Prefer it for the per-side widths: a plain object
+    ;; assigned as a literal has no such member, and a proxy's public per-side
+    ;; getters fall back to the uniform width, which would materialize four
+    ;; identical sides on every commit and lose the distinction between "unset"
+    ;; and "explicitly equal".
+    (let [raw        (obj/get stroke "$state")
+          from-proxy (map? raw)
+          side-width (fn [k js-key]
+                       (if from-proxy
+                         (get raw k)
+                         (obj/get stroke js-key)))]
+      (d/without-nils
+       {:stroke-color (-> (obj/get stroke "strokeColor") parse-hex)
+        :stroke-color-ref-file (-> (obj/get stroke "strokeColorRefFile") parse-id)
+        :stroke-color-ref-id (-> (obj/get stroke "strokeColorRefId") parse-id)
+        :stroke-opacity (obj/get stroke "strokeOpacity")
+        :stroke-style (-> (obj/get stroke "strokeStyle") parse-keyword)
+        :stroke-width (obj/get stroke "strokeWidth")
+        :stroke-width-top (side-width :stroke-width-top "strokeWidthTop")
+        :stroke-width-right (side-width :stroke-width-right "strokeWidthRight")
+        :stroke-width-bottom (side-width :stroke-width-bottom "strokeWidthBottom")
+        :stroke-width-left (side-width :stroke-width-left "strokeWidthLeft")
+        :stroke-alignment (-> (obj/get stroke "strokeAlignment") parse-keyword)
+        :stroke-cap-start (-> (obj/get stroke "strokeCapStart") parse-keyword)
+        :stroke-cap-end (-> (obj/get stroke "strokeCapEnd") parse-keyword)
+        :stroke-color-gradient (-> (obj/get stroke "strokeColorGradient") parse-gradient)
+        :stroke-image (-> (obj/get stroke "strokeImage") parse-image-data)}))))
 
 (defn parse-strokes
   [^js strokes]
