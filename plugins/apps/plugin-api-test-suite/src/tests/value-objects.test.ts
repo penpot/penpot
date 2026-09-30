@@ -129,6 +129,51 @@ describe('Value objects', () => {
       expect(stroke.strokeCapEnd).toBe('square');
     });
 
+    test('per-side width members round-trip', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];
+      const stroke = r.strokes[0];
+      stroke.strokeWidthTop = 2;
+      stroke.strokeWidthRight = 3;
+      stroke.strokeWidthBottom = 4;
+      stroke.strokeWidthLeft = 5;
+      expect(stroke.strokeWidthTop).toBeCloseTo(2, 0);
+      expect(stroke.strokeWidthRight).toBeCloseTo(3, 0);
+      expect(stroke.strokeWidthBottom).toBeCloseTo(4, 0);
+      expect(stroke.strokeWidthLeft).toBeCloseTo(5, 0);
+    });
+
+    test('a uniform stroke reads the same width on every side', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [{ strokeColor: '#000000', strokeWidth: 6 }];
+      const stroke = r.strokes[0];
+      expect(stroke.strokeWidthTop).toBeCloseTo(6, 0);
+      expect(stroke.strokeWidthRight).toBeCloseTo(6, 0);
+      expect(stroke.strokeWidthBottom).toBeCloseTo(6, 0);
+      expect(stroke.strokeWidthLeft).toBeCloseTo(6, 0);
+    });
+
+    test('setting strokeWidth flattens every side', (ctx) => {
+      const r = rect(ctx);
+      r.strokes = [
+        {
+          strokeColor: '#000000',
+          strokeWidth: 1,
+          strokeWidthTop: 2,
+          strokeWidthRight: 3,
+          strokeWidthBottom: 4,
+          strokeWidthLeft: 5,
+        },
+      ];
+      const stroke = r.strokes[0];
+      stroke.strokeWidth = 7;
+      expect(stroke.strokeWidth).toBeCloseTo(7, 0);
+      expect(stroke.strokeWidthTop).toBeCloseTo(7, 0);
+      expect(stroke.strokeWidthRight).toBeCloseTo(7, 0);
+      expect(stroke.strokeWidthBottom).toBeCloseTo(7, 0);
+      expect(stroke.strokeWidthLeft).toBeCloseTo(7, 0);
+    });
+
     test('stroke reference and gradient members round-trip', (ctx) => {
       const r = rect(ctx);
       r.strokes = [{ strokeColor: '#000000', strokeWidth: 1 }];

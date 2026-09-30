@@ -32,6 +32,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -992,8 +993,12 @@
            :strokes
            {:this true
             :get (fn [^js self]
-                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
-                                           #(commit-strokes! plugin-id self %)))
+                   (let [shape (u/proxy->shape self)]
+                     (strokes/format-strokes
+                      (:strokes shape)
+                      #(commit-strokes! plugin-id self %)
+                      {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
+                       :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
