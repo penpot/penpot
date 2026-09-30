@@ -1248,15 +1248,26 @@
            (not (r/check-permission plugin-id "library:write"))
            (u/reject-not-valid reject :connectLibrary "Plugin doesn't have 'library:write' permission")
 
-           (not (string? library-id))
+           (not (uuid/parse* library-id))
            (u/reject-not-valid reject :connectLibrary library-id)
 
            :else
-           (let [file-id (:current-file-id @st/state)
+           (let [file-id    (:current-file-id @st/state)
+                 team-id    (:current-team-id @st/state)
                  library-id (uuid/parse library-id)]
-             (->> st/stream
-                  (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
-                  (rx/take 1)
-                  (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
-             (st/emit! (-> (dwl/link-file-to-library file-id library-id)
-                           (se/add-event plugin-id))))))))))
+             (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+                  (rx/subs!
+                   (fn [shared-files]
+                     ;; Only published libraries of the team can be linked
+                     (if (or (= library-id file-id)
+                             (not (some #(= library-id (:id %)) shared-files)))
+                       (u/reject-not-valid reject :connectLibrary
+                                           (dm/str library-id " is not a published library"))
+                       (do
+                         (->> st/stream
+                              (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
+                              (rx/take 1)
+                              (rx/subs! #(resolve (library-proxy plugin-id library-id)) reject))
+                         (st/emit! (-> (dwl/link-file-to-library file-id library-id)
+                                       (se/add-event plugin-id))))))
+                   reject)))))))))
