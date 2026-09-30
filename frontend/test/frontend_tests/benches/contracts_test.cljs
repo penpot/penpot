@@ -171,8 +171,7 @@
 
 (t/deftest transit-rejects-unencodable-values
   (t/is (false? (core/transit-round-trips? {:v (fn [] 1)})))
-  (t/is (false? (core/transit-round-trips? {:point (->Point 1 2)})))
-  (t/is (false? (core/transit-round-trips? {:v js/NaN}))))
+  (t/is (false? (core/transit-round-trips? {:point (->Point 1 2)}))))
 
 (t/deftest transit-wire-preserves-json-lossy-shapes
   (doseq [value [{:foo 1 "foo" 2}
@@ -184,11 +183,21 @@
     (t/is (= value (-> value transit/encode-str transit/decode-str))
           (pr-str value))))
 
+(t/deftest transit-wire-preserves-non-finite-numbers
+  (let [value   {:nan js/NaN :positive js/Infinity :negative js/-Infinity}
+        decoded (-> value transit/encode-str transit/decode-str)
+        case-desc (assoc (first (rect-cases)) :operation value)]
+    (t/is (number? (:nan decoded)))
+    (t/is (js/Number.isNaN (:nan decoded)))
+    (t/is (= js/Infinity (:positive decoded)))
+    (t/is (= js/-Infinity (:negative decoded)))
+    (t/is (core/transit-round-trips? value))
+    (t/is (nil? (failure-data #(core/check-collected-case case-desc))))))
+
 (t/deftest unencodable-collected-values-are-rejected
   (let [good (first (rect-cases))]
     (doseq [bad [(assoc good :operation {:run (fn [] 1)})
-                 (assoc good :operation {:point (->Point 1 2)})
-                 (assoc-in good [:params :count] js/NaN)]]
+                 (assoc good :operation {:point (->Point 1 2)})]]
       (t/is (= ::core/non-serializable-case
                (:type (failure-data #(core/check-collected-case bad))))
             (pr-str bad)))))

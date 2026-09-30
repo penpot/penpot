@@ -28,6 +28,7 @@
    [app.render-wasm.api.enums]
    [app.render-wasm.api.webgl :as webgl]
    [benches.render-wasm.cases]
+   [benches.render-wasm.failures :as fail]
    [benches.render-wasm.protocol :as protocol]
    [benches.render-wasm.scenes.common :as scenes]
    [benches.render-wasm.scenes.core :as core]
@@ -127,9 +128,6 @@
 (defonce ^:private canvas*
   (atom nil))
 
-(defn- fail-data
-  [m]
-  (assoc m :status "failed"))
 
 (defn- mark-live!
   []
@@ -218,16 +216,17 @@
     true))
 
 (defn- render-ok
-  "Maps one drain result to the bridge value. Success keeps the owner live
-  for explicit disposal. Failures release the owner only if it still is current
-  (i.e. it owns the page resources) so a stale failure cannot dispose of
-  resources belonging to a newer owner."
+  "Maps one drain result to the bridge value.
+
+  Success keeps the owner live for explicit disposal. Failures release the owner
+  only if it still is current (i.e. it owns the page resources) to avoid
+  disposing of resources belonging to a newer owner in case of a stale failure."
   [epoch module-ms graphics-ms upload-ms alive? drain-result snapshot seed ctx width height dpr renderer]
   (if-not alive?
     (do
       (dispose-if-current! epoch)
-      (fail-data {:phase "first-render"
-                  :message "disposed or context lost during render"}))
+      (fail/fail-data {:phase "first-render"
+                       :message "disposed or context lost during render"}))
     (assoc drain-result
            :status "ok"
            :module-init-ms module-ms
@@ -295,126 +294,6 @@
 ;; Public interface
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- stale?
-  "True when `cause` is the superseded-owner marker from `guard-current!`."
-  [cause]
-  (true? (::stale (ex-data cause))))
-
-(defn- guard-current!
-  "Throws the stale marker when `epoch` no longer owns the realm. Every
-  async step calls it first with its own phase so the terminal handler can
-  tell superseded work from genuine failures. The marker lives in `ex-data`,
-  never in the message: message text is not a protocol."
-  [epoch phase]
-  (when-not (= epoch @owner-epoch*)
-    (throw (ex-info "superseded" {::stale true :phase phase}))))
-
-(def ^:private max-cause-depth
-  "How many cause levels the failure cause keeps: the phase wrapper, the
-  WASM-error mapping and the original failure."
-  3)
-
-(def ^:private max-cause-chars
-  "Hard cap for any string in the failure cause, so a hostile value never
-  bloats the bridge payload."
-  500)
-
-(def ^:private unrenderable-value
-  "Fallback for a cause value `pr-str` cannot render."
-  "unrenderable value")
-
-(def ^:private unrenderable-cause-text
-  "Fallback message when a cause level cannot be rendered."
-  "unrenderable cause")
-
-(defn- truncate-cause-str
-  "Truncates `s` to `max-cause-chars` without splitting a surrogate pair.
-  Never throws."
-  [s]
-  (try
-    (let [text (str s)]
-      (if (<= (count text) max-cause-chars)
-        text
-        (let [cut  (subs text 0 max-cause-chars)
-              last (.charCodeAt cut (dec max-cause-chars))]
-          (if (and (>= last 0xD800)
-                   (<= last 0xDBFF)
-                   (let [nxt (.charCodeAt text max-cause-chars)]
-                     (and (>= nxt 0xDC00) (<= nxt 0xDFFF))))
-            (subs cut 0 (dec max-cause-chars))
-            cut))))
-    (catch :default _
-      unrenderable-value)))
-
-(defn- finite-cause-number?
-  "True for numbers kept as numbers in failure causes. NaN and
-  infinities travel as truncated strings, never as numbers."
-  [value]
-  (and (number? value)
-       (js/isFinite value)))
-
-(defn- sanitize-cause-value
-  "Keeps plain-data leaves as-is, stringifies anything else with `pr-str`
-  truncation. Never throws."
-  [value]
-  (try
-    (cond
-      (or (nil? value) (boolean? value) (keyword? value))
-      value
-
-      (string? value)
-      (truncate-cause-str value)
-
-      (finite-cause-number? value)
-      value
-
-      :else
-      (truncate-cause-str (pr-str value)))
-    (catch :default _
-      unrenderable-value)))
-
-(defn- describe-cause-level
-  "Plain-data projection of one `ex-cause` link. Keeps `:message` plus the
-  allowlisted WASM details, sanitized. Never throws."
-  [cause]
-  (try
-    (let [message (try (ex-message cause) (catch :default _ nil))
-          data    (try (ex-data cause) (catch :default _ nil))
-          text    (cond
-                    (string? message) message
-                    (string? cause)   cause
-                    (nil? cause)      "unknown failure"
-                    :else             (pr-str cause))
-          out     {:message (sanitize-cause-value text)}]
-      (if (map? data)
-        (reduce (fn [m k]
-                  (if (contains? data k)
-                    (assoc m k (sanitize-cause-value (get data k)))
-                    m))
-                out
-                [:fn :code :type :hint])
-        out))
-    (catch :default _
-      {:message unrenderable-cause-text})))
-
-(defn- describe-cause
-  "Walks at most `max-cause-depth` cause levels, projecting each with
-  `describe-cause-level`. Always returns plain data, never throws."
-  [cause]
-  (try
-    (loop [current cause
-           depth   0
-           acc     []]
-      (if (or (nil? current) (>= depth max-cause-depth))
-        (if (seq acc)
-          acc
-          [{:message "unknown failure"}])
-        (let [level (describe-cause-level current)
-              next  (try (ex-cause current) (catch :default _ nil))]
-          (recur next (inc depth) (conj acc level)))))
-    (catch :default _
-      [{:message unrenderable-cause-text}])))
-
 (defn- terminal-failure
   "Maps a chain rejection to the bridge value. Stale work resolves to the
   stale marker without touching the newer owner; any other failure releases
@@ -423,7 +302,7 @@
   accounting; the original failure lives under `:cause` as plain data. Only
   the top-level cause decides staleness."
   [epoch cause fallback-phase]
-  (if (stale? cause)
+  (if (fail/stale? cause)
     {:status "stale"}
     (let [phase   (try (or (:phase (ex-data cause))
                            fallback-phase
@@ -433,13 +312,22 @@
           message (try (or (ex-message cause) "unknown failure")
                        (catch :default _
                          "unknown failure"))
-          detail  (try (describe-cause cause)
+          detail  (try (fail/describe-cause cause)
                        (catch :default _
-                         [{:message unrenderable-cause-text}]))]
+                         [{:message fail/unrenderable-cause-text}]))]
       (dispose-if-current! epoch)
-      (fail-data {:phase   phase
-                  :message message
-                  :cause   detail}))))
+      (fail/fail-data {:phase   phase
+                       :message message
+                       :cause   detail}))))
+
+(defn- guard-current!
+  "Throws the stale marker when `epoch` no longer owns the realm. Every
+  async step calls it first with its own phase so the terminal handler can
+  tell superseded work from genuine failures. The marker lives in `ex-data`,
+  never in the message: message text is not a protocol."
+  [epoch phase]
+  (when-not (= epoch @owner-epoch*)
+    (throw (ex-info "superseded" {::fail/stale true :phase phase}))))
 
 (defn- build-canvas!
   "Creates the bench canvas with a `width*dpr` backing buffer and an explicit
@@ -459,8 +347,8 @@
   (if-not alive?
     (do
       (dispose-if-current! epoch)
-      (fail-data {:phase "interact"
-                  :message "disposed or context lost during interaction"}))
+      (fail/fail-data {:phase "interact"
+                       :message "disposed or context lost during interaction"}))
     (merge interaction
            {:status "ok"
             :module-init-ms module-ms
@@ -517,8 +405,8 @@
   (try
     (let [params (t/decode-str request)]
       (if-not (sm/validate schema:load-scene-args params)
-        {:error (fail-data {:phase "invalid-args"
-                            :message "load-scene needs a Transit request with seed and case"})}
+        {:error (fail/fail-data {:phase "invalid-args"
+                                 :message "load-scene needs a Transit request with seed and case"})}
         (let [case-desc (:case params)
               scene     (core/registered-scene (:scene case-desc))]
           (when (nil? scene)
@@ -528,9 +416,9 @@
            :case-desc (core/check-collected-case case-desc)
            :scene scene})))
     (catch :default cause
-      {:error (fail-data {:phase "invalid-args"
-                          :message (or (ex-message cause)
-                                       "invalid Transit request")})})))
+      {:error (fail/fail-data {:phase "invalid-args"
+                               :message (or (ex-message cause)
+                                            "invalid Transit request")})})))
 
 (defn- begin-load!
   "Claims the page, releases the prior owner, then fixes this attempt's
@@ -616,7 +504,7 @@
              :snapshot snapshot
              :ordered (upload/prepare-scene snapshot)))
     (catch :default cause
-      (if (stale? cause)
+      (if (fail/stale? cause)
         (throw cause)
         (throw (ex-info "scene build failed"
                         {:phase "scene-build"}
@@ -646,7 +534,7 @@
       (h/call wasm/internal-module "_set_view_end")
       (assoc graphics :upload-ms (- (now) u0) :view view))
     (catch :default cause
-      (if (stale? cause)
+      (if (fail/stale? cause)
         (throw cause)
         (throw (ex-info "upload failed"
                         {:phase "upload"}
@@ -690,16 +578,16 @@
                                      (terminal-failure epoch cause "aborted")))))))
                  (catch :default cause
                    (js/Promise.resolve
-                    (fail-data {:phase "setup" :message (ex-message cause)}))))]
+                    (fail/fail-data {:phase "setup" :message (ex-message cause)}))))]
     (-> result
         (.then t/encode-str)
         (.catch (fn [cause]
                   (when-some [epoch @epoch*]
                     (dispose-if-current! epoch))
                   (t/encode-str
-                   (fail-data {:phase "bridge"
-                               :message (or (ex-message cause)
-                                            "result encoding failed")})))))))
+                   (fail/fail-data {:phase "bridge"
+                                    :message (or (ex-message cause)
+                                                 "result encoding failed")})))))))
 
 (defn ping
   "Bridge placeholder that checks the Node/browser boundary."
