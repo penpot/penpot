@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -22,6 +23,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.shapes :as ths]
    [app.common.time :as ct]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
@@ -1622,4 +1624,23 @@
                                           {:apply-changes-local-library? true}))]
 
     (t/is (= 2 (count (:redo-changes changes))))))
+
+(t/deftest update-shapes-without-page-skips-validation
+  ;; generate-update-shapes only validates when the changes have a page. For
+  ;; changes on a component container it must not fail on the page-id getter.
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :r01))
+        page    (thf/current-page file)
+        main    (ths/get-shape file :m01)
+        comp    (thc/get-component file :c01)
+
+        changes (cls/generate-update-shapes (-> (pcb/empty-changes nil)
+                                                (pcb/with-container (ctn/make-container comp :component)))
+                                            [(:id main)]
+                                            #(assoc % :name "New name")
+                                            (:objects page)
+                                            {})]
+
+    (t/is (seq (:redo-changes changes)))
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
 
