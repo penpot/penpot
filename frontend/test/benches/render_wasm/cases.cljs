@@ -7,9 +7,10 @@
 ;; Discovery loads each scene and its transitive requires, including any
 ;; colocated operation functions. Stripping :run! only makes output plain
 ;; data; it cannot isolate browser dependencies. Keep this entire import
-;; graph safe for Node. Browser adapters supply execution capabilities in
-;; rtx; discovery must never invoke operation bodies. Ticket 06 must prove
-;; collection with a real pan body present, not just metadata-only cases.
+;; graph safe for Node. Browser adapters will supply execution capabilities in
+;; rtx; discovery must never invoke operation bodies. Collection with a
+;; real body present is proven by `contracts-scene/case`, not by the
+;; metadata-only rects cases.
 
 (ns benches.render-wasm.cases
   "Case collection for the renderer benchmarks.
@@ -106,7 +107,7 @@
                              :scene-seed (core/derive-seed master-seed
                                                            (:scene registered)
                                                            (:params registered))))]
-    (as-invalid-case! #(core/check-collected-case! projected))))
+    (as-invalid-case! #(core/check-collected-case projected))))
 
 (defn scene-ids
   "Registered scene ids in declaration order."

@@ -9,7 +9,7 @@
 
   In order to emulate editor behaviour, `upload-scene!` derives
   parent-before-child order from a validated scene
-  snapshot and uploads it with `serialize-shapes-batch!`
+  snapshot and uploads it with `serialize-shapes-batch`
 
   Validation, timing, lifecycle (`_begin/_end_loading`), host font/image/grid
   sequencing and text layouts stay in the callers (tickets 02/05).
@@ -23,7 +23,7 @@
 (defn prepare-scene
   "Derives the parent-before-child shape vector from a validated `snapshot`.
   Call it outside measured regions, then pass the result to
-  `serialize-shapes-batch!` inside."
+  `serialize-shapes-batch` inside."
   [snapshot]
   (common/upload-order snapshot))
 
@@ -38,4 +38,4 @@
 
   Returns the prepared shape vector."
   [snapshot opts]
-  (serialize-shape/serialize-shapes-batch! (prepare-scene snapshot) opts))
+  (serialize-shape/serialize-shapes-batch (prepare-scene snapshot) opts))
