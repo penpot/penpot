@@ -215,7 +215,7 @@
                    (assoc ::bfc/profile-id (:id profile))
                    (assoc ::bfc/input input)
                    (v3/import-files!))]
-    (bfc/get-file th/*system* (first result))))
+    (bfc/get-file th/*system* (first (:file-ids result)))))
 
 (t/deftest import-binfile-v3-preserves-camel-case-svg-attrs
   ;; The json reader used by the v3 import rewrites every key of every
