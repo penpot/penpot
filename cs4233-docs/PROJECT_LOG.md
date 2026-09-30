@@ -168,3 +168,7 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 > Shorten it into like 2 sentences max
 
 - AI cut each bullet to two sentences or fewer.
+
+> Shorter and simpler
+
+- AI cut the bullets to one short sentence each.
