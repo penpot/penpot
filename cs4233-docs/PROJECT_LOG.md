@@ -164,3 +164,13 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - AI committed the pending log entries on `kylebranch` so the switch
   works.
+
+### 15. Summary for the write-up (2026-09-30)
+
+> Can you turn the PROJECT_LOG.md into like 4 bullet points that we could
+> put for our "Completed evaluation checklist."
+
+> Can you turn the PROJECT_LOG.md into like 4 bullet points that we could
+> put for our "The documented steps in details."
+
+- AI summarised this log in 4 bullets for the course write-up.
