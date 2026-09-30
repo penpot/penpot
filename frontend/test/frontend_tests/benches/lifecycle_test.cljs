@@ -5,36 +5,49 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.benches.lifecycle-test
-  "Boundary-fake coverage for the ticket-05 browser lifecycle.
+  "Tests the browser bridge with fake DOM and renderer boundaries.
 
-  Full load/render runs headless in the pilot (real WASM + DOM). Here the
-  DOM/FFI boundary is faked: bridge arg validation (seeds, views, viewports,
-  non-finite numbers), viewport resolution, disposal state reset, epoch
-  bumps, owner-guard and terminal-failure mapping, context-loss flags, bridge
-  shape, and through-entry `load-rects` scenarios (happy path, rejected
-  import, post-registration failure, overlapping loads) against fake canvases
-  and a fake Emscripten factory. GL init/release unit behavior lives in
-  `frontend-tests.render-wasm.webgl-test`; live context loss and
-  blocked-page cancellation belong to ticket 15's failure verification;
-  exhaustive stale-callback coverage belongs to ticket 06's protocol-test
-  with its injected clock."
+  It covers bridge input, ownership, disposal and `load-scene` with fake
+  canvases and a fake Emscripten factory. Protocol timing tests use an
+  injected clock in `frontend-tests.benches.protocol-test`."
   (:require
    [app.common.render-wasm.wasm :as wasm]
+   [app.common.transit :as transit]
    [benches.render-wasm.browser :as browser]
+   [benches.render-wasm.cases :as cases]
    [benches.render-wasm.scenes.core :as core]
    [cljs.test :as t :include-macros true]))
 
-;; Partial-init unwinding of `init-context!` is covered in
+;; Forward declaration: entry-test helpers below build args against the
+;; fake Emscripten factory URL defined alongside the fake-DOM harness.
+(declare factory-url)
+
+;; Partial-init unwinding of `init-context` is covered in
 ;; `frontend-tests.render-wasm.webgl-test`, which also pins the success,
 ;; nil-context and registration-failure cases.
 
+(defn- load-case
+  "Collected `:rects/load` descriptor for entry tests."
+  []
+  (first (cases/collect-cases {:master-seed 42 :filter "rects/load"})))
+
+(defn- scene-args
+  "Transit request for `browser/load-scene`. `overrides` change the
+  collected case descriptor."
+  [seed overrides]
+  (transit/encode-str
+   {:seed seed
+    :case (merge (load-case) overrides)
+    :module-url (factory-url)
+    :wasm-url "./fake.wasm"}))
+
 (defn- expect-failed-args
-  "Calls `load-rects` with `args` (never touching DOM/FFI: validation runs
+  "Calls `load-scene` with `args` (never touching DOM/FFI: validation runs
   first) and asserts a failure map. Calls `done` when finished."
   [args check-phase? done]
-  (-> (.then (browser/load-rects args)
+  (-> (.then (browser/load-scene args)
              (fn [result]
-               (let [m (js->clj result :keywordize-keys true)]
+               (let [m (transit/decode-str result)]
                  (t/is (= "failed" (:status m)))
                  (when check-phase?
                    (t/is (= "invalid-args" (:phase m))))
@@ -45,41 +58,44 @@
 
 (t/deftest invalid-seed-fails-before-timers
   (t/async done
-    (expect-failed-args #js {"seed" -1} true done)))
+    (expect-failed-args (scene-args -1 {}) true done)))
 
 (t/deftest missing-seed-fails-before-timers
   (t/async done
-    (expect-failed-args #js {} true done)))
+    (expect-failed-args (transit/encode-str {:case (load-case)}) true done)))
+
+(t/deftest missing-case-fails-before-timers
+  (t/async done
+    (expect-failed-args (transit/encode-str {:seed 42}) true done)))
+
+(t/deftest malformed-transit-fails-before-timers
+  (t/async done
+    (expect-failed-args "not transit" true done)))
 
 (t/deftest invalid-view-fails-before-timers
   (t/async done
     (expect-failed-args
-     #js {"seed" 42
-          "view" #js {"scale" -1 "x" 0 "y" 0}}
+     (scene-args 42 {:view {:scale -1 :x 0 :y 0}})
      true
      done)))
 
 (t/deftest invalid-viewport-fails-before-timers
   (t/async done
     (expect-failed-args
-     #js {"seed" 42
-          "view" #js {"scale" 1 "x" 0 "y" 0
-                      "viewport" #js {"width" -5}}}
+     (scene-args 42 {:view {:scale 1 :x 0 :y 0
+                            :viewport {:width -5}}})
      true
      done)))
 
 (t/deftest non-finite-view-values-fail-before-timers
   (t/async done
-    (expect-failed-args #js {"seed" 42
-                             "view" #js {"scale" js/Infinity "x" 0 "y" 0}}
+    (expect-failed-args (scene-args 42 {:view {:scale js/Infinity :x 0 :y 0}})
                         true
                         (fn []
-                          (expect-failed-args #js {"seed" 42
-                                                   "view" #js {"scale" 1 "x" js/NaN "y" 0}}
+                          (expect-failed-args (scene-args 42 {:view {:scale 1 :x js/NaN :y 0}})
                                               true
                                               (fn []
-                                                (expect-failed-args #js {"seed" 42
-                                                                         "view" #js {"scale" 1 "x" 0 "y" js/Infinity}}
+                                                (expect-failed-args (scene-args 42 {:view {:scale 1 :x 0 :y js/Infinity}})
                                                                     true
                                                                     done)))))))
 
@@ -142,37 +158,33 @@
                                         :phase "upload"})
                               "upload")
             after  @@#'browser/owner-epoch*]
-        (t/is (= "stale" (unchecked-get result "status")))
+        (t/is (= "stale" (:status result)))
         (t/is (= before after) "no epoch bump: the newer owner is untouched")))
     (t/testing "terminal failure keeps its phase and disposes the current owner"
       (let [current @@#'browser/owner-epoch*
             result  (terminate current (ex-info "upload failed" {:phase "upload"}) "aborted")]
-        (t/is (= "failed" (unchecked-get result "status")))
-        (t/is (= "upload" (unchecked-get result "phase")))
+        (t/is (= "failed" (:status result)))
+        (t/is (= "upload" (:phase result)))
         (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))
     (t/testing "phaseless failures use the fallback phase"
       (set! wasm/internal-module nil)
       (let [current @@#'browser/owner-epoch*
             result  (terminate current (ex-info "boom" {}) "aborted")]
-        (t/is (= "failed" (unchecked-get result "status")))
-        (t/is (= "aborted" (unchecked-get result "phase")))
+        (t/is (= "failed" (:status result)))
+        (t/is (= "aborted" (:phase result)))
         (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))))
 
 (t/deftest bridge-exposes-pilot-entries
   (let [keys (js/Object.keys browser/bridge)]
     (t/is (some #{"ping"} keys))
-    (t/is (some #{"loadRects"} keys))
+    (t/is (some #{"loadScene"} keys))
     (t/is (some #{"dispose"} keys))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Through-entry fake harness.
 ;;
-;; TODO(mem:render-wasm/performance/cljs-rewrite/06-render-and-interaction-protocol):
-;; shared entry-test harness. Ticket 06 replaces `load-rects` with the generic
-;; case-descriptor entry: keep this section (fake DOM, fake Emscripten factory,
-;; call recording) and repoint the bridge calls below; only call shapes and
-;; result assertions change. The DOM/module boundary the fakes cover does not
-;; change with the entry.
+;; The DOM/module boundary the fakes cover does not change with the entry:
+;; fake DOM, fake Emscripten factory, call recording.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- record!
@@ -229,7 +241,7 @@
                            (fn [cb]
                              ;; Park the first frame while `__benchGateRaf`
                              ;; is set so a second load can supersede a live,
-                             ;; polling owner; later frames run synchronously.
+                             ;; active owner; later frames run synchronously.
                              (if (and (unchecked-get js/globalThis "__benchGateRaf")
                                       (nil? (unchecked-get js/globalThis "__benchRafCb")))
                                (unchecked-set js/globalThis "__benchRafCb" cb)
@@ -315,12 +327,13 @@
   (count (filter #(= effect (first %)) calls)))
 
 (defn- load-result
-  "Calls `browser/load-rects` with `args` and delivers the plain-data result
-  to `k`. A rejected bridge (a broken always-resolve contract) arrives as a
-  `threw` map so the test fails with the cause attached."
+  "Decodes the bridge's Transit result for `k`. A rejected bridge arrives
+  as a `threw` map so the test fails with the cause attached."
   [args k]
-  (-> (browser/load-rects args)
-      (.then (fn [result] (k (js->clj result :keywordize-keys true))))
+  (-> (browser/load-scene args)
+      (.then (fn [result]
+               (t/is (string? result) "loadScene returns Transit")
+               (k (transit/decode-str result))))
       (.catch (fn [cause] (k {:status "threw" :cause (str cause)})))))
 
 (defn- with-entry-env
@@ -339,17 +352,15 @@
   (t/async done
     (with-entry-env
       (fn [cleanup]
-        (load-result #js {"seed" 7
-                          "module-url" (factory-url)
-                          "wasm-url" "./fake.wasm"}
+        (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "ok" (:status m)))
-                       (t/is (= 1 (:renderFrames m)))
+                       (t/is (= 1 (:render-frames m)))
                        (t/is (= 1001 (:shapes (:scene m))) "the canonical scene uploads whole")
-                       (let [graphics (:effectiveGraphics m)]
-                         (t/is (= 1234 (:drawingBufferWidth graphics))
+                       (let [graphics (:effective-graphics m)]
+                         (t/is (= 1234 (:drawing-buffer-width graphics))
                                "drawing buffer width comes from the context")
-                         (t/is (= 5678 (:drawingBufferHeight graphics))
+                         (t/is (= 5678 (:drawing-buffer-height graphics))
                                "drawing buffer height comes from the context")
                          (t/is (false? (:antialias graphics))
                                "context attributes pass through")
@@ -361,14 +372,62 @@
                        (cleanup)
                        (done)))))))
 
+(t/deftest invalid-args-keep-the-current-owner
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (load-result (scene-args 7 {})
+                     (fn [loaded]
+                       (t/is (= "ok" (:status loaded)))
+                       (let [owner  @@#'browser/canvas*
+                             epoch  @@#'browser/owner-epoch*]
+                         (load-result (transit/encode-str {:seed -1})
+                                      (fn [invalid]
+                                        (t/is (= "invalid-args" (:phase invalid)))
+                                        (t/is (identical? owner @@#'browser/canvas*))
+                                        (t/is (= epoch @@#'browser/owner-epoch*))
+                                        (t/is (zero? (effect-count (read-calls) "remove")))
+                                        (cleanup)
+                                        (done))))))))))
+
+(t/deftest warm-pan-restores-and-reaches-full
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (load-result (scene-args 7 {:id :rects/pan :context :reuse})
+                     (fn [m]
+                       (t/is (= "ok" (:status m)))
+                       (t/is (= 20 (count (:cached-slices m))))
+                       (t/is (= 100 (:settling-requested-ms m)))
+                       (t/is (= [4] (mapv :flags (:slices m))))
+                       (t/is (= [2] (mapv :frame-type (:slices m))))
+                       (t/is (= 2 (effect-count (read-calls) "render"))
+                             "restore and finalization each drain once")
+                       (cleanup)
+                       (done)))))))
+
+(t/deftest warm-zoom-reaches-full
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (load-result (scene-args 7 {:id :rects/zoom :context :reuse})
+                     (fn [m]
+                       (t/is (= "ok" (:status m)))
+                       (t/is (= 20 (count (:cached-slices m))))
+                       (t/is (= [2] (mapv :frame-type (:slices m))))
+                       (cleanup)
+                       (done)))))))
+
 (t/deftest rejected-import-resolves-module-init-failure
   (t/async done
     ;; Needs the entry env for the import polyfill, even though the import
     ;; itself fails before touching the DOM.
     (with-entry-env
       (fn [cleanup]
-        (load-result #js {"seed" 7
-                          "module-url" "data:text/javascript,this is not valid javascript((("}
+        (load-result (transit/encode-str
+                      {:seed 7
+                       :case (load-case)
+                       :module-url "data:text/javascript,this is not valid javascript((("})
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "module-init" (:phase m)))
@@ -376,7 +435,7 @@
                        (done)))))))
 
 (defn- assert-wasm-cause
-  "Shared cause assertions for WASM failures through `load-rects`: plain-data
+  "Shared cause assertions for WASM failures through `load-scene`: plain-data
   vector, wire contract, failing fn name, fake message and WASM code."
   [cause fn-name message-pattern]
   (t/is (vector? cause) "cause is plain-data vector")
@@ -397,9 +456,7 @@
     (with-entry-env
       (fn [cleanup]
         (unchecked-set js/globalThis "__benchThrowIn" "_set_browser")
-        (load-result #js {"seed" 7
-                          "module-url" (factory-url)
-                          "wasm-url" "./fake.wasm"}
+        (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "graphics-init" (:phase m)))
@@ -423,9 +480,7 @@
     (with-entry-env
       (fn [cleanup]
         (unchecked-set js/globalThis "__benchThrowIn" "_set_view")
-        (load-result #js {"seed" 7
-                          "module-url" (factory-url)
-                          "wasm-url" "./fake.wasm"}
+        (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "failed" (:status m)))
                        (t/is (= "upload" (:phase m)))
@@ -447,7 +502,7 @@
                             :hint (apply str (repeat 1000 "x"))}
                            (js/Error. "inner boom"))
         result    (terminate current hostile "aborted")
-        m         (js->clj result :keywordize-keys true)
+        m         result
         cause     (:cause m)]
     (t/is (= "failed" (:status m)))
     (t/is (= "aborted" (:phase m)))
@@ -478,7 +533,7 @@
           current   @@#'browser/owner-epoch*
           hostile   (ex-info "evil boom" {:fn evil} (js/Error. "inner"))
           result    (terminate current hostile "aborted")
-          m         (js->clj result :keywordize-keys true)
+          m         result
           cause     (:cause m)
           outer     (first cause)]
       (t/is (= "failed" (:status m)))
@@ -494,7 +549,7 @@
           terminate @#'browser/terminal-failure
           current   @@#'browser/owner-epoch*
           result    (terminate current evil "aborted")
-          m         (js->clj result :keywordize-keys true)
+          m         result
           cause     (:cause m)]
       (t/is (= "failed" (:status m)))
       (t/is (core/transit-round-trips? cause) "throwing cause still crosses the wire")
@@ -510,7 +565,7 @@
                                     {:benches.render-wasm.browser/stale true
                                      :phase "upload"}))
         result    (terminate current nested "aborted")
-        m         (js->clj result :keywordize-keys true)]
+        m         result]
     (t/is (= "failed" (:status m)) "only the top level decides staleness")
     (t/is (= "upload" (:phase m)))
     (t/is (vector? (:cause m)) "cause still rendered")))
@@ -520,28 +575,26 @@
     (with-entry-env
       (fn [cleanup]
         (unchecked-set js/globalThis "__benchGateRaf" true)
-        (let [args       (fn [seed] #js {"seed" seed
-                                         "module-url" (factory-url)
-                                         "wasm-url" "./fake.wasm"})
-              first-load (browser/load-rects (args 7))]
+        (let [args       (fn [seed] (scene-args seed {}))
+              first-load (browser/load-scene (args 7))]
           ;; Microtasks drain before this macrotask: the first load parked on
-          ;; its first poll frame with a live canvas. Macrotask ordering
+          ;; its first frame with a live canvas. Macrotask ordering
           ;; (never wall timing) sequences the assertions.
           (js/setTimeout
            (fn []
              (t/is (some? (unchecked-get js/globalThis "__benchRafCb"))
-                   "first load is polling")
-             (let [second-load (browser/load-rects (args 8))]
+                   "first load is waiting for a frame")
+             (let [second-load (browser/load-scene (args 8))]
                (js/setTimeout
                 (fn []
                   ;; The second load completed; release the parked frame so
                   ;; the first load observes its superseded epoch.
                   (if-some [parked (unchecked-get js/globalThis "__benchRafCb")]
                     (parked 0)
-                    (t/is false "first load never parked on a poll frame"))
+                    (t/is false "first load never parked on a frame"))
                   (-> (js/Promise.all #js [first-load second-load])
                       (.then (fn [results]
-                               (let [[stale ok] (js->clj results :keywordize-keys true)]
+                               (let [[stale ok] (mapv transit/decode-str (array-seq results))]
                                  (t/is (= "stale" (:status stale)) "superseded load resolves stale")
                                  (t/is (= "ok" (:status ok)) "newer owner completes")
                                  (t/is (= 8 (:seed (:scene ok))) "the completer is the second load")
