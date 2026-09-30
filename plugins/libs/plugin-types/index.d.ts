@@ -4194,6 +4194,26 @@ export interface Stroke {
    */
   strokeWidth?: number;
   /**
+   * The optional width of the top side of the stroke. Only applies to boards
+   * and rectangles; setting it on another shape type raises a validation error.
+   */
+  strokeWidthTop?: number;
+  /**
+   * The optional width of the right side of the stroke. Only applies to boards
+   * and rectangles; setting it on another shape type raises a validation error.
+   */
+  strokeWidthRight?: number;
+  /**
+   * The optional width of the bottom side of the stroke. Only applies to boards
+   * and rectangles; setting it on another shape type raises a validation error.
+   */
+  strokeWidthBottom?: number;
+  /**
+   * The optional width of the left side of the stroke. Only applies to boards
+   * and rectangles; setting it on another shape type raises a validation error.
+   */
+  strokeWidthLeft?: number;
+  /**
    * The optional alignment of the stroke relative to the shape's boundary.
    */
   strokeAlignment?: 'center' | 'inner' | 'outer';
@@ -5465,7 +5485,11 @@ type TokenDimensionProps =
   | 'y'
 
   // Stroke width
-  | 'strokeWidth';
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a FontFamilies token can be applied to.
@@ -5534,7 +5558,12 @@ type TokenSpacingProps =
 /**
  * The properties that a BorderWidth token can be applied to.
  */
-type TokenBorderWidthProps = 'strokeWidth';
+type TokenBorderWidthProps =
+  | 'strokeWidth'
+  | 'strokeWidthTop'
+  | 'strokeWidthRight'
+  | 'strokeWidthBottom'
+  | 'strokeWidthLeft';
 
 /**
  * The properties that a TextCase token can be applied to.
