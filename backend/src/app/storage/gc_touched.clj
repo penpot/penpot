@@ -185,18 +185,20 @@
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
 
+(defn- defer-poison!
+  "Defer corrupt rows by one day in their own transaction, separate from
+  the healthy-chunk work."
+  [{:keys [::db/conn]} poison-ids]
+  (defer-in-bulk! conn poison-ids (ct/plus (ct/now) {:days 1})))
+
 (defn process-chunk!
-  [{:keys [::db/conn]} chunk poison-ids]
-  (when (seq poison-ids)
-    (defer-in-bulk! conn poison-ids (ct/plus (ct/now) {:days 1})))
-  (if (seq chunk)
-    (reduce-kv (fn [[nfo ndo] bucket objects]
-                 (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
-                   [(+ nfo nfo')
-                    (+ ndo ndo')]))
-               [0 0]
-               (d/group-by lookup-bucket identity #{} chunk))
-    [0 0]))
+  [{:keys [::db/conn]} chunk]
+  (reduce-kv (fn [[nfo ndo] bucket objects]
+               (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
+                 [(+ nfo nfo')
+                  (+ ndo ndo')]))
+             [0 0]
+             (d/group-by lookup-bucket identity #{} chunk)))
 
 (def ^:private sql:get-touched-storage-objects
   "SELECT so.*
@@ -237,9 +239,14 @@
          deleted 0]
     (let [{:keys [chunk poison]} (get-chunk pool timestamp)]
       (when (seq poison)
-        (mtx/run! metrics :id :storage-gc-poison :inc (count poison)))
+        (mtx/run! metrics :id :storage-gc-poison :inc (count poison))
+        (db/tx-run! cfg defer-poison! poison))
+      ;; Keep draining after a poison-only batch: the deferred rows leave
+      ;; the selection and the next batch may hold healthy objects.
       (if (or (seq chunk) (seq poison))
-        (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk poison)]
+        (let [[nfo ndo] (if (seq chunk)
+                          (db/tx-run! cfg process-chunk! chunk)
+                          [0 0])]
           (recur (long (+ freezed nfo))
                  (long (+ deleted ndo))))
         {:freeze freezed :delete deleted}))))

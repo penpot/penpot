@@ -540,6 +540,30 @@
       (t/is (= (inst-ms (ct/plus now {:days 1}))
                (inst-ms (:touched-at row)))))))
 
+(t/deftest storage-gc-touched-drains-past-a-poison-only-batch
+  ;; A full batch of poison rows must not stop the run: they are deferred
+  ;; and the loop keeps draining, so a healthy row queued behind the
+  ;; LIMIT (later touched_at) still gets collected.
+  (let [now     (ct/now)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        earlier (ct/minus now {:seconds 1})
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poisons (repeatedly 10 uuid/random)]
+    (doseq [id poisons]
+      (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                    id earlier]))
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (doseq [id poisons]
+      (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" id])]
+        (t/is (= (inst-ms (ct/plus now {:days 1}))
+                 (inst-ms (:touched-at row))))))))
+
 (def ^:private migration-0155-fixtures
   ;; [id transit-metadata]: production-shaped legacy rows (nil payload
   ;; means a NULL column).
