@@ -81,10 +81,10 @@ CREATE INDEX job__profile__idx
     WHERE profile_id IS NOT NULL;
 
 -- Cron no-overlap check and submit dedupe: both look for jobs of one
--- tenant with the same name and label that have not started yet, so one
--- index serves the two queries.
+-- tenant with the same name and queue and label that have not started
+-- yet, so one index serves the two queries.
 CREATE INDEX job__name_label__idx
-    ON job (tenant, name, label)
+    ON job (tenant, name, queue, label)
     WHERE status IN ('new', 'scheduled', 'running', 'retry');
 
 -- Storage GC reference check: it answers whether any job still points

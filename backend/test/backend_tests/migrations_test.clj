@@ -157,7 +157,7 @@
   (t/testing "reschedule of lost scheduled rows"
     (t/is (str/includes? (indexdef "job__scheduled__idx") "(tenant, scheduled_at)")))
   (t/testing "cron no-overlap check and submit dedupe"
-    (t/is (str/includes? (indexdef "job__name_label__idx") "(tenant, name, label)"))))
+    (t/is (str/includes? (indexdef "job__name_label__idx") "(tenant, name, queue, label)"))))
 
 (t/deftest job-table-has-sweep-path-indexes
   (t/testing "jobs-GC expiration scan"
