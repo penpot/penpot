@@ -28,12 +28,11 @@
    :params-schema [:map {:closed true}]}
   (fn [params] params))
 
-(core/defcase :contracts-scene/case
-  :contracts-scene
+(core/defcase :contracts-scene/case :contracts-scene
   {:params {}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh}
-  (-> rtx (touch!)))
+  (fn [ctx] (touch! ctx)))
 
 (defn- failure-data
   [f]
@@ -191,7 +190,7 @@
                  (assoc good :operation {:point (->Point 1 2)})
                  (assoc-in good [:params :count] js/NaN)]]
       (t/is (= ::core/non-serializable-case
-               (:type (failure-data #(core/check-collected-case! bad))))
+               (:type (failure-data #(core/check-collected-case bad))))
             (pr-str bad)))))
 
 (t/deftest duplicate-scene-id-from-another-namespace-is-rejected
@@ -400,12 +399,11 @@
            (:type (failure-data #(cases/collect-cases {:master-seed 42
                                                        :filter "missing"}))))))
 
-(t/deftest defcase-body-is-stored-and-stripped
+(t/deftest defcase-registers-function-without-sending-it
   (reset! body-calls [])
   (let [collected (cases/collect-cases {:master-seed 42 :filter "contracts-scene/"})]
     (t/is (= [:contracts-scene/case] (mapv :id collected)))
     (t/is (not (contains? (first collected) :run!)))
-    (t/is (not (contains? (first collected) :body-source)))
     (t/is (core/transit-round-trips? (first collected))))
   (t/is (empty? @body-calls))
   (let [entry (core/registered-case :contracts-scene/case)]
@@ -414,38 +412,9 @@
     (t/is (= :runtime ((:run! entry) :runtime)))
     (t/is (= [:touched] @body-calls))))
 
-(t/deftest check-body-source-accepts-pipelines
-  (doseq [source ['((-> rtx (pan! x)))
-                  '((let [a 1] (-> rtx (pan! a))))
-                  '((do (log! 1) (-> rtx (pan!))))
-                  '((comment "setup") (-> rtx (pan!)))
-                  '((clojure.core/-> rtx (pan!)))]]
-    (t/is (= source (core/check-body-source! :case source)) (pr-str source))))
-
-(t/deftest check-body-source-rejects-other-shapes
-  (doseq [source ['((pan! x))
-                  '((-> other (pan!)))
-                  '((->> rtx (pan!)))
-                  '((if c (-> rtx a) (-> rtx b)))
-                  '()
-                  '((do))
-                  '((let [x 1]))]]
-    (t/is (= ::core/invalid-case
-             (:type (failure-data #(core/check-body-source! :case source))))
-          (pr-str source))))
-
-(t/deftest register-case-rejects-invalid-body-source
-  (try
-    (t/is (= ::core/invalid-case
-             (:type (failure-data
-                     #(core/register-case! {:id :contracts-badbody/case
-                                            :scene :contracts-scene
-                                            :ns "contracts-test"
-                                            :params {}
-                                            :view {:scale 1 :x 0 :y 0}
-                                            :context :fresh
-                                            :run! (fn [rtx] rtx)
-                                            :body-source '((pan! x))})))))
-    (t/is (nil? (core/registered-case :contracts-badbody/case)))
-    (finally
-      (core/unregister-case! :contracts-badbody/case))))
+(t/deftest defcase-rejects-run-function-in-options
+  (t/is (= :benches.render-wasm.scenes.core/invalid-run-function
+           (:type (failure-data
+                   #(core/defcase :contracts-scene/unchecked :contracts-scene
+                      {:run! (fn [x y] [x y])})))))
+  (t/is (nil? (core/registered-case :contracts-scene/unchecked))))
