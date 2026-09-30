@@ -37,13 +37,16 @@
 (declare change-edit-mode)
 
 (defn start-created-path-edition
-  [id]
-  (ptk/reify ::start-created-path-edition
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dwe/start-edition-mode id)
-             (edition/start-path-edit id)
-             (change-edit-mode :draw)))))
+  "Edits a just created path in `edit-mode` (`:draw` by default)."
+  ([id]
+   (start-created-path-edition id :draw))
+  ([id edit-mode]
+   (ptk/reify ::start-created-path-edition
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of (dwe/start-edition-mode id)
+              (edition/start-path-edit id)
+              (change-edit-mode edit-mode))))))
 
 ;; Draw-loop stop signals either restart the same path or exit drawing.
 
@@ -434,11 +437,12 @@
       (when-let [content (dm/get-in state [:workspace-drawing :object :content])]
         (cond
           (and (> (count content) 1) restart?)
-          (rx/of (common/finish-path)
-                 (clean-drawn-content)
-                 (setup-frame)
-                 (dwdc/handle-finish-drawing)
-                 (start-created-path-edition shape-id))
+          (let [edit-mode (dm/get-in state [:workspace-local :edit-path shape-id :edit-mode])]
+            (rx/of (common/finish-path)
+                   (clean-drawn-content)
+                   (setup-frame)
+                   (dwdc/handle-finish-drawing)
+                   (start-created-path-edition shape-id (d/nilv edit-mode :draw))))
 
           (> (count content) 1)
           (rx/of (clean-drawn-content)
@@ -545,6 +549,10 @@
       state)))
 
 (defn change-edit-mode
+  "Switches the active path between `:draw` and `:move`.
+
+  A new path being drawn has no edition yet; switching it to `:move`
+  finishes the drawing, which then reenters edition in `:move`."
   [mode]
   (ptk/reify ::change-edit-mode
     ptk/UpdateEvent
@@ -552,16 +560,20 @@
       (if-let [id (dm/get-in state [:workspace-local :edition])]
         (cond-> (d/update-in-when state [:workspace-local :edit-path id] assoc :edit-mode mode)
           (= mode :draw) (enter-draw-from-selected-node id))
-        state))
+        (cond-> state
+          (and (= mode :move) (st/drawing? state))
+          (assoc-in [:workspace-local :edit-path (st/get-path-id state) :edit-mode] :move))))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [id (dm/get-in state [:workspace-local :edition])]
+      (if-let [id (dm/get-in state [:workspace-local :edition])]
         (let [mode (dm/get-in state [:workspace-local :edit-path id :edit-mode])]
           (case mode
             :move (rx/of (common/finish-path))
             :draw (rx/of (start-draw-mode))
-            (rx/empty)))))))
+            (rx/empty)))
+        (when (and (= mode :move) (st/drawing? state))
+          (rx/of (common/finish-path)))))))
 
 (defn reset-last-handler
   []
