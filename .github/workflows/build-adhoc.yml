@@ -23,7 +23,12 @@ on:
 jobs:
   build-bundle:
     uses: ./.github/workflows/build-bundle.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     with:
       gh_ref: ${{ inputs.gh_ref }}
       force: ${{ inputs.force }}
@@ -31,7 +36,17 @@ jobs:
   build-docker:
     needs: build-bundle
     uses: ./.github/workflows/build-docker.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+      PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     with:
       gh_ref: ${{ inputs.gh_ref }}
       # Pin build-docker to the commit build-bundle actually bundled.
@@ -40,7 +55,8 @@ jobs:
 
   build-docker-admin-console:
     uses: ./.github/workflows/build-docker-admin-console.yml
-    secrets: inherit
+    secrets:
+      ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
     with:
       gh_ref: ${{ inputs.nitrate_ref || inputs.gh_ref }}
       force: ${{ inputs.force }}

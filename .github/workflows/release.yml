@@ -13,6 +13,21 @@ on:
         description: 'Tag to release'
         type: string
         required: true
+    secrets:
+      AWS_REGION:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      PUB_DOCKER_PASSWORD:
+        required: false
+      PUB_DOCKER_USERNAME:
+        required: false
 
 permissions:
   contents: write

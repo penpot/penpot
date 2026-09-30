@@ -27,6 +27,13 @@ on:
         description: 'Publig name (from plugins/apps/<plugin_name>-plugin)'
         type: string
         required: true
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
 
 permissions:
   contents: read

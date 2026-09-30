@@ -50,15 +50,6 @@ rules:
   github-app:
     ignore:
       - auto-label.yml
-  # Pass only the secrets each reusable workflow needs.
-  secrets-inherit:
-    ignore:
-      - build-adhoc.yml
-      - build-develop.yml
-      - build-staging.yml
-      - build-tag.yml
-      - build-tmp-tokens.yml
-      - plugins-deploy-packages.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
