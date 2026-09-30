@@ -30,3 +30,4 @@
 - `migrate-file` synthesizes legacy migration ids from old numeric versions when `:migrations` is absent, migrates legacy features, and records feature flags created through `cfeat/*new*`.
 - When a file had no previous `:migrations`, `migrate-file` marks all migrations as migrated in metadata so callers persist the complete migration set, not only transformations that changed data.
 - Closed schemas (`schema:stroke-attrs` and others) reject a key that was dropped from the declaration, so removing a declared attr needs a migration in the same change, for data already written with it.
+- Rebase collision on a migration number: upstream keeps the id. Renumber the branch migration to the next free one, keep it last in `available-migrations`, and rename everything that spells the number — its test file and namespace (`files_migrations_00NN_test.cljc`), the test names, and comments in production code or memories that name it.
