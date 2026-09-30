@@ -1,16 +1,19 @@
 ---
 title: 3.12. Branching
-desc: Learn how Penpot file branching works — isolated file copies, a three-way entity-level merge engine, conflict resolution, the RPC API and the workspace UI. View Penpot's technical guide for self-hosting, configuration and developer insights.
+desc: Learn how Penpot file branching works — branches that copy no data, a three-way entity-level merge engine, conflict resolution, the RPC API and the workspace UI. View Penpot's technical guide for self-hosting, configuration and developer insights.
 ---
 
 # File branching
 
-Branching lets a user take an isolated, editable copy of a file (a **branch**),
-work on it without touching the original (**main**), and later bring the changes
-back through a **merge**. It is conceptually the same idea Git offers for source
+Branching lets a user open an editable **branch** of a file, work on it without
+touching the original (**main**), and later bring the changes back through a
+**merge**. It is conceptually the same idea Git offers for source
 code, applied to design files: the workspace even reuses a small set of `git-*`
 icons (`git-branch`, `git-branch-plus`, `git-commit`, `git-merge`) to make the
 mental model obvious.
+A branch copies no data: it is a file row flagged `is_branch`, a
+`file_branch` row, an op log in `file_branch_change`, and a pinned snapshot
+of main that serves as its merge base.
 
 The whole feature is gated behind the `:branching` product flag and was added in
 the `2.16` API generation (all the RPC methods carry `::doc/added "2.16"`).
@@ -21,12 +24,15 @@ Branching always reasons about **three** versions of the same file:
 
  * **branch** — the isolated working state the user edits. A branch is
    **not a stored copy**: it is a reference to the merge base plus an
-   append-only **op log** (`file_branch_change`), one change vector per
-   branch save. The branch's `:data` is *derived* on every read by
-   replaying that log over the base. Its file row still exists (the
-   frontend keys on file ids), but it stores no data payload.
- * **merge base** — a frozen snapshot of main taken at the exact moment the
-   branch was created.
+   **op log** (`file_branch_change`). Each branch save appends one change
+   vector to the log, and a successful update from main replaces the log
+   with the branch's squashed net changes or empties it. The branch's
+   `:data` is *derived* on every read by replaying that log over the base.
+   Its file row still exists (the frontend keys on file ids), but it stores
+   no data payload.
+ * **merge base** — a pinned snapshot of main. Branch creation takes the
+   first one, and each successful update from main replaces it with a
+   snapshot of main's current state (`reposition-base!`).
 
 Comparing two versions is not enough to decide who is right when a value
 differs. With the third (the base) the engine can tell *who* changed *what*:
@@ -69,7 +75,9 @@ Tests:
 
 ```text
 common/test/common_tests/files_branch_merge_test.cljc  ; unit tests for the diff/merge engine
+backend/test/backend_tests/branch_merge_test.clj       ; engine tests on hand-built data
 backend/test/backend_tests/rpc_file_branch_test.clj    ; integration tests for the RPC commands
+backend/test/backend_tests/rpc_file_branch_oplog_test.clj ; op log storage and derivation invariants
 ```
 
 The branching commands closely mirror the patterns in
@@ -147,8 +155,9 @@ Key points:
  * **`file_branch_change`** is the branch's op log: one row per branch save
    (the blob-encoded change vector, `UNIQUE (file_id, revn)`). The branch's
    `:data` is derived by replaying its rows in revn order over the base
-   snapshot. Rows are replaced (squashed) by `update-branch-from-main` and
-   cascade away when the branch is deleted.
+   snapshot. Rows are replaced (squashed) by `update-branch-from-main`, stay
+   in place when the branch is logically deleted, and go with the foreign
+   key's cascade when the garbage collector hard-deletes the branch file row.
 
  * **`base_snapshot_id`** references the merge-base snapshot. **`base_revn`**
    records MAIN's revision number and **`base_branch_revn`** the BRANCH file's
@@ -167,8 +176,7 @@ Key points:
 
 The `::create-file-branch` command (`files_branch.clj`) refuses to branch a
 branch (`:cannot-branch-a-branch`) and runs everything inside a single
-transaction (with `SET CONSTRAINTS ALL DEFERRED`, because the new file and
-its branch row reference each other) **under the file's advisory lock**
+transaction **under the file's advisory lock**
 (`db/xact-lock!`, the same one update-file takes), so the base snapshot and
 the branch's initial state (the empty op log over that base) are guaranteed
 to come from the SAME state of main — a concurrent save between the two
@@ -179,8 +187,10 @@ manufacture phantom diffs later:
     future. The far-future deletion date keeps the snapshot from being pruned by
     the snapshot GC while the branch is open — the diff needs it for as long as
     the branch lives. The pin is **released** (rescheduled with the team's
-    normal deletion delay) whenever the branch is merged, deleted or its base
-    is repositioned, so closed branches do not leak multi-year snapshots. If
+    normal deletion delay) whenever the branch is deleted, materialised, or its
+    base is repositioned, so closed branches do not leak multi-year snapshots.
+    A merge releases it through the deletion, and a branch kept after the
+    merge keeps its pin. If
     the snapshot can ever not be resolved, merge/update/diff **refuse** with
     `:base-snapshot-missing` — silently falling back to main would degrade the
     three-way merge into "branch overwrites main" without conflicts.
@@ -189,12 +199,17 @@ manufacture phantom diffs later:
     derived data is plain maps) and data version. No data, no media, no
     library copy: the read path derives the state, and the op log starts
     empty, so the branch's initial content equals the base by construction.
+    The new file row references nothing created in this transaction, and
+    every row that references it is inserted after it. No insert therefore
+    depends on the `SET CONSTRAINTS ALL DEFERRED` the transaction opens with.
  3. **Mark the new file as a branch** (`is_branch = true`) so it stays out of
     the listings, grant the creator ownership (`file_profile_rel`, the same
     grant the old duplicate path made), and copy main's `file_library_rel`
     rows so shared-library components keep resolving on the derived state.
  4. **Insert the `file_branch` row** with `status = 'open'`, the base snapshot
-    id and `base_revn = base_branch_revn = (:revn file)`.
+    id, `base_revn` set to main's revision (`(:revn file)`), and
+    `base_branch_revn` set to the branch file's own revision
+    (`(:revn branch-file)`, 0 for the new file row).
 
 Before any of this it enforces edition permissions on main and checks two quotas:
 `::quotes/branches-per-file` and `::quotes/branches-per-team` (configurable via
@@ -430,24 +445,29 @@ The flow:
      * publishes a `:file-merged` message on the msgbus topic of main so every
        open client reloads the file in real time.
 
-Closing the branch (`finish-branch!`) always releases the pinned base
-snapshot and, **unless the caller passes `:keep-branch true`**, logically
-deletes the branch and its file in the SAME transaction (`delete-branch!`) —
-merged copies do not pile up, and there is no client-driven second call that
-could be lost mid-way. The `:file-deleted` msgbus message carries the
-`session-id`, so the merging client (which is navigating to main on its own)
-is not raced into the dashboard by its own deletion.
+Closing the branch (`finish-branch!`) marks it `merged` and, **unless the
+caller passes `:keep-branch true`**, logically deletes the branch and its file
+in the SAME transaction (`delete-branch!`) — merged copies do not pile up, and
+there is no client-driven second call that could be lost mid-way. The deletion
+also releases the pinned base snapshot. A kept branch keeps its pin, because
+its state is still derived from that snapshot. The `:file-deleted` msgbus
+message carries the `session-id`, so the merging client (which is navigating
+to main on its own) is not raced into the dashboard by its own deletion.
 
 ### Resolutions
 
-Conflict resolutions are a simple map of **entity id → `:main` | `:branch`**.
+Conflict resolutions are a map keyed by **entity id**. A value is either
+`:main` or `:branch` for the whole entity, or, for a conflict that carries
+`:changed-attrs`, a per-attribute map `{attr → :main | :branch}` that
+resolves the conflict only when it names every changed attribute.
 The id is usually a uuid, but structural conflicts use keyword ids
 (`:active-themes`, `:active-sets`, `:page-order`, `:token-set-order` — each
 distinct, so resolving one can never accidentally satisfy another). `:branch`
 takes the branch side, `:main` (or absent) leaves main untouched. Resolving a
 delete conflict to `:branch` really restores: a shape comes back with its whole
 surviving subtree, a page with its full contents, a token set with its tokens. The frontend builds this
-map through `set-conflict-resolution` (one entity) and `set-all-resolutions`
+map through `set-conflict-resolution` (one entity),
+`set-conflict-attr-resolution` (one attribute), and `set-all-resolutions`
 (bulk), then passes it to the merge command.
 
 ## From merge to change ops: `compute-changes`
@@ -591,21 +611,25 @@ The listing is deliberately not gated. It renders the branch panel, so
 refusing it would take the panel away rather than protect it, and its cost
 is bounded by the summary cache instead.
 
-Every mutation that runs through `audited`, and every save routed to a
+Every command that runs through `audited`, and every save routed to a
 branch's op log, attaches `:branch-operation`, `:branch-outcome` and
 `:branch-duration-ms` to its own audit event, because the generic RPC event
 records who called what and not how long it took, and duration is the number
-the first enterprise trial will be asked about. Creation, compare, merge,
-update-from-main and materialise attach them through `audited`; the save
-attaches them on the `update-file` event, whose props it replaces. Every
-outcome carries them, the no-op merge, the idempotent materialise and both
-refusal shapes included.
+the first enterprise trial will be asked about. Creation, the listing,
+compare, merge, update-from-main, and materialise attach them through
+`audited`, and the listing adds `:branches-compared` and `:branches-cached`,
+the two numbers that explain its duration. The save attaches them on the
+`update-file` event, whose props it replaces. Every outcome these commands
+return carries them, the no-op merge, the idempotent materialise, and the
+`:conflicts` and `:unsupported` refusals included. A refusal raised as an
+error, such as a size gate's `:restriction` or `:file-modified`, carries
+none of them: the audit middleware records a call only when it returns, so
+the error writes no audit event at all.
 
 Three mutations are the exception: `update-file-branch`,
-`archive-file-branch` and `delete-file-branch` are single-row metadata
-updates that carry only the generic event. The three reads are the same:
-the listing, the branch context and the limits are hot paths, and the
-listing's own cost is recorded by the summary cache instead.
+`archive-file-branch`, and `delete-file-branch` do not run through `audited`
+and carry only the generic event. Two reads are the same: the branch
+context, which the frontend asks for on every file open, and the limits.
 
 ## RPC API summary
 
@@ -621,6 +645,7 @@ All commands live in `app.rpc.commands.files-branch`, are gated by
 | `::update-branch-from-main`   | mutation | Pull main's changes into the branch                 |
 | `::materialize-file-branch`   | mutation | Turn a branch into an ordinary file (idempotent)    |
 | `::get-file-branch-info`      | query    | Branch metadata when opening a branch file          |
+| `::get-branching-limits`      | query    | Size limits the gates enforce, for the UI to show   |
 | `::update-file-branch`        | mutation | Rename / edit description                            |
 | `::archive-file-branch`       | mutation | Archive / restore a branch                          |
 | `::delete-file-branch`        | mutation | Logically delete a branch                           |
@@ -636,8 +661,9 @@ All commands live in `app.rpc.commands.files-branch`, are gated by
    (the diff result + selected change + resolutions) and `workspace-branch-context`
    (metadata when editing a branch).
  * Events: `fetch-branches`, `create-branch`, `open-branch`, `fetch-branch-diff`,
-   `set-conflict-resolution`, `set-all-resolutions`, `merge-branch`,
-   `update-branch-from-main`, `fetch-branch-context`, plus `rename-branch`,
+   `set-conflict-resolution`, `set-conflict-attr-resolution`,
+   `set-all-resolutions`, `merge-branch`, `update-branch-from-main`,
+   `fetch-branch-context`, `fetch-branching-limits`, plus `rename-branch`,
    `archive-branch`, `delete-branch`. Each maps to the matching `rp/cmd!` call
    (`:create-file-branch`, `:get-file-branches`, `:get-branch-diff`,
    `:merge-file-branch`, `:update-branch-from-main`, …).
@@ -652,6 +678,12 @@ All commands live in `app.rpc.commands.files-branch`, are gated by
    archived branches; **`branch-entry*`** is a single branch card with rename /
    archive / delete actions.
  * **`create-branch-dialog*`** — the create modal (name + description).
+ * **`branch-info-dialog*`** is the branch info card: status, author, source
+   file, dates, change counts, and a description its author can edit.
+ * **`merge-branch-dialog*`** is the merge confirmation that `confirm-merge!`
+   opens, with a checkbox that keeps the merged branch (`:keep-branch`).
+ * **`limits-dialog*`** lists the size limits it fetches through
+   `::get-branching-limits`, plus the scope and merge limitations.
  * **`branch-compare-dialog*`** — a read-only diff viewer, filterable by category
    (pages / components / colors / tokens) and status (added / modified / deleted).
  * **`branch-conflicts-dialog*`** — the conflict-resolution UI, showing
@@ -670,8 +702,12 @@ card so branches can be opened or created without entering the file.
 The pure engine is covered by `common-tests.files-branch-merge-test`, which
 exercises `three-way-entities` and `compute-merge` across the add / modify /
 delete / conflict scenarios and can be run in both the JVM and JavaScript
-runners. The RPC layer is covered end-to-end by
-`backend-tests.rpc-file-branch-test` (create / list / diff / merge). See the
+runners. `backend-tests.branch-merge-test` adds engine cases on hand-built
+data in the backend runner. The RPC layer is covered end-to-end by
+`backend-tests.rpc-file-branch-test` (create / list / diff / merge).
+`backend-tests.rpc-file-branch-oplog-test` asserts the op log storage and
+derivation invariants, and `backend-tests.rpc-file-pull-request-test`
+covers the pull request commands. See the
 [Unit tests](/technical-guide/developer/common/#unit-tests) section for how to run
 them.
 
