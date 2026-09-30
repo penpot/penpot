@@ -3,6 +3,12 @@
   <head>
     <meta charset="utf-8">
     <title>renderer benchmark pilot</title>
+    <style>
+      /* The canvas is the page: kill the UA body margin (8px) that would
+         leave a gutter around the scene in screenshots. */
+      html, body { margin: 0; padding: 0; }
+      canvas { display: block; }
+    </style>
   </head>
   <body>
     <!-- Same one-liner as frontend/resources/polyfills/dynamicImport.js:
