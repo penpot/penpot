@@ -82,36 +82,10 @@ rules:
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
-  # Replace actions that duplicate built-in runner tools.
-  superfluous-actions:
-    ignore:
-      - release.yml
   # Pin container images to a digest.
   unpinned-images:
     ignore:
       - plugins-deploy-package.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
-  # Pin actions to a full commit SHA.
-  unpinned-uses:
-    ignore:
-      - auto-label.yml
-      - build-bundle.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - commit-checker.yml
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-package.yml
-      - plugins-deploy-packages.yml
-      - plugins-deploy-styles-doc.yml
-      - release.yml
       - tests-backend.yml
       - tests-common.yml
       - tests-e2e.yml
