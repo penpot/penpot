@@ -14,7 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.jobs.metrics :as jobs-metrics]
+   [app.jobs.metrics :as metrics]
    [app.metrics :as mtx]
    [app.redis :as rds]
    [app.worker :as wrk]
@@ -102,9 +102,10 @@ RETURNING job.id, job.queue")
     (db/after-commit!
      (fn []
        (doseq [{:keys [id queue]} rows]
-         (jobs-metrics/record-rescheduled cfg queue)
+         (metrics/record-rescheduled cfg queue)
          (l/wrn :hint "reschedule"
                 :id (str id)
+                :tenant tenant
                 :queue queue))))))
 
 (defn- mark-orphan-jobs
@@ -116,9 +117,10 @@ RETURNING job.id, job.queue")
     (db/after-commit!
      (fn []
        (doseq [{:keys [id queue]} rows]
-         (jobs-metrics/record-orphan cfg queue)
+         (metrics/record-orphan cfg queue)
          (l/wrn :hint "marked job as orphan"
                 :id (str id)
+                :tenant tenant
                 :queue queue))))))
 
 (defn- get-jobs
@@ -144,15 +146,13 @@ RETURNING job.id, job.queue")
         key   (wrk/queue-key tenant queue)]
 
     (rds/rpush conn key items)
-
-    (db/after-commit!
-     (fn []
-       (jobs-metrics/record-dispatcher-size cfg queue (count jobs))
-       (doseq [{:keys [id name queue]} jobs]
-         (jobs-metrics/record-dispatched cfg name queue 1)
-         (l/trc :hist "schedule"
-                :id (str id)
-                :queue queue))))))
+    (metrics/record-dispatcher-size cfg queue (count jobs))
+    (doseq [{:keys [id name queue]} jobs]
+      (metrics/record-dispatched cfg name queue 1)
+      (l/trc :hist "schedule"
+             :tenant tenant
+             :queue queue
+             :job-id (str id)))))
 
 (defn- run-batch'
   [cfg]
@@ -179,7 +179,7 @@ RETURNING job.id, job.queue")
                    ;; the next batch iteration
                    ::wait)]
       (db/after-commit!
-       #(jobs-metrics/record-dispatcher-batch cfg :dispatch :completed (inst-ms (tpoint))))
+       #(metrics/record-dispatcher-batch cfg :dispatch :completed (inst-ms (tpoint))))
       result)))
 
 (defn- sleep-after-error
@@ -191,7 +191,8 @@ RETURNING job.id, job.queue")
   (lease-based) and claim pending jobs into their Redis queues. Exposed
   as a function for testability; the dispatcher thread loops on it."
   [cfg]
-  (let [tpoint (ct/tpoint)]
+  (let [tpoint (ct/tpoint)
+        tenant (::wrk/tenant cfg)]
     (try
       (let [rconn (rds/connect cfg)]
         (try
@@ -207,26 +208,26 @@ RETURNING job.id, job.queue")
         (cond
           (rds/exception? cause)
           (do
-            (jobs-metrics/record-dispatcher-batch cfg :redis :failed (inst-ms (tpoint)))
-            (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
+            (metrics/record-dispatcher-batch cfg :redis :failed (inst-ms (tpoint)))
+            (l/wrn :hint "redis exception (will retry in an instant)" :tenant tenant :cause cause)
             (sleep-after-error cfg))
 
           (db/sql-exception? cause)
           (do
-            (jobs-metrics/record-dispatcher-batch cfg :database :failed (inst-ms (tpoint)))
-            (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
+            (metrics/record-dispatcher-batch cfg :database :failed (inst-ms (tpoint)))
+            (l/wrn :hint "database exception (will retry in an instant)" :tenant tenant :cause cause)
             (sleep-after-error cfg))
 
           :else
           (do
-            (jobs-metrics/record-dispatcher-batch cfg :execution :failed (inst-ms (tpoint)))
-            (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
+            (metrics/record-dispatcher-batch cfg :execution :failed (inst-ms (tpoint)))
+            (l/err :hint "unhandled exception (will retry in an instant)" :tenant tenant :cause cause)
             (sleep-after-error cfg)))))))
 
 (defmethod ig/init-key ::wrk/dispatcher
-  [_ {:keys [::db/pool ::wait-duration] :as cfg}]
+  [_ {:keys [::db/pool ::wait-duration ::wrk/tenant] :as cfg}]
   (letfn [(dispatcher []
-            (l/inf :hint "started")
+            (l/inf :hint "started" :tenant tenant)
             (try
               (loop []
                 (let [result (run-batch cfg)]
@@ -234,14 +235,14 @@ RETURNING job.id, job.queue")
                     (px/sleep wait-duration))
                   (recur)))
               (catch InterruptedException _
-                (l/trc :hint "interrupted"))
+                (l/trc :hint "interrupted" :tenant tenant))
               (catch Throwable cause
-                (l/err :hint "unexpected exception" :cause cause))
+                (l/err :hint "unexpected exception" :tenant tenant :cause cause))
               (finally
-                (l/inf :hint "terminated"))))]
+                (l/inf :hint "terminated" :tenant tenant))))]
 
     (if (db/read-only? pool)
-      (l/wrn :hint "not started (db is read-only)")
+      (l/wrn :hint "not started (db is read-only)" :tenant tenant)
       (px/fn->thread dispatcher :name "penpot/worker-dispatcher"))))
 
 (defmethod ig/halt-key! ::wrk/dispatcher

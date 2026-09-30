@@ -6,7 +6,12 @@
 
 (ns backend-tests.worker-test
   (:require
+   [app.common.schema :as sm]
+   [app.msgbus :as mbus]
    [app.worker :as wrk]
+   [app.worker.cron :as wcron]
+   [app.worker.dispatcher :as wdisp]
+   [app.worker.runner :as wrkr]
    [clojure.test :as t]))
 
 ;; The dispatcher's push and the runner's pop agree on the Redis list
@@ -25,3 +30,17 @@
   (t/testing "hyphens travel through untouched"
     (t/is (= "penpot.worker.queue:my-tenant:daily-cleanup"
              (wrk/queue-key "my-tenant" :daily-cleanup)))))
+
+;; Booting the backend asserts these integrant keys, and assert-key
+;; compiles the schema first: a ref with no registered schema crashes
+;; the boot with :malli.core/invalid-schema instead of asserting. The
+;; component schemas lean on the shared registry (db pool, metrics,
+;; redis client, msgbus, job defs), so the registry dependencies must
+;; be loaded for them to compile, like the full system does.
+(t/deftest worker-component-schemas-resolve-every-ref
+  (t/testing "cron, dispatcher and runner schemas compile"
+    (t/is (sm/schema? (sm/schema ::mbus/msgbus)))
+    (doseq [s [@#'wcron/schema:params
+               @#'wdisp/schema:dispatcher
+               @#'wrkr/schema:params]]
+      (t/is (sm/schema? (sm/schema s))))))

@@ -61,34 +61,34 @@
   (let [jobs (:app.jobs/defs sys/system)]
     (pp/pprint (into (sorted-set) (keys jobs)))))
 
-(defn run-task!
+(defn run-job
   "Execute the job handler in-process (no job row)."
   ([tname]
-   (run-task! tname {}))
+   (run-job tname {}))
   ([tname params]
    (jobs/invoke (-> sys/system
                     (assoc ::jobs/name tname)
                     (assoc ::jobs/params params)))))
 
-(defn schedule-task!
+(defn submit-job
   "Submit a durable job to the queue."
   ([name]
-   (schedule-task! name {}))
+   (submit-job name {}))
   ([name params]
    (jobs/submit sys/system
                 {::jobs/name name
                  ::jobs/params params})))
 
-(defn send-test-email!
+(defn send-test-email
   [destination]
   (assert (string? destination) "destination should be provided")
-  (jobs/invoke (-> sys/system
-                   (assoc ::jobs/name :sendmail)
-                   (assoc ::jobs/params {:body "test email"
-                                         :subject "test email"
-                                         :to [destination]}))))
+  (jobs/submit sys/system
+               {::jobs/name :sendmail
+                ::jobs/params {:body "test email"
+                               :subject "test email"
+                               :to [destination]}}))
 
-(defn resend-email-verification-email!
+(defn resend-email-verification-email
   [email]
   (db/tx-run! sys/system
               (fn [{:keys [::db/conn] :as cfg}]

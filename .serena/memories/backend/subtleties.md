@@ -30,6 +30,7 @@
 - `job_event` is append-only and deleted by cascade with the job. `progress` is a row there, not a column: no Redis and no mutable column to keep in sync.
 - A missing job-def raises (`:no-job-definition`) instead of completing. Throwing with `ex-data :type ::retry` still controls retry behavior; `:strategy ::noop` retries without incrementing retry count.
 - Cron entries claim their `scheduled_task` row with `FOR UPDATE SKIP LOCKED`, disable statement/idle-in-transaction timeouts locally, submit one `job` row per entry when no active instance exists (no-overlap), and reschedule themselves in `finally` unless interrupted. Worker, dispatcher, and cron components do not start when the DB pool is read-only.
+- Integrant params schemas name injected components as bare `::ns/key` entries (pool, metrics, msgbus, job defs), and a bare entry is a malli registry lookup, not `any?`: the owning namespace must `sm/register!` it at load, or the backend crashes at boot with `:malli.core/invalid-schema` instead of asserting. Unit tests never build those keys, so `backend-tests.worker-test` compiles the three worker schemas to catch it.
 
 ## Config and HTTP/session middleware
 

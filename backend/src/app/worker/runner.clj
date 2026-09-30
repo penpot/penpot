@@ -90,11 +90,12 @@
    (some-> (db/get* cfg :job {:id job-id}))))
 
 (defn- execute-job
-  [{:keys [::jobs/defs ::id ::queue] :as cfg} job]
+  [{:keys [::jobs/defs ::id ::queue ::wrk/tenant] :as cfg} job]
   (try
     (l/dbg :hint "start"
            :name (:name job)
            :job-id (str (:id job))
+           :tenant tenant
            :queue queue
            :runner-id id
            :retry (:retry-num job))
@@ -103,6 +104,8 @@
       (l/wrn :hint "skipping job, not claimable"
              :id (str (:id job))
              :name (:name job)
+             :tenant tenant
+             :queue queue
              :status (:status job))
 
       (do
@@ -146,6 +149,7 @@
           (l/dbg :hint "end"
                  :name (:name job)
                  :job-id (str (:id job))
+                 :tenant tenant
                  :queue queue
                  :runner-id id
                  :retry (:retry-num job)
@@ -172,6 +176,7 @@
           (do
             (l/err :hint "unhandled exception on job"
                    ::l/context (assoc (cf/logging-context) :params job)
+                   :tenant tenant
                    :cause cause)
             ;; Unknown job names and invalid params never heal by retrying
             ;; (no rolling deploy will register them on this backend), so
@@ -186,12 +191,13 @@
       (jobs/cleanup-throttle (:id job)))))
 
 (defn- run-job
-  [{:keys [::id ::timeout] :as cfg} job-id scheduled-at]
+  [{:keys [::id ::timeout ::wrk/tenant] :as cfg} job-id scheduled-at]
   (loop [job (get-job cfg job-id)]
     (cond
       (nil? job)
       (l/wrn :hint "no job found on the database"
              :runner-id id
+             :tenant tenant
              :job-id (str job-id))
 
       (ex/exception? job)
@@ -200,12 +206,14 @@
         (do
           (l/wrn :hint "connection error on retrieving job from database (retrying in some instants)"
                  :runner-id id
+                 :tenant tenant
                  :cause job)
           (px/sleep timeout)
           (recur (get-job cfg job-id)))
         (do
           (l/err :hint "unhandled exception on retrieving job from database (retrying in some instants)"
                  :runner-id id
+                 :tenant tenant
                  :cause job)
           (px/sleep timeout)
           (recur (get-job cfg job-id))))
@@ -215,6 +223,7 @@
       (l/wrn :hint "skipping job, rescheduled"
              :job-id (str job-id)
              :runner-id id
+             :tenant tenant
              :scheduled-at (ct/format-inst (:scheduled-at job))
              :expected-scheduled-at (ct/format-inst scheduled-at))
 
@@ -264,11 +273,13 @@
                   [job-id sched-at]
                   (do
                     (l/err :hint "received unexpected payload"
+                           :tenant tenant
                            :payload payload)
                     nil)))
               (catch Throwable cause
                 (l/err :hint "unable to decode payload"
                        ::l/context (cf/logging-context)
+                       :tenant tenant
                        :payload payload
                        :length (count payload)
                        :cause cause))))
@@ -289,11 +300,13 @@
                         (db/serialization-error? cause))
                   (do
                     (l/wrn :hint "database exeption on processing job result (retrying in some instants)"
+                           :tenant tenant
                            :cause cause)
                     (px/sleep timeout)
                     (recur result))
                   (l/err :hint "unhandled exception on processing job result"
                          ::l/context (cf/logging-context)
+                         :tenant tenant
                          :cause cause)))))]
 
     (try
@@ -311,19 +324,21 @@
           (do
             (l/err :hint "redis pop operation timeout, consider increasing redis timeout (will retry in some instants)"
                    ::l/context (cf/logging-context)
+                   :tenant tenant
                    :timeout timeout
                    :cause cause)
             (px/sleep timeout))
 
           (l/err :hint "unhandled exception"
                  ::l/context (cf/logging-context)
+                 :tenant tenant
                  :cause cause))))))
 
 (defn- start-thread
-  [{:keys [::id ::queue] :as cfg}]
+  [{:keys [::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
     {:name (str "penpot/job-runner/" id)}
-    (l/inf :hint "started" :id id :queue queue)
+    (l/inf :hint "started" :id id :tenant tenant :queue queue)
 
     (let [rconn (rds/connect cfg)]
       (try
@@ -339,17 +354,20 @@
         (catch InterruptedException _
           (l/dbg :hint "interrupted"
                  :id id
+                 :tenant tenant
                  :queue queue))
         (catch Throwable cause
           (l/err :hint "unexpected exception"
                  ::l/context (cf/logging-context)
                  :id id
+                 :tenant tenant
                  :queue queue
                  :cause cause))
         (finally
           (.close ^AutoCloseable rconn)
           (l/inf :hint "terminated"
                  :id id
+                 :tenant tenant
                  :queue queue))))))
 
 (def ^:private schema:params
@@ -373,11 +391,11 @@
   {k (merge {::wrk/parallelism 1} (d/without-nils v))})
 
 (defmethod ig/init-key ::wrk/runner
-  [_ {:keys [::db/pool ::wrk/queue ::wrk/parallelism] :as cfg}]
+  [_ {:keys [::db/pool ::wrk/queue ::wrk/parallelism ::wrk/tenant] :as cfg}]
   (let [queue (d/name queue)
         cfg   (assoc cfg ::queue queue)]
     (if (db/read-only? pool)
-      (l/wrn :hint "not started (db is read-only)" :queue queue :parallelism parallelism)
+      (l/wrn :hint "not started (db is read-only)" :tenant tenant :queue queue :parallelism parallelism)
       (doall
        (->> (range parallelism)
             (map #(assoc cfg ::id (str queue "/" %)))

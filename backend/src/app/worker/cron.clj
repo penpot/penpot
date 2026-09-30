@@ -23,7 +23,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.jobs.metrics :as jobs-metrics]
+   [app.jobs.metrics :as metrics]
    [app.metrics :as-alias mtx]
    [app.util.cron :as cron]
    [app.worker :as-alias wrk]
@@ -92,6 +92,7 @@
         (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                           (db/exec-one! conn ["SET LOCAL statement_timeout=0;"])
                           (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout=0;"])
+
                           (when (lock-scheduled-task conn id)
                             (db/update! conn :scheduled-task
                                         {:cron-expr (str cron)
@@ -105,35 +106,34 @@
                             ;; next tick will submit if needed. The FOR UPDATE
                             ;; SKIP LOCKED on the scheduled_task row prevents
                             ;; race conditions between nodes.
-                            (let [active (get (db/exec-one! conn
-                                                            [sql:count-active-jobs task (str id) (cf/get :tenant)])
-                                              :n)]
-                              (if (pos? (or active 0))
+                            (let [tenant (cf/get :tenant)
+                                  row    (db/exec-one! conn  [sql:count-active-jobs task (str id) tenant])
+                                  active (or (get row :n) 0)]
+                              (if (pos? active)
                                 (do
-                                  (db/after-commit!
-                                   #(jobs-metrics/record-cron cfg :skipped :active))
-                                  (l/dbg :hint "skip scheduling, active instance exists"
+                                  (db/after-commit! #(metrics/record-cron cfg :skipped :active))
+                                  (l/dbg :hint "skip"
+                                         :reason "scheduling, active instance exists"
                                          :id id :task task))
-                                (let [job-id (submit-cron-job cfg entry)]
-                                  (db/after-commit!
-                                   #(jobs-metrics/record-cron cfg :submitted :none))
-                                  (l/dbg :hint "cron job submitted"
+                                (let [job-id  (submit-cron-job cfg entry)
+                                      elapsed (ct/format-duration (tpoint))]
+                                  (db/after-commit! #(metrics/record-cron cfg :submitted :none))
+                                  (l/dbg :hint "submit"
                                          :id id
                                          :task task
-                                         :job-id (str job-id))))))
-
-                          (let [elapsed (ct/format-duration (tpoint))]
-                            (l/dbg :hint "end" :id id :elapsed elapsed))))
+                                         :job-id (str job-id)
+                                         :elapsed elapsed)))))))
 
         (catch InterruptedException _
-          (jobs-metrics/record-cron cfg :interrupted :interrupted)
+          (metrics/record-cron cfg :error :interrupted)
           (let [elapsed (ct/format-duration (tpoint))]
             (l/debug :hint "task interrupted" :id id :elapsed elapsed)))
 
         (catch Throwable cause
-          (jobs-metrics/record-cron cfg :error :failure)
-          (let [elapsed (ct/format-duration (tpoint))]
-            (binding [l/*context* (assoc (cf/logging-context) :params entry)]
+          (metrics/record-cron cfg :error :failure)
+          (let [elapsed (ct/format-duration (tpoint))
+                context (assoc (cf/logging-context) :params entry)]
+            (binding [l/*context* context]
               (l/err :hint "unhandled exception on running task"
                      :id id
                      :elapsed elapsed

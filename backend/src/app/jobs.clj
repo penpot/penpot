@@ -48,7 +48,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.jobs.metrics :as jobs-metrics]
+   [app.jobs.metrics :as metrics]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.redis :as rds]
@@ -128,6 +128,12 @@
 
 (def ^:private schema:job-defs
   [:map-of :keyword schema:job-def])
+
+;; The worker components name this registry as a bare `::defs` entry in
+;; their integrant params schemas, and a bare entry is a registry lookup:
+;; without this the backend crashes at boot with
+;; `:malli.core/invalid-schema` instead of asserting the config.
+(sm/register! ::defs schema:job-defs)
 
 ;; Module-level registry of the job-defs, populated by the ::jobs/defs
 ;; ig component on init. It exists for the submit call-sites that run
@@ -287,7 +293,7 @@
                                        (-> (db/exec-one! conn [sql:remove-not-started-jobs
                                                                job-name tenant queue label now])
                                            (db/get-update-count)))]
-                         (l/trc :hint "submit job"
+                         (l/trc :hint "submit"
                                 :name job-name
                                 :job-id (str id)
                                 :queue queue
@@ -307,7 +313,7 @@
                 (fn [{:keys [::db/conn]}]
                   (let [result (insert! conn)]
                     (db/after-commit!
-                     #(jobs-metrics/record-submitted cfg job-name queue))
+                     #(metrics/record-submitted cfg job-name queue))
                     result)))
     id))
 
@@ -484,7 +490,7 @@
                 :profile-id profile-id))
     (let [{:keys [id created-at]}
           (db/exec-one! connectable [sql:insert-job-event job-id kind (db/json payload)])]
-      (db/after-commit! #(jobs-metrics/record-event cfg))
+      (db/after-commit! #(metrics/record-event cfg))
       (when profile-id
         (db/after-commit!
          #(notify-event cfg {:profile-id profile-id
@@ -700,9 +706,9 @@
   the callback is not tied to an instance read at registration time."
   [cfg job outcome]
   (when job
-    (jobs-metrics/record-outcome cfg (:name job) (:queue job) outcome)
+    (metrics/record-outcome cfg (:name job) (:queue job) outcome)
     (when (ct/inst? (:created-at job))
-      (jobs-metrics/record-total
+      (metrics/record-total
        cfg
        (:name job)
        (:queue job)
@@ -811,10 +817,10 @@
                                     job-id "retry" {:attempt (inc (long retry-num))
                                                     :reason   (name reason)})
                       (db/after-commit!
-                       #(jobs-metrics/record-retry tx-cfg
-                                                   (:name job)
-                                                   (:queue job)
-                                                   reason))
+                       #(metrics/record-retry tx-cfg
+                                              (:name job)
+                                              (:queue job)
+                                              reason))
                       1)
                     0)))))
 
@@ -1104,9 +1110,9 @@
           (finally
             ;; the context, not `cfg`: the caller's cfg only carries the
             ;; request pool, and the metrics instance comes with it
-            (jobs-metrics/record-request context
-                                         @outcome
-                                         (inst-ms (tpoint)))
+            (metrics/record-request context
+                                    @outcome
+                                    (inst-ms (tpoint)))
             (rds/del conn reply-key)
             (rds/reset-timeout conn)))))))
 
