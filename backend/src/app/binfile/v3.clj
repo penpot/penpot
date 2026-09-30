@@ -1218,8 +1218,8 @@
                                                    :tokens-source-fallback (:fallback-outcome pending-source))))))
                          acc used-by)))))))
 
-      {}
-      (:external-libraries manifest))))
+     {}
+     (:external-libraries manifest))))
 
 (defn resolve-import-token-source!
   "Link the chosen replacement library and finalize the consumer token
@@ -1235,16 +1235,16 @@
         library-data   (assoc (:data library) :id library-id)
         provider?      (cfo/tokens-provider? library-data)
         outcome        (if provider?
-                        :tokens-source-restored
-                        (if (cfo/has-own-tokens? file-data)
-                          :tokens-source-fallback-local
-                          :tokens-source-deactivated))
+                         :tokens-source-restored
+                         (if (cfo/has-own-tokens? file-data)
+                           :tokens-source-fallback-local
+                           :tokens-source-deactivated))
         data           (-> file-data
-                          (cfo/set-tokens-source (when provider? library-id))
-                          (assoc :tokens-status
-                                 (if provider?
-                                   (tokens-status-from-names status-names (:tokens-lib library-data))
-                                   (ctos/make-tokens-status))))
+                           (cfo/set-tokens-source (when provider? library-id))
+                           (assoc :tokens-status
+                                  (if provider?
+                                    (tokens-status-from-names status-names (:tokens-lib library-data))
+                                    (ctos/make-tokens-status))))
         stored-status  (:tokens-status file-data)
         marker         (when-not provider? outcome)
         stored-marker  (get-in file [:metadata :tokens-source-fallback-notification])
@@ -1260,7 +1260,7 @@
     (let [rel-params {:file-id file-id
                       :library-file-id library-id}]
       (db/insert! conn :file-library-rel rel-params
-                {::db/on-conflict-do-nothing? true})
+                  {::db/on-conflict-do-nothing? true})
       (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at (ct/now))))
     (when-not unchanged?
       (bfc/update-file! cfg (ctf/check-file (assoc file
@@ -1295,9 +1295,9 @@
           imported   (mapv #(import-file cfg decisions %) files)
           file-ids   (mapv :file-id imported)
           files-info (into {} (map (fn [file-id manifest-file]
-                                    [file-id (:name manifest-file)])
-                                  file-ids
-                                  files))]
+                                     [file-id (:name manifest-file)])
+                                   file-ids
+                                   files))]
 
       (import-file-relations cfg)
 
