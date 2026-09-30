@@ -1246,6 +1246,21 @@
   (assert-page-id! changes)
   (::page-id (meta changes)))
 
+;; The getters above assert that their context has been given. Use these
+;; predicates when a caller has a fallback for a missing context.
+
+(defn has-library-data?
+  [changes]
+  (contains? (meta changes) ::library-data))
+
+(defn has-objects?
+  [changes]
+  (contains? (meta changes) ::file-data))
+
+(defn has-page?
+  [changes]
+  (contains? (meta changes) ::page))
+
 (defn set-text-content
   [changes id content prev-content]
   (assert-page-id! changes)

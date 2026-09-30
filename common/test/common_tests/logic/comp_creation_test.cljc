@@ -17,6 +17,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
@@ -656,3 +657,70 @@
     (t/is (some? copy1-root'))
     (t/is (not (ctk/instance-head? copy1-root')))
     (t/is (not (ctk/in-component-copy? copy1-root')))))
+
+(defn- delete-shapes
+  [file labels]
+  (let [page    (thf/current-page file)
+        [_ changes]
+        (cls/generate-delete-shapes (pcb/empty-changes)
+                                    file
+                                    page
+                                    (:objects page)
+                                    (into #{} (map thi/id) labels)
+                                    {:components-v2 true})]
+    (thf/apply-changes file changes)))
+
+(defn- restore-changes
+  "Build the changes of restoring a deleted component as the workspace does,
+  without any library data or objects in the changes builder."
+  [file component-label]
+  (let [page (thf/current-page file)]
+    (cll/generate-restore-component (pcb/empty-changes)
+                                    (:data file)
+                                    (thi/id component-label)
+                                    (:id file)
+                                    page
+                                    (:objects page))))
+
+(t/deftest test-restore-component-without-library-data
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1
+                                                        :main1-root
+                                                        :main1-child
+                                                        :copy1-root)
+                    (delete-shapes [:main1-root]))
+
+        ;; ==== Action
+        changes (restore-changes file :component1)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        component1' (thc/get-component file' :component1)
+        main1-root' (ths/get-shape file' :main1-root)]
+
+    ;; ==== Check
+    (t/is (some? component1'))
+    (t/is (some? main1-root'))))
+
+(t/deftest test-restore-variant-after-deleting-its-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:v01]))
+
+        ;; ==== Action
+        changes (restore-changes file :c01)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        c01'    (thc/get-component file' :c01)
+        m01'    (ths/get-shape file' :m01)]
+
+    ;; ==== Check
+    ;; The container no longer exists, so the main is restored as a
+    ;; component that is not a variant
+    (t/is (some? c01'))
+    (t/is (some? m01'))
+    (t/is (nil? (:variant-id c01')))
+    (t/is (nil? (:variant-id m01')))))
