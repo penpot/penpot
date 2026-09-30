@@ -148,13 +148,13 @@
                      nil
                      (catch :default cause
                        cause))]
-        (t/is (true? (:benches.render-wasm.browser/stale (ex-data thrown)))
+        (t/is (true? (:benches.render-wasm.failures/stale (ex-data thrown)))
               "the marker lives in ex-data, never in message text")))
     (t/testing "terminal stale resolves without disposal"
       (let [before @@#'browser/owner-epoch*
             result (terminate epoch
                               (ex-info "superseded"
-                                       {:benches.render-wasm.browser/stale true
+                                       {:benches.render-wasm.failures/stale true
                                         :phase "upload"})
                               "upload")
             after  @@#'browser/owner-epoch*]
@@ -556,13 +556,28 @@
       (t/is (= "unrenderable cause" (:message (first cause)))
             "level fallback holds"))))
 
+(t/deftest non-finite-failure-details-cross-transit-as-numbers
+  (let [terminate @#'browser/terminal-failure
+        current   @@#'browser/owner-epoch*
+        failure   (ex-info "bad measurement"
+                           {:code js/NaN
+                            :hint js/Infinity
+                            :type js/-Infinity})
+        result    (terminate current failure "aborted")
+        decoded   (-> result transit/encode-str transit/decode-str)
+        detail    (first (:cause decoded))]
+    (t/is (number? (:code detail)))
+    (t/is (js/Number.isNaN (:code detail)))
+    (t/is (= js/Infinity (:hint detail)))
+    (t/is (= js/-Infinity (:type detail)))))
+
 (t/deftest nested-stale-marker-does-not-resolve-stale
   (let [terminate @#'browser/terminal-failure
         current   @@#'browser/owner-epoch*
         nested    (ex-info "upload failed"
                            {:phase "upload"}
                            (ex-info "superseded"
-                                    {:benches.render-wasm.browser/stale true
+                                    {:benches.render-wasm.failures/stale true
                                      :phase "upload"}))
         result    (terminate current nested "aborted")
         m         result]
