@@ -128,7 +128,7 @@ Cases already covered by tests, do not break: `accept-organization-invitation` t
 
 ## 6. Penpot frontend events: what is collected, with what guarantees
 
-The browser **never writes to the table**; it POSTs transit batches to `push-audit-events` (`backend/src/app/rpc/commands/audit.clj`), which stamps server `id`, session `profile-id`, request IP, and server `created-at`, and distrusts the client clock (future or >1h-late `tracked-at` is reset, the original kept in `context.original-tracked-at`). Without `:audit-log`/`:telemetry`, or on a read-only pool, the endpoint is a no-op.
+The browser **never writes to the table**; it POSTs transit batches to `push-audit-events` (`backend/src/app/rpc/commands/audit.clj`), which stamps server `id`, session `profile-id`, request IP, server `created-at`, and server-side `:initiator` (from the `x-client` header, see section 8; anything the client sends as `initiator` is overwritten), and distrusts the client clock (future or >1h-late `tracked-at` is reset, the original kept in `context.original-tracked-at`). Without `:audit-log`/`:telemetry`, or on a read-only pool, the endpoint is a no-op.
 
 Valid types (`schema:frontend-event`): `"action"`, `"identify"`, `"trigger"`. Names must match `#"[\d\w-]{1,50}"` (max 250). `props` is a free map with no schema: **tests are the only guard of the contract** (see section 13).
 
@@ -174,7 +174,7 @@ Code: the admin-console browser has a helper that POSTs to the Penpot **public**
 ```
 POST api/main/methods/push-audit-events
 credentials: include, keepalive: true
-headers: x-client: "penpot-nitrate/<version>", x-frontend-version: <version>
+headers: x-client: "penpot-admin-console/<version>"
 body: {events: [{name, type: "action", timestamp, props, context: {eventOrigin?}}]}
 ```
 
@@ -188,7 +188,7 @@ The Nitrate repo also has a shared, generic push client for the management endpo
 
 Besides explicit events, **every RPC request from the frontend carries headers** so the backend can fill its own event `context`. This is how the backend learns "which browser/version/screen" made the request:
 
-- `x-frontend-version` and `x-client: penpot-frontend/<version>`: added by `default-headers` in `frontend/src/app/util/http.cljs` to **all** fetch requests (unless `omit-default-headers`). The admin-console browser channel sends `penpot-nitrate/<version>` instead.
+- `x-frontend-version` and `x-client: penpot-frontend/<version>`: added by `default-headers` in `frontend/src/app/util/http.cljs` to **all** fetch requests (unless `omit-default-headers`). The admin-console browser channel sends `penpot-admin-console/<version>` instead (`x-frontend-version` is ignored on the event-ingest path, only `x-client` matters there).
 - `user-agent`: set by the browser alone; the backend trims it to 500 chars (`get-client-user-agent`).
 - `x-external-session-id`: external SaaS session via `cf/external-session-id`; added by `repo.cljs` (`send!`, special `cmd!`, `multipart-upload`, export...) and also stored by `persist-events` in the frontend event context. The backend checks it (max 256, ignores `"null"`/empty).
 - `x-session-id`: `cf/session-id` (tab session), only in the main `send!`.
@@ -198,15 +198,18 @@ On the backend, `prepare-context-from-request` (`backend/src/app/loggers/audit.c
 
 ### Context field guide: `initiator`
 
-`initiator` answers "which application started this request?". It comes from the shared-key auth layer (`wrap-shared-key-auth` in `backend/src/app/http/middleware.clj`): when a trusted service calls the management API with `x-shared-key: "<key-id> <secret>"`, the key-id (lowercased) is stored on the request as `::http/auth-key-id`, and `prepare-context-from-request` copies it into `:initiator`. When there is no shared key (a normal user RPC), it falls back to `"app"`, which means Penpot itself.
+`initiator` answers "which application started this request?". Two paths set it, both server-side, never trusting the client:
+
+- **Backend channel** (RPC + management API): it comes from the shared-key auth layer (`wrap-shared-key-auth` in `backend/src/app/http/middleware.clj`): when a trusted service calls the management API with `x-shared-key: "<key-id> <secret>"`, the key-id (lowercased) is stored on the request as `::http/auth-key-id`, and `prepare-context-from-request` copies it into `:initiator`. When there is no shared key (a normal user RPC), it falls back to `"app"`, which means Penpot itself.
+- **Frontend channel** (`push-audit-events`): `get-client-initiator` maps the `x-client` header product to an initiator: `penpot-frontend` → `"app"`, `penpot-admin-console` → `"admin-console"`, legacy `penpot-nitrate` (old admin-console releases, remove once redeployed) → `"admin-console"`, missing or unknown → `"app"`. It overwrites any client-sent `initiator`.
 
 Values you will see:
 
-- `"app"`: normal Penpot traffic (browser → public RPC, or backend internal work). This is the vast majority.
-- `"admin-console"`: the private Nitrate admin-console calling the management API (section 7a).
+- `"app"`: normal Penpot traffic (browser → public RPC or event ingest, or backend internal work). This is the vast majority.
+- `"admin-console"`: the private Nitrate admin-console, on both channels: management API calls (section 7a) and browser events (section 7b, via the `x-client` mapping).
 - `"nexus"`, `"exporter"`, `"media-processor"`: other first-party services using their own shared keys (key ids come from `::setup/shared-keys` in `backend/src/app/setup.clj`, derived from the instance secret unless overridden).
 
-Why it matters: it is the only context field that tells Penpot's own traffic apart from trusted services acting through the management API, and it is one of the four backend context keys that survive into telemetry (so per-initiator counts stay available even on anonymized rows).
+Why it matters: it is the only context field that tells Penpot's own traffic apart from trusted services and from the admin-console browser, and it survives into telemetry on both channels (one of the four backend keys, and on the frontend allowlist too), so per-initiator counts stay available even on anonymized rows.
 
 More metadata the Penpot frontend adds inside each event (not as headers): `collect-context` with `ua-parser` (browser, engine, OS, device, screen, CPU arch), `locale` (updated on language change), `:session` / `:session-id` / `:external-session-id`, and SaaS host extras (`add-external-context-info`).
 
