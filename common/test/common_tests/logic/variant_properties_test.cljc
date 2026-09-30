@@ -655,7 +655,25 @@
     (t/is (nil? (:variant-id comp01')))
     (t/is (nil? (:variant-properties comp01')))
     (t/is (nil? (:variant-id main01')))
-    (t/is (nil? (:variant-name main01')))))
+    (t/is (nil? (:variant-name main01')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id main01)]))))
+
+(t/deftest test-make-shapes-no-variant-validates-shapes
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        main01  (ths/get-shape file :m01)
+        main02  (ths/get-shape file :m02)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-make-shapes-no-variant [main01 main02]))]
+
+    ;; Only the extracted main instances change. The container is not
+    ;; validated, as the caller may not have moved the shapes out of it yet
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id main01) (:id main02)]))))
 
 ;; =============================================================================
 ;; generate-make-shapes-variant tests
