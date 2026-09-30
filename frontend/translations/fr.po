@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-28 08:13+0000\n"
-"Last-Translator: Surfoo <surfooo@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2026-09-30 16:51+0000\n"
+"Last-Translator: imagoiq <loic@anicro.ch>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -611,7 +611,7 @@ msgstr "Aucune police personnalisée pour l'instant."
 #: src/app/main/ui/dashboard/fonts.cljs:499
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Dès qu'un membre de l'équipe télécharge une police personnalisée, elle sera "
+"Dès qu'un membre de l'équipe téléverse une police personnalisée, elle sera "
 "affichée ici."
 
 #: src/app/main/ui/dashboard/fonts.cljs:223
@@ -624,25 +624,25 @@ msgstr[1] "%s polices ajoutées"
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Toute police Web que vous téléchargez sera ajoutée à la liste de polices de "
+"Toute police Web que vous téléversez sera ajoutée à la liste de polices de "
 "caractères disponible dans les propriétés de texte des fichiers de cette "
 "équipe. Les polices du même nom de famille de polices seront groupées en "
 "**une seule famille de polices**. Vous pouvez télécharger les polices au "
-"formats suivants : **TTF, OTF et WOFF** (un seul format est nécessaire)."
+"formats suivants : **TTF, OTF et WOFF** (un seul format est nécessaire)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:211
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Ne téléchargez que des polices que vous possédez ou dont la licence vous "
+"Ne téléversez que des polices que vous possédez ou dont la licence vous "
 "permet de les utiliser dans Penpot. Vous trouverez plus d'informations dans "
-"la section Propriété des Contenus des [conditions générales d'utilisation "
-"de Penpot](%s). Vous pouvez également vous renseigner sur les [licences de "
+"la section Propriété des Contenus des [conditions générales d'utilisation de "
+"Penpot](%s). Vous pouvez également vous renseigner sur les [licences de "
 "polices](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:231
 msgid "dashboard.fonts.upload-all"
-msgstr "Uploader tout"
+msgstr "Tout téléverser"
 
 #: src/app/main/ui/dashboard/fonts.cljs:216
 #, markdown
@@ -1497,7 +1497,7 @@ msgstr "Les polices %s n'ont pas pu être chargées"
 
 #: src/app/main/data/workspace/media.cljs:237
 msgid "errors.cannot-upload"
-msgstr "Impossible de télécharger le fichier média."
+msgstr "Impossible de téléverser le fichier média."
 
 #: src/app/main/ui/comments.cljs:769, src/app/main/ui/comments.cljs:799, src/app/main/ui/comments.cljs:898
 msgid "errors.character-limit-exceeded"
@@ -3450,15 +3450,15 @@ msgstr "Mettre à jour l'équipe"
 
 #: src/app/main/ui/dashboard/fonts.cljs:270
 msgid "labels.upload"
-msgstr "Télécharger"
+msgstr "Téléverser"
 
 #: src/app/main/ui/dashboard/fonts.cljs:197
 msgid "labels.upload-custom-fonts"
-msgstr "Télécharger des polices personnalisées"
+msgstr "Téléverser des polices personnalisées"
 
 #: src/app/main/ui/dashboard/fonts.cljs:269
 msgid "labels.uploading"
-msgstr "Téléchargement…"
+msgstr "Envoi en cours…"
 
 #: src/app/main/ui/dashboard/import.cljs:648
 msgid "labels.uploading-file"
@@ -9512,3 +9512,9 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "Les versions auto-enregistrées seront conservées %s jours."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+msgid "workspace.options.font-not-available"
+msgstr ""
+"La police utilisée par ce texte (%s) n'est plus disponible. Téléverser à "
+"nouveau la police pour créer un style typographique"
