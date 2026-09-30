@@ -21,21 +21,48 @@
   `(benches.render-wasm.scenes.core/register-scene!
     (assoc ~opts :id ~id :ns ~(str *ns*) :build ~build)))
 
+(defn- one-argument-fn-form?
+  "True for functions of arity 1"
+  [form]
+  (when (and (seq? form)
+             (contains? '#{fn fn* clojure.core/fn cljs.core/fn} (first form)))
+    (let [clauses (if (symbol? (second form)) (nnext form) (next form))
+          params  (cond
+                    (vector? (first clauses))
+                    (first clauses)
+                    (and (= 1 (count clauses))
+                         (seq? (first clauses)))
+                    (ffirst clauses))]
+      (and (vector? params)
+           (= 1 (count params))
+           (not= '& (first params))))))
+
+(defn- case-registration-form
+  [id scene opts run-fn]
+  (let [options (gensym "options")]
+    `(let [~options ~opts]
+       (when (contains? ~options :run!)
+         (throw (ex-info (str "defcase " ~id " requires its run function as the fourth argument")
+                         {:type :benches.render-wasm.scenes.core/invalid-run-function
+                          :id ~id})))
+       (benches.render-wasm.scenes.core/register-case!
+        (assoc ~options :id ~id :scene ~scene :ns ~(str *ns*)
+               ~@(when run-fn [:run! run-fn]))))))
+
 (defmacro defcase
   "Registers a case for `scene` and returns its id.
 
-  The optional body threads the injected runtime as `rtx` and becomes the
-  case's browser-side run function. The quoted body source travels with the
-  registration for validation; case collection strips the body and the
-  source before handing descriptors to the runner."
-  [id scene opts & body]
-  (if (seq body)
-    `(benches.render-wasm.scenes.core/register-case!
-      (assoc ~opts
-             :id ~id
-             :scene ~scene
-             :ns ~(str *ns*)
-             :run! (fn [~'rtx] ~@body)
-             :body-source '~body))
-    `(benches.render-wasm.scenes.core/register-case!
-      (assoc ~opts :id ~id :scene ~scene :ns ~(str *ns*)))))
+  An optional inline, one-argument function becomes `:run!`; its argument
+  name is chosen by the caller. Other function forms fail at expansion.
+  Ticket 14 will call it. Case collection omits it from descriptors. Example:
+
+    (defcase :rects/pan :rects options (fn [context] (pan! context)))"
+  ([id scene opts]
+   (case-registration-form id scene opts nil))
+  ([id scene opts run-fn]
+   (when-not (one-argument-fn-form? run-fn)
+     (throw (ex-info (str "defcase " id " requires an inline one-argument function")
+                     {:type ::invalid-run-function
+                      :id id
+                      :form run-fn})))
+   (case-registration-form id scene opts run-fn)))
