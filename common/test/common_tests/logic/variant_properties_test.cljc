@@ -249,7 +249,9 @@
 
     ;; ==== Check
     (t/is (= (-> comp01' :variant-properties first :value) "NewValue1"))
-    (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))))
+    (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))
+    ;; The last call validates the main instance of comp02
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp02)]))))
 
 (t/deftest test-update-property-value-duplicate-value
   (let [file    (-> (thf/sample-file :file1)
@@ -274,7 +276,24 @@
         comp02' (thc/get-component file' :c02)]
 
     (t/is (= "SharedValue" (-> comp01' :variant-properties first :value)))
-    (t/is (= "SharedValue" (-> comp02' :variant-properties first :value)))))
+    (t/is (= "SharedValue" (-> comp02' :variant-properties first :value)))
+    ;; The last call validates the main instance of comp02
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp02)]))))
+
+(t/deftest test-update-property-value-validates-main
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 "NewValue"))]
+
+    ;; Only the main instance of the updated component changes
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 ;; =============================================================================
 ;; generate-set-variant-error tests
