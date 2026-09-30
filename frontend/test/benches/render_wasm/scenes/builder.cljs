@@ -5,30 +5,30 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.scenes.builder
-  "Scoped construction for renderer benchmark scenes.
+  "Construction of benchmark scenes.
 
-  A scene scope owns one seeded generator, one object map, and one label
-  map. Shape constructors add themselves to the current parent: `rect`,
-  `circle`, and the `frame`/`group`/`bool` container scopes. The scope
-  returns a validated snapshot in the ticket02 contract
-  `{:objects ... :refs ...}`.
+  A `scene` consists of one seeded generator, one object map, and one label
+  map.
+
+  Ancestry and order are implicit in the nesting of calls: shape constructors
+  add themselves to the current parent, in the sequence they are called.
 
   Construction is synchronous by design: the scope and the current parent
   are carried by dynamic vars, so `let`, `doseq` and functions defined
   outside the scope all work inside a scene. Scene scopes cannot nest
   and body exceptions unwind without leaving state behind. A container whose
   body throws is marked unfinished and `finish!` rejects the instance, so a
-  caught exception cannot silently produce a half-built scene.
+  caught exception cannot produce a half-built scene.
 
-  Defaults follow the same theme: `*defaults*` maps a shape type to an
-  attribute generator map, bound by the `scene` macro from the scope
+  Default attributes follow the same theme: `*defaults*` maps a shape type to
+  an attribute generator map, bound by the `scene` macro from the scope
   params. Per-shape attrs are merged over the generated values, so a recipe
   can override anything locally and rebind `*defaults*` around a section.
 
-  Coordinates stay page-absolute: nesting supplies ownership and order, not
-  translation. Frames keep authored bounds; groups derive bounds from their
-  children inside out; a masked group takes the geometry of its first child.
-  Booleans derive content and geometry from their children with the canonical
+  Coordinates are page-absolute like in penpot. Frames use their state bounds
+  and groups derive their bounds from their children inside out.
+  A masked group takes the geometry of its first child.
+  Booleans derive content and geometry from their children with the standard
   path engine and inherit style from the head child unless attrs supply it.
 
   Masked groups and the frame/group/bool scopes live here; paths ticket07/08."
