@@ -306,15 +306,47 @@
         menu-open*   (mf/use-state false)
         menu-open?   (deref menu-open*)
 
-        on-toggle-menu
+        open-timer*  (mf/use-ref nil)
+        close-timer* (mf/use-ref nil)
+
+        on-open-menu
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! menu-open* not)))
+           (cancel-timer! open-timer*)
+           (cancel-timer! close-timer*)
+           (reset! menu-open* true)))
 
         on-close-menu
         (mf/use-fn
-         #(reset! menu-open* false))
+         (fn []
+           (cancel-timer! open-timer*)
+           (cancel-timer! close-timer*)
+           (reset! menu-open* false)))
+
+        on-display-menu
+        (mf/use-fn
+         (fn []
+           (cancel-timer! close-timer*)
+           (cancel-timer! open-timer*)
+           (mf/set-ref-val!
+            open-timer*
+            (ts/schedule 350
+                         #(do
+                            (reset! menu-open* true)
+                            (mf/set-ref-val! open-timer* nil))))))
+
+        on-hide-menu
+        (mf/use-fn
+         (fn []
+           (cancel-timer! open-timer*)
+           (cancel-timer! close-timer*)
+           (mf/set-ref-val!
+            close-timer*
+            (ts/schedule 350
+                         #(do
+                            (reset! menu-open* false)
+                            (mf/set-ref-val! close-timer* nil))))))
 
         on-connect
         (mf/use-fn
@@ -334,9 +366,17 @@
                (.then #(st/emit! (ntf/info copied-text)))
                (.catch #(st/emit! (ntf/error copy-error))))))]
 
-    [:*
+    (mf/with-effect []
+      (fn []
+        (cancel-timer! open-timer*)
+        (cancel-timer! close-timer*)))
+
+    [:div {:on-pointer-enter on-display-menu
+           :on-pointer-leave on-hide-menu}
      [:> button* {:variant "ghost"
-                  :on-click on-toggle-menu
+                  :on-click on-open-menu
+                  :aria-haspopup true
+                  :aria-expanded menu-open?
                   :aria-pressed menu-open?
                   :data-tool "mcp"
                   :data-testid "mcp-btn"}
