@@ -438,9 +438,13 @@
      (prepare-restore-component changes library-data component-id page nil nil nil nil)))
 
   ([changes library-data component-id page position old-id parent-id frame-id]
-   (let [library-data      (or (pcb/get-library-data changes) library-data)
+   (let [library-data      (or (when (pcb/has-library-data? changes)
+                                 (pcb/get-library-data changes))
+                               library-data)
          component         (ctkl/get-deleted-component library-data component-id)
-         objects           (or (pcb/get-objects changes) (:objects page))
+         objects           (or (when (pcb/has-objects? changes)
+                                 (pcb/get-objects changes))
+                               (:objects page))
          parent            (get objects parent-id)
          main-inst         (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
