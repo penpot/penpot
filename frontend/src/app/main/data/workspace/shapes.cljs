@@ -212,10 +212,19 @@
                objects   (dsh/lookup-page-objects state page-id)
                ids       (into [] (filter some?) ids)
 
+               skip-local?
+               (and translation?
+                    (some? resize-ids)
+                    (not-any? (fn [id]
+                                (some #(cfh/group-like-shape? objects %)
+                                      (cons id (cfh/get-parent-ids objects id))))
+                              resize-ids))
+
                changes
                (-> (pcb/empty-changes it page-id)
                    (pcb/set-save-undo? save-undo?)
                    (pcb/set-stack-undo? stack-undo?)
+                   (pcb/skip-local skip-local?)
                    (cls/generate-update-shapes ids
                                                update-fn
                                                objects
