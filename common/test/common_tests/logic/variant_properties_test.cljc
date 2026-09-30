@@ -335,7 +335,8 @@
 
         main01' (ths/get-shape file' :m01)]
 
-    (t/is (= "MyError" (:variant-error main01')))))
+    (t/is (= "MyError" (:variant-error main01')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 (t/deftest test-set-variant-error-add-and-clear
   (let [file    (-> (thf/sample-file :file1)
@@ -356,7 +357,24 @@
 
         main01' (ths/get-shape file' :m01)]
 
-    (t/is (nil? (:variant-error main01')))))
+    (t/is (nil? (:variant-error main01')))
+    ;; The last call, which clears the error, validates the same main instance
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
+
+(t/deftest test-set-variant-error-validates-main
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-set-variant-error (:id comp01) "MyError"))]
+
+    ;; Only the main instance of the component changes
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 ;; =============================================================================
 ;; generate-reorder-variant-poperties tests
