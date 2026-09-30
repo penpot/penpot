@@ -472,6 +472,8 @@ pub(crate) struct RenderState {
     /// GPU crops from `Backbuffer` or tile atlas keyed by shape id. Filled on full-frame completion; during
     /// drag, entries for the moved top-level selection are ensured here
     pub backbuffer_crop_cache: HashMap<Uuid, InteractiveDragCrop>,
+    /// Extrect of each moved shape at the previous interactive frame; reset per gesture.
+    pub moving_extrects: HashMap<Uuid, Rect>,
     /// Whether we've already forced a GPU flush+submit before a tile-atlas
     /// snapshot this render. The first snapshot of a pass can otherwise capture
     /// a tile before its text glyph uploads complete (blank first/center tile).
@@ -674,6 +676,7 @@ impl RenderState {
             interactive_target_seeded: false,
             preserve_target_during_render: false,
             backbuffer_crop_cache: HashMap::default(),
+            moving_extrects: HashMap::default(),
             tile_atlas_flushed: false,
             drop_shadows_ops_warmed: false,
             drop_shadow_filter_cache: shadows::DropShadowFilterCache::new(),
@@ -4540,7 +4543,8 @@ impl RenderState {
         //
         // We intentionally skip this when there is NO modifier so that plain
         // zoom / pan tile-index rebuilds do NOT invalidate valid atlas content.
-        if tree.get_modifier(&shape.id).is_some() {
+        // Once per gesture: later frames only move away from pixels already cleared.
+        if tree.get_modifier(&shape.id).is_some() && !self.moving_extrects.contains_key(&shape.id) {
             if let Some(raw_shape) = tree.get_raw(&shape.id) {
                 let old_extrect = raw_shape.extrect(tree, 1.0);
                 self.surfaces
@@ -4816,12 +4820,35 @@ impl RenderState {
         }
 
         if self.options.is_interactive_transform() {
-            self.update_tiles_shapes(ids, tree)?;
+            self.update_moving_tiles(ids, tree);
         } else {
             let ancestors = all_with_ancestors(ids, tree, false);
             self.update_tiles_shapes(&ancestors, tree)?;
         }
         Ok(())
+    }
+
+    /// Evicts each moved shape's previous-frame ∪ current coverage. Tiles it left
+    /// before the previous frame were already repainted without it.
+    fn update_moving_tiles(&mut self, ids: &[Uuid], tree: ShapesPoolRef) {
+        let mut next = HashMap::with_capacity(ids.len());
+        for id in ids {
+            let Some(shape) = tree.get(id) else {
+                continue;
+            };
+            let prev_extrect = self.moving_extrects.get(id).copied();
+            self.invalidate_shape_and_update_tiles(shape, tree, prev_extrect);
+            let extrect = self.get_cached_extrect(shape, tree, 1.0);
+            next.insert(*id, extrect);
+        }
+        // Shapes that stopped moving (e.g. flex siblings no longer reflowed) leave their
+        // last position behind; dropping them also restarts their coverage if they re-enter.
+        let previous = std::mem::replace(&mut self.moving_extrects, next);
+        for (id, rect) in previous {
+            if !self.moving_extrects.contains_key(&id) {
+                self.surfaces.invalidate_cached_tiles_intersecting(rect);
+            }
+        }
     }
 
     pub fn get_scale(&self) -> f32 {
