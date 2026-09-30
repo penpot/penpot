@@ -30,6 +30,7 @@
 
 - `app.config/config` and `flags` are dynamic `defonce` vars populated from `PENPOT_*` env vars through the shared schema string transformer. Tests and tooling can bind them.
 - `parse-flags` automatically adds `:disable-secure-session-cookies` when `public-uri` is plain HTTP and not localhost. This changes cookie defaults without an explicit env flag.
+- A request `Origin` listed in `:trusted-origins` (`PENPOT_TRUSTED_ORIGINS`, bare origins, comma/whitespace separated) is stamped on the request as `:app.http/trusted-origin` by the http `wrap-trusted-origin` middleware, which binds `app.config/config` with `:public-uri` replaced by that origin for the dynamic extent of the request. Every request-scoped link builder (emails, asset URLs, audit/webhook link fields, redirects) then follows it; unlisted or absent origins keep the canonical `:public-uri` (fail-closed). Background workers run outside the binding and keep the canonical base.
 - The backend sets Clojure `*assert*` globally from the `:backend-asserts` feature flag. Assertion-dependent checks can therefore differ by runtime flags.
 - Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`.
 - Response formatting negotiates with `Accept` or `_fmt=json`. Transit is the default for collection/boolean bodies; JSON encoding has special pointer-map handling.
