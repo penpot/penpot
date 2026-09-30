@@ -1336,6 +1336,90 @@
         (t/is (th/success? out))
         (t/is (empty? @sent))))))
 
+;; The move-teams tests below simulate a second session: Nitrate answers
+;; with the permissions as they are at the moment of the call, as if the
+;; organization owner had changed them after the user opened the modal.
+
+(defn- move-team-nitrate-mock
+  [{:keys [owner-id team-id source-organization perms-by-organization-id calls]}]
+  (fn [_cfg method params]
+    (swap! calls conj method)
+    (case method
+      :get-organization-membership {:is-member true :organization-id (:organization-id params)}
+      :get-organization-members [owner-id]
+      :get-team-organization {:organization source-organization}
+      :get-organization-permissions (get perms-by-organization-id (:organization-id params))
+      :set-team-organization {:id team-id}
+      :get-organization-sso {:active false}
+      :get-organization-summary {:id (:organization-id params) :teams [{:id team-id}]}
+      nil)))
+
+(t/deftest remove-team-from-organization-follows-move-teams
+  (doseq [[i move-teams allowed?] [[401 "always" true]
+                                   [402 "myOrganizations" false]
+                                   [403 "never" false]]]
+    (t/testing move-teams
+      (let [owner           (th/create-profile* i {:is-active true})
+            team            (th/create-team* i {:profile-id (:id owner)})
+            organization-id (uuid/random)
+            calls           (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call (move-team-nitrate-mock
+                                    {:owner-id (:id owner)
+                                     :team-id (:id team)
+                                     :perms-by-organization-id
+                                     {organization-id {:owner-id (uuid/random)
+                                                       :permissions {:move-teams move-teams}}}
+                                     :calls calls})]
+          (let [out (th/command! {::th/type :remove-team-from-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id organization-id
+                                  :organization-name "Org"})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            (t/is (= allowed?
+                     (contains? (set @calls) :remove-team-from-organization)))))))))
+
+(t/deftest add-team-to-organization-move-follows-move-teams
+  (doseq [[i desc move-teams same-owner? requester-owns-organization? allowed?]
+          [[411 "myOrganizations, same owner" "myOrganizations" true false true]
+           [412 "myOrganizations, other owner" "myOrganizations" false false false]
+           [413 "never" "never" true false false]
+           [414 "never, organization owner" "never" true true false]]]
+    (t/testing desc
+      (let [owner              (th/create-profile* i {:is-active true})
+            team               (th/create-team* i {:profile-id (:id owner)})
+            source-id          (uuid/random)
+            target-id          (uuid/random)
+            source-owner-id    (if requester-owns-organization? (:id owner) (uuid/random))
+            target-owner-id    (if same-owner? source-owner-id (uuid/random))
+            calls              (atom [])]
+        (with-redefs [cf/flags (conj cf/flags :admin-console)
+                      nitrate/call (move-team-nitrate-mock
+                                    {:owner-id (:id owner)
+                                     :team-id (:id team)
+                                     :source-organization {:id source-id}
+                                     :perms-by-organization-id
+                                     {source-id {:owner-id source-owner-id
+                                                 :permissions {:create-teams "any"
+                                                               :move-teams move-teams}}
+                                      target-id {:owner-id target-owner-id
+                                                 :permissions {:create-teams "any"
+                                                               :move-teams "always"}}}
+                                     :calls calls})
+                      teams/initialize-user-in-organization (fn [& _] nil)]
+          (let [out (th/command! {::th/type :add-team-to-organization
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :organization-id target-id})]
+            (if allowed?
+              (t/is (th/success? out))
+              (t/is (= :not-allowed (th/ex-code (:error out)))))
+            (t/is (= allowed?
+                     (contains? (set @calls) :set-team-organization)))))))))
+
 (t/deftest get-nitrate-activation-code-request
   (let [profile    (th/create-profile* 1 {:is-active true})
         nitrate-id "nitrate-instance-1"
