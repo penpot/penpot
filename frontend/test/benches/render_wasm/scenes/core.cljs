@@ -7,9 +7,9 @@
 (ns benches.render-wasm.scenes.core
   "Registry and contract for renderer benchmark scenes and cases.
 
-  Scene namespaces register themselves at load time through the `defscene`
-  and `defcase` macros in `core.clj`. We don't import browser or renderer
-  code here.
+  Scene namespaces register themselves through the `defscene` and
+  `defcase` macros in `core.clj`. This namespace imports no browser or
+  renderer code.
 
   - A scene declares an id, a version, a human description, a closed
     parameters schema and a one-argument build function.
@@ -18,7 +18,7 @@
     identity and run function.
 
   Collection validates every declaration, derives each scene seed and
-  returns plain data"
+  returns plain data."
   (:require
    [app.common.schema :as sm]
    [app.common.transit :as t]
@@ -28,8 +28,8 @@
 ;; Runtime contract
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; rtx is the case execution context. The driver builds one map per attempt,
-;; calls the case body with it, and reads it back at completion:
+;; Ticket 14 will define rtx as the case execution context. Its proposed
+;; fields are:
 ;;
 ;;   :case    the collected case descriptor (id, scene, params, view,
 ;;            context, completion, batch-size, operation)
@@ -42,18 +42,15 @@
 ;;   :sleep   (fn [ms] ...) promise
 ;;   :check   zero-arg guard covering cancellation, deadline, context loss
 ;;
-;; Ops take rtx first and return it, or a promise of it. Case bodies thread
-;; rtx with `->`; the body's value is the rtx the driver collects. The
-;; driver, the clock/scheduling helpers and the op vocabulary arrive with
-;; tickets 05/06/14; this namespace fixes the binding name, the single
-;; threaded value, and the body shape checked below.
+;; Case run functions take one runtime argument. The current bridge uses case
+;; metadata and does not run these functions.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Node/browser dependency contract (runtime wiring pending in ticket 06)
+;; Node/browser dependency contract (case execution pending in ticket 14)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Scene declarations and bodies load in both Node and browser. Only the
-;; browser driver executes bodies. Their transitive imports must stay safe
+;; Scene declarations and bodies load in both Node and browser. Ticket 14's
+;; browser driver will execute bodies. Their transitive imports must stay safe
 ;; for Node; removing :run! from descriptors does not isolate dependencies.
 ;;
 ;; If an operation needs a browser API/helper, keep that import in a browser
@@ -121,8 +118,7 @@
    [:batch-size {:optional true} [:int {:min 1}]]
    [:operation {:optional true} [:map]]
    [:preparation {:optional true} [:map]]
-   [:run! {:optional true} fn?]
-   [:body-source {:optional true} [:fn seq?]]])
+   [:run! {:optional true} fn?]])
 
 (def schema:collected-case
   [:map {:closed true}
@@ -170,47 +166,10 @@
                    (update :scene-order conj id))))))
   id)
 
-(defn- thread-form?
-  [form]
-  (and (seq? form)
-       (contains? '#{-> clojure.core/->} (first form))
-       (= 'rtx (second form))))
-
-(defn- valid-tail?
-  [form]
-  (cond
-    (thread-form? form)
-    true
-
-    (and (seq? form) (contains? '#{do let} (first form)))
-    (valid-tail? (last form))
-
-    :else
-    false))
-
-(defn check-body-source!
-  "Validates a defcase body source and returns it unchanged. Every value
-  the body can return threads the injected runtime: a `(-> rtx ...)`
-  pipeline, optionally preceded by setup forms or wrapped in `let`/`do`.
-  Anything else throws ::invalid-case. The checker covers shape only;
-  review and fake-runtime unit tests cover sense."
-  [id body-source]
-  (when-not (and (seq body-source) (valid-tail? (last body-source)))
-    (throw (ex-info (str "defcase " id " threads the injected runtime: "
-                         "its value is a (-> rtx ...) pipeline, "
-                         "optionally wrapped in let/do. Got: "
-                         (pr-str body-source))
-                    {:type ::invalid-case
-                     :id id})))
-  body-source)
-
 (defn register-case!
   "Adds `bench-case` to the registry with the same replace/reject semantics
-  as register-scene!. A declared body source is validated here, at load
-  time, so a malformed pipeline fails before any browser work."
-  [{:keys [id ns body-source] :as bench-case}]
-  (when (some? body-source)
-    (check-body-source! id body-source))
+  as register-scene!."
+  [{:keys [id ns] :as bench-case}]
   (let [existing (get-in @registry [:cases id])]
     (when (and (some? existing) (not= ns (:ns existing)))
       (throw (ex-info (str "duplicate case id: " id)
@@ -263,10 +222,7 @@
   (get-in @registry [:scenes id]))
 
 (defn registered-case
-  "Full registered entry for a case id, including the browser-side run
-  function when the case declares one. The browser bridge resolves
-  executions through this namespace; the Node runner only reads collected
-  descriptors."
+  "Full case entry, including `:run!` when the case declares one."
   [id]
   (get-in @registry [:cases id]))
 
@@ -399,8 +355,8 @@
     (catch :default _ false)))
 
 (defn project-case
-  "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`,
-  `:body-source`) stripped, collection defaults applied."
+  "Plain-data projection of a registered case: internal keys (`:ns`, `:run!`)
+  stripped, collection defaults applied."
   [bench-case]
   (-> bench-case
       (select-keys [:id :scene :params :view :context :completion :batch-size
@@ -409,7 +365,7 @@
       (update :batch-size #(or % 1))
       (update :preparation #(or % {:version 1}))))
 
-(defn check-collected-case!
+(defn check-collected-case
   "Validates a collected case descriptor and returns it unchanged.
 
   Rejects anything that fails the schema and anything that does not survive
