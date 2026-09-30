@@ -17,6 +17,10 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -1598,3 +1602,24 @@
                 :operations [{:type :set :attr :name :val "renamed"}]}
                {:type :set-plugin-data :object-type :shape :object-id (ids :rect-a)
                 :page-id page-id :namespace "ns" :key "k" :value "v"}])))))
+
+(t/deftest apply-changes-local-skips-validate-shapes
+  ;; The builder applies pending changes to a local copy of the data, which
+  ;; has neither the real file id nor the libraries, so a :validate-shapes
+  ;; change must not run there. On CLJS it would report false errors.
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :r01))
+        page    (thf/current-page file)
+        main    (ths/get-shape file :m01)
+        comp-id (:id (thc/get-component file :c01))
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (pcb/validate-shapes (:id page) [(:id main)] "test")
+                    (pcb/update-component comp-id (fn [c] (assoc c :name "New name"))
+                                          {:apply-changes-local-library? true}))]
+
+    (t/is (= 2 (count (:redo-changes changes))))))
+
