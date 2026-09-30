@@ -703,6 +703,21 @@
         (vreset! cache (translate-selrect computed (- tx) (- ty)))
         computed))))
 
+(defn- without-inherited-transforms
+  "Drops the entries that repeat their parent's transform. Only for WASM, which applies it to
+  the subtree; the UI looks transforms up per shape. WASM does not expand into bool operands
+  nor masks, so those are kept."
+  [objects modifiers]
+  (let [transforms (into {} modifiers)]
+    (into []
+          (remove (fn [[id transform]]
+                    (let [parent (get objects (dm/get-in objects [id :parent-id]))]
+                      (and (= transform (get transforms (:id parent)))
+                           (not (cfh/bool-shape? parent))
+                           (not (and (cfh/mask-shape? parent)
+                                     (= id (first (:shapes parent)))))))))
+          modifiers)))
+
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis
@@ -761,7 +776,9 @@
                   (let [propagated (wasm.api/propagate-modifiers geometry-entries snap-pixel? snap-ignore-axis)]
                     (if (seq propagated) propagated root-modifiers)))]
             (when wasm-ready?
-              (wasm.api/set-modifiers modifiers))
+              (wasm.api/set-modifiers
+               (cond->> modifiers
+                 translation? (without-inherited-transforms (dsh/lookup-page-objects state)))))
             (let [ids     (into [] xf:map-key geometry-entries)
                   selrect (when wasm-ready?
                             (if (and translation? (not snap-pixel?) selection-rect-cache (seq modifiers))
