@@ -34,25 +34,6 @@
 (def ^:private known-stages
   #{"claim" "redis" "database" "dispatch" "execution" "terminal"})
 
-(def ^:private known-job-names
-  #{"sendmail"
-    "delete-object"
-    "demo-purge"
-    "run-webhook"
-    "process-webhook-event"
-    "file-gc"
-    "offload-file-data"
-    "objects-gc"
-    "storage-gc-deleted"
-    "storage-gc-touched"
-    "storage-pending-gc"
-    "jobs-gc"
-    "telemetry"
-    "session-gc"
-    "file-gc-scheduler"
-    "audit-log-archive"
-    "audit-log-gc"})
-
 (def ^:private known-gc-kinds
   #{"expired" "retained"})
 
@@ -75,9 +56,11 @@
   (let [queue (str/lower (mtx/label queue "other"))]
     (if (contains? known-queues queue) queue "other")))
 
+;; Job names go to the metric as-is: the registry is fixed (one job-def
+;; per name, wired in `app.main`), so cardinality is bounded by it.
+;; Anything without a name (nil) still falls back to "other".
 (defn- name-label [name]
-  (let [name (mtx/label name "other")]
-    (if (contains? known-job-names name) name "other")))
+  (mtx/label name "other"))
 
 (defn- gc-kind-label [kind]
   (let [kind (str/lower (or (some-> kind d/name) "other"))]
@@ -164,13 +147,8 @@
   It only carries the job name label, with no queue to tell jobs of the
   same name apart. Use `record-execution`, which adds the queue label,
   for anything new. Kept exported only so the dashboards and the alerts
-  that already read it keep working.
-
-  The label is the raw job name, not `name-label`: this series is read
-  by panels that predate `known-job-names`, so folding an unknown name
-  into \"other\" would merge series that used to be separate. Every other
-  jobs metric bounds its labels, and that is the right default; this one
-  is the exception because its whole job is to keep reading the same."
+  that already read it keep working: like every other jobs metric,
+  the label is the raw job name."
   [cfg name millis]
   (record-value (mtx/instance cfg) :tasks-timing
                 [(mtx/label name "other")]

@@ -93,6 +93,16 @@
     (gc/execute-jobs-gc cfg {})
     (t/is (= 1.0 (counter-value metrics ["expired" "deleted"])))))
 
+(t/deftest job-rows-are-protected-against-unintended-deletes
+  (let [job-id (mk-job {:expires-at (ct/in-past {:minutes 5})})]
+    (t/testing "a stray DELETE is blocked by the deletion protection trigger"
+      (t/is (thrown-with-msg? Exception #"unable to proceed to delete row"
+                              (th/db-exec! ["DELETE FROM job WHERE id = ?" job-id])))
+      (t/is (some? (th/db-get :job {:id job-id} :id :status))))
+    (t/testing "the jobs GC is the intended deleter and disables the guard"
+      (th/run-task! :jobs-gc {})
+      (t/is (nil? (th/db-get :job {:id job-id} :id :status))))))
+
 (t/deftest gc-deletes-expired-jobs-and-touches-their-resources
   (let [old-object   (mk-storage-object)
         live-object  (mk-storage-object)

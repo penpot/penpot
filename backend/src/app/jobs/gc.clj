@@ -27,7 +27,12 @@
 
   Each batch deletes and touches in its own transaction: a crash
   leaves the remaining batches for the next tick, and an object can
-  never lose its referencing row without being marked for reclaim."
+  never lose its referencing row without being marked for reclaim.
+
+  `job` carries a deletion-protection trigger, so each batch disables
+  it first (`SET LOCAL rules.deletion_protection TO off`): the GC is
+  the intended deleter, and the guard only exists so a stray
+  `DELETE FROM job` cannot drop a row without touching its object."
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -35,7 +40,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
-   [app.jobs.metrics :as jobs-metrics]
+   [app.jobs.metrics :as metrics]
    [integrant.core :as ig]))
 
 (def ^:private sql:touch-objects
@@ -79,15 +84,16 @@
     (let [[rows touched-now]
           (db/tx-run! cfg
                       (fn [{:keys [::db/conn]}]
+                        (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                         (let [rows         (db/exec! conn (conj (into [sql] params)
                                                                 gc-batch-size))
                               resource-ids (into [] (keep :resource-id) rows)
                               touched      (touch-resources conn resource-ids)]
                           (db/after-commit!
                            #(do
-                              (jobs-metrics/record-gc-rows
+                              (metrics/record-gc-rows
                                cfg kind :deleted (count rows))
-                              (jobs-metrics/record-gc-rows
+                              (metrics/record-gc-rows
                                cfg kind :touched touched)))
                           [rows touched])))
           deleted' (+ deleted (count rows))
@@ -111,9 +117,8 @@
   [_ cfg]
   {::jobs/name      :jobs-gc
    ::jobs/schema    schema:jobs-gc-params
-   ::jobs/handler
-   (fn [_context params]
-     (execute-jobs-gc cfg params))
+   ::jobs/handler   (fn [_context params]
+                      (execute-jobs-gc cfg params))
    ::jobs/decoder   (sm/decoder schema:jobs-gc-params sm/json-transformer)
    ::jobs/validator (sm/validator schema:jobs-gc-params)})
 
@@ -126,22 +131,26 @@
   transaction, with a heartbeat between batches so long sweeps neither
   spike the WAL nor outrun the job lease."
   [cfg params]
-  (let [min-age (ct/duration (or (:min-age params)
-                                 (cf/get-jobs-retention)))
-        expired-tpoint (ct/tpoint)
+  (let [min-age
+        (ct/duration (or (:min-age params)
+                         (cf/get-jobs-retention)))
+
+        expired-tpoint
+        (ct/tpoint)
+
         [deleted-expired touched-expired]
         (delete-jobs cfg :expired sql:delete-expired-jobs)
-        retained-tpoint (ct/tpoint)
+
+        retained-tpoint
+        (ct/tpoint)
+
         [deleted-retained touched-retained]
         (delete-jobs cfg :retained sql:delete-retained-jobs
                      (db/interval min-age))]
-    (db/after-commit!
-     #(jobs-metrics/record-gc-duration
-       cfg :expired (inst-ms (expired-tpoint))))
-    (db/after-commit!
-     #(jobs-metrics/record-gc-duration
-       cfg :retained (inst-ms (retained-tpoint))))
-    (l/dbg :hint "jobs gc finished"
+
+    (metrics/record-gc-duration cfg :expired (inst-ms (expired-tpoint)))
+    (metrics/record-gc-duration cfg :retained (inst-ms (retained-tpoint)))
+    (l/dbg :hint "finished"
            :deleted-expired deleted-expired
            :touched-expired touched-expired
            :deleted-retained deleted-retained

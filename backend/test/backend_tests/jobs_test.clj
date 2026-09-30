@@ -81,6 +81,14 @@
    :id        (uuid/next)
    :file-id   (uuid/next)})
 
+(defn- insert-job-statement?
+  "True when a `db/exec-one!` call is the job INSERT, whatever the
+  argument shape (a `[sql & params]` vector or a bare SQL string)."
+  [args]
+  (let [stmt (second args)
+        sql  (if (string? stmt) stmt (first stmt))]
+    (and (string? sql) (str/starts-with? sql "insert into job"))))
+
 (def ^:private test-error
   {:type :internal
    :code :boom
@@ -263,7 +271,17 @@
     (let [cfg (make-cfg (get-job-defs))]
       (t/is (thrown-with-msg? Exception #"no job definition"
                               (jobs/submit cfg {::jobs/name   :unknown
-                                                ::jobs/params {}}))))))
+                                                ::jobs/params {}})))))
+
+  (t/testing "the job name is a keyword, and only a keyword"
+    (let [cfg (make-cfg (get-job-defs))]
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (jobs/submit cfg {::jobs/name   "echo"
+                                       ::jobs/params {}})))
+      (t/is (thrown? clojure.lang.ExceptionInfo
+                     (jobs/invoke (assoc cfg
+                                         ::jobs/name "echo"
+                                         ::jobs/params {})))))))
 
 (t/deftest submit-persists-row-with-json-params
   (let [cfg   (make-cfg (get-job-defs))
@@ -418,12 +436,11 @@
                 ::jobs/dedupe true
                 ::jobs/label  "atomic-label"}
         kept   (jobs/submit cfg opts)
-        calls  (atom 0)
         orig   @#'db/exec-one!]
-    ;; fault the INSERT (2nd statement): the DELETE must roll back too
+    ;; fault the INSERT: the DELETE before it must roll back too
     (alter-var-root #'db/exec-one!
                     (constantly (fn [& args]
-                                  (when (= 2 (swap! calls inc))
+                                  (when (insert-job-statement? args)
                                     (throw (ex-info "boom" {})))
                                   (apply orig args))))
     (try
@@ -442,14 +459,13 @@
                 ::jobs/dedupe true
                 ::jobs/label  "atomic-autocommit-label"}
         kept   (jobs/submit cfg opts)
-        calls  (atom 0)
         orig   @#'db/exec-one!]
     ;; a raw connection outside any transaction: DELETE+INSERT must
     ;; still share one transaction opened on it
     (with-open [conn (db/open th/*pool*)]
       (alter-var-root #'db/exec-one!
                       (constantly (fn [& args]
-                                    (when (= 2 (swap! calls inc))
+                                    (when (insert-job-statement? args)
                                       (throw (ex-info "boom" {})))
                                     (apply orig args))))
       (try

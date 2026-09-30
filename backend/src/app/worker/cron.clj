@@ -107,20 +107,20 @@
                             ;; SKIP LOCKED on the scheduled_task row prevents
                             ;; race conditions between nodes.
                             (let [tenant (cf/get :tenant)
-                                  row    (db/exec-one! conn  [sql:count-active-jobs task (str id) tenant])
+                                  row    (db/exec-one! conn  [sql:count-active-jobs (d/name task) (str id) tenant])
                                   active (or (get row :n) 0)]
                               (if (pos? active)
                                 (do
                                   (db/after-commit! #(metrics/record-cron cfg :skipped :active))
                                   (l/dbg :hint "skip"
                                          :reason "scheduling, active instance exists"
-                                         :id id :task task))
+                                         :id id :task (d/name task)))
                                 (let [job-id  (submit-cron-job cfg entry)
                                       elapsed (ct/format-duration (tpoint))]
                                   (db/after-commit! #(metrics/record-cron cfg :submitted :none))
                                   (l/dbg :hint "submit"
                                          :id id
-                                         :task task
+                                         :task (d/name task)
                                          :job-id (str job-id)
                                          :elapsed elapsed)))))))
 
@@ -191,12 +191,14 @@
                    (->> entries
                         (filter some?)
                         ;; If id is not defined, use the task as id.
+                        ;; The task stays a keyword (the canonical job
+                        ;; name): only the id is stringified, because it
+                        ;; becomes the job label and the scheduled_task
+                        ;; row id.
                         (map (fn [{:keys [id task] :as item}]
                                (if (some? id)
                                  (assoc item :id (d/name id))
                                  (assoc item :id (d/name task)))))
-                        (map (fn [item]
-                               (update item :task d/name)))
                         (map (fn [item]
                                ;; fail fast when the entry references
                                ;; an unknown job name

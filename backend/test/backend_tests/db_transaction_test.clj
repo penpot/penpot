@@ -77,4 +77,4 @@
       (t/testing "its callback ran with its own commit, the caller one was dropped"
         (t/is (= [:inner] @events)))
       (finally
-        (th/db-exec-one! ["DELETE FROM job WHERE id = ?" job-id])))))
+        (th/db-force-delete! :job {:id job-id})))))

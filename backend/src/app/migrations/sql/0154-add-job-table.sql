@@ -130,3 +130,17 @@ CREATE TABLE job_event (
 -- (`WHERE job_id = ? AND kind = 'progress' ORDER BY created_at DESC LIMIT 1`).
 CREATE INDEX job_event__job_kind_created_idx
     ON job_event (job_id, kind, created_at DESC, id DESC);
+
+-- Deletion protection, like the domain tables (`team`, `profile`, the
+-- file thumbnail tables). The only intended deleter of `job` rows is the
+-- jobs GC, which also marks the referenced storage objects as touched in
+-- the same transaction; a stray `DELETE FROM job` would drop the row
+-- (and cascade `job_event`) without touching the object, orphaning it
+-- forever. The GC and the submit dedupe disable the guard inside their
+-- transaction with `SET LOCAL rules.deletion_protection TO off`, the
+-- same escape hatch used by `app.tasks.objects-gc`.
+CREATE OR REPLACE TRIGGER deletion_protection__tgr
+BEFORE DELETE ON job FOR EACH STATEMENT
+  WHEN ((current_setting('rules.deletion_protection', true) IN ('on', '')) OR
+        (current_setting('rules.deletion_protection', true) IS NULL))
+  EXECUTE PROCEDURE raise_deletion_protection();

@@ -120,11 +120,12 @@
 
 (t/deftest cron-tick-submits-only-when-no-active-instance
   (let [cfg   (make-cfg)
-        ;; strings, as produced by the cron component init (d/name);
-        ;; the cron expression must be parsed: the tick reschedules
-        ;; itself in `finally`
+        ;; the entry keeps the canonical keyword task; only the id is a
+        ;; string, as normalized by the cron component init. The cron
+        ;; expression must be parsed: the tick reschedules itself in
+        ;; `finally`
         entry {:id   "session-gc-no-overlap"
-               :task "session-gc"
+               :task :session-gc
                :cron (ucron/cron "0 0 0 * * ?")}]
 
     ;; the tick claims this row; without it the tick silently skips
@@ -170,7 +171,7 @@
 (t/deftest cron-tick-is-not-blocked-by-another-tenants-active-job
   (let [cfg   (make-cfg)
         entry {:id   "session-gc-shared-db"
-               :task "session-gc"
+               :task :session-gc
                :cron (ucron/cron "0 0 0 * * ?")}]
 
     (th/db-insert! :scheduled-task {:id        "session-gc-shared-db"

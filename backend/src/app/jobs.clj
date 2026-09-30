@@ -110,9 +110,16 @@
 ;; JOB DEFINITIONS (registry)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def schema:job-name
+  "Canonical job name: a keyword, and only a keyword. Callers pass
+  `:sendmail`, never \"sendmail\": `submit` and `invoke` reject anything
+  else. The database still stores a string (`d/name` at the submit
+  boundary), so `get-job-def` coerces back at that boundary."
+  :keyword)
+
 (def ^:private schema:job-def
   [:map {:title "job-def"}
-   [::name [:or ::sm/text :keyword]]
+   [::name schema:job-name]
    [::schema any?]
    ;; every handler is [context params]. A job-def already closes over its
    ;; own dependencies, so nothing else is handed to it: a handler cannot
@@ -174,7 +181,11 @@
   (l/inf :hint "job definitions halted" :jobs (count defs)))
 
 (defn get-job-def
-  "Resolve the job-def for the provided job name; raises if missing."
+  "Resolve the job-def for the provided job name; raises if missing.
+
+  Accepts a string as well as a keyword, but only because the runner
+  resolves from the database row (whose `name` column is text): every
+  other caller passes the canonical keyword."
   [defs name]
   (or (get defs (keyword name))
       (ex/raise :type :not-found
@@ -216,7 +227,7 @@
 
 (def ^:private schema:options
   [:map {:title "submit-options"}
-   [::name [:or ::sm/text :keyword]]
+   [::name schema:job-name]
    [::label {:optional true} ::sm/text]
    [::delay {:optional true}
     [:or ::sm/int ::ct/duration]]
@@ -290,6 +301,10 @@
         ;; and dedupe is best-effort.
         insert!      (fn [conn]
                        (let [deleted (when dedupe
+                                       ;; the DELETE below is intentional:
+                                       ;; disable the `job` deletion-protection
+                                       ;; guard inside this transaction
+                                       (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                                        (-> (db/exec-one! conn [sql:remove-not-started-jobs
                                                                job-name tenant queue label now])
                                            (db/get-update-count)))]
@@ -1150,8 +1165,14 @@
 
   Returns the handler result."
   [cfg]
-  (let [job-def (get-job-def (get-defs cfg) (get cfg ::name))
-        context (some-> (get cfg ::context) check-context)
-        decoded (decode-params job-def (get cfg ::params))]
-    (binding [*job-id* (get cfg ::job-id)]
-      ((::handler job-def) context decoded))))
+  (let [name (get cfg ::name)]
+    (when-not (keyword? name)
+      (ex/raise :type :validation
+                :code :invalid-job-name
+                :hint "job name must be a keyword"
+                :name name))
+    (let [job-def (get-job-def (get-defs cfg) name)
+          context (some-> (get cfg ::context) check-context)
+          decoded (decode-params job-def (get cfg ::params))]
+      (binding [*job-id* (get cfg ::job-id)]
+        ((::handler job-def) context decoded)))))

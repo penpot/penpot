@@ -249,13 +249,13 @@
     (run-one cfg)
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-queue-wait-timing
-                                       ["other" "other"])))
+                                       ["echo-runner" "other"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-execution-timing
-                                       ["other" "other"])))
+                                       ["echo-runner" "other"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-total-timing
-                                       ["other" "other" "completed"])))
+                                       ["echo-runner" "other" "completed"])))
     (t/testing "the legacy histogram is still emitted, with its raw name label"
       (t/is (= 1 (histogram-sample-count metrics
                                          :tasks-timing
@@ -562,5 +562,5 @@
     (push-payload job-id scheduled-at)
     (run-one (mk-cfg {}))
     (t/is (= 2 (count (get-events job-id))))
-    (th/db-delete! :job {:id job-id})
+    (th/db-force-delete! :job {:id job-id})
     (t/is (= [] (get-events job-id)))))

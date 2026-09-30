@@ -1302,8 +1302,8 @@
                                           :id :deleted-at)))))
 
     ;; once the referencing row is gone, the touched object becomes
-    ;; eligible for deletion
-    (th/db-delete! :job {:id job-id})
+    ;; eligible for deletion (the job table is deletion-protected)
+    (th/db-force-delete! :job {:id job-id})
     (th/db-update! :storage-object {:touched-at (ct/now)} {:id (:id object)})
 
     (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]

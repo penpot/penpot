@@ -515,7 +515,9 @@
                 (let [jobs-rows (db/exec! conn [sql:pending-jobs])]
                   (doseq [row jobs-rows]
                     (jobs/invoke (-> *system*
-                                     (assoc ::jobs/name (:name row))
+                                     ;; the row stores a string; invoke
+                                     ;; takes the canonical keyword
+                                     (assoc ::jobs/name (keyword (:name row)))
                                      (assoc ::jobs/params (:params row))
                                      (assoc ::jobs/context (jobs/make-context row))
                                      (assoc ::jobs/job-id (:id row)))))))))
@@ -629,6 +631,17 @@
 (defn db-delete!
   [& params]
   (apply db/delete! *pool* params))
+
+(defn db-force-delete!
+  "Deletes rows whose table is guarded by `raise_deletion_protection`,
+  inside a transaction that disables the guard. Test-only escape hatch:
+  production delete paths disable protection in their own transaction
+  (see `app.jobs.gc`)."
+  [& params]
+  (db/tx-run! *pool*
+              (fn [{:keys [::db/conn]}]
+                (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                (apply db/delete! conn params))))
 
 (defn db-query
   [& params]

@@ -82,7 +82,7 @@
       (t/testing "the tenant is not smuggled inside the queue"
         (t/is (not (str/includes? (:queue (th/db-get :job {:id job-id})) "acme"))))
       (finally
-        (th/db-delete! :job {:id job-id})))))
+        (th/db-force-delete! :job {:id job-id})))))
 
 (t/deftest job-table-has-no-target-nor-progress-columns
   (t/testing "target and job.progress are gone: progress lives in job_event"
@@ -108,7 +108,7 @@
                        (th/db-insert! :job-event {:job-id job-id
                                                   :kind   "unknown"}))))
       (finally
-        (th/db-delete! :job {:id job-id})))))
+        (th/db-force-delete! :job {:id job-id})))))
 
 (t/deftest job-event-index-serves-the-history-read
   (let [indexdef (:indexdef (th/db-exec-one! ["SELECT indexdef FROM pg_indexes
@@ -122,7 +122,7 @@
     (th/db-insert! :job {:id job-id :name "test" :tenant "acme" :queue "default"})
     (th/db-insert! :job-event {:job-id job-id :kind "progress"})
     (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event WHERE job_id = ?" job-id]))))
-    (th/db-delete! :job {:id job-id})
+    (th/db-force-delete! :job {:id job-id})
     (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event WHERE job_id = ?" job-id]))))))
 
 (t/deftest job-event-foreign-key-is-deferrable
@@ -204,12 +204,15 @@
       (t/is (some? scheduled-at))
       (t/is (some? created-at))
       (t/is (some? modified-at))
-      (th/db-delete! :job {:id (th/mk-uuid "job-status" status)}))))
+      (th/db-force-delete! :job {:id (th/mk-uuid "job-status" status)}))))
 
-(t/deftest job-has-no-modified-at-trigger
+(t/deftest job-has-only-the-deletion-protection-trigger
   (let [triggers (->> (th/db-exec! ["SELECT tgname FROM pg_trigger
                                      WHERE tgrelid = ?::regclass
                                        AND NOT tgisinternal" "job"])
                       (map :tgname)
                       set)]
-    (t/is (empty? triggers))))
+    (t/testing "no modified-at trigger: the application updates it"
+      (t/is (not (contains? triggers "job__modified_at__tgr"))))
+    (t/testing "deletion protection is the only trigger on job"
+      (t/is (= #{"deletion_protection__tgr"} triggers)))))

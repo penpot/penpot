@@ -124,7 +124,7 @@
                                               {::jobs/name :echo
                                                ::jobs/params {}})
                                  (throw (ex-info "rollback" {}))))))
-    (t/is (= 0.0 (counter-value metrics :jobs-submitted ["other" "default"])))))
+    (t/is (= 0.0 (counter-value metrics :jobs-submitted ["echo" "default"])))))
 
 (t/deftest submit-and-terminal-writers-record-production-events
   (let [metrics (make-metrics)
@@ -139,10 +139,10 @@
         job-id  (jobs/submit cfg {::jobs/name :echo ::jobs/params {}})]
     (jobs/claim cfg job-id (:scheduled-at (jobs/get-job cfg job-id)))
     (jobs/complete cfg :job-id job-id :result {:ok true})
-    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["other" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "default" "completed"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["echo" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"])))))
 
-(t/deftest lifecycle-helpers-use-bounded-labels
+(t/deftest lifecycle-helpers-use-labels-as-is
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-submitted cfg "delete-object" "default")
@@ -168,7 +168,7 @@
 
     (t/testing "the legacy histogram keeps the raw job name, with no queue"
       (t/is (= 1.0 (histogram-count metrics :tasks-timing ["delete-object"]))))
-    (t/testing "and it does not fold an unknown name into \"other\", as the newer metrics do"
+    (t/testing "like every other jobs metric now, it does not fold an unknown name into \"other\""
       (jobs-metrics/record-legacy-execution cfg :brand-new-job 7)
       (t/is (= 1.0 (histogram-count metrics :tasks-timing ["brand-new-job"])))
       (t/is (= 0.0 (histogram-count metrics :tasks-timing ["other"]))))))
@@ -181,7 +181,7 @@
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-outcome cfg "echo" "unexpected" :unexpected)
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "other" "failed"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "other" "failed"])))))
 
 (t/deftest sampler-is-wired-and-does-not-start-on-read-only
   (t/is (contains? main/worker-config :app.jobs.metrics/sampler))
@@ -196,12 +196,12 @@
         (finally
           (ig/halt-key! :app.jobs.metrics/sampler sampler))))))
 
-(t/deftest unknown-job-names-and-gc-kinds-are-bounded
+(t/deftest job-names-go-to-metrics-as-is-and-gc-kinds-are-bounded
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-submitted cfg "unknown-job" "default")
     (jobs-metrics/record-gc-rows cfg :unknown :deleted 1)
-    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["other" "default"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["unknown-job" "default"])))
     (t/is (= 1.0 (counter-value metrics :jobs-gc-rows ["other" "deleted"])))))
 
 (t/deftest backlog-sampler-updates-status-and-age-gauges
@@ -272,7 +272,7 @@
       (t/is (= 2 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event"])))))
 
     (t/testing "the terminal counter followed its own commit, not the caller one"
-      (t/is (= 1.0 (counter-value metrics :jobs-completed ["other" "default" "completed"]))))))
+      (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "default" "completed"]))))))
 
 (t/deftest progress-counter-follows-the-report-that-outlives-the-caller
   (let [metrics (make-metrics)
