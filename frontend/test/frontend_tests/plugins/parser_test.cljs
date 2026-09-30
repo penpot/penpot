@@ -193,3 +193,21 @@
 
   (t/testing "a malformed id raises, so plugin bugs stay visible"
     (t/is (thrown? js/Error (parser/parse-id "not-a-uuid")))))
+
+(t/deftest test-parse-stroke-maps-per-side-widths
+  (let [stroke (parser/parse-stroke
+                #js {:strokeColor "#000000"
+                     :strokeWidth 1
+                     :strokeWidthTop 2
+                     :strokeWidthRight 3
+                     :strokeWidthBottom 4
+                     :strokeWidthLeft 5})]
+    (t/is (= 2 (:stroke-width-top stroke)))
+    (t/is (= 3 (:stroke-width-right stroke)))
+    (t/is (= 4 (:stroke-width-bottom stroke)))
+    (t/is (= 5 (:stroke-width-left stroke))))
+
+  (t/testing "absent per-side keys are not materialized"
+    (let [stroke (parser/parse-stroke #js {:strokeColor "#000000" :strokeWidth 1})]
+      (t/is (not (contains? stroke :stroke-width-top)))
+      (t/is (not (contains? stroke :stroke-width-left))))))
