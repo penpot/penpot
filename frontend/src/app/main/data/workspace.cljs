@@ -784,7 +784,7 @@
                   component-id
                   variant-id
                   variant-properties
-                  {})
+                  [])
                  (dwva/remove-empty-properties variant-id)
                  (dwva/update-error component-id name)))))))
 
