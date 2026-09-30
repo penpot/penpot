@@ -19,7 +19,6 @@ on:
         description: 'Name of the branch or ref'
         type: string
         required: true
-        default: 'develop'
       sha:
         description: >-
           Exact commit to check out (full 40-char SHA, e.g. from
