@@ -28,6 +28,7 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
+   [app.srepl.procs.fdata-storage :as fdata-storage]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
@@ -2892,6 +2893,102 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+(t/deftest fallback-notification-consumption-across-file-data-backends
+  (let [profile  (th/create-profile* 1)
+        reader   (th/create-profile* 2)
+        stranger (th/create-profile* 3)]
+    (doseq [[backend-index backend] (map-indexed vector ["db" "storage" "legacy-db"])
+            [case-index local? outcome] [[0 true :tokens-source-fallback-local]
+                                         [1 false :tokens-source-deactivated]]]
+      (t/testing (str backend " " outcome)
+        (binding [cf/config (assoc cf/config :file-data-backend backend)]
+          (let [index  (+ 10 (* backend-index 10) (* case-index 2))
+                case   (create-token-source-consumer! profile index (inc index)
+                                                      (str backend " " case-index) local?)
+                output (export-link-later! [(:id (:file case))])]
+            (db/update! th/*system* :file {:deleted-at (ct/now)}
+                        {:id (:id (:source case))})
+            (let [result      (import-link-later! profile output)
+                  file-id     (first (:file-ids result))
+                  before      (bfc/get-file th/*system* file-id)
+                  row         (th/db-get :file-data {:file-id file-id :id file-id})
+                  legacy-data (seq (:data (th/db-get :file {:id file-id})))
+                  params      {::th/type :consume-tokens-source-fallback-notification
+                               ::rpc/profile-id (:id reader)
+                               :file-id file-id}]
+              (t/is (= backend (:backend before)))
+              (t/is (= outcome (get-in before [:metadata :tokens-source-fallback-notification])))
+              (t/is (= backend (:backend row)))
+              (if (= backend "db")
+                (t/is (bytes? (:data row)))
+                (t/is (nil? (:data row))))
+              (when (= backend "legacy-db")
+                (t/is (bytes? (:data (th/db-get :file {:id file-id}))))
+                (db/tx-run! th/*system* fdata-storage/migrate-file-to-storage {:id file-id})
+                (let [migrated (bfc/get-file th/*system* file-id)]
+                  (t/is (= "db" (:backend migrated)))
+                  (t/is (= (:metadata before) (:metadata migrated))))
+                (db/tx-run! th/*system* fdata-storage/rollback-file-from-storage {:id file-id})
+                (db/tx-run! th/*system* fdata-storage/rollback-file-from-storage {:id file-id})
+                (let [rolled-back (bfc/get-file th/*system* file-id)]
+                  (t/is (= "legacy-db" (:backend rolled-back)))
+                  (t/is (= (:metadata before) (:metadata rolled-back)))))
+              (when (= backend "storage")
+                (t/is (uuid? (get-in before [:metadata :storage-ref-id]))))
+
+              (let [row (th/db-get :file-data {:file-id file-id :id file-id})]
+                (let [denied (th/command! (assoc params ::rpc/profile-id (:id stranger)))]
+                  (t/is (some? (:error denied)))
+                  (t/is (= (:metadata before)
+                           (:metadata (bfc/get-file th/*system* file-id)))))
+
+                ;; Read access alone is sufficient; both calls start together
+                ;; and use separate RPC transactions.
+                (db/insert! th/*system* :file-profile-rel
+                            {:file-id file-id :profile-id (:id reader)
+                             :is-owner false :is-admin false :can-edit false})
+                (let [ready   (java.util.concurrent.CountDownLatch. 2)
+                      start   (promise)
+                      calls   (mapv (fn [_]
+                                      (future
+                                        (.countDown ready)
+                                        @start
+                                        (th/command! params)))
+                                    (range 2))
+                      _       (t/is (.await ready 5 java.util.concurrent.TimeUnit/SECONDS))
+                      _       (deliver start true)
+                      results (mapv #(deref % 10000 ::timeout) calls)]
+                  (doseq [call calls] (future-cancel call))
+                  (t/is (not-any? #{::timeout} results))
+                  (t/is (every? #(nil? (:error %)) results))
+                  (t/is (= {outcome 1 nil 1}
+                           (frequencies (map #(get-in % [:result :tokens-source-fallback-notification])
+                                             results)))))
+
+                (let [after (bfc/get-file th/*system* file-id)]
+                  (t/is (= (dissoc (:metadata before) :tokens-source-fallback-notification)
+                           (:metadata after)))
+                  (t/is (= (:revn before) (:revn after)))
+                  (t/is (= (:modified-at before) (:modified-at after)))
+                  (t/is (= backend (:backend after)))
+                  (t/is (= (cfo/get-tokens-source (:data before))
+                           (cfo/get-tokens-source (:data after))))
+                  (let [before-status (get-in before [:data :tokens-status])
+                        after-status  (get-in after [:data :tokens-status])]
+                    (t/is (ctos/tokens-status? after-status))
+                    (t/is (= (ctos/get-active-theme-ids before-status)
+                             (ctos/get-active-theme-ids after-status)))
+                    (t/is (= (ctos/get-active-set-ids before-status)
+                             (ctos/get-active-set-ids after-status))))
+                  (t/is (= legacy-data (seq (:data (th/db-get :file {:id file-id})))))
+                  (t/is (= (:modified-at row)
+                           (:modified-at (th/db-get :file-data {:file-id file-id :id file-id}))))
+                  (t/is (= (seq (:data row))
+                           (seq (:data (th/db-get :file-data {:file-id file-id :id file-id}))))))
+                (let [again (th/command! params)]
+                  (t/is (nil? (:error again)))
+                  (t/is (nil? (get-in again [:result :tokens-source-fallback-notification]))))))))))))
 
 (t/deftest link-later-fallback-notification-consumed-once
   "Fallback import/resolution persists a one-shot workspace marker that a
