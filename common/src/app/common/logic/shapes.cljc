@@ -107,7 +107,9 @@
                   (not ignore-touched)
                   (generate-unapply-tokens objects changed-sub-attr changed-item-index))
 
-        page-id (pcb/get-page-id changes)
+        ;; Only validate changes on a page (not on a component container)
+        page-id (when (pcb/has-page-id? changes)
+                  (pcb/get-page-id changes))
         modified-components (ctn/get-all-instance-roots objects ids)
 
         changes (if (and page-id (seq modified-components))
