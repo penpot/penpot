@@ -204,8 +204,9 @@
 (defn- import-svg-attrs-asset
   "Imports the `svg-attrs-camel-case.penpot` asset, a real penpot export
   whose shapes carry `:svg-attrs` keys in camelCase (the spelling the
-  binary export writes), and returns the imported file. The v3 reader
-  kebab-izes every key, so the shapes come back with kebab-case keys."
+  binary export wrote at the time), and returns the imported file. The
+  v3 reader kebab-izes every key, so the shapes come back with
+  kebab-case keys."
   [profile]
   (let [input  (th/tempfile "backend_tests/test_files/svg-attrs-camel-case.penpot")
         result (-> th/*system*

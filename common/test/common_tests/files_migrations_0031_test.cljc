@@ -188,6 +188,24 @@
     (t/is (= "junk" (:svg-attrs shape)) "non-maps reach validation untouched")
     (t/is (= "junk" (:svg-defs shape)))))
 
+(t/deftest migration-0031-junk-viewbox-becomes-default-rect
+  ;; Unlike `:svg-attrs`/`:svg-defs` (passed through to validation),
+  ;; `:svg-viewbox` goes through `make-rect`, which does not throw on
+  ;; junk: it falls back to the default rect. Inherited from 0021.
+  (let [shape-id (uuid/next)
+        page-id  (uuid/next)
+        data     {:pages-index
+                  {page-id
+                   {:objects
+                    {shape-id (make-shape shape-id
+                                          {:type :rect
+                                           :svg-viewbox "junk"})}}}}
+        data'    (cfm/migrate-data data migration-id)
+        viewbox  (get-in data' [:pages-index page-id :objects shape-id :svg-viewbox])]
+    (t/is (grc/rect? viewbox) "junk viewbox becomes a rect, not an error")
+    (t/is (= 0 (:x viewbox)))
+    (t/is (= 0.01 (:width viewbox)))))
+
 (t/deftest migration-0031-runs-through-file-migration
   ;; A file that recorded the withdrawn "0021-fix-shape-svg-attrs" (and
   ;; everything else current) still needs migration: 0021 left

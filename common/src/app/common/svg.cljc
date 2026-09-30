@@ -546,6 +546,21 @@
   drift from birth."
   (sort-by name (map (comp keyword str/kebab name) svg-props)))
 
+(def stored-attr-display-names
+  "Stored kebab key -> spec/source spelling, for user-facing labels
+  (the svg-attrs menu shows these). Kebab storage matches the spec for
+  most keys (`:stroke-width` shows `stroke-width`), but spec-camel keys
+  do not (`:class-name` shows `class`, `:view-box` shows `viewBox`)."
+  (into {}
+        (map (fn [k] [(keyword (str/kebab (name (prop-key k)))) (name k)]))
+        (concat svg-attrs svg-presentation-attrs penpot-extra-attrs)))
+
+(defn stored-attr-display-name
+  "User-facing label for a stored kebab attr key. Unknown keys fall
+  back to their name."
+  [k]
+  (get stored-attr-display-names k (name k)))
+
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basically the defaults that can be percents and we need to replace because
 ;; otherwise won't work as expected in the workspace
