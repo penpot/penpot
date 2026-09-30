@@ -12,26 +12,6 @@ rules:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Use `persist-credentials: false` in actions/checkout.
-  artipacked:
-    ignore:
-      - build-bundle.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-package.yml
-      - plugins-deploy-packages.yml
-      - plugins-deploy-styles-doc.yml
-      - release.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
   # Avoid restoring caches in release/publish workflows.
   cache-poisoning:
     ignore:
