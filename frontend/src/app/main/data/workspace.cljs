@@ -794,7 +794,7 @@
 
            variant-name
            (rx/of (dwva/update-properties-names-and-values
-                   component-id variant-id variant-properties {})
+                   component-id variant-id variant-properties [])
                   (dwva/remove-empty-properties variant-id)
                   (dwva/update-error component-id name))
 
