@@ -99,7 +99,11 @@
           (-> changes
               (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
                                     {:apply-changes-local-library? true})
-              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))
+              (pcb/validate-shapes (pcb/get-page-id changes)
+                                   [main-id]
+                                   (str "generate-update-property-value: " component-id
+                                        " pos: " pos " value: " value))))
         changes))))
 
 (defn generate-set-variant-error
