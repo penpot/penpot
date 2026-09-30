@@ -235,7 +235,14 @@
   "Extract some components from a variant, removing the variant-id and variant-name from the 
    main instances and the variant-id and variant-properties from the components."
   [changes shapes]
-  (reduce generate-make-shape-no-variant changes shapes))
+  (if (empty? shapes)
+    changes
+    ;; Only the extracted main instances change. The container is not
+    ;; validated, as the caller may not have moved the shapes out of it yet
+    (-> (reduce generate-make-shape-no-variant changes shapes)
+        (pcb/validate-shapes (pcb/get-page-id changes)
+                             (mapv :id shapes)
+                             (str "generate-make-shapes-no-variant: " (mapv :id shapes))))))
 
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
