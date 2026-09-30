@@ -109,18 +109,37 @@
              params
              params))
 
+;; Matches both metadata encodings while Transit rows still exist. The
+;; UNION ALL keeps each branch indexable: migration 0068 covers the legacy
+;; "~:" keys and 0156 covers the plain JSON keys. Phase 3 drops the legacy
+;; branch once no "~:" rows remain.
+(def ^:private sql:get-database-object-by-hash
+  "(
+     select * from storage_object
+      where (metadata->>'~:hash') = ?
+        and (metadata->>'~:bucket') = ?
+        and backend = ?
+        and deleted_at is null
+        and status = 'valid'
+      limit 1
+   ) union all (
+     select * from storage_object
+      where (metadata->>'hash') = ?
+        and (metadata->>'bucket') = ?
+        and backend = ?
+        and deleted_at is null
+        and status = 'valid'
+      limit 1
+   ) limit 1")
+
+;; NOTE: metadata is left encoded; row->storage-object is responsible for
+;; decoding it.
 (defn- get-database-object-by-hash
   [connectable backend bucket hash]
-  (let [sql (str "select * from storage_object "
-                 " where (metadata->>'~:hash') = ? "
-                 "   and (metadata->>'~:bucket') = ? "
-                 "   and backend = ?"
-                 "   and deleted_at is null"
-                 "   and status = 'valid'"
-                 " limit 1")]
-    ;; NOTE: metadata is left encoded; row->storage-object is
-    ;; responsible for decoding it.
-    (db/exec-one! connectable [sql hash bucket (name backend)])))
+  (let [backend (name backend)]
+    (db/exec-one! connectable [sql:get-database-object-by-hash
+                               hash bucket backend
+                               hash bucket backend])))
 
 (defn- promote-object!
   [storage object]

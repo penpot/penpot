@@ -813,6 +813,43 @@
     (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
       (t/is (= 1 (:count row))))))
 
+(t/deftest dedup-reuses-json-encoded-blob
+  ;; With the JSON flag on, the dedup lookup must find the row it just
+  ;; wrote; a "~:"-only lookup used to miss it and duplicate the blob.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          content (-> (sto/content "json-content")
+                      (sto/wrap-with-hash "json-hash"))
+          params  {::sto/content content
+                   ::sto/deduplicate? true
+                   :bucket "file-media-object"
+                   :content-type "text/plain"}
+          object1 (sto/put-object! storage params)
+          object2 (sto/put-object! storage params)]
+      (t/is (= (:id object1) (:id object2)))
+      (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+        (t/is (= 1 (:count row)))))))
+
+(t/deftest dedup-json-put-finds-transit-row
+  ;; Both encodings coexist during the transition: a JSON write must
+  ;; reuse a blob already stored as Transit.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "mixed-content")
+                    (sto/wrap-with-hash "mixed-hash"))
+        params  {::sto/content content
+                 ::sto/deduplicate? true
+                 :bucket "file-media-object"
+                 :content-type "text/plain"}
+        object1 (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+                  (sto/put-object! storage params))
+        object2 (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+                  (sto/put-object! storage params))]
+    (t/is (= (:id object1) (:id object2)))
+    (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+      (t/is (= 1 (:count row))))))
+
 (t/deftest dedup-repairs-stale-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
