@@ -71,10 +71,10 @@
   "Submit the system job for the entry to the `:cron` queue. Uses the
   entry id as the job label (stable per entry) and returns the created
   job-id. No-overlap pre-check lives in the caller."
-  [cfg {:keys [task props id]}]
+  [cfg {:keys [job props id]}]
   (jobs/submit
    cfg
-   {::jobs/name   task
+   {::jobs/name   job
     ::jobs/params (or props {})  ;; entries don't carry props; default to empty map
     ::jobs/queue  :cron
     ::jobs/label  (name id)}))
@@ -84,7 +84,7 @@
 (defn- execute-cron-task
   "Tick thread for one entry: claim the scheduled_task row and submit
   the system job; no in-process execution of the handler here."
-  [cfg {:keys [id cron task] :as entry}]
+  [cfg {:keys [id cron job] :as entry}]
   (px/thread
     {:name (str "penpot/cron-task/" id)}
     (let [tpoint (ct/tpoint)]
@@ -107,20 +107,20 @@
                             ;; SKIP LOCKED on the scheduled_task row prevents
                             ;; race conditions between nodes.
                             (let [tenant (cf/get :tenant)
-                                  row    (db/exec-one! conn  [sql:count-active-jobs (d/name task) (str id) tenant])
+                                  row    (db/exec-one! conn  [sql:count-active-jobs (d/name job) (str id) tenant])
                                   active (or (get row :n) 0)]
                               (if (pos? active)
                                 (do
                                   (db/after-commit! #(metrics/record-cron cfg :skipped :active))
                                   (l/dbg :hint "skip"
                                          :reason "scheduling, active instance exists"
-                                         :id id :task (d/name task)))
+                                         :id id :job (d/name job)))
                                 (let [job-id  (submit-cron-job cfg entry)
                                       elapsed (ct/format-duration (tpoint))]
                                   (db/after-commit! #(metrics/record-cron cfg :submitted :none))
                                   (l/dbg :hint "submit"
                                          :id id
-                                         :task (d/name task)
+                                         :job (d/name job)
                                          :job-id (str job-id)
                                          :elapsed elapsed)))))))
 
@@ -150,9 +150,9 @@
     (ct/diff now next)))
 
 (defn- schedule-cron-task
-  [{:keys [::running] :as cfg} {:keys [cron id] :as task}]
+  [{:keys [::running] :as cfg} {:keys [cron id] :as entry}]
   (let [ts (ms-until-valid cron)
-        ft (px/schedule! ts (partial execute-cron-task cfg task))]
+        ft (px/schedule! ts (partial execute-cron-task cfg entry))]
 
     (l/dbg :hint "schedule" :id id
            :ts (ct/format-duration ts)
@@ -167,7 +167,7 @@
      [:maybe
       [:map
        [:cron [:fn cron/cron-expr?]]
-       [:task :keyword]
+       [:job :keyword]
        [:props {:optional true} :map]
        [:id {:optional true} :keyword]]]]]
    ::jobs/defs
@@ -190,19 +190,19 @@
           entries (doall
                    (->> entries
                         (filter some?)
-                        ;; If id is not defined, use the task as id.
-                        ;; The task stays a keyword (the canonical job
+                        ;; If id is not defined, use the job as id.
+                        ;; The job stays a keyword (the canonical job
                         ;; name): only the id is stringified, because it
                         ;; becomes the job label and the scheduled_task
                         ;; row id.
-                        (map (fn [{:keys [id task] :as item}]
+                        (map (fn [{:keys [id job] :as item}]
                                (if (some? id)
                                  (assoc item :id (d/name id))
-                                 (assoc item :id (d/name task)))))
+                                 (assoc item :id (d/name job)))))
                         (map (fn [item]
                                ;; fail fast when the entry references
                                ;; an unknown job name
-                               (jobs/get-job-def defs (:task item))
+                               (jobs/get-job-def defs (:job item))
                                item))))]
 
       (l/inf :hint "started" :tasks (count entries))

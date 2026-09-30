@@ -249,13 +249,13 @@
     (run-one cfg)
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-queue-wait-timing
-                                       ["echo-runner" "other"])))
+                                       ["echo-runner" "test"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-execution-timing
-                                       ["echo-runner" "other"])))
+                                       ["echo-runner" "test"])))
     (t/is (= 1 (histogram-sample-count metrics
                                        :jobs-total-timing
-                                       ["echo-runner" "other" "completed"])))
+                                       ["echo-runner" "test" "completed"])))
     (t/testing "the legacy histogram is still emitted, with its raw name label"
       (t/is (= 1 (histogram-sample-count metrics
                                          :tasks-timing

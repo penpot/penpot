@@ -776,36 +776,36 @@
     ::mtx/metrics             (ig/ref ::mtx/metrics)
     ::wrk/entries
     [{:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :session-gc}
+      :job :session-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :objects-gc}
+      :job :objects-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :storage-gc-deleted}
+      :job :storage-gc-deleted}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :storage-gc-touched}
+      :job :storage-gc-touched}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :storage-pending-gc}
+      :job :storage-pending-gc}
 
      {:cron #penpot/cron "0 0 0 * * ?" ;; daily
-      :task :jobs-gc}
+      :job :jobs-gc}
 
      {:cron #penpot/cron "0 0 2 * * ?" ;; daily
-      :task :file-gc-scheduler}
+      :job :file-gc-scheduler}
 
      {:cron #penpot/cron "0 30 */3,23 * * ?"
-      :task :telemetry}
+      :job :telemetry}
 
      (when (contains? cf/flags :audit-log-archive)
        {:cron #penpot/cron "0 */5 * * * ?" ;; every 5m
-        :task :audit-log-archive})
+        :job :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
        {:cron #penpot/cron "30 */5 * * * ?" ;; every 5m
-        :task :audit-log-gc})]}
+        :job :audit-log-gc})]}
 
    ::wrk/dispatcher
    {::rds/client  (ig/ref ::rds/client)

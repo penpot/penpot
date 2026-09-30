@@ -5,7 +5,14 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.jobs.metrics
-  "Metric names, bounded labels and the jobs backlog sampler.
+  "Metric names, labels and the jobs backlog sampler.
+
+  Labels are bounded by construction, not by allowlist: every value
+  recorded here comes from a fixed call site (a job name from the
+  registry, a queue from submit, an outcome from the lifecycle
+  writers), never from params, IDs or exception text. A new value
+  showing up in Prometheus means new code, which is exactly what you
+  want to see: folding it into some other bucket would only hide it.
 
   This namespace is intentionally free of job handlers. Callers pass only
   values already known at their boundary; IDs, props and exception text never
@@ -22,39 +29,11 @@
 
 (set! *warn-on-reflection* true)
 
-(def ^:private known-queues
-  #{"default" "webhooks" "cron" "email"})
-
-(def ^:private known-outcomes
-  #{"completed" "failed" "cancelled"})
-
-(def ^:private known-retry-reasons
-  #{"backoff" "noop"})
-
-(def ^:private known-stages
-  #{"claim" "redis" "database" "dispatch" "execution" "terminal"})
-
-(def ^:private known-gc-kinds
-  #{"expired" "retained"})
-
-(def ^:private known-gc-actions
-  #{"deleted" "touched"})
-
-(def ^:private known-cron-outcomes
-  #{"submitted" "skipped" "error" "interrupted"})
-
-(def ^:private known-cron-reasons
-  #{"none" "active" "failure" "interrupted"})
-
-(def ^:private known-request-outcomes
-  #{"replied" "error" "timeout"})
-
 (defn queue-label
-  "Return a bounded queue label. `job.queue` stores the bare queue name, so
-  there is nothing to strip: the value only has to be in the known set."
+  "Coerce a queue to its label: lowercase, with \"other\" only when there
+  is no queue at all. A new queue shows up as-is: that means new code."
   [queue]
-  (let [queue (str/lower (mtx/label queue "other"))]
-    (if (contains? known-queues queue) queue "other")))
+  (str/lower (mtx/label queue "other")))
 
 ;; Job names go to the metric as-is: the registry is fixed (one job-def
 ;; per name, wired in `app.main`), so cardinality is bounded by it.
@@ -63,20 +42,16 @@
   (mtx/label name "other"))
 
 (defn- gc-kind-label [kind]
-  (let [kind (str/lower (or (some-> kind d/name) "other"))]
-    (if (contains? known-gc-kinds kind) kind "other")))
+  (str/lower (or (some-> kind d/name) "other")))
 
 (defn- outcome-label [outcome]
-  (let [outcome (str/lower (or (some-> outcome d/name) "failed"))]
-    (if (contains? known-outcomes outcome) outcome "failed")))
+  (str/lower (or (some-> outcome d/name) "failed")))
 
 (defn- retry-reason-label [reason]
-  (let [reason (str/lower (or (some-> reason d/name) "backoff"))]
-    (if (contains? known-retry-reasons reason) reason "backoff")))
+  (str/lower (or (some-> reason d/name) "backoff")))
 
 (defn- stage-label [stage]
-  (let [stage (str/lower (or (some-> stage d/name) "execution"))]
-    (if (contains? known-stages stage) stage "execution")))
+  (str/lower (or (some-> stage d/name) "execution")))
 
 (defn- record-value [metrics id labels value]
   (mtx/run! metrics :id id :labels labels :val value))
@@ -175,10 +150,10 @@
 
 (defn record-gc-rows
   [cfg kind action amount]
-  (let [kind   (gc-kind-label kind)
-        action (str/lower (or (some-> action d/name) "deleted"))]
-    (when (contains? known-gc-actions action)
-      (record-count (mtx/instance cfg) :jobs-gc-rows [kind action] amount))))
+  (record-count (mtx/instance cfg) :jobs-gc-rows
+                [(gc-kind-label kind)
+                 (str/lower (or (some-> action d/name) "deleted"))]
+                amount))
 
 (defn record-gc-duration
   [cfg kind millis]
@@ -188,22 +163,18 @@
 
 (defn record-cron
   [cfg outcome reason]
-  (let [outcome (str/lower (or (some-> outcome d/name) "error"))
-        reason  (str/lower (or (some-> reason d/name) "none"))]
-    (when (contains? known-cron-outcomes outcome)
-      (record-count (mtx/instance cfg) :jobs-cron-total
-                    [outcome
-                     (if (contains? known-cron-reasons reason) reason "failure")]
-                    1))))
+  (record-count (mtx/instance cfg) :jobs-cron-total
+                [(str/lower (or (some-> outcome d/name) "error"))
+                 (str/lower (or (some-> reason d/name) "none"))]
+                1))
 
 (defn record-request
   [cfg outcome millis]
   (let [outcome (str/lower (or (some-> outcome d/name) "error"))
         metrics (mtx/instance cfg)]
-    (when (contains? known-request-outcomes outcome)
-      (record-count metrics :jobs-requests-total [outcome] 1)
-      (record-value metrics :jobs-request-timing [outcome]
-                    (max 0 (long millis))))))
+    (record-count metrics :jobs-requests-total [outcome] 1)
+    (record-value metrics :jobs-request-timing [outcome]
+                  (max 0 (long millis)))))
 
 (def ^:private backlog-statuses
   ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled"])

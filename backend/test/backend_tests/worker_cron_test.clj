@@ -52,17 +52,17 @@
 (defn- get-cron-entries
   []
   [{:id :session-gc-no-props
-    :task :session-gc
+    :job :session-gc
     :cron "0 0 * * *"}
    {:id :jobs-gc-with-props
-    :task :jobs-gc
+    :job :jobs-gc
     :cron "0 0 * * *"
     :props {:min-age 3600000}}])
 
 (t/deftest cron-component-init-registers-and-schedules-entries
   (let [defs    (get th/*system* :app.jobs/defs)
         entries [{:id   :test-cron-init
-                  :task :session-gc
+                  :job :session-gc
                   :cron (ucron/cron "0 0 0 * * ?")}]
         inst    (ig/init-key :app.worker/cron
                              {:app.worker/entries entries
@@ -125,7 +125,7 @@
         ;; expression must be parsed: the tick reschedules itself in
         ;; `finally`
         entry {:id   "session-gc-no-overlap"
-               :task :session-gc
+               :job :session-gc
                :cron (ucron/cron "0 0 0 * * ?")}]
 
     ;; the tick claims this row; without it the tick silently skips
@@ -171,7 +171,7 @@
 (t/deftest cron-tick-is-not-blocked-by-another-tenants-active-job
   (let [cfg   (make-cfg)
         entry {:id   "session-gc-shared-db"
-               :task :session-gc
+               :job :session-gc
                :cron (ucron/cron "0 0 0 * * ?")}]
 
     (th/db-insert! :scheduled-task {:id        "session-gc-shared-db"

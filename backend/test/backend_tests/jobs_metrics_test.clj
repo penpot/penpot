@@ -161,7 +161,7 @@
     (t/is (= 1.0 (counter-value metrics :jobs-completed ["delete-object" "default" "completed"])))
     (t/is (= 1.0 (counter-value metrics :jobs-retries ["delete-object" "default" "backoff"])))
     (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["webhooks"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-rescheduled ["other"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-rescheduled ["custom"])))
     (t/is (= 3.0 (counter-value metrics :jobs-gc-rows ["expired" "deleted"])))
     (t/is (= 1.0 (counter-value metrics :jobs-cron-total ["submitted" "none"])))
     (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["replied"])))
@@ -173,15 +173,23 @@
       (t/is (= 1.0 (histogram-count metrics :tasks-timing ["brand-new-job"])))
       (t/is (= 0.0 (histogram-count metrics :tasks-timing ["other"]))))))
 
-(t/deftest unknown-outcomes-and-queues-are-bounded
-  (t/testing "the queue is already bare, so the label is a plain membership test"
-    (t/is (= "other" (jobs-metrics/queue-label "unexpected")))
+(t/deftest labels-go-to-metrics-as-is
+  (t/testing "queues are lowercased, with other only when missing"
+    (t/is (= "unexpected" (jobs-metrics/queue-label "unexpected")))
     (t/is (= "default" (jobs-metrics/queue-label "default")))
-    (t/is (= "default" (jobs-metrics/queue-label :default))))
+    (t/is (= "default" (jobs-metrics/queue-label :default)))
+    (t/is (= "other" (jobs-metrics/queue-label nil))))
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-outcome cfg "echo" "unexpected" :unexpected)
-    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "other" "failed"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed ["echo" "unexpected" "unexpected"])))
+    (t/testing "a new value is recorded, never folded or dropped"
+      (jobs-metrics/record-gc-rows cfg :unknown :deleted 1)
+      (jobs-metrics/record-cron cfg :brand-new :whatever)
+      (jobs-metrics/record-request cfg :brand-new 5)
+      (t/is (= 1.0 (counter-value metrics :jobs-gc-rows ["unknown" "deleted"])))
+      (t/is (= 1.0 (counter-value metrics :jobs-cron-total ["brand-new" "whatever"])))
+      (t/is (= 1.0 (counter-value metrics :jobs-requests-total ["brand-new"]))))))
 
 (t/deftest sampler-is-wired-and-does-not-start-on-read-only
   (t/is (contains? main/worker-config :app.jobs.metrics/sampler))
@@ -196,13 +204,11 @@
         (finally
           (ig/halt-key! :app.jobs.metrics/sampler sampler))))))
 
-(t/deftest job-names-go-to-metrics-as-is-and-gc-kinds-are-bounded
+(t/deftest unknown-names-go-to-metrics-as-is
   (let [metrics (make-metrics)
         cfg     (metrics-cfg metrics)]
     (jobs-metrics/record-submitted cfg "unknown-job" "default")
-    (jobs-metrics/record-gc-rows cfg :unknown :deleted 1)
-    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["unknown-job" "default"])))
-    (t/is (= 1.0 (counter-value metrics :jobs-gc-rows ["other" "deleted"])))))
+    (t/is (= 1.0 (counter-value metrics :jobs-submitted ["unknown-job" "default"])))))
 
 (t/deftest backlog-sampler-updates-status-and-age-gauges
   (let [metrics (make-metrics)
