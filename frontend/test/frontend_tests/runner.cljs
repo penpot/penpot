@@ -114,6 +114,7 @@
    [frontend-tests.ui.shortcuts-labels-test]
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.ui.stroke-menu-test]
+   [frontend-tests.ui.text-attrs-multiple-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
    [frontend-tests.util-queue-test]
@@ -248,6 +249,7 @@
    'frontend-tests.ui.shortcuts-labels-test
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.ui.stroke-menu-test
+   'frontend-tests.ui.text-attrs-multiple-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
    'frontend-tests.util-queue-test
