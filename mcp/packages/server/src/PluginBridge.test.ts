@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS } from "./PluginBridge";
+import { assertPluginResponsive, HEARTBEAT_STALE_THRESHOLD_MS, pluginUnavailableReason } from "./PluginBridge";
 
 test("passes for a responsive connection with a recent heartbeat", () => {
     const now = 1_000_000;
@@ -41,5 +41,30 @@ test("honours a custom stale threshold", () => {
     assert.throws(
         () => assertPluginResponsive({ frozen: false, lastHeartbeat }, now, 1_000),
         /appears to be suspended by the browser/
+    );
+});
+
+test("reports no reason for an open, responsive connection", () => {
+    const now = 1_000_000;
+    assert.equal(pluginUnavailableReason({ frozen: false, lastHeartbeat: now - 1_000 }, true, now), undefined);
+});
+
+test("reports a closed socket as unavailable", () => {
+    const now = 1_000_000;
+    const reason = pluginUnavailableReason({ frozen: false, lastHeartbeat: now }, false, now);
+    assert.match(reason?.message ?? "", /disconnected/);
+});
+
+test("reports a stale or frozen connection as unavailable", () => {
+    const now = 1_000_000;
+    const stale = pluginUnavailableReason(
+        { frozen: false, lastHeartbeat: now - (HEARTBEAT_STALE_THRESHOLD_MS + 1) },
+        true,
+        now
+    );
+    assert.match(stale?.message ?? "", /appears to be suspended by the browser/);
+    assert.match(
+        pluginUnavailableReason({ frozen: true, lastHeartbeat: now }, true, now)?.message ?? "",
+        /has been frozen/
     );
 });

@@ -62,6 +62,36 @@ export function assertPluginResponsive(
 }
 
 /**
+ * Delay, in milliseconds, before an instance whose local plugin cannot run tasks
+ * competes for a forwarded task. A responsive instance claims the task first; the
+ * unresponsive one only claims it, and reports its error, if nobody else did.
+ */
+export const UNRESPONSIVE_CLAIM_DELAY_MS = 2000;
+
+/**
+ * Returns why a plugin connection cannot run tasks right now, or undefined if it can.
+ *
+ * @param state - the connection's liveness state
+ * @param socketOpen - whether the connection's WebSocket is open
+ * @param now - current time, in ms since epoch
+ */
+export function pluginUnavailableReason(
+    state: PluginLivenessState,
+    socketOpen: boolean,
+    now: number
+): Error | undefined {
+    if (!socketOpen) {
+        return new Error(`Plugin instance is disconnected. Task could not be sent.`);
+    }
+    try {
+        assertPluginResponsive(state, now);
+        return undefined;
+    } catch (error) {
+        return error instanceof Error ? error : new Error(String(error));
+    }
+}
+
+/**
  * Manages WebSocket connections to Penpot plugin instances and handles plugin tasks
  * over these connections.
  */
@@ -452,7 +482,8 @@ export class PluginBridge {
      * When several instances hold a plugin connection for the same user token, each of
      * them receives the request. The request is claimed first, and only the instance
      * that obtains the claim dispatches it; the others ignore it, so the task is
-     * executed exactly once.
+     * executed exactly once. An instance whose plugin cannot run tasks waits
+     * {@link UNRESPONSIVE_CLAIM_DELAY_MS} before claiming, so a responsive instance wins.
      *
      * @param userToken - The user token on whose request channel the request arrived;
      *   identifies the locally-connected plugin to dispatch to
@@ -473,6 +504,13 @@ export class PluginBridge {
             return;
         }
 
+        // A connection that cannot run tasks (e.g. a backgrounded tab on another device)
+        // lets responsive instances claim first, and only reports its error if none did.
+        const unavailable = pluginUnavailableReason(connection, connection.socket.readyState === 1, Date.now());
+        if (unavailable) {
+            await new Promise((resolve) => setTimeout(resolve, UNRESPONSIVE_CLAIM_DELAY_MS));
+        }
+
         try {
             const claimed = await this.redisBridge.claimTask(request.id, this.taskTimeoutSecs * 1000);
             if (!claimed) {
@@ -481,6 +519,11 @@ export class PluginBridge {
             }
         } catch (error) {
             task.rejectWithError(error instanceof Error ? error : new Error(String(error)));
+            return;
+        }
+
+        if (unavailable) {
+            task.rejectWithError(unavailable);
             return;
         }
 
