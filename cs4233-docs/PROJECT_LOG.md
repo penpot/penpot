@@ -148,3 +148,19 @@ scalable-exporter diagram.)
 
 - AI committed the exporter work and this log on `kylebranch`. Project
   rules say the AI never pushes, so Kyle pushes.
+
+### 13. Hold off on the pull request (2026-09-30)
+
+> Actually I dont wanna push it next, so for now I have a "Compare & pull
+> request" how do I get rid of that agian
+
+- `kylebranch` is on GitHub. GitHub's "Compare & pull request" banner is
+  only a suggestion, so Kyle can ignore it; no pull request was opened.
+
+### 14. Switching to `develop` blocked (2026-09-30)
+
+(Kyle pasted a terminal error: `git checkout develop` refused because of
+uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
+
+- AI committed the pending log entries on `kylebranch` so the switch
+  works.
