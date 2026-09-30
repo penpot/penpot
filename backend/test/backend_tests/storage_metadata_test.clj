@@ -156,11 +156,20 @@
                           (stsch/encode-metadata {:bucket "file-media-object"}))))
 
 (t/deftest encode-rejects-missing-file-data-ids
+  ;; Both ids are required for file-data; omitting one fails the bucket
+  ;; requirement check (the file-id here is a native UUID, so the map
+  ;; itself is valid).
   (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"invalid storage object metadata"
                           (stsch/encode-metadata {:bucket "file-data"
                                                   :content-type "application/octet-stream"
-                                                  :file-id "86907e95-1cb8-8122-8008-4eb7ba07d89d"}))))
+                                                  :file-id (parse-uuid "86907e95-1cb8-8122-8008-4eb7ba07d89d")}))))
+
+(t/deftest encode-rejects-missing-organization-id
+  (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"invalid storage object metadata"
+                          (stsch/encode-metadata {:bucket "organization"
+                                                  :content-type "image/svg+xml"}))))
 
 (t/deftest decode-real-transit-payload
   ;; Same legacy shape as above but produced by the real transit

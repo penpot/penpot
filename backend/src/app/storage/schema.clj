@@ -33,25 +33,39 @@
   "Bucket name for chunked-upload chunks."
   "upload-session")
 
+(def bucket-requirements
+  "Canonical buckets and the extra keys each one must carry, so a new
+  bucket and its contract live in one place. Listed keys are declared as
+  optional in `schema:metadata` and only checked for presence; their type
+  is enforced by the map. Only buckets whose keys are read somewhere need
+  an entry: `file-data` ids are resolved by the GC, `organization-id` is
+  the logo's owner."
+  {"file-media-object"     #{}
+   "team-font-variant"     #{}
+   "file-object-thumbnail" #{}
+   "file-thumbnail"        #{}
+   "profile"               #{}
+   "organization"          #{:organization-id}
+   tempfile-bucket         #{}
+   upload-session-bucket   #{}
+   "file-data"             #{:file-id :id}
+   "file-data-fragment"    #{}
+   "file-change"           #{}})
+
 (def metadata-buckets
   "Canonical bucket set. `app.storage/valid-buckets` aliases it so the
   list lives in exactly one place."
-  #{"file-media-object" "team-font-variant" "file-object-thumbnail"
-    "file-thumbnail" "profile" "organization" tempfile-bucket
-    upload-session-bucket "file-data" "file-data-fragment" "file-change"})
+  (set (keys bucket-requirements)))
 
-(defn- file-data-ids-present?
-  "`file-data` rows are resolved by `has-file-data-refs?` in the GC
-  through `:file-id` and `:id`; require both for that bucket."
-  [{:keys [bucket file-id id]}]
-  (or (not= bucket "file-data")
-      (and (some? file-id) (some? id))))
+(defn- bucket-requirements-present?
+  [{:keys [bucket] :as mdata}]
+  (every? #(some? (get mdata %)) (get bucket-requirements bucket #{})))
 
 (def schema:metadata
   "Closed schema for `storage_object.metadata`. A single shape shared by
   every bucket: `:bucket` is checked against `metadata-buckets` and the
-  rest are typed optional keys. Per-bucket requirements are limited to
-  `file-data`, which needs both ids so the GC can resolve its references."
+  rest are typed optional keys. `bucket-requirements` adds the per-bucket
+  presence checks."
   [:and
    [:map {:closed true}
     [:bucket          [::sm/one-of {:format :string} metadata-buckets]]
@@ -61,8 +75,8 @@
     [:organization-id {:optional true} ::sm/uuid]
     [:file-id         {:optional true} ::sm/uuid]
     [:id              {:optional true} ::sm/uuid]]
-   [:fn {:error/message "file-data metadata requires :file-id and :id"}
-    file-data-ids-present?]])
+   [:fn {:error/message "storage metadata is missing a required key for its bucket"}
+    bucket-requirements-present?]])
 
 (defn- ->bucket
   [v]
