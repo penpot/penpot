@@ -432,7 +432,8 @@
         comp01' (thc/get-component file' :c01)]
 
     (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-    (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))))
+    (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 (t/deftest test-reorder-variant-properties-clamped-pos
   (let [file    (-> (thf/sample-file :file1)
@@ -449,13 +450,32 @@
           file'   (thf/apply-changes file changes)
           comp01' (thc/get-component file' :c01)]
       (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-      (t/is (= "Property 1" (-> comp01' :variant-properties last :name))))
+      (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+      (t/is (thf/validates-shapes-last? changes (:id page) [v-id])))
 
     (let [changes (clvp/generate-reorder-variant-poperties base-changes v-id 1 -1)
           file'   (thf/apply-changes file changes)
           comp01' (thc/get-component file' :c01)]
       (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-      (t/is (= "Property 1" (-> comp01' :variant-properties last :name))))))
+      (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+      (t/is (thf/validates-shapes-last? changes (:id page) [v-id])))))
+
+(t/deftest test-reorder-variant-properties-validates-container
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-reorder-variant-poperties v-id 0 2))]
+
+    ;; All the components of the variant change, so validate the container,
+    ;; which checks every main instance and that all of them keep the same
+    ;; order of properties
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 ;; =============================================================================
 ;; generate-add-new-property tests
