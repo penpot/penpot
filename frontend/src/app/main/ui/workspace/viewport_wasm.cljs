@@ -869,6 +869,7 @@
        (when-not shapes-loading?
          [:> widgets/frame-titles*
           {:objects objects-modified
+           :base-objects base-objects
            :selected selected
            :zoom zoom
            :is-show-artboard-names show-artboard-names?
@@ -917,6 +918,7 @@
            :page-id page-id
            :selected selected
            :objects objects-modified
+           :base-objects base-objects
            :focus focus}])
 
        (when show-snap-distance?
