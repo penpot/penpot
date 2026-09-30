@@ -13,13 +13,20 @@
   job id.
 
   Every state change also publishes the same `:export-update` message the
-  exporter has always published, so websocket clients keep working unchanged."
+  exporter has always published, so websocket clients keep working unchanged.
+
+  In a distributed deployment the process that creates a job is not the one
+  that runs it: `create-queued!` records it for the shared queue, and the
+  worker that claims it takes it over with `adopt!`."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.instance :as instance]
+   [app.jobs.queue :as queue]
    [app.jobs.store :as store]
    [app.redis :as redis]
    [promesa.core :as p]))
@@ -74,24 +81,56 @@
   (swap! registry update (str (:id job)) assoc :job job)
   job)
 
+(defn- new-job
+  [{:keys [profile-id cmd backend total name resource-id]}]
+  {:id (uuid/next)
+   :profile-id profile-id
+   :cmd cmd
+   :backend backend
+   :state "queued"
+   :done 0
+   :total total
+   :name name
+   :resource-id resource-id
+   :created-at (now-ms)})
+
 (defn create!
   "Builds a queued job and persists it. `run-fn` is a 1-arg fn of the job that
   performs the export and returns a promise; the caller decides when to run
   it."
-  [{:keys [profile-id cmd backend total name resource-id]} run-fn]
-  (let [job {:id (uuid/next)
-             :profile-id profile-id
-             :cmd cmd
-             :backend backend
-             :state "queued"
-             :done 0
-             :total total
-             :name name
-             :resource-id resource-id
-             :created-at (now-ms)}]
+  [attrs run-fn]
+  (let [job (new-job attrs)]
     (swap! registry assoc (str (:id job)) {:job job :run-fn run-fn :cancelled? false})
     (->> (store/persist! job)
          (p/fmap (constantly job)))))
+
+(defn create-queued!
+  "Builds a job another process will run. The record is persisted, but no
+  process owns it until a worker claims it from the shared queue."
+  [attrs]
+  (let [job (new-job attrs)]
+    (->> (store/persist! job)
+         (p/fmap (constantly job)))))
+
+(declare ^:private cancel-local!)
+
+(defn adopt!
+  "Takes over a job claimed from the shared queue, so this process runs it.
+  A cancel that arrived before this point was left as a flag, and is acted on
+  here."
+  [job run-fn]
+  (let [job (-> job
+                (assoc :owner instance/id)
+                (update :attempts (fnil inc 0)))
+        id  (:id job)]
+    (swap! registry assoc (str id) {:job job :run-fn run-fn :cancelled? false})
+    (->> (store/persist! job)
+         (p/mcat (fn [_] (store/cancel-requested? id)))
+         (p/mcat (fn [cancel?]
+                   (if cancel?
+                     (->> (cancel-local! id)
+                          (p/fmap (constantly job)))
+                     (p/resolved job)))))))
 
 (defn run-fn
   [job-id]
@@ -158,6 +197,23 @@
   (store-job! job)
   (publish! job)
   (store/persist! job))
+
+(defn- persist-unowned!
+  "Writes a job that no process runs. It must not go through `store-job!`,
+  which would give it a runtime entry here that nothing ever releases."
+  [job data]
+  (let [job (merge job data)]
+    (publish! job)
+    (store/persist! job)))
+
+(defn fail-unowned!
+  "Fails a job that no process runs, such as one whose worker could not
+  start it."
+  [job reason]
+  (l/error :hint "export job failed" :job-id (str (:id job)) :reason reason)
+  (persist-unowned! job {:state "error"
+                         :ended-at (now-ms)
+                         :error reason}))
 
 (defn transition!
   "Moves the job on. The first terminal state wins: anything arriving after it
@@ -241,9 +297,65 @@
                    (cond
                      (nil? job)     (p/resolved nil)
                      (terminal? job) (p/resolved job)
+
+                     ;; Still on the shared queue: taking it off settles it.
+                     ;; If a worker got to it first, it is cancelled like any
+                     ;; running job.
+                     (= "queued" (:state job))
+                     (->> (queue/remove-queued! (:id job))
+                          (p/mcat (fn [removed?]
+                                    (if removed?
+                                      (persist-unowned! job {:state "cancelled" :ended-at (now-ms)})
+                                      (p/do
+                                        (store/request-cancel! (:id job))
+                                        job)))))
+
                      :else          (p/do
                                       (store/request-cancel! (:id job))
                                       job)))))))
+
+(defn requeue!
+  "Records that a job lost with its worker is back on the shared queue, or
+  fails it once it has been tried `exporter-max-attempts` times. A job that
+  settled or expired meanwhile is only taken off the queue."
+  [job-id]
+  (->> (fetch job-id)
+       (p/mcat (fn [job]
+                 (cond
+                   (or (nil? job) (terminal? job))
+                   (->> (queue/remove-queued! job-id)
+                        (p/fmap (constantly job)))
+
+                   (>= (:attempts job 0) (cf/get :exporter-max-attempts 3))
+                   (p/do
+                     (queue/remove-queued! job-id)
+                     (fail-unowned! job "export worker lost"))
+
+                   :else
+                   (persist-unowned! job {:state "queued" :owner nil}))))))
+
+(def ^:private settle-poll-ms 250)
+
+(defn await-settled
+  "Resolves to the job record once it reaches a terminal state, whichever
+  process runs it. Rejects after `timeout-ms`."
+  [job-id timeout-ms]
+  (let [deadline (+ (now-ms) timeout-ms)]
+    (letfn [(step []
+              (->> (fetch job-id)
+                   (p/mcat (fn [job]
+                             (cond
+                               (and (some? job) (terminal? job))
+                               (p/resolved job)
+
+                               (> (now-ms) deadline)
+                               (p/rejected (ex/error :type :internal
+                                                     :code :export-timeout
+                                                     :hint "export job did not finish in time"))
+
+                               :else
+                               (p/mcat (fn [_] (step)) (p/delay settle-poll-ms)))))))]
+      (step))))
 
 (defn- clean-abandoned!
   "Marks every job left mid-flight by a previous process as cancelled.
@@ -253,8 +365,9 @@
   record would keep claiming to be running until its TTL expires.
 
   NOTE: the store cannot tell whose jobs are whose, so with more than one
-  exporter behind a load balancer this would also cancel a sibling's running
-  jobs. Single-instance deployments only."
+  exporter this would also cancel a sibling's running jobs. It only runs in
+  the `all` role; distributed deployments recover lost jobs through
+  `app.jobs.queue/reap!` instead."
   []
   (->> (store/fetch-all)
        (p/mcat (fn [jobs]
@@ -281,4 +394,6 @@
      (when (some? (runtime job-id))
        (l/info :hint "remote cancel request" :job-id job-id)
        (cancel-local! job-id))))
-  (clean-abandoned!))
+  (if (cf/distributed?)
+    (p/resolved 0)
+    (clean-abandoned!)))

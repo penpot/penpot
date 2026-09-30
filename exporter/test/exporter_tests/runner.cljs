@@ -10,8 +10,10 @@
    [cljs.test :as t]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
+   [exporter-tests.crypto-test]
    [exporter-tests.export-shapes-test]
    [exporter-tests.jobs-test]
+   [exporter-tests.queue-test]
    [exporter-tests.renderer-svg-test]
    [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
@@ -21,8 +23,10 @@
 (enable-console-print!)
 
 (def test-namespaces
-  ['exporter-tests.export-shapes-test
+  ['exporter-tests.crypto-test
+   'exporter-tests.export-shapes-test
    'exporter-tests.jobs-test
+   'exporter-tests.queue-test
    'exporter-tests.renderer-svg-test
    'exporter-tests.scheduler-test
    'exporter-tests.shell-test

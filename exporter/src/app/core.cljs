@@ -12,8 +12,10 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.http :as http]
+   [app.instance :as instance]
    [app.jobs :as jobs]
    [app.jobs.utils :as job.utils]
+   [app.jobs.worker :as worker]
    [app.redis :as redis]
    [app.wasm :as wasm]
    [app.wasm.pool :as wasm.pool]
@@ -31,6 +33,7 @@
     (wasm.worker/main)
     (do
       (l/info :msg "initializing"
+              :role (name (cf/role))
               :public-uri (str (cf/get :public-uri))
               :internal-uri (str (cf/get-internal-uri))
               :version (:full cf/version))
@@ -38,13 +41,17 @@
               :wasm-dir wasm/artifact-dir
               :workers (cf/get :wasm-worker-pool-max)
               :image-cache-size (cf/get :wasm-worker-image-cache-size))
+      ;; An `api` process never renders, and a `worker` never takes requests:
+      ;; each starts only its side.
       (p/do
-        (bwr/init)
+        (when (cf/renders?) (bwr/init))
         (redis/init)
+        (when (cf/distributed?) (instance/init))
         (jobs/init)
-        (job.utils/init)
-        (wasm.pool/init)
-        (http/init)))))
+        (when (cf/renders?) (job.utils/init))
+        (when (cf/renders?) (wasm.pool/init))
+        (when (cf/serves-http?) (http/init))
+        (when (= :worker (cf/role)) (worker/init))))))
 
 (def main start)
 
@@ -76,6 +83,8 @@
     (do
       (l/info :msg "stopping")
       (p/do
+        (shutdown-step "queue-worker" worker/stop)
+        (shutdown-step "instance" instance/stop)
         (shutdown-step "browser-pool" bwr/stop)
         (shutdown-step "wasm-worker-pool" wasm.pool/stop)
         (shutdown-step "redis" redis/stop)

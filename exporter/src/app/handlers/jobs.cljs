@@ -13,8 +13,11 @@
    [app.auth :as auth]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.config :as cf]
    [app.handlers.export :as export]
+   [app.instance :as instance]
    [app.jobs :as jobs]
+   [app.jobs.queue :as queue]
    [promesa.core :as p]))
 
 (defn create
@@ -58,3 +61,20 @@
                    (ex/raise :type :not-found
                              :code :object-not-found
                              :hint "job does not exist"))))))
+
+(defn cluster
+  "How the export queue is doing: jobs waiting and the processes serving it.
+  Distributed deployments only; a single process has no shared queue."
+  [{:keys [:request/auth-token] :as exchange}]
+  (->> (auth/require-profile-id auth-token)
+       (p/mcat (fn [_]
+                 (if (cf/distributed?)
+                   (p/let [depth     (queue/depth)
+                           instances (instance/describe)]
+                     {:role (cf/role)
+                      :instance instance/id
+                      :queue-depth depth
+                      :instances instances})
+                   (p/resolved {:role (cf/role)}))))
+       (p/fmap (fn [body]
+                 (assoc exchange :response/body body)))))

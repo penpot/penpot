@@ -110,7 +110,7 @@
   (boolean (some #(rd/headless? {:is-wasm is-wasm :type (:type %)}) exports)))
 
 (defn prepare
-  [auth-token {:keys [exports force-multiple name skip-children is-wasm] :as _params}]
+  [auth-token {:keys [exports force-multiple name skip-children is-wasm resource-id] :as _params}]
   (let [exports   (prepare-exports exports auth-token is-wasm)
         headless? (headless-exports? exports is-wasm)
         single?   (and (not force-multiple)
@@ -118,7 +118,7 @@
                        (= 1 (count (-> exports first :objects))))]
     (if single?
       (let [export   (first exports)
-            resource (rsc/create (:type export) (or name (:name export)))]
+            resource (rsc/create (:type export) (or name (:name export)) resource-id)]
         {:resource resource
          :total 1
          :headless headless?
@@ -127,7 +127,7 @@
                                      :is-wasm is-wasm
                                      :skip-children skip-children}))})
 
-      (let [resource (rsc/create :zip (or name (-> exports first :name)))]
+      (let [resource (rsc/create :zip (or name (-> exports first :name)) resource-id)]
         {:resource resource
          :total (count-objects exports)
          :headless headless?

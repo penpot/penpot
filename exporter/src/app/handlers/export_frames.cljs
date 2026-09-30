@@ -66,10 +66,10 @@
          (p/fmap (fn [resource] (dissoc resource :path))))))
 
 (defn prepare
-  [auth-token {:keys [exports name is-wasm] :as _params}]
+  [auth-token {:keys [exports name is-wasm resource-id] :as _params}]
   (let [exports  (-> (map #(assoc % :type :pdf :scale 1 :suffix "") exports)
                      (prepare-exports auth-token is-wasm))
-        resource (rsc/create :pdf (or name (-> exports first :name)))
+        resource (rsc/create :pdf (or name (-> exports first :name)) resource-id)
         file-id  (-> exports first :file-id)]
     {:resource resource
      :total (count-objects exports)

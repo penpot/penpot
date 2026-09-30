@@ -75,10 +75,25 @@
                       (p/all))))
        (p/fmap (fn [jobs] (vec (remove nil? jobs))))))
 
-(defn request-cancel!
-  "Asks every exporter to cancel `job-id`. Only the one running it will act."
+(defn- cancel-key
   [job-id]
-  (redis/pub! cancel-topic (str job-id)))
+  (redis/->key "job-cancel." job-id))
+
+(defn request-cancel!
+  "Asks every exporter to cancel `job-id`. Only the one running it will act.
+
+  The request is also left as a flag: a worker that claimed the job but has
+  not registered it yet misses the broadcast, and checks the flag instead."
+  [job-id]
+  (->> (redis/set-ex! (cancel-key job-id) "1" (ttl))
+       (p/merr (fn [cause]
+                 (l/warn :hint "unable to record cancel request" :job-id (str job-id) :cause cause)
+                 (p/resolved nil)))
+       (p/mcat (fn [_] (p/do (redis/pub! cancel-topic (str job-id)))))))
+
+(defn cancel-requested?
+  [job-id]
+  (redis/key-exists? (cancel-key job-id)))
 
 (defn on-cancel-request
   "Registers `handler` (fn of the job-id string) for cancel requests. Returns an

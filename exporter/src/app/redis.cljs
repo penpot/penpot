@@ -22,6 +22,11 @@
 ;; subscriptions need a connection of their own.
 (def ^:private subscriber (atom nil))
 
+;; A blocking pop holds its connection until a job arrives, stalling every
+;; command queued behind it, so it gets a connection of its own too. Opened
+;; on first use: only queue workers block.
+(def ^:private blocking (atom nil))
+
 (def ^:private subscriptions (atom {}))
 
 (defn- create-client
@@ -67,6 +72,9 @@
 (defn stop
   []
   (reset! subscriptions {})
+  (swap! blocking (fn [conn]
+                    (when conn (.disconnect ^js conn))
+                    nil))
   (swap! subscriber (fn [conn]
                       (when conn (.quit ^js conn))
                       nil))
@@ -175,3 +183,66 @@
                                  (p/resolved found)
                                  (step next-cursor found))))))))]
     (step "0" [])))
+
+(defn get-key
+  "The string value at `k`, or nil."
+  [k]
+  (with-client-lenient (fn [^js client] (.get client k))))
+
+(defn set-ex!
+  "Writes `value` at `k`, expiring after `seconds`."
+  [k value seconds]
+  (with-client (fn [^js client] (.set client k value "EX" seconds))))
+
+(defn key-exists?
+  [k]
+  (->> (with-client-lenient (fn [^js client] (.exists client k)))
+       (p/fmap (fn [n] (and (some? n) (pos? n))))))
+
+(defn rpush!
+  [k value]
+  (with-client (fn [^js client] (.rpush client k value))))
+
+(defn llen
+  [k]
+  (with-client (fn [^js client] (.llen client k))))
+
+(defn lrange
+  "Every element of the list at `k`."
+  [k]
+  (->> (with-client-lenient (fn [^js client] (.lrange client k 0 -1)))
+       (p/fmap (fn [result] (vec (or result []))))))
+
+(defn lrem!
+  "Removes every occurrence of `value` from the list at `k`. Resolves to the
+  number removed."
+  [k value]
+  (with-client (fn [^js client] (.lrem client k 0 value))))
+
+(defn lmove!
+  "Atomically pops from one end of `src` and pushes onto one end of `dst`.
+  Resolves to the moved element, or nil when `src` is empty."
+  [src dst from to]
+  (with-client (fn [^js client] (.lmove client src dst from to))))
+
+(defn blmove!
+  "Like `lmove!`, but waits up to `timeout` seconds for `src` to have an
+  element. Runs on its own connection."
+  [src dst from to timeout]
+  (let [^js conn (or @blocking
+                     (swap! blocking (fn [conn]
+                                       (or conn (create-client (cf/get :redis-uri) "blocking")))))]
+    (p/do (.blmove conn src dst from to timeout))))
+
+(defn sadd!
+  [k value]
+  (with-client (fn [^js client] (.sadd client k value))))
+
+(defn srem!
+  [k value]
+  (with-client (fn [^js client] (.srem client k value))))
+
+(defn smembers
+  [k]
+  (->> (with-client-lenient (fn [^js client] (.smembers client k)))
+       (p/fmap (fn [result] (vec (or result []))))))

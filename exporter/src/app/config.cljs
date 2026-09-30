@@ -33,6 +33,11 @@
    :exporter-max-jobs-per-profile 2
    :exporter-queue-max 64
    :exporter-job-ttl 3600
+   :exporter-role "all"
+   :exporter-heartbeat-interval 5
+   :exporter-heartbeat-ttl 15
+   :exporter-max-attempts 3
+   :exporter-wait-timeout 300
    :wasm-worker-pool-max 2
    :wasm-worker-pool-min 1
    :wasm-worker-idle-timeout 300
@@ -55,6 +60,11 @@
    [:exporter-max-jobs-per-profile {:optional true} ::sm/int]
    [:exporter-queue-max {:optional true} ::sm/int]
    [:exporter-job-ttl {:optional true} ::sm/int]
+   [:exporter-role {:optional true} [:enum "all" "api" "worker"]]
+   [:exporter-heartbeat-interval {:optional true} ::sm/int]
+   [:exporter-heartbeat-ttl {:optional true} ::sm/int]
+   [:exporter-max-attempts {:optional true} ::sm/int]
+   [:exporter-wait-timeout {:optional true} ::sm/int]
    [:wasm-worker-pool-max {:optional true} ::sm/int]
    [:wasm-worker-pool-min {:optional true} ::sm/int]
    [:wasm-worker-idle-timeout {:optional true} ::sm/int]
@@ -117,6 +127,26 @@
    (c/get config key))
   ([key default]
    (c/get config key default)))
+
+;; `all` is a single process that takes requests and renders them, the way
+;; the exporter has always run. `api` and `worker` split that in two over a
+;; shared queue in redis, so renders can scale out across processes.
+(defn role
+  []
+  (keyword (c/get config :exporter-role "all")))
+
+(defn distributed?
+  "Whether jobs go through the shared queue rather than staying in process."
+  []
+  (not= :all (role)))
+
+(defn serves-http?
+  []
+  (contains? #{:all :api} (role)))
+
+(defn renders?
+  []
+  (contains? #{:all :worker} (role)))
 
 (defn get-internal-uri
   "Returns internal-uri if set, otherwise falls back to public-uri."

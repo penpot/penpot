@@ -28,16 +28,19 @@
   (path/join sh/tmpdir (str/concat  "penpot.resource." (c/name type) "." id)))
 
 (defn create
-  "Generates ephimeral resource object."
-  [type name]
-  (let [task-id (uuid/next)
-        path    (-> (get-path type task-id)
-                    (sh/schedule-deletion))]
-    {:path     path
-     :mtype    (mime/get type)
-     :name     name
-     :filename (str/concat (str/replace name #"[\\/:*?\"<>|]" "_") (mime/get-extension type))
-     :id       task-id}))
+  "Generates ephimeral resource object. `id` is given when the resource was
+  announced to the client by another process (see `app.jobs.queue`)."
+  ([type name]
+   (create type name nil))
+  ([type name id]
+   (let [task-id (or id (uuid/next))
+         path    (-> (get-path type task-id)
+                     (sh/schedule-deletion))]
+     {:path     path
+      :mtype    (mime/get type)
+      :name     name
+      :filename (str/concat (str/replace name #"[\\/:*?\"<>|]" "_") (mime/get-extension type))
+      :id       task-id})))
 
 (defn create-zip
   [& {:keys [resource on-complete on-progress on-error]}]

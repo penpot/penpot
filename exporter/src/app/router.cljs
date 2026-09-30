@@ -45,6 +45,9 @@
         (and (= "post" method) (= "/jobs" path))
         (jobs.handlers/create exchange)
 
+        (and (= "get" method) (= "/cluster" path))
+        (jobs.handlers/cluster exchange)
+
         (and (= "get" method) (str/starts-with? path "/jobs/"))
         (if-let [id (job-id path "/jobs/")]
           (jobs.handlers/fetch exchange id)

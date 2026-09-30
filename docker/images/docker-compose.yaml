@@ -210,8 +210,17 @@ services:
     networks:
       - penpot
 
+  ## The exporter runs in two roles that share a job queue in Valkey:
+  ## `penpot-exporter` (role `api`) takes export requests from the
+  ## frontend and queues them; `penpot-exporter-worker` (role `worker`)
+  ## renders them. Scale renders by changing the worker `replicas`.
+  ##
+  ## Both need an exporter image with the queue (the CS4233 fork's image,
+  ## published by its CI). The upstream `penpotapp/exporter` image ignores
+  ## PENPOT_EXPORTER_ROLE; with it, keep a single `penpot-exporter` and
+  ## remove the worker service.
   penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-2.18}"
+    image: "${PENPOT_EXPORTER_IMAGE:-ghcr.io/mooketsinoko/penpot-exporter:develop}"
     restart: always
 
     depends_on:
@@ -232,6 +241,10 @@ services:
       ## and for storing the state export jobs
       PENPOT_REDIS_URI: redis://penpot-valkey/0
 
+      ## `api` queues exports for the workers below. `all` (the default)
+      ## renders them in this process instead, as a single exporter.
+      PENPOT_EXPORTER_ROLE: api
+
       # PENPOT_EXPORTER_MAX_CONCURRENT_JOBS: 4
       # PENPOT_EXPORTER_MAX_JOBS_PER_PROFILE: 2
       # PENPOT_EXPORTER_QUEUE_MAX: 64
@@ -240,6 +253,33 @@ services:
       # PENPOT_WASM_WORKER_POOL_MIN: 1
       # PENPOT_WASM_WORKER_IDLE_TIMEOUT: 300
       # PENPOT_WASM_WORKER_IMAGE_CACHE_SIZE: 134217728
+
+  penpot-exporter-worker:
+    image: "${PENPOT_EXPORTER_IMAGE:-ghcr.io/mooketsinoko/penpot-exporter:develop}"
+    restart: always
+
+    deploy:
+      replicas: 2
+
+    depends_on:
+      penpot-valkey:
+        condition: service_healthy
+
+    networks:
+      - penpot
+
+    environment:
+      << : [*penpot-flags, *penpot-secret-key, *penpot-public-uri]
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
+      PENPOT_EXPORTER_ROLE: worker
+
+      ## Per worker: how many jobs it runs at once, and how long a worker
+      ## can go silent before the others hand its jobs to someone else.
+      # PENPOT_EXPORTER_MAX_CONCURRENT_JOBS: 4
+      # PENPOT_EXPORTER_HEARTBEAT_INTERVAL: 5
+      # PENPOT_EXPORTER_HEARTBEAT_TTL: 15
+      # PENPOT_EXPORTER_MAX_ATTEMPTS: 3
 
   penpot-postgres:
     image: "postgres:15"
