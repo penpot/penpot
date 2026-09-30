@@ -12,19 +12,8 @@
   `build` produces the scene snapshot; `defscene` and `defcase` declare
   the scene and its standard cases. The three cases share parameters, so
   they render the same scene. The path and effect scenes arrive in
-  tickets07/08.
-
-  Operation bodies are deferred to tickets05/06. The intended threaded
-  shape is:
-
-    (defcase :rects/pan :rects {...}
-      (-> rtx
-          (restore! base-view)
-          (pan! {:frames 20 :distance [120 60] :settle-ms 100})
-          (drain! :full)))
-
-  where `rtx` is the injected runtime and each operation contributes its
-  plain-data identity to the collected case."
+  tickets 07/08. The bridge supplies the current pan and zoom gestures;
+  scene case bodies arrive with ticket 14."
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.scenes.builder :as sb :include-macros true]
