@@ -1241,6 +1241,30 @@
 ;; Category 2: Cross-Team Migration
 ;; -----------------------------------------------------------------------------
 
+(t/deftest link-later-overwrite-with-missing-tokens-source
+  (let [profile (th/create-profile* 1)]
+    (doseq [[source-idx file-idx local?] [[1 2 true] [3 4 false]]]
+      (let [{:keys [source file]} (create-token-source-consumer!
+                                   profile source-idx file-idx "Missing Source" local?)
+            output               (export-link-later! [(:id file)])]
+        (db/update! th/*system* :file
+                    {:deleted-at (ct/now)}
+                    {:id (:id source)})
+        (let [result   (-> th/*system*
+                           (assoc ::bfc/project-id (:default-project-id profile))
+                           (assoc ::bfc/profile-id (:id profile))
+                           (assoc ::bfc/team-id (:default-team-id profile))
+                           (assoc ::bfc/file-id (:id file))
+                           (assoc ::bfc/input output)
+                           (v3/import-files!))
+              imported (bfc/get-file th/*system* (:id file))]
+          (t/is (= #{(:id file)} (set (:file-ids result))))
+          (t/is (nil? (cfo/get-tokens-source (:data imported))))
+          (t/is (ctos/tokens-status? (get-in imported [:data :tokens-status])))
+          (t/is (= (if local? :tokens-source-fallback-local :tokens-source-deactivated)
+                   (get-in imported [:metadata :tokens-source-fallback-notification])))
+          (t/is (nil? (cfv/validate-file imported []))))))))
+
 (t/deftest link-later-cross-team-library-pre-exists
   (let [{:keys [profile file-id team-id]} (import-sample-file)
         ;; Create a second team with a library named "LIbrary"

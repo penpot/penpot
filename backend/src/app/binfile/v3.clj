@@ -902,7 +902,7 @@
            :tokens-lib tokens-lib
            :provider? (cfo/tokens-provider? data)})
         (when overwrite
-          (when-let [library (bfc/get-file cfg source-id :throw-if-not-exists false)]
+          (when-let [library (bfc/get-file cfg source-id :throw-if-not-exists? false)]
             (let [data (assoc (:data library) :id source-id)]
               {:id source-id
                :tokens-lib (:tokens-lib data)
