@@ -32,6 +32,27 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_REGION:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      PUB_DOCKER_PASSWORD:
+        required: false
+      PUB_DOCKER_USERNAME:
+        required: false
+      S3_BUCKET:
+        required: false
 
 # Literal group name: under `workflow_call`, `github.workflow` resolves to the
 # caller's workflow, which put this workflow and the other reusable one called
