@@ -6,10 +6,12 @@
 
 (ns app.main.data.workspace.pull-requests
   "Data layer for pull requests over file branches. A pull request points
-  to a pinned review snapshot of its branch; the review sandbox is that
-  snapshot loaded read-only into the workspace (same mechanics as the
-  version-history preview in `app.main.data.workspace.versions`), so it
-  is never an editable copy of anything. Mirrors the patterns of
+  to a pinned review snapshot of its branch. Reviewing opens the live
+  branch file as a normal, editable workspace with a review context
+  attached (`:workspace-pr-preview`, which drives the review banner and
+  header), so a reviewer's edits change the branch and mark the pull
+  request outdated. The pinned snapshot backs the interactions viewer and
+  the outdated flag, not the canvas. Mirrors the patterns of
   `app.main.data.workspace.branches`."
   (:require
    [app.common.data :as d]
@@ -253,13 +255,14 @@
                 (rx/of (ntf/error (tr "workspace.pull-requests.lifecycle.error"))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; REVIEW SANDBOX (read-only preview of the pinned snapshot)
+;; REVIEW CONTEXT (the live, editable branch file plus the review banner)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn open-pull-request
-  "Navigate into the review sandbox of `pr`: the branch file's workspace
-  with the `pr-id` query param, which loads the pinned snapshot
-  read-only once the file is initialized."
+  "Navigate into the review of `pr`: the branch file's workspace with the
+  `pr-id` query param, which attaches the review context once the file is
+  initialized (`initialize-pull-request-preview`). The canvas is the live
+  branch, editable as always."
   [pr]
   (assert (uuid? (:id pr)) "expected a pull request row with a valid `:id`")
   (ptk/reify ::open-pull-request

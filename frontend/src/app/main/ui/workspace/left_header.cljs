@@ -41,9 +41,9 @@
         branch-ctx  (mf/deref refs/branch-context)
         branch?     (and (some? branch-ctx) (some? (:source-name branch-ctx)))
 
-        ;; When a pull request review sandbox is active the header gets a
-        ;; distinct badge and title so the snapshot is never mistaken for
-        ;; the editable branch.
+        ;; When a pull request review is active the header gets a
+        ;; distinct badge and the pull request title, so the user knows a
+        ;; review is open. The file is still the live, editable branch.
         pr-preview  (mf/deref refs/pull-request-preview)
         review?     (some? pr-preview)
         pr-title    (get-in pr-preview [:info :title] "")

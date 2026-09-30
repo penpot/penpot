@@ -329,8 +329,11 @@
           (rx/of (ptk/event ::dw/reload-current-file)))))))
 
 (defn handle-file-merged
-  "A branch was merged into this file (main). Reload the current file so
-  the merged changes appear for everyone with main open."
+  "Another session integrated changes into this file: a merge of a branch
+  into main (sent on main's topic) or an update of a branch from main
+  (sent on the branch file's topic). Reload the current file so the
+  integrated changes appear for everyone with that file open. The
+  websocket drops the message for the session that made the change."
   [{:keys [file-id] :as _msg}]
   (ptk/reify ::handle-file-merged
     ptk/WatchEvent

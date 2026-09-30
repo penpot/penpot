@@ -588,8 +588,9 @@
   max-inline-size: 90vw;
   border-radius: deprecated.$s-8;
 
-  // the review sandbox must never be confused with the editable branch:
-  // accent-colored border instead of the branch banner's neutral one
+  // the review banner must stand out from the branch banner it replaces
+  // (the canvas is still the live branch): accent-colored border instead
+  // of the branch banner's neutral one
   border: deprecated.$s-2 solid var(--color-accent-primary);
   background-color: var(--color-background-primary);
 

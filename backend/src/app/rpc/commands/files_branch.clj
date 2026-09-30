@@ -5,10 +5,12 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns app.rpc.commands.files-branch
-  "RPC commands for file branching: create an isolated copy of a file
-  (a \"branch\") linked to its source file (\"main\"), list branches,
-  diff a branch against main, merge a branch into main (with conflict
-  resolutions), and update a branch from main. See
+  "RPC commands for file branching: create a branch of a file linked to
+  its source file (\"main\"), list branches, diff a branch against main,
+  merge a branch into main (with conflict resolutions), and update a
+  branch from main. A branch is a file row with no data of its own: its
+  state is derived from a pinned base snapshot of main plus the branch's
+  op log (`app.binfile.common/branch-file-data`). See
   `app.rpc.commands.files-snapshot` for the patterns this namespace
   mirrors."
   (:require
@@ -152,10 +154,11 @@
 ;; operation attaches it to its own event.
 
 (defn- audited
-  "Attach the `:duration-ms` and `:outcome` props to the audit event of a
-  branch operation, and print the matching log line. `result` is returned
-  unchanged to the caller, and `extra` lets an operation add numbers of
-  its own to the same record.
+  "Attach the `:branch-operation`, `:branch-outcome` and
+  `:branch-duration-ms` props to the audit event of a branch operation,
+  and print the matching log line. `result` is returned unchanged to the
+  caller, and `extra` lets an operation add numbers of its own to the
+  same record.
 
   A listing returns a vector rather than a map, and a vector carries
   metadata exactly like the maps the other commands return, so the props
@@ -178,9 +181,12 @@
 
 ;; --- Helpers: media pairing
 ;;
-;; `duplicate-file` (branch creation) gives the branch's file_media_object
-;; rows FRESH ids and relinks the branch `:data` to them, so the same image
-;; carries a different id on each side. Before diffing or merging, the
+;; A branch copies no media at creation: the content it inherits from its
+;; base references main's file_media_object rows. Rows cross between the
+;; two files only as copies under FRESH ids (`copy-media-rows!`): an update
+;; from main copies the media main added into the branch, and a merge
+;; copies the media the branch added into main. So the same image can
+;; carry a different id on each side. Before diffing or merging, the
 ;; branch-side media ids must be normalized back to the target's ids
 ;; (together with the file id, via `bm/remap-refs`); otherwise every image
 ;; looks changed, and merged shapes would reference media rows owned by the
@@ -195,9 +201,10 @@
 (defn- media-pairs
   "{from-media-id -> to-media-id} for the file_media_object rows present on
   both files with the same content identity (storage object + name +
-  dimensions + mtype) — i.e. the rows `duplicate-file` copied at branch
-  creation. Rows with several identical copies are paired positionally
-  (they are interchangeable). Media added on one side stays unpaired."
+  dimensions + mtype), such as the rows one file received as a copy of
+  the other's (`copy-media-rows!`, run by an update from main or a merge).
+  Rows with several identical copies are paired positionally (they are
+  interchangeable). Media added on one side stays unpaired."
   [cfg from-file-id to-file-id]
   (let [ident   (juxt :media-id :name :width :height :mtype)
         from-gs (group-by ident (db/exec! cfg [sql:file-media-identity from-file-id]))
@@ -470,9 +477,10 @@
 
                     ;; 6. Persist the branch metadata. `base-revn`
                     ;; tracks MAIN's revision counter and
-                    ;; `base-branch-revn` the BRANCH file's one (they
-                    ;; coincide at creation but drift apart: they are
-                    ;; independent counters).
+                    ;; `base-branch-revn` the BRANCH file's one. Each
+                    ;; starts at its own side's revn (main's current
+                    ;; revn, the new branch file's 0) and is compared
+                    ;; against that side alone (see `revn-deltas`).
                     (db/insert! conn :file-branch
                                 {:id meta-id
                                  :branch-file-id branch-id
@@ -759,7 +767,9 @@
 
 (sv/defmethod ::get-branch-diff
   "Read-only three-way diff between a branch and its source (main),
-  using the merge base captured at branch creation. Returns the summary
+  using the branch's current merge base: the snapshot taken at branch
+  creation, or the one the latest update from main repositioned it to
+  (`reposition-base!` in `update-branch-from-main`). Returns the summary
   produced by `branch-merge/compute-merge` (stats, changes, conflicts).
 
   NOTE (Phase 2): base/main/branch are assumed to share the same file
@@ -830,13 +840,14 @@
 (sv/defmethod ::merge-file-branch
   "Merge a branch into its source file (main).
 
-  Phase 3 scope: clean merges only. If the three-way diff has conflicts
-  the command returns `{:status :conflicts}` (resolution UI lands in a
-  later phase); if it contains change kinds not yet translatable
-  (components, pages, tokens) it returns `{:status :unsupported}` so no
-  change is silently dropped. Otherwise it applies the merge to main
-  through the production change pipeline, takes a safety snapshot, marks
-  the branch merged and notifies open clients via msgbus."
+  Conflicts that `resolutions` leaves unresolved make the command return
+  `{:status :conflicts}`; a resolved conflict merges the side its
+  resolution picks, per entity or per attr. Change kinds the engine
+  cannot translate (`bm/unsupported-kinds`) make it return
+  `{:status :unsupported}` so no change is silently dropped. Otherwise it
+  takes a safety snapshot of main, applies the merge to main through the
+  production change pipeline, marks the branch merged and notifies open
+  clients via msgbus."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:merge-file-branch
@@ -1411,9 +1422,13 @@
       AND fb.deleted_at IS NULL")
 
 (sv/defmethod ::get-file-branch-info
-  "If the given file is a branch, return its branch metadata (with cheap
-  revn-based ahead/behind); otherwise nil. Returns nil when branching is
-  disabled, so it is safe to call on every file open."
+  "If the given file is a branch, return its branch metadata with
+  entity-level `ahead`/`behind`/`conflicts` counts read through the
+  summary cache (`cached-diff-counts`); otherwise nil. A cache miss on an
+  open branch whose revn deltas are not both zero runs the three-way diff
+  (`branch-diff-counts!`), which loads main, the branch and its base.
+  Returns nil when branching is disabled, so it is safe to call on every
+  file open."
   {::doc/added "2.16"
    ::sm/params schema:get-file-branch-info}
   [cfg {:keys [::rpc/profile-id file-id]}]

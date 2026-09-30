@@ -7,11 +7,15 @@
 (ns app.rpc.commands.files-pull-request
   "RPC commands for pull requests on top of file branching: a review
   request over a pinned snapshot of a branch. A pull request does NOT
-  create a new file; the review sandbox is a virtual read-only view of
-  the branch served from the pinned snapshot (`get-pull-request-bundle`),
-  so it disappears when the pull request is closed and the snapshot pin
-  is released. Merging stays on `app.rpc.commands.files-branch`; approving
-  a pull request is informative and never a gate for the merge."
+  create a new file. Reviewers open the live branch file, which stays
+  editable, so their edits change the branch and mark the pull request
+  `outdated` (the branch revn moved past the snapshot's). The pinned
+  snapshot serves only the read-only views: the interactions viewer
+  (`viewer/get-view-only-bundle` with `:pr-id`) and
+  `get-pull-request-bundle`. Both refuse once the pull request is no
+  longer open, and closing it releases the snapshot pin. Merging stays on
+  `app.rpc.commands.files-branch`; approving a pull request is
+  informative and never a gate for the merge."
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]

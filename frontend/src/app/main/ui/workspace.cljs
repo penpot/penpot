@@ -94,9 +94,9 @@
         pr-preview (mf/deref refs/pull-request-preview)]
     [:*
      (when (not ^boolean hide-ui?)
-       ;; inside a review sandbox the pull request banner replaces the
-       ;; branch banner: the user is reviewing a pinned snapshot, not
-       ;; editing the branch
+       ;; during a pull request review the review banner replaces the
+       ;; branch banner. The canvas is still the live, editable branch:
+       ;; edits change it and mark the pull request outdated
        (if (some? pr-preview)
          [:> pr-review-banner* {}]
          [:> branch-context-banner* {:file-id (get file :id)}]))

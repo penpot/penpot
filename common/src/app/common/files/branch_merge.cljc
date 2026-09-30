@@ -7,12 +7,14 @@
 (ns app.common.files.branch-merge
   "Three-way, entity-level merge/diff engine for file branching.
 
-  Phase 2 scope: read-only diff. `compute-merge` takes the file `:data`
-  of the merge base, main and branch and returns a serializable summary
-  of what the branch changes relative to main, plus the set of
-  conflicting entities. It never mutates the blob; translating the
-  result into `changes` (for an actual merge) and token diffing arrive
-  in later phases.
+  `compute-merge` takes the file `:data` of the merge base, main and
+  branch and returns a serializable summary of what the branch changes
+  relative to main, plus the set of conflicting entities. It never
+  mutates the blob. `compute-changes` translates the same comparison
+  into `changes` for an actual merge or update, resolved conflicts
+  included. It covers every kind `compute-merge` reports, token kinds
+  included, except the residual page attrs (`:page-attrs`), which
+  `unsupported-kinds` reports so the caller refuses them.
 
   Direction `:branch->main` (merge/compare) treats main as `theirs` and
   branch as `ours`; `:main->branch` (update from main) swaps them."
@@ -127,16 +129,18 @@
   "Drop keys whose value is `nil`, deeply, so that a key present with a
   `nil` value compares equal to an absent key.
 
-  A branch copy re-points its local references through the duplication
-  pipeline, which leaves keys like `:fill-color-ref-file` and
-  `:typography-ref-file` present with `nil` where the source omitted them;
-  the same asymmetry appears inside a text `:content`. Comparing the two
-  forms as different makes an untouched entity look edited on one side, and
-  when the other side really moved it the engine reports a false
-  `:modify-modify` conflict — 368 of them on the design-system file's
-  screenshots of the shape trees, before this existed. Absent and nil mean
-  the same thing for a shape attribute, so the comparison should not see
-  the difference."
+  The three sides reach the comparison by different routes: the base is a
+  stored snapshot, main is its own saved data, and the branch is that base
+  with its op log replayed over it. They do not always spell an unset
+  attribute the same way: one side can carry a key like
+  `:fill-color-ref-file` or `:typography-ref-file` with `nil` where another
+  omits it, and the same asymmetry appears inside a text `:content`.
+  Comparing the two forms as different makes an untouched entity look
+  edited on one side, and when the other side really moved it the engine
+  reports a false `:modify-modify` conflict — 368 of them on the
+  design-system file's screenshots of the shape trees, before this
+  existed. Absent and nil mean the same thing for a shape attribute, so
+  the comparison should not see the difference."
   [v]
   (cond
     (map? v)
@@ -428,12 +432,12 @@
 
 ;; --- Tokens ---
 ;;
-;; Token *values* (tokens within an existing set) are mergeable (kind
-;; :token -> :set-token). Structural token changes (adding/renaming sets,
-;; themes, active-theme/active-set toggles) are surfaced with
-;; non-mergeable kinds (:token-set, :token-theme, :token-active-themes)
-;; so the merge refuses them rather than dropping them silently — a full
-;; structural token merge is a later step.
+;; Every token change is mergeable. Token *values* (tokens within an
+;; existing set) carry kind :token -> :set-token. Structural changes
+;; carry their own kinds, each translated by `compute-changes`: set
+;; add/delete :token-set, rename/description :token-set-rename, set order
+;; :token-set-order, themes :token-theme, active themes
+;; :token-active-themes and active-set toggles :token-active-sets.
 
 (defn- lib-set-ids
   [lib]
@@ -560,7 +564,7 @@
                                          {:kind :token-set})
                      (presence-only)
                      (update :conflicts #(slim-conflict-sides slim-set %)))
-        ;; set rename/description on common sets (NOT yet mergeable)
+        ;; set rename/description on common sets (mergeable: :token-set-rename)
         rename   (three-way-entities (select-keys (lib-set-meta bl) common)
                                      (select-keys (lib-set-meta tl) common)
                                      (select-keys (lib-set-meta ol) common)
@@ -578,7 +582,7 @@
                                          {:active-themes (lib-active-paths tl)}
                                          {:active-themes (lib-active-paths ol)}
                                          {:kind :token-active-themes})
-        ;; active-set toggles (hidden theme) — NOT yet mergeable
+        ;; active-set toggles (hidden theme) (mergeable: :token-active-sets)
         active-sets (three-way-entities {:active-sets (lib-hidden-sets bl)}
                                         {:active-sets (lib-hidden-sets tl)}
                                         {:active-sets (lib-hidden-sets ol)}
@@ -602,21 +606,24 @@
 
 (defn remap-refs
   "Rewrite cross-file references in `data` through `id-map`
-  ({old-id -> new-id}): the file refs relinked by `duplicate-file`
+  ({old-id -> new-id}): the file refs `cfh/relink-refs` rewrites
   (`:component-file`, `:fill-color-ref-file`, `:stroke-color-ref-file`,
   `:typography-ref-file`, shadow/grid `:file-id`) plus the media refs
   (shape `:metadata`/`:fill-image`/`:stroke-image` ids, the `:media`
-  collection keys and library-color `:image` ids) — the exact same
-  surface `binfile.common/process-file` remaps when the branch copy is
-  created.
+  collection keys and library-color `:image` ids). It is the same surface
+  `binfile.common/process-file` remaps when it copies a file.
 
-  A branch is a file copy whose LOCAL references were re-pointed to its
-  own ids by the duplication pipeline. Before diffing or merging against
-  another file those references must be normalized to the target's ids;
-  otherwise (a) every affected entity looks modified, inflating the
-  diff/conflicts, and (b) merged references cannot be resolved in the
-  target file — repair would detach components and images would break.
-  Ids not present in `id-map` (external libraries) are left untouched."
+  A branch stores no data of its own: its state is its source's base
+  snapshot with the branch's op log replayed over it
+  (`binfile.common/branch-file-data`). What it inherited from the base
+  keeps the source's ids, but the references the branch writes itself
+  name the branch file and the media rows it owns. Before diffing or
+  merging against another file those references must be normalized to
+  the target's ids; otherwise (a) every affected entity looks modified,
+  inflating the diff/conflicts, and (b) merged references cannot be
+  resolved in the target file — repair would detach components and
+  images would break. Ids not present in `id-map` (external libraries)
+  are left untouched."
   [data id-map]
   (if (empty? id-map)
     data
@@ -760,19 +767,19 @@
   NOT sound for the direction that reports main's changes, and passing it
   there would hide them.
 
-  NOTE: token-lib diffing is not yet implemented (handled in a later
-  phase); `:tokens-lib` changes are not reported here."
+  The `:tokens-lib` is diffed as well (`diff-tokens`), so token changes
+  are reported here with their own kinds."
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MERGE -> CHANGES (Phase 3, no-conflict path)
+;; MERGE -> CHANGES (clean changes plus resolved conflicts)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Kinds `compute-changes` can translate into change ops. Components,
-;; pages (add/remove/rename) and tokens are not yet supported and cause
-;; the merge to refuse rather than silently drop changes.
+;; Kinds `compute-changes` can translate into change ops: every kind
+;; `compute-merge` reports except the residual page attrs (`:page-attrs`),
+;; which make the merge refuse rather than silently drop changes.
 (def ^:private mergeable-kinds
   #{:color :typography :media :shape :token :token-set :token-set-rename :token-set-order
     :token-theme :token-active-themes :token-active-sets
@@ -1041,8 +1048,8 @@
   no conflict remains unresolved before applying).
 
   Returns `{:changes [..] :unsupported #{kinds..}}`. When `:unsupported`
-  is non-empty the caller must refuse the merge (translation for those
-  kinds — components, pages, tokens — is not implemented yet).
+  is non-empty the caller must refuse the merge (the only kind it cannot
+  translate is `:page-attrs`, the residual page attrs no pass handles).
 
   The 5-arity accepts the `compute-merge` summary the caller usually
   already computed (for the conflict gate), so the full three-way diff is

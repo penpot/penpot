@@ -484,9 +484,9 @@
         team     (mf/deref refs/team)
         author?  (= (:created-by pr) (:id profile))
         reviewer? (some #(= (:profile-id %) (:id profile)) (:reviews pr))
-        ;; merging keeps requiring edition permissions on main: the
-        ;; sandbox file permissions are stripped, but the team role tells
-        ;; whether this user could integrate the branch
+        ;; merging requires edition permissions on main, not on the open
+        ;; branch file, so the team role tells whether this user could
+        ;; integrate the branch
         can-merge? (boolean (get-in team [:permissions :can-edit]))
         [approvals total] (current-approvals pr)
 

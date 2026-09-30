@@ -94,8 +94,8 @@
   color: var(--button-secondary-foreground-color-rest);
 }
 
-// pull request review sandbox: accent-colored so the read-only snapshot
-// is never mistaken for the editable branch
+// pull request review: accent-colored so an active review stands out from
+// the plain branch badge (the file is still the live, editable branch)
 .review-badge {
   @include deprecated.flex-center;
 
