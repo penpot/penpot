@@ -96,7 +96,7 @@
       SET touched_at = NULL
     WHERE id = ANY(?::uuid[])")
 
-(defn- mark-freeze-in-bulk!
+(defn- mark-freeze-in-bulk
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-freeze-in-bulk ids])))
@@ -107,7 +107,7 @@
           touched_at = NULL
     WHERE id = ANY(?::uuid[])")
 
-(defn- mark-delete-in-bulk!
+(defn- mark-delete-in-bulk
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-delete-in-bulk (ct/now) ids])))
@@ -117,7 +117,7 @@
       SET touched_at = ?
     WHERE id = ANY(?::uuid[])")
 
-(defn- defer-in-bulk!
+(defn- defer-in-bulk
   [conn ids timestamp]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:defer-in-bulk timestamp ids])))
@@ -146,7 +146,7 @@
                :id (str id))
         sto/default-bucket)))
 
-(defn- process-objects!
+(defn- process-objects
   [conn has-refs? bucket objects]
   (loop [to-freeze #{}
          to-delete #{}
@@ -164,37 +164,37 @@
                  :bucket bucket)
           (recur to-freeze (conj to-delete id) (rest objects))))
       (do
-        (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
-        (some->> (seq to-delete) (mark-delete-in-bulk! conn))
+        (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
+        (some->> (seq to-delete) (mark-delete-in-bulk conn))
         [(count to-freeze) (count to-delete)]))))
 
-(defn- process-bucket!
+(defn- process-bucket
   [conn bucket objects]
   (cond
-    (= bucket "file-media-object")       (process-objects! conn has-file-media-object-refs? bucket objects)
-    (= bucket "team-font-variant")       (process-objects! conn has-team-font-variant-refs? bucket objects)
-    (= bucket "file-object-thumbnail")   (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
-    (= bucket "file-thumbnail")          (process-objects! conn has-file-thumbnails-refs? bucket objects)
-    (= bucket "profile")                 (process-objects! conn has-profile-refs? bucket objects)
-    (= bucket "file-data")               (process-objects! conn has-file-data-refs? bucket objects)
-    (= bucket sto/tempfile-bucket)       (process-objects! conn (constantly false) sto/tempfile-bucket objects)
-    (= bucket sto/upload-session-bucket) (process-objects! conn (constantly false) sto/upload-session-bucket objects)
-    (= bucket "organization")            (process-objects! conn (constantly false) bucket objects)
+    (= bucket "file-media-object")       (process-objects conn has-file-media-object-refs? bucket objects)
+    (= bucket "team-font-variant")       (process-objects conn has-team-font-variant-refs? bucket objects)
+    (= bucket "file-object-thumbnail")   (process-objects conn has-file-object-thumbnails-refs? bucket objects)
+    (= bucket "file-thumbnail")          (process-objects conn has-file-thumbnails-refs? bucket objects)
+    (= bucket "profile")                 (process-objects conn has-profile-refs? bucket objects)
+    (= bucket "file-data")               (process-objects conn has-file-data-refs? bucket objects)
+    (= bucket sto/tempfile-bucket)       (process-objects conn (constantly false) sto/tempfile-bucket objects)
+    (= bucket sto/upload-session-bucket) (process-objects conn (constantly false) sto/upload-session-bucket objects)
+    (= bucket "organization")            (process-objects conn (constantly false) bucket objects)
     :else
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
 
-(defn- defer-poison!
+(defn- defer-poison
   "Defer corrupt rows by one day in their own transaction, separate from
   the healthy-chunk work."
   [{:keys [::db/conn]} poison-ids]
-  (defer-in-bulk! conn poison-ids (ct/plus (ct/now) {:days 1})))
+  (defer-in-bulk conn poison-ids (ct/plus (ct/now) {:days 1})))
 
-(defn process-chunk!
+(defn process-chunk
   [{:keys [::db/conn]} chunk]
   (reduce-kv (fn [[nfo ndo] bucket objects]
-               (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
+               (let [[nfo' ndo'] (process-bucket conn bucket objects)]
                  [(+ nfo nfo')
                   (+ ndo ndo')]))
              [0 0]
@@ -233,19 +233,19 @@
     {:chunk  (not-empty (mapv second (:ok grouped)))
      :poison (not-empty (mapv second (:poison grouped)))}))
 
-(defn- process-touched!
+(defn- process-touched
   [{:keys [::db/pool ::mtx/metrics ::timestamp] :as cfg}]
   (loop [freezed 0
          deleted 0]
     (let [{:keys [chunk poison]} (get-chunk pool timestamp)]
       (when (seq poison)
         (mtx/run! metrics :id :storage-gc-poison :inc (count poison))
-        (db/tx-run! cfg defer-poison! poison))
+        (db/tx-run! cfg defer-poison poison))
       ;; Keep draining after a poison-only batch: the deferred rows leave
       ;; the selection and the next batch may hold healthy objects.
       (if (or (seq chunk) (seq poison))
         (let [[nfo ndo] (if (seq chunk)
-                          (db/tx-run! cfg process-chunk! chunk)
+                          (db/tx-run! cfg process-chunk chunk)
                           [0 0])]
           (recur (long (+ freezed nfo))
                  (long (+ deleted ndo))))
@@ -270,5 +270,5 @@
     (let [threshold (if (:skip-delay props)
                       (ct/now)
                       (ct/minus (ct/now) min-age))]
-      (process-touched! (assoc cfg ::timestamp threshold)))))
+      (process-touched (assoc cfg ::timestamp threshold)))))
 
