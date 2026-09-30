@@ -1,0 +1,195 @@
+name: "CI/CD: Group Pipeline"
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-backend:
+    name: "Test: Backend"
+    runs-on: ubuntu-latest
+    container:
+      image: penpotapp/devenv:latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      valkey:
+        image: valkey/valkey:9
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Format check
+        working-directory: ./backend
+        run: cljfmt check --parallel=true src/ test/
+
+      - name: Lint
+        working-directory: ./backend
+        run: clj-kondo --parallel --lint ../common/src/ src/
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          PENPOT_TEST_DATABASE_URI: "postgresql://postgres/penpot_test"
+          PENPOT_TEST_DATABASE_USERNAME: penpot_test
+          PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+          PENPOT_TEST_REDIS_URI: "redis://valkey/1"
+        run: |
+          mkdir -p /tmp/penpot
+          clojure -M:dev:test
+
+  test-frontend:
+    name: "Test: Frontend"
+    runs-on: ubuntu-latest
+    container:
+      image: penpotapp/devenv:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Lint
+        working-directory: ./frontend
+        run: |
+          pnpm run check-fmt:js
+          pnpm run check-fmt:scss
+          pnpm run lint:js
+          pnpm run lint:scss
+
+      - name: Unit tests
+        working-directory: ./frontend
+        run: ./scripts/test
+
+  test-exporter:
+    name: "Test: Exporter"
+    runs-on: ubuntu-latest
+    container:
+      image: penpotapp/devenv:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        working-directory: ./exporter
+        run: pnpm install
+
+      - name: Lint
+        working-directory: ./exporter
+        run: |
+          pnpm run check-fmt:clj
+          pnpm run lint:clj
+
+      - name: Tests
+        working-directory: ./exporter
+        run: ./scripts/test
+
+  # STUB — not implemented yet.
+  #
+  # The Module 1 architecture diagram proposes a scalable exporter: an
+  # export queue/dispatcher in front of a pool of exporter workers, with
+  # Valkey holding job state. None of that exists in code yet (exporter/
+  # is still a single-process service), so there is nothing real to test.
+  #
+  # This job is a placeholder that documents the CI/CD plan for when it
+  # lands, so the pipeline isn't silent about a known architecture gap.
+  # It always succeeds; it does not assert anything about the codebase.
+  #
+  # Once the dispatcher and worker pool exist, replace this job's steps
+  # with:
+  #   - Unit tests for the dispatcher's job-distribution logic (does a
+  #     submitted export land on exactly one worker, and does it retry
+  #     correctly if a worker dies mid-job?).
+  #   - An integration test that runs 2+ worker replicas against a real
+  #     Valkey service container and confirms jobs are not dropped or
+  #     double-processed under concurrent load.
+  #   - A check that worker autoscaling config (however it's implemented)
+  #     is exercised, not just present in a config file.
+  test-scalable-exporter:
+    name: "Test: Scalable Exporter (planned)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Not implemented yet
+        run: |
+          echo "STUB: the export queue/dispatcher + worker pool from the"
+          echo "architecture diagram have no code yet, so there is nothing"
+          echo "to build or test here. See the comment above this job in"
+          echo ".github/workflows/ci-cd-assignment.yml for the test plan"
+          echo "to implement once that component is built."
+
+  build:
+    name: "Build artifacts"
+    needs: [test-backend, test-frontend, test-exporter]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    container:
+      image: penpotapp/devenv:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build backend jar
+        working-directory: ./backend
+        run: clojure -T:build jar
+
+      - name: Build frontend bundle
+        working-directory: ./frontend
+        run: |
+          pnpm install
+          pnpm run build:wasm
+          pnpm run build:app
+
+      - name: Build exporter bundle
+        working-directory: ./exporter
+        run: |
+          pnpm install
+          pnpm run build:wasm
+          pnpm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: penpot-build-${{ github.sha }}
+          path: |
+            backend/target/*.jar
+            frontend/target
+            exporter/target
+          retention-days: 7
+
+  deploy:
+    name: "Deploy"
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: penpot-build-${{ github.sha }}
+
+      - name: Deploy
+        run: |
+          echo "Deploy target not yet provisioned for this course project."
+          echo "This step is where we would push images/artifacts to our host"
+          echo "(e.g. docker build + push to a registry, then SSH/compose up,"
+          echo "or a cloud provider's deploy CLI) once one is chosen."
+          ls -R
