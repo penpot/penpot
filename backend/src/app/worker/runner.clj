@@ -167,7 +167,7 @@
                  (= ::wrk/retry (:type edata)))
           (cond-> {:status "retry" :error cause}
             (ct/duration? (:delay edata))
-            (assoc :delay-ms (.toMillis ^java.time.Duration (:delay edata)))
+            (assoc :delay-ms (inst-ms (:delay edata)))
             (int? (:delay edata))
             (assoc :delay-ms (:delay edata))
 

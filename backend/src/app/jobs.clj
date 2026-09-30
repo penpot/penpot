@@ -277,7 +277,7 @@
         ;; in-process callers).
         payload      (db/json (-> (dissoc params :rollback?)
                                   (update-vals #(if (ct/duration? %)
-                                                  (.toMillis ^java.time.Duration %)
+                                                  (inst-ms %)
                                                   %))))
         id           (uuid/next)
         tenant       (cf/get :tenant)
@@ -296,6 +296,7 @@
                          (l/trc :hint "submit"
                                 :name job-name
                                 :job-id (str id)
+                                :tenant tenant
                                 :queue queue
                                 :label label
                                 :dedupe (boolean dedupe)
@@ -659,6 +660,7 @@
                 (vswap! writes + (store))
                 (catch Throwable cause
                   (l/err :hint "unable to persist job progress"
+                         :tenant (cf/get :tenant)
                          :job-id (str job-id)
                          :cause cause))))))
         (int @writes)))))
@@ -1093,6 +1095,7 @@
                 (ex/raise :type :timeout
                           :code :request-timeout
                           :hint "timeout waiting for the job reply"
+                          :tenant tenant
                           :queue queue
                           :timeout timeout))
               (let [response (json/decode reply :key-fn keyword)]
@@ -1102,6 +1105,8 @@
                     (ex/raise :type :internal
                               :code (get error :code)
                               :hint (or (get error :hint) "request failed")
+                              :tenant tenant
+                              :queue queue
                               :response response))
                   (do
                     (vreset! outcome :replied)
@@ -1113,6 +1118,12 @@
             (metrics/record-request context
                                     @outcome
                                     (inst-ms (tpoint)))
+            (l/trc :hint "request"
+                   :tenant tenant
+                   :queue (d/name queue)
+                   :cmd (d/name cmd)
+                   :outcome @outcome
+                   :elapsed (inst-ms (tpoint)))
             (rds/del conn reply-key)
             (rds/reset-timeout conn)))))))
 
