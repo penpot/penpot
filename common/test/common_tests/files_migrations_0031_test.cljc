@@ -7,6 +7,7 @@
 (ns common-tests.files-migrations-0031-test
   (:require
    [app.common.files.migrations :as cfm]
+   [app.common.geom.rect :as grc]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -150,6 +151,27 @@
                     {shape-id (camel-shape shape-id)}}}}
         data'    (cfm/migrate-data data migration-id)]
     (t/is (= data' (cfm/migrate-data data' migration-id)))))
+
+(t/deftest migration-0031-normalizes-flat-svg-viewbox-to-rect
+  ;; Carried over from the withdrawn 0021: legacy files hold
+  ;; `:svg-viewbox` as a plain map instead of a rect record.
+  (let [shape-id (uuid/next)
+        page-id  (uuid/next)
+        data     {:pages-index
+                  {page-id
+                   {:objects
+                    {shape-id (make-shape shape-id
+                                          {:type :rect
+                                           :svg-viewbox {:x 1 :y 2 :width 3 :height 4}})}}}}
+        data'    (cfm/migrate-data data migration-id)
+        viewbox  (get-in data' [:pages-index page-id :objects shape-id :svg-viewbox])]
+    (t/is (grc/rect? viewbox) "flat viewbox becomes a rect record")
+    (t/is (= 1 (:x viewbox)))
+    (t/is (= 2 (:y viewbox)))
+    (t/is (= 3 (:width viewbox)))
+    (t/is (= 4 (:height viewbox)))
+    (t/is (= data' (cfm/migrate-data data' migration-id))
+          "re-running is stable")))
 
 (t/deftest migration-0031-passes-non-maps-through
   (let [shape-id (uuid/next)

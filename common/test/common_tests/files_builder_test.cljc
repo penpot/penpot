@@ -18,6 +18,39 @@
     :stroke-color color
     :stroke-opacity 1}])
 
+(t/deftest add-shape-normalizes-svg-defs-and-content-to-kebab
+  ;; Defense in depth: generic producers that bypass `shapes-builder`
+  ;; still land on the stored kebab convention for defs and content.
+  (let [file-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        state    (-> (fb/create-state)
+                     (fb/add-file {:id file-id :name "Test file"})
+                     (fb/add-page {:id page-id :name "Page 1"})
+                     (fb/add-shape {:id shape-id
+                                    :type :svg-raw
+                                    :name "raw"
+                                    :x 0
+                                    :y 0
+                                    :width 10
+                                    :height 10
+                                    :content {:tag :g
+                                              :attrs {:strokeWidth "2"
+                                                      :data-foo "keep-me"}
+                                              :content []}
+                                    :svg-attrs {:fillRule "evenodd"}
+                                    :svg-defs {"g1" {:tag :linearGradient
+                                                     :attrs {:id "g1"
+                                                             :gradientUnits "userSpaceOnUse"}
+                                                     :content []}}}))
+        shape    (fb/get-shape state shape-id)
+        node     (get (:svg-defs shape) "g1")]
+    (t/is (= "evenodd" (get-in shape [:svg-attrs :fill-rule])))
+    (t/is (= "userSpaceOnUse" (get-in node [:attrs :gradient-units])))
+    (t/is (= "2" (get-in shape [:content :attrs :stroke-width])))
+    (t/is (= "keep-me" (get-in shape [:content :attrs :data-foo]))
+          "unknown content keys survive")))
+
 (t/deftest add-bool-uses-difference-head-style
   (let [file-id  (uuid/next)
         page-id  (uuid/next)

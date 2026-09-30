@@ -413,6 +413,13 @@
   [state params]
   (let [obj (-> params
                 (d/update-when :svg-attrs csvg/attrs->kebab-props)
+                (d/update-when :svg-defs
+                               (fn [defs]
+                                 (if (map? defs)
+                                   (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
+                                   defs)))
+                (cond-> (= :svg-raw (:type params))
+                  (d/update-when :content csvg/kebabize-content-node))
                 (types.shape/setup-shape)
                 (assign-shape-name state))]
     (-> state

@@ -549,6 +549,9 @@
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basically the defaults that can be percents and we need to replace because
 ;; otherwise won't work as expected in the workspace
+;; NOTE: camelCase keys on purpose. These defaults run on the raw
+;; parser output before birth normalizes stored keys to kebab-case;
+;; do not "fix" them to kebab.
 (def svg-tag-defaults
   (let [filter-default {:units :filterUnits
                         :default "objectBoundingBox"
@@ -984,7 +987,10 @@
 
 (defn fix-default-values
   "Gives values to some SVG elements which defaults won't work when
-  imported into the platform"
+  imported into the platform.
+
+  NOTE: reads raw parser keys (camelCase). Runs before birth
+  normalization; do not switch to kebab."
   [svg-data]
   (let [add-defaults
         (fn [{:keys [tag attrs] :as node}]
@@ -1009,7 +1015,10 @@
      (mth/sqrt 2)))
 
 (defn fix-percents
-  "Changes percents to a value according to the size of the svg imported"
+  "Changes percents to a value according to the size of the svg imported.
+
+  NOTE: reads raw parser keys (camelCase). Runs before birth
+  normalization; do not switch to kebab."
   [svg-data]
   ;; https://www.w3.org/TR/SVG11/single-page.html#coords-Units
   (let [viewbox {:x (:offset-x svg-data)
@@ -1082,7 +1091,10 @@
 
       (map-nodes fix-percent-values svg-data))))
 
-(defn collect-images [svg-data]
+(defn collect-images
+  "NOTE: reads raw parser keys (`:xlink:href` with colon). Runs before
+  birth normalization; do not switch to kebab."
+  [svg-data]
   (let [redfn (fn [acc {:keys [tag attrs]}]
                 (cond-> acc
                   (= :image tag)

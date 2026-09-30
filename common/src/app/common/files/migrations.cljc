@@ -1836,6 +1836,7 @@
                                    (csvg/attrs->kebab-props attrs)
                                    attrs)))
                 (d/update-when :svg-defs migrate-defs)
+                (d/update-when :svg-viewbox grc/make-rect)
                 (cond-> (= :svg-raw (:type shape))
                   (d/update-when :content csvg/kebabize-content-node))))
 

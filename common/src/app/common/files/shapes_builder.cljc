@@ -122,7 +122,11 @@
    - The referencing gradient's attributes override the base ones
    - If the referencing gradient has stops, they replace the base stops
    
-   Returns the defs map with all gradient href references resolved."
+   Returns the defs map with all gradient href references resolved.
+
+   NOTE: reads raw parser keys (`:xlink:href` with colon,
+   `:gradientTransform` camelCase). Runs before birth normalization;
+   do not switch to kebab."
   [defs]
   (letfn [(resolve-gradient [gradient-id gradient-node defs visited]
             (if (contains? visited gradient-id)

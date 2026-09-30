@@ -131,6 +131,23 @@
            (:style (csvg/attrs->kebab-props {:style "stroke-style:dotted"})))
         "birth agrees: kebab stays kebab"))
 
+(t/deftest collect-images-resolves-href-and-xlink-href
+  ;; Both href spellings resolve: plain `:href` (SVG2 style, kept by the
+  ;; whitelist so gradients and images survive birth) and `:xlink:href`.
+  (let [svg-data {:tag :svg
+                  :attrs {}
+                  :content [{:tag :image
+                             :attrs {:xlink:href "#a" :width "10" :height "20"}
+                             :content []}
+                            {:tag :image
+                             :attrs {:href "#b" :width "30" :height "40"}
+                             :content []}]}]
+    (t/is (= [{:href "#a" :width 10 :height 20}
+              {:href "#b" :width 30 :height 40}]
+             (csvg/collect-images svg-data))))
+  (t/is (= {:href "#b"} (csvg/attrs->kebab-props {:href "#b"}))
+        "plain href survives the whitelist"))
+
 (t/deftest birth-stores-svg-attrs-as-kebab
   (let [svg-data {:name "kebab"
                   :tag :svg
