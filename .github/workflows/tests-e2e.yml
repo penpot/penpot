@@ -109,6 +109,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.gh_ref }}
 
       # The cache key must come from the SHA actually checked out: on a manual
@@ -165,6 +166,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.gh_ref }}
 
       - name: Restore Cache
@@ -235,6 +237,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       # The driver serves the prebuilt bundle from frontend/resources/public.
       - name: Restore Cache
@@ -273,6 +277,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       # Mocked mode serves the prebuilt bundle from frontend/resources/public.
       - name: Restore Cache
@@ -320,6 +326,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           ref: ${{ inputs.gh_ref }}
 
       - name: Install deps
