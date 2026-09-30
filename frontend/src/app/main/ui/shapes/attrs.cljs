@@ -168,6 +168,10 @@
                (dm/str render-id "-" id)
                id)))
           (dissoc :id)
+          ;; Stored keys are kebab-case; React needs camelCase props.
+          ;; Stored data is whitelist-clean by construction, so this
+          ;; conversion drops nothing.
+          (csvg/attrs->props)
           (json/->js :key-fn name)))))
 
 (defn get-fill-style

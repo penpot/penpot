@@ -412,7 +412,7 @@
 (defn add-shape
   [state params]
   (let [obj (-> params
-                (d/update-when :svg-attrs csvg/attrs->props)
+                (d/update-when :svg-attrs csvg/attrs->kebab-props)
                 (types.shape/setup-shape)
                 (assign-shape-name state))]
     (-> state

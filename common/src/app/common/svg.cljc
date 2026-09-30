@@ -179,6 +179,7 @@
     :horiz-adv-x
     :horiz-origin-x
     :horiz-origin-y
+    :href
     :id
     :ideographic
     :in
@@ -379,6 +380,13 @@
     :writing-mode
     :mask-type})
 
+(def penpot-extra-attrs
+  "Non-spec attrs Penpot deliberately keeps because exporters emit them
+  and Penpot readers need them. Seeded with `:stroke-style`, read by the
+  svg-raw sidebar. Only add an entry with a reader that needs it plus a
+  test; this set is not a catch-all for unknown attrs."
+  #{:stroke-style})
+
 (def inheritable-props
   #{:style
     :clip-rule
@@ -520,7 +528,23 @@
   (let [xf (map prop-key)]
     (-> #{}
         (into xf svg-attrs)
-        (into xf svg-presentation-attrs))))
+        (into xf svg-presentation-attrs)
+        (into xf penpot-extra-attrs))))
+
+(def penpot-extra-prop-keys
+  "Camel render key -> source spelling for `penpot-extra-attrs`.
+  `attrs->props` keeps these keys in source spelling (instead of
+  camelizing them) so React passes them to the DOM silently, with no
+  unknown-prop warning, and export writes them back as emitted."
+  (into {} (map (fn [k] [(prop-key k) k])) penpot-extra-attrs))
+
+(def svg-stored-attr-keys
+  "Kebab-case keys storable in `:svg-attrs` and `:svg-defs` node
+  `:attrs`: every `svg-props` whitelist key in stored spelling, sorted
+  for stable schema derivation. Birth (`attrs->kebab-props`) can only
+  produce these keys, so the shape schema derived from them cannot
+  drift from birth."
+  (sort-by name (map (comp keyword str/kebab name) svg-props)))
 
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basically the defaults that can be percents and we need to replace because
@@ -605,28 +629,63 @@
 
   ([attrs whitelist?]
    (reduce-kv (fn [res k v]
-                (let [k (prop-key k)]
+                (let [ck (prop-key k)]
                   (cond
-                    (nil? k)
+                    (nil? ck)
                     res
 
                     (nil? v)
                     res
 
-                    (= k :style)
+                    (= ck :style)
                     (let [v (if (string? v) (parse-style v) v)
                           v (not-empty (attrs->props v false))]
                       (if v
-                        (assoc res k v)
+                        (assoc res ck v)
                         res))
 
                     :else
-                    (if (or (not whitelist?) (contains? svg-props k))
-                      (let [v (if (string? v) (str/trim v) v)]
-                        (assoc res k v))
+                    (if (or (not whitelist?) (contains? svg-props ck))
+                      (let [v (if (string? v) (str/trim v) v)
+                            ;; Extra attrs keep their source spelling so
+                            ;; React passes them to the DOM silently.
+                            out-k (get penpot-extra-prop-keys ck ck)]
+                        (assoc res out-k v))
                       res))))
               {}
               attrs)))
+
+(defn attrs->kebab-props
+  "Like `attrs->props` (same whitelist, trim and `:style` parsing) but
+  with kebab-case keys, the stored convention for `:svg-attrs` and
+  `:svg-defs` node attrs. Kebab is a fixed point: running it twice
+  returns the same map."
+  [attrs]
+  (-> attrs
+      (attrs->props)
+      (d/kebab-keys)))
+
+(defn- normalize-node-tree
+  [attrs-fn node]
+  (if-not (map? node)
+    node
+    (-> node
+        (d/update-when :attrs attrs-fn)
+        (d/update-when :content #(mapv (partial normalize-node-tree attrs-fn) %)))))
+
+(defn normalize-def-node
+  "Normalizes a `:svg-defs` node to the stored kebab convention: `:attrs`
+  go through `attrs->kebab-props` (whitelist + kebab), recursively
+  through nested `:content`. Tags, ids and values are left untouched."
+  [node]
+  (normalize-node-tree attrs->kebab-props node))
+
+(defn kebabize-content-node
+  "Kebab-izes the `:attrs` keys of an svg-raw `:content` tree, spelling
+  only: unknown keys are kept because the sidebar reads keys outside
+  the whitelist (e.g. `:stroke-style`)."
+  [node]
+  (normalize-node-tree d/kebab-keys node))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"

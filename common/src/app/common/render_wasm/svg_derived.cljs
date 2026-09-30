@@ -356,9 +356,9 @@
         attr-fill  (parse-svg-fill shape (dm/get-in shape [:svg-attrs :fill]))
         {:keys [type value]} (or style-fill attr-fill)]
     (when (some? type)
-      (let [opacity (or (some-> (dm/get-in shape [:svg-attrs :style :fillOpacity])
+      (let [opacity (or (some-> (dm/get-in shape [:svg-attrs :style :fill-opacity])
                                 (d/parse-double 1))
-                        (some-> (dm/get-in shape [:svg-attrs :fillOpacity])
+                        (some-> (dm/get-in shape [:svg-attrs :fill-opacity])
                                 (d/parse-double 1)))
             base-fill (case type
                         :color {:fill-color value}
@@ -402,8 +402,8 @@
   (when gaussian-blur
     {:id (uuid/next)
      :type :layer-blur
-     ;; For layer blur the value matches stdDeviation directly
-     :value (-> (dm/get-in gaussian-blur [:attrs :stdDeviation])
+     ;; For layer blur the value matches std-deviation directly
+     :value (-> (dm/get-in gaussian-blur [:attrs :std-deviation])
                 (d/parse-double 0))
      :hidden false}))
 
@@ -470,7 +470,7 @@
     (let [blur-elem (find-filter-element filter-content :feGaussianBlur)]
       (drop-shadow (d/parse-double (filter-attr offset-elem :dx) 0)
                    (d/parse-double (filter-attr offset-elem :dy) 0)
-                   (d/parse-double (filter-attr blur-elem :stddeviation) 0)
+                   (d/parse-double (filter-attr blur-elem :std-deviation :stddeviation) 0)
                    (or (shadow-color filter-content)
                        {:color clr/black :opacity 1})))))
 
@@ -479,7 +479,7 @@
   [elem]
   (drop-shadow (d/parse-double (filter-attr elem :dx) 2)
                (d/parse-double (filter-attr elem :dy) 2)
-               (d/parse-double (filter-attr elem :stddeviation) 2)
+               (d/parse-double (filter-attr elem :std-deviation :stddeviation) 2)
                (flood->shadow-color elem)))
 
 (defn apply-svg-filters
