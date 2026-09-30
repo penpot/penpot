@@ -377,7 +377,9 @@
 (declare indexed-shapes)
 
 (defn get-base-shape
-  "Selects the shape that will be the base to add the shapes over"
+  "Selects the shape that will be the base to add the shapes over.
+   Returns nil when the selection is empty or when none of the
+   selected shapes is reachable in the objects tree."
   [objects selected]
   (let [;; Gets the tree-index for all the shapes
         indexed-shapes (indexed-shapes objects selected)
@@ -560,6 +562,7 @@
          shapes  (-> objects
                      (get uuid/zero)
                      (get :shapes)
+                     (or [])
                      (rseq))]
 
     (let [shape-id (first shapes)]
