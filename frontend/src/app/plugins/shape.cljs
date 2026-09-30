@@ -31,8 +31,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
-   [app.common.types.token :as ctt]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -280,21 +280,23 @@
         value (parser/parse-strokes value)]
     (cond
       (not (sm/validate [:vector cts/schema:stroke] value))
-      (u/not-valid plugin-id :strokes value)
+      (do (u/not-valid plugin-id :strokes value) false)
 
       (and (not (ctt/per-side-stroke-shape? (:type shape)))
            (some #(some % [:stroke-width-top :stroke-width-right
                            :stroke-width-bottom :stroke-width-left]) value))
-      (u/not-valid plugin-id :strokes value)
+      (do (u/not-valid plugin-id :strokes value) false)
 
       (not (r/check-permission plugin-id "content:write"))
-      (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission")
+      (do (u/not-valid plugin-id :strokes "Plugin doesn't have 'content:write' permission") false)
 
       (not (u/page-active? (obj/get self "$page")))
-      (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active")
+      (do (u/not-valid plugin-id :strokes "Cannot modify a page that is not currently active") false)
 
       :else
-      (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))
+      (do
+        (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value)))
+        true))))
 
 (defn commit-shadows!
   [plugin-id ^js self value]

@@ -14,12 +14,34 @@
    [app.common.test-helpers.files :as cthf]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.strokes :as strokes]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
    [potok.v2.core :as ptk]))
 
 (def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
+
+(t/deftest rejected-side-width-does-not-poison-retained-stroke
+  (doseq [reject! [(constantly false)
+                   (fn [] (throw (js/Error. "invalid stroke")))]]
+    (let [reject?   (atom true)
+          ^js proxy (strokes/stroke-proxy
+                     {:stroke-width 1}
+                     #(if @reject? (reject!) true))]
+      (doseq [side ["strokeWidthTop" "strokeWidthRight" "strokeWidthBottom" "strokeWidthLeft"]]
+        (try
+          (aset proxy side 2)
+          (catch :default _))
+        (t/is (nil? (aget proxy side))))
+      (reset! reject? false)
+      (set! (.-strokeWidthTop proxy) 3)
+      (t/is (= 3 (.-strokeWidthTop proxy)))
+      (reset! reject? true)
+      (try
+        (set! (.-strokeWidthTop proxy) 4)
+        (catch :default _))
+      (t/is (= 3 (.-strokeWidthTop proxy))))))
 
 (defn- setup-context []
   (let [store   (ths/setup-store (cthf/sample-file :file1 :page-label :page1))

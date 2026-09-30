@@ -345,11 +345,11 @@ describe('Fills & strokes', () => {
           { strokeColor: '#ff0000', strokeWidth: 1, strokeWidthTop: 2 },
         ];
       }).toThrow();
+      const stroke = ellipse.strokes[0];
       expect(() => {
-        ellipse.strokes[0].strokeWidthTop = 2;
+        stroke.strokeWidthTop = 2;
       }).toThrow();
 
-      const stroke = ellipse.strokes[0];
       expect(stroke.strokeColor).toBe('#000000');
       expect(stroke.strokeWidth).toBe(1);
       expect(stroke.strokeWidthTop).toBeUndefined();
