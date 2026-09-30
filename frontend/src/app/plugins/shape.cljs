@@ -65,7 +65,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -1787,7 +1787,7 @@
                   (let [set-id   (obj/get token "$set-id")
                         token-id (obj/get token "$id")
                         token    (u/locate-token file-id set-id token-id)
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                        kw-attrs (expand-token-attrs attrs)]
                     (cond
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")

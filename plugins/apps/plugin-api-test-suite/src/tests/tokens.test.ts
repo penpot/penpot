@@ -385,6 +385,44 @@ describe('Tokens', () => {
       expect(Object.keys(b.tokens)).toContain('paddingLeft');
     });
 
+    test('applyToken accepts the uniform strokeWidth property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidth']);
+
+      await waitFor(() => Object.keys(rect.tokens).length > 0);
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).toContain('strokeWidthRight');
+      expect(keys).toContain('strokeWidthBottom');
+      expect(keys).toContain('strokeWidthLeft');
+    });
+
+    test('applyToken binds a single per-side stroke width property', async (ctx) => {
+      const set = activeSet(ctx, unique('set'));
+      const token = set.addToken({
+        type: 'borderWidth',
+        name: unique('width.'),
+        value: '4',
+      });
+      const rect = ctx.penpot.createRectangle();
+      ctx.board.appendChild(rect);
+
+      rect.applyToken(token, ['strokeWidthTop']);
+
+      await waitFor(() => Object.keys(rect.tokens).includes('strokeWidthTop'));
+      const keys = Object.keys(rect.tokens);
+      expect(keys).toContain('strokeWidthTop');
+      expect(keys).not.toContain('strokeWidthRight');
+    });
+
     test('duplicate and remove a token', (ctx) => {
       const set = activeSet(ctx, unique('set'));
       const token = set.addToken({

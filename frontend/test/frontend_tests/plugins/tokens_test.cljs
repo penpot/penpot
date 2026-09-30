@@ -11,6 +11,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
@@ -121,6 +122,28 @@
   (t/is (true? (boolean (ptok/token-attr? "stroke-color"))))
   (t/is (true? (boolean (ptok/token-attr? "r1"))))
   (t/is (true? (boolean (ptok/token-attr? "m3")))))
+
+(t/deftest token-attr?-accepts-per-side-stroke-width
+  ;; The uniform `strokeWidth` alias is no longer an internal attribute, so the
+  ;; predicate must accept it explicitly; the four per-side keys already are.
+  ;; The plugin schema kebab-cases JS strings (`"strokeWidth"` -> `:stroke-width`)
+  ;; before the predicate sees them, so the string form here is kebab-case.
+  (t/is (true? (boolean (ptok/token-attr? :stroke-width))))
+  (t/is (true? (boolean (ptok/token-attr? "stroke-width"))))
+  (t/is (true? (boolean (ptok/token-attr? :stroke-width-top))))
+  (t/is (true? (boolean (ptok/token-attr? "stroke-width-left")))))
+
+(t/deftest expand-token-attrs-expands-uniform-stroke-width
+  (t/testing "the uniform alias becomes the four per-side attributes"
+    (t/is (= ctt/per-side-stroke-width-keys
+             (ptok/expand-token-attrs #{:stroke-width})))
+    (t/is (= ctt/per-side-stroke-width-keys
+             (ptok/expand-token-attrs #{"stroke-width"}))))
+
+  (t/testing "per-side and unrelated attributes pass through unchanged"
+    (t/is (= #{:stroke-width-top} (ptok/expand-token-attrs #{:stroke-width-top})))
+    (t/is (= #{:fill} (ptok/expand-token-attrs #{:fill})))
+    (t/is (= #{} (ptok/expand-token-attrs nil)))))
 
 (t/deftest shape-apply-token-accepts-padding-top
   (t/async
