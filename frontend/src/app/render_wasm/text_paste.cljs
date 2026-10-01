@@ -66,6 +66,23 @@
       span
       (dissoc result :typography-ref-id :typography-ref-file))))
 
+(defn fragment->content
+  "Penpot content for `fragment`, with `base` as the style its overrides go over."
+  [fragment base]
+  {:type "root"
+   :children
+   [{:type "paragraph-set"
+     :children
+     (mapv (fn [{:keys [children]}]
+             (merge base
+                    {:type "paragraph"
+                     :children (if (seq children)
+                                 (mapv (fn [{:keys [text attrs]}]
+                                         (resolve-overrides (assoc base :text text) attrs))
+                                       children)
+                                 [(assoc base :text "")])}))
+           fragment)}]})
+
 (defn apply-fragment-styles
   "Restyles the `fragment` text WASM inserted at `start` in `content`."
   [content fragment start]

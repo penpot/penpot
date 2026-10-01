@@ -53,12 +53,14 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.code-gen.markup-svg :as svg]
    [app.util.code-gen.style-css :as css]
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.text.clipboard :as text-clipboard]
    [app.util.text.content :as tc]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -261,9 +263,15 @@
 (declare ^:private paste-svg-text)
 (declare ^:private paste-shapes)
 
-(def ^:private default-options
+(defn- v3-html-paste?
+  [state]
+  (and (features/active-feature? state "text-editor-wasm/v1")
+       (features/active-feature? state "text-editor-wasm/v1-html-paste")))
+
+(defn- clipboard-options
+  [state]
   #js {:decodeTransit t/decode-str
-       :allowHTMLPaste (features/active-feature? @st/state "text-editor/v2-html-paste")})
+       :allowHTMLPaste (v3-html-paste? state)})
 
 (defn- create-paste-from-blob
   [in-viewport? replace?]
@@ -328,7 +336,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (if (page-ready? (dsh/lookup-page-objects state))
-         (->> (clipboard/from-navigator default-options)
+         (->> (clipboard/from-navigator (clipboard-options state))
               (rx/mapcat (create-paste-from-blob false (boolean replace?)))
               (rx/take 1)
               (rx/catch on-clipboard-permission-error))
@@ -349,7 +357,7 @@
         ;; Pastes arriving before the page is loaded are ignored as well.
         (if (or is-editing? (not (page-ready? objects)))
           (rx/empty)
-          (->> (clipboard/from-synthetic-clipboard-event event default-options)
+          (->> (clipboard/from-synthetic-clipboard-event event (clipboard-options state))
                (rx/mapcat (create-paste-from-blob in-viewport? false))))))))
 
 (defn copy-selected-svg
@@ -529,7 +537,7 @@
                         (rx/empty)))))]
 
           (if (page-ready? (dsh/lookup-page-objects state))
-            (->> (clipboard/from-navigator default-options)
+            (->> (clipboard/from-navigator (clipboard-options state))
                  (rx/mapcat #(.text %))
                  (rx/map decode-entry)
                  (rx/take 1)
@@ -1057,11 +1065,15 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [style   (deref refs/workspace-clipboard-style)
-            root    (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))
-            text    (.-textContent root)
-            content (tc/dom->cljs root)]
-        (when (types.text/valid-content? content)
+      (let [[text content]
+            (if (v3-html-paste? state)
+              (when-let [fragment (text-clipboard/html->fragment html)]
+                [(text-paste/fragment->text fragment)
+                 (text-paste/fragment->content fragment (txt/get-default-text-attrs))])
+              (let [style (deref refs/workspace-clipboard-style)
+                    root  (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))]
+                [(.-textContent root) (tc/dom->cljs root)]))]
+        (when (and (some? content) (types.text/valid-content? content))
           (let [id            (uuid/next)
                 width         (max 8 (min (* 7 (count text)) 700))
                 height        16

@@ -129,3 +129,18 @@
           result   (text-paste/apply-fragment-styles pasted fragment {:para 0 :offset 2})]
       (t/is (= [[(span "😀") (span "X" bold-variant) (span "b")]]
                (spans-of result))))))
+
+(t/deftest fragment->content
+  (t/testing "runs become spans over the base style, and empty paragraphs keep one empty span"
+    (let [result (text-paste/fragment->content
+                  [(fragment-paragraph (run "Hello ") (run "bold" {:font-weight "700"}))
+                   (fragment-paragraph)]
+                  regular)]
+      (t/is (= [[(span "Hello ") (span "bold" bold-variant)]
+                [(span "")]]
+               (spans-of result)))))
+
+  (t/testing "paragraphs carry the base style"
+    (let [result (text-paste/fragment->content [(fragment-paragraph (run "x"))] regular)]
+      (t/is (= (assoc regular :type "paragraph")
+               (dissoc (-> result :children first :children first) :children))))))
