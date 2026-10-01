@@ -618,6 +618,22 @@
   (when (initialized?)
     (h/call wasm/internal-module "_render_preview")))
 
+(defn- paint-after-structural-ingest!
+  "Paint geometry/fills as soon as the structural batch is in WASM, before
+   the slower host-attrs pass (text/path/grid/images).
+
+   Leaves `_begin_loading` active afterward so host-attr mutations do not
+   invalidate tiles until the final `_end_loading` in finalize. Optionally
+   invokes `on-shapes-ready` so page-transition blur can lift on this frame."
+  [on-shapes-ready]
+  (when (wasm/live?)
+    (h/call wasm/internal-module "_end_loading")
+    (when on-shapes-ready (on-shapes-ready))
+    ;; Sync render: do not wait for rAF — host-attrs chunks would delay it.
+    (h/call wasm/internal-module "_render_sync")
+    (set! wasm/internal-frame-id nil)
+    (js/console.info "[wasm-batch] structural paint")
+    (h/call wasm/internal-module "_begin_loading")))
 
 (defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
@@ -1982,12 +1998,15 @@
    browser between chunks so the UI stays responsive.
    Returns a promise that resolves when all shapes are processed."
   [shapes render-callback on-shapes-ready]
-  (let [total-shapes (count shapes)]
+  (let [total-shapes (count shapes)
+        ;; True after server-path early paint already invoked on-shapes-ready.
+        shapes-ready-fired? (atom false)]
     (p/create
      (fn [resolve _reject]
        (letfn [(finalize! [thumbnails-acc full-acc text-font-state-acc prepared-shapes]
                  (perf/end-measure "set-objects")
-                 (when on-shapes-ready (on-shapes-ready))
+                 (when (and on-shapes-ready (compare-and-set! shapes-ready-fired? false true))
+                   (on-shapes-ready))
                  (if-not (wasm/live?)
                    (do
                      (end-shapes-loading!)
@@ -2051,7 +2070,12 @@
              (p/then
               (fn [{:keys [mode prepared]}]
                 (if (= mode :server)
-                  (process-next-server-chunk prepared 0 [] [] empty-text-font-state)
+                  (do
+                    (when (wasm/live?)
+                      (paint-after-structural-ingest! on-shapes-ready)
+                      (when on-shapes-ready
+                        (reset! shapes-ready-fired? true)))
+                    (process-next-server-chunk prepared 0 [] [] empty-text-font-state))
                   (process-next-client-chunk 0 [] [] empty-text-font-state))))
              (p/catch
               (fn [err]
@@ -2113,12 +2137,17 @@
   (-> (maybe-ingest-server-batch! shapes)
       (p/then
        (fn [{:keys [mode prepared]}]
-         (let [prepared (if (= mode :server)
+         (let [server?  (= mode :server)
+               prepared (if server?
                           prepared
                           (serialize-shape/serialize-shapes-batch!
                            shapes
                            {:include-layout? true
                             :include-fills-strokes? true}))
+               ;; Paint geometry before host attrs when the structural batch
+               ;; arrived from the server (same idea as the async path).
+               _ (when server?
+                   (paint-after-structural-ingest! on-shapes-ready))
                total-shapes (count prepared)
                {:keys [thumbnails full text-font-state]}
                (loop [index 0
@@ -2140,7 +2169,8 @@
                     :full (persistent! full-acc)
                     :text-font-state font-state-acc}))]
            (perf/end-measure "set-objects")
-           (when on-shapes-ready (on-shapes-ready))
+           (when (and on-shapes-ready (not server?))
+             (on-shapes-ready))
            (if-not (wasm/live?)
              (end-shapes-loading!)
              (do
