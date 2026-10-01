@@ -112,7 +112,11 @@
   "Import the package at `input` as part of a job, reporting progress as
   job events. The package was read from the resource of the job, so the
   caller resolves the destination team and the adapter only fixes what
-  the legacy RPC and a job must share."
+  the legacy RPC and a job must share.
+
+  Both formats answer with the same shape: the version 1 reader returns
+  the set of files it created, and the version 3 one returns a map that
+  already carries them together with the resolution of the libraries."
   [cfg context {:keys [profile-id project-id team name input version]}]
   (check-active cfg context)
   (let [cfg (bfc/import-cfg cfg {:profile-id profile-id
@@ -122,7 +126,7 @@
                                  :input input})]
     (with-progress cfg context
       #(case (int version)
-         1 (bf.v1/import-files! cfg)
+         1 {:file-ids (vec (bf.v1/import-files! cfg))}
          3 (bf.v3/import-files! cfg)
          (ex/raise :type :validation
                    :code :unsupported-version

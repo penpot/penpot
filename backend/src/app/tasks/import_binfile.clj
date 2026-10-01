@@ -15,8 +15,10 @@
    [app.jobs :as jobs]
    [app.jobs.storage :as js]
    [app.metrics :as mtx]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.storage :as sto]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]))
 
 (def schema:params
@@ -30,16 +32,42 @@
    [:generated-by {:optional true} [:maybe ::sm/text]]
    [:referer      {:optional true} [:maybe ::sm/text]]])
 
+(def schema:result
+  "What the job stores when the import succeeds: the files it created and
+  how the libraries of the package were resolved."
+  [:map {:title "import-binfile-result" :closed true}
+   [:file-ids   [:vector ::sm/uuid]]
+   [:resolution {:optional true} :map]
+   [:name       [:or [:string {:max 250}]
+                 [:map-of ::sm/uuid [:string {:max 250}]]]]
+   [:version    [:enum 1 3]]])
+
+(def ^:private check-result
+  (sm/check-fn schema:result
+               :hint "invalid result of an import job"
+               :type :validation
+               :code :invalid-result))
+
 (defn execute-import
   "Plain handler, importable and testable without integrant.
 
-  The package is downloaded from the resource of the job to a temporary
-  file. Releasing that resource and turning the result into the job result
-  is the next step of the job."
+  The edition permission is checked again here, and not only when the job
+  was created: it can be revoked while the job waits in its queue. The
+  core runs inside a transaction, so a cancellation detected between units
+  rolls the whole import back.
+
+  The package is the input of the job: it is released and its temporary
+  copy deleted once the job is terminal, whatever the outcome. A crash is
+  covered by the storage GC."
   [cfg context params]
   (let [profile-id (:profile-id context)
         project-id (:project-id params)
-        team       (or (teams/get-team cfg
+        input      (js/load-input cfg context)]
+
+    (try
+      (projects/check-edition-permissions! cfg profile-id project-id)
+
+      (let [team   (or (teams/get-team cfg
                                        :profile-id profile-id
                                        :project-id project-id)
                        (ex/raise :type :not-found
@@ -47,16 +75,23 @@
                                  :hint "the destination project is not available"
                                  :profile-id profile-id
                                  :project-id project-id))
-        input      (js/load-input cfg context)]
+            result (db/tx-run! cfg
+                               (fn [_]
+                                 (bfj/import-files cfg context
+                                                   {:profile-id profile-id
+                                                    :project-id project-id
+                                                    :team       team
+                                                    :name       (:name params)
+                                                    :input      input
+                                                    :version    (:version params)})))]
 
-    (db/tx-run! cfg
-                (fn [_]
-                  (bfj/import-files cfg context {:profile-id profile-id
-                                                 :project-id project-id
-                                                 :team       team
-                                                 :name       (:name params)
-                                                 :input      input
-                                                 :version    (:version params)})))))
+        (check-result (assoc result
+                             :name (:name params)
+                             :version (:version params))))
+
+      (finally
+        (fs/delete input)
+        (js/release-input cfg context)))))
 
 (defmethod ig/assert-key ::import-binfile-job-def
   [_ params]

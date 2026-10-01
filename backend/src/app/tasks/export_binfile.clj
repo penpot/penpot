@@ -34,6 +34,21 @@
   {:filename "export.penpot"
    :mtype    "application/zip"})
 
+(def schema:result
+  "What the job stores when the export succeeds: where the artifact can be
+  downloaded from and what it is."
+  [:map {:title "export-binfile-result" :closed true}
+   [:resource-uri ::sm/text]
+   [:filename     ::sm/text]
+   [:mtype        ::sm/text]
+   [:size         ::sm/int]])
+
+(def ^:private check-result
+  (sm/check-fn schema:result
+               :hint "invalid result of an export job"
+               :type :validation
+               :code :invalid-result))
+
 (defn execute-export
   "Plain handler, importable and testable without integrant.
 
@@ -56,7 +71,7 @@
                                        :output      output})
         (let [resource (js/put-resource cfg profile-id
                                         (assoc artifact :content (sto/content output)))]
-          {:result      (dissoc resource :resource-id)
+          {:result      (check-result (dissoc resource :resource-id))
            :resource-id (:resource-id resource)})
         (finally
           (fs/delete output))))))
