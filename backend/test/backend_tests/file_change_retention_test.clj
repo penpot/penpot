@@ -207,3 +207,31 @@
 
       (t/testing "so the collector takes it"
         (t/is (nil? (find-change revision-id)))))))
+
+(t/deftest restoring-a-file-through-the-task-leaves-the-revision-schedule-alone
+  ;; Same invariant as `restoring-a-file-leaves-the-revision-schedule-alone`,
+  ;; through the worker path the admin panel uses: the `:restore-object`
+  ;; task walks the cascade with a nil date, and that must not unmark a
+  ;; revision either.
+  (binding [ct/*clock* (ct/fixed-clock test-now)]
+    (let [[_ file] (create-file 1)
+          file-id   (:id file)
+          trash-at  (ct/in-future {:days 7})
+          old-at    (ct/in-past {:hours 2})
+
+          revision-id (insert-revision file-id old-at)
+          revision-at (:deleted-at (find-change revision-id))
+
+          snapshot-id (insert-change file-id {:created-at old-at
+                                              :created-by "user"
+                                              :label      "a snapshot"
+                                              :deleted-at trash-at})]
+
+      (th/run-task! :restore-object {:object :file
+                                     :id     file-id})
+
+      (t/testing "the revision keeps the schedule it was born with"
+        (t/is (= revision-at (:deleted-at (find-change revision-id)))))
+
+      (t/testing "the snapshot comes back"
+        (t/is (nil? (:deleted-at (find-change snapshot-id))))))))
