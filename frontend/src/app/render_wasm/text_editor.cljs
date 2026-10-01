@@ -739,7 +739,7 @@
       (= 1 (count fills-set)) (first fills-set)
       :else                   :multiple)))
 
-(defn- apply-styles-over-range
+(defn apply-styles-over-range
   "Apply `styles` (attrs map or per-span fn) to the char range of `content`, splitting spans."
   [content {:keys [start-para start-offset end-para end-offset]} styles]
   (let [paragraph-set  (first (:children content))
