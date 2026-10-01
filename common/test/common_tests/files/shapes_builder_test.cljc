@@ -283,3 +283,21 @@
     (t/is (= "round" (get-in path [:svg-attrs :stroke-linecap])) "linecap stays for renderers")
     (t/is (nil? (get-in path [:svg-attrs :stroke-width])) "consumed keys are removed")
     (t/is (nil? (get-in path [:svg-attrs :stroke-opacity])))))
+
+(t/deftest birth-setup-opacity-reads-kebab-blend-mode
+  ;; Regression for PR #12006 review: `setup-opacity` still looked up
+  ;; `:mixBlendMode` (camel) after birth started storing kebab keys, so
+  ;; `mix-blend-mode` survived in `:svg-attrs` and `:blend-mode` was
+  ;; never set. Birth stores the style map kebab-ized.
+  (let [svg-data {:name "blend"
+                  :tag :svg
+                  :attrs {:width "100" :height "100" :viewBox "0 0 100 100"}
+                  :content [{:tag :rect
+                             :attrs {:x "10" :y "10" :width "80" :height "80"
+                                     :style "mix-blend-mode: multiply"}
+                             :content []}]}
+        [_ children] (sb/create-svg-shapes svg-data {:x 0 :y 0} {} nil nil #{} false)
+        rect         (first (filter #(and (= :rect (:type %)) (not (:hidden %))) children))]
+    (t/is (some? rect))
+    (t/is (= :multiply (:blend-mode rect)))
+    (t/is (nil? (get-in rect [:svg-attrs :style :mix-blend-mode])) "consumed keys are removed")))

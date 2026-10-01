@@ -221,10 +221,19 @@
               (let [result (update combined :content #(or % []))]
                 result))))))))
 
+(defn- style-map
+  "Stop `:style` as a map, whatever its spelling: pre-migration files
+  carry it as a CSS string, stored (post-0031) files as a kebab map."
+  [style]
+  (cond
+    (string? style) (csvg/parse-style style)
+    (map? style) style
+    :else nil))
+
 (defn- parse-gradient-stop
   [stop-node]
   (let [attrs (normalize-attrs (:attrs stop-node))
-        style (some-> (get attrs :style) csvg/parse-style)
+        style (some-> (get attrs :style) style-map)
         color-value (or (get attrs :stop-color)
                         (get attrs :stopcolor)
                         (get style :stop-color)

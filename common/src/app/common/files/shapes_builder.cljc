@@ -636,13 +636,13 @@
         (assoc :opacity (-> (dm/get-in shape [:svg-attrs :style :opacity])
                             (d/parse-double 1))))
 
-    (dm/get-in shape [:svg-attrs :mixBlendMode])
-    (-> (update :svg-attrs dissoc :mixBlendMode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mixBlendMode]) assert-valid-blend-mode)))
+    (dm/get-in shape [:svg-attrs :mix-blend-mode])
+    (-> (update :svg-attrs dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mix-blend-mode]) assert-valid-blend-mode)))
 
-    (dm/get-in shape [:svg-attrs :style :mixBlendMode])
-    (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
+    (dm/get-in shape [:svg-attrs :style :mix-blend-mode])
+    (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mix-blend-mode]) assert-valid-blend-mode)))))
 
 (defn setup-other [shape]
   (cond-> shape
