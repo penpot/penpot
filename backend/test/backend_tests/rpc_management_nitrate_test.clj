@@ -267,7 +267,7 @@
                                                      :organization {:name organization-name}}))]
     (t/is (th/success? out))
     (t/is (= 1 (count @calls)))
-    (t/is (= uuid/zero (-> @calls first :topic)))
+    (t/is (= team-id (-> @calls first :topic)))
     (let [msg (-> @calls first :message)]
       (t/is (= :team-organization-change (:type msg)))
       (t/is (= "dashboard.team-no-longer-belong-organization" (:notification msg)))

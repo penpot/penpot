@@ -50,20 +50,19 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper    (rx/filter (ptk/type? ::finalize) stream)
-            profile-id (:profile-id state)
-            current-team (dm/get-in state [:teams team-id])
-            organization-id (dm/get-in current-team [:organization :id])
-
-            subscriptions (cond-> [{:type :subscribe-team :team-id team-id}]
-                            (some? organization-id)
-                            (conj {:type :subscribe-organization :organization-id organization-id}))]
+      (let [stopper         (rx/filter (ptk/type? ::finalize) stream)
+            profile-id      (:profile-id state)
+            organization-id (dm/get-in state [:teams team-id :organization :id])
+            initmsg         {:type :subscribe-team :team-id team-id}]
 
         (->> (rx/merge
               (rx/of (fetch-projects team-id)
-                     (df/fetch-fonts team-id))
-              (->> (rx/from subscriptions)
-                   (rx/map dws/send))
+                     (df/fetch-fonts team-id)
+                     (dws/send initmsg))
+              ;; On reconnect, send again the subscription message
+              (->> stream
+                   (rx/filter (ptk/type? ::dws/opened))
+                   (rx/map #(dws/send initmsg)))
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
