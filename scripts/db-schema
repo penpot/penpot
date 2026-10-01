@@ -5,11 +5,22 @@ HOST="${PENPOT_DB_HOST:-postgres}"
 USER="${PENPOT_DB_USER:-penpot}"
 PASSWORD="${PENPOT_DB_PASSWORD:-penpot}"
 DB="${PENPOT_DB_NAME:-penpot}"
+TEST=false
+WS=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --test)
             DB="penpot_test"
+            TEST=true
+            shift
+            ;;
+        --ws)
+            WS="$2"
+            shift 2
+            ;;
+        --ws*)
+            WS="${1#--ws}"
             shift
             ;;
         --host|-h)
@@ -29,6 +40,26 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# --ws selects one instance's isolated backend-test database
+# (penpot_test on ws0, penpot_test_wsN on wsN). It only applies together
+# with --test because the main database is shared by all instances.
+if [[ -n "$WS" ]]; then
+    if [[ "$WS" =~ ^ws([0-9]+)$ ]]; then
+        WS="${BASH_REMATCH[1]}"
+    fi
+    if [[ ! "$WS" =~ ^[0-9]+$ ]]; then
+        echo "Invalid --ws value: '$WS' (expected a non-negative integer, e.g. --ws 1)" >&2
+        exit 1
+    fi
+    if [[ "$TEST" != "true" ]]; then
+        echo "--ws only applies together with --test (the main database is shared by all instances)." >&2
+        exit 1
+    fi
+    if [[ "$WS" != "0" ]]; then
+        DB="penpot_test_ws${WS}"
+    fi
+fi
 
 export PGPASSWORD="$PASSWORD"
 exec pg_dump -h "$HOST" -U "$USER" -d "$DB" --schema-only --no-owner --no-privileges "$@"
