@@ -22,30 +22,6 @@ rules:
     ignore:
       - auto-label.yml
       - commit-checker.yml
-  # Declare least-privilege `permissions:` per workflow/job.
-  excessive-permissions:
-    ignore:
-      - auto-label.yml
-      - build-adhoc.yml
-      - build-bundle.yml
-      - build-develop.yml
-      - build-docker-admin-console.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - build-staging.yml
-      - build-tag.yml
-      - build-tmp-tokens.yml
-      - commit-checker.yml
-      - plugins-deploy-packages.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
   # Scope GitHub App tokens.
   github-app:
     ignore:

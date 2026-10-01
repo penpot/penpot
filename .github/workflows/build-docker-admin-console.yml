@@ -39,6 +39,8 @@ on:
         description: 'Token with Actions write access on penpot-nitrate'
         required: true
 
+permissions: {}
+
 jobs:
   build-nitrate-docker:
     runs-on: ubuntu-latest

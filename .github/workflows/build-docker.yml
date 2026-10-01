@@ -70,6 +70,9 @@ env:
   # missing (e.g. if runners ever move to separate machines).
   BUNDLE_CACHE: /var/tmp/penpot-bundle-cache
 
+permissions:
+  contents: read
+
 jobs:
   # ── 1. Resolve the build key and check the whole set at once ───────────
   prepare:

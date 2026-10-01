@@ -6,6 +6,8 @@ on:
   pull_request_target:
     types: [opened]
 
+permissions: {}
+
 jobs:
   triage:
     runs-on: ubuntu-latest

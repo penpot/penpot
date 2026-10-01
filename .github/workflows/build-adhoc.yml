@@ -20,8 +20,12 @@ on:
         required: false
         default: false
 
+permissions: {}
+
 jobs:
   build-bundle:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-bundle.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -35,6 +39,8 @@ jobs:
 
   build-docker:
     needs: build-bundle
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-docker.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -54,6 +60,7 @@ jobs:
       force: ${{ inputs.force }}
 
   build-docker-admin-console:
+    permissions: {}
     uses: ./.github/workflows/build-docker-admin-console.yml
     secrets:
       ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}

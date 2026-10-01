@@ -3,6 +3,9 @@ name: DevEnv Docker Image Builder
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-push:
     name: Build and push DevEnv Docker image
