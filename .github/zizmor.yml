@@ -1,25 +1,31 @@
 # zizmor configuration — https://docs.zizmor.sh/configuration/
 #
-# Every audit is enforced for every workflow. The per-file ignores below are
-# the findings that already existed when this check was introduced: each one
-# is a pending clean-up, not an accepted risk. New workflows are checked
-# with no exceptions. Remove a file from a list in the same PR that fixes it,
-# and the whole rule entry once its list is empty.
+# Every audit is enforced for every workflow. New workflows are checked with
+# no exceptions. The entries below are the only remaining ones, and each is
+# marked as either a pending clean-up or an accepted risk with its reason.
+# Remove a file from a list in the same PR that fixes it, and the whole rule
+# entry once its list is empty.
 rules:
-  # Avoid installing packages ad hoc inside `run:`.
+  # Pending: wrangler is added with `pnpm add wrangler@latest` before each
+  # deploy because it is not a dependency of the plugins workspace. Fixed by
+  # adding it to plugins/package.json (devDependencies) and dropping that line.
   adhoc-packages:
     ignore:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Review `pull_request_target` usage.
+  # Accepted: auto-label.yml needs pull_request_target so the GitHub App
+  # secrets are available for PRs from forks. It never checks out or runs
+  # PR code, it only reads ids from the event payload.
   dangerous-triggers:
     ignore:
       - auto-label.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
-  # Pin container images to a digest.
+  # Accepted for now: penpotapp/devenv is our own image, built and pushed by
+  # build-docker-devenv.yml. Pinning it by digest means bumping ten files on
+  # every rebuild; revisit once Renovate can do that automatically.
   unpinned-images:
     ignore:
       - plugins-deploy-package.yml
