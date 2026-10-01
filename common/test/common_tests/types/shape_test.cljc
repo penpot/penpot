@@ -70,7 +70,11 @@
 (t/deftest svg-content-keeps-unknown-keys
   ;; `:content` attrs are spelling-only: the sidebar reads keys outside
   ;; the whitelist (e.g. `:stroke-style`), so the schema stays open.
-  (let [shape (->> (sg/sample (sg/generator schema:shape) {:size 50})
+  ;; NOTE: the sample seed is pinned. Unpinned sampling flaked (~1%
+  ;; of runs): some seeds deal zero `:svg-raw` shapes in 50 samples,
+  ;; `first` yields nil, and the `assoc` below builds a typeless
+  ;; `{:content …}` map that fails the `:multi` dispatch on `:type`.
+  (let [shape (->> (sg/sample (sg/generator schema:shape) {:size 50 :seed 42})
                    (filter #(= :svg-raw (:type %)))
                    (first)
                    (#(assoc % :content {:tag :g
