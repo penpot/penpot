@@ -214,6 +214,7 @@
         result (-> th/*system*
                    (assoc ::bfc/project-id (:default-project-id profile))
                    (assoc ::bfc/profile-id (:id profile))
+                   (assoc ::bfc/team-id (:default-team-id profile))
                    (assoc ::bfc/input input)
                    (v3/import-files!))]
     (bfc/get-file th/*system* (first (:file-ids result)))))

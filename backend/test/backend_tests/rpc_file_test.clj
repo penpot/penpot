@@ -717,7 +717,7 @@
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
       (let [res (binding [ct/*clock* (ct/fixed-clock (ct/in-future {:hours 3}))]
-                  (th/run-task! "storage-gc-touched" {}))]
+                  (th/run-task! :storage-gc-touched {}))]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects

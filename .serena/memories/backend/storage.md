@@ -96,11 +96,11 @@ Since `put-object!` uses backend-specific operations (`impl/resolve-backend` + `
 | `file-change` | Compatibility value for file changes. Current snapshots store data in `file_data`, not this bucket. | No current write semantics | Authentication required | No touched-object collector case. |
 | `job-resource` | Storage objects owned by job rows (`job.resource_id`). | Yes | Authentication required | jobs-GC touch → reference scan. |
 
-- The valid bucket set lives in `app.storage/valid-buckets`.
+- The valid bucket set is `app.storage.schema/metadata-buckets` (derived from `bucket-requirements`, where a new bucket and its required metadata keys are one entry); `app.storage/valid-buckets` aliases it.
 - `file-media-object` is the default bucket for old rows without bucket metadata.
 - Do not assign a new bucket without adding its access and cleanup behavior.
 - The touched-object collector raises an internal error for an unknown bucket.
-- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, `upload-session`, and `organization`.
+- It supports `file-media-object`, `team-font-variant`, `file-object-thumbnail`, `file-thumbnail`, `profile`, `file-data`, `tempfile`, `upload-session`, `job-resource`, and `organization`.
 - It does not support `file-data-fragment` or `file-change`.
 
 ## Access Rules

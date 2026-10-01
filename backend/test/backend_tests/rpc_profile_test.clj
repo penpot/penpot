@@ -699,7 +699,7 @@
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration
   (with-redefs [app.config/flags #{:login-with-password :email-verification}]
-    (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-mocks [mock {:target 'app.email/send :return nil}]
       (let [email   "invited@example.com"
             fixture (create-invitation-fixture email (ct/in-future "48h"))
             itoken  (create-test-invitation-token fixture email)
