@@ -180,6 +180,12 @@
     ::mdef/labels ["route" "backend" "bucket" "result"]
     ::mdef/type :counter}
 
+   :storage-gc-poison
+   {::mdef/name "penpot_storage_gc_poison_total"
+    ::mdef/help "Storage objects deferred by storage-gc-touched because their metadata is corrupt."
+    ::mdef/labels []
+    ::mdef/type :counter}
+
    :http-server-dispatch-timing
    {::mdef/name "penpot_http_server_dispatch_timing"
     ::mdef/help "Histogram of dispatch handler"
@@ -271,7 +277,8 @@
     ::sto/storage  (ig/ref ::sto/storage)}
 
    ::sto.gc-touched/handler
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool      (ig/ref ::db/pool)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    ::sto.pending-gc/handler
    {::db/pool     (ig/ref ::db/pool)

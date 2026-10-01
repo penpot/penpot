@@ -56,7 +56,17 @@
                                      :bucket bucket
                                      :content-type "text/plain"}
                               (some? profile-id)
-                              (assoc :profile-id profile-id)))))
+                              (assoc :profile-id profile-id)
+
+                              ;; file-data objects require file/id
+                              ;; references for GC (has-file-data-refs?).
+                              (= bucket "file-data")
+                              (assoc :file-id (uuid/random)
+                                     :id (uuid/random))
+
+                              ;; organization objects require their owner id.
+                              (= bucket "organization")
+                              (assoc :organization-id (uuid/random))))))
 
 (defn- make-metrics
   []
