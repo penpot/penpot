@@ -60,8 +60,8 @@
 (def varia
   "Rest of the flags"
   #{:audit-log
-    :audit-log-archive
-    :audit-log-gc
+    ;; Enables shipping audit_log chunks to Nexus.
+    :nexus
     :audit-log-logger
     :auto-file-snapshot
     ;; enables the `/api/doc` endpoint that lists all the rpc methods available.
