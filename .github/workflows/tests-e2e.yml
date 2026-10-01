@@ -86,6 +86,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.gh_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   # ── 1. Build the frontend bundle once ──────────────────────────────────
   build-bundle:

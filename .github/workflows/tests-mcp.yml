@@ -24,6 +24,9 @@ on:
     paths:
       - 'mcp/**'
 
+permissions:
+  contents: read
+
 jobs:
   test-mcp:
     if: ${{ !github.event.pull_request.draft }}

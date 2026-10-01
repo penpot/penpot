@@ -21,6 +21,9 @@ on:
           - staging
           - main
 
+permissions:
+  contents: read
+
 jobs:
   detect-changes:
     runs-on: ubuntu-latest

@@ -20,6 +20,10 @@ on:
       - develop
       - staging
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   check-commit-message:
     if: ${{ !github.event.pull_request.draft }}

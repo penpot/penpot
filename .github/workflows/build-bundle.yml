@@ -49,6 +49,9 @@ concurrency:
   group: build-bundle-${{ inputs.gh_ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   # ── 1. Decide whether there is anything to build ───────────────────────
   check:
