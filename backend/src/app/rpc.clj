@@ -6,6 +6,7 @@
 
 (ns app.rpc
   (:require
+   [app.auth :as-alias auth]
    [app.auth.ldap :as-alias ldap]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -164,7 +165,15 @@
   [_ f mdata]
   (let [required-auth?      (::auth mdata true)
         required-auth-type  (::auth-type mdata)
-        required-perms      (into #{} (::perms mdata))]
+        required-perms      (set (::perms mdata))
+        ;; Token scopes keep their meaning: they force token authentication
+        ;; and are checked against the token. "superuser" is satisfied either
+        ;; by registry membership (any auth type) or by a token carrying it
+        ;; as a granted scope. Token scopes are operator-granted only —
+        ;; tokens are created with empty perms — so this grants nothing
+        ;; by itself.
+        scope-perms         (disj required-perms "superuser")
+        superuser-required (contains? required-perms "superuser")]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
@@ -181,18 +190,27 @@
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
 
-          (and (seq required-perms)
+          (and (seq scope-perms)
                (not= auth-type :token))
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
 
-          (and (seq required-perms)
-               (not (set/subset? required-perms token-perms)))
+          (and (seq scope-perms)
+               (not (set/subset? scope-perms token-perms)))
           (ex/raise :type :authorization
                     :code :missing-perms
                     :hint "missing required permissions"
-                    :required required-perms)
+                    :required scope-perms)
+
+          (and superuser-required
+               (not (or (and (= "devenv" (cf/get :host))
+                             (uuid? profile-id))
+                        (contains? (::auth/superusers cfg) profile-id)
+                        (contains? token-perms "superuser"))))
+          (ex/raise :type :authorization
+                    :code :superuser-required
+                    :hint "superuser required for this endpoint")
 
           :else
           (f cfg params))))))
@@ -365,6 +383,7 @@
   [cfg]
   (let [cfg (assoc cfg ::module "main" ::type "command" ::metrics-id :rpc-main-timing)]
     (->> (sv/scan-ns
+          'app.rpc.commands.admin
           'app.rpc.commands.access-token
           'app.rpc.commands.audit
           'app.rpc.commands.auth

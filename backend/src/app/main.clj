@@ -412,7 +412,8 @@
     (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/methods
-   {::http.client/client (ig/ref ::http.client/client)
+   {:app.auth/superusers  (ig/ref :app.auth/superusers)
+    ::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
@@ -442,6 +443,13 @@
    :app.nitrate/client
    {::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
+
+   :app.auth/superusers
+   {::db/pool    (ig/ref ::db/pool)
+
+    ;; NOTE: this dependency is only necessary for proper initialization
+    ;; ordering, the registry queries the profile table on startup.
+    ::migrations (ig/ref :app.migrations/migrations)}
 
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)

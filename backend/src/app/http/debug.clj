@@ -890,7 +890,7 @@
   [pool {:keys [::session/profile-id]}]
   (or (and (= "devenv" (cf/get :host)) profile-id)
       (let [profile (ex/ignoring (profile/get-profile pool profile-id))
-            admins  (or (cf/get :admins) #{})]
+            admins  (or (cf/get :superusers) #{})]
         (contains? admins (:email profile)))))
 
 (def with-authorization

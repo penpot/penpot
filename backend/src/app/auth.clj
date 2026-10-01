@@ -6,7 +6,10 @@
 
 (ns app.auth
   (:require
-   [buddy.hashers :as hashers]))
+   [app.config :as cf]
+   [app.db :as db]
+   [buddy.hashers :as hashers]
+   [integrant.core :as ig]))
 
 (def ^:private default-options
   {:alg :argon2id
@@ -36,3 +39,19 @@
     (catch Throwable _
       {:update false
        :valid false})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Superuser registry
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Resolves the configured `:superusers` emails to profile ids once, at
+;; startup. What does not exist then is simply not in the set: a profile
+;; registered afterwards is recognized after the next restart. Callers
+;; check membership with a plain `contains?` on the set found under
+;; `::superusers` in their config map, so the check costs no query.
+(defmethod ig/init-key ::superusers
+  [_ {:keys [::db/pool]}]
+  (into #{}
+        (keep (fn [email]
+                (:id (db/get* pool :profile {:email email}))))
+        (or (cf/get :superusers) #{})))

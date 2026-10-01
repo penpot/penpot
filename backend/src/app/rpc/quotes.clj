@@ -84,7 +84,7 @@
           :total (::total params)
           :incr  (::inc params 1))
 
-  (when-let [admins (seq (cf/get :admins))]
+  (when-let [admins (seq (cf/get :superusers))]
     (let [subject (str/istr "[quotes:notification]: max quote reached ~(::target params)")
           content (str/istr "- Param: profile-id '~(::profile-id params)}'\n"
                             "- Param: team-id '~(::team-id params)'\n"
