@@ -301,6 +301,17 @@
     (let [report (errors/generate-report (error-cause :type :network :hint "boom"))]
       (t/is (string? report)))))
 
+(t/deftest generate-report-carries-no-separator-lines
+  ;; Scenario: a full internal report. The throwable dump used to be
+  ;; wrapped between `====` banners; they carry no information and
+  ;; bloated every stored report. Proves: no equals-run survives,
+  ;; while the Context and Last-events sections still do.
+  (let [report (errors/generate-report (error-cause :type :internal :hint "boom"))]
+    (t/is (string? report))
+    (t/is (nil? (re-find #"={10,}" report)))
+    (t/is (str/includes? report "Context:"))
+    (t/is (str/includes? report "Last events:"))))
+
 (t/deftest ^:async flash-emits-a-fallback-report-when-generation-fails
   ;; Scenario: the full-report formatter throws. `generate-report` stays
   ;; total and the fallback string is what gets emitted. Proves: a
