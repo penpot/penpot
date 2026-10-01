@@ -852,6 +852,17 @@
     ::db/pool         (ig/ref ::db/pool)
     ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
 
+   ;; the heavy work of a user job does not share the default runner
+   [::binfile ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-binfile-parallelism 1)
+    ::wrk/queue       :binfile
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
    [::cron ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-cron-parallelism 2)
     ::wrk/queue       :cron
