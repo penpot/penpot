@@ -85,7 +85,7 @@
           :total (::total cfg)
           :incr  (::inc cfg 1))
 
-  (when-let [admins (seq (cf/get :admins))]
+  (when-let [admins (seq (cf/get :superusers))]
     (let [subject (str/istr "[quotes:notification]: max quote reached ~(::target cfg)")
           content (str/istr "- Param: profile-id '~(::profile-id cfg)}'\n"
                             "- Param: team-id '~(::team-id cfg)'\n"
@@ -104,6 +104,7 @@
                     ::jobs/params {:to (vec admins)
                                    :subject subject
                                    :body content}}))))
+
 
 (defn- generic-check!
   [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as cfg}]

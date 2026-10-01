@@ -131,7 +131,7 @@
   (do #_sm/optional-keys
    [:map {:title "config"}
     [:flags {:optional true} [::sm/set :string]]
-    [:admins {:optional true} [::sm/set ::sm/email]]
+    [:superusers {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
 
     [:tenant {:optional false} schema:tenant]
