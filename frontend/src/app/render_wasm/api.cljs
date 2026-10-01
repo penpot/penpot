@@ -2479,6 +2479,13 @@
                               :cause cause)
                    nil)))))
 
+;; Stable listener identities, so `removeEventListener` matches across hot reloads
+(defonce ^:private webgl-context-lost-listener
+  (fn [event] (on-webgl-context-lost event)))
+
+(defonce ^:private webgl-context-restored-listener
+  (fn [event] (on-webgl-context-restored event)))
+
 (defn init-canvas-context
   [canvas]
   (if-not (wasm/module-ready?)
@@ -2523,8 +2530,8 @@
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
           (when can-listen?
-            (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-            (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored))
+            (.addEventListener canvas "webglcontextlost" webgl-context-lost-listener)
+            (.addEventListener canvas "webglcontextrestored" webgl-context-restored-listener))
           (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)
@@ -2558,8 +2565,8 @@
 
      ;; Remove listener before losing/deleting context.
      (when wasm/canvas
-       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
-       (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
+       (.removeEventListener wasm/canvas "webglcontextlost" webgl-context-lost-listener)
+       (.removeEventListener wasm/canvas "webglcontextrestored" webgl-context-restored-listener))
      (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)

@@ -39,14 +39,15 @@ jobs:
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # START: Setup Node and PNPM enabling cache
       - name: Setup pnpm + Node.js
-        uses: pnpm/setup@v2
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
           working-directory: plugins
           runtime: node@24.21.0
@@ -59,7 +60,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
 
       - name: Cache pnpm store
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}

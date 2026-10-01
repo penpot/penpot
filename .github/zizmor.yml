@@ -12,26 +12,6 @@ rules:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Use `persist-credentials: false` in actions/checkout.
-  artipacked:
-    ignore:
-      - build-bundle.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-package.yml
-      - plugins-deploy-packages.yml
-      - plugins-deploy-styles-doc.yml
-      - release.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
   # Avoid restoring caches in release/publish workflows.
   cache-poisoning:
     ignore:
@@ -70,48 +50,13 @@ rules:
   github-app:
     ignore:
       - auto-label.yml
-  # Pass only the secrets each reusable workflow needs.
-  secrets-inherit:
-    ignore:
-      - build-adhoc.yml
-      - build-develop.yml
-      - build-staging.yml
-      - build-tag.yml
-      - build-tmp-tokens.yml
-      - plugins-deploy-packages.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
-  # Replace actions that duplicate built-in runner tools.
-  superfluous-actions:
-    ignore:
-      - release.yml
   # Pin container images to a digest.
   unpinned-images:
     ignore:
       - plugins-deploy-package.yml
-      - tests-backend.yml
-      - tests-common.yml
-      - tests-e2e.yml
-      - tests-exporter.yml
-      - tests-frontend.yml
-      - tests-library.yml
-      - tests-mcp.yml
-      - tests-plugins.yml
-      - tests-wasm.yml
-  # Pin actions to a full commit SHA.
-  unpinned-uses:
-    ignore:
-      - auto-label.yml
-      - build-bundle.yml
-      - build-docker-devenv.yml
-      - build-docker.yml
-      - commit-checker.yml
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-package.yml
-      - plugins-deploy-packages.yml
-      - plugins-deploy-styles-doc.yml
-      - release.yml
       - tests-backend.yml
       - tests-common.yml
       - tests-e2e.yml

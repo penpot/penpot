@@ -13,6 +13,21 @@ on:
         description: 'Tag to release'
         type: string
         required: true
+    secrets:
+      AWS_REGION:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      PUB_DOCKER_PASSWORD:
+        required: false
+      PUB_DOCKER_USERNAME:
+        required: false
 
 permissions:
   contents: write
@@ -32,14 +47,15 @@ jobs:
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
       # --- Publicly release the docker images ---
       - name: Configure ECR credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
           aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
@@ -94,14 +110,19 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # --- Create GitHub release ---
+      # Updates the release if it already exists, so re-running is safe.
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.vars.outputs.gh_ref }}
-          name: ${{ steps.vars.outputs.gh_ref }}
-          body: ${{ steps.extract_release_notes.outputs.release_notes }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.vars.outputs.gh_ref }}
+          NOTES: ${{ steps.extract_release_notes.outputs.release_notes }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes "$NOTES"
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes "$NOTES"
+          fi
 
       - name: Notify Mattermost
         if: failure()

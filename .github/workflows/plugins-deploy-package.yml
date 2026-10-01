@@ -27,6 +27,13 @@ on:
         description: 'Publig name (from plugins/apps/<plugin_name>-plugin)'
         type: string
         required: true
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
 
 permissions:
   contents: read
@@ -58,8 +65,9 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
 

@@ -47,6 +47,15 @@
 - Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
 - Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
+## 2.18.1
+
+### :bug: Bugs fixed
+
+- Fix workspace freezing with a stack overflow when opening the context menu on a shape that isn't on the current page [#11882](https://github.com/penpot/penpot/issues/11882) (PR: [#11891](https://github.com/penpot/penpot/pull/11891))
+- Fix workspace showing repeated error toasts when a third-party script injected into the page throws [#11813](https://github.com/penpot/penpot/issues/11813) (PR: [#11816](https://github.com/penpot/penpot/pull/11816))
+- Fix register flow from workspace URL not working [#11753](https://github.com/penpot/penpot/issues/11753) (PR: [#11756](https://github.com/penpot/penpot/pull/11756))
+- Fix empty response when exporting bin using API (by @filipsajdak) [#7649](https://github.com/penpot/penpot/issues/7649) (PR: [#10341](https://github.com/penpot/penpot/pull/10341))
+
 ## 2.18.0
 
 ### :rocket: Epics and highlights

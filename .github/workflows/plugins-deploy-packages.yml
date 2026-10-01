@@ -36,9 +36,11 @@ jobs:
       # [For new plugins]
       #   Add more outputs here
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
       - id: filter
-        uses: dorny/paths-filter@v4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: |
             colors_to_tokens:
@@ -72,7 +74,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.colors_to_tokens == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: colors-to-tokens
@@ -81,7 +86,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.contrast == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: contrast
@@ -90,7 +98,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.create_palette == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: create-palette
@@ -99,7 +110,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.icons == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: icons
@@ -108,7 +122,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.lorem_ipsum == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: lorem-ipsum
@@ -117,7 +134,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.rename_layers == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: rename-layers
@@ -126,7 +146,10 @@ jobs:
     needs: detect-changes
     if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.table == 'true'
     uses: ./.github/workflows/plugins-deploy-package.yml
-    secrets: inherit
+    secrets:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
     with:
       gh_ref: "${{ inputs.gh_ref || github.ref_name }}"
       plugin_name: table

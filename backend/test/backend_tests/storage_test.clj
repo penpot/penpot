@@ -9,12 +9,16 @@
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
+   [app.metrics :as mtx]
+   [app.metrics.definition :as-alias mdef]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.fs :as-alias sto.fs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as-alias sto.s3]
+   [app.storage.schema :as stsch]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -23,6 +27,11 @@
    [mockery.core :refer [with-mocks]]
    [promesa.core :as p])
   (:import
+   (io.prometheus.client
+    Counter
+    Counter$Child)
+   (org.postgresql.util
+    PGobject)
    (software.amazon.awssdk.services.s3
     S3AsyncClient)
    (software.amazon.awssdk.services.s3.model
@@ -41,23 +50,50 @@
   [storage]
   (assoc storage ::sto/backend :fs))
 
+(defn- poison-counter-value
+  "Read the process-wide gc-poison counter from the test system metrics."
+  []
+  (let [metrics   (:app.metrics/metrics th/*system*)
+        collector (mtx/get-collector metrics :storage-gc-poison)
+        instance  (::mdef/instance collector)]
+    (.get ^Counter$Child (.labels ^Counter instance (into-array String [])))))
+
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          :other "data"})]
+                                          :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (fs/path? (sto/get-object-path storage object)))
 
     (t/is (nil? (:expired-at object)))
     (t/is (= :fs (:backend object)))
-    (t/is (= "data" (:other (meta object))))
+    (t/is (= "file-media-object" (:bucket (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
     (t/is (= "content" (slurp (sto/get-object-path storage object))))))
+
+(t/deftest put-and-retrieve-with-json-metadata-flag
+  ;; End-to-end through the jsonb column: with the flag on, the row is
+  ;; stored as plain JSON and still decodes to native types.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          profile (uuid/random)
+          object  (sto/put-object! storage {::sto/content (sto/content "content")
+                                            :bucket "tempfile"
+                                            :content-type "application/zip"
+                                            :profile-id profile})
+          row     (th/db-exec-one! ["select metadata::text as metadata from storage_object where id = ?"
+                                    (:id object)])]
+      (t/is (not (str/includes? (:metadata row) "\"~:")))
+      (t/is (str/includes? (:metadata row) "\"bucket\""))
+      (let [loaded (sto/get-object storage (:id object))]
+        (t/is (= "tempfile" (:bucket (meta loaded))))
+        (t/is (= "application/zip" (:content-type (meta loaded))))
+        (t/is (= profile (:profile-id (meta loaded))))))))
 
 (t/deftest tempfile-objects-are-not-deduplicated
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -94,8 +130,7 @@
                     (configure-storage-backend))
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
-                                          :content-type "text/plain"
-                                          :expired-at (ct/in-future {:seconds 1})})]
+                                          :content-type "text/plain"})]
     (t/is (sto/object? object))
     (t/is (true? (sto/del-object! storage (:id object))))
 
@@ -108,6 +143,18 @@
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
     (t/is (nil? (sto/get-object storage (:id object))))))
+
+(t/deftest delete-expired-object-returns-false
+  ;; An object stored with `::sto/expired-at` is born with `deleted_at`
+  ;; set, so deleting it is a no-op and must report `false`.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          :content-type "text/plain"
+                                          ::sto/expired-at (ct/in-future {:hours 1})})]
+    (t/is (some? (:expired-at object)))
+    (t/is (false? (sto/del-object! storage (:id object))))))
 
 (t/deftest deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -438,6 +485,146 @@
     (let [row (th/db-exec-one! ["select deleted_at from storage_object where id = ?" (:id object1)])]
       (t/is (ct/is-before-or-equal? (:deleted-at row) (ct/plus now {:seconds 1}))))))
 
+(t/deftest storage-gc-touched-null-metadata
+  ;; A NULL metadata column (predates any normalization) flows through
+  ;; the lookup fallback with a warning instead of breaking the GC loop.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (sto/content "content")
+        object  (sto/put-object! storage {::sto/content content
+                                          ::sto/touch true
+                                          :content-type "text/plain"})]
+    (th/db-exec! ["update storage_object set metadata = null where id = ?" (:id object)])
+    (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 1 (:delete res))))))
+
+(t/deftest storage-gc-touched-defers-corrupt-metadata
+  ;; A non-map metadata row neither blocks the chunk nor gets
+  ;; collected: it is logged and deferred exactly one day, keeping its
+  ;; metadata intact for a later repair.
+  (let [now     (ct/now)
+        before  (poison-counter-value)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poison  (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (let [row (th/db-exec-one! ["select metadata::text as metadata, touched_at from storage_object where id = ?" poison])]
+      (t/is (= "[]" (:metadata row)))
+      ;; inst-ms: timestamptz keeps micros, the frozen clock has nanos.
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))
+    ;; One poison row observed, one increment.
+    (t/is (= (inc before) (poison-counter-value)))))
+
+(t/deftest storage-gc-touched-poison-only
+  ;; A chunk made only of poison rows still terminates: the rows are
+  ;; deferred, the next scan returns nothing, and no delete is counted.
+  (let [now    (ct/now)
+        poison (uuid/random)]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                  poison now])
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 0 (:delete res)))))
+    (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" poison])]
+      (t/is (= (inst-ms (ct/plus now {:days 1}))
+               (inst-ms (:touched-at row)))))))
+
+(t/deftest storage-gc-touched-drains-past-a-poison-only-batch
+  ;; A full batch of poison rows must not stop the run: they are deferred
+  ;; and the loop keeps draining, so a healthy row queued behind the
+  ;; LIMIT (later touched_at) still gets collected.
+  (let [now     (ct/now)
+        storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        earlier (ct/minus now {:seconds 1})
+        healthy (sto/put-object! storage {::sto/content (sto/content "healthy")
+                                          ::sto/touched-at now
+                                          :content-type "text/plain"})
+        poisons (repeatedly 10 uuid/random)]
+    (doseq [id poisons]
+      (th/db-exec! ["insert into storage_object (id, backend, metadata, touched_at) values (?, 'fs', '[]'::jsonb, ?)"
+                    id earlier]))
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (let [res (th/run-task! :storage-gc-touched {:skip-delay true})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 1 (:delete res)))))
+    (doseq [id poisons]
+      (let [row (th/db-exec-one! ["select touched_at from storage_object where id = ?" id])]
+        (t/is (= (inst-ms (ct/plus now {:days 1}))
+                 (inst-ms (:touched-at row))))))))
+
+(def ^:private migration-0155-fixtures
+  ;; [id transit-metadata]: production-shaped legacy rows (nil payload
+  ;; means a NULL column).
+  [["11111111-1111-1111-1111-111111111111"
+    "{\"~:reference\":\"~:file-media-object\",\"~:content-type\":\"image/png\",\"~:hash\":\"blake2b:aaa\"}"]
+   ["22222222-2222-2222-2222-222222222222"
+    "{\"~:content-type\":\"image/svg+xml\"}"]
+   ["33333333-3333-3333-3333-333333333333"
+    "{\"~:bucket\":\"tempfile\",\"~:reference\":\"~:tempfile\",\"~:content-type\":\"application/zip\"}"]
+   ["44444444-4444-4444-4444-444444444444"
+    "{\"~:bucket\":\"tempfile\",\"~:content-type\":\"application/zip\",\"~:upload-id\":\"~u86907e95-1cb8-8122-8008-4eb7ba07d89d\",\"~:chunk-index\":3}"]
+   ["55555555-5555-5555-5555-555555555555"
+    nil]])
+
+(defn- run-migration-0155!
+  ;; Re-runs the 0155 statements (not migratus: it already applied at
+  ;; bootstrap) over the fixture rows above.
+  []
+  (let [sql (-> (io/resource "app/migrations/sql/0155-normalize-storage-object-metadata.sql")
+                (slurp))
+        no-comments (->> (.split ^String sql "\n")
+                         (remove #(.startsWith ^String (str/trim %) "--"))
+                         (str/join "\n"))]
+    (doseq [stmt (->> (.split ^String no-comments ";")
+                      (map str/trim)
+                      (remove str/blank?))]
+      (th/db-exec! [stmt]))))
+
+(defn- get-metadata-by-id
+  [id]
+  (:metadata (th/db-exec-one! ["select metadata from storage_object where id = ?"
+                               (parse-uuid id)])))
+
+(t/deftest storage-migration-0155-normalizes-legacy-rows
+  (doseq [[id mdata] migration-0155-fixtures]
+    (th/db-exec! ["insert into storage_object (id, backend, metadata) values (?, 'fs', ?::jsonb)"
+                  (parse-uuid id) mdata]))
+  (run-migration-0155!)
+  (let [mdata (fn [id] (stsch/decode-metadata (get-metadata-by-id id)))]
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/png"
+              :hash "blake2b:aaa"}
+             (mdata "11111111-1111-1111-1111-111111111111")))
+    (t/is (= {:bucket "file-media-object"
+              :content-type "image/svg+xml"}
+             (mdata "22222222-2222-2222-2222-222222222222")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "33333333-3333-3333-3333-333333333333")))
+    (t/is (= {:bucket "tempfile"
+              :content-type "application/zip"}
+             (mdata "44444444-4444-4444-4444-444444444444")))
+    (t/is (= {:bucket "file-media-object"}
+             (mdata "55555555-5555-5555-5555-555555555555"))))
+  ;; second run changes nothing (idempotent)
+  (let [raw    (fn [] (mapv #(.getValue ^PGobject (get-metadata-by-id %))
+                            (map first migration-0155-fixtures)))
+        before (raw)]
+    (run-migration-0155!)
+    (t/is (= before (raw)))))
+
 (t/deftest storage-gc-deleted-immediate
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -622,6 +809,43 @@
                                           ::sto/deduplicate? true
                                           :bucket "file-media-object"
                                           :content-type "text/plain"})]
+    (t/is (= (:id object1) (:id object2)))
+    (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+      (t/is (= 1 (:count row))))))
+
+(t/deftest dedup-reuses-json-encoded-blob
+  ;; With the JSON flag on, the dedup lookup must find the row it just
+  ;; wrote; a "~:"-only lookup used to miss it and duplicate the blob.
+  (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+    (let [storage (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+          content (-> (sto/content "json-content")
+                      (sto/wrap-with-hash "json-hash"))
+          params  {::sto/content content
+                   ::sto/deduplicate? true
+                   :bucket "file-media-object"
+                   :content-type "text/plain"}
+          object1 (sto/put-object! storage params)
+          object2 (sto/put-object! storage params)]
+      (t/is (= (:id object1) (:id object2)))
+      (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
+        (t/is (= 1 (:count row)))))))
+
+(t/deftest dedup-json-put-finds-transit-row
+  ;; Both encodings coexist during the transition: a JSON write must
+  ;; reuse a blob already stored as Transit.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "mixed-content")
+                    (sto/wrap-with-hash "mixed-hash"))
+        params  {::sto/content content
+                 ::sto/deduplicate? true
+                 :bucket "file-media-object"
+                 :content-type "text/plain"}
+        object1 (binding [cf/config (assoc cf/config :storage-metadata-as-json nil)]
+                  (sto/put-object! storage params))
+        object2 (binding [cf/config (assoc cf/config :storage-metadata-as-json true)]
+                  (sto/put-object! storage params))]
     (t/is (= (:id object1) (:id object2)))
     (let [row (th/db-exec-one! ["select count(*) from storage_object"])]
       (t/is (= 1 (:count row))))))

@@ -20,6 +20,7 @@
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
+   [app.storage.schema :as stsch]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig])
@@ -37,28 +38,18 @@
       nil)))
 
 (def default-bucket
-  "file-media-object")
+  stsch/default-bucket)
 
 (def tempfile-bucket
   "Bucket name for temporary file uploads (10-minute expiry)."
-  "tempfile")
+  stsch/tempfile-bucket)
 
 (def upload-session-bucket
   "Bucket name for chunked-upload chunks."
-  "upload-session")
+  stsch/upload-session-bucket)
 
 (def valid-buckets
-  #{"file-media-object"
-    "team-font-variant"
-    "file-object-thumbnail"
-    "file-thumbnail"
-    "profile"
-    "organization"
-    tempfile-bucket
-    upload-session-bucket
-    "file-data"
-    "file-data-fragment"
-    "file-change"})
+  stsch/metadata-buckets)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -118,18 +109,37 @@
              params
              params))
 
+;; Matches both metadata encodings while Transit rows still exist. The
+;; UNION ALL keeps each branch indexable: migration 0068 covers the legacy
+;; "~:" keys and 0156 covers the plain JSON keys. Phase 3 drops the legacy
+;; branch once no "~:" rows remain.
+(def ^:private sql:get-database-object-by-hash
+  "(
+     select * from storage_object
+      where (metadata->>'~:hash') = ?
+        and (metadata->>'~:bucket') = ?
+        and backend = ?
+        and deleted_at is null
+        and status = 'valid'
+      limit 1
+   ) union all (
+     select * from storage_object
+      where (metadata->>'hash') = ?
+        and (metadata->>'bucket') = ?
+        and backend = ?
+        and deleted_at is null
+        and status = 'valid'
+      limit 1
+   ) limit 1")
+
+;; NOTE: metadata is left encoded; row->storage-object is responsible for
+;; decoding it.
 (defn- get-database-object-by-hash
   [connectable backend bucket hash]
-  (let [sql (str "select * from storage_object "
-                 " where (metadata->>'~:hash') = ? "
-                 "   and (metadata->>'~:bucket') = ? "
-                 "   and backend = ?"
-                 "   and deleted_at is null"
-                 "   and status = 'valid'"
-                 " limit 1")]
-    ;; NOTE: metadata is left encoded; row->storage-object is
-    ;; responsible for decoding it.
-    (db/exec-one! connectable [sql hash bucket (name backend)])))
+  (let [backend (name backend)]
+    (db/exec-one! connectable [sql:get-database-object-by-hash
+                               hash bucket backend
+                               hash bucket backend])))
 
 (defn- promote-object!
   [storage object]
@@ -147,7 +157,7 @@
     res))
 
 (defn row->storage-object [res]
-  (let [mdata (or (some-> (:metadata res) (db/decode-transit-pgobject)) {})]
+  (let [mdata (or (some-> (:metadata res) (stsch/decode-metadata)) {})]
     (impl/storage-object
      (:id res)
      (:size res)
@@ -289,7 +299,7 @@
                                {:id id
                                 :size (impl/get-size content)
                                 :backend (name backend)
-                                :metadata (db/tjson mdata)
+                                :metadata (stsch/encode-metadata mdata)
                                 :deleted-at expired-at
                                 :touched-at touched-at
                                 :status "pending"})

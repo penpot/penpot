@@ -1,0 +1,16 @@
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+updates:
+  # Actions are pinned to a commit SHA with a `# vX.Y.Z` comment; Dependabot
+  # bumps both. All updates are grouped into a single monthly PR.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ":arrow_up:"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

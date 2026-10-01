@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Commit Type
-        uses: gsactions/commit-message-checker@v2
+        uses: gsactions/commit-message-checker@16fa2d5de096ae0d35626443bcd24f1e756cafee # v2.0.0
         with:
           pattern: '^(((:(lipstick|globe_with_meridians|wrench|books|arrow_up|arrow_down|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle|rewind|construction_worker):)\s[A-Z].*[^.])|(Merge|Revert|Reapply).+[^.])$'
           flags: 'gm'
