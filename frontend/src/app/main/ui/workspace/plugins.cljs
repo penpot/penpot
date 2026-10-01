@@ -56,7 +56,7 @@
           icon))
 
 (mf/defc plugin-entry*
-  [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
+  [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin remove-disabled]}]
 
   (let [{:keys [plugin-id host icon name description permissions]} manifest
         plugins-permissions-peek (deref refs/plugins-permissions-peek)
@@ -86,8 +86,8 @@
                     (icon-url host icon)
                     (avatars/generate {:name name}))}]]
      [:div {:class (stl/css :plugin-description)}
-      [:div {:class (stl/css :plugin-title)} name]
-      [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
+      [:div {:class (stl/css :plugin-title) :title name} name]
+      [:div {:class (stl/css :plugin-summary) :title description} (d/nilv description "")]]
 
 
      [:> button* {:class (stl/css :open-button)
@@ -100,6 +100,7 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.plugins.remove-plugin")
                        :on-click handle-delete-click
+                       :disabled remove-disabled
                        :icon i/delete}]]))
 
 (mf/defc plugin-management-dialog
@@ -125,6 +126,10 @@
 
         fetching-manifest?
         (mf/use-state false)
+
+        ;; Ids with a persist in flight; their remove button is disabled
+        in-flight*
+        (mf/use-state #{})
 
         on-url-change
         (mf/use-fn
@@ -174,13 +179,35 @@
          (mf/deps plugins-state)
          (fn [plugin-index]
            (let [plugins-list (preg/plugins-list)
-                 plugin (nth plugins-list plugin-index)]
-             (st/emit! (ev/event {::ev/name "remove-plugin"
-                                  :name (:name plugin)
-                                  :host (:host plugin)}))
-             (dp/close-plugin! plugin)
-             (preg/remove-plugin! plugin)
-             (reset! plugins-state* (preg/plugins-list)))))]
+                 plugin       (nth plugins-list plugin-index)
+                 plugin-name  (:name plugin)
+                 ;; Truncated so long names fit the confirm dialog
+                 plugin-name  (if (> (count plugin-name) 60)
+                                (str (subs plugin-name 0 60) "…")
+                                plugin-name)]
+             (modal/show!
+              {:type :confirm
+               :title (tr "workspace.plugins.remove-confirmation.title")
+               :message (tr "workspace.plugins.remove-confirmation.message" plugin-name)
+               :accept-label (tr "workspace.plugins.remove-plugin")
+               :on-accept (fn [_]
+                            (st/emit! (ev/event {::ev/name "remove-plugin"
+                                                 :name (:name plugin)
+                                                 :host (:host plugin)}))
+                            (dp/close-plugin! plugin)
+                            (preg/remove-plugin! plugin)
+                            (modal/show! :plugin-management {}))
+               :on-cancel (fn [_]
+                            (modal/show! :plugin-management {}))}))))]
+
+    (mf/with-effect []
+      (let [listener (preg/subscribe-in-flight! #(reset! in-flight* %))]
+        (partial preg/unsubscribe-in-flight! listener)))
+
+    ;; Re-reads the list on every registry change, including rollbacks
+    (mf/with-effect []
+      (let [listener (preg/subscribe-registry! #(reset! plugins-state* (preg/plugins-list)))]
+        (partial preg/unsubscribe-registry! listener)))
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}
@@ -236,6 +263,7 @@
                                 :index idx
                                 :manifest manifest
                                 :user-can-edit user-can-edit?
+                                :remove-disabled (contains? @in-flight* (:plugin-id manifest))
                                 :on-open-plugin on-open-plugin
                                 :on-remove-plugin on-remove-plugin}])]])]]]))
 

@@ -94,6 +94,9 @@ set -e
 #   instance-compose        wrap 'docker compose' for one instance's main
 #                           project, injecting that instance's overrides
 #   instance-env-overrides  the per-instance KEY=VALUE overrides
+#   instance-test-db-name   test database name for one instance
+#   instance-test-redis-db  Valkey DB number for one instance's tests
+#   ensure-instance-test-database  create one instance's test database
 #   devenv-main-container   resolve the 'main' container id via compose ps
 #   devenv-main-running     true if 'main' is up
 #
@@ -301,6 +304,43 @@ function ensure-infra-up {
     infra-compose up -d --wait --wait-timeout 60 --remove-orphans
 }
 
+# Create the backend-test database for <instance> on the shared Postgres
+# if it does not exist yet. Idempotent: safe to run on every bring-up.
+# Needed because postgresql_init.sql only runs when the Postgres volume is
+# created for the first time, so per-instance test databases (which did not
+# exist back then) would otherwise never be created on existing volumes.
+# The backend applies migrations itself on first use, so an empty database
+# is enough here. (Two plain SQL round-trips on purpose: psql -c does not
+# reliably mix SQL with psql-only commands like \gexec.)
+function ensure-instance-test-database {
+    local instance="$1"
+    local dbname
+    dbname=$(instance-test-db-name "$instance")
+
+    local pg_container
+    pg_container=$(infra-compose ps -q postgres 2>/dev/null)
+    if [[ -z "$pg_container" ]]; then
+        echo "[${instance}] postgres container not found; is shared infra up?" >&2
+        return 1
+    fi
+
+    local -a psql_base=(docker exec
+        -e "PGPASSWORD=${PENPOT_DATABASE_PASSWORD:-penpot}"
+        "$pg_container"
+        psql -h 127.0.0.1 -U "${PENPOT_DATABASE_USERNAME:-penpot}"
+        -d postgres -v ON_ERROR_STOP=1 -tA)
+
+    local exists
+    exists=$("${psql_base[@]}" -c "SELECT 1 FROM pg_database WHERE datname = '${dbname}'")
+    if [[ "$exists" == "1" ]]; then
+        echo "[${instance}] test database ${dbname} already exists."
+        return 0
+    fi
+
+    echo "[${instance}] creating test database ${dbname} ..."
+    "${psql_base[@]}" -c "CREATE DATABASE \"${dbname}\""
+}
+
 # Refuse to sync workspaces if the live repo is in a fragile Git state.
 # Copying a partial rebase/merge/cherry-pick into all workspaces would leave
 # every instance in the same broken state.
@@ -333,6 +373,33 @@ function instance-port {
     echo $(( base + n * PENPOT_INSTANCE_PORT_STRIDE ))
 }
 
+# Echo the backend-test database name for <instance>. ws0 keeps the
+# historical name so existing flows stay untouched; ws1+ get an isolated
+# database each on the shared Postgres server. The main database stays
+# shared by all instances on purpose.
+function instance-test-db-name {
+    local instance="$1"
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    if (( n == 0 )); then
+        echo "penpot_test"
+    else
+        echo "penpot_test_ws${n}"
+    fi
+}
+
+# Echo the Valkey DB number reserved for the backend tests of <instance>.
+# Runtime backends already occupy 0..PENPOT_MAX_WS_INDEX on the shared
+# Valkey, so test DBs start right after to never share a DB with a
+# running backend. (Resolved at call time; PENPOT_MAX_WS_INDEX is defined
+# further below but always set before any call.)
+function instance-test-redis-db {
+    local instance="$1"
+    local n=0
+    [[ "$instance" =~ ^ws([0-9]+)$ ]] && n="${BASH_REMATCH[1]}"
+    echo $(( PENPOT_MAX_WS_INDEX + 1 + n ))
+}
+
 # Echo the per-instance Compose variable overrides for a workspace, one
 # KEY=VALUE per line, for instance-compose to inject into its `env -i` line.
 # Compose gives shell-env precedence over --env-file, so these override the
@@ -358,11 +425,15 @@ function instance-env-overrides {
     opencode=$(instance-port "$instance" "$PENPOT_PORT_BASE_OPENCODE")
     mdts=$(instance-port "$instance" "$PENPOT_PORT_BASE_MDTS")
     storybook=$(instance-port "$instance" "$PENPOT_PORT_BASE_STORYBOOK")
+    test_db=$(instance-test-db-name "$instance")
+    test_redis_db=$(instance-test-redis-db "$instance")
     printf '%s\n' \
         "PENPOT_MAIN_CONTAINER_NAME=penpot-devenv-${instance}-main" \
         "PENPOT_USER_DATA_VOLUME=penpotdev_${instance}_user_data" \
         "PENPOT_PUBLIC_URI=https://localhost:${public_https}" \
         "PENPOT_REDIS_URI=redis://valkey/${n}" \
+        "PENPOT_TEST_DATABASE_URI=postgresql://postgres/${test_db}" \
+        "PENPOT_TEST_REDIS_URI=redis://valkey/${test_redis_db}" \
         "PENPOT_PUBLIC_HTTPS_PORT=${public_https}" \
         "PENPOT_PUBLIC_HTTP_PORT=${public}" \
         "PENPOT_MCP_SERVER_PORT=${mcp}" \
@@ -708,6 +779,8 @@ function start-instance {
     local git_user_name="${3:-}"
     local git_user_email="${4:-}"
     local agentic="${5:-true}"
+
+    ensure-instance-test-database "$instance"
 
     instance-compose "$instance" up -d main
 

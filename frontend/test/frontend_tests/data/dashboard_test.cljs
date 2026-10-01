@@ -9,10 +9,13 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
+   [app.main.data.dashboard :as dd]
+   [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -82,3 +85,48 @@
                 (fn []
                   (done')))))
         done))))
+
+(defn- sent-messages
+  "Runs the watch of `event` against `stream` with `dws/send` stubbed
+  and resolves to the messages it sends over the websocket."
+  [event state stream]
+  (let [sent (atom [])]
+    (-> (mock/with-mocks*
+          {dws/send (mock/stub (fn [msg] (swap! sent conj msg) msg))}
+          (await (async/observe (ptk/watch event state stream))))
+        (.then (fn [_] @sent)))))
+
+(t/deftest ^:async dashboard-initialize-subscribes-to-team
+  (let [team-id (uuid/next)
+        state   {:profile-id (uuid/next)
+                 :teams {team-id {:id team-id :organization {:id (uuid/next)}}}}
+        sent    (await (sent-messages (dd/initialize team-id) state (rx/empty)))]
+    (t/is (= [{:type :subscribe-team :team-id team-id}] sent))))
+
+(t/deftest ^:async dashboard-initialize-resubscribes-on-reconnect
+  (let [team-id (uuid/next)
+        state   {:profile-id (uuid/next)
+                 :teams {team-id {:id team-id}}}
+        stream  (rx/of (ptk/data-event ::dws/opened {})
+                       (ptk/data-event ::dws/opened {}))
+        sent    (await (sent-messages (dd/initialize team-id) state stream))]
+    (t/is (= 3 (count sent)))
+    (t/is (every? #(= {:type :subscribe-team :team-id team-id} %) sent))))
+
+(t/deftest ^:async dashboard-initialize-accepts-team-organization-messages
+  (let [team-id   (uuid/next)
+        org-id    (uuid/next)
+        state     {:profile-id (uuid/next)
+                   :teams {team-id {:id team-id :organization {:id org-id}}}}
+        message   (fn [topic]
+                    (ptk/data-event ::dws/message
+                                    {:type :organization-change-sso
+                                     :topic topic
+                                     :organization-id org-id}))
+        stream    (rx/of (message org-id) (message (uuid/next)))
+        processed (atom [])]
+    (await (mock/with-mocks*
+             {dws/send (mock/stub identity)}
+             (await (async/observe (ptk/watch (dd/initialize team-id) state stream)
+                                   :on-next #(swap! processed conj (ptk/type %))))))
+    (t/is (= 1 (count (filter #{::dcm/handle-organization-change-sso} @processed))))))

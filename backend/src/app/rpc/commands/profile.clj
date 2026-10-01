@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -36,6 +37,7 @@
    [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
+(declare check-props-size)
 (declare decode-row)
 (declare filter-props)
 (declare get-profile)
@@ -283,7 +285,8 @@
 
         props
         (-> (get profile :props)
-            (assoc :notifications notifications))]
+            (assoc :notifications notifications)
+            (check-props-size))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -474,18 +477,46 @@
   [:map {:title "update-profile-props"}
    [:props schema:props-writeable]])
 
+(def default-props-max-size
+  "Default total serialized size limit (in bytes) for profile props.
+  Overridable with the :profile-props-max-size config entry."
+  (* 1024 1024 2)) ;; 2 MiB
+
+(defn- props-size
+  "Returns the serialized size in UTF-8 bytes of the props map."
+  [props]
+  (if props
+    (alength ^bytes (t/encode props {:type :json-verbose}))
+    0))
+
+(defn check-props-size
+  "Raises :props-too-large when props exceed the total size limit.
+  Returns props unchanged so it can be threaded into the write.
+
+  Used by the user-facing props writers; system writers (OIDC login,
+  management subscription) write fixed-key props and skip it."
+  [props]
+  (let [limit (cf/get :profile-props-max-size default-props-max-size)
+        size  (props-size props)]
+    (when (> size limit)
+      (ex/raise :type :validation
+                :code :props-too-large
+                :hint "profile props exceed maximum size"))
+    props))
+
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
   (let [profile (get-profile conn profile-id ::db/for-update true)
-        props   (reduce-kv (fn [props k v]
-                             ;; We don't accept namespaced keys
-                             (if (simple-ident? k)
-                               (if (nil? v)
-                                 (dissoc props k)
-                                 (assoc props k v))
-                               props))
-                           (:props profile)
-                           (apply dissoc props system-managed-props))]
+        props   (->> (apply dissoc props system-managed-props)
+                     (reduce-kv (fn [props k v]
+                                  ;; We don't accept namespaced keys
+                                  (if (simple-ident? k)
+                                    (if (nil? v)
+                                      (dissoc props k)
+                                      (assoc props k v))
+                                    props))
+                                (:props profile))
+                     (check-props-size))]
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
@@ -658,8 +689,41 @@
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
+(defn- truncate-string
+  "Cuts s to at most n chars without splitting a surrogate pair."
+  [^String s n]
+  (if (> (count s) n)
+    (let [n (if (Character/isHighSurrogate (.charAt s (dec n))) (dec n) n)]
+      (subs s 0 n))
+    s))
+
+(defn- clamp-plugin-entry
+  [entry]
+  (reduce-kv (fn [entry k n]
+               (let [v (get entry k)]
+                 (if (and (string? v) (> (count v) n))
+                   (assoc entry k (truncate-string v n))
+                   entry)))
+             entry
+             ctp/registry-entry-max-lengths))
+
+(defn clamp-plugins-registry
+  "Fits a plugin registry into the registry schema caps: keeps the
+  first `ctp/max-plugins` plugins with data and truncates the bounded
+  strings. Applied on read, so a stored registry over the caps cannot
+  keep the profile over the props size limit."
+  [{:keys [ids data] :as plugins}]
+  (let [ids  (->> ids
+                  (filter #(contains? data %))
+                  (distinct)
+                  (take ctp/max-plugins)
+                  (vec))
+        data (update-vals (select-keys data ids) clamp-plugin-entry)]
+    (assoc plugins :ids ids :data data)))
+
 (defn decode-row
   [{:keys [props] :as row}]
   (cond-> row
     (db/pgobject? props "jsonb")
-    (assoc :props (db/decode-transit-pgobject props))))
+    (assoc :props (-> (db/decode-transit-pgobject props)
+                      (d/update-when :plugins #(cond-> % (map? %) (clamp-plugins-registry)))))))

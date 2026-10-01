@@ -21,7 +21,6 @@
    [frontend-tests.data.svg-upload-test]
    [frontend-tests.data.uploads-test]
    [frontend-tests.data.viewer-test]
-   [frontend-tests.data.wasm-text-test]
    [frontend-tests.data.workspace-colors-test]
    [frontend-tests.data.workspace-comments-test]
    [frontend-tests.data.workspace-context-menu-test]
@@ -72,6 +71,7 @@
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
+   [frontend-tests.plugins.register-test]
    [frontend-tests.plugins.shape-bugfixes-test]
    [frontend-tests.plugins.text-test]
    [frontend-tests.plugins.tokens-test]
@@ -156,7 +156,6 @@
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
    'frontend-tests.data.viewer-test
-   'frontend-tests.data.wasm-text-test
    'frontend-tests.data.workspace-colors-test
    'frontend-tests.data.workspace-comments-test
    'frontend-tests.data.workspace-context-menu-test
@@ -207,6 +206,7 @@
    'frontend-tests.plugins.page-active-validation-test
    'frontend-tests.plugins.page-test
    'frontend-tests.plugins.parser-test
+   'frontend-tests.plugins.register-test
    'frontend-tests.plugins.shape-bugfixes-test
    'frontend-tests.plugins.text-test
    'frontend-tests.plugins.tokens-test

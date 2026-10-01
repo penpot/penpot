@@ -60,6 +60,13 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+;; Fallback values used when no PENPOT_TEST_* env vars are set (e.g. CI sets
+;; them explicitly, see .github/workflows/tests-backend.yml). Inside the
+;; devenv each wsN container receives per-instance values via
+;; manage.sh (PENPOT_TEST_DATABASE_URI=postgresql://postgres/penpot_test_wsN,
+;; PENPOT_TEST_REDIS_URI=redis://valkey/<6+N>), so parallel test runs on
+;; different workspaces never share a database. cf/read-config picks the env
+;; vars up through the "penpot-test" prefix.
 (def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://valkey/1"

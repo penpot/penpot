@@ -1438,11 +1438,11 @@ msgstr "Attention"
 msgid "ds.component-subtitle"
 msgstr "Components to update:"
 
-#: src/app/main/ui/workspace/plugins.cljs:379, src/app/main/ui/workspace/plugins.cljs:442
+#: src/app/main/ui/workspace/plugins.cljs:407, src/app/main/ui/workspace/plugins.cljs:470
 msgid "ds.confirm-allow"
 msgstr "Allow"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:401, src/app/main/ui/workspace/plugins.cljs:464
 msgid "ds.confirm-cancel"
 msgstr "Cancel"
 
@@ -1524,7 +1524,7 @@ msgstr ""
 "Clipboard access denied. Please allow clipboard permissions in your browser "
 "to paste content"
 
-#: src/app/main/errors.cljs:773
+#: src/app/main/errors.cljs:782
 msgid "errors.comment-error"
 msgstr "There was an error with the comment"
 
@@ -1532,21 +1532,21 @@ msgstr "There was an error with the comment"
 msgid "errors.connection-error"
 msgstr "Cannot reach the server. Check your connection and try again."
 
-#: src/app/main/errors.cljs:842
+#: src/app/main/errors.cljs:851
 msgid "errors.deprecated"
 msgstr ""
 "Sorry! This is an old file that uses a deprecated type of Penpot assets and "
 "you can't open it."
 
-#: src/app/main/errors.cljs:845
+#: src/app/main/errors.cljs:854
 msgid "errors.deprecated.contact.after"
 msgstr "so we can help you."
 
-#: src/app/main/errors.cljs:843
+#: src/app/main/errors.cljs:852
 msgid "errors.deprecated.contact.before"
 msgstr "Although Penpot no longer support this type of Assets, you can"
 
-#: src/app/main/errors.cljs:844
+#: src/app/main/errors.cljs:853
 msgid "errors.deprecated.contact.text"
 msgstr "contact us"
 
@@ -1582,13 +1582,13 @@ msgstr "The email «%s» has many permanent bounce reports."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "The email «%s» has been reported as spam or permanently bounce."
 
-#: src/app/main/errors.cljs:819
+#: src/app/main/errors.cljs:828
 msgid "errors.feature-mismatch"
 msgstr ""
 "Looks like you are opening a file that has the feature '%s' enabled but the "
 "current penpot version does not supports it or has it disabled."
 
-#: src/app/main/errors.cljs:823, src/app/main/errors.cljs:837
+#: src/app/main/errors.cljs:832, src/app/main/errors.cljs:846
 msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
@@ -1608,7 +1608,7 @@ msgstr "Empty field"
 msgid "errors.field-not-all-whitespace"
 msgstr "The name must contain some character other than space."
 
-#: src/app/main/errors.cljs:815
+#: src/app/main/errors.cljs:824
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "It seems that there is a mismatch between the enabled features and the "
@@ -1621,11 +1621,11 @@ msgstr ""
 "The font family name can only contain letters, numbers, spaces, hyphens, "
 "underscores, and dots."
 
-#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:158, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
+#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
 msgstr "Something wrong has happened."
 
-#: src/app/main/errors.cljs:752
+#: src/app/main/errors.cljs:761
 msgid "errors.internal-worker-error"
 msgstr "Something wrong has happened with the web worker."
 
@@ -1675,7 +1675,7 @@ msgstr "This invite might be canceled or may be expired."
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
 
-#: src/app/main/errors.cljs:831, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1123, src/app/main/ui/onboarding/team_choice.cljs:117
+#: src/app/main/errors.cljs:840, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1123, src/app/main/ui/onboarding/team_choice.cljs:117
 msgid "errors.max-quota-reached"
 msgstr "You have reached the '%s' quota. Contact support."
 
@@ -1701,7 +1701,7 @@ msgstr "Seems that this is not a valid image."
 msgid "errors.member-is-muted"
 msgstr "The profile you inviting has emails muted (spam reports or high bounces)."
 
-#: src/app/main/errors.cljs:805
+#: src/app/main/errors.cljs:814
 msgid "errors.migration-in-progress"
 msgstr "Migration in progress"
 
@@ -1745,6 +1745,12 @@ msgstr "The profile is blocked"
 msgid "errors.profile-is-muted"
 msgstr "Your profile has emails muted (spam reports or high bounces)."
 
+#: src/app/main/errors.cljs:724
+msgid "errors.profile-props-too-large"
+msgstr ""
+"Your profile settings are too large to save. Remove some plugins and try "
+"again."
+
 #: src/app/main/data/auth.cljs:340, src/app/main/ui/auth/register.cljs:96
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
@@ -1759,11 +1765,11 @@ msgstr ""
 msgid "errors.save-retrying"
 msgstr "Connection lost. Retrying to save your changes."
 
-#: src/app/main/errors.cljs:764
+#: src/app/main/errors.cljs:773
 msgid "errors.svg-parser.invalid-svg"
 msgstr "SVG is invalid or malformed"
 
-#: src/app/main/errors.cljs:810
+#: src/app/main/errors.cljs:819
 msgid "errors.team-feature-mismatch"
 msgstr "Detected incompatible feature '%s'"
 
@@ -1936,7 +1942,7 @@ msgstr "An unexpected error occurred."
 msgid "errors.unexpected-token"
 msgstr "Unknown token"
 
-#: src/app/main/errors.cljs:723
+#: src/app/main/errors.cljs:732
 msgid "errors.version-already-locked"
 msgstr "This version is already locked"
 
@@ -1944,7 +1950,7 @@ msgstr "This version is already locked"
 msgid "errors.version-locked"
 msgstr "This version is locked and cannot be deleted by others"
 
-#: src/app/main/errors.cljs:827
+#: src/app/main/errors.cljs:836
 msgid "errors.version-not-supported"
 msgstr "File has an incompatible version number"
 
@@ -8099,16 +8105,16 @@ msgstr "Snap nodes (%s)"
 msgid "workspace.plugins.button-open"
 msgstr "Open"
 
-#: src/app/main/ui/workspace/plugins.cljs:215
+#: src/app/main/ui/workspace/plugins.cljs:242
 #, markdown
 msgid "workspace.plugins.discover"
 msgstr "Discover [more plugins](%s)"
 
-#: src/app/main/ui/workspace/plugins.cljs:222
+#: src/app/main/ui/workspace/plugins.cljs:249
 msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
-#: src/app/main/ui/workspace/plugins.cljs:209
+#: src/app/main/ui/workspace/plugins.cljs:236
 msgid "workspace.plugins.error.manifest"
 msgstr "The plugin manifest is incorrect."
 
@@ -8120,15 +8126,15 @@ msgstr "You need to be an editor to use this plugin"
 msgid "workspace.plugins.error.unreachable"
 msgstr "The plugin URL could not be reached."
 
-#: src/app/main/ui/workspace/plugins.cljs:205
+#: src/app/main/ui/workspace/plugins.cljs:232
 msgid "workspace.plugins.error.url"
 msgstr "The plugin doesn't exist or the URL is not correct."
 
-#: src/app/main/ui/workspace/plugins.cljs:201
+#: src/app/main/ui/workspace/plugins.cljs:228
 msgid "workspace.plugins.install"
 msgstr "Install"
 
-#: src/app/main/ui/workspace/plugins.cljs:231
+#: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.installed-plugins"
 msgstr "Installed plugins"
 
@@ -8140,102 +8146,112 @@ msgstr "Plugins manager"
 msgid "workspace.plugins.menu.title"
 msgstr "Plugins"
 
-#: src/app/main/ui/workspace/plugins.cljs:424
+#: src/app/main/ui/workspace/plugins.cljs:452
 msgid "workspace.plugins.permissions-update.title"
 msgstr "UPDATE THIS PLUGIN"
 
-#: src/app/main/ui/workspace/plugins.cljs:428
+#: src/app/main/ui/workspace/plugins.cljs:456
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
 "The plugin has been modified since you last opened it. It now also wants to "
 "access:"
 
-#: src/app/main/ui/workspace/plugins.cljs:297
+#: src/app/main/ui/workspace/plugins.cljs:325
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Start file downloads."
 
-#: src/app/main/ui/workspace/plugins.cljs:304
+#: src/app/main/ui/workspace/plugins.cljs:332
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Store data in the browser."
 
-#: src/app/main/ui/workspace/plugins.cljs:317
+#: src/app/main/ui/workspace/plugins.cljs:345
 msgid "workspace.plugins.permissions.clipboard-read"
 msgstr "Read the contents of your clipboard."
 
-#: src/app/main/ui/workspace/plugins.cljs:311
+#: src/app/main/ui/workspace/plugins.cljs:339
 msgid "workspace.plugins.permissions.clipboard-write"
 msgstr "Read and write to your clipboard."
 
-#: src/app/main/ui/workspace/plugins.cljs:290
+#: src/app/main/ui/workspace/plugins.cljs:318
 msgid "workspace.plugins.permissions.comment-read"
 msgstr "Read your comments and replies."
 
-#: src/app/main/ui/workspace/plugins.cljs:284
+#: src/app/main/ui/workspace/plugins.cljs:312
 msgid "workspace.plugins.permissions.comment-write"
 msgstr "Read and modify your comments and reply in your name."
 
-#: src/app/main/ui/workspace/plugins.cljs:257
+#: src/app/main/ui/workspace/plugins.cljs:285
 msgid "workspace.plugins.permissions.content-read"
 msgstr "Read the content of files that users have access to."
 
-#: src/app/main/ui/workspace/plugins.cljs:251
+#: src/app/main/ui/workspace/plugins.cljs:279
 msgid "workspace.plugins.permissions.content-write"
 msgstr "Read and modify the content of files that users have access to."
 
-#: src/app/main/ui/workspace/plugins.cljs:366
+#: src/app/main/ui/workspace/plugins.cljs:394
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
 "Please note that this plugin is created by an external party, so ensure you "
 "trust it before granting access. Your data privacy and security are "
 "important to us. If you have any concerns, please contact support."
 
-#: src/app/main/ui/workspace/plugins.cljs:277
+#: src/app/main/ui/workspace/plugins.cljs:305
 msgid "workspace.plugins.permissions.library-read"
 msgstr "Read your libraries and assets."
 
-#: src/app/main/ui/workspace/plugins.cljs:271
+#: src/app/main/ui/workspace/plugins.cljs:299
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Read and modify your libraries and assets."
 
-#: src/app/main/ui/workspace/plugins.cljs:359
+#: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "'%s' PLUGIN WANTS ACCESS TO:"
 
-#: src/app/main/ui/workspace/plugins.cljs:264
+#: src/app/main/ui/workspace/plugins.cljs:292
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Read the profile information of the current user."
 
-#: src/app/main/ui/workspace/plugins.cljs:227
+#: src/app/main/ui/workspace/plugins.cljs:254
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Plugins List"
 
-#: src/app/main/ui/workspace/plugins.cljs:101
+#: src/app/main/ui/workspace/plugins.cljs:191
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr ""
+"Are you sure you want to remove the plugin %s? You can install it again at "
+"any time."
+
+#: src/app/main/ui/workspace/plugins.cljs:190
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "Remove plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:101, src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.remove-plugin"
 msgstr "Remove plugin"
 
-#: src/app/main/ui/workspace/plugins.cljs:195
+#: src/app/main/ui/workspace/plugins.cljs:222
 msgid "workspace.plugins.search-placeholder"
 msgstr "Write a plugin URL"
 
-#: src/app/main/ui/workspace/plugins.cljs:188
+#: src/app/main/ui/workspace/plugins.cljs:215
 msgid "workspace.plugins.title"
 msgstr "Plugins"
 
-#: src/app/main/ui/workspace/plugins.cljs:494
+#: src/app/main/ui/workspace/plugins.cljs:522
 msgid "workspace.plugins.try-out.cancel"
 msgstr "NOT NOW"
 
-#: src/app/main/ui/workspace/plugins.cljs:487
+#: src/app/main/ui/workspace/plugins.cljs:515
 msgid "workspace.plugins.try-out.message"
 msgstr ""
 "Want to take a look? It will open in a new draft for your current team. (If "
 "not, you can always find it in the installed plugins of any file.)"
 
-#: src/app/main/ui/workspace/plugins.cljs:483
+#: src/app/main/ui/workspace/plugins.cljs:511
 msgid "workspace.plugins.try-out.title"
 msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
 
-#: src/app/main/ui/workspace/plugins.cljs:500
+#: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "TRY PLUGIN"
 
