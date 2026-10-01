@@ -317,7 +317,7 @@
          (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                  changes
                  (rest new-shapes))
-         
+
          ids-to-validate (cond-> [(:id first-shape)]
                            grid-parent?
                            (conj (:parent-id first-shape)))
