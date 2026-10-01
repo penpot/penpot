@@ -12,11 +12,6 @@ rules:
       - plugins-deploy-api-doc.yml
       - plugins-deploy-package.yml
       - plugins-deploy-styles-doc.yml
-  # Avoid restoring caches in release/publish workflows.
-  cache-poisoning:
-    ignore:
-      - plugins-deploy-api-doc.yml
-      - plugins-deploy-styles-doc.yml
   # Review `pull_request_target` usage.
   dangerous-triggers:
     ignore:
