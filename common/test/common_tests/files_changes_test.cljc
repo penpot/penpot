@@ -1210,3 +1210,10 @@
 
     (t/is (seq (:redo-changes changes)))
     (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
+
+(t/deftest skip-validate-changes
+  (let [changes [{:type :mod-obj :id (uuid/next)}
+                 {:type :validate-shapes :page-id (uuid/next) :shape-ids []}
+                 {:type :del-obj :id (uuid/next)}]]
+    (t/is (= [:mod-obj :del-obj]
+             (map :type (ch/skip-validate-changes changes))))))

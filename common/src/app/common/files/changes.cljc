@@ -1105,6 +1105,12 @@
 
 ;; --- Validate Shapes
 
+(defn skip-validate-changes
+  "Remove the :validate-shapes changes, for data where the shapes can't
+  be validated (e.g. without the full file or its libraries)."
+  [changes]
+  (remove #(= :validate-shapes (:type %)) changes))
+
 #?(:clj
    (defmethod process-change :validate-shapes
      [data _ _]
