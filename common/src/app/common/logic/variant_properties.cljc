@@ -42,11 +42,11 @@
                                      changes
                                      related-components)
 
-                  ids-to-validate (map :main-instance-id related-components)
-
+                  ;; All components of the variant change, so validate the
+                  ;; container, which also checks every main instance
                   changes (pcb/validate-shapes changes
                                                (pcb/get-page-id changes)
-                                               ids-to-validate
+                                               [variant-id]
                                                (str "generate-update-property-name: " variant-id
                                                     " pos: " pos " new-name: " new-name))]
               changes)))))))
@@ -74,11 +74,11 @@
                               changes
                               related-components)
 
-              ids-to-validate (map :main-instance-id related-components)
-
+              ;; All components of the variant change, so validate the
+              ;; container, which also checks every main instance
               changes (pcb/validate-shapes changes
                                            (pcb/get-page-id changes)
-                                           ids-to-validate
+                                           [variant-id]
                                            (str "generate-remove-property: " variant-id " pos: " pos))]
           changes)
         changes))))

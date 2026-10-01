@@ -79,7 +79,8 @@
     (t/is (= (-> comp01' :variant-properties first :name) "NewName1"))
     (t/is (= (-> comp01' :variant-properties last :name) "NewName2"))
     (t/is (= (-> comp02' :variant-properties first :name) "NewName1"))
-    (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))))
+    (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 (t/deftest test-update-property-name-duplicate
   (let [file    (-> (thf/sample-file :file1)
@@ -188,7 +189,8 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 ;; =============================================================================
 ;; generate-update-property-value tests
