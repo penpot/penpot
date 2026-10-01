@@ -139,6 +139,8 @@
                            :app.setup/templates templates
                            :app.loggers.mattermost/reporter nil
                            :app.loggers.database/reporter nil)
+                   (update :app.rpc/admin-methods assoc
+                           :app.setup/templates templates)
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/route

@@ -69,7 +69,9 @@
   under `:progress`, the artifact as `:uri` when the job completed, and
   the public error of the job when it failed. The queue of a file is
   announced by `export-files` before any job exists and only ends with a
-  milestone: a worker picking the job up is not one.
+  milestone: a worker picking the job up is not one. A job cancelled
+  elsewhere (e.g. from the admin panel) answers as `:cancelled`, so the
+  dialog never hangs on a file whose job will never produce an artifact.
 
   `on-job` is an optional callback invoked with `{:job-id ... :file-id
   ...}` for the created job, so the caller can track it per file and
@@ -93,6 +95,9 @@
                                         (rx/of {:file-id (:id file)
                                                 :error   error})
 
+                                        ;; cancelled elsewhere (e.g. from
+                                        ;; the admin panel): no artifact
+                                        ;; is coming, mark the file
                                         (= "cancelled" status)
                                         (rx/of {:file-id   (:id file)
                                                 :cancelled true})

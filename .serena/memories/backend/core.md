@@ -14,7 +14,8 @@ Backend: JVM Clojure; Integrant; PostgreSQL; Redis/Valkey; RPC; HTTP; storage; m
 
 ## Stable namespace map
 
-- `app.rpc.commands.*`: RPC command implementations exposed under `/api/rpc/command/<cmd-name>`.
+- `app.rpc.commands.*`: RPC command implementations, all reachable under `/api/main/methods/<cmd-name>`. `/api/rpc/command/<cmd-name>` is the deprecated alias of `/api/main/methods`; it still exists because the exporter calls it.
+- `app.rpc.admin.*`: superuser-guarded admin commands under `/api/admin/methods/<cmd-name>` (same wrapper as `main`, short names, no doc routes). Binary file transfer (`file-export`, `file-import`) lives in `app.http.admin` as plain HTTP routes next to the methods, not as commands.
 - `app.rpc.permissions`: permission predicate/check helper factories.
 - `app.http.*`: HTTP routes and middleware.
 - `app.auth.*`: provider-specific authentication helpers such as LDAP/OIDC.
@@ -107,6 +108,7 @@ EOF
 ```
 
 Default port is 6064. Use `-p <PORT>` for a different port. Use `-t <MS>` to override the 120s timeout. Do not start the nREPL server — assume it is already running.
+Reloading a namespace with `:reload` only affects the REPL session: the running server keeps serving old code until you evaluate `(restart)` in nREPL, which reloads the whole system.
 
 ### Interactive REPL
 

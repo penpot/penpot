@@ -427,7 +427,7 @@
                                  {:on-next #(swap! seen conj %)})
              job-id (:job-id (first @calls))]
 
-         (t/testing "the cancelled ending terminates the stream"
+         (t/testing "the cancelled ending fails the entries instead of hanging them"
            (swap! rows assoc job-id (job job-id "cancelled"))
            (rx/push! ws-stream (message (event job-id :end {:outcome "cancelled"})))
            (await done)

@@ -90,6 +90,7 @@
    [:email ::sm/email]
    [:theme {:optional true} :string]
    [:is-admin {:optional true} ::sm/boolean]
+   [:is-superuser {:optional true} ::sm/boolean]
    [:is-active {:optional true} ::sm/boolean]
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
@@ -135,7 +136,14 @@
   (try
     (let [profile (-> (get-profile pool profile-id)
                       (strip-private-attrs)
-                      (update :props filter-props))]
+                      (update :props filter-props))
+          ;; Same answer the guard gives: devenv passes any authenticated
+          ;; profile, otherwise the registry decides.
+          profile (assoc profile :is-superuser
+                         (boolean (or (and (= "devenv" (cf/get :host))
+                                           (some? (:id profile)))
+                                      (contains? (::auth/superusers cfg)
+                                                 (:id profile)))))]
       (with-nitrate-licence profile cfg))
 
     (catch Throwable cause
