@@ -940,3 +940,44 @@
   [cfg team-id slug]
   (->> (get-shared-files-for-team cfg team-id)
        (filter #(= slug (slugify-name (:name %))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REQUEST CFG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-export-type
+  "The canonical export type of a request: an explicit `type` wins, and
+  the deprecated boolean flags are translated. Shared by the legacy RPC
+  and the export job so both export the same way."
+  [{:keys [type include-libraries embed-assets]}]
+  (cond
+    (some? type)              type
+    (true? include-libraries) :include-libraries
+    (true? embed-assets)      :merge-libraries
+    :else                     :detach-libraries))
+
+(defn export-cfg
+  "The domain cfg of an export: the frozen set of files and how their
+  libraries are handled."
+  [cfg {:keys [ids export-type]}]
+  (-> cfg
+      (assoc ::ids ids)
+      (assoc ::export-type export-type)))
+
+(defn import-cfg
+  "The domain cfg of an import: the destination team/profile/project, the
+  name, the input and the anti-zip-bomb limits. The caller resolves the
+  team, because what allows it to import there differs between the RPC and
+  a job; what both must share is fixed here."
+  [cfg {:keys [profile-id project-id team name input]}]
+  (-> cfg
+      (assoc ::features (cfeat/get-team-enabled-features cf/flags team))
+      (assoc ::project-id project-id)
+      (assoc ::profile-id profile-id)
+      (assoc ::team-id (:id team))
+      (assoc ::name name)
+      (assoc ::input input)
+      (assoc ::import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
+      (assoc ::import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
+      (assoc ::import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
+      (assoc ::import-max-zip-entries (cf/get :binfile-import-max-zip-entries))))

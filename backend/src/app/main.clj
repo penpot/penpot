@@ -589,6 +589,8 @@
     :file-gc               (ig/ref :app.tasks.file-gc/file-gc-job-def)
     :offload-file-data     (ig/ref :app.tasks.offload-file-data/offload-file-data-job-def)
     :objects-gc            (ig/ref :app.tasks.objects-gc/objects-gc-job-def)
+    :export-binfile        (ig/ref :app.tasks.export-binfile/export-binfile-job-def)
+    :import-binfile        (ig/ref :app.tasks.import-binfile/import-binfile-job-def)
     :storage-gc-deleted    (ig/ref ::sto.gc-deleted/storage-gc-deleted-job-def)
     :storage-gc-touched    (ig/ref ::sto.gc-touched/storage-gc-touched-job-def)
     :storage-pending-gc    (ig/ref ::sto.pending-gc/storage-pending-gc-job-def)
@@ -640,6 +642,19 @@
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.export-binfile/export-binfile-job-def
+   {::db/pool      (ig/ref ::db/pool)
+    ::sto/storage  (ig/ref ::sto/storage)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
+    ;; the job belongs to a profile, so its events are published
+    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
+
+   :app.tasks.import-binfile/import-binfile-job-def
+   {::db/pool      (ig/ref ::db/pool)
+    ::sto/storage  (ig/ref ::sto/storage)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
 
    :app.storage.gc-deleted/storage-gc-deleted-job-def
    {::db/pool     (ig/ref ::db/pool)
