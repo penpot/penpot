@@ -165,6 +165,9 @@
     [:binfile-import-max-text-total-size {:optional true} ::sm/int]
     [:binfile-import-max-zip-entries {:optional true} ::sm/int]
 
+    ;; Max serialized size of profile props in bytes (default 2 MiB)
+    [:profile-props-max-size {:optional true} ::sm/int]
+
     [:login-lockout-max-attempts {:optional true} ::sm/int]
     [:login-lockout-window {:optional true} ::ct/duration]
 

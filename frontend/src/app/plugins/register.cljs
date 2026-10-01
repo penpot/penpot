@@ -112,6 +112,20 @@
       manifest
       (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
 
+(defn subscribe-registry!
+  "Subscribes f, called with no arguments on every registry change.
+  Returns f."
+  [f]
+  (add-watch registry f (fn [_ _ old new]
+                          (when-not (identical? old new)
+                            (f))))
+  f)
+
+(defn unsubscribe-registry!
+  [f]
+  (remove-watch registry f)
+  nil)
+
 (defn load-from-store
   []
   (reset! registry (get-in @st/state [:profile :props :plugins] {})))
@@ -122,36 +136,128 @@
 
 (declare remove-plugin!)
 
+;; Plugin ids with a persist in flight; install/remove calls on them are skipped
+(defonce ^:private in-flight (atom #{}))
+
+(defonce ^:private in-flight-listeners (atom #{}))
+
+(defn subscribe-in-flight!
+  "Subscribes f, called with the in-flight id set on every change.
+  Calls f immediately with the current set. Returns f."
+  [f]
+  (swap! in-flight-listeners conj f)
+  (f @in-flight)
+  f)
+
+(defn unsubscribe-in-flight!
+  [f]
+  (swap! in-flight-listeners disj f)
+  nil)
+
+(defn- notify-in-flight!
+  []
+  (let [ids @in-flight]
+    (doseq [f @in-flight-listeners]
+      (f ids))))
+
+(defn- track!
+  [plugin-id]
+  (swap! in-flight conj plugin-id)
+  (notify-in-flight!))
+
+(defn- release!
+  [plugin-id]
+  (swap! in-flight disj plugin-id)
+  (notify-in-flight!))
+
+(defn- validation-error?
+  [err]
+  (= :validation (:type (ex-data err))))
+
+(defn- drop-local!
+  [{:keys [plugin-id]}]
+  (swap! registry #(-> %
+                       (update :ids (fn [ids] (vec (remove (partial = plugin-id) ids))))
+                       (update :data dissoc plugin-id))))
+
+(defn- insert-at
+  [ids idx id]
+  (let [v   (vec ids)
+        idx (max 0 (min idx (count v)))]
+    (vec (concat (subvec v 0 idx) [id] (subvec v idx)))))
+
+(defn- restore-local!
+  "Puts the stored plugin back into the registry at position idx."
+  [{:keys [plugin-id] :as plugin} idx]
+  (swap! registry #(-> %
+                       (update :ids (fn [ids]
+                                      (insert-at (remove (partial = plugin-id) ids)
+                                                 idx
+                                                 plugin-id)))
+                       (assoc-in [:data plugin-id] plugin))))
+
 (defn install-plugin!
   [plugin]
-  (letfn [(update-ids [ids]
-            (conj
-             (->> ids (remove #(= % (:plugin-id plugin))))
-             (:plugin-id plugin)))]
-    (swap! registry #(-> %
-                         (update :ids update-ids)
-                         (update :data assoc (:plugin-id plugin) plugin)))
-    (->> (rp/cmd! :add-profile-plugin {:plugin plugin})
-         (rx/subs! identity
-                   (fn [err]
-                     (remove-plugin! plugin)
-                     (.error js/console "Failed to install plugin:" err))))))
+  (let [plugin-id (:plugin-id plugin)
+        previous  (get-plugin plugin-id)
+        prev-idx  (.indexOf (vec (:ids @registry)) plugin-id)]
+    (when-not (contains? @in-flight plugin-id)
+      (track! plugin-id)
+      (letfn [(update-ids [ids]
+                (conj
+                 (->> ids (remove #(= % (:plugin-id plugin))))
+                 (:plugin-id plugin)))]
+        (swap! registry #(-> %
+                             (update :ids update-ids)
+                             (update :data assoc (:plugin-id plugin) plugin)))
+        (->> (rp/cmd! :add-profile-plugin {:plugin plugin})
+             (rx/subs! (fn [_]
+                         (release! plugin-id))
+                       (fn [err]
+                         (release! plugin-id)
+                         ;; Restore the previous version in place, else drop it
+                         (if previous
+                           (restore-local! previous prev-idx)
+                           (drop-local! plugin))
+                         ;; Other failures may have reached the server: undo it
+                         ;; once by re-saving the previous version or removing
+                         ;; the new entry, without further rollback.
+                         (when-not (validation-error? err)
+                           (->> (if previous
+                                  (rp/cmd! :add-profile-plugin {:plugin previous})
+                                  (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id}))
+                                (rx/subs! (fn [_] nil)
+                                          (fn [err2]
+                                            (.error js/console "Rollback failed:" err2)))))
+                         (.error js/console "Failed to install plugin:" err))))))))
 
 (defn remove-plugin!
   [{:keys [plugin-id]}]
-  (let [plugin (get-plugin plugin-id)]
-    (letfn [(update-ids [ids]
-              (->> ids
-                   (remove #(= % plugin-id))))]
-      (swap! registry #(-> %
-                           (update :ids update-ids)
-                           (update :data dissoc plugin-id)))
-      (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
-           (rx/subs! identity
-                     (fn [err]
-                       (when plugin
-                         (install-plugin! plugin))
-                       (.error js/console "Failed to remove plugin:" err)))))))
+  (let [stored   (get-plugin plugin-id)
+        prev-idx (.indexOf (vec (:ids @registry)) plugin-id)]
+    (when-not (contains? @in-flight plugin-id)
+      (track! plugin-id)
+      (letfn [(update-ids [ids]
+                (->> ids
+                     (remove #(= % plugin-id))))]
+        (swap! registry #(-> %
+                             (update :ids update-ids)
+                             (update :data dissoc plugin-id)))
+        (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
+             (rx/subs! (fn [_]
+                         (release! plugin-id))
+                       (fn [err]
+                         (release! plugin-id)
+                         (when stored
+                           ;; Restore in place; validation errors keep it server-side
+                           (restore-local! stored prev-idx)
+                           ;; Other failures: re-save it once, without further rollback
+                           (when-not (validation-error? err)
+                             (->> (rp/cmd! :add-profile-plugin {:plugin stored})
+                                  (rx/subs! (fn [_] nil)
+                                            (fn [err2]
+                                              (.error js/console "Rollback install failed:" err2))))))
+                         (.error js/console "Failed to remove plugin:" err))))))))
 
 (defn check-permission
   [plugin-id permission]

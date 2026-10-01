@@ -1452,11 +1452,11 @@ msgstr "Atención"
 msgid "ds.component-subtitle"
 msgstr "Componentes a actualizar:"
 
-#: src/app/main/ui/workspace/plugins.cljs:379, src/app/main/ui/workspace/plugins.cljs:442
+#: src/app/main/ui/workspace/plugins.cljs:407, src/app/main/ui/workspace/plugins.cljs:470
 msgid "ds.confirm-allow"
 msgstr "Permitir"
 
-#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:373, src/app/main/ui/workspace/plugins.cljs:436
+#: src/app/main/ui/comments.cljs:719, src/app/main/ui/confirm.cljs:43, src/app/main/ui/settings/subscription.cljs:327, src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:844, src/app/main/ui/settings/subscription.cljs:893, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/workspace/plugins.cljs:401, src/app/main/ui/workspace/plugins.cljs:464
 msgid "ds.confirm-cancel"
 msgstr "Cancelar"
 
@@ -1538,25 +1538,25 @@ msgstr ""
 "Acceso al portapapeles denegado. Permite el acceso al portapapeles en tu "
 "navegador para pegar contenido."
 
-#: src/app/main/errors.cljs:773
+#: src/app/main/errors.cljs:782
 msgid "errors.comment-error"
 msgstr "Ha habido un error con el comentario"
 
-#: src/app/main/errors.cljs:842
+#: src/app/main/errors.cljs:851
 msgid "errors.deprecated"
 msgstr ""
 "¡Lo sentimos! Este es un fichero antiguo que utiliza un tipo de recurso de "
 "Penpot obsoleto, y no puedes abrirlo."
 
-#: src/app/main/errors.cljs:845
+#: src/app/main/errors.cljs:854
 msgid "errors.deprecated.contact.after"
 msgstr "para que podamos ayudarte."
 
-#: src/app/main/errors.cljs:843
+#: src/app/main/errors.cljs:852
 msgid "errors.deprecated.contact.before"
 msgstr "Aunque Penpot ya no da soporte a este tipo de Recursos, puedes"
 
-#: src/app/main/errors.cljs:844
+#: src/app/main/errors.cljs:853
 msgid "errors.deprecated.contact.text"
 msgstr "contactar con nosotros"
 
@@ -1592,13 +1592,13 @@ msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "El email «%s» tiene reportes de spam o de rebote permanente."
 
-#: src/app/main/errors.cljs:819
+#: src/app/main/errors.cljs:828
 msgid "errors.feature-mismatch"
 msgstr ""
 "Parece que está abriendo un archivo que tiene la función '%s' habilitada, "
 "pero la versión actual de penpot no la admite o la tiene deshabilitada."
 
-#: src/app/main/errors.cljs:823, src/app/main/errors.cljs:837
+#: src/app/main/errors.cljs:832, src/app/main/errors.cljs:846
 msgid "errors.feature-not-supported"
 msgstr "Caracteristica no soportada: '%s'."
 
@@ -1618,7 +1618,7 @@ msgstr "Campo vacio"
 msgid "errors.field-not-all-whitespace"
 msgstr "Debe contener algún carácter diferente de espacio."
 
-#: src/app/main/errors.cljs:815
+#: src/app/main/errors.cljs:824
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Parece que hay discordancia entre las features habilitadas y las features "
@@ -1631,11 +1631,11 @@ msgstr ""
 "El nombre de la familia tipográfica solo puede contener letras, números, "
 "espacios, guiones, guiones bajos y puntos."
 
-#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:158, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
+#: src/app/main/data/auth.cljs:352, src/app/main/errors.cljs:479, src/app/main/ui/auth/login.cljs:116, src/app/main/ui/auth/register.cljs:131, src/app/main/ui/auth/register.cljs:317, src/app/main/ui/auth/verify_token.cljs:131, src/app/main/ui/dashboard/fonts.cljs:386, src/app/main/ui/dashboard/team.cljs:250, src/app/main/ui/dashboard/team.cljs:1131, src/app/main/ui/onboarding/team_choice.cljs:125, src/app/main/ui/settings/feedback.cljs:84, src/app/main/ui/settings/integrations.cljs:143, src/app/main/ui/workspace/main_menu.cljs:966
 msgid "errors.generic"
 msgstr "Ha ocurrido algún error."
 
-#: src/app/main/errors.cljs:752
+#: src/app/main/errors.cljs:761
 msgid "errors.internal-worker-error"
 msgstr "Ha ocurrido un problema con el web worker."
 
@@ -1687,7 +1687,7 @@ msgstr "Esta invitación puede haber sido cancelada o ha expirado."
 msgid "errors.ldap-disabled"
 msgstr "La autheticacion via LDAP esta deshabilitada."
 
-#: src/app/main/errors.cljs:831, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1123, src/app/main/ui/onboarding/team_choice.cljs:117
+#: src/app/main/errors.cljs:840, src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/dashboard/team.cljs:1123, src/app/main/ui/onboarding/team_choice.cljs:117
 msgid "errors.max-quota-reached"
 msgstr "Ha alcalzando el maximo de la quota '%s'. Contacte con soporte tecnico."
 
@@ -1717,7 +1717,7 @@ msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
 "spam o alto índice de rebote)."
 
-#: src/app/main/errors.cljs:805
+#: src/app/main/errors.cljs:814
 msgid "errors.migration-in-progress"
 msgstr "Migración en proceso"
 
@@ -1765,6 +1765,12 @@ msgstr ""
 "Tu perfil tiene los emails silenciados (por reportes de spam o alto índice "
 "de rebote)."
 
+#: src/app/main/errors.cljs:724
+msgid "errors.profile-props-too-large"
+msgstr ""
+"La configuración de tu perfil es demasiado grande y no se puede guardar. "
+"Elimina algunas extensiones e inténtalo de nuevo."
+
 #: src/app/main/data/auth.cljs:340, src/app/main/ui/auth/register.cljs:96
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
@@ -1776,11 +1782,11 @@ msgstr ""
 "informar del error y recarga para continuar desde los últimos cambios "
 "guardados."
 
-#: src/app/main/errors.cljs:764
+#: src/app/main/errors.cljs:773
 msgid "errors.svg-parser.invalid-svg"
 msgstr "El SVG no es válido o está mal formado"
 
-#: src/app/main/errors.cljs:810
+#: src/app/main/errors.cljs:819
 msgid "errors.team-feature-mismatch"
 msgstr "Detectada funcionalidad incompatible '%s'"
 
@@ -1964,7 +1970,7 @@ msgstr "Ha ocurrido un error inesperado."
 msgid "errors.unexpected-token"
 msgstr "Token desconocido"
 
-#: src/app/main/errors.cljs:723
+#: src/app/main/errors.cljs:732
 msgid "errors.version-already-locked"
 msgstr "Esta versión ya está bloqueada"
 
@@ -1972,7 +1978,7 @@ msgstr "Esta versión ya está bloqueada"
 msgid "errors.version-locked"
 msgstr "Esta versión está bloqueada y otras personas no pueden eliminarla"
 
-#: src/app/main/errors.cljs:827
+#: src/app/main/errors.cljs:836
 msgid "errors.version-not-supported"
 msgstr "El fichero tiene un número de versión incompatible"
 
@@ -8169,16 +8175,16 @@ msgstr "Alinear nodos (%s)"
 msgid "workspace.plugins.button-open"
 msgstr "Abrir"
 
-#: src/app/main/ui/workspace/plugins.cljs:215
+#: src/app/main/ui/workspace/plugins.cljs:242
 #, markdown
 msgid "workspace.plugins.discover"
 msgstr "Descubre [más extensiones](%s)"
 
-#: src/app/main/ui/workspace/plugins.cljs:222
+#: src/app/main/ui/workspace/plugins.cljs:249
 msgid "workspace.plugins.empty-plugins"
 msgstr "No se encuentran extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:209
+#: src/app/main/ui/workspace/plugins.cljs:236
 msgid "workspace.plugins.error.manifest"
 msgstr "El manifiesto de la expansión es incorrecto."
 
@@ -8190,15 +8196,15 @@ msgstr "Debes ser un editor para usar este plugin"
 msgid "workspace.plugins.error.unreachable"
 msgstr "No se ha podido acceder a la URL de la extensión."
 
-#: src/app/main/ui/workspace/plugins.cljs:205
+#: src/app/main/ui/workspace/plugins.cljs:232
 msgid "workspace.plugins.error.url"
 msgstr "La extensión no existe o la url no es correcta."
 
-#: src/app/main/ui/workspace/plugins.cljs:201
+#: src/app/main/ui/workspace/plugins.cljs:228
 msgid "workspace.plugins.install"
 msgstr "Instalar"
 
-#: src/app/main/ui/workspace/plugins.cljs:231
+#: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.installed-plugins"
 msgstr "Extensiones instaladas"
 
@@ -8210,49 +8216,49 @@ msgstr "Gestor de extensiones"
 msgid "workspace.plugins.menu.title"
 msgstr "Extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:424
+#: src/app/main/ui/workspace/plugins.cljs:452
 msgid "workspace.plugins.permissions-update.title"
 msgstr "EXTENSIÓN ACTUALIZADA"
 
-#: src/app/main/ui/workspace/plugins.cljs:428
+#: src/app/main/ui/workspace/plugins.cljs:456
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
 "La extensión ha cambiado desde la última vez que la abriste. Ahora quiere "
 "acceder a:"
 
-#: src/app/main/ui/workspace/plugins.cljs:297
+#: src/app/main/ui/workspace/plugins.cljs:325
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Comenzar descargas de ficheros."
 
-#: src/app/main/ui/workspace/plugins.cljs:304
+#: src/app/main/ui/workspace/plugins.cljs:332
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Guardar datos en el navegador."
 
-#: src/app/main/ui/workspace/plugins.cljs:317
+#: src/app/main/ui/workspace/plugins.cljs:345
 msgid "workspace.plugins.permissions.clipboard-read"
 msgstr "Leer el contenido de tu portapapeles."
 
-#: src/app/main/ui/workspace/plugins.cljs:311
+#: src/app/main/ui/workspace/plugins.cljs:339
 msgid "workspace.plugins.permissions.clipboard-write"
 msgstr "Leer y escribir en tu portapapeles."
 
-#: src/app/main/ui/workspace/plugins.cljs:290
+#: src/app/main/ui/workspace/plugins.cljs:318
 msgid "workspace.plugins.permissions.comment-read"
 msgstr "Leer tus comentarios y respuestas."
 
-#: src/app/main/ui/workspace/plugins.cljs:284
+#: src/app/main/ui/workspace/plugins.cljs:312
 msgid "workspace.plugins.permissions.comment-write"
 msgstr "Leer y modificar tus comentarios y responder en tu nombre."
 
-#: src/app/main/ui/workspace/plugins.cljs:257
+#: src/app/main/ui/workspace/plugins.cljs:285
 msgid "workspace.plugins.permissions.content-read"
 msgstr "Leer el contenido de sus archivos."
 
-#: src/app/main/ui/workspace/plugins.cljs:251
+#: src/app/main/ui/workspace/plugins.cljs:279
 msgid "workspace.plugins.permissions.content-write"
 msgstr "Leer y modificar el contenido de sus archivos."
 
-#: src/app/main/ui/workspace/plugins.cljs:366
+#: src/app/main/ui/workspace/plugins.cljs:394
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
 "Ten en cuenta que las extensiones están desarrolladas por terceros, "
@@ -8260,54 +8266,64 @@ msgstr ""
 "seguridad es importante para nosotros. Si tienes cualquier duda, contacta "
 "con soporte."
 
-#: src/app/main/ui/workspace/plugins.cljs:277
+#: src/app/main/ui/workspace/plugins.cljs:305
 msgid "workspace.plugins.permissions.library-read"
 msgstr "Leer la información de sus bibliotecas y recursos."
 
-#: src/app/main/ui/workspace/plugins.cljs:271
+#: src/app/main/ui/workspace/plugins.cljs:299
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
-#: src/app/main/ui/workspace/plugins.cljs:359
+#: src/app/main/ui/workspace/plugins.cljs:387
 msgid "workspace.plugins.permissions.title"
 msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"
 
-#: src/app/main/ui/workspace/plugins.cljs:264
+#: src/app/main/ui/workspace/plugins.cljs:292
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Leer la información del usuario actual."
 
-#: src/app/main/ui/workspace/plugins.cljs:227
+#: src/app/main/ui/workspace/plugins.cljs:254
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Lista de extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:101
+#: src/app/main/ui/workspace/plugins.cljs:191
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr ""
+"¿Seguro que quieres eliminar la extensión %s? Puedes instalarla de nuevo en "
+"cualquier momento."
+
+#: src/app/main/ui/workspace/plugins.cljs:190
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "Eliminar extensión"
+
+#: src/app/main/ui/workspace/plugins.cljs:101, src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.remove-plugin"
 msgstr "Eliminar extensión"
 
-#: src/app/main/ui/workspace/plugins.cljs:195
+#: src/app/main/ui/workspace/plugins.cljs:222
 msgid "workspace.plugins.search-placeholder"
 msgstr "Intruduzca URL de la extensión"
 
-#: src/app/main/ui/workspace/plugins.cljs:188
+#: src/app/main/ui/workspace/plugins.cljs:215
 msgid "workspace.plugins.title"
 msgstr "Extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:494
+#: src/app/main/ui/workspace/plugins.cljs:522
 msgid "workspace.plugins.try-out.cancel"
 msgstr "AHORA NO"
 
-#: src/app/main/ui/workspace/plugins.cljs:487
+#: src/app/main/ui/workspace/plugins.cljs:515
 msgid "workspace.plugins.try-out.message"
 msgstr ""
 "¿Quieres echar un vistazo?. Crearemos un nuevo borrador en tu equipo "
 "actual. (Si no, puedes encontrar los plugins instalados en cualquier "
 "fichero.)"
 
-#: src/app/main/ui/workspace/plugins.cljs:483
+#: src/app/main/ui/workspace/plugins.cljs:511
 msgid "workspace.plugins.try-out.title"
 msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 
-#: src/app/main/ui/workspace/plugins.cljs:500
+#: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "PROBAR PLUGIN"
 
