@@ -8,8 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
+   [app.common.files.tokens :as cfo]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -459,3 +461,96 @@
     (t/is (nil? (:stroke-per-side stroke'))
           "obsolete attr removed before schema validation")
     (t/is (= 5 (:stroke-width stroke')) "stroke width preserved")))
+
+(t/deftest migration-0031-legacy-applied-token-is-not-recognized-before-migration
+  ;; Reproduces #12016: the editor reads only the per-side token attributes, so
+  ;; a shape carrying the old global `:stroke-width` reference looks unapplied.
+  (let [shape (-> (cts/setup-shape {:id (uuid/next) :type :rect})
+                  (assoc :applied-tokens {:stroke-width "30"}))]
+    (t/is (not (cfo/shapes-token-applied? {:name "30"} [shape]
+                                          ctt/stroke-width-keys))
+          "a legacy applied token is invisible to the token lookup")))
+
+(t/deftest migration-0031-recycles-global-stroke-width-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :fill "red"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        shape'       (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id])
+        applied'     (:applied-tokens shape')]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-top applied')))
+    (t/is (= "30" (:stroke-width-right applied')))
+    (t/is (= "30" (:stroke-width-bottom applied')))
+    (t/is (= "30" (:stroke-width-left applied')))
+    (t/is (= "red" (:fill applied')) "unrelated tokens preserved")
+    (t/is (cfo/shapes-token-applied? {:name "30"} [shape']
+                                     ctt/stroke-width-keys)
+          "the token is recognized after migration")))
+
+(t/deftest migration-0031-keeps-side-token-that-was-already-set
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"
+                                                 :stroke-width-top "10"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (= "10" (:stroke-width-top applied'))
+          "an explicit side reference is not overwritten")
+    (t/is (= "30" (:stroke-width-right applied')))))
+
+(t/deftest migration-0031-repairs-component-shapes
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        component-id (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        data         {:components {component-id {:objects {shape-id shape}}}}
+        applied'     (get-in (cfm/migrate-data data migration-id)
+                             [:components component-id :objects shape-id :applied-tokens])]
+
+    (t/is (nil? (:stroke-width applied')) "legacy key removed")
+    (t/is (= "30" (:stroke-width-left applied'))
+          "component side reference created")))
+
+(t/deftest migration-0031-leaves-shapes-without-the-legacy-token
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        page-id      (uuid/next)
+        shape-id     (uuid/next)
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width-top "30"
+                                                 :stroke-width-right "30"
+                                                 :stroke-width-bottom "30"
+                                                 :stroke-width-left "30"}))
+        data         {:pages-index {page-id {:objects {shape-id shape}}}}]
+
+    (t/is (= data (cfm/migrate-data data migration-id))
+          "a shape without the legacy token is left untouched")))
+
+(t/deftest migration-0031-runs-through-file-migration
+  (let [migration-id "0031-migrate-stroke-width-token-attr"
+        shape-id     (uuid/next)
+        file         (ctf/make-file {:name "Legacy stroke width token"})
+        page-id      (first (get-in file [:data :pages]))
+        shape        (-> (cts/setup-shape {:id shape-id :type :rect})
+                         (assoc :applied-tokens {:stroke-width "30"}))
+        file         (-> file
+                         (assoc :migrations (disj cfm/available-migrations migration-id))
+                         (assoc-in [:data :pages-index page-id :objects shape-id] shape))
+        file'        (cfm/migrate-file file {})
+        applied'     (get-in file' [:data :pages-index page-id :objects shape-id :applied-tokens])]
+
+    (t/is (cfm/need-migration? file) "new migration detected")
+    (t/is (not (cfm/need-migration? file')) "new migration recorded")
+    (t/is (contains? (:migrations file') migration-id) "migration id persisted")
+    (t/is (= "30" (:stroke-width-top applied'))
+          "legacy token applied to the sides")))
