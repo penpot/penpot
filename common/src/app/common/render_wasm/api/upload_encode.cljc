@@ -21,8 +21,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
-;; v2: JVM UUID layout fixed to LE u32 quartet (matches CLJS/WASM).
-(def ^:const PROTOCOL-VERSION "wasm-shapes-batch/v2")
+;; v3: fill/stroke image UUIDs use LE u32 quartet on the JVM (v2 only fixed shape ids).
+(def ^:const PROTOCOL-VERSION "wasm-shapes-batch/v3")
 
 (def ^:const BASE-PROPS-SIZE 104)
 (def ^:const FLAG-CLIP-CONTENT 0x01)
@@ -262,12 +262,28 @@
   [fills]
   (+ 4 (* (count fills) types.fills.impl/FILL-U8-SIZE)))
 
+(defn- write-image-fill-wasm!
+  "Like `types.fills.impl/write-image-fill`, then rewrite the image id with
+  `write-uuid!` (JVM `buf/write-uuid` is BE; WASM expects LE u32 quartet)."
+  [offset dview opacity image]
+  (let [end (types.fills.impl/write-image-fill offset dview opacity image)]
+    (write-uuid! dview (+ offset 4) (get image :id))
+    end))
+
 (defn- write-fills-section!
   [dview offset fills]
-  (let [fills  (types.fills/coerce (or fills []))
+  (let [fills* (into [] (take types.fills.impl/MAX-FILLS) (or fills []))
+        fills  (types.fills/coerce fills*)
         nbytes (fills-data-byte-size fills)
         src    (.-dbuffer fills)]
     (copy-u8! dview offset src 0 nbytes)
+    ;; Coerce encodes image ids with `buf/write-uuid` (BE on JVM). Patch to LE.
+    (doseq [[i fill] (map-indexed vector fills*)
+            :let [image (:fill-image fill)]
+            :when image]
+      (write-uuid! dview
+                   (+ offset 4 (* i types.fills.impl/FILL-U8-SIZE) 4)
+                   (get image :id)))
     (+ offset nbytes)))
 
 (defn- write-stroke-fill!
@@ -281,7 +297,7 @@
       (types.fills.impl/write-gradient-fill offset dview opacity gradient)
 
       (some? image)
-      (types.fills.impl/write-image-fill offset dview opacity image)
+      (write-image-fill-wasm! offset dview opacity image)
 
       (some? color)
       (types.fills.impl/write-solid-fill offset dview opacity color)

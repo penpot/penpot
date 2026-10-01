@@ -622,9 +622,7 @@
   "Paint geometry/fills as soon as the structural batch is in WASM, before
    the slower host-attrs pass (text/path/grid/images).
 
-   Leaves `_begin_loading` active afterward so host-attr mutations do not
-   invalidate tiles until the final `_end_loading` in finalize. Optionally
-   invokes `on-shapes-ready` so page-transition blur can lift on this frame."
+   Leaves loading mode OFF so later image stores can invalidate tiles."
   [on-shapes-ready]
   (when (wasm/live?)
     (h/call wasm/internal-module "_end_loading")
@@ -632,8 +630,7 @@
     ;; Sync render: do not wait for rAF — host-attrs chunks would delay it.
     (h/call wasm/internal-module "_render_sync")
     (set! wasm/internal-frame-id nil)
-    (js/console.info "[wasm-batch] structural paint")
-    (h/call wasm/internal-module "_begin_loading")))
+    (js/console.info "[wasm-batch] structural paint")))
 
 (defonce pending-render (atom false))
 (defonce shapes-loading? (atom false))
@@ -795,6 +792,16 @@
     ;; This ensures shapes are displayed even if no deferred render was requested
     (when was-loading
       (request-render "set-objects:flush"))))
+
+(defn- paint-after-images!
+  "Sync paint after image bytes are stored. Progressive `request-render` can
+   keep early-paint tiles that lack textures; `render_sync` rebuilds them."
+  []
+  (when (wasm/live?)
+    (stop-progressive-render!)
+    (h/call wasm/internal-module "_render_sync")
+    (set! wasm/internal-frame-id nil)
+    (ug/dispatch! (ug/event "penpot:wasm:render"))))
 
 (declare get-text-dimensions)
 
@@ -1813,7 +1820,7 @@
             noop-fn
             (fn []
               (relayout-after-fonts! shapes text-font-state)
-              (request-render "images-loaded")
+              (paint-after-images!)
               (when (fn? on-complete) (on-complete)))))
       ;; No pending images — complete immediately.
       (when on-complete (on-complete)))))
@@ -2043,7 +2050,7 @@
                                noop-fn
                                (fn []
                                  (relayout-after-fonts! prepared-shapes text-font-state-acc)
-                                 (request-render "images-loaded")))))))))
+                                 (paint-after-images!)))))))))
 
                (process-next-client-chunk [index thumbnails-acc full-acc text-font-state-acc]
                  (if (< index total-shapes)

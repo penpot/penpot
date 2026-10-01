@@ -132,6 +132,35 @@
       (t/is (= (nth expected i) (u8-at rec (+ 4 i)))
             (str "uuid byte " i)))))
 
+(t/deftest encode-fill-image-uuid-matches-wasm-le-u32-quartet
+  ;; Image fill id must use the same LE layout as shape ids; otherwise WASM
+  ;; looks up a swapped id and never binds the host-fetched texture.
+  (let [shape-id #uuid "11111111-1111-1111-1111-111111111111"
+        image-id #uuid "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8"
+        shape    (-> (sample-rect shape-id uuid/zero)
+                     (assoc :parent-id uuid/zero
+                            :fills [{:fill-image {:id image-id
+                                                  :width 10
+                                                  :height 10
+                                                  :keep-aspect-ratio false}
+                                     :fill-opacity 1}]
+                            :strokes []))
+        rec      (encode/encode-shape-record
+                  shape
+                  {:include-layout? false
+                   :include-fills-strokes? true})
+        ;; [len][base 104][mask][children count=0][fills count][fill…]
+        ;; image uuid is at fill_payload + 4.
+        fill0    (+ 4 104 4 4 4)
+        expected [0xa4 0xa3 0xa2 0xa1
+                  0xc2 0xc1 0xb2 0xb1
+                  0xd4 0xd3 0xd2 0xd1
+                  0xd8 0xd7 0xd6 0xd5]]
+    (t/is (= 0x03 (u8-at rec fill0)) "image fill type tag")
+    (doseq [i (range 16)]
+      (t/is (= (nth expected i) (u8-at rec (+ fill0 4 i)))
+            (str "fill-image uuid byte " i)))))
+
 (t/deftest encode-text-shape-type-and-grow
   (let [id    (uuid/next)
         shape {:id id
