@@ -198,7 +198,7 @@
   padding: var(--sp-s);
   border-radius: $br-8;
   z-index: var(--z-index-dropdown);
-  color: var(--title-foreground-color-hover);
+  color: var(--color-foreground-secondary);
   background-color: var(--switcher-dropdown-background);
   border: $b-2 solid var(--panel-border-color);
   margin: 0;
@@ -261,7 +261,6 @@
 .column-label {
   @include t.use-typography("headline-small");
 
-  color: var(--color-foreground-secondary);
   padding: var(--sp-s) $sz-6 $sz-6 var(--sp-m);
   margin-block-end: var(--sp-xxs);
   text-transform: uppercase;
@@ -331,6 +330,7 @@
 
   &:hover {
     background-color: var(--menu-background-color-hover);
+    color: var(--color-foreground-primary);
   }
 }
 
@@ -366,7 +366,6 @@
 
   min-width: 0;
   text-align: left;
-  color: var(--menu-foreground-color-hover);
 }
 
 .organization-text,
@@ -376,6 +375,12 @@
 
 .selected {
   background-color: var(--menu-background-color-hover);
+  color: var(--color-foreground-primary);
+}
+
+.organization-current,
+.team-current {
+  color: var(--color-foreground-primary);
 }
 
 .action {

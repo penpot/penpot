@@ -220,7 +220,7 @@
         [:> raw-svg* {:id penpot-logo-icon-subtle}]]
        [:> organization-avatar* {:organization organization :size "xxl"}])
      [:span {:class (stl/css :organization-text-group)}
-      [:span {:class (stl/css :organization-text)
+      [:span {:class (stl/css-case :organization-text true :organization-current (= bucket-id current-id))
               :title (if personal? (tr "dashboard.other-teams") (:name organization))}
        (if personal? (tr "dashboard.other-teams") (:name organization))]
       (when (= bucket-id current-id)
@@ -289,7 +289,7 @@
               :href admin-console-href
               :tab-index "-1"}
           [:span {:class (stl/css :icon-wrapper)}
-           [:> icon* {:icon-id i/arrow-up-right :class (stl/css :action-icon)}]]
+           [:> icon* {:size "s" :icon-id i/arrow-up-right :class (stl/css :action-icon)}]]
           [:span {:class (stl/css :organization-text)} (tr "dashboard.go-to-admin-console")]]])
 
       [:> dropdown-menu-item* {:on-click on-create-organization
@@ -319,7 +319,7 @@
                :class (stl/css :team-item-picture)
                :alt (:name team)}])
       [:span {:class (stl/css :team-text-group)}
-       [:span {:class (stl/css :team-text)
+       [:span {:class (stl/css-case :team-text true :team-current (= (:id team) selected-team-id))
                :title (team-display-name team)}
         (team-display-name team)]
        (when show-badge?
