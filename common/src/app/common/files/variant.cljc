@@ -79,7 +79,7 @@
   [data component]
   (let [page-id (:main-instance-page component)
         objects (-> (dm/get-in data [:pages-index page-id])
-                      (get :objects))]
+                    (get :objects))]
     (->> (get-variant-mains data component)
          peek
          (get objects))))
