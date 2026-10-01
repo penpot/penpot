@@ -27,12 +27,13 @@
    [app.storage.tmp :as tmp]))
 
 (defn- resource-uri
-  "The url a user downloads the artifact from."
+  "The url a user downloads the artifact from. A string, because the
+  descriptor ends up in the JSON result of the job."
   [id]
-  (-> (cf/get :public-uri)
-      (u/ensure-path-slash)
-      (u/join "assets/by-id/")
-      (u/join (str id))))
+  (str (-> (cf/get :public-uri)
+           (u/ensure-path-slash)
+           (u/join "assets/by-id/")
+           (u/join (str id)))))
 
 (defn put-resource
   "Store an artifact of a job in the `job-resource` bucket and return the

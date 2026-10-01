@@ -204,14 +204,16 @@
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
         job-id  (make-job! (:id profile) nil)
-        output  (jobs/invoke (-> th/*system*
+        result  (jobs/invoke (-> th/*system*
                                  (assoc ::jobs/name :export-binfile)
                                  (assoc ::jobs/params {:file-ids    #{file-id}
                                                        :export-type :detach-libraries})
                                  (assoc ::jobs/context (job-context job-id))))]
 
-    (t/is (some? output))
-    (t/is (fs/exists? output))
+    (t/testing "the handler answers with the completion envelope of the job"
+      (t/is (uuid? (:resource-id result)))
+      (t/is (some? (get-in result [:result :resource-uri]))))
+
     (t/testing "the handler reported progress without knowing the job id"
       (t/is (pos? (count (progress-events job-id)))))))
 

@@ -12,9 +12,12 @@
    [app.common.schema :as sm]
    [app.db :as db]
    [app.jobs :as jobs]
+   [app.jobs.storage :as js]
    [app.metrics :as mtx]
+   [app.rpc.commands.files :as files]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]))
 
 (def schema:params
@@ -25,18 +28,38 @@
    [:export-type [::sm/one-of #{:include-libraries :merge-libraries
                                 :detach-libraries :link-later}]]])
 
+(def ^:private artifact
+  "What the user sees of the package an export produces. A single name
+  describes a set of files, so it does not come from any of them."
+  {:filename "export.penpot"
+   :mtype    "application/zip"})
+
 (defn execute-export
   "Plain handler, importable and testable without integrant.
 
-  The artifact is left in a temporary file for the caller to store and
-  clean up: uploading it to storage and completing with its descriptor is
-  the next step of the job."
+  The read permission is checked again here, and not only when the job was
+  created: it can be revoked while the job waits in its queue. The artifact
+  is stored as the resource of the job, and the completion envelope carries
+  its descriptor as the business result and its id for the runner to
+  associate."
   [cfg context params]
-  (let [output (tmp/tempfile* :suffix ".penpot")]
-    (bfj/export-files cfg context {:ids         (:file-ids params)
-                                   :export-type (:export-type params)
-                                   :output      output})
-    output))
+  (let [profile-id (:profile-id context)
+        file-ids   (:file-ids params)]
+
+    (doseq [file-id file-ids]
+      (files/check-read-permissions! cfg profile-id file-id))
+
+    (let [output (tmp/tempfile* :suffix ".penpot")]
+      (try
+        (bfj/export-files cfg context {:ids         file-ids
+                                       :export-type (:export-type params)
+                                       :output      output})
+        (let [resource (js/put-resource cfg profile-id
+                                        (assoc artifact :content (sto/content output)))]
+          {:result      (dissoc resource :resource-id)
+           :resource-id (:resource-id resource)})
+        (finally
+          (fs/delete output))))))
 
 (defmethod ig/assert-key ::export-binfile-job-def
   [_ params]
