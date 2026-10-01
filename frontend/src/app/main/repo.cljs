@@ -159,6 +159,7 @@
    {:stream? true}
 
    :export-binfile {:response-type :blob}
+   :get-file-wasm-shapes-batch {:response-type :buffer}
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!

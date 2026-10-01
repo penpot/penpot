@@ -14,6 +14,7 @@
    [clojure.test :as t]
    [common-tests.attrs-test]
    [common-tests.buffer-test]
+   [common-tests.render-wasm.upload-encode-test]
    [common-tests.colors-test]
    [common-tests.data-test]
    [common-tests.files-builder-test]
@@ -99,6 +100,7 @@
    'common-tests.attrs-test
    'common-tests.buffer-test
    'common-tests.colors-test
+   'common-tests.render-wasm.upload-encode-test
    'common-tests.data-test
    'common-tests.files-changes-test
    'common-tests.files-builder-test

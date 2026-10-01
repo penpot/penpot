@@ -18,6 +18,7 @@
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
    [app.common.render-wasm.api.select :as wselect]
+   [app.common.render-wasm.api.upload :as upload]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.mem.heap32 :as mem.h32]
@@ -38,6 +39,7 @@
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace.texts-v3 :as texts]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.shapes.text]
@@ -66,6 +68,58 @@
    [rumext.v2 :as mf]))
 
 (def use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+(defn wasm-shapes-batch-enabled?
+  "Prototype: server-encoded cold-load batch (on by default).
+  Disable with `disable-wasm-shapes-batch` in penpotFlags / PENPOT_FLAGS."
+  []
+  (contains? cf/flags :wasm-shapes-batch))
+
+;; Prefetched `_set_shapes_batch` bytes for the next cold load.
+;; Shape: {:file-id uuid :page-id uuid :promise Promise<Uint8Array|nil>}
+(defonce ^:private cold-load-batch* (atom nil))
+
+(defn clear-cold-load-batch!
+  []
+  (reset! cold-load-batch* nil))
+
+(defn prefetch-cold-load-batch!
+  "Start downloading the server-encoded shapes batch for `file-id`/`page-id`.
+  Safe to call multiple times; only the latest pair is kept."
+  [file-id page-id]
+  (when (and (wasm-shapes-batch-enabled?) (uuid? file-id) (uuid? page-id))
+    (let [t0 (js/performance.now)
+          prom
+          (p/create
+           (fn [resolve reject]
+             (->> (rp/cmd! :get-file-wasm-shapes-batch
+                           {:file-id file-id
+                            :page-id page-id})
+                  (rx/take 1)
+                  (rx/subs!
+                   (fn [buf]
+                     (let [u8 (js/Uint8Array. buf)
+                           ms (- (js/performance.now) t0)]
+                       (js/console.info
+                        "[wasm-batch] download"
+                        (.-byteLength u8) "bytes in"
+                        (.toFixed ms 1) "ms")
+                       (resolve u8)))
+                   (fn [err]
+                     (js/console.warn "[wasm-batch] download failed" err)
+                     (resolve nil))))))]
+      (reset! cold-load-batch*
+              {:file-id file-id
+               :page-id page-id
+               :promise prom})
+      prom)))
+
+(defn- take-cold-load-batch-promise
+  [file-id page-id]
+  (when-let [entry @cold-load-batch*]
+    (when (and (= file-id (:file-id entry))
+               (= page-id (:page-id entry)))
+      (:promise entry))))
 
 (defn- wasm-get-numeric-value
   "Read a positive numeric query param (e.g. `?dpr=2`)."
@@ -1788,24 +1842,15 @@
 
 (def ^:private ^:const BATCH_MAX_SHAPES 512)
 
-(defn- process-shapes-chunk
-  "Process up to `BATCH_MAX_SHAPES` shapes starting at `start-index`.
-
-   Structural attrs are uploaded in one `_set_shapes_batch` FFI per chunk;
-   host-specific attrs (fills/strokes/text/grid/path) stay per-shape.
-
-   Returns {:thumbnails [...] :full [...] :text-font-state {...} :next-index n}"
-  [shapes start-index thumbnails-acc full-acc text-font-state-acc]
-  (let [total     (count shapes)
+(defn- process-host-attrs-chunk
+  "Process host-specific attrs for up to `BATCH_MAX_SHAPES` already-uploaded
+   shapes. `prepared` must already be svg-derived."
+  [prepared start-index thumbnails-acc full-acc text-font-state-acc]
+  (let [total     (count prepared)
         end-index (min total (+ start-index BATCH_MAX_SHAPES))
-        chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
-                                   start-index end-index))
-        prepared  (serialize-shape/serialize-shapes-batch!
-                   chunk
-                   {:include-layout? true
-                    :include-fills-strokes? true})]
-
-    (loop [xs prepared
+        chunk     (into [] (subvec (if (vector? prepared) prepared (vec prepared))
+                                   start-index end-index))]
+    (loop [xs chunk
            t-acc (transient thumbnails-acc)
            f-acc (transient full-acc)
            font-state-acc text-font-state-acc]
@@ -1824,6 +1869,114 @@
          :text-font-state font-state-acc
          :next-index end-index}))))
 
+(defn- process-shapes-chunk
+  "Process up to `BATCH_MAX_SHAPES` shapes starting at `start-index`.
+
+   Structural attrs are uploaded in one `_set_shapes_batch` FFI per chunk;
+   host-specific attrs (fills/strokes/text/grid/path) stay per-shape.
+
+   Returns {:thumbnails [...] :full [...] :text-font-state {...} :next-index n}"
+  [shapes start-index thumbnails-acc full-acc text-font-state-acc]
+  (let [total     (count shapes)
+        end-index (min total (+ start-index BATCH_MAX_SHAPES))
+        chunk     (into [] (subvec (if (vector? shapes) shapes (vec shapes))
+                                   start-index end-index))
+        prepared  (serialize-shape/serialize-shapes-batch!
+                   chunk
+                   {:include-layout? true
+                    :include-fills-strokes? true})]
+    (-> (process-host-attrs-chunk prepared 0 thumbnails-acc full-acc text-font-state-acc)
+        (assoc :next-index end-index))))
+
+(defn- read-batch-shape-id-at
+  "Decode shape id at `byte-offset` from a `_set_shapes_batch` buffer
+  (LE u32 quartet)."
+  [u8 byte-offset]
+  (when (and u8 (>= (.-byteLength ^js u8) (+ byte-offset 16)))
+    (let [view (js/DataView. (.-buffer ^js u8)
+                             (.-byteOffset ^js u8)
+                             (.-byteLength ^js u8))
+          a (.getUint32 view byte-offset true)
+          b (.getUint32 view (+ byte-offset 4) true)
+          c (.getUint32 view (+ byte-offset 8) true)
+          d (.getUint32 view (+ byte-offset 12) true)]
+      (uuid/from-unsigned-parts a b c d))))
+
+(defn- find-batch-child-shape-id
+  "Walk the batch and return the first shape id that is not `uuid/zero`.
+  Root is all-zero so it matches under both BE and LE layouts — useless
+  for detecting the JVM UUID endian bug."
+  [u8]
+  (when (and u8 (>= (.-byteLength ^js u8) 4))
+    (let [view  (js/DataView. (.-buffer ^js u8)
+                              (.-byteOffset ^js u8)
+                              (.-byteLength ^js u8))
+          count (.getUint32 view 0 true)]
+      (loop [i 0
+             off 4]
+        (when (and (< i count) (<= (+ off 4 16) (.-byteLength ^js u8)))
+          (let [plen (.getUint32 view off true)
+                id   (read-batch-shape-id-at u8 (+ off 4))]
+            (if (and id (not= id uuid/zero))
+              id
+              (recur (inc i) (+ off 4 plen)))))))))
+
+(defn- server-batch-ids-match?
+  "True when a non-root id from the server buffer appears in `shapes`.
+  A mismatch means the JVM encoder still emits BE UUID longs — host text
+  content would attach to orphan shapes and texts stay invisible."
+  [u8 shapes]
+  (let [batch-id (find-batch-child-shape-id u8)
+        shape-ids (into #{} (map :id) shapes)]
+    (cond
+      (nil? batch-id)
+      (do (js/console.warn "[wasm-batch] no non-root id in buffer")
+          false)
+
+      (contains? shape-ids batch-id)
+      (do (js/console.info "[wasm-batch] uuid parity ok" (str batch-id))
+          true)
+
+      :else
+      (do (js/console.error "[wasm-batch] uuid parity FAIL"
+                            "batch-child=" (str batch-id)
+                            "not in page shapes — refusing ingest"
+                            "(backend still on BE uuid layout?)")
+          false))))
+
+(defn- maybe-ingest-server-batch!
+  "If a prefetched server batch is available for the current page, flush it
+   and apply path/svg tails. Returns a promise of
+   `{:mode :server :prepared [...]}` or `{:mode :client}`."
+  [shapes]
+  (let [state   @st/state
+        file-id (:current-file-id state)
+        page-id (:current-page-id state)
+        batch-p (take-cold-load-batch-promise file-id page-id)]
+    (if-not batch-p
+      (p/resolved {:mode :client})
+      (-> batch-p
+          (p/then
+           (fn [u8]
+             (clear-cold-load-batch!)
+             (cond
+               (nil? u8)
+               {:mode :client}
+
+               (not (server-batch-ids-match? u8 shapes))
+               {:mode :client}
+
+               :else
+               (let [t0 (js/performance.now)]
+                 (upload/flush-shapes-batch-bytes! u8)
+                 (let [prepared (serialize-shape/apply-batch-tails! shapes)
+                       ms (- (js/performance.now) t0)]
+                   (js/console.info "[wasm-batch] structural ingest"
+                                    (.-byteLength u8) "bytes in"
+                                    (.toFixed ms 1) "ms"
+                                    "protocol" upload/PROTOCOL-VERSION)
+                   {:mode :server :prepared prepared})))))))))
+
 (defn- set-objects-async
   "Asynchronously process shapes in time-budgeted chunks, yielding to the
    browser between chunks so the UI stays responsive.
@@ -1832,72 +1985,78 @@
   (let [total-shapes (count shapes)]
     (p/create
      (fn [resolve _reject]
-       (letfn [(process-next-chunk [index thumbnails-acc full-acc text-font-state-acc]
+       (letfn [(finalize! [thumbnails-acc full-acc text-font-state-acc prepared-shapes]
+                 (perf/end-measure "set-objects")
+                 (when on-shapes-ready (on-shapes-ready))
+                 (if-not (wasm/live?)
+                   (do
+                     (end-shapes-loading!)
+                     (resolve nil))
+                   (do
+                     (h/call wasm/internal-module "_end_loading")
+                     (end-shapes-loading!)
+                     (h/call wasm/internal-module "_set_view_end")
+                     (reset! view-interaction-active? false)
+                     (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) prepared-shapes)]
+                       (when (seq text-ids)
+                         (update-text-layouts text-ids)))
+                     (if render-callback
+                       (render-callback)
+                       (request-render "set-objects-complete"))
+                     (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
+                     (resolve nil)
+                     (let [pending-thumbnails (d/index-by :key :callback thumbnails-acc)
+                           pending-full       (d/index-by :key :callback full-acc)]
+                       (when (or (seq pending-thumbnails) (seq pending-full))
+                         (->> (rx/concat
+                               (->> (rx/from (vals pending-thumbnails))
+                                    (rx/merge-map
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
+                                    (rx/reduce conj []))
+                               (->> (rx/from (vals pending-full))
+                                    (rx/mapcat
+                                     (fn [callback]
+                                       (if (fn? callback) (callback) (rx/empty))))
+                                    (rx/reduce conj [])))
+                              (rx/subs!
+                               noop-fn
+                               noop-fn
+                               (fn []
+                                 (relayout-after-fonts! prepared-shapes text-font-state-acc)
+                                 (request-render "images-loaded")))))))))
+
+               (process-next-client-chunk [index thumbnails-acc full-acc text-font-state-acc]
                  (if (< index total-shapes)
-                   ;; Process one time-budgeted chunk
                    (let [{:keys [thumbnails full text-font-state next-index]}
                          (process-shapes-chunk shapes index
                                                thumbnails-acc full-acc text-font-state-acc)]
-                     ;; Yield to browser, then continue with next chunk
                      (-> (yield-to-browser)
                          (p/then (fn [_]
-                                   (process-next-chunk next-index thumbnails full text-font-state)))))
-                   ;; All chunks done - finalize
-                   (do
-                     (perf/end-measure "set-objects")
+                                   (process-next-client-chunk next-index thumbnails full text-font-state)))))
+                   (finalize! thumbnails-acc full-acc text-font-state-acc shapes)))
 
-                     ;; Notify that shapes are loaded and tiles rebuilt
-                     (when on-shapes-ready (on-shapes-ready))
-                     (if-not (wasm/live?)
-                       (do
-                         (end-shapes-loading!)
-                         (resolve nil))
-                       (do
-                         ;; Show shapes immediately: end loading overlay + unblock rendering
-                         (h/call wasm/internal-module "_end_loading")
-                         (end-shapes-loading!)
+               (process-next-server-chunk [prepared index thumbnails-acc full-acc text-font-state-acc]
+                 (if (< index (count prepared))
+                   (let [{:keys [thumbnails full text-font-state next-index]}
+                         (process-host-attrs-chunk prepared index
+                                                   thumbnails-acc full-acc text-font-state-acc)]
+                     (-> (yield-to-browser)
+                         (p/then (fn [_]
+                                   (process-next-server-chunk prepared next-index
+                                                              thumbnails full text-font-state)))))
+                   (finalize! thumbnails-acc full-acc text-font-state-acc prepared)))]
 
-                         ;; Rebuild the tile index so _render knows which shapes
-                         ;; map to which tiles after a page switch.
-                         (h/call wasm/internal-module "_set_view_end")
-                         (reset! view-interaction-active? false)
-
-                         ;; Text layouts must run after _end_loading (they
-                         ;; depend on state that is only correct when loading
-                         ;; is false).  Each call touch_shape → touched_ids.
-                         (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)]
-                           (when (seq text-ids)
-                             (update-text-layouts text-ids)))
-                         (if render-callback
-                           (render-callback)
-                           (request-render "set-objects-complete"))
-                         (ug/dispatch! (ug/event "penpot:wasm:set-objects"))
-                         (resolve nil)
-
-                         ;; Kick off image fetches in the background.
-                         ;; The promise is already resolved so these don't
-                         ;; block the caller.
-                         (let [pending-thumbnails (d/index-by :key :callback thumbnails-acc)
-                               pending-full       (d/index-by :key :callback full-acc)]
-                           (when (or (seq pending-thumbnails) (seq pending-full))
-                             (->> (rx/concat
-                                   (->> (rx/from (vals pending-thumbnails))
-                                        (rx/merge-map
-                                         (fn [callback]
-                                           (if (fn? callback) (callback) (rx/empty))))
-                                        (rx/reduce conj []))
-                                   (->> (rx/from (vals pending-full))
-                                        (rx/mapcat
-                                         (fn [callback]
-                                           (if (fn? callback) (callback) (rx/empty))))
-                                        (rx/reduce conj [])))
-                                  (rx/subs!
-                                   noop-fn
-                                   noop-fn
-                                   (fn []
-                                     (relayout-after-fonts! shapes text-font-state-acc)
-                                     (request-render "images-loaded")))))))))))]
-         (process-next-chunk 0 [] [] empty-text-font-state))))))
+         (-> (maybe-ingest-server-batch! shapes)
+             (p/then
+              (fn [{:keys [mode prepared]}]
+                (if (= mode :server)
+                  (process-next-server-chunk prepared 0 [] [] empty-text-font-state)
+                  (process-next-client-chunk 0 [] [] empty-text-font-state))))
+             (p/catch
+              (fn [err]
+                (js/console.error "[wasm-batch] ingest failed, falling back" err)
+                (process-next-client-chunk 0 [] [] empty-text-font-state)))))))))
 
 
 ;; This is a version of process-pending that doesn't have sideffects
@@ -1947,45 +2106,61 @@
     (process-pending-no-sideffects thumbnails full set-objects-cb)))
 
 (defn- set-objects-sync
-  "Synchronously process all shapes (for small shape counts)."
+  "Process all shapes for a small page. Still async at the edges: server
+   batch ingest is a promise (prefetch), so callers must have
+   `shapes-loading?` set before the pool is cleared."
   [shapes render-callback on-shapes-ready]
-  (let [prepared     (serialize-shape/serialize-shapes-batch!
-                      shapes
-                      {:include-layout? true
-                       :include-fills-strokes? true})
-        total-shapes (count prepared)
-        {:keys [thumbnails full text-font-state]}
-        (loop [index 0
-               thumbnails-acc (transient [])
-               full-acc (transient [])
-               font-state-acc empty-text-font-state]
-          (if (< index total-shapes)
-            (let [shape (nth prepared index)
-                  {:keys [thumbnails full font-face-keys pending-font-face-keys]}
-                  (set-object-host-attrs shape true :skip-fills-strokes? true)]
-              (recur (inc index)
-                     (reduce conj! thumbnails-acc thumbnails)
-                     (reduce conj! full-acc full)
-                     (acc-text-font-state font-state-acc
-                                          (:id shape)
-                                          font-face-keys
-                                          pending-font-face-keys)))
-            {:thumbnails (persistent! thumbnails-acc)
-             :full (persistent! full-acc)
-             :text-font-state font-state-acc}))]
-    (perf/end-measure "set-objects")
-    (when on-shapes-ready (on-shapes-ready))
-    (when (wasm/live?)
-      ;; Rebuild the tile index so _render knows which shapes
-      ;; map to which tiles after a page switch.
-      (h/call wasm/internal-module "_set_view_end")
-      (reset! view-interaction-active? false)
-      (process-pending shapes thumbnails full text-font-state
-                       (fn []
-                         (if render-callback
-                           (render-callback)
-                           (request-render "set-objects-sync-complete"))
-                         (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))
+  (-> (maybe-ingest-server-batch! shapes)
+      (p/then
+       (fn [{:keys [mode prepared]}]
+         (let [prepared (if (= mode :server)
+                          prepared
+                          (serialize-shape/serialize-shapes-batch!
+                           shapes
+                           {:include-layout? true
+                            :include-fills-strokes? true}))
+               total-shapes (count prepared)
+               {:keys [thumbnails full text-font-state]}
+               (loop [index 0
+                      thumbnails-acc (transient [])
+                      full-acc (transient [])
+                      font-state-acc empty-text-font-state]
+                 (if (< index total-shapes)
+                   (let [shape (nth prepared index)
+                         {:keys [thumbnails full font-face-keys pending-font-face-keys]}
+                         (set-object-host-attrs shape true :skip-fills-strokes? true)]
+                     (recur (inc index)
+                            (reduce conj! thumbnails-acc thumbnails)
+                            (reduce conj! full-acc full)
+                            (acc-text-font-state font-state-acc
+                                                 (:id shape)
+                                                 font-face-keys
+                                                 pending-font-face-keys)))
+                   {:thumbnails (persistent! thumbnails-acc)
+                    :full (persistent! full-acc)
+                    :text-font-state font-state-acc}))]
+           (perf/end-measure "set-objects")
+           (when on-shapes-ready (on-shapes-ready))
+           (if-not (wasm/live?)
+             (end-shapes-loading!)
+             (do
+               (h/call wasm/internal-module "_end_loading")
+               (end-shapes-loading!)
+               (h/call wasm/internal-module "_set_view_end")
+               (reset! view-interaction-active? false)
+               (process-pending prepared thumbnails full text-font-state
+                                (fn []
+                                  (if render-callback
+                                    (render-callback)
+                                    (request-render "set-objects-sync-complete"))
+                                  (ug/dispatch! (ug/event "penpot:wasm:set-objects")))))))))
+      (p/catch
+       (fn [error]
+         (when (wasm/live?)
+           (h/call wasm/internal-module "_end_loading"))
+         (end-shapes-loading!)
+         (js/console.error "[wasm-batch] sync ingest failed" error))))
+  nil)
 
 (defn- shapes-in-tree-order
   "Returns shapes sorted in tree order (parents before children).
@@ -2035,26 +2210,25 @@
      (perf/begin-measure "set-objects")
      (let [shapes (shapes-in-tree-order objects)
            total-shapes (count shapes)]
+       ;; Gate rAF while the pool may be empty or mid-ingest. Server batch
+       ;; ingest is always a promise (even for "sync" small pages), so both
+       ;; paths need this — otherwise page switches panic in `_render`.
+       (begin-shapes-loading!)
+       (h/call wasm/internal-module "_begin_loading")
        (if (or force-sync (< total-shapes ASYNC_THRESHOLD))
          (set-objects-sync shapes render-callback on-shapes-ready)
-         (do
-           (begin-shapes-loading!)
-           (h/call wasm/internal-module "_begin_loading")
-           ;; NOTE: to render a loading overlay in the future
-           ;;  (when-not on-shapes-ready
-           ;;    (h/call wasm/internal-module "_render_loading_overlay"))
-           (try
-             (-> (set-objects-async shapes render-callback on-shapes-ready)
-                 (p/catch (fn [error]
-                            (h/call wasm/internal-module "_end_loading")
-                            (end-shapes-loading!)
-                            (js/console.error "Async WASM shape loading failed" error))))
-             (catch :default error
-               (h/call wasm/internal-module "_end_loading")
-               (end-shapes-loading!)
-               (js/console.error "Async WASM shape loading failed" error)
-               (throw error)))
-           nil))))))
+         (try
+           (-> (set-objects-async shapes render-callback on-shapes-ready)
+               (p/catch (fn [error]
+                          (h/call wasm/internal-module "_end_loading")
+                          (end-shapes-loading!)
+                          (js/console.error "Async WASM shape loading failed" error))))
+           (catch :default error
+             (h/call wasm/internal-module "_end_loading")
+             (end-shapes-loading!)
+             (js/console.error "Async WASM shape loading failed" error)
+             (throw error))))
+       nil))))
 
 (defn clear-focus-mode
   []

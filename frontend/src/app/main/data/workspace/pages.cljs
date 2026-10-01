@@ -32,6 +32,7 @@
    [app.main.features :as features]
    [app.main.router :as rt]
    [app.main.worker :as mw]
+   [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
@@ -104,22 +105,27 @@
     ptk/WatchEvent
     (watch [_ state _]
       (if (dsh/lookup-page state file-id page-id)
-        (rx/concat
-         (rx/of (initialize-page* file-id page-id)
-                (fdf/fix-deleted-fonts-for-page file-id page-id))
+        (do
+          ;; Prototype: prefetch server shapes-batch on page open/switch
+          ;; so cold ingest can skip client structural encode.
+          (wasm.api/prefetch-cold-load-batch! file-id page-id)
 
-         ;; Disable thumbnail generation in wasm renderer
-         (if (features/active-feature? state "render-wasm/v1")
-           (rx/empty)
-           (rx/of (dwth/watch-state-changes file-id page-id)))
+          (rx/concat
+           (rx/of (initialize-page* file-id page-id)
+                  (fdf/fix-deleted-fonts-for-page file-id page-id))
 
-         (rx/of (dwl/watch-component-changes))
-         (rx/of (dwl/watch-token-changes))
+           ;; Disable thumbnail generation in wasm renderer
+           (if (features/active-feature? state "render-wasm/v1")
+             (rx/empty)
+             (rx/of (dwth/watch-state-changes file-id page-id)))
 
-         (let [profile (:profile state)
-               props   (get profile :props)]
-           (when (not (:workspace-visited props))
-             (rx/of (select-frame-tool file-id page-id)))))
+           (rx/of (dwl/watch-component-changes))
+           (rx/of (dwl/watch-token-changes))
+
+           (let [profile (:profile state)
+                 props   (get profile :props)]
+             (when (not (:workspace-visited props))
+               (rx/of (select-frame-tool file-id page-id))))))
 
         ;; NOTE: this redirect is necessary for cases where user
         ;; explicitly passes an non-existing page-id on the url

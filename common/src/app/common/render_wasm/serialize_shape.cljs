@@ -75,3 +75,14 @@
           (wselect/use-shape (:id shape))
           (write-shape-tail! shape))))
     prepared))
+
+(defn apply-batch-tails!
+  "Apply svg-attrs/path tails after a pre-encoded structural batch ingest.
+  Returns the svg-derived prepared shapes vector."
+  [shapes]
+  (let [prepared (mapv svg-derived/apply-svg-derived shapes)]
+    (doseq [shape prepared]
+      (when (needs-shape-tail? shape)
+        (wselect/use-shape (:id shape))
+        (write-shape-tail! shape)))
+    prepared))

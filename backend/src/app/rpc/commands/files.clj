@@ -24,11 +24,13 @@
    [app.common.types.file :as ctf]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uri :as uri]
+   [app.common.render-wasm.api.upload-encode :as upload-encode]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
    [app.features.logical-deletion :as ldel]
+   [app.http :as-alias http]
    [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
@@ -471,6 +473,59 @@
               (fn [cfg]
                 (check-read-permissions! cfg profile-id file-id share-id)
                 (get-page cfg (assoc params :profile-id profile-id)))))
+
+;; --- COMMAND QUERY: get-file-wasm-shapes-batch (prototype)
+
+(def schema:get-file-wasm-shapes-batch
+  [:map {:title "get-file-wasm-shapes-batch"}
+   [:file-id ::sm/uuid]
+   [:page-id {:optional true} ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
+
+(defn- encode-page-wasm-shapes-batch
+  "Encode page objects to `_set_shapes_batch` bytes. Prototype helper."
+  [page]
+  ;; Prototype: pick up common encoder edits (e.g. UUID LE layout) without a
+  ;; full JVM restart. Remove once the path is no longer experimental.
+  (require 'app.common.render-wasm.api.upload-encode :reload)
+  (let [objects (:objects page)
+        t0      (System/nanoTime)
+        bytes   (upload-encode/encode-page-objects objects)
+        elapsed (/ (- (System/nanoTime) t0) 1e6)
+        n       (count objects)]
+    (l/info :hint "wasm-shapes-batch encoded"
+            :version upload-encode/PROTOCOL-VERSION
+            :shapes n
+            :bytes (alength ^bytes bytes)
+            :encode-ms (format "%.2f" elapsed))
+    {:bytes bytes
+     :shape-count n
+     :encode-ms elapsed}))
+
+(sv/defmethod ::get-file-wasm-shapes-batch
+  "Prototype: returns a binary `_set_shapes_batch` buffer for a page.
+  Used to measure cold-load TTFP when the frontend ingests the buffer
+  instead of encoding shapes in the browser. Auth same as get-page."
+  {::doc/added "2.12"
+   ::sm/params schema:get-file-wasm-shapes-batch}
+  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
+  (db/tx-run! cfg
+              (fn [cfg]
+                (check-read-permissions! cfg profile-id file-id share-id)
+                (let [page   (get-page cfg (assoc params :profile-id profile-id))
+                      file   (bfc/get-file cfg file-id :read-only? true)
+                      result (encode-page-wasm-shapes-batch page)
+                      bytes  (:bytes result)
+                      revn   (:revn file)]
+                  (rph/wrap
+                   (java.io.ByteArrayInputStream. bytes)
+                   {::http/headers
+                    {"content-type" "application/octet-stream"
+                     "x-penpot-wasm-batch-version" upload-encode/PROTOCOL-VERSION
+                     "x-penpot-shape-count" (str (:shape-count result))
+                     "x-penpot-file-revn" (str revn)
+                     "x-penpot-encode-ms" (format "%.2f" (:encode-ms result))}})))))
 
 ;; --- COMMAND QUERY: get-team-shared-files
 

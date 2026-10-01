@@ -151,6 +151,8 @@
     :render-wasm-dpr
     ;; Show WASM renderer info label (hidden by default).
     :render-wasm-info
+    ;; Prototype: ingest server-encoded `_set_shapes_batch` on cold load.
+    :wasm-shapes-batch
     :render-switch
     :hide-release-modal
     :subscriptions
@@ -225,6 +227,7 @@
    :enable-token-import-from-library
    :enable-render-switch
    :enable-render-wasm-info
+   :enable-wasm-shapes-batch
    :enable-available-viewer-wasm
    :enable-background-blur
    :enable-stroke-path

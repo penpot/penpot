@@ -357,10 +357,20 @@
   [file-id features]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
 
-      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
+      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
+            page-id   (or (some-> (rt/get-params state) :page-id uuid/parse*)
+                          (:current-page-id state)
+                          (some-> (dsh/lookup-file-data state file-id)
+                                  (get :pages)
+                                  (first)))]
+
+        ;; Prototype: overlap binary shapes-batch download with Transit fetch.
+        (when (uuid? page-id)
+          (wasm.api/prefetch-cold-load-batch! file-id page-id))
+
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (get-file-object-thumbnails file-id))
              (rx/take 1)
