@@ -1038,26 +1038,49 @@
       file-id')))
 
 (defn- import-file-relations
+  "Import library relations from the manifest, ignoring relations whose
+  endpoints are not both part of the package. Of the rest, skip edges that
+  would close a dependency cycle or link a file to itself (same check as
+  `link-file-to-library`, see `bfc/library-link-status`). Relations are
+  processed in sorted manifest order and the first edge wins: an edge
+  that would close a cycle with previously imported relations is skipped
+  and logged."
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
-  (let [relations (:relations manifest)
+  (let [relations (sort-by (fn [[file-id libr-id]] [(str file-id) (str libr-id)])
+                           (:relations manifest))
         file-ids  (into #{} (map :id) (:files manifest))]
     (doseq [[index [file-id libr-id]] (d/enumerate relations)]
       (tap-progress cfg {:section :relations
-                         :current (inc index) :total (count relations)})
+                         :current (inc index)
+                         :total (count relations)})
 
-      (if (and (not= file-id libr-id)
-               (contains? file-ids file-id)
+      (if (and (contains? file-ids file-id)
                (contains? file-ids libr-id))
         (let [file-id (bfc/lookup-index file-id)
               libr-id (bfc/lookup-index libr-id)]
-          (l/dbg :hint "create file library link"
-                 :file-id (str file-id)
-                 :lib-id (str libr-id)
-                 ::l/sync? true)
-          (let [rel-params {:file-id file-id
-                            :library-file-id libr-id}]
-            (db/insert! conn :file-library-rel rel-params)
-            (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))
+          (case (bfc/library-link-status cfg file-id libr-id)
+            :self-link
+            (l/warn :hint "ignoring self-referencing library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
+
+            :circular
+            (l/warn :hint "ignoring circular library link"
+                    :file-id (str file-id)
+                    :lib-id (str libr-id)
+                    ::l/sync? true)
+
+            :ok
+            (do
+              (l/dbg :hint "create file library link"
+                     :file-id (str file-id)
+                     :lib-id (str libr-id)
+                     ::l/sync? true)
+              (let [rel-params {:file-id file-id
+                                :library-file-id libr-id}]
+                (db/insert! conn :file-library-rel rel-params)
+                (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp))))))
         (l/warn :hint "ignoring invalid file library relation"
                 :file-id (str file-id)
                 :lib-id (str libr-id))))))
