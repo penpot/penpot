@@ -491,7 +491,10 @@
 
 (defn check-props-size
   "Raises :props-too-large when props exceed the total size limit.
-  Returns props unchanged so it can be threaded into the write."
+  Returns props unchanged so it can be threaded into the write.
+
+  Used by the user-facing props writers; system writers (OIDC login,
+  management subscription) write fixed-key props and skip it."
   [props]
   (let [limit (cf/get :profile-props-max-size default-props-max-size)
         size  (props-size props)]
@@ -686,8 +689,41 @@
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
+(defn- truncate-string
+  "Cuts s to at most n chars without splitting a surrogate pair."
+  [^String s n]
+  (if (> (count s) n)
+    (let [n (if (Character/isHighSurrogate (.charAt s (dec n))) (dec n) n)]
+      (subs s 0 n))
+    s))
+
+(defn- clamp-plugin-entry
+  [entry]
+  (reduce-kv (fn [entry k n]
+               (let [v (get entry k)]
+                 (if (and (string? v) (> (count v) n))
+                   (assoc entry k (truncate-string v n))
+                   entry)))
+             entry
+             ctp/registry-entry-max-lengths))
+
+(defn clamp-plugins-registry
+  "Fits a plugin registry into the registry schema caps: keeps the
+  first `ctp/max-plugins` plugins with data and truncates the bounded
+  strings. Applied on read, so a stored registry over the caps cannot
+  keep the profile over the props size limit."
+  [{:keys [ids data] :as plugins}]
+  (let [ids  (->> ids
+                  (filter #(contains? data %))
+                  (distinct)
+                  (take ctp/max-plugins)
+                  (vec))
+        data (update-vals (select-keys data ids) clamp-plugin-entry)]
+    (assoc plugins :ids ids :data data)))
+
 (defn decode-row
   [{:keys [props] :as row}]
   (cond-> row
     (db/pgobject? props "jsonb")
-    (assoc :props (db/decode-transit-pgobject props))))
+    (assoc :props (-> (db/decode-transit-pgobject props)
+                      (d/update-when :plugins #(cond-> % (map? %) (clamp-plugins-registry)))))))

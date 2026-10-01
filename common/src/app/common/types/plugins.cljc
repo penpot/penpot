@@ -45,15 +45,24 @@
   "Maximum number of plugins a profile can hold."
   50)
 
+(def registry-entry-max-lengths
+  "Maximum length (in chars) of the bounded registry entry strings.
+  `:code` and `:icon` hold manifest paths, not content."
+  {:name 500
+   :description 4096
+   :host 500
+   :code 500
+   :icon 500})
+
 (def schema:registry-entry
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
-   [:name [:string {:max 500}]]
-   [:description {:optional true} [:string {:max 4096}]]
-   [:host [:string {:max 500}]]
-   [:code [:string {:max 500}]] ;; manifest path, not content
-   [:icon {:optional true} [:string {:max 500}]] ;; manifest path, not content
+   [:name [:string {:max (:name registry-entry-max-lengths)}]]
+   [:description {:optional true} [:string {:max (:description registry-entry-max-lengths)}]]
+   [:host [:string {:max (:host registry-entry-max-lengths)}]]
+   [:code [:string {:max (:code registry-entry-max-lengths)}]]
+   [:icon {:optional true} [:string {:max (:icon registry-entry-max-lengths)}]]
    [:permissions schema:permissions]])
 
 (def schema:plugin-registry

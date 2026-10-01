@@ -152,6 +152,32 @@
           (done')))
       done)))
 
+(t/deftest install-non-validation-error-on-update-resaves-previous
+  (t/async done
+    (mock/with-mocks
+      {rp/cmd! (record-cmd-mock
+                (fn [_ params]
+                  (if (= "v2" (get-in params [:plugin :name]))
+                    (rx/throw (ex-info "busy" {:type :concurrency-limit}))
+                    (rx/of {:ok true}))))}
+      (fn [done']
+        (let [own #{"reg-upd-a" "reg-upd-b" "reg-upd-c"}
+              v1  {:plugin-id "reg-upd-b" :name "v1"}
+              v2  {:plugin-id "reg-upd-b" :name "v2"}]
+          (preg/install-plugin! {:plugin-id "reg-upd-a"})
+          (preg/install-plugin! v1)
+          (preg/install-plugin! {:plugin-id "reg-upd-c"})
+          (reset! mock/rpc-calls [])
+          (preg/install-plugin! v2)
+          (t/is (= [:add-profile-plugin :add-profile-plugin] (cmds))
+                "the compensating write re-saves v1, never removes it")
+          (t/is (= v1 (get-in (second @mock/rpc-calls) [:params :plugin])))
+          (t/is (= v1 (preg/get-plugin "reg-upd-b")))
+          (t/is (= ["reg-upd-c" "reg-upd-b" "reg-upd-a"]
+                   (filterv own (mapv :plugin-id (preg/plugins-list)))))
+          (done')))
+      done)))
+
 ;; --- remove-plugin! ---
 
 (t/deftest remove-success-releases-id
@@ -269,3 +295,28 @@
                    (filterv own (mapv :plugin-id (preg/plugins-list)))))
           (done')))
       done)))
+
+;; --- subscribe-registry! ---
+
+(t/deftest registry-subscriber-sees-rollback
+  (t/async done
+    (let [subjects (atom [])
+          seen     (atom [])
+          listener (fn [] (swap! seen conj (some? (preg/get-plugin "reg-watch"))))]
+      (mock/with-mocks
+        {rp/cmd! (record-cmd-mock
+                  (fn [_ _]
+                    (let [sb (rx/subject)]
+                      (swap! subjects conj sb)
+                      sb)))}
+        (fn [done']
+          (preg/subscribe-registry! listener)
+          (preg/install-plugin! {:plugin-id "reg-watch"})
+          (rx/error! (first @subjects) (ex-info "rejected" {:type :validation}))
+          (t/is (= [true false] @seen)
+                "notified on the optimistic add and on the rollback")
+          (preg/unsubscribe-registry! listener)
+          (preg/install-plugin! {:plugin-id "reg-watch"})
+          (t/is (= [true false] @seen) "no calls after unsubscribing")
+          (done'))
+        done))))

@@ -80,18 +80,12 @@
         plugin-id-str (str plugin-id)]
     (if-not (or (some #(= % plugin-id-str) (:ids plugins))
                 (contains? (:data plugins) plugin-id-str))
-      ;; Nothing to remove: skip the write (and the size check) entirely.
+      ;; Nothing to remove: no write
       nil
       (let [plugins (-> plugins
                         (update :ids #(vec (remove (partial = plugin-id-str) %)))
                         (update :data dissoc plugin-id-str))
-            ;; The size check runs on the resulting props: removal usually
-            ;; shrinks them, but still raises when the remaining props exceed
-            ;; the limit. Kept for uniformity so the user-facing profile.props
-            ;; RPC writes (update-profile-props, update-profile-notifications,
-            ;; add/remove-profile-plugin) all go through the size check. System
-            ;; writers (OIDC login merge, management subscription update) are
-            ;; exempt: they write fixed-key, non-accumulating shapes.
+            ;; Raises when the remaining props still exceed the size limit
             props   (-> (:props profile)
                         (assoc :plugins plugins)
                         (profile/check-props-size))]

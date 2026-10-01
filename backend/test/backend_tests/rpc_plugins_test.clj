@@ -6,6 +6,8 @@
 
 (ns backend-tests.rpc-plugins-test
   (:require
+   [app.common.schema :as sm]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -296,3 +298,86 @@
           props (profile/decode-row saved)]
       (t/is (nil? (get-in props [:props :plugins]))
             ":plugins must not be writable via update-profile-props"))))
+
+;; --- Stored registries over the caps
+
+(defn- legacy-entry
+  [plugin-id & {:as attrs}]
+  (merge valid-plugin {:plugin-id plugin-id :code "plugin.js"} attrs))
+
+(defn- legacy-registry
+  [entries]
+  {:ids  (mapv :plugin-id entries)
+   :data (into {} (map (juxt :plugin-id identity)) entries)})
+
+(defn- stored-props
+  "Props as stored in the database, without the read-time clamping."
+  [profile-id]
+  (db/decode-transit-pgobject (:props (th/db-get :profile {:id profile-id}))))
+
+(t/deftest get-profile-clamps-legacy-registry
+  (let [profile (th/create-profile* 1)
+        big     (apply str (repeat 10000 "x"))
+        ;; "😀" is two chars, so char 500 is a high surrogate
+        emoji   (str (apply str (repeat 499 "n")) "😀")
+        entries (into [(legacy-entry plugin-id-1
+                                     :name emoji
+                                     :description big
+                                     :host big
+                                     :code big
+                                     :icon big)]
+                      (map #(legacy-entry (str "extra-" %)))
+                      (range 60))
+        stored  (-> (legacy-registry entries)
+                    (update :ids conj "dangling"))]
+    (th/db-update! :profile {:props (db/tjson {:plugins stored :renderer :wasm})}
+                   {:id (:id profile)})
+    (let [out     (th/command! {::th/type :get-profile ::rpc/profile-id (:id profile)})
+          props   (get-in out [:result :props])
+          plugins (:plugins props)
+          entry   (get-in plugins [:data plugin-id-1])]
+      (t/is (nil? (:error out)))
+      (t/is (= :wasm (:renderer props)) "other props are kept")
+      (t/is (= (mapv :plugin-id (take ctp/max-plugins entries)) (:ids plugins))
+            "keeps the first plugins in registry order, drops ids without data")
+      (t/is (= (set (:ids plugins)) (set (keys (:data plugins)))))
+      (t/is (= (apply str (repeat 499 "n")) (:name entry)) "does not split a surrogate pair")
+      (doseq [k [:description :host :code :icon]]
+        (t/is (= (get ctp/registry-entry-max-lengths k) (count (get entry k)))
+              (str k " truncated to its cap")))
+      (t/is (sm/validate ctp/schema:plugin-registry plugins)))
+    (t/is (= stored (:plugins (stored-props (:id profile))))
+          "reading does not write")))
+
+(t/deftest get-profile-keeps-valid-registry
+  (let [profile (th/create-profile* 1)
+        stored  (legacy-registry [(legacy-entry plugin-id-1)])]
+    (th/db-update! :profile {:props (db/tjson {:plugins stored})} {:id (:id profile)})
+    (let [out (th/command! {::th/type :get-profile ::rpc/profile-id (:id profile)})]
+      (t/is (= stored (get-in out [:result :props :plugins]))))))
+
+(t/deftest oversized-legacy-profile-recovers-on-write
+  ;; A stored registry over the caps pushes props past the size limit;
+  ;; the clamped read lets writes through and saves the clamped registry
+  (let [profile (th/create-profile* 1)
+        code    (apply str (repeat 3000 "c"))
+        entries [(legacy-entry plugin-id-1 :code code)
+                 (legacy-entry plugin-id-2 :code code)]]
+    (th/db-update! :profile {:props (db/tjson {:plugins (legacy-registry entries)})}
+                   {:id (:id profile)})
+    (with-redefs [cf/get (th/config-get-mock {:profile-props-max-size 5000})]
+      (t/is (thrown? Exception (profile/check-props-size (stored-props (:id profile))))
+            "the stored props exceed the limit")
+      (let [out (th/command! {::th/type :update-profile-props
+                              ::rpc/profile-id (:id profile)
+                              :props {:workspace-visited true}})]
+        (t/is (nil? (:error out))))
+      (let [out (th/command! {::th/type :remove-profile-plugin
+                              ::rpc/profile-id (:id profile)
+                              :plugin-id (uuid/uuid plugin-id-1)})]
+        (t/is (nil? (:error out)))))
+    (let [props (stored-props (:id profile))]
+      (t/is (true? (:workspace-visited props)))
+      (t/is (= [plugin-id-2] (get-in props [:plugins :ids])))
+      (t/is (= 500 (count (get-in props [:plugins :data plugin-id-2 :code])))
+            "the write saved the clamped registry"))))

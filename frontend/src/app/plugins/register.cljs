@@ -112,6 +112,20 @@
       manifest
       (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
 
+(defn subscribe-registry!
+  "Subscribes f, called with no arguments on every registry change.
+  Returns f."
+  [f]
+  (add-watch registry f (fn [_ _ old new]
+                          (when-not (identical? old new)
+                            (f))))
+  f)
+
+(defn unsubscribe-registry!
+  [f]
+  (remove-watch registry f)
+  nil)
+
 (defn load-from-store
   []
   (reset! registry (get-in @st/state [:profile :props :plugins] {})))
@@ -122,8 +136,7 @@
 
 (declare remove-plugin!)
 
-;; Tracks plugin ids with a persist request in flight, so rapid repeated
-;; install/remove clicks on the same plugin cannot stack RPC writes.
+;; Plugin ids with a persist in flight; install/remove calls on them are skipped
 (defonce ^:private in-flight (atom #{}))
 
 (defonce ^:private in-flight-listeners (atom #{}))
@@ -173,6 +186,16 @@
         idx (max 0 (min idx (count v)))]
     (vec (concat (subvec v 0 idx) [id] (subvec v idx)))))
 
+(defn- restore-local!
+  "Puts the stored plugin back into the registry at position idx."
+  [{:keys [plugin-id] :as plugin} idx]
+  (swap! registry #(-> %
+                       (update :ids (fn [ids]
+                                      (insert-at (remove (partial = plugin-id) ids)
+                                                 idx
+                                                 plugin-id)))
+                       (assoc-in [:data plugin-id] plugin))))
+
 (defn install-plugin!
   [plugin]
   (let [plugin-id (:plugin-id plugin)
@@ -192,26 +215,20 @@
                          (release! plugin-id))
                        (fn [err]
                          (release! plugin-id)
-                         (if (validation-error? err)
-                           ;; The server kept the previous version (if any)
-                           ;; in its original position: drop the optimistic
-                           ;; entry and restore both position and data.
-                           (if previous
-                             (swap! registry #(-> %
-                                                  (update :ids (fn [ids]
-                                                                 (insert-at (remove (partial = plugin-id) ids)
-                                                                            prev-idx
-                                                                            plugin-id)))
-                                                  (assoc-in [:data plugin-id] previous)))
-                             (drop-local! plugin))
-                           ;; One-shot compensating write with terminal
-                           ;; callbacks: never re-arms tracking or rollback.
-                           (do
-                             (drop-local! plugin)
-                             (->> (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id})
-                                  (rx/subs! (fn [_] nil)
-                                            (fn [err2]
-                                              (.error js/console "Rollback remove failed:" err2))))))
+                         ;; Restore the previous version in place, else drop it
+                         (if previous
+                           (restore-local! previous prev-idx)
+                           (drop-local! plugin))
+                         ;; Other failures may have reached the server: undo it
+                         ;; once by re-saving the previous version or removing
+                         ;; the new entry, without further rollback.
+                         (when-not (validation-error? err)
+                           (->> (if previous
+                                  (rp/cmd! :add-profile-plugin {:plugin previous})
+                                  (rp/cmd! :remove-profile-plugin {:plugin-id plugin-id}))
+                                (rx/subs! (fn [_] nil)
+                                          (fn [err2]
+                                            (.error js/console "Rollback failed:" err2)))))
                          (.error js/console "Failed to install plugin:" err))))))))
 
 (defn remove-plugin!
@@ -232,13 +249,9 @@
                        (fn [err]
                          (release! plugin-id)
                          (when stored
-                           ;; Restore at the original position; the server
-                           ;; still holds the entry on validation errors.
-                           (swap! registry #(-> %
-                                                (update :ids insert-at prev-idx plugin-id)
-                                                (update :data assoc plugin-id stored)))
-                           ;; One-shot compensating write with terminal
-                           ;; callbacks on any other failure.
+                           ;; Restore in place; validation errors keep it server-side
+                           (restore-local! stored prev-idx)
+                           ;; Other failures: re-save it once, without further rollback
                            (when-not (validation-error? err)
                              (->> (rp/cmd! :add-profile-plugin {:plugin stored})
                                   (rx/subs! (fn [_] nil)
