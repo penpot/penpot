@@ -3217,11 +3217,13 @@
                (map #(vector (:old-id %) (-> % :obj :id))))
               (:redo-changes changes))
 
-        copied-components
-        (ctn/get-all-instance-roots (:objects page) ids)
-
+        ;; Look for the instance roots from the new shapes, where they have
+        ;; been pasted. A copy pasted inside another component is a nested
+        ;; copy, so the root of the enclosing instance is validated instead
+        ;; of the copy alone
         ids-to-validate
-        (map #(get ids-map % %) copied-components)
+        (ctn/get-all-instance-roots (pcb/get-objects changes)
+                                    (keep ids-map ids))
 
         changes (if (seq ids-to-validate)
                   (pcb/validate-shapes changes
