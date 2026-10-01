@@ -8,6 +8,7 @@
   (:require
    [app.common.files.shapes-builder :as sb]
    [app.common.svg :as csvg]
+   [app.common.types.color :as clr]
    [clojure.test :as t]))
 
 ;; Regression for https://github.com/penpot/penpot/issues/7869.
@@ -301,3 +302,25 @@
     (t/is (some? rect))
     (t/is (= :multiply (:blend-mode rect)))
     (t/is (nil? (get-in rect [:svg-attrs :style :mix-blend-mode])) "consumed keys are removed")))
+
+(t/deftest birth-child-style-beats-inherited-group-attr
+  ;; Regression: `inherit-attributes` filtered on `(:styles attrs)`
+  ;; (plural, always nil) instead of `(:style attrs)`, so a group attr
+  ;; leaked next to the child's own style and `setup-stroke` preferred
+  ;; the group color. Per CSS the child's inline style wins.
+  (let [svg-data {:name "inherit"
+                  :tag :svg
+                  :attrs {:width "100" :height "100" :viewBox "0 0 100 100"}
+                  :content [{:tag :g
+                             :attrs {:stroke "#ff0000"}
+                             :content [{:tag :rect
+                                        :attrs {:x "10" :y "10" :width "80" :height "80"
+                                                :fill "none"
+                                                :style "stroke:#0000ff"}
+                                        :content []}]}]}
+        [_ children] (sb/create-svg-shapes svg-data {:x 0 :y 0} {} nil nil #{} false)
+        rect         (first (filter #(and (= :rect (:type %)) (not (:hidden %))) children))
+        stroke       (first (:strokes rect))]
+    (t/is (some? rect))
+    (t/is (= (clr/parse "#0000ff") (:stroke-color stroke)) "child style beats group attr")
+    (t/is (nil? (get-in rect [:svg-attrs :stroke])) "group attr is not inherited over child style")))

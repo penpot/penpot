@@ -962,7 +962,7 @@
 
           ;; Don't inherit a property that is already in the style attribute
           inherit-style     (-> (:style group-attrs) (d/without-keys (keys attrs)))
-          inheritable-props (->> inheritable-props (remove #(contains? (:styles attrs) %)))
+          inheritable-props (->> inheritable-props (remove #(contains? (:style attrs) %)))
           group-attrs       (-> group-attrs (assoc :style inherit-style))
 
           attrs             (-> (select-keys group-attrs inheritable-props)
