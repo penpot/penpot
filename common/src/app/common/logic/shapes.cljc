@@ -588,7 +588,19 @@
                                   (conj to-delete (:id parent))
                                   to-delete)))
                             #{}
-                            (remove #(= % parent-id) all-parents))]
+                            (remove #(= % parent-id) all-parents))
+
+        ;; Variant containers changed by the move: the ones the variants come
+        ;; from (unless they are deleted for being empty) and the one they go
+        ;; into. The shapes taken out of a variant are validated by
+        ;; generate-make-shapes-no-variant
+        variant-cont-to-validate
+        (cond-> (into #{}
+                      (comp (keep :variant-id)
+                            (remove empty-variant-cont))
+                      variant-shapes)
+          (ctk/is-variant-container? parent)
+          (conj parent-id))]
 
     (-> changes
         ;; Remove layout-item properties and tokens when moving a shape outside a layout
@@ -701,7 +713,12 @@
 
         ;; Remove parents when are a variant-container that becomes empty
         (cond-> (seq empty-variant-cont)
-          (#(second (generate-delete-shapes % empty-variant-cont {})))))))
+          (#(second (generate-delete-shapes % empty-variant-cont {}))))
+
+        (cond-> (seq variant-cont-to-validate)
+          (pcb/validate-shapes (pcb/get-page-id changes)
+                               variant-cont-to-validate
+                               (str "generate-relocate: " (vec ids) " to parent " parent-id))))))
 
 (defn change-show-in-viewer
   [shape hide?]
