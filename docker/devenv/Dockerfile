@@ -67,7 +67,7 @@ RUN set -ex; \
 FROM base AS setup-node
 
 ENV NODE_VERSION=v24.21.0 \
-    PNPM_VERSION=12.6.0 \
+    PNPM_VERSION=12.8.1 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -77,13 +77,13 @@ RUN set -eux; \
          OPENSSL_ARCH='linux-aarch64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          PNPM_ARCH='arm64'; \
-         PNPM_SHA256='973af2b3eb9509416cf889a7336705062c936407d5fda07298814e7532f5dea1'; \
+         PNPM_SHA256='75c5e34d3164fe3d3549580b1b1b59c9dd16543e558dec722b686193cdb7dfa1'; \
          ;; \
        amd64|x86_64) \
          OPENSSL_ARCH='linux-x86_64'; \
          BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          PNPM_ARCH='x64'; \
-         PNPM_SHA256='3f4c66f668d0e84219679982d095b30da68325e1fac9284e7f5dc1584bd3d13e'; \
+         PNPM_SHA256='db3906881f63e41b655e3b97d473603dc26326c2470d0b1b8083689e1bcbd1e8'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -109,57 +109,29 @@ RUN set -eux; \
 
 FROM base AS setup-opencode
 
-ENV OPENCODE_VERSION=1.18.33
-
-RUN set -ex; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-arm64.tar.gz"; \
-         ;; \
-       amd64|x86_64) \
-         BINARY_URL="https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/opencode-linux-x64.tar.gz"; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; exit 1; \
-         ;; \
-    esac; \
-    curl -fsSL ${BINARY_URL} -o /tmp/opencode.tar.gz; \
-    mkdir -p /tmp/opencode; \
-    tar -xzf /tmp/opencode.tar.gz -C /tmp/opencode; \
-    chmod +x /tmp/opencode/opencode; \
-    rm -f /tmp/opencode.tar.gz;
-
-################################################################################
-## OPENCODE2 SETUP (V2, side-by-side with V1 `opencode`)
-################################################################################
-
-FROM base AS setup-opencode2
-
-ENV OPENCODE2_VERSION=2.0.18
+ENV OPENCODE_VERSION=2.0.21
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='ddc98e5c789c496dada1ecfae9fe4e0931c7ac43a46da5436b97ecda5cd0ba5d'; \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-${OPENCODE_VERSION}.tgz"; \
+         ESUM='046c0e0e8eec8f6085d46c0eca29ece65fb00e21df0881c81cbcf7392458b1d2'; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE2_VERSION}.tgz"; \
-         ESUM='aa455d073b3a0733a6912f477b370f3d50ca7af44715bb7ccc41faa13b3cc2eb'; \
+         BINARY_URL="https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-${OPENCODE_VERSION}.tgz"; \
+         ESUM='57db421ab689d6831178c84736ba1e667c9c27627866849a114fa57afbc81785'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; exit 1; \
          ;; \
     esac; \
-    curl -LfsSo /tmp/opencode2.tgz "${BINARY_URL}"; \
-    echo "${ESUM} */tmp/opencode2.tgz" | sha256sum -c -; \
-    mkdir -p /tmp/opencode2; \
-    tar -xzf /tmp/opencode2.tgz -C /tmp/opencode2 --strip-components=2 package/bin; \
-    mv /tmp/opencode2/opencode /tmp/opencode2/opencode2; \
-    chmod +x /tmp/opencode2/opencode2; \
-    rm -f /tmp/opencode2.tgz;
+    curl -LfsSo /tmp/opencode.tgz "${BINARY_URL}"; \
+    echo "${ESUM} */tmp/opencode.tgz" | sha256sum -c -; \
+    mkdir -p /tmp/opencode; \
+    tar -xzf /tmp/opencode.tgz -C /tmp/opencode --strip-components=2 package/bin; \
+    chmod +x /tmp/opencode/opencode; \
+    rm -f /tmp/opencode.tgz;
 
 
 ################################################################################
@@ -587,7 +559,6 @@ COPY --from=setup-rust /opt/rustup /opt/rustup
 COPY --from=setup-rust /opt/emsdk /opt/emsdk
 COPY --from=setup-caddy /usr/bin/caddy /usr/bin/caddy
 COPY --from=setup-opencode /tmp/opencode/opencode /opt/utils/bin/opencode
-COPY --from=setup-opencode2 /tmp/opencode2/opencode2 /opt/utils/bin/opencode2
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/nginx-mime.types /etc/nginx/mime.types
