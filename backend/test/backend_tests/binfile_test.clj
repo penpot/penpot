@@ -2488,3 +2488,46 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+;; -----------------------------------------------------------------------------
+;; Branch target protection
+;; -----------------------------------------------------------------------------
+
+(t/deftest import-overwrite-refuses-branch-file
+  ;; A branch file's data payload is derived from its merge base and op
+  ;; log, so an in-place import would write a `file_data` main row that
+  ;; no read path consults.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1)
+          file    (prepare-simple-file profile)
+          output  (tmp/tempfile :suffix ".zip")]
+
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/export-type :detach-libraries))
+       (io/output-stream output))
+
+      (let [out       (th/command! {::th/type :create-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :file-id (:id file)
+                                    :name "import-target"})
+            branch-id (:branch-file-id (:result out))
+
+            error
+            (try
+              (-> th/*system*
+                  (assoc ::bfc/project-id (:default-project-id profile))
+                  (assoc ::bfc/profile-id (:id profile))
+                  (assoc ::bfc/team-id (:default-team-id profile))
+                  (assoc ::bfc/file-id branch-id)
+                  (assoc ::bfc/input output)
+                  (v3/import-files!))
+              :no-error
+              (catch Throwable e
+                (or (ex-data e) (some-> (ex-cause e) ex-data))))]
+
+        (t/is (uuid? branch-id))
+        (t/is (= :validation (:type error)))
+        (t/is (= :branch-file-cant-be-overwritten (:code error)))
+        (t/is (empty? (th/db-query :file-data {:file-id branch-id :type "main"})))))))

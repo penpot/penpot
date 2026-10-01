@@ -53,6 +53,8 @@
    :branching-max-pages 500
    :branching-max-oplog-changes 100000
 
+   :branch-merge-policies-file "resources/app/branch-merge-policies.edn"
+
    :public-uri "http://localhost:3449"
 
    :host "localhost"
@@ -170,6 +172,12 @@
     [:branching-max-shapes {:optional true} ::sm/int]
     [:branching-max-pages {:optional true} ::sm/int]
     [:branching-max-oplog-changes {:optional true} ::sm/int]
+
+    ;; The branch-merge policy switch file: a commented EDN map that
+    ;; picks one alternative per policy. Re-read on mtime change, so it
+    ;; can be edited while the backend runs. See
+    ;; `app.rpc.commands.files-branch-policies`.
+    [:branch-merge-policies-file {:optional true} ::fs/path]
 
     [:media-max-file-size {:optional true} ::sm/int]
     [:font-max-file-size  {:optional true} ::sm/int]

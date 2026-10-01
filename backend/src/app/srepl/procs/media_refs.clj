@@ -36,7 +36,7 @@
   having the same media object associated with two different files;"
   [cfg file]
   (let [media-refs (collect-media-refs (:data file))]
-    (bfc/update-media-references! cfg file media-refs)))
+    (first (bfc/update-media-references! cfg file media-refs))))
 
 (def ^:private sql:get-files
   "SELECT f.id

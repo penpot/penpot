@@ -17,15 +17,71 @@
   `unsupported-kinds` reports so the caller refuses them.
 
   Direction `:branch->main` (merge/compare) treats main as `theirs` and
-  branch as `ours`; `:main->branch` (update from main) swaps them."
+  branch as `ours`; `:main->branch` (update from main) swaps them. The
+  reported payload names the DOCUMENTS either way (see `compute-merge`)."
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.string :as str]))
+
+;; --- Tree-shape policies ---
+;;
+;; Three tree-shape cases have more than one defensible merge. The engine
+;; reads the choice from `*policies*`; the backend binds it from
+;; `backend/resources/app/branch-merge-policies.edn` around every compare,
+;; merge and update.
+
+(def default-policies
+  "Policy chosen for each tree-shape case when none is configured."
+  {:same-parent-reorder              :merge
+   :addition-under-deleted-parent    :conflict
+   :container-delete-over-main-edits :conflict})
+
+(def policy-values
+  "Allowed alternatives per policy key.
+
+  `:same-parent-reorder`: one side reorders the children of a parent both
+  sides keep.
+    `:merge`  detected, reported as a `:shapes` attr on the parent and
+              applied as `:mov-objects`; both sides reordering it
+              differently is a conflict on the parent.
+    `:refuse` reported as an `:unsupported` `:shape-order` entry naming
+              the parent, so the merge or update refuses.
+    `:ignore` invisible and lost (the behaviour before the policy).
+
+  `:addition-under-deleted-parent`: the target deleted container P and the
+  source added a shape inside it.
+    `:conflict` a `:modify-delete` conflict on P (see `three-way-entities`).
+    `:refuse`   reported as an `:unsupported` `:shape-orphan` entry naming
+                P.
+    `:reparent-to-ancestor` the addition lands under the nearest ancestor
+                the target still has.
+    `:page-root` the addition lands at the page root (the behaviour before
+                the policy).
+
+  `:container-delete-over-main-edits`: the source deleted container F while
+  the target modified or added something in F's subtree.
+    `:conflict` a `:delete-modify` conflict on F.
+    `:expand`   only what the source deleted goes; the target's additions
+                move to F's parent.
+    `:cascade`  F goes with its whole subtree (the behaviour before the
+                policy)."
+  {:same-parent-reorder              #{:merge :refuse :ignore}
+   :addition-under-deleted-parent    #{:conflict :refuse :reparent-to-ancestor :page-root}
+   :container-delete-over-main-edits #{:conflict :expand :cascade}})
+
+(def ^:dynamic *policies*
+  "Effective policies; the engine reads only `(get *policies* k)`."
+  default-policies)
+
+(defn- policy
+  [k]
+  (get *policies* k (get default-policies k)))
 
 (defn- entity-label
   [kind v]
@@ -75,11 +131,15 @@
 (defn- merge-attrs
   "Entity to apply for a per-attr resolution: start from main (`t`) and
   overlay branch's value for each differing attr resolved to `:branch`.
-  For `res = :branch` this equals `o`; for `:main`/nil it equals `t`."
+  For `res = :branch` this equals `o`; for `:main`/nil it equals `t`.
+  An attr the winning side does not carry is REMOVED (absent key — how the
+  closed change schemas express removal) rather than assoc-ed nil."
   [t o res]
   (reduce (fn [acc [k {:keys [branch]}]]
             (if (= :branch (attr-side res k))
-              (assoc acc k branch)
+              (if (nil? branch)
+                (dissoc acc k)
+                (assoc acc k branch))
               acc))
           t
           (shallow-attr-diff t o)))
@@ -174,9 +234,15 @@
 (defn three-way-entities
   "Diff one indexed entity collection (id->value) across base/theirs/ours.
 
-  Returns `{:changes [..] :conflicts [..]}` where changes are the
-  branch's net additions/modifications/deletions that apply cleanly to
-  main, and conflicts are entities both sides diverged on.
+  Returns `{:changes [..] :conflicts [..]}` where changes are `ours`' net
+  additions/modifications/deletions that apply cleanly to `theirs`, and
+  conflicts are entities both sides diverged on.
+
+  Entries label the two sides for the `:branch->main` roles: `:main` holds
+  the `theirs` value and `:branch` the `ours` one. `compute-merge` renames
+  them to the two documents before reporting them (see `doc-sides`), so a
+  summary names main's value `:main` and the branch's `:branch` in both
+  directions.
 
   `ctx`: `{:kind <keyword> :page-id <optional uuid>}`. Optional display
   knobs (do NOT affect the actual merge, only this summary):
@@ -282,6 +348,25 @@
   [page]
   (select-keys page [:name :background :pixel-grid-color :pixel-grid-opacity]))
 
+(def ^:private clearable-page-meta
+  "Page meta attrs the `:mod-page` schema expresses removal for with an
+  explicit nil (`[:maybe ...]` slots: nil is what `mod-page` removes on)."
+  [:background :pixel-grid-color :pixel-grid-opacity])
+
+(defn- page-meta-clears
+  "The `:mod-page` attrs for the winning meta map `m` of a page whose
+  target meta is `t`: a clearable attr `m` lacks but `t` still carries is
+  emitted as explicit nil — the value `mod-page` removes on (an absent key
+  would leave main's value in place)."
+  [t m]
+  (reduce (fn [acc k]
+            (cond-> acc
+              (and (not (contains? m k))
+                   (contains? t k))
+              (assoc k nil)))
+          m
+          clearable-page-meta))
+
 (defn- page-extra
   "Residual page attrs that no pass handles — kept as `:page-attrs` to be
   refused (never silently dropped). Objects, name/background/grid, guides,
@@ -328,9 +413,318 @@
               (transient {})
               (or pd {}))))
 
+;; --- Shape tree ---
+;;
+;; `three-way-entities` classifies shapes one by one, while containment
+;; and child order are relations between them. The helpers below put the
+;; tree back: they find same-parent reorders for the classification and
+;; apply the tree-shape policies (`*policies*`) to a page's result. They
+;; work in the roles of `three-way-entities`: `to` is the target of the
+;; change (theirs) and `oo` its source (ours).
+
+(defn- index-of
+  [coll x]
+  (first (keep-indexed (fn [i v] (when (= v x) i)) coll)))
+
+(defn- subtree-ids
+  "`id` plus all its descendants' ids, walking `:shapes` in `objects`."
+  [objects id]
+  (loop [pending [id] out []]
+    (if (empty? pending)
+      out
+      (let [cur (peek pending)]
+        (recur (into (pop pending) (get-in objects [cur :shapes]))
+               (conj out cur))))))
+
+(defn- shape-depth
+  "Depth of a shape in its objects tree (root = 0). Used to order moves so a
+  container is relocated before the shapes the branch moved into it."
+  [objects id]
+  (loop [id id d 0]
+    (let [p (:parent-id (get objects id))]
+      (if (and p (not= p id) (contains? objects p))
+        (recur p (inc d))
+        d))))
+
+(defn- root-id?
+  "True for the page root and for a missing parent."
+  [id]
+  (or (nil? id) (= id uuid/zero)))
+
+(defn- preorder-ids
+  "`id` and its descendants in `objects`, parents first and children in
+  `:shapes` order."
+  [objects id]
+  (loop [stack (list id) out []]
+    (if (empty? stack)
+      out
+      (let [cur (first stack)]
+        (recur (into (rest stack) (reverse (get-in objects [cur :shapes])))
+               (conj out cur))))))
+
+(defn- relative-order
+  [shapes keep]
+  (filterv #(contains? keep %) shapes))
+
+(defn- child-reorder
+  "Relative order, on each side, of the children `os` shares with `bs`
+  (and with `ts` when `theirs?`), when `os` changes it; nil otherwise.
+  Equal vectors short-circuit, so an untouched parent costs one `=`."
+  [bs ts os theirs?]
+  (when-not (or (identical? bs os) (= bs os))
+    (let [keep (cond-> (set/intersection (set bs) (set os))
+                 theirs? (set/intersection (set ts)))]
+      (when (> (count keep) 1)
+        (let [order-b (relative-order bs keep)
+              order-o (relative-order os keep)]
+          (when (not= order-b order-o)
+            {:base   order-b
+             :theirs (when theirs? (relative-order ts keep))
+             :ours   order-o}))))))
+
+(defn- shape-reorders
+  "Parent id -> `child-reorder` for every parent whose children `oo`
+  reorders against `bo`."
+  [bo to oo]
+  (persistent!
+   (reduce-kv (fn [acc id o]
+                (let [os (:shapes o)
+                      b  (when (some? os) (get bo id))]
+                  (if (nil? b)
+                    acc
+                    (let [t (get to id)]
+                      (if-let [r (child-reorder (:shapes b) (:shapes t) os (some? t))]
+                        (assoc! acc id r)
+                        acc)))))
+              (transient {})
+              (or oo {}))))
+
+(defn- classification-objects
+  "The stripped objects maps (see `strip-shapes`) a page's shapes are
+  classified on, plus the same-parent reorders `oo` makes.
+
+  Under `:same-parent-reorder :merge` a reordered parent carries the
+  relative order of its shared children as `:shapes` on every side that
+  has it, so the reorder classifies as a change of the parent and both
+  sides reordering it differently as a conflict on it. `:refuse` finds
+  the reorders without classifying them; `:ignore` skips the scan."
+  [bo to oo]
+  (let [mode     (policy :same-parent-reorder)
+        reorders (if (= :ignore mode) {} (shape-reorders bo to oo))
+        inject   (fn [objects side]
+                   (if (and (= :merge mode) (seq reorders))
+                     (reduce-kv (fn [acc id r]
+                                  (if (contains? acc id)
+                                    (assoc-in acc [id :shapes] (get r side))
+                                    acc))
+                                objects
+                                reorders)
+                     objects))]
+    {:sbo      (inject (strip-shapes bo) :base)
+     :sto      (inject (strip-shapes to) :theirs)
+     :soo      (inject (strip-shapes oo) :ours)
+     :reorders reorders}))
+
+(defn- tree-modes
+  "The tree-shape policies in the roles of `three-way-entities` for `dir`.
+
+  The policies name the documents and the engine handles two role
+  shapes: `:lost`, the target deleted a container the source edits
+  inside (main deleted P and the branch added into it, when merging),
+  and `:dropped`, the source deleted a container the target edits into
+  (the branch deleted F while main edited inside it, when merging). A
+  merge maps each policy to its own shape; an update from main swaps the
+  roles, so each policy drives the other shape through the alternative
+  that means the same thing for the documents.
+
+  A mechanism's alternatives:
+    `:lost`    `:conflict` (a `:modify-delete` conflict on the container:
+               `:branch` restores it as the source has it, additions
+               included, `:main` drops the source's shapes), `:refuse`,
+               `:reparent-to-ancestor`, `:page-root`, `:cascade` (the
+               container goes with its whole subtree).
+    `:dropped` `:conflict` (a `:delete-modify` conflict on the container:
+               `:branch` deletes the whole subtree knowingly, `:main`
+               keeps it as the target has it), `:expand` (the target's
+               shapes relocate to the container's slot in its parent),
+               `:page-root`, `:refuse`, `:cascade`."
+  [dir]
+  (let [update? (= dir :main->branch)
+        add     (policy :addition-under-deleted-parent)
+        cont    (policy :container-delete-over-main-edits)]
+    {:order   (policy :same-parent-reorder)
+     :lost    (if update?
+                (get {:conflict :conflict :expand :reparent-to-ancestor :cascade :cascade}
+                     cont :conflict)
+                (get {:conflict :conflict :refuse :refuse
+                      :reparent-to-ancestor :reparent-to-ancestor :page-root :page-root}
+                     add :conflict))
+     :dropped (if update?
+                (get {:conflict :conflict :refuse :refuse
+                      :reparent-to-ancestor :expand :page-root :page-root}
+                     add :conflict)
+                (get {:conflict :conflict :expand :expand :cascade :cascade}
+                     cont :conflict))}))
+
+(defn- lost-root
+  "Highest shape on `id`'s ancestry in the source tree `oo`, `id`
+  included, that the target deleted. The walk climbs while a shape is
+  absent from the target `to`, either deleted there (it is in the base
+  `bo`) or added by the source; nil when it meets no deleted shape."
+  [bo to oo id]
+  (loop [cur id top nil n (count oo)]
+    (if (or (root-id? cur) (contains? to cur) (not (contains? oo cur)) (neg? n))
+      top
+      (recur (:parent-id (get oo cur))
+             (if (contains? bo cur) cur top)
+             (dec n)))))
+
+(defn- target-subtree-edits
+  "Ids in the target's subtree of `id`, `id` excluded, that the target
+  added, changed or (unless `order-mode` is `:ignore`) reordered the
+  children of, against the base."
+  [bo to sbo sto order-mode id]
+  (filterv (fn [d]
+             (let [b (get bo d)]
+               (or (nil? b)
+                   (not= (strip-nil-attrs (get sbo d)) (strip-nil-attrs (get sto d)))
+                   (and (not= :ignore order-mode)
+                        (some? (child-reorder (:shapes b) nil (:shapes (get to d)) false))))))
+           (rest (preorder-ids to id))))
+
+(defn- source-deleted-roots
+  "The ids of `deleted` whose parent in `to` is not in `deleted`: the
+  topmost shapes of each deleted subtree."
+  [to deleted]
+  (filterv #(not (contains? deleted (:parent-id (get to %)))) deleted))
+
+(defn- tree-policy-pass
+  "Apply the tree-shape policies (`tree-modes`) to one page's shape
+  result `res` from `three-way-entities`.
+
+  `:same-parent-reorder :refuse` adds an `:unsupported` `:shape-order`
+  entry per reordered parent the merge would have to reorder.
+
+  `:lost` gathers the source's additions, and its changes to shapes the
+  target deleted, under the highest deleted shape on their path
+  (`lost-root`). `:conflict` replaces them with one `:modify-delete`
+  conflict on that shape: resolved to `:branch` it restores the shape
+  and its subtree as the source has them, additions included; resolved
+  to `:main` it leaves them out. `:refuse` adds an `:unsupported`
+  `:shape-orphan` entry per deleted shape holding an addition. The other
+  alternatives act in `page-shape-changes`.
+
+  `:dropped` looks at the topmost shapes the source deleted whose
+  subtree the target edited (added, changed or reordered something in).
+  `:conflict` turns each into one `:delete-modify` conflict that replaces
+  its `:deleted` entry and every entry inside its subtree: resolved to
+  `:branch` the whole subtree goes, resolved to `:main` it stays as the
+  target has it. `:refuse` adds an `:unsupported` `:shape-orphan` entry
+  per such shape the target added inside. The other alternatives act in
+  `page-shape-changes`.
+
+  A region conflict lists the shapes it decides for in `:subtree-edits`
+  (`[{:id :label}]`). Without any of these cases the pass returns `res`
+  as it is."
+  [{:keys [changes conflicts] :as res} bo to oo sbo sto reorders page-id modes]
+  (let [{lost-mode :lost dropped-mode :dropped order-mode :order} modes
+        label   (fn [id] (entity-label :shape (or (get oo id) (get to id) (get bo id))))
+        edits   (fn [ids] (mapv (fn [id] {:id id :label (label id)}) ids))
+        entry   (fn [m] (assoc m :kind (:kind m :shape) :page-id page-id :label (label (:id m))))
+        added?  #(= :added (:status %))
+
+        refused-orders
+        (when (= :refuse order-mode)
+          (into [] (keep (fn [[id {:keys [theirs ours]}]]
+                           (when (not= theirs ours)
+                             (entry {:kind :shape-order :status :unsupported :id id
+                                     :policy :same-parent-reorder}))))
+                reorders))
+
+        ;; [id root] for the source's edits inside a container the target
+        ;; deleted, in result order
+        lost
+        (case lost-mode
+          :conflict (into [] (keep (fn [{:keys [id]}]
+                                     (when-let [r (lost-root bo to oo id)] [id r])))
+                          (concat (filter added? changes)
+                                  (filter #(= :modify-delete (:reason %)) conflicts)))
+          :refuse   (into [] (keep (fn [{:keys [id]}]
+                                     (when-let [r (lost-root bo to oo id)] [id r])))
+                          (filter added? changes))
+          [])
+        lost-ids (into #{} (map first) lost)
+        lost-by  (group-by second lost)
+
+        ;; topmost shapes the source deleted whose subtree the target edited
+        dropped
+        (if (contains? #{:conflict :refuse} dropped-mode)
+          (let [deleted (into #{} (comp (filter #(or (= :deleted (:status %))
+                                                     (= :delete-modify (:reason %))))
+                                        (map :id))
+                              (concat changes conflicts))]
+            (into [] (keep (fn [f]
+                             (let [e (cond->> (target-subtree-edits bo to sbo sto order-mode f)
+                                       (= :refuse dropped-mode) (filterv #(not (contains? bo %))))]
+                               (when (seq e) [f e]))))
+                  (source-deleted-roots to deleted)))
+          [])
+        dropped-in (into #{} (mapcat (fn [[f _]] (preorder-ids to f))) dropped)]
+
+    (if (and (empty? refused-orders) (empty? lost) (empty? dropped))
+      res
+      (let [lost-conflict?    (= :conflict lost-mode)
+            dropped-conflict? (= :conflict dropped-mode)
+            region-edits      (merge (into {} (map (fn [[r pairs]]
+                                                     [r (edits (into [] (comp (map first) (remove #{r})) pairs))]))
+                                           (when lost-conflict? lost-by))
+                                     (when dropped-conflict? (into {} (map (fn [[f e]] [f (edits e)])) dropped)))
+            own-reason        (fn [id] (if (contains? lost-by id) :modify-delete :delete-modify))
+            absorbed?         (fn [{:keys [id status reason]}]
+                                (or (and lost-conflict? (contains? lost-ids id)
+                                         (or (= :added status) (= :modify-delete reason))
+                                         (not (contains? region-edits id)))
+                                    (and dropped-conflict? (contains? dropped-in id)
+                                         (or (= :deleted status) (= :delete-modify reason)))))
+            kept-conflicts    (into [] (remove absorbed?) conflicts)
+            own               (into #{} (keep (fn [{:keys [id reason]}]
+                                                (when (and (contains? region-edits id)
+                                                           (= reason (own-reason id)))
+                                                  id)))
+                                    kept-conflicts)
+            conflicts'        (-> (mapv (fn [c]
+                                          (if (and (contains? own (:id c))
+                                                   (= (:reason c) (own-reason (:id c))))
+                                            (assoc c :subtree-edits (get region-edits (:id c)))
+                                            c))
+                                        kept-conflicts)
+                                  (into (comp (remove own)
+                                              (map (fn [r]
+                                                     (entry {:status :conflict :id r
+                                                             :reason (own-reason r)
+                                                             :subtree-edits (get region-edits r)}))))
+                                        (keys region-edits)))
+            refused-orphans   (concat
+                               (when (= :refuse lost-mode)
+                                 (map (fn [[r pairs]]
+                                        (entry {:kind :shape-orphan :status :unsupported :id r
+                                                :policy :addition-under-deleted-parent
+                                                :shapes (mapv first pairs)}))
+                                      lost-by))
+                               (when (= :refuse dropped-mode)
+                                 (map (fn [[f e]]
+                                        (entry {:kind :shape-orphan :status :unsupported :id f
+                                                :policy :addition-under-deleted-parent
+                                                :shapes e}))
+                                      dropped)))]
+        {:changes   (-> (into [] (remove absorbed?) changes)
+                        (into refused-orders)
+                        (into refused-orphans))
+         :conflicts conflicts'}))))
+
 (defn- diff-pages
-  ([base theirs ours] (diff-pages base theirs ours nil))
-  ([base theirs ours only-pages]
+  ([base theirs ours] (diff-pages base theirs ours nil :branch->main))
+  ([base theirs ours only-pages dir]
    ;; `only-pages` bounds every page pass, the presence one included,
    ;; because `page-content` strips the shapes of every page it looks at
    ;; and that is most of what a whole-file comparison costs. It is the
@@ -395,19 +789,25 @@
                                                   (plugin-of ours pid)
                                                   {:kind :page-plugin :page-id pid}))
                             common)
-         ;; objects (shapes) on common pages (mergeable: :shape). The page
-         ;; root frame (uuid/zero) is skipped and the shapes are diffed
-         ;; STRIPPED of derived attrs (`shape-ignored-attrs`) so that pure
-         ;; `:shapes`/`:touched`/geometry-cache churn neither shows up as a
-         ;; change nor manufactures false conflicts (their merge is driven
-         ;; by add/del/move ops, not by these values).
+         ;; objects (shapes) on common pages (mergeable: :shape). The shapes
+         ;; are diffed STRIPPED of derived attrs (`shape-ignored-attrs`) and
+         ;; with the same-parent reorders folded in as `:shapes` of their
+         ;; parent (`classification-objects`), so derived churn neither shows
+         ;; up as a change nor manufactures false conflicts, while a reorder
+         ;; is a change of the parent. The page root frame (uuid/zero) is
+         ;; skipped unless the reordering touches it: top-level layer order
+         ;; is a real, user-meaningful change.
+         modes     (tree-modes dir)
          obj-diffs (map (fn [pid]
                           (let [bo  (get-in base [:pages-index pid :objects] {})
                                 to  (get-in theirs [:pages-index pid :objects] {})
                                 oo  (get-in ours [:pages-index pid :objects] {})
-                                res (three-way-entities (strip-shapes bo) (strip-shapes to) (strip-shapes oo)
+                                {:keys [sbo sto soo reorders]} (classification-objects bo to oo)
+                                res (three-way-entities sbo sto soo
                                                         {:kind :shape :page-id pid
-                                                         :ignore-ids #{uuid/zero}})
+                                                         :ignore-ids (if (contains? reorders uuid/zero)
+                                                                       #{}
+                                                                       #{uuid/zero})})
                                 ;; enrich each entry with the shape's type/component
                                 ;; nature, read from whichever side still has it
                                 enrich (fn [e]
@@ -423,9 +823,18 @@
                                             (assoc e
                                                    :base (get bo (:id e))
                                                    :main (get to (:id e))
-                                                   :branch (get oo (:id e))))]
-                            {:changes   (mapv enrich (:changes res))
-                             :conflicts (mapv (comp rehydrate enrich) (:conflicts res))}))
+                                                   :branch (get oo (:id e))))
+                                passed (tree-policy-pass res bo to oo sbo sto reorders pid modes)]
+                            {:changes   (mapv (fn [e]
+                                                ;; a `:refuse` entry names the
+                                                ;; container it could not place
+                                                ;; under; it is not a shape to
+                                                ;; display
+                                                (if (= :unsupported (:status e))
+                                                  e
+                                                  (enrich e)))
+                                              (:changes passed))
+                             :conflicts (mapv (comp rehydrate enrich) (:conflicts passed))}))
                         common)]
      (merge-results (concat [presence meta-diff extra-diff order]
                             guides-diffs flows-diffs grids-diffs plugins-diffs obj-diffs)))))
@@ -508,6 +917,19 @@
   [lib set-id]
   (let [s (ctob/get-set lib set-id)]
     [(ctob/get-name s) (ctob/get-description s)]))
+
+(defn- set-rename-wins?
+  "True when the rename/description change for `sid` is emitted: branch
+  changed the set metadata and either main left it at the base or the
+  resolution takes branch. Those renames run before the set-order moves
+  in the change list, so they settle the names the moves address."
+  [bl ml ol resolutions sid]
+  (let [b (set-meta-of bl sid)
+        m (set-meta-of ml sid)
+        o (set-meta-of ol sid)]
+    (and (not= o b)
+         (or (= m b)
+             (= (get resolutions sid) :branch)))))
 
 (defn- lib-tokens-by-id
   "token-id -> token (plain map) for a single set."
@@ -686,9 +1108,13 @@
   whole map, so `:obj`, `:page`, `:params`, and a component's `:objects` are
   complete on their own. The payloads it cannot see are the values that ARE
   the reference: a media object's `:id` (its `:media-id` is a storage key and
-  must not be touched), a library color's `:image` id, and an operation value
-  that is the reference itself. Token changes are left alone: no id in
-  `id-map` is a token id."
+  must not be touched), a library color's `:image` id, a `:del-media`'s
+  top-level `:id`, and an operation value that is the reference itself. The
+  top-level `:id` of the other delete changes (`:del-color`,
+  `:del-typography`, `:del-component`, `:del-obj`, `:del-page`) is NOT such a
+  value: those name entities the two files share by id, never a media row,
+  so they are left alone — only a media id or the file id is ever a key of
+  `id-map`. Token changes are left alone: no id in `id-map` is a token id."
   [changes id-map]
   (if (empty? id-map)
     changes
@@ -696,6 +1122,9 @@
           relink #(cfh/relink-refs % lookup)]
       (mapv (fn [change]
               (cond-> (relink change)
+                (= :del-media (:type change))
+                (update :id lookup)
+
                 (uuid? (:id (:object change)))
                 (update-in [:object :id] lookup)
 
@@ -724,12 +1153,38 @@
               (transient {})
               (or index {}))))
 
+(defn- doc-sides
+  "Rewrite one summary entry from the comparison roles to the documents.
+
+  `three-way-entities` reports entries in the `:branch->main` roles — the
+  `theirs` value under `:main`, the `ours` value under `:branch`. For
+  `:main->branch` the engine runs with those roles fed the other way round
+  (so the reported changes are main's), and this renames the payload back
+  before `compute-merge` reports it: the two entity sides, the two values
+  inside every `:changed-attrs` pair, and the two delete reasons.
+  `:delete-modify` names the branch's deletion against main's modification
+  and `:modify-delete` the branch's modification against main's deletion —
+  the same meaning in both directions."
+  [{:keys [status changed-attrs] :as entry}]
+  (let [entry (cond-> entry
+                (map? changed-attrs)
+                (assoc :changed-attrs
+                       (into {} (map (fn [[k v]] [k {:main (:branch v) :branch (:main v)}]))
+                             changed-attrs)))]
+    (if (= :conflict status)
+      (-> entry
+          (assoc :main (:branch entry) :branch (:main entry))
+          (update :reason #(get {:delete-modify :modify-delete
+                                 :modify-delete :delete-modify} % %)))
+      entry)))
+
 (defn- compute-merge*
   "The comparison itself. Both arities of `compute-merge` land here rather
   than one delegating to the other through the var, so that a test which
   counts engine calls counts comparisons and not dispatches."
   [base main branch dir only-pages]
-  (let [[theirs ours] (if (= dir :main->branch) [branch main] [main branch])
+  (let [update?  (= dir :main->branch)
+        [theirs ours] (if update? [branch main] [main branch])
         results  [(three-way-entities (strip-modified-at (:colors base))
                                       (strip-modified-at (:colors theirs))
                                       (strip-modified-at (:colors ours))
@@ -744,11 +1199,20 @@
                                       {:kind :component})
                   (three-way-entities (:media base) (:media theirs) (:media ours)
                                       {:kind :media})
-                  (diff-pages base theirs ours only-pages)
+                  (diff-pages base theirs ours only-pages dir)
                   (diff-tokens base theirs ours)]
-        {:keys [changes conflicts]} (merge-results results)]
+        {:keys [changes conflicts]} (merge-results results)
+        ;; the engine reports `ours`' changes against `theirs` and labels
+        ;; those roles `:main`/`:branch`; the summary names the DOCUMENTS,
+        ;; so `:main->branch` (theirs=branch, ours=main) is renamed here
+        ;; (see `doc-sides`)
+        changes   (if update? (mapv doc-sides changes) changes)
+        conflicts (if update? (mapv doc-sides conflicts) conflicts)]
     {:changes   changes
      :conflicts conflicts
+     ;; the tree-shape policies act per direction (`tree-modes`), so
+     ;; `compute-changes` needs to know which one this summary is
+     :dir       dir
      :stats     {:added     (count (filterv #(= :added (:status %)) changes))
                  :modified  (count (filterv #(= :modified (:status %)) changes))
                  :deleted   (count (filterv #(= :deleted (:status %)) changes))
@@ -761,6 +1225,15 @@
     {:changes   [<change descriptor> ...]   ; clean, branch -> main
      :conflicts [<conflict descriptor> ...] ; need resolution
      :stats     {:added n :modified n :deleted n :conflicts n}}
+
+  Every entry names the two DOCUMENTS, whatever `dir`: `:main` carries
+  main's value, `:branch` the branch's, and each `:changed-attrs` pair
+  (`attribute -> {:main v :branch v}`) says the same. The two delete
+  reasons do not flip with `dir` either: `:delete-modify` names the
+  branch's deletion against main's modification, `:modify-delete` the
+  branch's modification against main's deletion. The `:changes` do follow
+  `dir` — `:branch->main` reports the branch's outgoing changes,
+  `:main->branch` main's incoming ones.
 
   `opts` may carry `:only-pages`, a set of page ids the page passes are
   bounded to. It is sound exactly when `ours` cannot differ from `base`
@@ -849,10 +1322,6 @@
    []
    (set/union (set (keys base)) (set (keys theirs)) (set (keys ours)))))
 
-(defn- index-of
-  [coll x]
-  (first (keep-indexed (fn [i v] (when (= v x) i)) coll)))
-
 (def ^:private structural-set-attrs
   "Attrs NOT expressible as a plain `:set` op: containment/order are applied
   via `:mov-objects` and add/del object changes, so setting their raw values
@@ -895,26 +1364,6 @@
             [:selrect :points])
       ops)))
 
-(defn- subtree-ids
-  "`id` plus all its descendants' ids, walking `:shapes` in `objects`."
-  [objects id]
-  (loop [pending [id] out []]
-    (if (empty? pending)
-      out
-      (let [cur (peek pending)]
-        (recur (into (pop pending) (get-in objects [cur :shapes]))
-               (conj out cur))))))
-
-(defn- shape-depth
-  "Depth of a shape in its objects tree (root = 0). Used to order moves so a
-  container is relocated before the shapes the branch moved into it."
-  [objects id]
-  (loop [id id d 0]
-    (let [p (:parent-id (get objects id))]
-      (if (and p (not= p id) (contains? objects p))
-        (recur p (inc d))
-        d))))
-
 (defn- page-move-changes
   "Emit `:mov-objects` for EXISTING shapes the branch reparented to a
   different container, when the branch wins (main left the shape untouched,
@@ -948,18 +1397,177 @@
                 :shapes [id]
                 :ignore-touched true}))))
 
+(defn- reorder-ops
+  "`:mov-objects` operations that make the parent's children follow
+  `order-o` (the source's order) among the shapes the target keeps. The
+  target's other children keep their slots; each shape out of place is
+  moved, one at a time, to the slot its relative order demands."
+  [to order-o page-id id]
+  (let [keep   (set order-o)
+        cur0   (vec (get-in to [id :shapes]))
+        slots  (into [] (keep-indexed (fn [i x] (when (contains? keep x) i))) cur0)
+        ;; the target's children with the shared ones in the source's
+        ;; order: the slots the shared shapes sit in, filled left to right
+        wanted (loop [src slots [x & xs] order-o out (vec cur0)]
+                 (if (or (nil? x) (empty? src))
+                   out
+                   (recur (rest src) xs (assoc out (first src) x))))]
+    (loop [i 0 cur cur0 out []]
+      (if (>= i (count wanted))
+        out
+        (let [x (nth wanted i)
+              j (index-of cur x)]
+          (if (or (nil? j) (= i j))
+            (recur (inc i) cur out)
+            (recur (inc i)
+                   (d/insert-at-index cur i [x])
+                   (conj out {:type :mov-objects :page-id page-id
+                              :parent-id id :index i :shapes [x]
+                              :ignore-touched true}))))))))
+
+(defn- page-reorder-changes
+  "`:mov-objects` operations for the same-parent reorders (`reorders`)
+  the source wins: its order is the entry's `:ours`, or it resolved the
+  parent to `:branch`/`{:shapes :branch}`. Applied before everything
+  else, on the tree as the target has it."
+  [to _oo sbo sto reorders resolutions page-id]
+  (into []
+        (mapcat (fn [[id {:keys [ours]}]]
+                  (let [res (get resolutions id)]
+                    (when (and (contains? to id)
+                               (or (= (get sbo id) (get sto id))
+                                   (= :branch (attr-side res :shapes))))
+                      (reorder-ops to ours page-id id)))))
+        reorders))
+
+(defn- placement
+  "Where the merge creates the added shape `id`: its parent, its frame
+  and the index it takes among that parent's children. `lost-mode` is
+  the `:lost` alternative (`tree-modes`).
+  An orphan — a shape whose parent the result lacks, its `lost-root`
+  deleted — is created at the slot its lost root has under the nearest
+  ancestor the result keeps (`:reparent-to-ancestor`), at that slot but
+  on the page root (`:page-root`, `:refuse`), or not at all (`:cascade`,
+  which never calls this). Children of a placed shape keep their place
+  under it."
+  [oo to all-adds lost-mode root-id id]
+  (let [o       (get oo id)
+        host    (:parent-id o)
+        anchor  (loop [cur host n (count oo)]
+                  (cond
+                    (root-id? cur)                          root-id
+                    (or (contains? to cur) (contains? all-adds cur)) cur
+                    (neg? n)                                root-id
+                    :else                                   (recur (:parent-id (get oo cur)) (dec n))))
+        orphan? (not= anchor host)
+        chain   (when orphan?
+                  ;; the direct child of `anchor` on `id`'s ancestry
+                  (loop [cur host n (count oo)]
+                    (if (or (root-id? cur) (= anchor (:parent-id (get oo cur))))
+                      cur
+                      (recur (:parent-id (get oo cur)) (dec n)))))
+        to-root? (and orphan? (contains? #{:page-root :refuse} lost-mode))
+        parent   (if to-root? root-id anchor)
+        index    (if orphan?
+                   (if to-root?
+                     (index-of (get-in oo [host :shapes]) id)
+                     (+ (or (index-of (get-in oo [anchor :shapes]) chain) 0)
+                        (or (index-of (filterv #(contains? all-adds %)
+                                               (get-in oo [chain :shapes]))
+                                      id)
+                            0)))
+                   (index-of (get-in oo [host :shapes]) id))]
+    {:parent parent
+     :frame  (cond
+               (root-id? parent)      uuid/zero
+               (= :frame (:type (get oo parent))) parent
+               :else                  (or (:frame-id (get oo parent)) uuid/zero))
+     :index  index
+     :depth  (if orphan?
+               (inc (shape-depth oo anchor))
+               (shape-depth oo id))}))
+
+(defn- expand-relocations
+  "Where the target's shapes move when the merge deletes a container out
+  from under them (`:dropped` `:expand`/`:page-root`): out of each
+  container the source deleted, to its slot in the nearest ancestor the
+  target keeps (`:expand`) or to the page root (`:page-root`). Shapes
+  whose target parent another relocated shape is travel with it.
+  Returns {container {:parent p :index i :depth d :shapes [...]}}."
+  [to deleted root-id mode]
+  (let [anchor   (fn [f]
+                   (loop [cur (:parent-id (get to f)) n (count to)]
+                     (cond
+                       (root-id? cur)             root-id
+                       (not (contains? deleted cur)) cur
+                       (neg? n)                   root-id
+                       :else                      (recur (:parent-id (get to cur)) (dec n)))))
+        lift?    (fn [id]
+                   (and (contains? to id)
+                        (not (contains? deleted id))
+                        (contains? deleted (:parent-id (get to id)))))
+        lift-all? (fn [id] (and (contains? to id) (not (contains? deleted id))))
+        groups   (into {}
+                       (keep (fn [f]
+                               (let [ids (into [] (filter lift-all?) (rest (preorder-ids to f)))]
+                                 ;; only shapes whose own parent is gone need
+                                 ;; lifting; the others travel with them
+                                 (when-let [ids (seq (filter lift? ids))]
+                                   [f (vec ids)]))))
+                       (source-deleted-roots to deleted))]
+    (persistent!
+     (reduce-kv (fn [acc f ids]
+                  (let [p (if (= :page-root mode) root-id (anchor f))
+                        i (index-of (get-in to [(:parent-id (get to f)) :shapes]) f)]
+                    (assoc! acc f {:parent p
+                                   :index  i
+                                   :depth  (if (= p root-id) 0 (inc (shape-depth to p)))
+                                   :shapes ids})))
+                (transient {})
+                groups))))
+
+(defn- move-changes
+  "`:mov-objects` for the shapes `moves` relocates. Groups landing in the
+  same parent at the same slot (an expand out of nested containers) are
+  merged, so the group keeps one contiguous slot."
+  [moves page-id]
+  (->> moves
+       (sort-by (fn [[_ {:keys [depth]}]] depth))
+       (reduce (fn [out [_ {:keys [parent index shapes]}]]
+                 (let [k [parent index]
+                       g [k {:parent parent :index index :shapes (vec shapes)}]]
+                   (if-let [prev (peek out)]
+                     (if (= k (key prev))
+                       (conj (pop out) [k (update (val prev) :shapes into shapes)])
+                       (conj out g))
+                     (conj out g))))
+               [])
+       (map (fn [[_ {:keys [parent index shapes]}]]
+              {:type :mov-objects :page-id page-id :parent-id parent
+               :index index :shapes (vec shapes) :ignore-touched true}))
+       (vec)))
+
 (defn- page-shape-changes
-  [base theirs ours resolutions page-id]
+  "Changes for one page's shapes under `dir`, with the tree-shape
+  policies (`tree-modes`) applied on top of `flat-changes`:
+  `:same-parent-reorder` reorders emit `:mov-objects`; `:lost` places or
+  restores the source's shapes under a container the target deleted; and
+  `:dropped` lifts the target's shapes out of a container the source
+  deleted before it goes. The order is reorders, relocations,
+  add/mod/del, moves: a relocation may depend on a new container and a
+  move on a new parent.
+  Returns `{:changes [...] :unsupported #{entries..}}`: the `:refuse`
+  alternatives report `:shape-orphan` entries naming the container
+  instead of a placement the merge cannot honour."
+  [base theirs ours resolutions page-id dir]
   (let [bo (get-in base [:pages-index page-id :objects] {})
         to (get-in theirs [:pages-index page-id :objects] {})
         oo (get-in ours [:pages-index page-id :objects] {})
-
-        ;; classification runs on STRIPPED shapes (no derived attrs) so
-        ;; `:shapes`/`:touched`/cache churn cannot fabricate changes or
-        ;; conflicts; emission reads the FULL maps.
-        sbo (strip-shapes bo)
-        sto (strip-shapes to)
-        soo (strip-shapes oo)
+        root-id uuid/zero
+        modes   (tree-modes dir)
+        {lost-mode :lost dropped-mode :dropped order-mode :order} modes
+        snil=   (fn [a b] (= (strip-nil-attrs a) (strip-nil-attrs b)))
+        {:keys [sbo sto soo reorders]} (classification-objects bo to oo)
 
         ;; modifications + deletions (additions handled below, ordered)
         mod-del
@@ -978,51 +1586,119 @@
                              {:type :del-obj :page-id page-id :id id :ignore-touched true}))
              (filterv some?))
 
-        ;; additions: present in branch, absent from base and main
-        added-set (into #{} (filter (fn [id]
-                                      (and (contains? oo id)
-                                           (not (contains? bo id))
-                                           (not (contains? to id)))))
-                        (keys oo))
+        ;; the ids the merge deletes. `:dropped :conflict` resolved to
+        ;; `:main` keeps the container's whole subtree as the target has
+        ;; it, so no delete inside it is emitted
+        deleted (into #{} (keep (fn [{:keys [type id]}]
+                                  (when (= :del-obj type) id)))
+                      mod-del)
+        dropped-roots (when (contains? #{:conflict :expand :page-root :refuse} dropped-mode)
+                        (source-deleted-roots to deleted))
+        kept    (when (= :conflict dropped-mode)
+                  (into #{} (mapcat #(preorder-ids to %))
+                        (filter #(= :main (get resolutions %)) dropped-roots)))
+        mod-del (if (seq kept)
+                  (filterv (fn [{:keys [type id]}]
+                             (not (and (= :del-obj type) (contains? kept id))))
+                           mod-del)
+                  mod-del)
 
-        ;; modify-delete conflicts resolved to `:branch`: the branch modified
-        ;; a shape main deleted and the user chose to keep it — re-add its
-        ;; whole surviving subtree (main's delete was recursive), except the
-        ;; descendants main still has (it moved them out before deleting)
+        ;; `:lost`: the source's shapes under a container the target
+        ;; deleted — its additions and its changes to deleted shapes
+        lost-pairs (into []
+                         (keep (fn [id]
+                                 (when (and (contains? oo id)
+                                            (or (not (contains? bo id))
+                                                (and (not (contains? to id))
+                                                     (not (snil= (get sbo id) (get soo id))))))
+                                   (when-let [r (lost-root bo to oo id)]
+                                     [id r]))))
+                         (keys oo))
+        lost    (into {} lost-pairs)
+
+        ;; same-parent reorders, on the tree as the target has it
+        reorder-changes (when (= :merge order-mode)
+                          (page-reorder-changes to oo sbo sto reorders resolutions page-id))
+
+        ;; `:dropped` `:expand`/`:page-root`: the target's shapes the
+        ;; deleted container would take with it move out before the delete
+        expand-moves  (if (contains? #{:expand :page-root} dropped-mode)
+                        (expand-relocations to deleted root-id dropped-mode)
+                        {})
+        expand-changes (move-changes expand-moves page-id)
+
+        ;; additions: present in the source, absent from the base and the
+        ;; target, plus the shapes a modify-delete conflict resolved to
+        ;; `:branch` restores (the target's delete was recursive: the whole
+        ;; surviving subtree comes back, except the descendants the target
+        ;; still has — it moved them out before deleting)
+        additions (into #{}
+                        (filter (fn [id]
+                                  (and (contains? oo id)
+                                       (not (contains? bo id))
+                                       (not (contains? to id)))))
+                        (keys oo))
+        added-set (if (contains? #{:conflict :cascade} lost-mode)
+                    ;; under `:lost :conflict` the region conflict on the
+                    ;; lost root decides an addition's fate; under
+                    ;; `:cascade` the container goes with its whole subtree
+                    (into #{} (remove lost) additions)
+                    additions)
+        ;; a modify-delete resolved to `:branch` re-adds its whole
+        ;; surviving subtree (the target's delete was recursive), except
+        ;; the descendants the target still has — it moved them out before
+        ;; deleting. Under `:lost :conflict` the region conflict on the
+        ;; lost root decides instead: resolved to `:branch`, the root's
+        ;; whole subtree comes back.
         restore-set
         (into #{}
-              (comp (filter (fn [id]
-                              (and (contains? bo id)
-                                   (not (contains? to id))
-                                   (not= (get sbo id) (get soo id))
-                                   (= :branch (get resolutions id)))))
+              (remove #(contains? to %))
+              (into #{}
                     (mapcat #(subtree-ids oo %))
-                    (remove #(contains? to %)))
-              (keys oo))
+                    (cond
+                      (= :conflict lost-mode)
+                      (into #{} (comp (filter (fn [[_ r]] (= :branch (get resolutions r))))
+                                      (map second))
+                            lost-pairs)
 
+                      (= :cascade lost-mode)
+                      []
+
+                      :else
+                      (keep (fn [id]
+                              (when (and (contains? bo id)
+                                         (not (contains? to id))
+                                         (not (snil= (get sbo id) (get soo id)))
+                                         (= :branch (get resolutions id)))
+                                id))
+                            (keys oo)))))
         all-adds (set/union added-set restore-set)
 
+        ;; where each shape is created: its parent, its frame and the index
+        ;; it takes there (see `placement` for orphans)
+        placements (into {} (map (fn [id] [id (placement oo to all-adds lost-mode root-id id)])) all-adds)
+
         ;; topological order so a newly-added parent is created before its
-        ;; newly-added children
+        ;; newly-added children; within one parent, the source's sibling
+        ;; order (`:index`), so added siblings keep it
         ordered
         (loop [pending (vec all-adds) done #{} out []]
           (if (empty? pending)
             out
             (let [ready (filterv (fn [id]
-                                   (let [p (:parent-id (get oo id))]
-                                     (or (not (contains? all-adds p))
-                                         (contains? done p))))
+                                   (let [p (:parent (get placements id))]
+                                     (or (root-id? p) (contains? to p) (contains? done p))))
                                  pending)
                   ready (if (seq ready) ready (subvec pending 0 1))]
               (recur (filterv (complement (set ready)) pending)
                      (into done ready)
-                     (into out ready)))))
+                     (into out (sort-by (juxt :depth :index)
+                                        (map (fn [id] (assoc (get placements id) :id id))
+                                             ready)))))))
 
         add-changes
-        (mapv (fn [id]
-                (let [o      (get oo id)
-                      parent (:parent-id o)
-                      index  (index-of (get-in oo [parent :shapes]) id)]
+        (mapv (fn [{:keys [id parent frame index]}]
+                (let [o (get oo id)]
                   {:type :add-obj
                    :page-id page-id
                    :id id
@@ -1031,17 +1707,40 @@
                    ;; appended by their own add-obj (add-shape inserts at index)
                    :obj (cond-> o (contains? o :shapes) (assoc :shapes []))
                    :parent-id parent
-                   :frame-id (:frame-id o)
+                   :frame-id frame
                    :index index
                    :ignore-touched true}))
               ordered)
 
         ;; reparenting of EXISTING shapes — applied last, after new
         ;; containers exist and attr/add changes settled
-        move-changes (page-move-changes to oo sbo sto resolutions page-id)]
-    (-> mod-del
-        (into add-changes)
-        (into move-changes))))
+        move-changes (page-move-changes to oo sbo sto resolutions page-id)
+
+        ;; `:refuse`: the merge cannot place these shapes where they
+        ;; belong, so it refuses instead, naming the container
+        refused
+        (concat
+         (when (= :refuse lost-mode)
+           (->> (set/union added-set restore-set)
+                (keep (fn [id] (when-let [r (get lost id)] [r id])))
+                (group-by first)
+                (map (fn [[r pairs]]
+                       {:kind :shape-orphan :status :unsupported :id r
+                        :page-id page-id
+                        :label (entity-label :shape (get bo r))
+                        :policy :addition-under-deleted-parent
+                        :shapes (mapv second pairs)}))))
+         (when (= :refuse dropped-mode)
+           (map (fn [f]
+                  {:kind :shape-orphan :status :unsupported :id f
+                   :page-id page-id
+                   :label (entity-label :shape (get to f))
+                   :policy :addition-under-deleted-parent
+                   :shapes (into [] (remove #(contains? bo %)) (rest (preorder-ids to f)))})
+                dropped-roots)))]
+    {:changes (into (vec (concat reorder-changes expand-changes mod-del))
+                    (concat add-changes move-changes))
+     :unsupported (into #{} refused)}))
 
 (defn compute-changes
   "Translate the branch→main merge into a vector of raw change maps
@@ -1052,8 +1751,9 @@
   no conflict remains unresolved before applying).
 
   Returns `{:changes [..] :unsupported #{kinds..}}`. When `:unsupported`
-  is non-empty the caller must refuse the merge (the only kind it cannot
-  translate is `:page-attrs`, the residual page attrs no pass handles).
+  is non-empty the caller must refuse the merge: `:page-attrs` (the
+  residual page attrs no pass handles) is untranslatable, and the shape
+  pass reports its `:refuse` policy refusals there too.
 
   The 5-arity accepts the `compute-merge` summary the caller usually
   already computed (for the conflict gate), so the full three-way diff is
@@ -1108,9 +1808,11 @@
                                           (fn [pid] {:type :del-page :id pid}))
                             (filterv some?))
          pmeta (fn [pi] (into {} (map (fn [id] [id (page-meta (get pi id))])) tri-common-pages))
-         page-meta-changes (->> (flat-changes (pmeta bpi) (pmeta mpi) (pmeta opi) resolutions
+         bpm (pmeta bpi) tpm (pmeta mpi) opm (pmeta opi)
+         page-meta-changes (->> (flat-changes bpm tpm opm resolutions
                                               (fn [_ _] nil)
-                                              (fn [pid m] (assoc m :type :mod-page :id pid))
+                                              (fn [pid m] (-> (page-meta-clears (get tpm pid) m)
+                                                              (assoc :type :mod-page :id pid)))
                                               (fn [_] nil))
                                 (filterv some?))
 
@@ -1160,16 +1862,56 @@
                                                     (fn [[ns k]] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value nil}))))
                             common-pages)
 
-         ;; page order: reorder common pages to branch's order via mov-page
+         ;; page order: reorder the common pages to branch's order via
+         ;; mov-page. Every :index counts the FULL :pages vector as it is
+         ;; when the op runs: the presence changes above are already in it
+         ;; and the moves before it have landed, so a page main added keeps
+         ;; its slot while the common pages reorder around it.
          page-order-changes
          (let [order-of (fn [data] (filterv tri-common-pages (or (:pages data) [])))
                bo (order-of base) mo (order-of main) oo (order-of branch)]
            (if (and (not= oo bo)
                     (or (= mo bo) (= (get resolutions :page-order) :branch)))
-             (vec (map-indexed (fn [i pid] {:type :mov-page :id pid :index i}) oo))
+             (let [run-pages (reduce (fn [pages change]
+                                       (case (:type change)
+                                         :add-page (:pages (ctpl/add-page {:pages pages} (:page change)))
+                                         :del-page (:pages (ctpl/delete-page {:pages pages} (:id change)))
+                                         pages))
+                                     (vec (or (:pages main) []))
+                                     page-presence)
+                   ;; target: the common pages in branch's order, every
+                   ;; other page where it already is
+                   target (first (reduce (fn [[out order] pid]
+                                           (if (and (contains? tri-common-pages pid) (seq order))
+                                             [(conj out (first order)) (rest order)]
+                                             [(conj out pid) order]))
+                                         [[] oo]
+                                         run-pages))]
+               ;; land the pages left to right: slot i is already the right
+               ;; index against the vector the op runs on (the prefix before
+               ;; i is settled and the page comes from below it)
+               (loop [cur run-pages i 0 out []]
+                 (cond
+                   (>= i (count target))
+                   out
+
+                   (= (nth cur i) (nth target i))
+                   (recur cur (inc i) out)
+
+                   :else
+                   (let [pid (nth target i)]
+                     (recur (d/insert-at-index cur i [pid])
+                            (inc i)
+                            (conj out {:type :mov-page :id pid :index i}))))))
              []))
 
-         shapes (into [] (mapcat #(page-shape-changes base main branch resolutions %)) common-pages)
+         ;; shapes: the tree-shape policies act per page (see
+         ;; `page-shape-changes`); its `:unsupported` entries name the
+         ;; container a `:refuse` alternative could not place under
+         dir        (or (:dir merge-summary) :branch->main)
+         shapes-res (mapv (fn [pid] (page-shape-changes base main branch resolutions pid dir))
+                          common-pages)
+         shapes     (into [] (mapcat :changes) shapes-res)
 
          ;; components: row metadata (shapes handled by the shape/page passes).
          ;; A branch soft-delete keeps the row with `:deleted true`; surface it
@@ -1205,12 +1947,7 @@
          common-sets (set/intersection (lib-set-ids bl) (lib-set-ids ml) (lib-set-ids ol))
          set-rename-changes
          (into []
-               (comp (filter (fn [sid]
-                               (let [b (set-meta-of bl sid)
-                                     m (set-meta-of ml sid)
-                                     o (set-meta-of ol sid)]
-                                 (and (not= o b)
-                                      (or (= m b) (= (get resolutions sid) :branch))))))
+               (comp (filter (fn [sid] (set-rename-wins? bl ml ol resolutions sid)))
                      (map (fn [sid] {:type :set-token-set :id sid :attrs (set-rename-attrs ml ol sid)})))
                common-sets)
 
@@ -1246,7 +1983,13 @@
                oo (set-order-by-id ol common-sets)]
            (if (and (not= oo bo)
                     (or (= mo bo) (= (get resolutions :token-set-order) :branch)))
-             (let [names (mapv #(ctob/get-name (ctob/get-set ol %)) oo)]
+             ;; the moves address the sets by name as the renames above
+             ;; leave them: branch's name where the rename wins, main's
+             ;; where main's rename stands
+             (let [names (mapv (fn [sid]
+                                 (ctob/get-name
+                                  (ctob/get-set (if (set-rename-wins? bl ml ol resolutions sid) ol ml) sid)))
+                               oo)]
                (vec (for [i (range (- (count names) 2) -1 -1)]
                       {:type :move-token-set
                        :from-path (set-name->path (nth names i))
@@ -1280,7 +2023,7 @@
                               (fn [tid t] {:type :set-token-theme :id tid :attrs t})
                               (fn [tid] {:type :set-token-theme :id tid :attrs nil}))]
 
-     {:unsupported unsupported
+     {:unsupported (into unsupported (map :kind) (mapcat :unsupported shapes-res))
       ;; components before shapes so del-component can store the main-instance
       ;; objects (still on the page) before del-obj removes them
       :changes     (vec (concat page-presence components shapes page-meta-changes

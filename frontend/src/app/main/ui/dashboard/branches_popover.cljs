@@ -1,5 +1,5 @@
 ;; This Source Code Form is subject to the terms of the Mozilla Public
-;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; License v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
@@ -78,7 +78,13 @@
                 :on-click on-open-branch}
            [:> i/icon* {:icon-id i/git-branch :size "s"}]
            [:span {:class (stl/css :branches-popover-name)} (:name b)]
-           [:span {:class (stl/css :branches-popover-counts)}
-            (dm/str "↑" (:ahead b) " ↓" (:behind b))]])]
+           (if (or (:diff-error b) (nil? (:ahead b)))
+             ;; the comparison could not be made: the warning stands
+             ;; where the counts would, because zeros read as "in sync"
+             [:span {:class (stl/css :branches-popover-error)
+                     :title (tr "workspace.branches.counts.error")}
+              [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
+             [:span {:class (stl/css :branches-popover-counts)}
+              (dm/str "↑" (:ahead b) " ↓" (:behind b))])])]
        [:> button* {:variant "primary" :icon i/add :on-click on-create}
         (tr "workspace.branches.new")]]]]))

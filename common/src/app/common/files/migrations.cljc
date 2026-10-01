@@ -63,29 +63,96 @@
 (def xf:map-name
   (map :name))
 
+(defn data-version
+  "The current data version: the name of the last available migration.
+  A document holds the set of migrations applied to it and `migrate`
+  applies the available ones it lacks in list order, so a data version
+  is a prefix of `available-migrations` and its last name identifies it."
+  []
+  (first (rseq available-migrations)))
+
+(defn- migration-ordinal
+  "Sort key of a migration name in `available-migrations`: every
+  `legacy-N` name precedes every numbered `NNNN-...` name, and each
+  family sorts by its number. Nil for a name that follows neither
+  pattern."
+  [name]
+  (if-let [[_ n] (re-matches #"legacy-(\d+)" name)]
+    [0 (d/parse-integer n)]
+    (when-let [[_ n] (re-find #"^(\d+)" name)]
+      [1 (d/parse-integer n)])))
+
+(defn data-version-migrations
+  "The migrations that make up data version `version`: the prefix of
+  `available-migrations` that ends at that name.
+
+  A migration removed from the list (a revert) leaves a recorded
+  version with no position to cut at. The prefix then ends at the
+  nearest earlier available name, by the number the name carries; a
+  name with the same number is not earlier, because it replaces the
+  removed one. The migrations past the cut apply at the next version
+  boundary or at the end, as they would on an ordinary file. A removed
+  name that carries no number yields an empty set."
+  [version]
+  (if (contains? available-migrations version)
+    (reduce (fn [result name]
+              (let [result (conj result name)]
+                (if (= name version)
+                  (reduced result)
+                  result)))
+            (d/ordered-set)
+            available-migrations)
+    (if-let [ordinal (migration-ordinal version)]
+      (into (d/ordered-set)
+            (take-while #(neg? (compare (migration-ordinal %) ordinal)))
+            available-migrations)
+      (d/ordered-set))))
+
+(defn need-migration-to?
+  "True when `file` has not reached data version `version`. A nil
+  `version` names no version and needs nothing. A file that already
+  holds the version's last migration has reached it, which costs one
+  set lookup."
+  [file version]
+  (let [migrations (:migrations file)]
+    (and (some? version)
+         (not (contains? migrations version))
+         (boolean
+          (->> migrations
+               (set/difference (data-version-migrations version))
+               (not-empty))))))
+
 (defn migrate
-  [{:keys [id] :as file} libs]
+  "Apply to `file` the migrations of `target` (all available ones by
+  default) it has not applied yet, in list order. The file data schema
+  describes the current data version only, so the result is checked
+  against it only when `target` is the whole list."
+  ([file libs]
+   (migrate file libs available-migrations))
+  ([{:keys [id] :as file} libs target]
+   (let [diff
+         (set/difference target (:migrations file))
 
-  (let [diff
-        (set/difference available-migrations (:migrations file))
+         data (-> (:data file)
+                  (assoc :libs libs))
 
-        data (-> (:data file)
-                 (assoc :libs libs))
+         data
+         (reduce migrate-data data diff)
 
-        data
-        (reduce migrate-data data diff)
+         data
+         (cond-> (-> data
+                     (assoc :id id)
+                     (dissoc :version)
+                     (dissoc :libs))
+           ;; `target` is a prefix of the list, so equal counts mean
+           ;; the whole list
+           (= (count target) (count available-migrations))
+           (ctf/check-file-data))]
 
-        data
-        (-> data
-            (assoc :id id)
-            (dissoc :version)
-            (dissoc :libs)
-            (ctf/check-file-data))]
-
-    (-> file
-        (assoc :data data)
-        (update :migrations set/union diff)
-        (vary-meta assoc ::migrated (not-empty diff)))))
+     (-> file
+         (assoc :data data)
+         (update :migrations set/union diff)
+         (vary-meta assoc ::migrated (not-empty diff))))))
 
 (defn generate-migrations-from-version
   "A function that generates new format migration from the old,
@@ -98,8 +165,8 @@
         result (transduce xform conj (d/ordered-set) (range 1 (inc cfd/version)))]
     result))
 
-(defn migrate-file
-  [file libs]
+(defn- migrate-file*
+  [file libs target]
   (binding [cfeat/*new* (atom #{})]
     (let [version
           (or (:version file) (-> file :data :version))
@@ -119,7 +186,7 @@
               ;; from this function that executes on each file
               ;; migration operation
               (update :features cfeat/migrate-legacy-features)
-              (migrate libs)
+              (migrate libs target)
               (update :features (fnil into #{}) (deref cfeat/*new*)))]
 
       ;; NOTE: When we have no previous migrations, we report all
@@ -128,6 +195,18 @@
       (if (not migrations)
         (vary-meta file assoc ::migrated (:migrations file))
         file))))
+
+(defn migrate-file
+  [file libs]
+  (migrate-file* file libs available-migrations))
+
+(defn migrate-file-to
+  "Migrate `file` up to data version `version` instead of the current
+  one. A document replayed from an op log moves through the versions
+  its ops were written at, the way an ordinary file moves through
+  them across upgrades."
+  [file libs version]
+  (migrate-file* file libs (data-version-migrations version)))
 
 (defn migrated?
   [file]

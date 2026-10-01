@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.event :as ev]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.import :as udi]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -135,8 +137,14 @@
 
 (mf/defc loading-placeholder*
   []
-  [:> loader*  {:width 32
-                :title (tr "labels.loading")
-                :class (stl/css :placeholder-loader)}
-   [:span {:class (stl/css :placeholder-text)}
-    (tr "dashboard.loading-files")]])
+  (let [failures (mf/deref refs/fetch-failures)]
+    (if (seq failures)
+      ;; A fetch that timed out or failed resolves the placeholder into
+      ;; a failure state instead of spinning forever.
+      [:> context-notification* {:level :error}
+       (tr "errors.unexpected-error")]
+      [:> loader*  {:width 32
+                    :title (tr "labels.loading")
+                    :class (stl/css :placeholder-loader)}
+       [:span {:class (stl/css :placeholder-text)}
+        (tr "dashboard.loading-files")]])))

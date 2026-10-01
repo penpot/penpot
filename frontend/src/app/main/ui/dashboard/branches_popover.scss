@@ -84,3 +84,9 @@
 
   color: var(--color-foreground-secondary);
 }
+
+.branches-popover-error {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-foreground-warning);
+}

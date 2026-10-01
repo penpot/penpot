@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.branch-merge :as bm]
    [app.common.files.changes :as cpc]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as val]
@@ -252,7 +253,12 @@
           revn
           (get file :revn)
 
-          file
+          ;; The changes application runs the media fix-up, which may
+          ;; rewrite the media references. It returns the change vector
+          ;; as fixed: that is the vector a branch appends to its op
+          ;; log, the state its derive reproduces. The xlog row below
+          ;; keeps the client's changes, exactly as on an ordinary save.
+          [file op-changes]
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
             (update-file-data! cfg file
@@ -290,7 +296,7 @@
                   {::db/return-keys false})
 
       (if (:is-branch file)
-        (persist-branch-file! cfg file changes)
+        (persist-branch-file! cfg file op-changes)
         (persist-file! cfg file))
 
       (when (contains? cf/flags :redis-cache)
@@ -362,7 +368,17 @@
   and the `file` row (revn, version, features, modified-at) plus the
   project modified-at are updated as usual, without any `file_data`
   write. The transient `file_change` xlog row (inserted by the caller)
-  keeps the lagged-changes machinery working unchanged."
+  keeps the lagged-changes machinery working unchanged.
+
+  The vector stores the media fix-up the save ran: `update-file*` passes
+  the changes as rewritten by `process-changes-and-validate`, so the
+  derive reproduces the copied media rows and their references.
+
+  The row records the data version the changes were applied at:
+  `update-file-data!` migrates the document to the current version
+  before it applies them, and the derive
+  (`app.binfile.common/branch-file-data`) migrates its replay to that
+  version before it applies the row."
   [{:keys [::db/conn ::timestamp] :as cfg} file changes]
   (let [modified-at (or timestamp (ct/now))
 
@@ -392,6 +408,7 @@
                  :file-id (:id file)
                  :revn (:revn file)
                  :changes (blob/encode changes)
+                 :data-version (fmg/data-version)
                  :created-at modified-at
                  :updated-at modified-at}
                 {::db/return-keys false})
@@ -493,10 +510,16 @@
               (update :data cpc/process-changes changes)
               (update :data d/without-nils)))
 
-        file
+        ;; The media fix-up copies the foreign media rows into the file
+        ;; and rewrites the references on the file data. A branch
+        ;; persists no data: its state is the change vector, so the same
+        ;; rewrite is recorded in it and the derive reproduces the fix
+        ;; (`bm/remap-changes` is a no-op with an empty remap).
+        [file op-changes]
         (if-let [media-refs (-> @state :media-refs not-empty)]
-          (bfc/update-media-references! cfg file media-refs)
-          file)]
+          (let [[file media-index] (bfc/update-media-references! cfg file media-refs)]
+            [file (bm/remap-changes changes media-index)])
+          [file changes])]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
@@ -513,7 +536,7 @@
                  (not skip-validate))
         (val/validate-file-schema! file)))
 
-    file))
+    [file op-changes]))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

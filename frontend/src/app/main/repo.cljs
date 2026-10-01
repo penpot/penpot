@@ -46,6 +46,13 @@
   {:max-retries    3
    :base-delay-ms  1000})
 
+(def fetch-timeout-ms
+  "Milliseconds a fetch may stay unanswered before callers resolve it
+  into a failure state.  Conservative: an idempotent request retried
+  under `default-retry-config` legitimately waits up to 15s in back-off
+  alone, so the bound leaves room for the whole retry budget."
+  30000)
+
 (defn with-retry
   "Wrap `observable-fn` (a zero-arg function returning an Observable) so
   that retryable errors are retried up to `:max-retries` times with

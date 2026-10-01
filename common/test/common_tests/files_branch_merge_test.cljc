@@ -8,6 +8,9 @@
   (:require
    [app.common.files.branch-merge :as bm]
    [app.common.files.changes :as cfc]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -70,13 +73,17 @@
     (t/is (= 0 (-> r :stats :modified)))))
 
 (t/deftest shape-with-only-structural-change-hidden
-  ;; a shape whose ONLY diff is structural/derived (here children reorder)
-  ;; is not reported as modified in the summary.
-  (let [base   (mkdata {:s1 {:id :s1 :name "A" :shapes [:c1 :c2]}})
-        branch (mkdata {:s1 {:id :s1 :name "A" :shapes [:c2 :c1]}})
-        r      (bm/compute-merge base base branch :branch->main)]
-    (t/is (= [] (:changes r)))
-    (t/is (= 0 (-> r :stats :modified)))))
+  ;; under `:same-parent-reorder :ignore` a shape whose ONLY diff is a
+  ;; children reorder is not reported, and the merge emits nothing for it
+  ;; (the reorder is lost; see the `same-parent-reorder-*` tests for the
+  ;; other alternatives)
+  (binding [bm/*policies* (assoc bm/default-policies :same-parent-reorder :ignore)]
+    (let [base   (mkdata {:s1 {:id :s1 :name "A" :shapes [:c1 :c2]}})
+          branch (mkdata {:s1 {:id :s1 :name "A" :shapes [:c2 :c1]}})
+          r      (bm/compute-merge base base branch :branch->main)]
+      (t/is (= [] (:changes r)))
+      (t/is (= 0 (-> r :stats :modified)))
+      (t/is (= [] (:changes (bm/compute-changes base base branch)))))))
 
 (t/deftest derived-attrs-stripped-containment-kept-and-merged
   ;; SUMMARY strips only derived/cache attrs (:shapes/:selrect/:points), so
@@ -994,3 +1001,456 @@
     (t/is (= selrect (get-in c [:branch :selrect])))
     (t/is (= "MAIN" (get-in c [:main :name])))
     (t/is (= "BRANCH" (get-in c [:branch :name])))))
+
+(t/deftest main->branch-conflict-sides-name-the-documents
+  ;; A conflict descriptor names the DOCUMENTS in both directions: `:main`
+  ;; is main's value and `:branch` the branch's, the `:changed-attrs`
+  ;; pairs included.
+  (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
+        main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
+        branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
+        r      (bm/compute-merge base main branch :main->branch)
+        c      (first (:conflicts r))]
+    (t/is (= 1 (-> r :stats :conflicts)))
+    (t/is (= :modify-modify (:reason c)))
+    (t/is (= "green" (get-in c [:main :fill])))
+    (t/is (= "blue" (get-in c [:branch :fill])))
+    (t/is (= {:main "green" :branch "blue"} (get-in c [:changed-attrs :fill])))))
+
+(t/deftest delete-reasons-name-the-same-side-in-both-directions
+  ;; `:delete-modify` names the branch's deletion against main's
+  ;; modification, `:modify-delete` the branch's modification against
+  ;; main's deletion — the same meaning in both directions.
+  (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
+        main   (mkdata {:s1 {:id :s1 :name "A" :fill "green"}})
+        branch (mkdata {})
+        r      (bm/compute-merge base main branch :main->branch)
+        c      (first (:conflicts r))]
+    (t/is (= 1 (-> r :stats :conflicts)))
+    (t/is (= :delete-modify (:reason c)))
+    (t/is (= "green" (get-in c [:main :fill])))
+    (t/is (nil? (:branch c))))
+  (let [base   (mkdata {:s1 {:id :s1 :name "A" :fill "red"}})
+        main   (mkdata {})
+        branch (mkdata {:s1 {:id :s1 :name "A" :fill "blue"}})
+        r      (bm/compute-merge base main branch :main->branch)
+        c      (first (:conflicts r))]
+    (t/is (= 1 (-> r :stats :conflicts)))
+    (t/is (= :modify-delete (:reason c)))
+    (t/is (nil? (:main c)))
+    (t/is (= "blue" (get-in c [:branch :fill])))))
+
+(t/deftest remap-changes-rewrites-a-del-media-id
+  ;; the id map carries the two file ids and the media ids (`media-pairs`
+  ;; plus the fresh ids of the copied rows). Of the change types
+  ;; `compute-changes` emits with a top-level `:id`, only `:del-media`'s
+  ;; names a media object, a reference through that map; its `:id` is the
+  ;; whole payload and `relink-refs` cannot see it. The others name
+  ;; entities the two files share by id (colour, typography, component,
+  ;; shape, page), never a media row, so they must come out untouched —
+  ;; re-pointing one through a media-pair map would corrupt it.
+  (let [media-old (uuid/next)
+        media-new (uuid/next)
+        color-id  (uuid/next)
+        typo-id   (uuid/next)
+        comp-id   (uuid/next)
+        shape-id  (uuid/next)
+        page-id   (uuid/next)
+        changes   [{:type :del-media :id media-old}
+                   {:type :add-media :object {:id media-old :media-id media-old
+                                              :name "img" :width 1 :height 1
+                                              :mtype "image/png"}}
+                   {:type :mod-media :object {:id media-old :name "renamed"}}
+                   {:type :del-color :id color-id}
+                   {:type :del-typography :id typo-id}
+                   {:type :del-component :id comp-id}
+                   {:type :del-obj :page-id page-id :id shape-id
+                    :ignore-touched true}]
+        out       (bm/remap-changes changes {media-old media-new})]
+    (t/is (= media-new (:id (nth out 0))))
+    (t/is (= media-new (get-in (nth out 1) [:object :id])))
+    (t/is (= media-new (get-in (nth out 2) [:object :id])))
+    (t/is (= color-id (:id (nth out 3))))
+    (t/is (= typo-id (:id (nth out 4))))
+    (t/is (= comp-id (:id (nth out 5))))
+    (t/is (= shape-id (:id (nth out 6))))))
+
+;;; --- Tree-shape policies (`bm/*policies*`) ---
+
+(defn- add-tree-shape
+  "Add a real shape (`cts/setup-shape`) under `parent` (nil = page root)
+  at `index` (nil = on top)."
+  [page id parent type name index]
+  (let [parent   (or parent uuid/zero)
+        pobj     (get-in page [:objects parent])
+        frame-id (if (= :frame (:type pobj)) parent (:frame-id pobj))
+        shape    (cts/setup-shape {:id id :type type :name name
+                                   :x 0 :y 0 :width 10 :height 10})]
+    (ctst/add-shape id shape page frame-id parent index true)))
+
+(defn- tree-data
+  "File data with one page built from `specs`, each `[id parent type
+  name]`, parents first. The shapes are real, so `cfc/process-changes`
+  validates the merged tree."
+  [& specs]
+  (let [pid  (uuid/custom 7 1)
+        page (reduce (fn [page [id parent type name]]
+                       (add-tree-shape page id parent type name nil))
+                     (ctp/make-empty-page {:id pid :name "Page 1"})
+                     specs)]
+    {:pages [pid] :pages-index {pid page}
+     :colors {} :typographies {} :components {} :media {}}))
+
+(defn- tree-page-id [data] (first (:pages data)))
+(defn- tree-objects [data] (get-in data [:pages-index (tree-page-id data) :objects]))
+(defn- tree-children [data id] (get-in (tree-objects data) [id :shapes]))
+
+(defn- tree-edit
+  [data f & args]
+  (apply update-in data [:pages-index (tree-page-id data) :objects] f args))
+
+(defn- tree-add
+  [data id parent type name & {:keys [index]}]
+  (update-in data [:pages-index (tree-page-id data)] add-tree-shape id parent type name index))
+
+(defn- tree-delete
+  [data id]
+  (update-in data [:pages-index (tree-page-id data)] ctst/delete-shape id true))
+
+(defn- merged
+  "Merge `branch` into `main` under `resolutions` and apply the changes
+  to main through the production change pipeline."
+  [base main branch resolutions]
+  (let [{:keys [changes unsupported]} (bm/compute-changes base main branch resolutions)]
+    {:unsupported unsupported
+     :changes     changes
+     :data        (cfc/process-changes main changes)}))
+
+(defn- policies
+  [k v]
+  (assoc bm/default-policies k v))
+
+(t/deftest same-parent-reorder-merge-is-shown-and-applied
+  ;; ws1: base and main hold [A B] in F and the branch [B A]. Under the
+  ;; default `:merge` the reorder is a modification of F and lands.
+  (let [f (uuid/next) a (uuid/next) b (uuid/next) m (uuid/next)
+        base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
+        branch (tree-edit base assoc-in [f :shapes] [b a])
+        r      (bm/compute-merge base base branch :branch->main)
+        entry  (first (:changes r))
+        {:keys [data unsupported]} (merged base base branch {})]
+    (t/is (= 1 (-> r :stats :modified)))
+    (t/is (= [f] (mapv :id (:changes r))))
+    (t/is (= {:main [a b] :branch [b a]} (get-in entry [:changed-attrs :shapes])))
+    (t/is (empty? unsupported))
+    (t/is (= [b a] (tree-children data f)))
+
+    (t/testing "main adding a child to F is not a conflict and keeps its slot"
+      (let [main (tree-add base m f :rect "M")
+            r    (bm/compute-merge base main branch :branch->main)]
+        (t/is (= [] (:conflicts r)))
+        (t/is (= [b a m] (tree-children (:data (merged base main branch {})) f)))))
+
+    (t/testing "update from main reports and applies main's reorder"
+      (let [main (tree-edit base assoc-in [f :shapes] [b a])
+            r    (bm/compute-merge base main base :main->branch)]
+        (t/is (= {:main [b a] :branch [a b]}
+                 (get-in (first (:changes r)) [:changed-attrs :shapes])))
+        (t/is (= [b a] (tree-children (:data (merged base base main {})) f)))))))
+
+(t/deftest same-parent-reorder-merge-both-sides-conflict
+  ;; both sides reorder F differently: a conflict on F whose resolution
+  ;; picks the order
+  (let [f (uuid/next) a (uuid/next) b (uuid/next) c (uuid/next)
+        base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"] [c f :rect "C"])
+        main   (tree-edit base assoc-in [f :shapes] [c a b])
+        branch (tree-edit base assoc-in [f :shapes] [b a c])
+        {:keys [conflicts]} (bm/compute-merge base main branch :branch->main)
+        cf     (first conflicts)]
+    (t/is (= [[f :modify-modify]] (mapv (juxt :id :reason) conflicts)))
+    (t/is (= {:main [c a b] :branch [b a c]} (get-in cf [:changed-attrs :shapes])))
+    (t/is (= [b a c] (tree-children (:data (merged base main branch {f :branch})) f)))
+    (t/is (= [c a b] (tree-children (:data (merged base main branch {f :main})) f)))
+    (t/is (= [b a c] (tree-children (:data (merged base main branch {f {:shapes :branch}})) f)))))
+
+(t/deftest same-parent-reorder-refuse
+  ;; `:refuse`: the reorder is an `:unsupported` entry naming F, so the
+  ;; merge refuses
+  (binding [bm/*policies* (policies :same-parent-reorder :refuse)]
+    (let [f (uuid/next) a (uuid/next) b (uuid/next)
+          base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
+          branch (tree-edit base assoc-in [f :shapes] [b a])
+          r      (bm/compute-merge base base branch :branch->main)]
+      (t/is (= [{:kind :shape-order :status :unsupported :id f :page-id (tree-page-id base)
+                 :label "F" :policy :same-parent-reorder}]
+               (:changes r)))
+      (t/is (= #{:shape-order} (bm/unsupported-kinds (:changes r))))
+      (t/is (= #{:shape-order} (:unsupported (bm/compute-changes base base branch {})))))))
+
+(t/deftest same-parent-reorder-ignore
+  ;; `:ignore`: the reorder is invisible and the merge loses it
+  (binding [bm/*policies* (policies :same-parent-reorder :ignore)]
+    (let [f (uuid/next) a (uuid/next) b (uuid/next)
+          base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
+          branch (tree-edit base assoc-in [f :shapes] [b a])
+          r      (bm/compute-merge base base branch :branch->main)]
+      (t/is (= {:added 0 :modified 0 :deleted 0 :conflicts 0} (:stats r)))
+      (t/is (= [a b] (tree-children (:data (merged base base branch {})) f))))))
+
+(t/deftest added-siblings-keep-the-branch-order
+  ;; ws1: main adds Z at index 0 of F, the branch adds siblings to F. The
+  ;; merged F holds the branch's siblings in the branch's order.
+  (let [f   (uuid/custom 9 100)
+        z   (uuid/custom 9 200)
+        ss  (mapv #(uuid/custom 9 %) (range 1 9))
+        base   (tree-data [f nil :frame "F"])
+        main   (tree-add base z f :rect "Z" :index 0)
+        branch (reduce (fn [d [i s]] (tree-add d s f :rect (str "S" i)))
+                       base (map-indexed vector ss))
+        out    (tree-children (:data (merged base main branch {})) f)]
+    (t/is (= ss (filterv (set ss) out)))
+    (t/is (= (inc (count ss)) (count out)))))
+
+(t/deftest addition-under-deleted-parent-conflict
+  ;; ws1: main deletes frame P, the branch adds M inside P. Default
+  ;; `:conflict`: a `:modify-delete` conflict on P; `:branch` restores P as
+  ;; the branch has it, `:main` drops M.
+  (let [p (uuid/next) c (uuid/next) m (uuid/next)
+        base   (tree-data [p nil :frame "P"] [c p :rect "C"])
+        main   (tree-delete base p)
+        branch (tree-add base m p :rect "M")
+        r      (bm/compute-merge base main branch :branch->main)
+        cf     (first (:conflicts r))]
+    (t/is (= [[p :modify-delete]] (mapv (juxt :id :reason) (:conflicts r))))
+    (t/is (= [{:id m :label "M"}] (:subtree-edits cf)))
+    (t/is (= "P" (get-in cf [:branch :name])))
+    (t/is (not-any? #(= m (:id %)) (:changes r)))
+    (let [objs (tree-objects (:data (merged base main branch {p :branch})))]
+      (t/is (= [p] (get-in objs [uuid/zero :shapes])))
+      (t/is (= [c m] (get-in objs [p :shapes])))
+      (t/is (= p (get-in objs [m :parent-id]))))
+    (let [objs (tree-objects (:data (merged base main branch {p :main})))]
+      (t/is (= #{uuid/zero} (set (keys objs)))))))
+
+(t/deftest addition-under-deleted-parent-conflict-lifts-restores
+  ;; ws1: main deletes frame P, the branch renames its child C. The
+  ;; conflict sits on P, and `:branch` restores P around C instead of
+  ;; putting C on the page root.
+  (let [p (uuid/next) c (uuid/next)
+        base   (tree-data [p nil :frame "P"] [c p :rect "C"])
+        main   (tree-delete base p)
+        branch (tree-edit base assoc-in [c :name] "C renamed")
+        r      (bm/compute-merge base main branch :branch->main)]
+    (t/is (= [[p :modify-delete]] (mapv (juxt :id :reason) (:conflicts r))))
+    (t/is (= [{:id c :label "C renamed"}] (:subtree-edits (first (:conflicts r)))))
+    (let [objs (tree-objects (:data (merged base main branch {p :branch})))]
+      (t/is (= [p] (get-in objs [uuid/zero :shapes])))
+      (t/is (= p (get-in objs [c :parent-id])))
+      (t/is (= "C renamed" (get-in objs [c :name]))))))
+
+(t/deftest addition-under-deleted-parent-refuse
+  ;; `:refuse`: the addition is an `:unsupported` entry naming P, and so
+  ;; is a restore that would lose its parent
+  (binding [bm/*policies* (policies :addition-under-deleted-parent :refuse)]
+    (let [p (uuid/next) c (uuid/next) m (uuid/next)
+          base   (tree-data [p nil :frame "P"] [c p :rect "C"])
+          main   (tree-delete base p)
+          branch (tree-add base m p :rect "M")
+          r      (bm/compute-merge base main branch :branch->main)]
+      (t/is (= [{:kind :shape-orphan :status :unsupported :id p :page-id (tree-page-id base)
+                 :label "P" :policy :addition-under-deleted-parent :shapes [m]}]
+               (filterv #(= :unsupported (:status %)) (:changes r))))
+      (t/is (= #{:shape-orphan} (:unsupported (bm/compute-changes base main branch {}))))
+      (let [branch (tree-edit base assoc-in [c :name] "C renamed")]
+        (t/is (= [[c :modify-delete]]
+                 (mapv (juxt :id :reason) (:conflicts (bm/compute-merge base main branch :branch->main)))))
+        (t/is (= #{:shape-orphan} (:unsupported (bm/compute-changes base main branch {c :branch}))))
+        (t/is (empty? (:unsupported (bm/compute-changes base main branch {c :main}))))))))
+
+(t/deftest addition-under-deleted-parent-reparent-to-ancestor
+  ;; `:reparent-to-ancestor`: main deletes P inside board G; the branch's
+  ;; addition M and a restored C land under G, where P was
+  (binding [bm/*policies* (policies :addition-under-deleted-parent :reparent-to-ancestor)]
+    (let [g (uuid/next) h (uuid/next) p (uuid/next) c (uuid/next) m (uuid/next)
+          base   (tree-data [g nil :frame "G"] [h g :rect "H"] [p g :frame "P"] [c p :rect "C"])
+          main   (tree-delete base p)
+          branch (tree-add base m p :rect "M")
+          r      (bm/compute-merge base main branch :branch->main)
+          {:keys [data unsupported]} (merged base main branch {})
+          objs   (tree-objects data)]
+      (t/is (= [] (:conflicts r)))
+      (t/is (empty? unsupported))
+      (t/is (= [h m] (get-in objs [g :shapes])))
+      (t/is (= g (get-in objs [m :parent-id])))
+      (t/is (= g (get-in objs [m :frame-id])))
+      (let [branch (tree-edit base assoc-in [c :name] "C renamed")
+            objs   (tree-objects (:data (merged base main branch {c :branch})))]
+        (t/is (= [h c] (get-in objs [g :shapes])))
+        (t/is (= g (get-in objs [c :frame-id])))))))
+
+(t/deftest addition-under-deleted-parent-page-root
+  ;; `:page-root`: the addition falls back to the page root
+  (binding [bm/*policies* (policies :addition-under-deleted-parent :page-root)]
+    (let [p (uuid/next) c (uuid/next) m (uuid/next)
+          base   (tree-data [p nil :frame "P"] [c p :rect "C"])
+          main   (tree-delete base p)
+          branch (tree-add base m p :rect "M")
+          objs   (tree-objects (:data (merged base main branch {})))]
+      (t/is (= [] (:conflicts (bm/compute-merge base main branch :branch->main))))
+      (t/is (= [m] (get-in objs [uuid/zero :shapes])))
+      (t/is (= uuid/zero (get-in objs [m :parent-id]))))))
+
+(defn- container-delete-case
+  "ws1: the branch deletes frame F, main recolours its child C and adds N
+  inside it; D is an untouched child of F and K a sibling of F."
+  []
+  (let [f (uuid/next) c (uuid/next) d (uuid/next) n (uuid/next) k (uuid/next)
+        base   (tree-data [k nil :rect "K"] [f nil :frame "F"] [c f :rect "C"] [d f :rect "D"])
+        main   (-> base
+                   (tree-edit assoc-in [c :fills] [{:fill-color "#FF0000" :fill-opacity 1}])
+                   (tree-add n f :rect "N"))
+        branch (tree-delete base f)]
+    {:f f :c c :d d :n n :k k :base base :main main :branch branch}))
+
+(t/deftest container-delete-over-main-edits-conflict
+  ;; default `:conflict`: one `:delete-modify` conflict on F. `:main` keeps
+  ;; F and its subtree as main has them, `:branch` deletes it all.
+  (let [{:keys [f c d n k base main branch]} (container-delete-case)
+        r (bm/compute-merge base main branch :branch->main)]
+    (t/is (= [[f :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
+    (t/is (= #{c n} (set (map :id (:subtree-edits (first (:conflicts r)))))))
+    (t/is (= [] (:changes r)))
+    (let [objs (tree-objects (:data (merged base main branch {f :main})))]
+      (t/is (= [k f] (get-in objs [uuid/zero :shapes])))
+      (t/is (= [c d n] (get-in objs [f :shapes])))
+      (t/is (= "#FF0000" (get-in objs [c :fills 0 :fill-color]))))
+    (let [objs (tree-objects (:data (merged base main branch {f :branch})))]
+      (t/is (= #{uuid/zero k} (set (keys objs)))))))
+
+(t/deftest container-delete-over-main-edits-expand
+  ;; `:expand`: only what the branch deleted goes; main's addition N, and
+  ;; C when its conflict is resolved to `:main`, move to F's parent where
+  ;; F was
+  (binding [bm/*policies* (policies :container-delete-over-main-edits :expand)]
+    (let [{:keys [f c d n k base main branch]} (container-delete-case)
+          r (bm/compute-merge base main branch :branch->main)]
+      (t/is (= [[c :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
+      (t/is (= #{f d} (set (map :id (:changes r)))))
+      (let [objs (tree-objects (:data (merged base main branch {c :main})))]
+        (t/is (= [k c n] (get-in objs [uuid/zero :shapes])))
+        (t/is (= #{uuid/zero k c n} (set (keys objs))))
+        (t/is (= uuid/zero (get-in objs [n :frame-id])))
+        (t/is (= "#FF0000" (get-in objs [c :fills 0 :fill-color]))))
+      (let [objs (tree-objects (:data (merged base main branch {c :branch})))]
+        (t/is (= [k n] (get-in objs [uuid/zero :shapes])))))))
+
+(t/deftest container-delete-over-main-edits-cascade
+  ;; `:cascade`: F goes with its whole subtree, main's edits included
+  (binding [bm/*policies* (policies :container-delete-over-main-edits :cascade)]
+    (let [{:keys [f c d k base main branch]} (container-delete-case)
+          r (bm/compute-merge base main branch :branch->main)]
+      (t/is (= [[c :delete-modify]] (mapv (juxt :id :reason) (:conflicts r))))
+      (t/is (= #{f d} (set (map :id (filter #(= :deleted (:status %)) (:changes r))))))
+      (let [objs (tree-objects (:data (merged base main branch {c :main})))]
+        (t/is (= #{uuid/zero k} (set (keys objs))))))))
+
+;;; --- Regression tests: mov-page indexes ---
+
+(t/deftest compute-changes-page-order-counts-full-pages
+  ;; `:mov-page :index` counts the FULL :pages vector as it is when the op
+  ;; runs: a page main added keeps its slot while the common pages reorder
+  ;; to branch's order around it. Counting the common-pages order instead
+  ;; pushed such a page out of its slot (to the end).
+  (let [p1 (uuid/next) p2 (uuid/next) p3 (uuid/next) x (uuid/next)
+        page (fn [id n] {:id id :name n :objects {}})
+        pages3 {p1 (page p1 "P1") p2 (page p2 "P2") p3 (page p3 "P3")}
+        pages4 (assoc pages3 x (page x "X"))
+        order (fn [main-pages]
+                (let [base   (pages-data pages3 [p1 p2 p3])
+                      main   (pages-data pages4 main-pages)
+                      branch (pages-data pages3 [p1 p3 p2])
+                      {:keys [changes]} (bm/compute-changes base main branch)]
+                  (:pages (cfc/process-changes main changes))))]
+    ;; main's extra page at the end: the reorder comes out right
+    (t/is (= [p1 p3 p2 x] (order [p1 p2 p3 x])))
+    ;; main's extra page interleaved: it keeps its slot
+    (t/is (= [p1 x p3 p2] (order [p1 x p2 p3])))
+    (t/is (= [x p1 p3 p2] (order [x p1 p2 p3])))))
+
+;;; --- Regression tests: cleared page meta ---
+
+(t/deftest compute-changes-page-meta-clear-carries-nil
+  ;; a branch that renames a page and clears its background must REMOVE the
+  ;; background: `mod-page` removes only on an explicit nil, so the change
+  ;; carries it — an absent key would leave main's background in place
+  (let [pid (uuid/next)
+        base   (pages-data {pid {:id pid :name "P" :objects {} :background "#ff0000"}} [pid])
+        branch (assoc-in base [:pages-index pid] {:id pid :name "Renamed" :objects {}})
+        {:keys [changes unsupported]} (bm/compute-changes base base branch)
+        mod    (first (filter #(= :mod-page (:type %)) changes))
+        data'  (cfc/process-changes base changes)]
+    (t/is (empty? unsupported))
+    (t/is (= "Renamed" (:name mod)))
+    (t/is (contains? mod :background))
+    (t/is (nil? (:background mod)))
+    (t/is (= "Renamed" (get-in data' [:pages-index pid :name])))
+    (t/is (not (contains? (get-in data' [:pages-index pid]) :background)))))
+
+;;; --- Regression tests: per-attr resolution on flat collections ---
+
+(t/deftest compute-changes-per-attr-removes-missing-attr
+  ;; main added an :opacity the branch does not carry; resolving that attr
+  ;; to :branch takes branch's state, where the attr is ABSENT — the shape
+  ;; `schema:library-color` expresses removal with (closed map: optional
+  ;; keys, never nil values)
+  (let [cid    (uuid/next)
+        base   (mkdata {} :colors {cid {:id cid :name "A" :color "#ff0000"}})
+        main   (mkdata {} :colors {cid {:id cid :name "A" :color "#ff0000" :opacity 0.5}})
+        branch (mkdata {} :colors {cid {:id cid :name "Brnc" :color "#ff0000"}})
+        {:keys [changes]} (bm/compute-changes base main branch {cid {:name :branch :opacity :branch}})
+        color  (-> (group-by :type changes) :mod-color first :color)]
+    (t/is (= "Brnc" (:name color)))
+    (t/is (not (contains? color :opacity)))
+    ;; round-trip: the applied color carries no :opacity either
+    (let [data' (cfc/process-changes main changes)]
+      (t/is (not (contains? (get-in data' [:colors cid]) :opacity))))))
+
+;;; --- Regression tests: token-set order vs renames ---
+
+(t/deftest compute-changes-token-set-order-after-rename
+  ;; main renamed alpha to ALPHA while the branch reordered to [beta alpha]:
+  ;; the moves must address the sets by the names they carry AFTER the
+  ;; emitted renames settle (main's rename stands), else `move-set` finds no
+  ;; set at the stale name and the reorder silently drops
+  (let [a (uuid/next) b (uuid/next)
+        base-lib   (-> (ctob/make-tokens-lib)
+                       (ctob/add-set (ctob/make-token-set {:id a :name "alpha"}))
+                       (ctob/add-set (ctob/make-token-set {:id b :name "beta"})))
+        main-lib   (ctob/update-set base-lib a
+                                    (fn [s] (ctob/make-token-set {:id (ctob/get-id s)
+                                                                  :name "ALPHA"
+                                                                  :tokens (ctob/get-tokens base-lib a)})))
+        branch-lib (ctob/move-set base-lib ["beta"] ["beta"] ["alpha"] false)
+        {:keys [changes unsupported]} (bm/compute-changes (with-tokens base-lib)
+                                                          (with-tokens main-lib)
+                                                          (with-tokens branch-lib))
+        data' (cfc/process-changes {:tokens-lib main-lib} changes)]
+    (t/is (empty? unsupported))
+    (t/is (seq (filter #(= :move-token-set (:type %)) changes)))
+    ;; the reorder survives main's rename
+    (t/is (= ["beta" "ALPHA"] (mapv ctob/get-name (ctob/get-sets (:tokens-lib data')))))))
+
+;;; --- Regression tests: shape-pass refusals ---
+
+(t/deftest compute-changes-shape-pass-refusals-surface
+  ;; a `:refuse` policy reports its refusals from the shape pass; they must
+  ;; reach the caller's `:unsupported` even when the merge summary handed
+  ;; to the 5-arity carries none of them — dropping the pass's
+  ;; `:unsupported` would silently turn a refused merge into a clean one
+  (binding [bm/*policies* (policies :addition-under-deleted-parent :refuse)]
+    (let [p (uuid/next) c (uuid/next) m (uuid/next)
+          base   (tree-data [p nil :frame "P"] [c p :rect "C"])
+          main   (tree-delete base p)
+          branch (tree-add base m p :rect "M")
+          {:keys [unsupported]} (bm/compute-changes base main branch {} {:changes [] :conflicts []})]
+      (t/is (= #{:shape-orphan} unsupported)))))

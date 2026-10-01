@@ -484,6 +484,18 @@
                          :accept-style :primary
                          :on-accept (fn [_] (st/emit! (dwb/update-branch-from-main branch)))})))
 
+;; --- Diff counts: known, or honestly unknown
+;;
+;; A row whose comparison could not be made carries no counts at all (and
+;; the `:diff-error` marker), because zeros read as "in sync" and a
+;; branch that cannot be compared is not in sync. Every surface showing
+;; the counts shows the comparison warning in their place.
+
+(defn- counts-error?
+  [row]
+  (or (:diff-error row)
+      (nil? (:ahead row))))
+
 ;; --- Branch info dialog (read-only info card + editable description)
 
 (mf/defc branch-info-dialog*
@@ -589,15 +601,20 @@
           [:div {:class (stl/css :info-row)}
            [:dt {:class (stl/css :info-key)} (tr "workspace.branches.info.changes")]
            [:dd {:class (stl/css :info-val :info-counts)}
-            [:span {:class (stl/css :count-ahead)
-                    :title (tr "workspace.branches.counts.ahead")}
-             [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead branch 0))]
-            [:span {:class (stl/css :count-behind)
-                    :title (tr "workspace.branches.counts.behind")}
-             [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind branch 0))]
-            (when (pos? (:conflicts branch 0))
-              [:span {:class (stl/css :item-badge :badge-conflict)}
-               (tr "workspace.branches.banner.conflicts" (dm/str (:conflicts branch)))])]])
+            (if (counts-error? branch)
+              [:span {:class (stl/css :count-error)
+                      :title (tr "workspace.branches.counts.error")}
+               [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
+              [:*
+               [:span {:class (stl/css :count-ahead)
+                       :title (tr "workspace.branches.counts.ahead")}
+                [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead branch 0))]
+               [:span {:class (stl/css :count-behind)
+                       :title (tr "workspace.branches.counts.behind")}
+                [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind branch 0))]
+               (when (pos? (:conflicts branch 0))
+                 [:span {:class (stl/css :item-badge :badge-conflict)}
+                  (tr "workspace.branches.banner.conflicts" (dm/str (:conflicts branch)))])])]])
 
         (when (:merged-at branch)
           [:div {:class (stl/css :info-row)}
@@ -820,14 +837,19 @@
      [:div {:class (stl/css :branch-entry-aside)}
       (when (and (not archived?) (not main?))
         [:div {:class (stl/css :branch-entry-counts)}
-         [:span {:class (stl/css :count-ahead)
-                 :title (tr "workspace.branches.counts.ahead")}
-          [:> i/icon* {:icon-id i/arrow-up :size "s"}]
-          (dm/str ahead)]
-         [:span {:class (stl/css :count-behind)
-                 :title (tr "workspace.branches.counts.behind")}
-          [:> i/icon* {:icon-id i/arrow-down :size "s"}]
-          (dm/str behind)]])
+         (if (counts-error? entry)
+           [:span {:class (stl/css :count-error)
+                   :title (tr "workspace.branches.counts.error")}
+            [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
+           [:*
+            [:span {:class (stl/css :count-ahead)
+                    :title (tr "workspace.branches.counts.ahead")}
+             [:> i/icon* {:icon-id i/arrow-up :size "s"}]
+             (dm/str ahead)]
+            [:span {:class (stl/css :count-behind)
+                    :title (tr "workspace.branches.counts.behind")}
+             [:> i/icon* {:icon-id i/arrow-down :size "s"}]
+             (dm/str behind)]])])
 
       (when-not main?
         [:> icon-button* {:variant "ghost"
@@ -843,7 +865,7 @@
        (when-not archived?
          [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-compare}
           (tr "workspace.branches.compare")])
-       (when (and (not archived?) (pos? behind))
+       (when (and (not archived?) (pos? (or behind 0)))
          [:> dropdown-menu-item* {:class (stl/css :menu-option) :on-click on-update}
           (tr "workspace.branches.update")])
        ;; review lifecycle: a branch without an open pull request offers to
@@ -1515,25 +1537,6 @@
     (map? res)      (get res attr)
     :else           nil))
 
-(defn- document-sides
-  "Re-key one conflict from a `:main->branch` payload's role names to the two
-  documents the resolution modal names, where `:main` holds the branch and
-  `:branch` holds main (`branch-merge.cljc::compute-merge*` feeds the branch
-  as `theirs` and main as `ours` in that direction, and
-  `branch-merge.cljc::three-way-entities` writes `:main` for `theirs`). The
-  base side, the id, the reason and the label read the same in both
-  directions, as do the resolution keywords the commands take, so only the
-  two sides and the values inside `:changed-attrs` move."
-  [conflict]
-  (let [swap (fn [sides] {:main (:branch sides) :branch (:main sides)})]
-    (cond-> (assoc conflict
-                   :main (:branch conflict)
-                   :branch (:main conflict))
-      (map? (:changed-attrs conflict))
-      (assoc :changed-attrs (into {}
-                                  (map (fn [[attr sides]] [attr (swap sides)]))
-                                  (:changed-attrs conflict))))))
-
 (mf/defc conflict-preview-row*
   "The BASE · MAIN · BRANCH · RESULT preview strip on top of the detail
   panel. RESULT updates live as per-property choices change."
@@ -1603,18 +1606,10 @@
         ;; enable (vcs:tp-update-conflict-frame). Prefer what the command said.
         conflicts   (if (seq conflicts) conflicts (:conflicts diff))
 
-        ;; In update mode the payload's two sides arrive role-keyed rather than
-        ;; document-keyed: `branch-merge.cljc::compute-merge*` runs the
-        ;; `:main->branch` direction with the branch as `theirs` and main as
-        ;; `ours`, and `branch-merge.cljc::three-way-entities` names those
-        ;; `:main` and `:branch`. Every heading, chip and button below names
-        ;; the two documents, so an update hands the branch where the modal
-        ;; says main. Re-key the payload once, here: the mode-dependent
-        ;; mapping lives in this one binding. Resolutions stay in document
-        ;; terms, which is what both commands expect of them.
-        conflicts   (if (= mode :update)
-                      (mapv document-sides conflicts)
-                      conflicts)
+        ;; the payload's two sides are document-keyed in both directions:
+        ;; `:main` holds main's value and `:branch` the branch's
+        ;; (`branch-merge.cljc::compute-merge`), which is what every heading,
+        ;; chip and button below names. Resolutions use the same vocabulary.
         resolutions (or resolutions {})
         total       (count conflicts)
         resolved    (count (filterv #(bm/conflict-resolved? % (get resolutions (:id %))) conflicts))
@@ -1929,12 +1924,17 @@
           (let [conflicts (or (:conflicts ctx) 0)]
             [:div {:class (stl/css :branch-banner-actions)}
              [:span {:class (stl/css :branch-banner-counts)}
-              [:span {:class (stl/css :count-ahead)
-                      :title (tr "workspace.branches.counts.ahead")}
-               [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead ctx))]
-              [:span {:class (stl/css :count-behind)
-                      :title (tr "workspace.branches.counts.behind")}
-               [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind ctx))]]
+              (if (counts-error? ctx)
+                [:span {:class (stl/css :count-error)
+                        :title (tr "workspace.branches.counts.error")}
+                 [:> i/icon* {:icon-id i/triangle-alert :size "s"}]]
+                [:*
+                 [:span {:class (stl/css :count-ahead)
+                         :title (tr "workspace.branches.counts.ahead")}
+                  [:> i/icon* {:icon-id i/arrow-up :size "s"}] (dm/str (:ahead ctx))]
+                 [:span {:class (stl/css :count-behind)
+                         :title (tr "workspace.branches.counts.behind")}
+                  [:> i/icon* {:icon-id i/arrow-down :size "s"}] (dm/str (:behind ctx))]])]
 
              (when (pos? conflicts)
                [:span {:class (stl/css :item-badge :badge-conflict)}
@@ -1952,7 +1952,7 @@
                             :on-click on-resolve}
                 (tr "workspace.branches.conflicts.resolve")]
 
-               (pos? (:behind ctx))
+               (pos? (or (:behind ctx) 0))
                [:> button* {:variant "primary"
                             :icon i/status-update
                             :on-click on-update}
@@ -1966,13 +1966,13 @@
                             :on-click on-open-review}
                 (tr "workspace.pull-requests.actions.open-review")]
 
-               (and prs-enabled? (pos? (:ahead ctx)))
+               (and prs-enabled? (pos? (or (:ahead ctx) 0)))
                [:> button* {:variant "primary"
                             :icon i/git-pull-request-arrow
                             :on-click on-request-review}
                 (tr "workspace.pull-requests.menu.request-review")]
 
-               (pos? (:ahead ctx))
+               (pos? (or (:ahead ctx) 0))
                [:> button* {:variant "primary"
                             :icon i/git-merge
                             :on-click on-merge}

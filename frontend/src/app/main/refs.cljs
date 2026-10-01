@@ -59,6 +59,11 @@
   ;; dashboard: open pull requests awaiting the current profile's review
   (l/derived #(get % :dashboard-pending-reviews) st/state))
 
+(def fetch-failures
+  ;; dashboard: fetches that timed out or failed, keyed by fetch event;
+  ;; non-empty while the placeholder waits for data it will not get
+  (l/derived #(get % :dashboard-fetch-failures) st/state))
+
 (def team
   (l/derived dsh/lookup-team st/state))
 

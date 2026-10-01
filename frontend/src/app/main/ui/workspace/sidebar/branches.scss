@@ -204,6 +204,12 @@
   color: var(--color-accent-primary);
 }
 
+.count-error {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-foreground-warning);
+}
+
 // --- Create branch dialog
 
 .modal-overlay {

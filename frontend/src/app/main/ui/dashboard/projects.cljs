@@ -108,9 +108,12 @@
         loading?   (and (pos? (:count project))
                         (empty? files))
 
+        failed?    (boolean (seq (mf/deref refs/fetch-failures)))
+
         is-draft?  (:is-default project)
         empty?     (and (not can-edit)
-                        (= 0 file-count))
+                        (= 0 file-count)
+                        (not failed?))
 
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
@@ -311,7 +314,7 @@
 
         [:> line-grid* {:project project
                         :team team
-                        :files (if loading? nil files)
+                        :files (if (or loading? (and failed? (empty? files))) nil files)
                         :create-fn create-file
                         :can-edit can-edit
                         :limit limit

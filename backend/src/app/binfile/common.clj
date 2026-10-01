@@ -295,7 +295,7 @@
            END")
 
 (def ^:private sql:get-branch-changes
-  "SELECT changes
+  "SELECT changes, data_version
      FROM file_branch_change
     WHERE file_id = ?
       AND deleted_at IS NULL
@@ -309,9 +309,49 @@
   (->> (db/exec! conn [sql:get-branch-changes branch-file-id])
        (mapv (fn [{:keys [changes]}] (blob/decode changes)))))
 
+(defn- migrate-detached
+  "Migrate `file` in memory with `migrate-fn`, called as
+  `(migrate-fn file libs)`, under the bindings `migrate-file` sets up.
+  Persists nothing: the branch derive migrates documents it builds
+  itself, the replayed branch and its merge base, and neither has a
+  row to write back to."
+  [cfg {:keys [id] :as file} migrate-fn]
+  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
+            pmap/*tracked* (pmap/create-tracked)]
+    (migrate-fn file (delay (get-resolved-file-libraries cfg file)))))
+
+(defn migrate-branch-base
+  "The `:data` of a branch's merge-base snapshot at the current data
+  version. The snapshot keeps the version main had when the base was
+  taken, while `get-file` migrates main and the branch on every read, so
+  a three-way comparison sees one version on all three sides only when
+  the base migrates the same way, with main's libraries. A base already
+  at the current version comes back as it is.
+
+  `snapshot` is a snapshot row with its data decoded: `:file-id`,
+  `:data`, `:version` and the `:migrations` its data holds."
+  [cfg {:keys [file-id data version migrations]}]
+  (let [base {:id file-id
+              :data data
+              :version version
+              :migrations (some-> migrations not-empty set)}]
+    (if (fmg/need-migration? base)
+      (:data (migrate-detached cfg base fmg/migrate-file))
+      data)))
+
 (defn- branch-file-data
   "Derive the `:data` of a branch file: the merge-base snapshot plus
   every op appended to the branch's log, replayed in revn order.
+
+  Each op-log row records the data version its changes were written at.
+  The replay starts from the base at the base's version, and before a
+  row written at a later version it migrates the document to that
+  version, the point where an ordinary file migrates across an upgrade.
+  The document never migrates past the version of the next row, because
+  a migration assumes its input is at the version before it. The file
+  returned carries the version and migration set the replay ended at, so
+  `get-file*` migrates the rest of the way in memory, and a log with no
+  upgrade since the base (the steady state) never migrates at all.
 
   Returns the file with `:data` decoded (plain maps); callers that asked
   for `:decode? false` get it re-encoded as bytes so the update-file
@@ -328,10 +368,11 @@
   ordinary read neither times nor logs anything.
 
   With `include-base-data?` true the returned file also carries the
-  decoded merge-base document under `::base-data`, which is the value
-  the replay starts from. A caller that is about to compare the branch
-  with its base reads the branch file with that flag and takes the
-  value, and it never decodes the same snapshot a second time."
+  merge-base document under `::base-data`, migrated to the current data
+  version (`migrate-branch-base`), the version `get-file` brings main and
+  the branch to. A caller that is about to compare the branch with its
+  base reads the branch file with that flag and takes the value, and it
+  never decodes the same snapshot a second time."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} decode? include-base-data?]
   (let [tpoint (ct/tpoint)
 
@@ -373,27 +414,48 @@
 
         rows (db/exec! conn [sql:get-branch-changes id])
 
-        ;; the decoded merge-base document. It is what the replay starts
-        ;; from, and `process-changes` builds its result with persistent
-        ;; updates and never writes into its input, so this value stays
-        ;; the pre-replay state while `data` becomes the branch. A caller
-        ;; that needs the merge base takes this value instead of decoding
-        ;; the same snapshot a second time.
-        base-data (:data base)
+        ;; the document the replay works on: the merge base at the
+        ;; base's data version, under the branch file's identity, so a
+        ;; migration on the way resolves the branch's libraries
+        doc (-> file
+                (assoc :data (:data base))
+                (assoc :version (or (:version base) (:version file)))
+                (assoc :migrations (:migrations base)))
 
         ;; the derive replays the log batch by batch, so each batch is
         ;; decoded exactly once. `depth` is the flattened op count, the
         ;; quantity `files_branch.clj::check-oplog-depth-limit!` limits,
         ;; and the one that predicts the cost of the replay.
-        [data depth]
-        (reduce (fn [[data depth] {:keys [changes]}]
-                  (let [changes (blob/decode changes)]
-                    [(cpc/process-changes data changes)
+        ;;
+        ;; A row's `data_version` is the version its changes were
+        ;; written at; the document migrates to it before the row
+        ;; applies, and in the steady state that check is one set
+        ;; lookup. A NULL stamp marks a row written before the column
+        ;; existed: it replays at the version the document holds, which
+        ;; is the base's version, because such rows precede every
+        ;; stamped row of their log. That is how the derive replayed
+        ;; every row before the column existed.
+        [doc depth]
+        (reduce (fn [[doc depth] {:keys [changes data-version]}]
+                  (let [changes (blob/decode changes)
+                        doc     (if (fmg/need-migration-to? doc data-version)
+                                  (migrate-detached cfg doc #(fmg/migrate-file-to %1 %2 data-version))
+                                  doc)]
+                    [(update doc :data cpc/process-changes changes)
                      (+ depth (count changes))]))
-                [base-data 0]
+                [doc 0]
                 rows)
 
-        data (if decode? data (blob/encode data))
+        data (cond-> (:data doc)
+               (not decode?) (blob/encode))
+
+        ;; the comparison's `base` is the merge base before the replay,
+        ;; at the version main and the branch are read at. The replay
+        ;; returns the branch's own state in `data`, so a comparison
+        ;; handed `data` as its base would compare the branch with
+        ;; itself.
+        base-data (when include-base-data?
+                    (migrate-branch-base cfg base))
 
         ;; measured once so the log line and the audit props carry the same
         ;; number. The timer covers the re-encode as well when the caller
@@ -407,20 +469,16 @@
            :duration-ms duration)
 
     (-> file
-        ;; the derived data is the BASE's data plus the op log, so the
-        ;; file carries the base's version and migration set; this keeps
-        ;; `need-migration?` quiet while base and main share a version
-        ;; and migrates in memory (read-only) only when the base is
-        ;; actually stale
+        ;; the derived data carries the version and migration set the
+        ;; replay ended at: the base's own while no row was written past
+        ;; it, which keeps `need-migration?` quiet in the steady state,
+        ;; and a later one when the replay crossed an upgrade
         (assoc :data data)
-        (assoc :version (or (:version base) (:version file)))
-        (cond-> (some? (:migrations base))
-          (assoc :migrations (:migrations base)))
+        (assoc :version (:version doc))
+        (assoc :features (:features doc))
+        (cond-> (some? (:migrations doc))
+          (assoc :migrations (:migrations doc)))
         (cond-> include-base-data?
-          ;; the comparison's `base` is the value the replay started from,
-          ;; which is the merge base as decoded. The replay returns the
-          ;; branch's own state in `data`, so a comparison handed `data`
-          ;; as its base would compare the branch with itself.
           (assoc ::base-data base-data))
         ;; the numbers travel with the value, because the RPC audit event
         ;; of the read that paid for this derive reads `::audit/props` off
@@ -432,6 +490,7 @@
                    {:branch-derive-ms duration
                     :branch-oplog-depth depth
                     :branch-oplog-batches (count rows)}))))
+
 (defn- get-file*
   [{:keys [::db/conn] :as cfg} id
    {:keys [migrate?
@@ -726,7 +785,12 @@
 
 (defn update-media-references!
   "Given a file and a coll of media-refs, check if all provided
-  references are correct or fix them in-place"
+  references are correct or fix them in-place. Returns a tuple of the
+  fixed file and the id remapping the fix applied ({foreign-id ->
+  copy-id}): the file data is rewritten in-place, but a caller that
+  persists a change vector instead of the data (the branch save path)
+  has to record the same remap in it, or its derive reproduces the
+  unfixed references."
   [{:keys [::db/conn] :as cfg} {file-id :id :as file} media-refs]
   (let [missing-index
         (reduce (fn [result {:keys [id] :as fmo}]
@@ -769,7 +833,7 @@
       (db/insert! conn :file-media-object item
                   {::db/return-keys false}))
 
-    file))
+    [file (update-vals missing-index :id)]))
 
 (def sql:get-file-media
   "SELECT * FROM file_media_object WHERE id = ANY(?)")

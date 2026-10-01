@@ -29,6 +29,7 @@
    [app.main.ui.dashboard.import]
    [app.main.ui.dashboard.layout-toggle :as lt]
    [app.main.ui.dashboard.libraries :refer [libraries-page*]]
+   [app.main.ui.dashboard.placeholder :refer [loading-placeholder*]]
    [app.main.ui.dashboard.projects :refer [projects-section*]]
    [app.main.ui.dashboard.search :refer [search-page*]]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
@@ -60,6 +61,8 @@
         team-id         (:id team)
 
         permissions     (:permissions team)
+
+        failed?         (boolean (seq (mf/deref refs/fetch-failures)))
 
         default-project-id
         (get default-project :id)
@@ -99,7 +102,7 @@
 
      (case section
        :dashboard-recent
-       (when (seq projects)
+       (if (seq projects)
          [:*
           [:> projects-section* {:team team
                                  :projects projects
@@ -112,7 +115,10 @@
                                     :project-id project-id
                                     :team-id team-id
                                     :default-project-id default-project-id
-                                    :content-width @content-width}])])
+                                    :content-width @content-width}])]
+         ;; A failed fetch must stay visible instead of a blank section.
+         (when ^boolean failed?
+           [:> loading-placeholder*]))
 
        :dashboard-fonts
        [:> fonts-page* {:team team}]
@@ -121,7 +127,7 @@
        [:> font-providers-page* {:team team}]
 
        :dashboard-files
-       (when project
+       (if project
          [:*
           [:> files-section* {:team team
                               :project project
@@ -132,7 +138,10 @@
                                     :team-id team-id
                                     :project-id project-id
                                     :default-project-id default-project-id
-                                    :content-width @content-width}])])
+                                    :content-width @content-width}])]
+         ;; A failed fetch must stay visible instead of a blank section.
+         (when ^boolean failed?
+           [:> loading-placeholder*]))
 
        :dashboard-search
        [:> search-page* {:team team

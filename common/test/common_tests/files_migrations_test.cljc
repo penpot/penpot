@@ -28,6 +28,52 @@
         (t/is (= cfm/available-migrations (:migrations file')))
         (t/is (= 3 (:sum (:data file'))))))))
 
+(t/deftest data-version-migrations-cut-the-list-at-a-version
+  (let [migrations (into (d/ordered-set)
+                         ["legacy-2" "legacy-10" "0001-a" "0002-b" "0002-c" "0003-d" "0005b-f"])]
+    (with-redefs [cfm/available-migrations migrations]
+      (t/is (= "0005b-f" (cfm/data-version)))
+
+      (t/testing "an available name ends the prefix at itself"
+        (t/is (= ["legacy-2" "legacy-10" "0001-a" "0002-b"]
+                 (vec (cfm/data-version-migrations "0002-b")))))
+
+      (t/testing "a removed name ends the prefix at the nearest earlier number"
+        (t/is (= ["legacy-2" "legacy-10" "0001-a" "0002-b" "0002-c" "0003-d"]
+                 (vec (cfm/data-version-migrations "0004-e"))))
+        (t/is (= ["legacy-2"]
+                 (vec (cfm/data-version-migrations "legacy-5")))))
+
+      (t/testing "a name with the same number replaces a removed one, so it is not earlier"
+        (t/is (= ["legacy-2" "legacy-10" "0001-a" "0002-b" "0002-c" "0003-d"]
+                 (vec (cfm/data-version-migrations "0005-f")))))
+
+      (t/testing "a removed name with no number cuts nothing"
+        (t/is (empty? (cfm/data-version-migrations "unknown")))))))
+
+(t/deftest migrate-file-to-stops-at-a-version
+  (let [migrations (into (d/ordered-set) ["test/1" "test/2" "test/3"])
+        file       {:data {:sum 1}
+                    :id 1
+                    :migrations (d/ordered-set "test/1")}]
+    ;; the file data schema describes the current version only, so a
+    ;; document stopped at an older one is not checked against it
+    (with-redefs [cfm/available-migrations migrations
+                  ctf/check-file-data (fn [_] (throw (ex-info "checked" {})))]
+      (t/is (cfm/need-migration-to? file "test/2"))
+      (t/is (not (cfm/need-migration-to? file "test/1")))
+      (t/is (not (cfm/need-migration-to? file nil)))
+
+      (let [file' (cfm/migrate-file-to file nil "test/2")]
+        (t/is (= 2 (-> file' :data :sum)))
+        (t/is (= #{"test/1" "test/2"} (set (:migrations file'))))
+        (t/is (not (cfm/need-migration-to? file' "test/2")))
+        (t/is (cfm/need-migration-to? file' "test/3"))
+
+        (t/testing "the step that reaches the current version is checked"
+          (t/is (thrown? #?(:clj Exception :cljs :default)
+                         (cfm/migrate-file-to file' nil "test/3"))))))))
+
 (t/deftest migration-0024b-fix-stroke-cap-placement
   (let [shape-id (uuid/next)
         page-id  (uuid/next)

@@ -62,6 +62,7 @@
     (update [_ state]
       (-> state
           (update :files merge (d/index-by :id files))
+          (update :dashboard-fetch-failures dissoc ::fetch-files)
           (d/update-in-when [:projects project-id] (fn [project]
                                                      (assoc project :count (count files))))))))
 
@@ -73,7 +74,14 @@
      (watch [_ state _]
        (when-let [project-id (or project-id (:current-project-id state))]
          (->> (rp/cmd! :get-project-files {:project-id project-id})
-              (rx/map (partial files-fetched project-id))))))))
+              (rx/map (partial files-fetched project-id))
+              (rx/timeout rp/fetch-timeout-ms
+                          (rx/throw (ex-info "fetch timeout" {:type :timeout})))
+              (rx/catch (fn [cause]
+                          ;; Resolve the placeholder into a failure state
+                          ;; instead of leaving it spinning forever.
+                          (rx/of (fn [state]
+                                   (assoc-in state [:dashboard-fetch-failures ::fetch-files] cause)))))))))))
 
 
 

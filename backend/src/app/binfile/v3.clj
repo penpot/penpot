@@ -1212,6 +1212,11 @@
             (db/exec! cfg [sql-1 file-id])
             (db/exec! cfg [sql-2 file-id]))))))
 
+(def ^:private sql:is-branch-file
+  "SELECT f.is_branch
+     FROM file AS f
+    WHERE f.id = ?")
+
 (defn- import-file-and-overwrite*
   [{:keys [::manifest ::bfc/file-id] :as cfg}]
 
@@ -1220,6 +1225,15 @@
               :code :invalid-condition
               :hint "unable to perform in-place update with binfile containing more than 1 file"
               :manifest manifest))
+
+  ;; A branch file's data payload is derived from the branch base and
+  ;; the operation log; overwriting it would persist a `file_data` row
+  ;; no read path consults.
+  (when (:is-branch (db/exec-one! cfg [sql:is-branch-file file-id]))
+    (ex/raise :type :validation
+              :code :branch-file-cant-be-overwritten
+              :hint "branch file data is derived from the branch base and the operation log and can't be overwritten by an import"
+              :file-id file-id))
 
   (bfc/configure-database-timeouts! cfg)
 

@@ -10,6 +10,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.common.time :as ct]
@@ -158,6 +159,15 @@
   (let [file  (bfc/get-file system file-id
                             :lock-for-update? true
                             :realize? true)
+
+        ;; A branch file's data payload is derived from the branch base
+        ;; and the operation log; processing it would persist a
+        ;; `file_data` row no read path consults.
+        _     (when (:is-branch file)
+                (ex/raise :type :validation
+                          :code :branch-file-cant-be-processed
+                          :hint "branch file data is derived from the branch base and the operation log; process the source file instead"
+                          :file-id file-id))
 
         libs  (when with-libraries?
                 (bfc/get-resolved-file-libraries system file))

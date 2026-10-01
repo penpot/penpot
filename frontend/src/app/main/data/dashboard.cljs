@@ -23,9 +23,11 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.project :as dpj]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
@@ -41,6 +43,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-projects)
+(declare fetch-recent-files)
+(declare refetch-placeholder-data)
 (declare process-message)
 
 (defn initialize
@@ -63,6 +67,12 @@
               (->> stream
                    (rx/filter (ptk/type? ::dws/opened))
                    (rx/map #(dws/send initmsg)))
+              (->> stream
+                   (rx/filter (ptk/type? ::dws/opened))
+                   ;; One refetch of the data the placeholder waits for on
+                   ;; every (re)connection, so a store that never took an
+                   ;; answer during an outage recovers without a reload.
+                   (rx/map (fn [_] (refetch-placeholder-data team-id))))
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
@@ -91,11 +101,12 @@
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (reduce (fn [state {:keys [id] :as project}]
-                ;; Replace completely instead of merge to ensure deleted-at is removed
-                (assoc-in state [:projects id] project))
-              state
-              projects))))
+      (-> (reduce (fn [state {:keys [id] :as project}]
+                    ;; Replace completely instead of merge to ensure deleted-at is removed
+                    (assoc-in state [:projects id] project))
+                  state
+                  projects)
+          (update :dashboard-fetch-failures dissoc ::fetch-projects)))))
 
 (defn fetch-projects
   [team-id]
@@ -103,7 +114,14 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-projects {:team-id team-id})
-           (rx/map projects-fetched)))))
+           (rx/map projects-fetched)
+           (rx/timeout rp/fetch-timeout-ms
+                       (rx/throw (ex-info "fetch timeout" {:type :timeout})))
+           (rx/catch (fn [cause]
+                       ;; Resolve the placeholder into a failure state
+                       ;; instead of leaving it spinning forever.
+                       (rx/of (fn [state]
+                                (assoc-in state [:dashboard-fetch-failures ::fetch-projects] cause)))))))))
 
 ;; --- EVENT: search
 
@@ -140,7 +158,8 @@
       (let [files (d/index-by :id files)]
         (-> state
             (assoc :recent-files files)
-            (update :files d/merge files))))))
+            (update :files d/merge files)
+            (update :dashboard-fetch-failures dissoc ::fetch-recent-files))))))
 
 (defn fetch-recent-files
   ([] (fetch-recent-files nil))
@@ -150,7 +169,31 @@
      (watch [_ state _]
        (when-let [team-id (or team-id (:current-team-id state))]
          (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
-              (rx/map recent-files-fetched)))))))
+              (rx/map recent-files-fetched)
+              (rx/timeout rp/fetch-timeout-ms
+                          (rx/throw (ex-info "fetch timeout" {:type :timeout})))
+              (rx/catch (fn [cause]
+                          ;; Resolve the placeholder into a failure state
+                          ;; instead of leaving it spinning forever.
+                          (rx/of (fn [state]
+                                   (assoc-in state [:dashboard-fetch-failures ::fetch-recent-files] cause)))))))))))
+
+;; --- EVENT: refetch-placeholder-data
+
+(defn- refetch-placeholder-data
+  "One refetch of the data the dashboard placeholder waits for: the team
+  projects and recent files, and the project files when the current
+  screen shows a project."
+  [team-id]
+  (ptk/reify ::refetch-placeholder-data
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [project-id (some-> (rt/get-params state) :project-id uuid/parse*)]
+        (rx/concat
+         (rx/of (fetch-projects team-id)
+                (fetch-recent-files team-id))
+         (when project-id
+           (rx/of (dpj/fetch-files project-id))))))))
 
 ;; --- EVENT: fetch-template-files
 

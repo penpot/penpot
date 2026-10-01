@@ -11,6 +11,7 @@
    [app.common.files.branch-merge :as bm]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -18,6 +19,8 @@
    [app.db :as db]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files-branch :as fbranch]
+   [app.rpc.commands.files-branch-policies :as fbp]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
@@ -1136,9 +1139,9 @@
                                  :id branch-file-id})
             img-id (get-in out [:result :data :colors cid :image :id])]
         (t/is (some? img-id))
-        ;; the colour's image keeps resolving to the right content (an
-        ;; inherited ref names MAIN's row: a branch stores no data, its
-        ;; document is the base snapshot plus the op log)
+        ;; the colour's image keeps resolving to the right content (the
+        ;; document names the branch's own paired copy: the base is pinned
+        ;; in the branch's frame and the op log replays over it)
         (let [row (th/db-get :file-media-object {:id img-id})]
           (t/is (= (:id sobj) (:media-id row)))))
 
@@ -1192,7 +1195,7 @@
         (t/testing "materialize persists the derived state and drops the branch"
           (let [out (th/command! {::th/type :materialize-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :file-id branch-file-id})]
+                                  :branch-file-id branch-file-id})]
             (t/is (nil? (:error out)))
             (t/is (= :materialized (-> out :result :status)))
             (t/is (true? (-> out :result :changed))))
@@ -1232,7 +1235,7 @@
         (t/testing "materializing again is a no-op"
           (let [out (th/command! {::th/type :materialize-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :file-id branch-file-id})]
+                                  :branch-file-id branch-file-id})]
             (t/is (nil? (:error out)))
             (t/is (= :materialized (-> out :result :status)))
             (t/is (false? (-> out :result :changed)))))))))
@@ -1516,7 +1519,7 @@
                                     :name "audited-exit"})
               out     (th/command! {::th/type :materialize-file-branch
                                     ::rpc/profile-id (:id profile)
-                                    :file-id (-> created :result :branch-file-id)})
+                                    :branch-file-id (-> created :result :branch-file-id)})
               props   (-> out :result meta :app.loggers.audit/props)]
           (t/is (nil? (:error out)))
           (t/is (= "materialize" (:branch-operation props)))
@@ -1825,7 +1828,7 @@
                       cfr/repair-file no-repair]
           (let [out (th/command! {::th/type :materialize-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :file-id branch-file-id})]
+                                  :branch-file-id branch-file-id})]
             (t/is (nil? (:error out)))
             (t/is (= :materialized (-> out :result :status)))
             (t/is (true? (-> out :result :changed)))))
@@ -1973,7 +1976,7 @@
                                                   :opacity 1}}])]
           (let [out (th/command! {::th/type :materialize-file-branch
                                   ::rpc/profile-id (:id profile)
-                                  :file-id b2-fid})]
+                                  :branch-file-id b2-fid})]
             (t/is (nil? (:error out)))
             (t/is (= :materialized (-> out :result :status)))))
 
@@ -2263,3 +2266,404 @@
           (t/is (= branch-file-id topic))
           ;; the update was already committed when the message left
           (t/is (= (:revn message) branch-revn)))))))
+
+(t/deftest materialize-takes-the-branch-file-id
+  ;; `:branch-file-id` names the branch FILE — the id `::create-file-branch`
+  ;; returns under that same key — while the sibling commands take the
+  ;; `file_branch` row id. The old generic `:file-id` name is refused by
+  ;; the schema.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile        (th/create-profile* 1 {:is-active true})
+          proj-id        (:default-project-id profile)
+          file           (th/create-file* 1 {:profile-id (:id profile)
+                                             :project-id proj-id
+                                             :is-shared false})
+          create         (:result (th/command! {::th/type :create-file-branch
+                                                ::rpc/profile-id (:id profile)
+                                                :file-id (:id file)
+                                                :name "to-materialize"}))
+          branch-file-id (:branch-file-id create)]
+
+      (t/testing "the old :file-id param is refused by the schema"
+        (let [{:keys [error]} (th/command! {::th/type :materialize-file-branch
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id branch-file-id})]
+          (t/is (some? error))
+          (t/is (th/ex-of-type? error :validation))
+          (t/is (th/ex-of-code? error :params-validation)))
+        ;; refused before the handler runs, so the branch is untouched
+        (t/is (true? (:is-branch (th/db-get :file {:id branch-file-id})))))
+
+      (t/testing "materialize runs on :branch-file-id"
+        (let [{:keys [error result]} (th/command! {::th/type :materialize-file-branch
+                                                   ::rpc/profile-id (:id profile)
+                                                   :branch-file-id branch-file-id})]
+          (t/is (nil? error))
+          (t/is (= :materialized (:status result)))
+          (t/is (true? (:changed result))))))))
+
+;;; --- A comparison that cannot be made is never "in sync"
+;;
+;; The listing is read-only: it cannot repair anything, and merge and
+;; update DO refuse loudly when the merge base cannot be resolved. So
+;; the row carries the error marker and no counts at all: zeros read as
+;; "in sync", and a branch that cannot be compared is not in sync.
+
+(t/deftest missing-base-snapshot-lists-an-error-marker
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "lost-base"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)]
+
+      ;; the branch diverged, so the listing pays for the comparison
+      (t/is (nil? (:error (apply-change* profile branch-file-id
+                                         {:type :add-color
+                                          :color {:id (uuid/random)
+                                                  :name "Brand"
+                                                  :color "#ff0000"
+                                                  :opacity 1}}))))
+
+      ;; the merge-base snapshot is gone
+      (let [base (:base-snapshot-id (first (th/db-query :file-branch {:id branch-id})))]
+        (t/is (some? base))
+        (th/db-delete! :file-change {:id base})
+        (t/is (empty? (th/db-query :file-change {:id base}))))
+
+      (let [out (th/command! {::th/type :get-file-branches
+                              ::rpc/profile-id (:id profile)
+                              :file-id (:id file)})
+            row (first (filter #(= branch-id (:id %)) (:result out)))]
+        (t/is (nil? (:error out)))
+        (t/is (some? row))
+        (t/is (true? (:diff-error row)) "the row does not carry the error marker")
+        (t/is (nil? (:ahead row)))
+        (t/is (nil? (:behind row)))
+        (t/is (nil? (:conflicts row)))))))
+
+;;; --- The listing holds no pooled connection across the comparisons
+;;
+;; Each comparison takes its own connection and returns it before the
+;; next one starts: the listing query uses one, the comparisons use one
+;; each, and none of them is held while the others run.
+
+(t/deftest listing-compare-takes-a-connection-per-diff
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create*  (fn [name]
+                     (:result (th/command! {::th/type :create-file-branch
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)
+                                            :name name})))
+          branches [(create* "one") (create* "two")]]
+
+      ;; both branches diverged, so the listing compares both
+      (doseq [branch branches]
+        (t/is (nil? (:error (apply-change* profile (:branch-file-id branch)
+                                           {:type :add-color
+                                            :color {:id (uuid/random)
+                                                    :name "Brand"
+                                                    :color "#ff0000"
+                                                    :opacity 1}})))))
+
+      (let [orig-open    db/open
+            orig-compute fbranch/branch-diff-counts!
+            checkouts    (atom [])
+            runs         (atom [])]
+        (with-redefs [db/open
+                      (fn [system-or-pool]
+                        (let [conn (orig-open system-or-pool)]
+                          (swap! checkouts conj conn)
+                          conn))
+
+                      fbranch/branch-diff-counts!
+                      (fn [cfg main-data branch]
+                        (let [conn (db/get-connection cfg)
+                              prev (:conn (peek @runs))]
+                          (swap! runs conj
+                                 {:conn conn
+                                  ;; the previous comparison's connection
+                                  ;; is back in the pool by now
+                                  :prev-closed? (or (nil? prev)
+                                                    (.isClosed ^java.sql.Connection prev))
+                                  ;; every connection handed out so far and
+                                  ;; still checked out at this moment
+                                  :held (into []
+                                              (remove #(.isClosed ^java.sql.Connection %))
+                                              @checkouts)}))
+                        (orig-compute cfg main-data branch))]
+          (t/is (nil? (:error (th/command! {::th/type :get-file-branches
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file)})))))
+
+        (t/is (= 2 (count @runs)) "both branches were compared")
+        ;; every comparison runs with a connection of its own
+        (t/is (apply distinct? (map :conn @runs))
+              "two comparisons shared one connection")
+        (t/is (every? :prev-closed? (rest @runs))
+              "a connection is held across the comparisons")
+        ;; ...and while it runs, its own is the only one checked out: the
+        ;; listing's and the previous comparison's are back in the pool
+        (t/is (every? (fn [{:keys [conn held]}] (= [conn] held)) @runs)
+              "a connection is held while the comparisons run")))))
+
+;;; --- Media pairing: the branch holds its own copies
+
+(defn- squashed-log-types
+  "Change types the branch's op log (`file_branch_change`) carries after
+  the squash an update-from-main performs."
+  [branch-id]
+  (into []
+        (mapcat (fn [row] (map :type (blob/decode (:changes row)))))
+        (th/db-query :file-branch-change {:branch-id branch-id})))
+
+(def ^:private media-change-types
+  #{:add-media :mod-media :del-media})
+
+(t/deftest update-from-main-deletes-the-paired-media-copy
+  ;; main deletes a media object the branch holds as a paired copy: the
+  ;; delete travels through `bm/remap-changes` with the pair map and must
+  ;; name the branch's copy, not main's row — the branch holds neither the
+  ;; id the change was computed with nor a second copy of the content
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id})
+          storage (-> (:app.storage/storage th/*system*)
+                      (assoc :app.storage/backend :fs))
+          sobj    (sto/put-object! storage {::sto/content (sto/content "shared-image")
+                                            :bucket :file-media-object
+                                            :content-type "image/png"})
+          fmo     (th/create-file-media-object* {:file-id (:id file)
+                                                 :name "shared.png"
+                                                 :media-id (:id sobj)})
+          _       (apply-change* profile (:id file)
+                                 {:type :add-media
+                                  :object {:id (:id fmo) :name "shared.png"
+                                           :media-id (:id sobj)
+                                           :width 100 :height 100
+                                           :mtype "image/png"}})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "paired-delete"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          branch-media   (fn []
+                           (let [out (th/command! {::th/type :get-file
+                                                   ::rpc/profile-id (:id profile)
+                                                   :id branch-file-id})]
+                             (-> out :result :data :media)))]
+      ;; a main-side change so the first update reaches the write path and
+      ;; copies main's row into the branch
+      (t/is (nil? (:error (apply-change* profile (:id file)
+                                         {:type :add-color
+                                          :color {:id (uuid/random) :name "C1"
+                                                  :color "#112233" :opacity 1}}))))
+      (let [out (th/command! {::th/type :update-branch-from-main
+                              ::rpc/profile-id (:id profile)
+                              :branch-id branch-id})]
+        (t/is (= :updated (-> out :result :status))))
+
+      (t/testing "the branch holds the media as its own paired copy"
+        (let [[media] (vals (branch-media))]
+          (t/is (= 1 (count (vals (branch-media)))))
+          (t/is (some? media))
+          (t/is (not= (:id fmo) (:id media)))
+          (t/is (= (:id sobj)
+                   (:media-id (th/db-get :file-media-object {:id (:id media)}))))))
+
+      (t/testing "deleting it on main deletes the branch's copy"
+        (t/is (nil? (:error (apply-change* profile (:id file)
+                                           {:type :del-media :id (:id fmo)}))))
+        (let [out (th/command! {::th/type :update-branch-from-main
+                                ::rpc/profile-id (:id profile)
+                                :branch-id branch-id})]
+          (t/is (= :updated (-> out :result :status))))
+        (t/is (empty? (branch-media)))))))
+
+(t/deftest repeated-updates-squash-no-phantom-media
+  ;; a second update from main must not squash media changes the branch
+  ;; never made: the write re-points main's media rows at the branch's
+  ;; copies, and the squashed log compares the updated branch with main's
+  ;; state — if one side is re-pointed and the other is not, the paired
+  ;; media reads as deleted+added on every update
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          storage (-> (:app.storage/storage th/*system*)
+                      (assoc :app.storage/backend :fs))
+          add-media-on-main! (fn [file name]
+                               (let [sobj (sto/put-object! storage {::sto/content (sto/content name)
+                                                                    :bucket :file-media-object
+                                                                    :content-type "image/png"})
+                                     fmo  (th/create-file-media-object* {:file-id (:id file)
+                                                                         :name name
+                                                                         :media-id (:id sobj)})]
+                                 (apply-change* profile (:id file)
+                                                {:type :add-media
+                                                 :object {:id (:id fmo) :name name
+                                                          :media-id (:id sobj)
+                                                          :width 100 :height 100
+                                                          :mtype "image/png"}})))
+          add-color-on-main! (fn [file]
+                               (apply-change* profile (:id file)
+                                              {:type :add-color
+                                               :color {:id (uuid/random) :name "C"
+                                                       :color "#112233" :opacity 1}}))
+          update! (fn [branch-id]
+                    (th/command! {::th/type :update-branch-from-main
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id}))]
+
+      (t/testing "media added on main after the fork"
+        (let [file    (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id proj-id})
+              create  (:result (th/command! {::th/type :create-file-branch
+                                             ::rpc/profile-id (:id profile)
+                                             :file-id (:id file)
+                                             :name "after-fork"}))
+              branch-id (:id create)]
+          (t/is (nil? (:error (add-media-on-main! file "after.png"))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
+          ;; again, with and without new main changes
+          (t/is (nil? (:error (add-color-on-main! file))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))))
+
+      (t/testing "media present before the fork"
+        (let [file    (th/create-file* 2 {:profile-id (:id profile)
+                                          :project-id proj-id})
+              _       (t/is (nil? (:error (add-media-on-main! file "before.png"))))
+              create  (:result (th/command! {::th/type :create-file-branch
+                                             ::rpc/profile-id (:id profile)
+                                             :file-id (:id file)
+                                             :name "before-fork"}))
+              branch-id (:id create)]
+          ;; a main-side change so the update reaches the write path
+          (t/is (nil? (:error (add-color-on-main! file))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
+          ;; again, with and without new main changes
+          (t/is (nil? (:error (add-color-on-main! file))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id))))
+          (t/is (= :updated (-> (update! branch-id) :result :status)))
+          (t/is (empty? (filter media-change-types (squashed-log-types branch-id)))))))))
+
+;; --- The branch-merge policy switch ---
+;;
+;; `resources/app/branch-merge-policies.edn` picks one alternative per
+;; policy; the backend re-reads it on mtime change and binds the result
+;; around every compare, merge, update and listing computation. These
+;; tests pin what a developer flipping that file relies on.
+
+(t/deftest policies-file-invalid-falls-back-to-defaults
+  ;; An invalid policies file must not take a merge down with it: it
+  ;; logs a warning and the engine runs the built-in defaults.
+  (let [path    (doto (java.io.File/createTempFile "branch-policies-" ".edn")
+                  (.deleteOnExit))
+        logged  (volatile! [])
+        run     (fn [content mtime]
+                  (spit path content)
+                  (.setLastModified path mtime)
+                  (vreset! logged [])
+                  (with-redefs [cf/config (assoc cf/config
+                                                 :branch-merge-policies-file (str path))
+                                ;; `l/warn` expands to `emit-log`, so this
+                                ;; captures what the loader logs
+                                l/emit-log (fn [props _cause _context _logger level _sync?]
+                                             (let [props (if (delay? props) @props props)]
+                                               (vswap! logged conj
+                                                       {:level level
+                                                        :props (into {} props)})))]
+                    (fbp/effective-policies)))
+        warned? (fn []
+                  (some (fn [record]
+                          (and (= :warn (:level record))
+                               (= "invalid branch merge policies file"
+                                  (:hint (:props record)))))
+                        @logged))]
+
+    ;; a value outside the policy's alternatives is invalid
+    (t/is (= bm/default-policies (run "{:same-parent-reorder :not-an-alternative}"
+                                      1700000000000)))
+    (t/is (warned?))
+
+    ;; a file that is not a policy map at all is invalid the same way
+    (t/is (= bm/default-policies (run "[1 2 3]" 1700000001000)))
+    (t/is (warned?))))
+
+(t/deftest policies-file-reloads-on-mtime-change
+  ;; Editing the policies file changes the effective policy the very
+  ;; next compare reads — no restart: the loader re-reads on mtime
+  ;; change and binds the result around the comparison.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile   (th/create-profile* 1 {:is-active true})
+          file      (th/create-file* 1 {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared false})
+          branch-id (-> (th/command! {::th/type :create-file-branch
+                                      ::rpc/profile-id (:id profile)
+                                      :file-id (:id file)
+                                      :name "policies-reload"})
+                        :result :id)
+          path      (doto (java.io.File/createTempFile "branch-policies-" ".edn")
+                      (.deleteOnExit))
+          seen      (volatile! nil)
+          write!    (fn [content mtime]
+                      (spit path content)
+                      (.setLastModified path mtime))
+          compare!  (fn []
+                      (let [out (th/command! {::th/type :get-branch-diff
+                                              ::rpc/profile-id (:id profile)
+                                              :branch-id branch-id})]
+                        (t/is (nil? (:error out)))))]
+
+      (write! "{:same-parent-reorder :refuse}" 1700000000000)
+      (with-redefs [cf/config (assoc cf/config
+                                     :branch-merge-policies-file (str path))
+                    bm/compute-merge (fn [& _]
+                                       (vreset! seen bm/*policies*)
+                                       {:changes [] :conflicts []})]
+        (compare!)
+        (t/is (= :refuse (get @seen :same-parent-reorder)))
+
+        ;; the same file, edited in place so its mtime moves, is picked
+        ;; up by the next compare: the switch needs no restart
+        (write! "{:same-parent-reorder :ignore}" 1700000001000)
+        (compare!)
+        (t/is (= :ignore (get @seen :same-parent-reorder)))))))
+
+(t/deftest summary-cache-key-changes-with-policies
+  ;; Two different policies must never share a cached summary: the key
+  ;; hashes the policies the value was computed under.
+  (let [row       {:base-snapshot-id (uuid/random) :source-revn 1 :branch-revn 2}
+        key-of    (fn [policies]
+                    (binding [bm/*policies* policies]
+                      (#'fbranch/summary-cache-key row)))
+        k-default (key-of bm/default-policies)
+        k-ignore  (key-of (assoc bm/default-policies :same-parent-reorder :ignore))
+        k-expand  (key-of (assoc bm/default-policies :container-delete-over-main-edits :expand))]
+
+    ;; the key is stable for the same policies …
+    (t/is (= k-default (key-of bm/default-policies)))
+    ;; … and distinct for different ones
+    (t/is (not= k-default k-ignore))
+    (t/is (not= k-default k-expand))
+    (t/is (not= k-ignore k-expand))))

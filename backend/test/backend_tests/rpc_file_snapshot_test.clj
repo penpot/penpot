@@ -220,3 +220,115 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))))))
+
+(t/deftest snapshots-rename-guard
+  ;; Renaming a snapshot the user does not own must not convert it into
+  ;; a user snapshot: `fsnap/update!` flips `:created-by` to the caller
+  ;; and clears `:deleted-at`, so an unguarded rename makes the branch
+  ;; base pin (and any other system snapshot) deletable.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
+
+          branch  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "rename-pin"}))
+
+          ;; the pin is a system snapshot, so it carries a future
+          ;; deleted-at and only shows up without the deleted filter
+          pin     (th/db-get :file-change
+                             {:file-id (:id file)
+                              :label "branch-base/rename-pin"}
+                             {::db/remove-deleted false})]
+
+      (t/testing "the branch base pin is a system snapshot"
+        (t/is (uuid? (:branch-file-id branch)))
+        (t/is (uuid? (:id pin)))
+        (t/is (= "system" (:created-by pin))))
+
+      (t/testing "renaming the branch base pin is refused"
+        (let [out (th/command! {::th/type :update-file-snapshot
+                                ::rpc/profile-id (:id profile)
+                                :id (:id pin)
+                                :label "stolen-label"})]
+          (t/is (some? (:error out)))
+          (t/is (= :system-snapshots-cant-be-renamed (th/ex-code (:error out))))))
+
+      (t/testing "the pin keeps its label and system ownership"
+        (let [pin (th/db-get :file-change {:id (:id pin)} {::db/remove-deleted false})]
+          (t/is (= "branch-base/rename-pin" (:label pin)))
+          (t/is (= "system" (:created-by pin)))))
+
+      (t/testing "the pin is still not deletable"
+        (let [out (th/command! {::th/type :delete-file-snapshot
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)
+                                :id (:id pin)})]
+          (t/is (some? (:error out)))
+          (t/is (= :system-snapshots-cant-be-deleted (th/ex-code (:error out))))))
+
+      (t/testing "other system snapshots are refused the same way"
+        ;; restoring creates a system backup snapshot of the current
+        ;; state; renaming it must not adopt it either
+        (let [file2     (th/create-file* 2 {:profile-id (:id profile)
+                                            :project-id (:default-project-id profile)
+                                            :is-shared false})
+              user-snap (:result (th/command! {::th/type :create-file-snapshot
+                                               ::rpc/profile-id (:id profile)
+                                               :file-id (:id file2)
+                                               :label "user-version"}))]
+
+          (t/is (nil? (:error (th/command! {::th/type :restore-file-snapshot
+                                            ::rpc/profile-id (:id profile)
+                                            :file-id (:id file2)
+                                            :id (:id user-snap)}))))
+
+          (let [backup (th/db-get :file-change
+                                  {:file-id (:id file2)
+                                   :created-by "system"}
+                                  {::db/remove-deleted false})
+                out    (th/command! {::th/type :update-file-snapshot
+                                     ::rpc/profile-id (:id profile)
+                                     :id (:id backup)
+                                     :label "stolen-backup"})]
+            (t/is (uuid? (:id backup)))
+            (t/is (some? (:error out)))
+            (t/is (= :system-snapshots-cant-be-renamed (th/ex-code (:error out))))
+            (t/is (= "system" (:created-by (th/db-get :file-change {:id (:id backup)}
+                                                      {::db/remove-deleted false}))))))))))
+
+(t/deftest snapshots-restore-guard
+  ;; Restoring onto a branch file would write the restored document as
+  ;; the branch's own `file_data` payload and advance its revn, while
+  ;; `branch-file-data` keeps deriving from the branch base and the op
+  ;; log and never reads that payload: the branch silently
+  ;; desynchronises.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id (:default-project-id profile)
+                                       :is-shared false})
+          branch   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "restore-target"}))
+          branch-id (:branch-file-id branch)
+
+          snap     (:result (th/command! {::th/type :create-file-snapshot
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id branch-id
+                                          :label "branch-version"}))
+
+          out      (th/command! {::th/type :restore-file-snapshot
+                                 ::rpc/profile-id (:id profile)
+                                 :file-id branch-id
+                                 :id (:id snap)})]
+
+      (t/is (uuid? branch-id))
+      (t/is (uuid? (:id snap)))
+      (t/is (some? (:error out)))
+      (t/is (= :branch-file-cant-be-restored (th/ex-code (:error out))))
+      (t/is (empty? (th/db-query :file-data {:file-id branch-id :type "main"}))))))

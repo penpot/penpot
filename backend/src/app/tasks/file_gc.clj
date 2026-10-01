@@ -229,13 +229,21 @@
 (defn- process-file!
   [cfg {:keys [file-id] :as props}]
   (if-let [file (get-file cfg props)]
-    (let [file (->> file
-                    (bfl/clean-file)
-                    (clean-media! cfg)
-                    (clean-fragments! cfg))
-          file (assoc file :has-media-trimmed true)]
-      (bfc/update-file! cfg file)
-      true)
+    (if (:is-branch file)
+      (do
+        ;; A branch file's data payload is derived from the branch base
+        ;; and the operation log; cleaning it would persist a
+        ;; `file_data` row no read path consults.
+        (l/wrn :hint "skip branch file cleaning"
+               :file-id (str file-id))
+        false)
+      (let [file (->> file
+                      (bfl/clean-file)
+                      (clean-media! cfg)
+                      (clean-fragments! cfg))
+            file (assoc file :has-media-trimmed true)]
+        (bfc/update-file! cfg file)
+        true))
 
     (do
       (l/dbg :hint "skip cleaning, criteria does not match" :file-id (str file-id))

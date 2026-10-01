@@ -118,6 +118,16 @@
   ;; Check permissions and read current file state (short-lived, outside restore transaction)
   (files/check-edition-permissions! pool profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)
+
+        ;; A branch file's data payload is derived from the branch base
+        ;; and the operation log; restoring would persist a `file_data`
+        ;; row no read path consults.
+        _     (when (:is-branch file)
+                (ex/raise :type :validation
+                          :code :branch-file-cant-be-restored
+                          :hint "branch file data is derived from the branch base and the operation log; restore the snapshot on the source file or update the branch from main instead"
+                          :file-id file-id))
+
         team  (teams/get-team pool
                               :profile-id profile-id
                               :file-id file-id)
@@ -161,6 +171,14 @@
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id label]}]
   (let [snapshot (fsnap/get-minimal-snapshot conn id)]
     (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+
+    (when (not= (:created-by snapshot) "user")
+      (ex/raise :type :validation
+                :code :system-snapshots-cant-be-renamed
+                :file-id (:file-id snapshot)
+                :snapshot-id id
+                :profile-id profile-id))
+
     (fsnap/update! conn (assoc snapshot :label label))))
 
 (def ^:private schema:remove-file-snapshot

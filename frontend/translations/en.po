@@ -6696,6 +6696,10 @@ msgstr ""
 "(shapes, pages, components, colours, typographies, media, and tokens), not "
 "saves."
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:606, src/app/main/ui/workspace/sidebar/branches.cljs:842, src/app/main/ui/workspace/sidebar/branches.cljs:1956, src/app/main/ui/dashboard/branches_popover.cljs:85
+msgid "workspace.branches.counts.error"
+msgstr "Couldn't compare this branch with main"
+
 #: src/app/main/ui/workspace/sidebar/branches.cljs:299
 msgid "workspace.branches.create.derive-from"
 msgstr "Derive from"

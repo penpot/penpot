@@ -12,6 +12,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email :as eml]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -738,3 +740,123 @@
         error  (:error out)]
     (t/is (some? error))
     (t/is (= :branching-disabled (-> error ex-data :code)))))
+
+(t/deftest pull-request-commands-notify-only-after-the-commit
+  (with-redefs [cf/flags pr-flags]
+    (let [author   (th/create-profile* 1 {:is-active true})
+          reviewer (th/create-profile* 2 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id author)
+                                       :project-id (:default-project-id author)})]
+      (th/create-team-role* {:team-id (:default-team-id author)
+                             :profile-id (:id reviewer)
+                             :role :editor})
+      (let [branch (create-branch* author file "notify")
+            bfid   (:branch-file-id branch)
+            actors {:author (:id author) :reviewer (:id reviewer)}
+            ;; one case per mutation; at the very moment `mbus/pub!`
+            ;; fires, `:view` reads the row ANOTHER pool connection sees
+            ;; and `:expected` is the state that must already be visible
+            ;; there (the transaction has committed)
+            cases
+            [{:label "create-pull-request"
+              :type :create-pull-request
+              :actor :author
+              :params (fn [_] {:branch-id (:id branch)
+                               :title "review me"
+                               :reviewers [(:id reviewer)]})
+              :message-type :pull-request-created
+              :view (fn [id] (select-keys (th/db-get :file-pull-request {:id id})
+                                          [:status]))
+              :expected (constantly {:status "open"})}
+
+             {:label "update-pull-request"
+              :type :update-pull-request
+              :actor :author
+              :params (fn [id] {:id id :title "renamed"})
+              :message-type :pull-request-updated
+              :view (fn [id] (select-keys (th/db-get :file-pull-request {:id id})
+                                          [:title]))
+              :expected (constantly {:title "renamed"})}
+
+             {:label "update-pull-request-snapshot"
+              :type :update-pull-request-snapshot
+              :actor :author
+              ;; the sandbox only republishes when the branch moved
+              :before (fn [] (add-color* author bfid "Extra"))
+              :params (fn [id] {:id id})
+              :message-type :pull-request-updated
+              :view (fn [id] (select-keys (th/db-get :file-pull-request {:id id})
+                                          [:review-revn]))
+              :expected (fn [_] {:review-revn (:revn (th/db-get :file {:id bfid}))})}
+
+             {:label "submit-pull-request-review"
+              :type :submit-pull-request-review
+              :actor :reviewer
+              :params (fn [id] {:id id :state "approved" :comment "ship it"})
+              :message-type :pull-request-review-submitted
+              :view (fn [id] (select-keys (th/db-get :file-pull-request-review
+                                                     {:pull-request-id id
+                                                      :profile-id (:id reviewer)})
+                                          [:state :reviewed-revn]))
+              :expected (fn [id] {:state "approved"
+                                  :reviewed-revn (:review-revn (th/db-get :file-pull-request {:id id}))})}
+
+             {:label "close-pull-request"
+              :type :close-pull-request
+              :actor :author
+              :params (fn [id] {:id id})
+              :message-type :pull-request-closed
+              :view (fn [id] (select-keys (th/db-get :file-pull-request {:id id})
+                                          [:status]))
+              :expected (constantly {:status "closed"})}
+
+             {:label "reopen-pull-request"
+              :type :reopen-pull-request
+              :actor :author
+              :params (fn [id] {:id id})
+              :message-type :pull-request-updated
+              :view (fn [id] (select-keys (th/db-get :file-pull-request {:id id})
+                                          [:status]))
+              :expected (constantly {:status "open"})}]]
+        (loop [cases cases
+               pr-id nil]
+          (when-some [{:keys [label type actor before params message-type view expected]}
+                      (first cases)]
+            (let [seen (atom [])
+                  _    (when before (before))
+                  out  (with-redefs [mbus/pub!
+                                     (fn [_ & {:keys [message]}]
+                                       (swap! seen conj {:message message
+                                                         :row (view (:pull-request-id message))}))]
+                         (th/command! (merge {::th/type type
+                                              ::rpc/profile-id (actors actor)}
+                                             (params pr-id))))]
+              (t/is (nil? (:error out)) (str label " runs"))
+              (let [{:keys [message row]} (first @seen)]
+                (t/is (= 1 (count @seen)) (str label " publishes once"))
+                (t/is (= message-type (:type message)) (str label " message type"))
+                (t/is (= (expected (:pull-request-id message)) row)
+                      (str label " publishes only after the commit")))
+              (recur (rest cases) (or pr-id (-> out :result :id))))))))))
+
+(t/deftest rolled-back-pull-request-commands-notify-nothing
+  (with-redefs [cf/flags pr-flags]
+    (let [author   (th/create-profile* 1 {:is-active true})
+          reviewer (th/create-profile* 2 {:is-active true})
+          file     (th/create-file* 1 {:profile-id (:id author)
+                                       :project-id (:default-project-id author)})]
+      (th/create-team-role* {:team-id (:default-team-id author)
+                             :profile-id (:id reviewer)
+                             :role :editor})
+      (let [branch (create-branch* author file "rollback")
+            seen   (atom [])]
+        ;; the reviewer emails are queued inside the transaction: make
+        ;; that queueing fail after the pull request row is written
+        (with-redefs [mbus/pub!   (fn [_ & {:keys [message]}]
+                                    (swap! seen conj message))
+                      eml/send!   (fn [_] (throw (IllegalStateException. "boom")))]
+          (let [out (create-pr* author (:id branch) {:reviewers [(:id reviewer)]})]
+            (t/is (some? (:error out)))))
+        (t/is (empty? @seen))
+        (t/is (empty? (th/db-query :file-pull-request
+                                   {:file-branch-id (:id branch)})))))))

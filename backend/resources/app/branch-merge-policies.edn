@@ -1,0 +1,47 @@
+;; Branch merge policies: the switch that decides how the merge engine
+;; resolves the three tree-shape cases where a silent default drops work.
+;;
+;; This file is re-read whenever its mtime changes, so a policy flip is:
+;; edit the value here, re-run the compare or merge — no restart. An
+;; invalid file logs a warning and the engine falls back to the built-in
+;; defaults (`app.common.files.branch-merge/default-policies`) until the
+;; file is fixed. A key left out of the map keeps its default.
+;;
+;; Every policy is one key with one value; the comments under each key
+;; list the alternatives with a sentence each.
+
+{;; --- :same-parent-reorder
+  ;; The branch — or both sides — reorders the children of one parent.
+  ;;
+  ;; :merge   detect the child-order change, show it in the compare and
+  ;;          apply it as a :mov-objects change; both sides reordering
+  ;;          the same parent differently is a conflict on the parent.
+  ;; :refuse  the merge/update refuses with :unsupported, naming the
+  ;;          parent.
+  ;; :ignore  today's behaviour: the reorder is dropped silently.
+  :same-parent-reorder :merge
+
+  ;; --- :addition-under-deleted-parent
+  ;; main deleted the frame P while the branch added a shape inside P.
+  ;;
+  ;; :conflict              a :modify-delete conflict on P: :branch
+  ;;                        restores P as the branch has it, addition
+  ;;                        included; :main drops the addition.
+  ;; :refuse                the merge/update refuses with :unsupported.
+  ;; :reparent-to-ancestor  place the addition under the nearest
+  ;;                        ancestor main still has.
+  ;; :page-root             today's behaviour: the addition lands at
+  ;;                        the page root.
+  :addition-under-deleted-parent :conflict
+
+  ;; --- :container-delete-over-main-edits
+  ;; The branch deleted the container F while main modified or added
+  ;; anything inside F's subtree.
+  ;;
+  ;; :conflict  a :delete-modify conflict on F: :branch deletes the
+  ;;            whole subtree knowingly; :main keeps F and its subtree
+  ;;            as main has them.
+  ;; :expand    delete only shapes the branch deleted; main's additions
+  ;;            move to F's parent.
+  ;; :cascade   today's behaviour: the whole subtree goes.
+  :container-delete-over-main-edits :conflict}

@@ -282,15 +282,18 @@
       (let [target-row (db/get-by-id cfg :file target-id)
             project    (db/get-by-id cfg :project (:project-id target-row))
             team-id    (:team-id project)
-            reviewers  (validate-reviewers! cfg team-id profile-id (or reviewers []))]
+            reviewers  (validate-reviewers! cfg team-id profile-id (or reviewers []))
+            messages   (volatile! [])]
 
         (-> cfg
             (assoc ::quotes/profile-id profile-id)
             (assoc ::quotes/team-id team-id)
             (quotes/check! {::quotes/id ::quotes/pull-requests-per-team}))
 
-        (db/tx-run!
+        (fbranch/tx-run-notify!
          cfg
+         msgbus
+         messages
          (fn [{:keys [::db/conn] :as cfg}]
            ;; Serialize against concurrent update-file on the branch so
            ;; the review snapshot captures a consistent state (same
@@ -357,12 +360,12 @@
                                              :target-name (:name target-row)
                                              :reviewers reviewers})
 
-               (mbus/pub! msgbus
-                          :topic target-id
-                          :message {:type :pull-request-created
-                                    :file-id target-id
-                                    :pull-request-id pr-id
-                                    :profile-id profile-id})
+               (vswap! messages conj
+                       {:topic target-id
+                        :message {:type :pull-request-created
+                                  :file-id target-id
+                                  :pull-request-id pr-id
+                                  :profile-id profile-id}})
 
                {:id pr-id
                 :file-branch-id branch-id
@@ -587,9 +590,12 @@
 
     (let [team-id   (perms/get-team-id-for-file cfg (:target-file-id pr))
           reviewers (some->> reviewers
-                             (validate-reviewers! cfg team-id (:created-by pr)))]
-      (db/tx-run!
+                             (validate-reviewers! cfg team-id (:created-by pr)))
+          messages  (volatile! [])]
+      (fbranch/tx-run-notify!
        cfg
+       msgbus
+       messages
        (fn [{:keys [::db/conn]}]
          (db/update! conn :file-pull-request
                      (cond-> {:updated-at (ct/now)}
@@ -622,12 +628,12 @@
                                                :target-name (:target-name row)
                                                :reviewers added})))))
 
-         (mbus/pub! msgbus
-                    :topic (:target-file-id pr)
-                    :message {:type :pull-request-updated
-                              :file-id (:target-file-id pr)
-                              :pull-request-id id
-                              :profile-id profile-id})
+         (vswap! messages conj
+                 {:topic (:target-file-id pr)
+                  :message {:type :pull-request-updated
+                            :file-id (:target-file-id pr)
+                            :pull-request-id id
+                            :profile-id profile-id}})
 
          {:id id
           :title (or title (:title pr))
@@ -651,7 +657,8 @@
    ::climit/id [[:update-pull-request-snapshot/global]]}
   [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id id]}]
   (check-pull-requests-enabled!)
-  (let [pr (get-pull-request* cfg id)]
+  (let [pr       (get-pull-request* cfg id)
+        messages (volatile! [])]
     (when (not= "open" (:status pr))
       (ex/raise :type :validation
                 :code :pull-request-not-open
@@ -661,8 +668,10 @@
     ;; creating the pull request
     (files/check-edition-permissions! cfg profile-id (:source-file-id pr))
 
-    (db/tx-run!
+    (fbranch/tx-run-notify!
      cfg
+     msgbus
+     messages
      (fn [{:keys [::db/conn] :as cfg}]
        ;; serialize against concurrent update-file on the branch so the
        ;; new snapshot captures a consistent state
@@ -688,12 +697,12 @@
                          {:id id}
                          {::db/return-keys false})
 
-             (mbus/pub! msgbus
-                        :topic (:target-file-id pr)
-                        :message {:type :pull-request-updated
-                                  :file-id (:target-file-id pr)
-                                  :pull-request-id id
-                                  :profile-id profile-id})
+             (vswap! messages conj
+                     {:topic (:target-file-id pr)
+                      :message {:type :pull-request-updated
+                                :file-id (:target-file-id pr)
+                                :pull-request-id id
+                                :profile-id profile-id}})
 
              {:id id :review-revn (:revn branch-file) :updated true})))))))
 
@@ -717,15 +726,18 @@
   [{:keys [::mbus/msgbus] :as cfg}
    {:keys [::rpc/profile-id id state comment]}]
   (check-pull-requests-enabled!)
-  (let [pr (get-pull-request* cfg id)]
+  (let [pr       (get-pull-request* cfg id)
+        messages (volatile! [])]
     (when (not= "open" (:status pr))
       (ex/raise :type :validation
                 :code :pull-request-not-open
                 :pull-request-id id))
     (files/check-read-permissions! cfg profile-id (:target-file-id pr))
 
-    (db/tx-run!
+    (fbranch/tx-run-notify!
      cfg
+     msgbus
+     messages
      (fn [{:keys [::db/conn]}]
        (let [review (db/get* conn :file-pull-request-review
                              {:pull-request-id id :profile-id profile-id})]
@@ -743,13 +755,13 @@
                      {:pull-request-id id :profile-id profile-id}
                      {::db/return-keys false})
 
-         (mbus/pub! msgbus
-                    :topic (:target-file-id pr)
-                    :message {:type :pull-request-review-submitted
-                              :file-id (:target-file-id pr)
-                              :pull-request-id id
-                              :profile-id profile-id
-                              :state state})
+         (vswap! messages conj
+                 {:topic (:target-file-id pr)
+                  :message {:type :pull-request-review-submitted
+                            :file-id (:target-file-id pr)
+                            :pull-request-id id
+                            :profile-id profile-id
+                            :state state}})
 
          {:id id
           :profile-id profile-id
@@ -772,15 +784,18 @@
    ::sm/params schema:close-pull-request}
   [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id id]}]
   (check-pull-requests-enabled!)
-  (let [pr (get-pull-request* cfg id)]
+  (let [pr       (get-pull-request* cfg id)
+        messages (volatile! [])]
     (when (not= "open" (:status pr))
       (ex/raise :type :validation
                 :code :pull-request-not-open
                 :pull-request-id id))
     (check-author-or-admin! cfg profile-id pr)
 
-    (db/tx-run!
+    (fbranch/tx-run-notify!
      cfg
+     msgbus
+     messages
      (fn [{:keys [::db/conn] :as cfg}]
        (let [team  (teams/get-team conn :profile-id profile-id
                                    :file-id (:target-file-id pr))
@@ -795,12 +810,12 @@
                      {::db/return-keys false})
          (release-review-snapshot! cfg pr (ct/in-future delay))
 
-         (mbus/pub! msgbus
-                    :topic (:target-file-id pr)
-                    :message {:type :pull-request-closed
-                              :file-id (:target-file-id pr)
-                              :pull-request-id id
-                              :profile-id profile-id})
+         (vswap! messages conj
+                 {:topic (:target-file-id pr)
+                  :message {:type :pull-request-closed
+                            :file-id (:target-file-id pr)
+                            :pull-request-id id
+                            :profile-id profile-id}})
 
          {:id id :status "closed"})))))
 
@@ -820,7 +835,8 @@
    ::sm/params schema:reopen-pull-request}
   [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id id]}]
   (check-pull-requests-enabled!)
-  (let [pr (get-pull-request* cfg id)]
+  (let [pr       (get-pull-request* cfg id)
+        messages (volatile! [])]
     (when (not= "closed" (:status pr))
       (ex/raise :type :validation
                 :code :pull-request-not-closed
@@ -836,8 +852,10 @@
                   :hint "the pull request's branch is no longer open"
                   :pull-request-id id))
 
-      (db/tx-run!
+      (fbranch/tx-run-notify!
        cfg
+       msgbus
+       messages
        (fn [{:keys [::db/conn] :as cfg}]
          (db/xact-lock! conn (:source-file-id pr))
 
@@ -872,12 +890,12 @@
                        {:id id}
                        {::db/return-keys false})
 
-           (mbus/pub! msgbus
-                      :topic (:target-file-id pr)
-                      :message {:type :pull-request-updated
-                                :file-id (:target-file-id pr)
-                                :pull-request-id id
-                                :profile-id profile-id})
+           (vswap! messages conj
+                   {:topic (:target-file-id pr)
+                    :message {:type :pull-request-updated
+                              :file-id (:target-file-id pr)
+                              :pull-request-id id
+                              :profile-id profile-id}})
 
            {:id id :status "open" :review-revn (:revn branch-file)}))))))
 

@@ -25,6 +25,7 @@
     WHERE f.has_media_trimmed IS false
       AND f.modified_at < ?
       AND f.deleted_at IS NULL
+      AND f.is_branch IS FALSE
     ORDER BY f.modified_at DESC
       FOR UPDATE OF f
      SKIP LOCKED")
