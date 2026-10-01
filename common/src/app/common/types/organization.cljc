@@ -100,6 +100,16 @@
     :else false))
 
 (defn- can-move-team?
+  "Checks the source organization's `:move-teams` value. The check that
+  the user owns the team happens elsewhere.
+
+  - \"always\": the team can move to any organization, or be taken out
+    of the organization.
+  - \"myOrganizations\": the team can move only to an organization with
+    the same owner, and cannot be taken out. A person has one Enterprise
+    subscription, so the same owner means the same subscription.
+  - \"never\": only the Admin Console can move teams. Nobody moves them
+    from Penpot, not even the organization owner."
   [{:keys [permission-value target-organization-same-owner?]}]
   (cond
     (= permission-value "never")

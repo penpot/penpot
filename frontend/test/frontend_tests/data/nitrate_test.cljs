@@ -15,10 +15,12 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.verify-token :as verify-token]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -352,3 +354,43 @@
                       {:callback callback})
           parsed     (-> href u/uri :query u/query-string->map :callback)]
       (t/is (= callback parsed)))))
+
+(defn- ^:async observe-add-team-rejected-by-permissions
+  "Runs `add-team-to-organization` for `team` while the backend rejects it
+  with `:not-allowed`, as when another session changed the permissions
+  after the modal opened. Resolves to the emitted events."
+  [team]
+  (let [emitted (atom [])
+        event   (dnt/add-team-to-organization {:team-id (:id team)
+                                               :organization-id "org-2"
+                                               :skip-audit? true})
+        state   {:teams {(:id team) team}}]
+    (await
+     (mock/with-mocks*
+       {rt/get-current-href (mock/stub (constantly "http://localhost/#/dashboard"))
+        rp/cmd! (mock/stub
+                 (fn [cmd _params]
+                   (case cmd
+                     :check-nitrate-sso (rx/of {:authorized true})
+                     ::dnt/add-team-to-organization
+                     (rx/throw (ex-info "not allowed" {:type :validation :code :not-allowed})))))
+        modal/show (mock/stub (fn [& args] {:modal-show args}))}
+       (await (async/observe (ptk/watch event state nil)
+                             :on-next #(swap! emitted conj %)))))
+    @emitted))
+
+(t/deftest ^:async add-team-to-organization-shows-no-permission-on-stale-move
+  (let [emitted (await (observe-add-team-rejected-by-permissions
+                        {:id "team-1" :organization {:id "org-1"}}))]
+    (t/is (= 2 (count emitted)))
+    (t/is (= ::dt/fetch-teams (ptk/type (first emitted))))
+    (t/is (= {:modal-show [:no-permission-modal {:type :no-organizations-change}]}
+             (second emitted)))))
+
+(t/deftest ^:async add-team-to-organization-shows-no-permission-on-stale-add
+  (let [emitted (await (observe-add-team-rejected-by-permissions
+                        {:id "team-1"}))]
+    (t/is (= 2 (count emitted)))
+    (t/is (= ::dt/fetch-teams (ptk/type (first emitted))))
+    (t/is (= {:modal-show [:no-permission-modal {:type :no-organizations-create}]}
+             (second emitted)))))
