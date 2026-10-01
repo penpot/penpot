@@ -1807,46 +1807,6 @@
                     {})]
     (cfcp/sync-component-id-with-ref-shape data libraries)))
 
-(defmethod migrate-data "0031-fix-shape-svg-attrs-and-defs"
-  ;; Stored svg attribute keys are kebab-case (issue #11947): the v3 reader
-  ;; already outputs kebab and birth normalizes any outside spelling, so
-  ;; export/import converges to the same state. Old birth and the cleaner
-  ;; era stored camelCase React prop names instead, which the reader
-  ;; kebab-ized on import beyond repair. Convert once, with the same
-  ;; birth transforms: `:svg-attrs` and `:svg-defs` node attrs go through
-  ;; the whitelist+kebab transform (unknown attrs drop, same as birth),
-  ;; while svg-raw `:content` attrs are kebab-ized spelling-only (unknown
-  ;; keys kept: the sidebar reads keys outside the whitelist). Kebab
-  ;; input passes through unchanged, so re-running is safe. This replaces
-  ;; "0021-fix-shape-svg-attrs" (id withdrawn below): files that recorded
-  ;; it migrate again through this one. Non-lowercase XML ids stay lossy:
-  ;; the reader lowercases them before anything runs.
-  [data _]
-  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
-  (letfn [(migrate-defs [defs]
-            (if (map? defs)
-              (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
-              defs))
-
-          (migrate-shape [shape]
-            (-> shape
-                (d/update-when :svg-attrs
-                               (fn [attrs]
-                                 (if (map? attrs)
-                                   (csvg/attrs->kebab-props attrs)
-                                   attrs)))
-                (d/update-when :svg-defs migrate-defs)
-                (d/update-when :svg-viewbox grc/make-rect)
-                (cond-> (= :svg-raw (:type shape))
-                  (d/update-when :content csvg/kebabize-content-node))))
-
-          (migrate-container [container]
-            (d/update-when container :objects d/update-vals migrate-shape))]
-
-    (-> data
-        (update :pages-index d/update-vals migrate-container)
-        (d/update-when :components d/update-vals migrate-container))))
-
 ;; Re-run the 0019 and 0020 fixers after normalizing :component-root.
 ;; Migrations 0019 and 0020 missed shapes with an explicit :component-root
 ;; false because subcopy-head? expects nil. Normalize first, then re-run.
@@ -2175,6 +2135,47 @@
     (-> data
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
+
+(defmethod migrate-data "0031-fix-shape-svg-attrs-and-defs"
+  ;; Stored svg attribute keys are kebab-case (issue #11947): the v3 reader
+  ;; already outputs kebab and birth normalizes any outside spelling, so
+  ;; export/import converges to the same state. Old birth and the cleaner
+  ;; era stored camelCase React prop names instead, which the reader
+  ;; kebab-ized on import beyond repair. Convert once, with the same
+  ;; birth transforms: `:svg-attrs` and `:svg-defs` node attrs go through
+  ;; the whitelist+kebab transform (unknown attrs drop, same as birth),
+  ;; while svg-raw `:content` attrs are kebab-ized spelling-only (unknown
+  ;; keys kept: the sidebar reads keys outside the whitelist). Kebab
+  ;; input passes through unchanged, so re-running is safe. This replaces
+  ;; "0021-fix-shape-svg-attrs" (id withdrawn from `available-migrations`
+  ;; below): files that recorded it migrate again through this one.
+  ;; Non-lowercase XML ids stay lossy: the reader lowercases them before
+  ;; anything runs.
+  [data _]
+  (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
+  (letfn [(migrate-defs [defs]
+            (if (map? defs)
+              (d/mapm (fn [_ node] (csvg/normalize-def-node node)) defs)
+              defs))
+
+          (migrate-shape [shape]
+            (-> shape
+                (d/update-when :svg-attrs
+                               (fn [attrs]
+                                 (if (map? attrs)
+                                   (csvg/attrs->kebab-props attrs)
+                                   attrs)))
+                (d/update-when :svg-defs migrate-defs)
+                (d/update-when :svg-viewbox grc/make-rect)
+                (cond-> (= :svg-raw (:type shape))
+                  (d/update-when :content csvg/kebabize-content-node))))
+
+          (migrate-container [container]
+            (d/update-when container :objects d/update-vals migrate-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals migrate-container)
+        (d/update-when :components d/update-vals migrate-container))))
 
 (def available-migrations
   (into (d/ordered-set)
