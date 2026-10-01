@@ -42,7 +42,7 @@
       (let [old-page (dm/get-in @state [:pages-index page-id])
             ;; The index only holds pages, without the file id nor its
             ;; components, so shape validation can't run here
-            changes  (remove #(= :validate-shapes (:type %)) changes)
+            changes  (ch/skip-validate-changes changes)
             new-page (-> state
                          (swap! ch/process-changes changes false)
                          (dm/get-in [:pages-index page-id]))
