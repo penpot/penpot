@@ -494,6 +494,7 @@
                              (assoc :component-root true))
 
          restoring-into-parent (get objects (:parent-id first-shape))
+         into-variant?         (ctk/is-variant-container? restoring-into-parent)
 
          changes           (-> changes
                                (pcb/with-page page)
@@ -512,9 +513,16 @@
                                       (nil? restoring-into-parent)))
                              (clvp/generate-make-shapes-no-variant [first-shape])
                              ;; Add variant info and rename when restoring into a variant-container
-                             (ctk/is-variant-container? restoring-into-parent)
-                             (clvp/generate-make-shapes-variant [first-shape] restoring-into-parent))]
-     {:changes (pcb/restore-component changes component-id (:id page) minusdelta)
+                             into-variant?
+                             (clvp/generate-make-shapes-variant [first-shape] restoring-into-parent))
+         changes           (cond-> (pcb/restore-component changes component-id (:id page) minusdelta)
+                             ;; generate-make-shapes-variant does not validate, so validate the
+                             ;; container with the restored component inside
+                             into-variant?
+                             (pcb/validate-shapes (:id page)
+                                                  [(:id restoring-into-parent)]
+                                                  (str "prepare-restore-component: " component-id)))]
+     {:changes changes
       :shape (first moved-shapes)})))
 
 ;; ---- General library synchronization functions ----
@@ -2936,7 +2944,14 @@
        (clvp/generate-update-property-value new-component-id (-> component :variant-properties count dec) value)
 
        :always
-       (pcb/change-parent (:id parent) [shape] 0))]))
+       (pcb/change-parent (:id parent) [shape] 0)
+
+       ;; generate-make-shapes-variant does not validate, so validate the
+       ;; container once the shape is inside it
+       into-new-variant?
+       (pcb/validate-shapes page-id
+                            [(:id parent)]
+                            (str "duplicate-variant: " (:id component) " into " (:id parent))))]))
 
 
 (defn generate-duplicate-component-change

@@ -760,3 +760,54 @@
     (t/is (some? m01'))
     (t/is (nil? (:variant-id c01')))
     (t/is (nil? (:variant-id m01')))))
+
+(defn- validates-shapes?
+  "Check that some :validate-shapes change validates exactly `shape-ids`."
+  [changes shape-ids]
+  (some #(and (= :validate-shapes (:type %))
+              (= (set shape-ids) (set (:shape-ids %))))
+        (:redo-changes changes)))
+
+(t/deftest test-restore-variant-into-its-container-validates-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:m02]))
+
+        ;; ==== Action
+        changes (restore-changes file :c02)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v01) (:parent-id (ths/get-shape file' :m02))))
+    (t/is (validates-shapes? changes [(thi/id :v01)]))))
+
+(t/deftest test-paste-variant-into-other-variant-validates-container
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+                      (ths/update-shape :v02 :name "Other")
+                      (ths/update-shape :m03 :name "Other")
+                      (ths/update-shape :m04 :name "Other")
+                      (thc/update-component :c03 {:name "Other"})
+                      (thc/update-component :c04 {:name "Other"}))
+        page      (thf/current-page file)
+        shape-id  (thi/id :m01)
+        v02-id    (thi/id :v02)
+
+        ;; ==== Action
+        ;; Paste a copy of m01 into v02, as the workspace does
+        objects   (update (:objects page) shape-id assoc :parent-id v02-id :frame-id v02-id)
+        changes   (-> (pcb/empty-changes nil)
+                      (pcb/with-page-id (:id page))
+                      (pcb/with-library-data (:data file))
+                      (pcb/with-objects (:objects page))
+                      (cll/generate-duplicate-changes objects page #{shape-id} (gpt/point 0 0)
+                                                      {(:id file) file} (:data file) (:id file)))
+        file'     (thf/apply-changes file changes)
+        v02'      (ths/get-shape file' :v02)]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes v02'))))
+    (t/is (validates-shapes? changes [v02-id]))))
