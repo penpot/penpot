@@ -107,6 +107,61 @@
      :token-sets token-sets
      :token-themes token-themes}))
 
+(defn sort-linked-libraries
+  "Given the linked libraries of a file and a map of library id to the
+  set of library ids it uses, return the libraries ordered as a tree:
+  each library is followed by the libraries nested under it, marked
+  with `:nested?` and `:parent-name`.
+
+  Direct libraries (`:is-indirect` false) and libraries not used by
+  any other linked library are roots. Every library is returned
+  exactly once, at any depth and even when the dependencies form a
+  cycle."
+  [libraries dependencies]
+  (let [by-id        (d/index-by :id libraries)
+        sort-by-name (partial sort-by (comp str/lower :name))
+
+        parents
+        (d/update-vals by-id
+                       (fn [{:keys [id]}]
+                         (into #{}
+                               (keep (fn [[parent-id library-ids]]
+                                       (when (and (not= parent-id id)
+                                                  (contains? by-id parent-id)
+                                                  (contains? library-ids id))
+                                         parent-id)))
+                               dependencies)))
+
+        root?
+        (fn [{:keys [id is-indirect]}]
+          (or (false? is-indirect)
+              (empty? (get parents id))))
+
+        children
+        (fn [parent-id]
+          (->> libraries
+               (remove root?)
+               (filter #(contains? (get parents (:id %)) parent-id))
+               (sort-by-name)))
+
+        visit
+        (fn visit [[result visited :as acc] library parent]
+          (if (contains? visited (:id library))
+            acc
+            (reduce #(visit %1 %2 library)
+                    [(conj result (assoc library
+                                         :nested? (some? parent)
+                                         :parent-name (:name parent)))
+                     (conj visited (:id library))]
+                    (children (:id library)))))]
+
+    ;; The second pass picks up libraries only reachable through a
+    ;; cycle, which have no root to hang from.
+    (as-> [[] #{}] $
+      (reduce #(visit %1 %2 nil) $ (sort-by-name (filter root? libraries)))
+      (reduce #(visit %1 %2 nil) $ (sort-by-name libraries))
+      (first $))))
+
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
   (let [all-zero? (and (zero? components-count)
@@ -675,61 +730,9 @@
 
         linked-libraries
         (mf/with-memo [linked-libraries find-connected-to dependencies]
-          (let [libs
-                (->> (vals linked-libraries)
-                     (map #(assoc % :connected-to (find-connected-to (:id %)))))
-
-                by-id
-                (d/index-by :id libs)
-
-                sort-by-name
-                (partial sort-by (comp str/lower :name))
-
-                ;; The linked libraries that use each library
-                parents
-                (d/update-vals by-id
-                               (fn [{:keys [id]}]
-                                 (into #{}
-                                       (keep (fn [[parent-id library-ids]]
-                                               (when (and (not= parent-id id)
-                                                          (contains? by-id parent-id)
-                                                          (contains? library-ids id))
-                                                 parent-id)))
-                                       dependencies)))
-
-                ;; Direct libraries and libraries not used by any other
-                ;; linked library go at the top level
-                root?
-                (fn [{:keys [id is-indirect]}]
-                  (or (false? is-indirect)
-                      (empty? (get parents id))))
-
-                children
-                (fn [parent-id]
-                  (->> libs
-                       (remove root?)
-                       (filter #(contains? (get parents (:id %)) parent-id))
-                       (sort-by-name)))
-
-                ;; Walk the tree at any depth, and add each library only
-                ;; once, even when the dependencies form a cycle
-                visit
-                (fn visit [[result visited :as acc] library parent]
-                  (if (contains? visited (:id library))
-                    acc
-                    (reduce #(visit %1 %2 library)
-                            [(conj result (assoc library
-                                                 :nested? (some? parent)
-                                                 :parent-name (:name parent)))
-                             (conj visited (:id library))]
-                            (children (:id library)))))]
-
-            ;; The second pass picks up libraries only reachable through a
-            ;; cycle, which have no root to hang from.
-            (as-> [[] #{}] $
-              (reduce #(visit %1 %2 nil) $ (sort-by-name (filter root? libs)))
-              (reduce #(visit %1 %2 nil) $ (sort-by-name libs))
-              (first $))))
+          (-> (->> (vals linked-libraries)
+                   (map #(assoc % :connected-to (find-connected-to (:id %)))))
+              (sort-linked-libraries dependencies)))
 
         linked-libraries-ids
         (mf/with-memo [linked-libraries]
