@@ -7,6 +7,11 @@
 (ns backend-tests.worker-test
   (:require
    [app.common.schema :as sm]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.jobs :as jobs]
+   [app.main :as main]
+   [app.metrics :as-alias mtx]
    [app.msgbus :as mbus]
    [app.worker :as wrk]
    [app.worker.cron :as wcron]
@@ -44,3 +49,20 @@
                @#'wdisp/schema:dispatcher
                @#'wrkr/schema:params]]
       (t/is (sm/schema? (sm/schema s))))))
+
+(t/deftest the-binfile-runner-is-wired
+  (let [cfg (get main/worker-config [:app.main/binfile ::wrk/runner])]
+
+    (t/is (some? cfg))
+
+    (t/testing "the heavy work of a user job does not share the default runner"
+      (t/is (= :binfile (::wrk/queue cfg)))
+      (t/is (= (cf/get :worker-binfile-parallelism 1) (::wrk/parallelism cfg))))
+
+    (t/testing "a job of a profile cannot store its events without a msgbus"
+      (t/is (contains? cfg ::mbus/msgbus)))
+
+    (t/testing "and the runner resolves jobs, metrics and the pool"
+      (t/is (contains? cfg ::jobs/defs))
+      (t/is (contains? cfg ::mtx/metrics))
+      (t/is (contains? cfg ::db/pool)))))

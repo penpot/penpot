@@ -248,11 +248,15 @@
         backend'   (impl/resolve-backend storage backend)
 
         bucket     (:bucket mdata)
+        ;; `job-resource` objects belong to one profile, so they are
+        ;; never shared: a dedup hit would hand the artifact of one
+        ;; profile to the job of another.
         dedupable? (and (::deduplicate? params)
                         (:hash mdata)
                         (some? bucket)
                         (not= tempfile-bucket bucket)
-                        (not= upload-session-bucket bucket))
+                        (not= upload-session-bucket bucket)
+                        (not= job-resource-bucket bucket))
 
         hit        (when dedupable?
                      (get-database-object-by-hash pool backend bucket (:hash mdata)))]

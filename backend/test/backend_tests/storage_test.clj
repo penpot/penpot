@@ -113,6 +113,25 @@
                                           :content-type "text/plain"})]
     (t/is (not= (:id object1) (:id object2)))))
 
+(t/deftest job-resource-objects-are-not-deduplicated
+  ;; An object in this bucket belongs to one profile: sharing a blob
+  ;; between two owners would serve one user's artifact to another.
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (configure-storage-backend))
+        content (-> (sto/content "content")
+                    (sto/wrap-with-hash "same-hash"))
+        object1 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :content-type "text/plain"})
+        object2 (sto/put-object! storage {::sto/content content
+                                          ::sto/deduplicate? true
+                                          ::sto/touched-at (ct/now)
+                                          :bucket sto/job-resource-bucket
+                                          :content-type "text/plain"})]
+    (t/is (not= (:id object1) (:id object2)))))
+
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

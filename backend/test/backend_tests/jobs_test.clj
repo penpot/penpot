@@ -159,6 +159,33 @@
     (t/testing "no job row was created by the rejected submits"
       (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"])))))))
 
+(t/deftest submit-persists-an-expiry-date
+  (let [cfg        (make-cfg (get-job-defs))
+        expires-at (ct/plus (ct/now) (ct/duration {:days 7}))]
+
+    (t/testing "an explicit expiry is persisted as the retention of the job"
+      (let [job-id (jobs/submit cfg {::jobs/name       :echo
+                                     ::jobs/params     (make-params)
+                                     ::jobs/expires-at expires-at})
+            row    (jobs/get-job cfg job-id)]
+        (t/is (= (inst-ms expires-at) (inst-ms (:expires-at row))))))
+
+    (t/testing "without the option the column stays nil, as before"
+      (let [job-id (jobs/submit cfg {::jobs/name   :echo
+                                     ::jobs/params (make-params)})
+            row    (jobs/get-job cfg job-id)]
+        (t/is (nil? (:expires-at row)))))))
+
+(t/deftest submit-rejects-an-invalid-expiry-date
+  (let [cfg (make-cfg (get-job-defs))]
+    (t/testing "a value that is not an instant is rejected before the insert"
+      (t/is (thrown? Exception
+                     (jobs/submit cfg {::jobs/name       :echo
+                                       ::jobs/params     (make-params)
+                                       ::jobs/expires-at "not-an-instant"}))))
+    (t/testing "no job row was created by the rejected submit"
+      (t/is (= 0 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job"])))))))
+
 (t/deftest progress-report-validates-its-payload
   (let [cfg    (make-cfg (get-job-defs))
         job-id (jobs/submit cfg {::jobs/name   :echo
@@ -672,6 +699,32 @@
                                            ::jobs/handler (fn [_context params]
                                                             params)}}})))))
 
+(t/deftest job-def-carries-optional-family-and-resource-role
+  (let [job-def {::jobs/name          :echo
+                 ::jobs/family        :export
+                 ::jobs/resource-role :output
+                 ::jobs/schema        schema:echo-params
+                 ::jobs/handler       (fn [_context params] params)
+                 ::jobs/decoder       (sm/decoder schema:echo-params sm/json-transformer)
+                 ::jobs/validator     (sm/validator schema:echo-params)}]
+
+    (t/testing "the metadata is accepted and readable from the registry"
+      (let [defs (-> (ig/init {::jobs/defs {:echo job-def}})
+                     (get ::jobs/defs))
+            echo (jobs/get-job-def defs :echo)]
+        (t/is (= :export (::jobs/family echo)))
+        (t/is (= :output (::jobs/resource-role echo)))))
+
+    (t/testing "a family is a keyword, not a free string"
+      (t/is (thrown? Exception
+                     (ig/init {::jobs/defs {:echo (assoc job-def
+                                                         ::jobs/family "export")}}))))
+
+    (t/testing "a resource role is a keyword too"
+      (t/is (thrown? Exception
+                     (ig/init {::jobs/defs {:echo (assoc job-def
+                                                         ::jobs/resource-role "output")}}))))))
+
 (t/deftest generic-schema-round-trip-preserves-type-sensitive-fields
   "For each registered job-def, verify that type-sensitive fields (uuids, insts)
   survive the JSON round-trip (db/json → decode). This catches the F2 class of
@@ -843,6 +896,7 @@
           :tenant      (cf/get :tenant)
           :queue       "default"
           :label       nil
+          :profile-id  nil
           :resource-id nil
           :retry-num   0
           :max-retries 3}
@@ -850,7 +904,7 @@
 
 (t/deftest make-context-selects-exactly-the-agreed-keys
   (let [context (jobs/make-context (mk-row {}))]
-    (t/is (= #{:id :name :label :resource-id} (set (keys context))))
+    (t/is (= #{:id :name :label :resource-id :profile-id} (set (keys context))))
     (t/testing "the queue is a routing detail of the dispatcher, not context"
       (t/is (not (contains? context :queue))))
     (t/testing "nor is the tenant that owns the queue"
@@ -879,11 +933,23 @@
       (t/is (= resource-id
                (:resource-id (jobs/make-context (mk-row {:resource-id resource-id}))))))))
 
+(t/deftest make-context-carries-the-job-owner
+  (t/testing "the key exists even when the job has no owner"
+    (let [context (jobs/make-context (mk-row {}))]
+      (t/is (contains? context :profile-id))
+      (t/is (nil? (:profile-id context)))))
+  (t/testing "the owner of a user job is carried as is"
+    (let [profile-id (uuid/next)]
+      (t/is (= profile-id
+               (:profile-id (jobs/make-context (mk-row {:profile-id profile-id}))))))))
+
 (t/deftest make-context-rejects-invalid-rows
   (t/testing "a missing id is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:id nil})))))
   (t/testing "a missing name is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:name nil})))))
+  (t/testing "a non uuid owner is rejected"
+    (t/is (thrown? Exception (jobs/make-context (mk-row {:profile-id "nope"})))))
   (t/testing "a non uuid resource reference is rejected"
     (t/is (thrown? Exception (jobs/make-context (mk-row {:resource-id "nope"}))))))
 
