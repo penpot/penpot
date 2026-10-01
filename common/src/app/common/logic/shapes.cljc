@@ -269,9 +269,9 @@
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
-         page    (or (when (pcb/has-page? changes)
-                       (pcb/get-page changes))
-                     (ctpl/get-page data page-id))
+         page    (if (pcb/has-page? changes)
+                   (pcb/get-page changes)
+                   (ctpl/get-page data page-id))
          ids     (cfh/clean-loops objects ids)
 
          in-component-copy?
