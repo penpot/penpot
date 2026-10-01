@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.http.websocket :as ws]
    [app.msgbus :as mbus]
+   [app.nitrate :as nitrate]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
@@ -67,6 +68,50 @@
 
     (t/testing "permission check passes for authorized user"
       (t/is (nil? (teams/check-read-permissions! cfg (:id profile1) (:id team)))))))
+
+(defn- subscribed-topics
+  "Runs :subscribe-team for `profile-id` on `team-id` with `nitrate-call`
+  standing in for nitrate; returns the topics and the stored subscription."
+  [profile-id team-id nitrate-call]
+  (let [state     (atom {})
+        output-ch (sp/chan :buf (sp/dropping-buffer 64))
+        wsp       (make-wsp profile-id state output-ch)
+        calls     (atom [])]
+    (with-redefs [nitrate/call nitrate-call
+                  mbus/sub!    (fn [_ & {:keys [topics]}]
+                                 (swap! calls conj topics))]
+      ((get-method ws/handle-message :subscribe-team)
+       th/*system* wsp {:team-id team-id}))
+    (some-> @state ::ws/team-subscription :channel sp/close!)
+    {:topics @calls
+     :subscription (::ws/team-subscription @state)}))
+
+(t/deftest subscribe-team-subscribes-to-team-organization
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team-id (:id (th/create-team* 1 {:profile-id (:id profile)}))
+        org-id  (uuid/next)]
+
+    (t/testing "adds the organization topic when the team has one"
+      (let [{:keys [topics subscription]}
+            (subscribed-topics (:id profile) team-id
+                               (fn [_ method params]
+                                 (when (= :get-team-organization method)
+                                   {:id (:team-id params)
+                                    :organization {:id org-id}})))]
+        (t/is (= [[team-id org-id]] topics))
+        (t/is (= org-id (:organization-id subscription)))))
+
+    (t/testing "subscribes only to the team when it has no organization"
+      (let [{:keys [topics subscription]}
+            (subscribed-topics (:id profile) team-id (constantly nil))]
+        (t/is (= [[team-id]] topics))
+        (t/is (nil? (:organization-id subscription)))))
+
+    (t/testing "subscribes to the team when nitrate fails"
+      (let [{:keys [topics]}
+            (subscribed-topics (:id profile) team-id
+                               (fn [& _] (throw (ex-info "nitrate down" {}))))]
+        (t/is (= [[team-id]] topics))))))
 
 (t/deftest pointer-update-validates-file-id
   (let [profile  (th/create-profile* 1 {:is-active true})

@@ -379,11 +379,12 @@
     ::setup/props     (ig/ref ::setup/props)}
 
    ::http.ws/routes
-   {::db/pool         (ig/ref ::db/pool)
-    ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
-    ::setup/props     (ig/ref ::setup/props)
-    ::session/manager (ig/ref ::session/manager)}
+   {::db/pool           (ig/ref ::db/pool)
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)
+    ::setup/props       (ig/ref ::setup/props)
+    ::session/manager   (ig/ref ::session/manager)
+    :app.nitrate/client (ig/ref :app.nitrate/client)}
 
    :app.http.assets/routes
    {::http.assets/path              (cf/get :assets-path)
