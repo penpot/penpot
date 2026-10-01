@@ -45,12 +45,12 @@
    :font-weight "400"})
 
 (defn- setup-text
-  "A text shape whose single position-data strip is `strip` (over
+  "A text shape with the given position-data `strips` (over
   `strip-defaults`), with its objects and selection."
-  [{:keys [width height]} strip]
+  [{:keys [width height]} & strips]
   (let [shape   (-> (cts/setup-shape {:type :text :x 10 :y 20 :width width :height height})
                     (assoc :name "Text"
-                           :position-data [(merge strip-defaults strip)]))
+                           :position-data (mapv #(merge strip-defaults %) strips)))
         file    (cths/add-sample-shape
                  (cthf/sample-file :file1 :page-label :page1)
                  :text
@@ -72,10 +72,10 @@
           :writing-mode "horizontal-tb"}
          attrs))
 
-(defn- setup-vertical-warichu-text
-  [text]
-  (setup-text {:width 60 :height 100}
-              (vertical-strip {:height 40 :text text :warichu "warichu"})))
+(defn- emphasis-mark
+  "A mark entry as the renderer emits it: the mark glyph in its em box."
+  [x y]
+  {:x x :y y :width 10 :height 10 :font-size "10px" :emphasis-mark true :text "•"})
 
 (deftest empty-selection-yields-empty-string
   (is (= "" (svg/generate-markup {} []))))
@@ -111,87 +111,48 @@
       (is (re-find #"font-feature-settings:&quot;vpal&quot;" markup))
       (is (not (re-find #"<foreignObject\b" markup))))))
 
-(deftest vertical-emphasis-svg-emits-static-marks
-  (testing "Static SVG draws emphasis marks and skips whitespace characters"
+(deftest emphasis-svg-draws-each-mark-in-its-box
+  (testing "Static SVG draws the marks the renderer placed, centred in their boxes"
     (let [{:keys [objects shapes]} (setup-text {:width 60 :height 100}
-                                               (vertical-strip {:text "強調 あ" :text-emphasis "filled-dot"}))
+                                               (vertical-strip {:text "強調"})
+                                               (emphasis-mark 44 40)
+                                               (emphasis-mark 44 60))
           markup (svg/generate-markup objects shapes)]
-      (is (re-find #"強調 あ" markup))
-      ;; 4 base chars: mark, mark, space (whitespace keeps its slot), mark.
-      (is (re-find #"•• •" markup))
+      (is (re-find #"強調" markup))
+      (is (= 2 (count-matches #">•<" markup)) "one text element per mark")
+      (is (re-find #"x=\"49\"" markup) "marks centre on their box")
+      (is (re-find #"text-anchor=\"middle\"" markup))
       (is (re-find #"font-size:10px" markup))
+      (is (re-find #"fill:url\(#fill-1-[^)]+-1\)" markup)
+          "a mark references its generated per-strip fill")
       (is (not (re-find #"<foreignObject\b" markup))))))
 
-(deftest horizontal-emphasis-svg-emits-static-marks-above-the-text
-  (testing "Static SVG draws horizontal emphasis and excludes punctuation and whitespace"
-    (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
-                                               (horizontal-strip {:text "強調、 あ" :text-emphasis "filled-dot"}))
+(deftest vertical-warichu-svg-draws-each-sub-line-at-half-size
+  (testing "Static SVG draws each renderer-split warichu sub-line in its own strip"
+    (let [{:keys [objects shapes]} (setup-text {:width 60 :height 100}
+                                               (vertical-strip {:x 30 :width 10 :height 40
+                                                                :text "割注" :warichu "warichu"})
+                                               (vertical-strip {:x 20 :width 10 :height 40
+                                                                :text "入り" :warichu "warichu"}))
           markup (svg/generate-markup objects shapes)]
-      (is (re-find #"強調、 あ" markup))
-      ;; Five Unicode base characters: two marks, punctuation and whitespace
-      ;; slots, then one mark.
-      (is (re-find #"••  •" markup))
-      (is (re-find #"writing-mode:horizontal-tb" markup))
-      (is (re-find #"dominant-baseline=\"text-after-edge\"" markup))
-      (is (re-find #"lengthAdjust=\"spacing\"" markup))
-      (is (re-find #"font-size:10px" markup))
-      (is (re-find #"fill:url\(#fill-0-[^)]+-0\)" markup)
-          "the emphasis mark references its generated per-strip fill")
+      (is (re-find #"x=\"35\"[^>]*>割注<" markup) "first sub-line on the right half")
+      (is (re-find #"x=\"25\"[^>]*>入り<" markup) "second sub-line on the left half")
+      (is (= 2 (count-matches #"font-size:10px" markup)))
       (is (not (re-find #"<foreignObject\b" markup))))))
 
-(deftest horizontal-auto-clearance-stacks-emphasis-outside-ruby
-  (testing "Static SVG keeps ruby nearest the base and offsets emphasis by another half-em"
+(deftest horizontal-warichu-svg-draws-each-sub-line-at-half-size
+  (testing "Static SVG draws horizontal warichu sub-lines from their top edges"
     (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
-                                               (horizontal-strip {:text "漢字"
-                                                                  :ruby "かんじ"
-                                                                  :text-emphasis "filled-dot"
-                                                                  :annotation-clearance "auto"
-                                                                  :annotation-has-ruby true}))
-          markup (svg/generate-markup objects shapes)]
-      (is (re-find #"かんじ" markup))
-      (is (re-find #"••" markup))
-      (is (re-find #"y=\"40\"" markup) "ruby occupies the first half-em layer")
-      (is (re-find #"y=\"30\"" markup) "emphasis occupies the outer half-em layer"))))
-
-(deftest vertical-warichu-svg-emits-two-sub-columns
-  (testing "Static SVG splits a warichu strip into two half-size sub-columns"
-    (let [{:keys [objects shapes]} (setup-vertical-warichu-text "割注入り")
+                                               (horizontal-strip {:width 40 :height 10 :y 50
+                                                                  :text "割注" :warichu "warichu"})
+                                               (horizontal-strip {:width 40 :height 10 :y 60
+                                                                  :text "入り" :warichu "warichu"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"割注" markup))
       (is (re-find #"入り" markup))
-      (is (not (re-find #"割注入り" markup))
-          "the base text must be split, not drawn as one strip")
-      (is (re-find #"font-size:10px" markup))
-      (is (not (re-find #"<foreignObject\b" markup))))))
-
-(deftest vertical-warichu-svg-split-respects-kinsoku
-  (testing "The second sub-line must not start with a line-start-prohibited mark"
-    (let [{:keys [objects shapes]} (setup-vertical-warichu-text "割り注、と")
-          markup (svg/generate-markup objects shapes)]
-      (is (re-find #"割り注、" markup)
-          "the comma is pulled up into the first sub-line")
-      (is (not (re-find #"割り注、と" markup))
-          "the strip is still split into two sub-lines"))))
-
-(deftest vertical-warichu-svg-preserves-non-bmp-characters
-  (testing "Static SVG never splits a surrogate pair between warichu sub-lines"
-    (let [{:keys [objects shapes]} (setup-vertical-warichu-text "割𠀀注😀")
-          markup (svg/generate-markup objects shapes)]
-      (is (re-find #"割𠀀" markup))
-      (is (re-find #"注😀" markup))
-      (is (not (re-find #"�" markup))))))
-
-(deftest horizontal-warichu-svg-emits-two-stacked-sub-lines
-  (testing "Static SVG splits horizontal warichu into top and bottom half-size lines"
-    (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
-                                               (horizontal-strip {:width 40 :text "割注入り" :warichu "warichu"}))
-          markup (svg/generate-markup objects shapes)]
-      (is (re-find #"割注" markup))
-      (is (re-find #"入り" markup))
-      (is (not (re-find #"割注入り" markup)))
       (is (re-find #"writing-mode:horizontal-tb" markup))
       (is (= 2 (count-matches #"dominant-baseline=.?hanging" markup)))
-      (is (re-find #"font-size:10px" markup)))))
+      (is (= 2 (count-matches #"font-size:10px" markup))))))
 
 (deftest vertical-ruby-svg-emits-static-annotation
   (testing "Static SVG keeps ruby visible without falling back to foreignObject"

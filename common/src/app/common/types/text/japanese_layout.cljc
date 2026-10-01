@@ -65,8 +65,21 @@
    :font-features        "none"
    :annotation-clearance "none"})
 
-;; Annotation font sizes relative to the base font size.
-(def emphasis-font-scale 0.5)
+;; Glyph of each emphasis style, per CSS `text-emphasis-style`.
+(def ^:private emphasis-mark-chars
+  {"filled-dot"    "•"
+   "open-dot"      "◦"
+   "filled-circle" "●"
+   "open-circle"   "○"
+   "filled-sesame" "﹅"
+   "open-sesame"   "﹆"})
+
+(defn emphasis-mark-char
+  "Mark glyph of a text-emphasis value, or nil for none."
+  [text-emphasis]
+  (get emphasis-mark-chars text-emphasis))
+
+;; Warichu sub-line font size relative to the base font size.
 (def warichu-font-scale 0.5)
 
 (defn ruby-font-scale

@@ -89,7 +89,7 @@
     [:writing-mode {:optional true} ::sm/text]
     [:text-orientation {:optional true} ::sm/text]
     [:text-combine-upright {:optional true} ::sm/text]
-    [:text-emphasis {:optional true} ::sm/text]
+    [:emphasis-mark {:optional true} :boolean]
     [:ruby {:optional true} :string]
     [:ruby-size {:optional true} ::sm/text]
     [:ruby-align {:optional true} ::sm/text]
@@ -97,8 +97,6 @@
     [:ruby-side {:optional true} ::sm/text]
     [:warichu {:optional true} ::sm/text]
     [:font-features {:optional true} ::sm/text]
-    [:annotation-clearance {:optional true} ::sm/text]
-    [:annotation-has-ruby {:optional true} :boolean]
     [:text {:optional true} :string]
     [:text-decoration {:optional true} ::sm/text]
     [:text-transform {:optional true} ::sm/text]]])

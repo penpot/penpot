@@ -12,7 +12,7 @@ use crate::shapes::{
 
 use super::cells::Fonts;
 use super::flow::FlowCell;
-use super::layout::{column_base_center, CellKind, VerticalCell, VerticalColumn};
+use super::layout::{column_base_center, CellKind, VerticalCell, VerticalColumn, VerticalLayout};
 use super::shaping::{shape_segment, shape_segment_with_fallbacks, span_font_families, ShapedRun};
 
 /// One shaped ruby glyph, retaining its fallback-font run and source range.
@@ -49,17 +49,15 @@ pub struct RubyCell {
 }
 
 /// One emphasis mark (圏点 / bouten) drawn beside a base character. Kept out of
-/// `cells` like ruby, so base metrics, caret and position-data never see it.
-/// The mark glyph is the single-glyph `run`; it is centred on the base cell's
-/// flow extent and drawn in the column's right-side gutter.
+/// `cells` like ruby, so base metrics and caret geometry never see it. The
+/// mark glyph is the single-glyph `run`; it is centred on its base cell's flow
+/// extent and drawn in the column's right-side gutter with the cell's paint.
 pub struct EmphasisMark {
     pub run: usize,
-    pub column: usize,
-    /// Flow-axis top and extent of the annotated base cell.
-    pub top: f32,
-    pub extent: f32,
-    pub paint: usize,
+    /// Index of the annotated base cell in `VerticalLayout::cells`.
+    pub cell: usize,
     pub font_size: f32,
+    /// Cross-axis offset past a stacked ruby layer.
     pub outside_offset: f32,
 }
 
@@ -488,6 +486,7 @@ pub(super) fn layout_emphasis(
     text_content: &TextContent,
     cells: &[VerticalCell],
     span_utf16_starts: &[Vec<usize>],
+    span_transforms: &[Vec<AppliedTextTransform>],
     fonts: &Fonts,
 ) -> (Vec<ShapedRun>, Vec<EmphasisMark>) {
     let mut emphasis_runs: Vec<ShapedRun> = Vec::new();
@@ -525,7 +524,9 @@ pub(super) fn layout_emphasis(
             let run_index = emphasis_runs.len();
             emphasis_runs.push(shaped.remove(0));
             let span_start = span_utf16_starts[paragraph_index][span_index];
-            for cell in cells {
+            // Cell offsets index the span's transformed text.
+            let span_text = &span_transforms[paragraph_index][span_index].text;
+            for (cell_index, cell) in cells.iter().enumerate() {
                 if cell.paragraph != paragraph_index
                     || cell.span != span_index
                     || !matches!(
@@ -533,7 +534,7 @@ pub(super) fn layout_emphasis(
                         CellKind::Upright { .. } | CellKind::SyntheticRotated { .. }
                     )
                     || !utf16_range_allows_emphasis(
-                        &span.text,
+                        span_text,
                         cell.start - span_start,
                         cell.end - span_start,
                     )
@@ -542,10 +543,7 @@ pub(super) fn layout_emphasis(
                 }
                 emphasis_marks.push(EmphasisMark {
                     run: run_index,
-                    column: cell.column,
-                    top: cell.top,
-                    extent: cell.extent,
-                    paint: cell.paint,
+                    cell: cell_index,
                     font_size: mark_font_size,
                     outside_offset: span.emphasis_ruby_offset(),
                 });
@@ -555,10 +553,16 @@ pub(super) fn layout_emphasis(
     (emphasis_runs, emphasis_marks)
 }
 
-/// Cross-axis centre of an emphasis mark's gutter, past any stacked ruby.
-pub(super) fn emphasis_gutter_center(column: &VerticalColumn, mark: &EmphasisMark) -> f32 {
+/// Centre of an emphasis mark, relative to the layout's content origin: in
+/// its column's gutter past any stacked ruby, at the middle of its base cell.
+pub(super) fn emphasis_mark_center(layout: &VerticalLayout, mark: &EmphasisMark) -> (f32, f32) {
+    let cell = &layout.cells[mark.cell];
     let base_font_size = mark.font_size / EMPHASIS_FONT_SCALE;
-    column_base_center(column) + base_font_size / 2.0 + mark.outside_offset + mark.font_size / 2.0
+    let x = column_base_center(&layout.columns[cell.column])
+        + base_font_size / 2.0
+        + mark.outside_offset
+        + mark.font_size / 2.0;
+    (x, cell.top + cell.extent / 2.0)
 }
 
 #[cfg(test)]
@@ -568,7 +572,9 @@ mod tests {
     use super::super::test_support::*;
     use super::*;
     use crate::shapes::{AnnotationClearance, GrowType, RubySize};
-    use crate::shapes::{TextAlign, TextEmphasis, TextOrientation, TextSpan, VerticalAlign};
+    use crate::shapes::{
+        TextAlign, TextEmphasis, TextOrientation, TextSpan, TextTransform, VerticalAlign,
+    };
 
     fn emphasis_content(base: &str, emphasis: TextEmphasis) -> TextContent {
         spans_content(
@@ -648,6 +654,25 @@ mod tests {
             2,
             "only A and B receive emphasis marks"
         );
+    }
+
+    #[test]
+    fn emphasis_follows_the_transformed_text() {
+        // Uppercase expands ß into SS, so the transformed cells S S 、 A are
+        // offset from the source text ß、A.
+        let content = spans_content(
+            vec![TextSpan {
+                text_emphasis: TextEmphasis::FilledDot,
+                text_orientation: TextOrientation::Upright,
+                text_transform: Some(TextTransform::Uppercase),
+                ..make_span("ß、A")
+            }],
+            400.0,
+        );
+        let layout = layout_content(&content, 400.0);
+        assert_eq!(layout.cells.len(), 4);
+        let marked: Vec<usize> = layout.emphasis_marks.iter().map(|mark| mark.cell).collect();
+        assert_eq!(marked, vec![0, 1, 3], "S, S and A are marked; 、 is not");
     }
 
     #[test]

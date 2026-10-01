@@ -2934,6 +2934,29 @@
 
 (def ^:private POSITION-DATA-VERTICAL 2)
 (def ^:private POSITION-DATA-RUBY 3)
+(def ^:private POSITION-DATA-EMPHASIS-MARK 4)
+
+(defn- emphasis-mark-entry
+  "Position-data entry for one emphasis mark (圏点): the geometry is the
+   mark's em box, centred where the canvas paints it."
+  [element {:keys [x y width height]}]
+  (when-let [mark (jl/emphasis-mark-char (get element :text-emphasis))]
+    (d/patch-object
+     (txt/get-default-text-attrs)
+     (d/without-nils
+      {:x x
+       :y (+ y height)
+       :width width
+       :height height
+       :direction "ltr"
+       :emphasis-mark true
+       :font-id (get element :font-id)
+       :font-family (get element :font-family)
+       :font-size (dm/str width "px")
+       :font-weight (get element :font-weight)
+       :font-style (get element :font-style)
+       :fills (get element :fills)
+       :text mark}))))
 
 (defn- ruby-strip-entry
   "Position-data entry for a ruby annotation strip: the offsets index the
@@ -2997,14 +3020,11 @@
          :text-transform  (get element :text-transform)
          :text-decoration (get element :text-decoration)
          :text-combine-upright (get element :text-combine-upright)
-         ;; Emphasis marks (圏点) and warichu are drawn by the static SVG
-         ;; renderer; "none" carries no information.
-         :text-emphasis   (let [emphasis (get element :text-emphasis)]
-                            (when (and (seq emphasis) (not= "none" emphasis))
-                              emphasis))
+         :font-features   (let [features (get element :font-features)]
+                            (when (and (seq features) (not= "none" features))
+                              features))
+         ;; Each warichu sub-line has its own entry, drawn at half size.
          :warichu         (when (= "warichu" (get element :warichu)) "warichu")
-         :annotation-clearance (when (= "auto" (get element :annotation-clearance)) "auto")
-         :annotation-has-ruby  (when (some? ruby) true)
          ;; Horizontal position data has no separate ruby strip, so the base
          ;; entry carries the annotation for static SVG export.
          :ruby            (when (and (not vertical?) (seq element-text)) ruby)
@@ -3049,8 +3069,9 @@
                                         (get 0) :children ;; paragraph-set
                                         (get paragraph))
                      element        (-> paragraph-node :children (get span))]
-                 (if (= direction POSITION-DATA-RUBY)
-                   (ruby-strip-entry element entry)
+                 (condp = direction
+                   POSITION-DATA-RUBY          (ruby-strip-entry element entry)
+                   POSITION-DATA-EMPHASIS-MARK (emphasis-mark-entry element entry)
                    (text-strip-entry paragraph-node element entry)))))
             result))))
 

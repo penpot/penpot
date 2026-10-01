@@ -274,12 +274,13 @@ fn calculate_cursor_rect(
 
             // Cursor offsets count source characters; the laid-out paragraph
             // indexes the transformed, kinsoku-shifted builder text.
+            let offsets = crate::shapes::HorizontalOffsets::new(para);
             let (cursor_x, cursor_y, cursor_width, cursor_height) = if para_char_count == 0 {
                 // Empty paragraph - use default height
                 (0.0, 0.0, 1.0, laid_out_para.height())
             } else if char_pos == 0 {
                 let rects = laid_out_para.get_rects_for_range(
-                    0..crate::shapes::horizontal_source_to_builder(para, 1),
+                    0..offsets.source_to_builder(1),
                     RectHeightStyle::Max,
                     RectWidthStyle::Tight,
                 );
@@ -290,11 +291,8 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else if char_pos >= para_char_count {
-                let last_start = crate::shapes::horizontal_source_to_builder(
-                    para,
-                    para_char_count.saturating_sub(1),
-                );
-                let last_end = crate::shapes::horizontal_source_to_builder(para, para_char_count);
+                let last_start = offsets.source_to_builder(para_char_count.saturating_sub(1));
+                let last_end = offsets.source_to_builder(para_char_count);
                 let rects = laid_out_para.get_rects_for_range(
                     last_start..last_end,
                     RectHeightStyle::Max,
@@ -314,8 +312,8 @@ fn calculate_cursor_rect(
                     (0.0, 0.0, 1.0, laid_out_para.height())
                 }
             } else {
-                let start = crate::shapes::horizontal_source_to_builder(para, char_pos);
-                let end = crate::shapes::horizontal_source_to_builder(para, char_pos + 1);
+                let start = offsets.source_to_builder(char_pos);
+                let end = offsets.source_to_builder(char_pos + 1);
                 let rects = laid_out_para.get_rects_for_range(
                     start..end,
                     RectHeightStyle::Max,
@@ -411,8 +409,8 @@ fn calculate_selection_rects(
                 ));
             }
             use skia_safe::textlayout::{RectHeightStyle, RectWidthStyle};
-            for builder_range in
-                crate::shapes::horizontal_normal_selection_ranges(para, range_start, range_end)
+            for builder_range in crate::shapes::HorizontalOffsets::new(para)
+                .normal_selection_ranges(para, range_start, range_end)
             {
                 for text_box in laid_out_para.get_rects_for_range(
                     builder_range,

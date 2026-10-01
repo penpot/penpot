@@ -112,11 +112,134 @@ pub(crate) struct HorizontalSpanRange {
     pub style_anchor_start: usize,
 }
 
+/// Offset mapping of one horizontally laid-out paragraph between source
+/// characters, the kinsoku-adjusted layout text and the paragraph builder
+/// text. Building it runs the kinsoku pass once; reuse it for every lookup
+/// into the same paragraph.
+pub(crate) struct HorizontalOffsets {
+    /// Map between the transformed text and the kinsoku-adjusted text.
+    pub(crate) offset_map: kinsoku::OffsetMap,
+    pub(crate) ranges: Vec<HorizontalSpanRange>,
+    /// Transformed-text UTF-16 offset of every source character boundary.
+    boundaries: Vec<usize>,
+}
+
+impl HorizontalOffsets {
+    pub(crate) fn new(paragraph: &Paragraph) -> Self {
+        let (span_texts, offset_map) = paragraph.layout_span_texts();
+        let ranges = span_ranges(paragraph, span_texts, &offset_map);
+        Self {
+            offset_map,
+            ranges,
+            boundaries: source_char_boundaries(paragraph),
+        }
+    }
+
+    /// Builder-text UTF-16 offset of a paragraph source character offset.
+    pub(crate) fn source_to_builder(&self, source_char_offset: usize) -> usize {
+        let boundaries = &self.boundaries;
+        let source_utf16 = boundaries
+            .get(source_char_offset)
+            .copied()
+            .unwrap_or_else(|| boundaries.last().copied().unwrap_or(0));
+        let Some(range) = self
+            .ranges
+            .iter()
+            .find(|range| source_utf16 >= range.source_start && source_utf16 <= range.source_end)
+        else {
+            return self
+                .ranges
+                .last()
+                .map(|range| range.builder_end)
+                .unwrap_or(0);
+        };
+        if range.warichu {
+            return if source_utf16 >= range.source_end {
+                range.builder_end
+            } else {
+                range.builder_start
+            };
+        }
+        let shifted = self.offset_map.to_shifted(source_utf16);
+        range.builder_start + shifted.saturating_sub(range.shifted_start)
+    }
+
+    /// Paragraph source character offset of a builder-text UTF-16 offset.
+    pub(crate) fn builder_to_source(&self, builder_offset: usize) -> usize {
+        let source_utf16 = self
+            .ranges
+            .iter()
+            .find(|range| {
+                builder_offset >= range.builder_start && builder_offset <= range.builder_end
+            })
+            .map(|range| {
+                if range.warichu {
+                    if builder_offset > range.builder_start {
+                        range.source_end
+                    } else {
+                        range.source_start
+                    }
+                } else {
+                    let within = builder_offset
+                        .saturating_sub(range.builder_start)
+                        .min(range.builder_end - range.builder_start);
+                    self.offset_map.to_original(range.shifted_start + within)
+                }
+            })
+            .unwrap_or_else(|| {
+                self.ranges
+                    .last()
+                    .map(|range| range.source_end)
+                    .unwrap_or(0)
+            });
+        let boundaries = &self.boundaries;
+        boundaries
+            .partition_point(|boundary| *boundary < source_utf16)
+            .min(boundaries.len().saturating_sub(1))
+    }
+
+    /// Builder-text ranges of the selected source characters
+    /// `[source_start, source_end)` outside warichu spans.
+    pub(crate) fn normal_selection_ranges(
+        &self,
+        paragraph: &Paragraph,
+        source_start: usize,
+        source_end: usize,
+    ) -> Vec<std::ops::Range<usize>> {
+        let mut span_start = 0usize;
+        paragraph
+            .children()
+            .iter()
+            .filter_map(|span| {
+                let span_end = span_start + span.text.chars().count();
+                let selected_start = source_start.max(span_start);
+                let selected_end = source_end.min(span_end);
+                span_start = span_end;
+                if span.is_warichu() || selected_start >= selected_end {
+                    return None;
+                }
+                Some(self.source_to_builder(selected_start)..self.source_to_builder(selected_end))
+            })
+            .collect()
+    }
+}
+
+pub(crate) fn horizontal_span_ranges(paragraph: &Paragraph) -> Vec<HorizontalSpanRange> {
+    HorizontalOffsets::new(paragraph).ranges
+}
+
+pub(crate) fn horizontal_builder_to_source(paragraph: &Paragraph, builder_offset: usize) -> usize {
+    HorizontalOffsets::new(paragraph).builder_to_source(builder_offset)
+}
+
 /// Ranges shared by layout, position-data and editor mapping. `shifted_*`
 /// addresses the normal kinsoku-adjusted paragraph text, while `builder_*`
 /// addresses the paragraph where a whole warichu span occupies one U+FFFC.
-pub(crate) fn horizontal_span_ranges(paragraph: &Paragraph) -> Vec<HorizontalSpanRange> {
-    let (span_texts, offset_map) = paragraph.layout_span_texts();
+fn span_ranges(
+    paragraph: &Paragraph,
+    span_texts: Vec<String>,
+    offset_map: &kinsoku::OffsetMap,
+) -> Vec<HorizontalSpanRange> {
     let mut builder_cursor = 0usize;
     let mut builder_byte_cursor = 0usize;
     let mut shifted_cursor = 0usize;
@@ -186,61 +309,6 @@ fn source_char_boundaries(paragraph: &Paragraph) -> Vec<usize> {
         span_base += applied.text.encode_utf16().count();
     }
     boundaries
-}
-
-pub(crate) fn horizontal_source_to_builder(
-    paragraph: &Paragraph,
-    source_char_offset: usize,
-) -> usize {
-    let boundaries = source_char_boundaries(paragraph);
-    let source_utf16 = boundaries
-        .get(source_char_offset)
-        .copied()
-        .unwrap_or_else(|| boundaries.last().copied().unwrap_or(0));
-    let (_, offset_map) = paragraph.layout_span_texts();
-    let ranges = horizontal_span_ranges(paragraph);
-    let Some(range) = ranges
-        .iter()
-        .find(|range| source_utf16 >= range.source_start && source_utf16 <= range.source_end)
-    else {
-        return ranges.last().map(|range| range.builder_end).unwrap_or(0);
-    };
-    if range.warichu {
-        return if source_utf16 >= range.source_end {
-            range.builder_end
-        } else {
-            range.builder_start
-        };
-    }
-    let shifted = offset_map.to_shifted(source_utf16);
-    range.builder_start + shifted.saturating_sub(range.shifted_start)
-}
-
-pub(crate) fn horizontal_builder_to_source(paragraph: &Paragraph, builder_offset: usize) -> usize {
-    let (_, offset_map) = paragraph.layout_span_texts();
-    let ranges = horizontal_span_ranges(paragraph);
-    let source_utf16 = ranges
-        .iter()
-        .find(|range| builder_offset >= range.builder_start && builder_offset <= range.builder_end)
-        .map(|range| {
-            if range.warichu {
-                if builder_offset > range.builder_start {
-                    range.source_end
-                } else {
-                    range.source_start
-                }
-            } else {
-                let within = builder_offset
-                    .saturating_sub(range.builder_start)
-                    .min(range.builder_end - range.builder_start);
-                offset_map.to_original(range.shifted_start + within)
-            }
-        })
-        .unwrap_or_else(|| ranges.last().map(|range| range.source_end).unwrap_or(0));
-    let boundaries = source_char_boundaries(paragraph);
-    boundaries
-        .partition_point(|boundary| *boundary < source_utf16)
-        .min(boundaries.len().saturating_sub(1))
 }
 
 /// Placeholder rect of each horizontal warichu span, keyed by span index.
@@ -377,32 +445,6 @@ pub(crate) fn horizontal_warichu_range_rects(
     rects
 }
 
-pub(crate) fn horizontal_normal_selection_ranges(
-    paragraph: &Paragraph,
-    source_start: usize,
-    source_end: usize,
-) -> Vec<std::ops::Range<usize>> {
-    let mut span_start = 0usize;
-    paragraph
-        .children()
-        .iter()
-        .filter_map(|span| {
-            let span_end = span_start + span.text.chars().count();
-            let selected_start = source_start.max(span_start);
-            let selected_end = source_end.min(span_end);
-            let warichu = span.is_warichu();
-            span_start = span_end;
-            if warichu || selected_start >= selected_end {
-                return None;
-            }
-            Some(
-                horizontal_source_to_builder(paragraph, selected_start)
-                    ..horizontal_source_to_builder(paragraph, selected_end),
-            )
-        })
-        .collect()
-}
-
 /// Char index where a warichu run splits into its two sub-lines: the
 /// balanced midpoint (first line longer), nudged so the second sub-line
 /// does not start with a line-start-prohibited character and the first
@@ -499,10 +541,13 @@ pub(crate) fn emphasis_char_allowed(character: char) -> bool {
         && !crate::shapes::japanese::classify(character).is_emphasis_prohibited()
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) struct HorizontalEmphasisPlacement {
     pub(crate) span: usize,
+    /// UTF-16 range of the base character in the span's transformed text.
+    pub(crate) range: std::ops::Range<usize>,
     pub(crate) mark: char,
+    /// Base character rect in the laid-out paragraph.
     pub(crate) rect: skia::Rect,
 }
 
@@ -511,13 +556,13 @@ pub(crate) struct HorizontalEmphasisPlacement {
 /// character range keeps the marks attached to the actual laid-out glyphs.
 pub(crate) fn horizontal_emphasis_placements(
     paragraph: &Paragraph,
+    offsets: &HorizontalOffsets,
     laid_out: &skia::textlayout::Paragraph,
 ) -> Vec<HorizontalEmphasisPlacement> {
-    let (_, offset_map) = paragraph.layout_span_texts();
-    let ranges = horizontal_span_ranges(paragraph);
+    let offset_map = &offsets.offset_map;
     let mut placements = Vec::new();
 
-    for range in ranges.iter().filter(|range| !range.warichu) {
+    for range in offsets.ranges.iter().filter(|range| !range.warichu) {
         let Some(span) = paragraph.children().get(range.span) else {
             continue;
         };
@@ -550,6 +595,7 @@ pub(crate) fn horizontal_emphasis_placements(
                 if let Some(rect) = scalar_rect {
                     placements.push(HorizontalEmphasisPlacement {
                         span: range.span,
+                        range: local_utf16..next_utf16,
                         mark,
                         rect,
                     });
@@ -588,6 +634,23 @@ pub(crate) fn horizontal_annotation_over_top(rect: skia::Rect, font_size: f32) -
     rect.top.max(rect.bottom - font_size) - font_size * (3.0 / 14.0)
 }
 
+/// Em box of a horizontal emphasis mark in the laid-out paragraph: centred
+/// over its base character, outside any stacked ruby layer.
+pub(crate) fn horizontal_emphasis_mark_box(
+    span: &TextSpan,
+    placement: &HorizontalEmphasisPlacement,
+) -> skia::Rect {
+    let size = span.font_size * EMPHASIS_FONT_SCALE;
+    let bottom = horizontal_annotation_over_top(placement.rect, span.font_size)
+        - span.emphasis_ruby_offset();
+    skia::Rect::from_xywh(
+        placement.rect.center_x() - size / 2.0,
+        bottom - size,
+        size,
+        size,
+    )
+}
+
 /// Paint horizontal emphasis marks (圏点 / bouten) above their base glyphs.
 /// The base paragraph retains its normal metrics; interlinear collision and
 /// automatic line-gap expansion remain a separate layout policy.
@@ -598,9 +661,9 @@ pub(crate) fn paint_horizontal_emphasis(
     x: f32,
     y: f32,
 ) {
-    let ranges = horizontal_span_ranges(paragraph);
-    let placements = horizontal_emphasis_placements(paragraph, laid_out);
-    for range in ranges.iter().filter(|range| !range.warichu) {
+    let offsets = HorizontalOffsets::new(paragraph);
+    let placements = horizontal_emphasis_placements(paragraph, &offsets, laid_out);
+    for range in offsets.ranges.iter().filter(|range| !range.warichu) {
         let Some(span) = paragraph.children().get(range.span) else {
             continue;
         };
@@ -1162,15 +1225,15 @@ mod tests {
         let ranges = horizontal_span_ranges(&paragraph);
         assert_eq!(ranges[0].builder_start..ranges[0].builder_end, 0..3);
         assert_eq!(ranges[1].builder_start..ranges[1].builder_end, 3..4);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 0);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 4), 3);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 5), 4);
+        assert_eq!(HorizontalOffsets::new(&paragraph).source_to_builder(2), 0);
+        assert_eq!(HorizontalOffsets::new(&paragraph).source_to_builder(4), 3);
+        assert_eq!(HorizontalOffsets::new(&paragraph).source_to_builder(5), 4);
         assert_eq!(horizontal_builder_to_source(&paragraph, 1), 4);
         assert_eq!(horizontal_builder_to_source(&paragraph, 2), 4);
         assert_eq!(horizontal_builder_to_source(&paragraph, 3), 4);
         assert_eq!(horizontal_builder_to_source(&paragraph, 4), 5);
         assert_eq!(
-            horizontal_normal_selection_ranges(&paragraph, 1, 5),
+            HorizontalOffsets::new(&paragraph).normal_selection_ranges(&paragraph, 1, 5),
             vec![3..4]
         );
     }
@@ -1180,9 +1243,9 @@ mod tests {
         init_state();
         let paragraph = make_paragraph(vec![make_span("😀A", 0.0)], 0.0);
 
-        assert_eq!(horizontal_source_to_builder(&paragraph, 1), 2);
+        assert_eq!(HorizontalOffsets::new(&paragraph).source_to_builder(1), 2);
         assert_eq!(horizontal_builder_to_source(&paragraph, 2), 1);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 3);
+        assert_eq!(HorizontalOffsets::new(&paragraph).source_to_builder(2), 3);
         assert_eq!(horizontal_builder_to_source(&paragraph, 3), 2);
     }
 
@@ -1256,6 +1319,65 @@ mod tests {
     }
 
     #[test]
+    fn horizontal_position_data_carries_warichu_lines_and_emphasis_marks() {
+        init_state();
+        let mut emphasized = make_span("A、B", 0.0);
+        emphasized.text_emphasis = TextEmphasis::FilledDot;
+        let mut warichu = make_span("割注入り", 0.0);
+        warichu.warichu = true;
+        let mut content = super::super::text::TextContent::new(
+            crate::math::Rect::from_xywh(0.0, 0.0, 400.0, 100.0),
+            crate::shapes::GrowType::Fixed,
+        );
+        content.add_paragraph(make_paragraph(vec![emphasized, warichu], 0.0));
+        let mut shape = crate::shapes::Shape::new(Uuid::nil());
+        shape.set_selrect(0.0, 0.0, 400.0, 100.0);
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+
+        let data = super::super::text::calculate_position_data(&shape, &content, false);
+
+        let warichu_lines: Vec<(u32, u32)> = data
+            .iter()
+            .filter(|entry| entry.span == 1)
+            .map(|entry| (entry.start_pos, entry.end_pos))
+            .collect();
+        assert_eq!(warichu_lines, vec![(0, 2), (2, 4)]);
+        let marks: Vec<(u32, u32)> = data
+            .iter()
+            .filter(|entry| entry.direction == super::super::text_vertical::DIRECTION_EMPHASIS_MARK)
+            .map(|entry| (entry.start_pos, entry.end_pos))
+            .collect();
+        assert_eq!(marks, vec![(0, 1), (2, 3)], "A and B are marked; 、 is not");
+    }
+
+    #[test]
+    fn horizontal_emphasis_mark_stacks_outside_auto_clearance_ruby() {
+        let placement = HorizontalEmphasisPlacement {
+            span: 0,
+            range: 0..1,
+            mark: '•',
+            rect: skia::Rect::from_xywh(10.0, 40.0, 16.0, 20.0),
+        };
+        let plain = make_span("漢", 0.0);
+        let mut stacked = make_span("漢", 0.0);
+        stacked.ruby = "かん".to_string();
+        stacked.annotation_clearance = AnnotationClearance::Auto;
+
+        let plain_box = horizontal_emphasis_mark_box(&plain, &placement);
+        let stacked_box = horizontal_emphasis_mark_box(&stacked, &placement);
+
+        assert_eq!(plain_box.width(), plain.font_size * EMPHASIS_FONT_SCALE);
+        assert_eq!(plain_box.center_x(), placement.rect.center_x());
+        assert_eq!(
+            stacked_box.bottom,
+            plain_box.bottom - stacked.ruby_font_size(),
+            "the mark sits outside the ruby layer"
+        );
+    }
+
+    #[test]
     fn horizontal_emphasis_tracks_eligible_unicode_characters() {
         init_state();
         let mut span = make_span("A😀。 B", 0.0);
@@ -1274,7 +1396,11 @@ mod tests {
         let mut laid_out = builder.build();
         laid_out.layout(200.0);
 
-        let placements = horizontal_emphasis_placements(&paragraph, &laid_out);
+        let placements = horizontal_emphasis_placements(
+            &paragraph,
+            &HorizontalOffsets::new(&paragraph),
+            &laid_out,
+        );
         assert_eq!(placements.len(), 3, "A, emoji and B receive one mark each");
         assert!(placements
             .iter()

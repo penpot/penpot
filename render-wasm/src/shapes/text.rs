@@ -2168,26 +2168,44 @@ pub fn calculate_text_layout_data(
                 // Ranges are in the builder-text (kinsoku-shifted)
                 // space; exported positions are translated back to
                 // original span-relative offsets through the map.
-                let (_, offset_map) = text_para.layout_span_texts();
-                let span_ranges = horizontal_span_ranges(text_para);
+                let offsets = HorizontalOffsets::new(text_para);
+                let offset_map = &offsets.offset_map;
+                let entry =
+                    |span: usize, range: std::ops::Range<usize>, mut rect: Rect, direction| {
+                        rect.offset((x, current_y));
+                        PositionData {
+                            paragraph: paragraph_index as u32,
+                            span: span as u32,
+                            start_pos: range.start as u32,
+                            end_pos: range.end as u32,
+                            x: rect.x(),
+                            y: rect.y(),
+                            width: rect.width(),
+                            height: rect.height(),
+                            direction,
+                        }
+                    };
                 let placeholder_rects = para_layout.paragraph.get_rects_for_placeholders();
                 let mut placeholder_index = 0usize;
-                for range in span_ranges {
+                for range in &offsets.ranges {
                     if range.warichu {
-                        if let Some(textbox) = placeholder_rects.get(placeholder_index) {
-                            let mut rect = textbox.rect;
-                            rect.offset((x, current_y));
-                            position_data.push(PositionData {
-                                paragraph: paragraph_index as u32,
-                                span: range.span as u32,
-                                start_pos: 0,
-                                end_pos: (range.source_end - range.source_start) as u32,
-                                x: rect.x(),
-                                y: rect.y(),
-                                width: rect.width(),
-                                height: rect.height(),
-                                direction: direction_to_int(TextDirection::LTR),
-                            });
+                        // One strip per sub-line: the top half holds the
+                        // first line, the bottom half the second.
+                        if let (Some(textbox), Some(span)) = (
+                            placeholder_rects.get(placeholder_index),
+                            text_para.children().get(range.span),
+                        ) {
+                            let rect = textbox.rect;
+                            let text = span.apply_text_transform();
+                            let split = warichu_text_lines(&text).0.encode_utf16().count();
+                            let end = range.source_end - range.source_start;
+                            let half = rect.height() / 2.0;
+                            let ltr = direction_to_int(TextDirection::LTR);
+                            let top = Rect::from_xywh(rect.x(), rect.y(), rect.width(), half);
+                            let bottom =
+                                Rect::from_xywh(rect.x(), rect.y() + half, rect.width(), half);
+                            position_data.push(entry(range.span, 0..split, top, ltr));
+                            position_data.push(entry(range.span, split..end, bottom, ltr));
                         }
                         placeholder_index += 1;
                         continue;
@@ -2201,7 +2219,7 @@ pub fn calculate_text_layout_data(
 
                     for textbox in rects {
                         let direction = textbox.direct;
-                        let mut rect = textbox.rect;
+                        let rect = textbox.rect;
                         let cy = rect.top + rect.height() / 2.0;
 
                         // Get byte positions from Skia's transformed text layout
@@ -2225,18 +2243,24 @@ pub fn calculate_text_layout_data(
                                 .position as usize,
                         ) - orig_span_start;
 
-                        rect.offset((x, current_y));
-                        position_data.push(PositionData {
-                            paragraph: paragraph_index as u32,
-                            span: range.span as u32,
-                            start_pos: start_pos as u32,
-                            end_pos: end_pos as u32,
-                            x: rect.x(),
-                            y: rect.y(),
-                            width: rect.width(),
-                            height: rect.height(),
-                            direction: direction_to_int(direction),
-                        });
+                        position_data.push(entry(
+                            range.span,
+                            start_pos..end_pos,
+                            rect,
+                            direction_to_int(direction),
+                        ));
+                    }
+                }
+                for placement in
+                    horizontal_emphasis_placements(text_para, &offsets, &para_layout.paragraph)
+                {
+                    if let Some(span) = text_para.children().get(placement.span) {
+                        position_data.push(entry(
+                            placement.span,
+                            placement.range.clone(),
+                            horizontal_emphasis_mark_box(span, &placement),
+                            super::text_vertical::DIRECTION_EMPHASIS_MARK,
+                        ));
                     }
                 }
             }
@@ -2457,7 +2481,10 @@ mod tests {
         let para = test_paragraph(&["Añadir"]);
         for offset in 0..=6 {
             assert_eq!(para.char_offset_to_utf16(offset), offset);
-            assert_eq!(horizontal_source_to_builder(&para, offset), offset);
+            assert_eq!(
+                HorizontalOffsets::new(&para).source_to_builder(offset),
+                offset
+            );
             assert_eq!(horizontal_builder_to_source(&para, offset), offset);
         }
     }
@@ -2491,9 +2518,9 @@ mod tests {
 
         assert_eq!(para.char_offset_to_utf16(4), 4);
         assert_eq!(para.char_offset_to_utf16(6), 7);
-        assert_eq!(horizontal_source_to_builder(&para, 4), 4);
-        assert_eq!(horizontal_source_to_builder(&para, 5), 6);
-        assert_eq!(horizontal_source_to_builder(&para, 6), 7);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(4), 4);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(5), 6);
+        assert_eq!(HorizontalOffsets::new(&para).source_to_builder(6), 7);
         assert_eq!(horizontal_builder_to_source(&para, 7), 6);
     }
 
@@ -2501,8 +2528,8 @@ mod tests {
     fn builder_range_covers_the_whole_glyph() {
         let para = test_paragraph(&["a😀b"]);
         let len_at = |offset| {
-            horizontal_source_to_builder(&para, offset + 1)
-                - horizontal_source_to_builder(&para, offset)
+            HorizontalOffsets::new(&para).source_to_builder(offset + 1)
+                - HorizontalOffsets::new(&para).source_to_builder(offset)
         };
         assert_eq!(len_at(0), 1);
         assert_eq!(len_at(1), 2);

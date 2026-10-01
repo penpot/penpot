@@ -5,7 +5,7 @@ use skia_safe::{Contains, Point as SkPoint};
 use crate::math::Rect;
 use crate::shapes::{PositionData, VerticalAlign};
 
-use super::annotations::ruby_strip_x;
+use super::annotations::{emphasis_mark_center, ruby_strip_x};
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
 
 /// Position-data `direction` value marking a vertical (vertical-rl)
@@ -19,15 +19,76 @@ pub const DIRECTION_VERTICAL_RL: u32 = 2;
 /// exact gutter placement the canvas paints.
 pub const DIRECTION_VERTICAL_RUBY: u32 = 3;
 
+/// Position-data `direction` value marking one emphasis mark (圏点): the
+/// entry's offsets are its base character's and the geometry is the mark's
+/// em box, centred where the canvas paints it. Horizontal text uses it too.
+pub const DIRECTION_EMPHASIS_MARK: u32 = 4;
+
+/// Paragraph source UTF-16 range of a `transformed` span-text range.
+fn source_utf16_range(
+    layout: &VerticalLayout,
+    paragraph: usize,
+    span: usize,
+    transformed: Range<usize>,
+) -> Range<usize> {
+    let transformed_span_start = layout.span_utf16_starts[paragraph][span];
+    let source_span_start = layout.span_source_utf16_starts[paragraph][span];
+    let relative = layout.span_transforms[paragraph][span].source_utf16_range(
+        transformed.start - transformed_span_start..transformed.end - transformed_span_start,
+    );
+    source_span_start + relative.start..source_span_start + relative.end
+}
+
 pub(super) fn cell_source_utf16_range(
     layout: &VerticalLayout,
     cell: &VerticalCell,
 ) -> Range<usize> {
-    let transformed_span_start = layout.span_utf16_starts[cell.paragraph][cell.span];
-    let source_span_start = layout.span_source_utf16_starts[cell.paragraph][cell.span];
-    let relative = layout.span_transforms[cell.paragraph][cell.span]
-        .source_utf16_range(cell.start - transformed_span_start..cell.end - transformed_span_start);
-    source_span_start + relative.start..source_span_start + relative.end
+    source_utf16_range(layout, cell.paragraph, cell.span, cell.start..cell.end)
+}
+
+/// Entry of `cell`'s span covering the paragraph source range `source`.
+fn span_entry(
+    layout: &VerticalLayout,
+    cell: &VerticalCell,
+    source: Range<usize>,
+    (x, y, width, height): (f32, f32, f32, f32),
+    direction: u32,
+) -> PositionData {
+    let span_start = layout.span_source_utf16_starts[cell.paragraph][cell.span];
+    PositionData {
+        paragraph: cell.paragraph as u32,
+        span: cell.span as u32,
+        start_pos: (source.start - span_start) as u32,
+        end_pos: (source.end - span_start) as u32,
+        x,
+        y,
+        width,
+        height,
+        direction,
+    }
+}
+
+/// The two sub-line strips of a warichu cell: the first on the right half of
+/// the base band, the second on the left, each holding its own characters.
+fn warichu_entries(
+    layout: &VerticalLayout,
+    cell: &VerticalCell,
+    first_chars: usize,
+    origin: (f32, f32),
+) -> [PositionData; 2] {
+    let column = &layout.columns[cell.column];
+    let center = origin.0 + column_base_center(column);
+    let half = cell.font_size / 2.0;
+    let split = cell.start + first_chars;
+    let line = |range: Range<usize>, x: f32| {
+        let source = source_utf16_range(layout, cell.paragraph, cell.span, range);
+        let rect = (x, origin.1 + cell.top, half, cell.extent);
+        span_entry(layout, cell, source, rect, DIRECTION_VERTICAL_RL)
+    };
+    [
+        line(cell.start..split, center),
+        line(split..cell.end, center - half),
+    ]
 }
 
 /// Position-data entries for the v2 editor / exports: consecutive cells of
@@ -43,6 +104,16 @@ pub fn position_data(
     let mut i = 0;
     while i < layout.cells.len() {
         let first = &layout.cells[i];
+        if let CellKind::Warichu { first_chars, .. } = first.kind {
+            result.extend(warichu_entries(
+                layout,
+                first,
+                first_chars,
+                (origin_x, origin_y),
+            ));
+            i += 1;
+            continue;
+        }
         let mut source_range = cell_source_utf16_range(layout, first);
         let mut bottom = first.top + first.extent;
         let mut j = i + 1;
@@ -51,6 +122,7 @@ pub fn position_data(
             if next.paragraph == first.paragraph
                 && next.span == first.span
                 && next.column == first.column
+                && !matches!(next.kind, CellKind::Warichu { .. })
             {
                 let next_source = cell_source_utf16_range(layout, next);
                 source_range.start = source_range.start.min(next_source.start);
@@ -62,20 +134,21 @@ pub fn position_data(
             }
         }
         let column = &layout.columns[first.column];
-        let span_start = layout.span_source_utf16_starts[first.paragraph][first.span];
-        result.push(PositionData {
-            paragraph: first.paragraph as u32,
-            span: first.span as u32,
-            start_pos: (source_range.start - span_start) as u32,
-            end_pos: (source_range.end - span_start) as u32,
-            x: origin_x + column.x,
-            y: origin_y + first.top,
-            // Base text occupies the base sub-band; any ruby gutter is
-            // excluded so the editor overlay and selection track the glyphs.
-            width: column.base_width,
-            height: bottom - first.top,
-            direction: DIRECTION_VERTICAL_RL,
-        });
+        // Base text occupies the base sub-band; any ruby gutter is excluded
+        // so the editor overlay and selection track the glyphs.
+        let rect = (
+            origin_x + column.x,
+            origin_y + first.top,
+            column.base_width,
+            bottom - first.top,
+        );
+        result.push(span_entry(
+            layout,
+            first,
+            source_range,
+            rect,
+            DIRECTION_VERTICAL_RL,
+        ));
         i = j;
     }
 
@@ -105,6 +178,26 @@ pub fn position_data(
             height: bottom - top,
             direction: DIRECTION_VERTICAL_RUBY,
         });
+    }
+
+    for mark in &layout.emphasis_marks {
+        let cell = &layout.cells[mark.cell];
+        let (center_x, center_y) = emphasis_mark_center(layout, mark);
+        let size = mark.font_size;
+        let rect = (
+            origin_x + center_x - size / 2.0,
+            origin_y + center_y - size / 2.0,
+            size,
+            size,
+        );
+        let source = cell_source_utf16_range(layout, cell);
+        result.push(span_entry(
+            layout,
+            cell,
+            source,
+            rect,
+            DIRECTION_EMPHASIS_MARK,
+        ));
     }
     result
 }
@@ -380,7 +473,8 @@ mod tests {
     use super::super::test_support::*;
     use super::*;
     use crate::shapes::{
-        TextCombineUpright, TextOrientation, TextPositionWithAffinity, TextTransform,
+        TextCombineUpright, TextEmphasis, TextOrientation, TextPositionWithAffinity, TextSpan,
+        TextTransform,
     };
     use crate::wasm::text::helpers as text_helpers;
 
@@ -434,6 +528,62 @@ mod tests {
         // After the composite the caret falls back to the flow axis.
         let rect = caret_rect(&layout, 0, cell.end).expect("caret rect");
         assert!(rect.height() < 0.01 || rect.top >= cell.top + cell.extent - 0.01);
+    }
+
+    #[test]
+    fn position_data_emits_one_strip_per_warichu_sub_line() {
+        let content = warichu_content("あいう、えお", 400.0);
+        let layout = layout_content(&content, 400.0);
+        let data = position_data(&layout, &content.bounds(), VerticalAlign::Top);
+
+        let strips: Vec<&PositionData> = data
+            .iter()
+            .filter(|entry| entry.direction == DIRECTION_VERTICAL_RL)
+            .collect();
+        assert_eq!(strips.len(), 2);
+        assert_eq!((strips[0].start_pos, strips[0].end_pos), (0, 4));
+        assert_eq!((strips[1].start_pos, strips[1].end_pos), (4, 6));
+        assert!(
+            strips[0].x > strips[1].x,
+            "the first sub-line reads first, on the right"
+        );
+        assert!((strips[0].width - EM / 2.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn position_data_emits_each_emphasis_mark_box() {
+        let content = spans_content(
+            vec![TextSpan {
+                text_emphasis: TextEmphasis::FilledDot,
+                text_orientation: TextOrientation::Upright,
+                ..make_span("A、B")
+            }],
+            400.0,
+        );
+        let layout = layout_content(&content, 400.0);
+        let data = position_data(&layout, &content.bounds(), VerticalAlign::Top);
+
+        let marks: Vec<&PositionData> = data
+            .iter()
+            .filter(|entry| entry.direction == DIRECTION_EMPHASIS_MARK)
+            .collect();
+        let ranges: Vec<(u32, u32)> = marks.iter().map(|m| (m.start_pos, m.end_pos)).collect();
+        assert_eq!(
+            ranges,
+            vec![(0, 1), (2, 3)],
+            "A and B are marked; 、 is not"
+        );
+        let base = data
+            .iter()
+            .find(|entry| entry.direction == DIRECTION_VERTICAL_RL)
+            .expect("base strip");
+        for mark in marks {
+            assert!((mark.width - EM / 2.0).abs() < 0.01);
+            assert!(
+                mark.x >= base.x + base.width - 0.01,
+                "marks sit in the gutter right of the base band"
+            );
+        }
     }
 
     #[test]

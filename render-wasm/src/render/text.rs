@@ -16,66 +16,57 @@ use skia_safe::{
     Canvas, ImageFilter, Paint,
 };
 
+/// Vertical text: shadows, fill, strokes and the debug grid, all painted from
+/// one layout. Like every vertical pass, the content is rebound to the
+/// selrect: stored text bounds describe the measured content and can be
+/// taller than a fixed shape, whose height is the column-wrap budget.
 pub fn render_vertical_text(
     state: &mut RenderState,
     shape: &Shape,
     text_content: &TextContent,
-    paragraph_builders: &mut [ParagraphBuilderGroup],
     fills_surface_id: SurfaceId,
     strokes_surface_id: SurfaceId,
     skip_effects: bool,
 ) -> Result<()> {
     let blur_filter = (!skip_effects).then(|| shape.image_filter(1.0)).flatten();
+    let text_content = text_content.new_bounds(shape.selrect());
     let bounds = text_content.bounds();
+    let vertical_align = shape.vertical_align();
+    let layout = text_vertical::layout_for_box(&text_content, bounds.height());
+
     let skip_shadows = skip_effects || state.should_skip_drop_shadows();
-    let mut drop_shadows = if skip_shadows {
-        Vec::new()
-    } else {
-        shape.drop_shadow_paints()
-    };
     if !skip_shadows {
+        let mut drop_shadows = shape.drop_shadow_paints();
         if let Some(inherited_shadows) = state.get_inherited_drop_shadows() {
             drop_shadows.extend(inherited_shadows);
         }
-    }
-    let strokes: Vec<Stroke> = shape.visible_strokes().rev().cloned().collect();
-    let layout = (!drop_shadows.is_empty() || !strokes.is_empty())
-        .then(|| text_vertical::layout_for_box(text_content, bounds.height()));
-
-    if let Some(layout) = layout.as_ref().filter(|_| !drop_shadows.is_empty()) {
-        let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
-        for shadow in &drop_shadows {
-            text_vertical::paint_drop_shadow(
-                canvas,
-                layout,
-                &bounds,
-                shape.vertical_align(),
-                shadow,
-            );
+        if !drop_shadows.is_empty() {
+            let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
+            for shadow in &drop_shadows {
+                text_vertical::paint_drop_shadow(canvas, &layout, &bounds, vertical_align, shadow);
+            }
         }
     }
 
-    render(
-        Some(state),
-        None,
+    render_to_surface(
+        state,
         shape,
-        paragraph_builders,
-        Some(fills_surface_id),
-        None,
+        fills_surface_id,
         blur_filter.as_ref(),
-        None,
-        None,
+        0.0,
+        |canvas| paint_vertical_fill(canvas, shape, &layout, &bounds, blur_filter.as_ref()),
     )?;
 
-    if let Some(layout) = layout.as_ref().filter(|_| !strokes.is_empty()) {
+    let strokes: Vec<&Stroke> = shape.visible_strokes().rev().collect();
+    if !strokes.is_empty() {
         let selrect = shape.selrect();
         let canvas = state.surfaces.canvas_and_mark_dirty(strokes_surface_id);
-        for stroke in &strokes {
+        for stroke in strokes {
             text_vertical::paint_stroke(
                 canvas,
-                layout,
+                &layout,
                 &bounds,
-                shape.vertical_align(),
+                vertical_align,
                 stroke,
                 &selrect,
                 blur_filter.as_ref(),
@@ -84,16 +75,8 @@ pub fn render_vertical_text(
     }
 
     if state.options.is_text_grid_visible() {
-        let owned_layout;
-        let grid_layout = match layout.as_ref() {
-            Some(layout) => layout,
-            None => {
-                owned_layout = text_vertical::layout_for_box(text_content, bounds.height());
-                &owned_layout
-            }
-        };
         let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
-        text_vertical::paint_grid(canvas, grid_layout, &bounds, shape.vertical_align());
+        text_vertical::paint_grid(canvas, &layout, &bounds, vertical_align);
     }
 
     Ok(())
@@ -327,6 +310,70 @@ pub fn render_with_bounds_outset_overlay_emoji(
     )
 }
 
+/// Run `paint` on `target_surface`. With a blur, it paints into a filter
+/// surface sized to the blurred text bounds (grown by `stroke_bounds_outset`)
+/// when those bounds are usable.
+fn render_to_surface(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    target_surface: SurfaceId,
+    blur: Option<&ImageFilter>,
+    stroke_bounds_outset: f32,
+    mut paint: impl FnMut(&Canvas),
+) -> Result<()> {
+    if let Some(blur_filter) = blur {
+        let mut text_bounds = shape
+            .get_text_content()
+            .calculate_bounds(shape, false)
+            .to_rect();
+        if stroke_bounds_outset > 0.0 {
+            text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
+        }
+        let bounds = blur_filter.compute_fast_bounds(text_bounds);
+        if bounds.is_finite()
+            && bounds.width() > 0.0
+            && bounds.height() > 0.0
+            && filters::render_with_filter_surface(
+                render_state,
+                bounds,
+                target_surface,
+                |state, temp_surface| {
+                    paint(state.surfaces.canvas(temp_surface));
+                    Ok(())
+                },
+            )?
+        {
+            return Ok(());
+        }
+    }
+    paint(render_state.surfaces.canvas_and_mark_dirty(target_surface));
+    Ok(())
+}
+
+/// Fill pass of vertical text: `layout` painted inside the shape's layer
+/// blur.
+pub fn paint_vertical_fill(
+    canvas: &Canvas,
+    shape: &Shape,
+    layout: &text_vertical::VerticalLayout,
+    bounds: &Rect,
+    blur: Option<&ImageFilter>,
+) {
+    if let Some(blur_filter) = blur {
+        let mut blur_paint = Paint::default();
+        blur_paint.set_image_filter(blur_filter.clone());
+        canvas.save_layer(
+            &SaveLayerRec::default()
+                .bounds(&shape.layer_bounds())
+                .paint(&blur_paint),
+        );
+    }
+    text_vertical::paint_layout(canvas, layout, bounds, shape.vertical_align());
+    if blur.is_some() {
+        canvas.restore();
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_with_bounds_outset_inner(
     render_state: Option<&mut RenderState>,
@@ -342,55 +389,25 @@ fn render_with_bounds_outset_inner(
     overlay_emoji: bool,
 ) -> Result<()> {
     if let Some(render_state) = render_state {
-        let target_surface = surface_id.unwrap_or(SurfaceId::Fills);
-
-        if let Some(blur_filter) = blur {
-            let mut text_bounds = shape
-                .get_text_content()
-                .calculate_bounds(shape, false)
-                .to_rect();
-            if stroke_bounds_outset > 0.0 {
-                text_bounds.inset((-stroke_bounds_outset, -stroke_bounds_outset));
-            }
-            let bounds = blur_filter.compute_fast_bounds(text_bounds);
-            if bounds.is_finite() && bounds.width() > 0.0 && bounds.height() > 0.0 {
-                let blur_filter_clone = blur_filter.clone();
-                if filters::render_with_filter_surface(
-                    render_state,
-                    bounds,
-                    target_surface,
-                    |state, temp_surface| {
-                        let temp_canvas = state.surfaces.canvas(temp_surface);
-                        render_text_on_canvas(
-                            temp_canvas,
-                            shape,
-                            paragraph_builders,
-                            shadow,
-                            Some(&blur_filter_clone),
-                            fill_inset,
-                            layer_opacity,
-                            false,
-                        );
-                        Ok(())
-                    },
-                )? {
-                    return Ok(());
-                }
-            }
-        }
-
-        let canvas = render_state.surfaces.canvas_and_mark_dirty(target_surface);
-        render_text_on_canvas(
-            canvas,
+        return render_to_surface(
+            render_state,
             shape,
-            paragraph_builders,
-            shadow,
+            surface_id.unwrap_or(SurfaceId::Fills),
             blur,
-            fill_inset,
-            layer_opacity,
-            false,
+            stroke_bounds_outset,
+            |canvas| {
+                render_text_on_canvas(
+                    canvas,
+                    shape,
+                    paragraph_builders,
+                    shadow,
+                    blur,
+                    fill_inset,
+                    layer_opacity,
+                    false,
+                )
+            },
         );
-        return Ok(());
     }
 
     if let Some(canvas) = canvas {

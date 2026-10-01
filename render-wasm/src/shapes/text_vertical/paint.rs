@@ -7,7 +7,7 @@ use skia_safe::{
 use crate::math::Rect;
 use crate::shapes::{Stroke, StrokeKind, TextContent, VerticalAlign};
 
-use super::annotations::{emphasis_gutter_center, ruby_strip_x, EmphasisMark, RubyCell};
+use super::annotations::{emphasis_mark_center, ruby_strip_x, EmphasisMark, RubyCell};
 use super::font_tables::upright_baseline;
 use super::layout::{column_base_center, layout_for_box, CellKind, VerticalCell, VerticalLayout};
 use super::shaping::{single_glyph_blob, ShapedRun};
@@ -222,10 +222,10 @@ fn emphasis_draw(
 ) -> Option<GlyphDraw> {
     let run = &layout.emphasis_runs[mark.run];
     let blob = single_glyph_blob(&run.font, *run.glyphs.first()?)?;
-    let gutter_center = origin.0 + emphasis_gutter_center(&layout.columns[mark.column], mark);
+    let (center_x, center_y) = emphasis_mark_center(layout, mark);
+    let gutter_center = origin.0 + center_x;
     let (_, metrics) = run.font.metrics();
-    let cell_center = origin.1 + mark.top + mark.extent / 2.0;
-    let baseline = cell_center - (metrics.ascent + metrics.descent) / 2.0;
+    let baseline = origin.1 + center_y - (metrics.ascent + metrics.descent) / 2.0;
     let advance = run.advances.first().copied().unwrap_or(0.0);
     Some(GlyphDraw::at(
         blob,
@@ -254,7 +254,7 @@ fn decoration_rects(
 
 /// Fill pass: each cell drawn with its own fill paint and its decorations,
 /// then ruby and emphasis marks with their base cell's paint.
-fn paint_layout(
+pub fn paint_layout(
     canvas: &Canvas,
     layout: &VerticalLayout,
     bounds: &Rect,
@@ -280,7 +280,7 @@ fn paint_layout(
     }
     for mark in &layout.emphasis_marks {
         if let Some(draw) = emphasis_draw(layout, mark, origin) {
-            draw.draw(canvas, &layout.paints[mark.paint]);
+            draw.draw(canvas, &layout.paints[layout.cells[mark.cell].paint]);
         }
     }
 }
@@ -353,7 +353,7 @@ fn paths_from_layout(
             push_text_path(
                 &mut paths,
                 draw.into_path(),
-                &layout.paints[mark.paint],
+                &layout.paints[layout.cells[mark.cell].paint],
                 antialias,
             );
         }

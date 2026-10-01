@@ -463,8 +463,13 @@ pub fn layout_vertical(
     }
 
     let (ruby_runs, ruby_cells) = layout_ruby(text_content, &cells, &fonts);
-    let (emphasis_runs, emphasis_marks) =
-        layout_emphasis(text_content, &cells, &span_utf16_starts, &fonts);
+    let (emphasis_runs, emphasis_marks) = layout_emphasis(
+        text_content,
+        &cells,
+        &span_utf16_starts,
+        &span_transforms,
+        &fonts,
+    );
 
     let height = cells
         .iter()
