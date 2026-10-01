@@ -283,6 +283,11 @@
                    (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct))
                          (type->editable-attrs type))))
 
+        ;; The `:text` read mode reads values from `attrs`, not from the
+        ;; editable attrs, so its token attrs must come from `attrs` too.
+        text-token-attrs
+        (into [] (comp (mapcat tt/shape-attr->token-attrs) (distinct)) attrs)
+
         merge-attrs
         (fn [v1 v2]
           (cond
@@ -311,8 +316,9 @@
 
         merge-token-values
         (fn [acc token-attrs applied-tokens]
-          "Merges token values across all token attributes derived from the shape's
-           editable attributes."
+          "Merges token values across all `token-attrs`. Callers derive them from
+           the attributes the shape's read mode reads: the editable attributes for
+           `:shape`, the whole group attributes for `:text`."
           (let [no-tokens? (empty? applied-tokens)
                 stable     (deref stable-token-acc)]
             (if (and no-tokens?
@@ -360,7 +366,7 @@
                         (merge-attrs shape-attrs)
                         (merge-attrs content-attrs))
 
-                    new-token-acc (merge-token-values token-acc (type->token-attrs type) applied-tokens)]
+                    new-token-acc (merge-token-values token-acc text-token-attrs applied-tokens)]
                 [(conj ids id)
                  new-values
                  new-token-acc])
