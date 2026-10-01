@@ -310,7 +310,8 @@ function ensure-infra-up {
 # created for the first time, so per-instance test databases (which did not
 # exist back then) would otherwise never be created on existing volumes.
 # The backend applies migrations itself on first use, so an empty database
-# is enough here.
+# is enough here. (Two plain SQL round-trips on purpose: psql -c does not
+# reliably mix SQL with psql-only commands like \gexec.)
 function ensure-instance-test-database {
     local instance="$1"
     local dbname
@@ -323,11 +324,21 @@ function ensure-instance-test-database {
         return 1
     fi
 
-    docker exec -e "PGPASSWORD=${PENPOT_DATABASE_PASSWORD:-penpot}" \
-        "$pg_container" \
-        psql -h 127.0.0.1 -U "${PENPOT_DATABASE_USERNAME:-penpot}" -d postgres \
-        -v ON_ERROR_STOP=1 \
-        -c "SELECT 'CREATE DATABASE \"${dbname}\"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${dbname}')\gexec"
+    local -a psql_base=(docker exec
+        -e "PGPASSWORD=${PENPOT_DATABASE_PASSWORD:-penpot}"
+        "$pg_container"
+        psql -h 127.0.0.1 -U "${PENPOT_DATABASE_USERNAME:-penpot}"
+        -d postgres -v ON_ERROR_STOP=1 -tA)
+
+    local exists
+    exists=$("${psql_base[@]}" -c "SELECT 1 FROM pg_database WHERE datname = '${dbname}'")
+    if [[ "$exists" == "1" ]]; then
+        echo "[${instance}] test database ${dbname} already exists."
+        return 0
+    fi
+
+    echo "[${instance}] creating test database ${dbname} ..."
+    "${psql_base[@]}" -c "CREATE DATABASE \"${dbname}\""
 }
 
 # Refuse to sync workspaces if the live repo is in a fragile Git state.
