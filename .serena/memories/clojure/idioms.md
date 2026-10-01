@@ -8,3 +8,4 @@ Behaviors confirmed against the language/stdlib — do not re-derive from assump
 - The analyzer reads `:async` only from the fn name meta and the `fn` operator meta; list-level meta is ignored (would make a MetaFn). `(fn ^:async [] …)` puts the meta on argv (pre/post only, NOT async).
 - Valid: `(defn ^:async f)`, `(defn- ^:async f)`, `(^:async fn [] …)` (the latter is what stock `t/async` generates itself).
 - `^:async` fns never throw synchronously (rejected promises instead); `try/catch/finally` supported; continuations are microtasks, timers and RxJS schedulers are macrotasks (FIFO).
+- Penpot extends `clojure.core/Inst` in `app.common.time` ( JVM-only section), so `inst-ms` also accepts `Duration` (returns `.toMillis`, NOT epoch millis), `FileTime` and `OffsetDateTime`. It only works where that namespace is loaded; on a bare `Duration`, prefer explicit `.toMillis`, which reads as what it is (an amount, not an instant).

@@ -6,6 +6,7 @@
 
 (ns backend-tests.metrics-test
   (:require
+   [app.common.exceptions :as ex]
    [app.metrics :as mtx]
    [app.metrics.definition :as-alias mdef]
    [clojure.test :as t]
@@ -92,6 +93,23 @@
         instance  (reify mtx/IMetrics
                     (get-collector [_ _] collector))]
     (t/is (true? (mtx/run! instance :id :x :inc 1 :labels ["ok"])))))
+
+(t/deftest instance-resolves-the-metrics-from-a-cfg
+  ;; the resolver is a map read and nothing more: it hands back the very
+  ;; instance, not a copy and not a wrapper
+  (let [metrics (ig/init-key :app.metrics/metrics {:default {}})]
+    (t/is (identical? metrics (mtx/instance {::mtx/metrics metrics})))))
+
+(t/deftest instance-raises-on-a-cfg-without-metrics
+  ;; A missing instance is a wiring bug, and the resolver is the one place
+  ;; that says so: a module that resolves it at the top of a write sees the
+  ;; failure before anything is persisted.
+  (let [cause (try
+                (mtx/instance {})
+                (catch Throwable e e))]
+    (t/is (some? cause))
+    (t/is (= :missing-metrics (:code (ex-data cause))))
+    (t/is (re-find #"::mtx/metrics" (:hint (ex-data cause))))))
 
 (t/deftest definitions-schema-accepts-all-consumed-keys
   (t/is (true? (valid-definitions?

@@ -14,12 +14,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -101,10 +101,10 @@
                                          (->> (auth/create-profile cfg params)
                                               (auth/create-profile-rels cfg))))]
 
-    (wrk/submit! (-> cfg
-                     (assoc ::wrk/task :demo-purge)
-                     (assoc ::wrk/delay deletion-delay)
-                     (assoc ::wrk/params {:profile-id (:id profile)})))
+    (jobs/submit cfg
+                 {::jobs/name :demo-purge
+                  ::jobs/delay deletion-delay
+                  ::jobs/params {:profile-id (:id profile)}})
 
     (with-meta {:email email
                 :password password}

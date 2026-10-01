@@ -20,6 +20,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.main :as main]
    [app.media]
    [app.media :as-alias mtx]
@@ -35,7 +36,6 @@
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -127,7 +127,8 @@
                            :app.worker/cron
                            :app.worker/dispatcher
                            [:app.main/default :app.worker/runner]
-                           [:app.main/webhook :app.worker/runner]))
+                           [:app.main/webhook :app.worker/runner]
+                           [:app.main/cron :app.worker/runner]))
         _      (ig/load-namespaces system)
         system (-> (ig/expand system) (ig/init))]
     (try
@@ -231,8 +232,10 @@
 (defn mark-file-deleted*
   ([params]
    (mark-file-deleted* *system* params))
-  ([conn {:keys [id] :as params}]
-   (#'files/mark-file-deleted conn {} id)))
+  ([system {:keys [id] :as params}]
+   (db/tx-run! system
+               (fn [cfg]
+                 (#'files/mark-file-deleted cfg {} id)))))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))
@@ -487,28 +490,37 @@
       (try-on! (method-fn params)))))
 
 (defn run-task!
+  "Execute a job handler directly (in-process, no row): the handler gets a
+  nil context, because there is no job to describe."
   ([name]
    (run-task! name {}))
   ([name params]
-   (wrk/invoke! (-> *system*
-                    (assoc ::wrk/task name)
-                    (assoc ::wrk/params params)))))
+   (jobs/invoke (-> *system*
+                    (assoc ::jobs/name name)
+                    (assoc ::jobs/params params)))))
 
-(def sql:pending-tasks
-  "select t.* from task as t
-    where t.status = 'new'
-    order by t.priority desc, t.scheduled_at")
+(def sql:pending-jobs
+  "select * from job
+    where status = 'new'
+    order by priority desc, scheduled_at")
 
-(defn run-pending-tasks!
+(defn run-pending-jobs
+  "Execute the pending (status='new') `job` rows in-process (simulating
+  the dispatcher + runner for the tests). Each row gets its context and its
+  job-id, so heartbeats and progress reach it exactly like in the runner.
+  Does not touch the row status; only the handler side effects matter."
   []
-  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
-                         (let [tasks (->> (db/exec! conn [sql:pending-tasks])
-                                          (map #'app.worker.runner/decode-task-row))]
-                           (doseq [task tasks]
-                             (let [cfg (-> cfg
-                                           (assoc :app.worker.runner/queue (:queue task))
-                                           (assoc :app.worker.runner/id 0))]
-                               (#'app.worker.runner/run-task cfg task)))))))
+  (db/tx-run! *system*
+              (fn [{:keys [::db/conn]}]
+                (let [jobs-rows (db/exec! conn [sql:pending-jobs])]
+                  (doseq [row jobs-rows]
+                    (jobs/invoke (-> *system*
+                                     ;; the row stores a string; invoke
+                                     ;; takes the canonical keyword
+                                     (assoc ::jobs/name (keyword (:name row)))
+                                     (assoc ::jobs/params (:params row))
+                                     (assoc ::jobs/context (jobs/make-context row))
+                                     (assoc ::jobs/job-id (:id row)))))))))
 
 ;; --- UTILS
 
@@ -619,6 +631,17 @@
 (defn db-delete!
   [& params]
   (apply db/delete! *pool* params))
+
+(defn db-force-delete!
+  "Deletes rows whose table is guarded by `raise_deletion_protection`,
+  inside a transaction that disables the guard. Test-only escape hatch:
+  production delete paths disable protection in their own transaction
+  (see `app.jobs.gc`)."
+  [& params]
+  (db/tx-run! *pool*
+              (fn [{:keys [::db/conn]}]
+                (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                (apply db/delete! conn params))))
 
 (defn db-query
   [& params]
