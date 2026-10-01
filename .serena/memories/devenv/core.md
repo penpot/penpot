@@ -1,6 +1,6 @@
 # Devenv startup and configuration
 
-Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + RustFS; each instance has its own `main` container, Valkey, source checkout, tmux session.
+Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Parallel instances share infra + Postgres + RustFS; each instance has its own `main` container, Valkey, source checkout, tmux session. The main database (`penpot`) and the S3 bucket (`penpot`) are shared by all instances on purpose; backend-test databases are isolated per instance (`penpot_test` on ws0, `penpot_test_wsN` on wsN) with per-instance Valkey DB numbers (`6+N`, since runtime backends occupy `0..5`).
 
 ## Compose project layout
 
@@ -12,7 +12,8 @@ Compose-based dev environment under `docker/devenv/`, driven by `manage.sh`. Par
 ## Source-of-truth files
 
 - `docker/devenv/defaults.env`: ws0 baseline — container/volume names, runtime env, published host ports, tmux defaults. `manage.sh` aborts if unreadable.
-- For ws1+, `instance-env-overrides` computes the per-instance overrides (container/volume names, host ports offset `10000·N`, `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_BACKEND_WORKER=false`) and `instance-compose` injects them as env vars at compose time — never written to disk, recomputed each call so they can't drift. ws0 uses `defaults.env` as-is.
+- For ws1+, `instance-env-overrides` computes the per-instance overrides (container/volume names, host ports offset `10000·N`, `PENPOT_PUBLIC_URI`, `PENPOT_REDIS_URI`, `PENPOT_TEST_DATABASE_URI`, `PENPOT_TEST_REDIS_URI`) and `instance-compose` injects them as env vars at compose time — never written to disk, recomputed each call so they can't drift. ws0 uses `defaults.env` as-is.
+- Per-instance test databases are created by `ensure-instance-test-database` (called from `start-instance`): `CREATE DATABASE` guarded by a `pg_database` existence check, so it is idempotent. Needed because `postgresql_init.sql` only runs on first volume creation. The backend applies migrations itself on first use, so an empty database is enough.
 - `backend/scripts/_env`: backend-internal only — secret keys, `PENPOT_FLAGS` (with `enable-backend-worker` gated on `PENPOT_BACKEND_WORKER`), `JAVA_OPTS`, `setup_s3_bucket()`. Never duplicates `defaults.env`.
 - Compose files use pure `${VAR}` substitution; missing var = compose fails.
 
