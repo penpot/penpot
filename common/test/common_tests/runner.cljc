@@ -24,6 +24,7 @@
    [common-tests.files.helpers-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.validate-test]
+   [common-tests.files.variant-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
    [common-tests.geom-bounds-map-test]
@@ -91,6 +92,7 @@
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
    [common-tests.types.tokens-status-test]
+   [common-tests.types.variant-test]
    [common-tests.undo-stack-test]
    [common-tests.uuid-test]))
 
@@ -107,6 +109,7 @@
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test
    'common-tests.files.validate-test
+   'common-tests.files.variant-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
    'common-tests.geom-bounds-map-test
@@ -149,6 +152,7 @@
    'common-tests.logic.token-test
    'common-tests.logic.variants-switch-test
    'common-tests.math-test
+   'common-tests.types.variant-test
    'common-tests.media-test
    'common-tests.path-names-test
    'common-tests.record-test
