@@ -493,7 +493,43 @@
     (t/is (ctk/instance-of? copy1-root' (:id file') (:id component')))
     (t/is (ctk/is-main-of? main1-root' copy1-root'))
     (t/is (ctk/is-main-of? main1-child' copy1-child'))
-    (t/is (ctst/parent-of? copy1-root' copy1-child'))))
+    (t/is (ctst/parent-of? copy1-root' copy1-child'))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id new-shape)]))))
+
+(t/deftest test-instantiate-component-inside-main-validates-root
+  ;; A copy nested in a main can't be validated on its own: the root of the
+  ;; main is validated instead
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :component1 :main1-root :main1-child)
+                      (tho/add-simple-component :component2 :main2-root :main2-child))
+
+        page      (thf/current-page file)
+        component (thc/get-component file :component1)
+        main2-id  (thi/id :main2-root)
+
+        ;; ==== Action
+        [new-shape changes]
+        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+                                                (pcb/with-objects (:objects page)))
+                                            (:objects page)
+                                            (:id file)
+                                            (:id component)
+                                            (gpt/point 1000 1000)
+                                            page
+                                            {(:id file) file}
+                                            nil
+                                            main2-id
+                                            main2-id
+                                            {})
+
+        file'     (thf/apply-changes file changes)
+        copy1'    (ths/get-shape-by-id file' (:id new-shape))]
+
+    ;; ==== Check
+    (t/is (= main2-id (:parent-id copy1')))
+    (t/is (not (ctk/instance-root? copy1')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [main2-id]))))
 
 (t/deftest test-instantiate-component-from-lib
   (let [;; ==== Setup

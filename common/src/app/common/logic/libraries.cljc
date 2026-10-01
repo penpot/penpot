@@ -318,9 +318,15 @@
                  changes
                  (rest new-shapes))
 
-         ids-to-validate (cond-> [(:id first-shape)]
-                           grid-parent?
-                           (conj (:parent-id first-shape)))
+         ;; A copy nested inside another component can't be validated on
+         ;; its own, as the validator needs the context of its ancestors.
+         ;; Validate the root of the enclosing instance instead, which also
+         ;; checks the parents that may change (e.g. layouts)
+         ids-to-validate (if (ctk/instance-root? first-shape)
+                           (cond-> [(:id first-shape)]
+                             grid-parent?
+                             (conj (:parent-id first-shape)))
+                           (ctn/get-all-instance-roots objects [(:parent-id first-shape)]))
 
          changes (if (seq ids-to-validate)
                    (pcb/validate-shapes changes
