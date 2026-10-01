@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-09-30 16:51+0000\n"
+"PO-Revision-Date: 2026-10-02 05:51+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/"
 "nl/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.10.dev0\n"
+"X-Generator: Weblate 2026.10\n"
 
 #: src/app/main/ui/auth/register.cljs:227, src/app/main/ui/static.cljs:191, src/app/main/ui/viewer/login.cljs:119
 msgid "auth.already-have-account"
@@ -1738,9 +1738,9 @@ msgstr "De registratie is momenteel uitgeschakeld."
 #: src/app/main/errors.cljs:538
 msgid "errors.save-failed"
 msgstr ""
-"Jouw laatste wijzigingen zijn niet bevestigd als opgeslagen. Het opslaan "
-"kan niet automatisch worden hervat. Sluit of herlaad dit tabblad niet: je "
-"kunt wijzigingen verliezen. Neem contact op met ondersteuning voor hulp."
+"Autom. opslaan werkt niet vanwege een fout. Neem contact op met de "
+"ondersteuning om de fout te melden en laad de pagina opnieuw om verder te "
+"gaan vanaf uw laatst opgeslagen versie."
 
 #: src/app/main/errors.cljs:764
 msgid "errors.svg-parser.invalid-svg"
