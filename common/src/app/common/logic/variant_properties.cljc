@@ -41,7 +41,7 @@
                                         {:apply-changes-local-library? true}))
                                      changes
                                      related-components)
-                  
+
                   ids-to-validate (map :main-instance-id related-components)
 
                   changes (pcb/validate-shapes changes
