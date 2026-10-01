@@ -527,7 +527,23 @@
     (t/is (= (count (:variant-properties comp01')) 2))
     (t/is (= (count (:variant-properties comp02)) 1))
     (t/is (= (count (:variant-properties comp02')) 2))
-    (t/is (= (-> comp01' :variant-properties last :value) ""))))
+    (t/is (= (-> comp01' :variant-properties last :value) ""))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
+
+(t/deftest test-add-new-property-skip-validation
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id :skip-validation? true))]
+
+    (t/is (seq (:redo-changes changes)))
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
 
 (t/deftest test-add-new-property-with-values
   (let [;; ==== Setup
@@ -730,3 +746,28 @@
     (t/is (= "Property 1" (-> c03' :variant-properties first :name)))
     (t/is (= "Frame1" (-> c03' :variant-properties first :value)))
     (t/is (= "Frame1" (-> m03' :variant-name)))))
+
+(t/deftest test-make-shapes-variant-with-new-properties-does-not-validate
+  ;; The shape is already inside the container but it is not a variant yet,
+  ;; as when a component is restored into a variant. The function adds a new
+  ;; property to the siblings while the shape is not a variant, so it must
+  ;; not validate: the caller validates the container when done
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (tho/add-simple-component :c03 :m03 :sh03
+                                              :root-params {:parent-label :v01
+                                                            :name "Big / Red"}))
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-make-shapes-variant [(ths/get-shape file :m03)]
+                                                       (ths/get-shape file :v01)))
+
+        file'   (thf/apply-changes file changes)]
+
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))
+    (t/is (= 2 (count (:variant-properties (thc/get-component file' :c01)))))
+    (t/is (= 2 (count (:variant-properties (thc/get-component file' :c03)))))))
