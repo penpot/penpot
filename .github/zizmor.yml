@@ -21,10 +21,6 @@ rules:
   dangerous-triggers:
     ignore:
       - auto-label.yml
-  # Scope GitHub App tokens.
-  github-app:
-    ignore:
-      - auto-label.yml
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
