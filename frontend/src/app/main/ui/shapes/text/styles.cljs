@@ -10,6 +10,7 @@
    [app.common.transit :as transit]
    [app.common.types.color :as cc]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.fonts :as fonts]
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
@@ -87,31 +88,74 @@
     "digits3" "digits 3"
     value))
 
+(defn- set-value?
+  "True for a stored style value other than empty or \"none\"."
+  [value]
+  (and (string? value) (pos? (alength value)) (not= "none" value)))
+
+(defn font-feature-settings
+  "CSS `font-feature-settings` for a persisted font-features value, or nil."
+  [font-features]
+  (when (set-value? font-features)
+    (str/format "\"%s\"" font-features)))
+
+(defn- annotation-line-height
+  "Line height that reserves a half-em per ruby/emphasis layer under
+   automatic annotation clearance, or nil."
+  [data]
+  (when (= "auto" (:annotation-clearance data))
+    (let [layers      (+ (if (jl/visible-ruby data) 1 0)
+                         (if (set-value? (:text-emphasis data)) 1 0))
+          line-height (js/parseFloat (or (:line-height data)
+                                         (:line-height txt/default-typography)))]
+      (when (and (pos? layers) (not (js/isNaN line-height)))
+        (+ line-height (* layers 0.5))))))
+
+(defn- add-japanese-text-styles!
+  [style data]
+  (let [text-combine-upright (:text-combine-upright data)
+        text-emphasis        (:text-emphasis data)
+        font-features        (font-feature-settings (:font-features data))
+        annotation-clearance (:annotation-clearance data)
+        line-height          (annotation-line-height data)
+        font-size            (:font-size data)]
+    (cond-> style
+      (and (string? text-combine-upright) (pos? (alength text-combine-upright)))
+      (obj/set! "textCombineUpright" (css-text-combine-upright text-combine-upright))
+
+      ;; Emphasis marks map to CSS text-emphasis-style: our kebab values
+      ;; ("filled-dot") become the CSS "<fill> <shape>" pair ("filled dot").
+      (set-value? text-emphasis)
+      (obj/set! "textEmphasis" (str/replace text-emphasis "-" " "))
+
+      (some? font-features)
+      (obj/set! "fontFeatureSettings" font-features)
+
+      (and (string? annotation-clearance) (pos? (alength annotation-clearance)))
+      (obj/set! "--annotation-clearance" annotation-clearance)
+
+      (some? line-height)
+      (obj/set! "lineHeight" line-height)
+
+      ;; Warichu (割注) CSS emulation: an inline-block at half size whose
+      ;; inline-size fits half the characters, so the browser wraps it into
+      ;; two half-size sub-lines within one inline position in either writing
+      ;; mode.
+      (jl/warichu-text? data)
+      (-> (obj/set! "display" "inline-block")
+          (obj/set! "fontSize" (if (and (string? font-size) (pos? (alength font-size)))
+                                 (str (* (js/parseFloat font-size) jl/warichu-font-scale) "px")
+                                 "50%"))
+          (obj/set! "lineHeight" "1")
+          (obj/set! "inlineSize"
+                    (str (js/Math.ceil (/ (alength (js/Array.from (:text data))) 2)) "em"))))))
+
 (defn generate-text-styles
   ([shape data]
    (generate-text-styles shape data nil))
 
   ([{:keys [grow-type] :as shape} data {:keys [show-text?] :or {show-text? true}}]
    (let [letter-spacing  (:letter-spacing data 0)
-         text-combine-upright (:text-combine-upright data)
-         text-emphasis   (:text-emphasis data)
-         font-features   (:font-features data)
-         annotation-clearance (:annotation-clearance data)
-         annotation-layers (if (= "auto" annotation-clearance)
-                             (+ (if (and (not (true? (:ruby-hidden data)))
-                                         (string? (:ruby data))
-                                         (seq (:ruby data))) 1 0)
-                                (if (and (string? text-emphasis)
-                                         (not= "none" text-emphasis)) 1 0))
-                             0)
-         line-height-num (js/parseFloat (or (:line-height data)
-                                            (:line-height txt/default-typography)))
-         auto-line-height (when (and (pos? annotation-layers)
-                                     (not (js/isNaN line-height-num)))
-                            (+ line-height-num (* annotation-layers 0.5)))
-         warichu?        (and (= "warichu" (:warichu data))
-                              (string? (:text data))
-                              (>= (count (:text data)) 2))
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
 
@@ -186,26 +230,6 @@
        (and (string? letter-spacing) (pos? (alength letter-spacing)))
        (obj/set! "letterSpacing" (str letter-spacing "px"))
 
-       (and (string? text-combine-upright) (pos? (alength text-combine-upright)))
-       (obj/set! "textCombineUpright" (css-text-combine-upright text-combine-upright))
-
-       ;; Emphasis marks map to CSS text-emphasis-style: our kebab values
-       ;; ("filled-dot") become the CSS "<fill> <shape>" pair ("filled dot").
-       (and (string? text-emphasis) (pos? (alength text-emphasis))
-            (not= "none" text-emphasis))
-       (obj/set! "textEmphasis" (str/replace text-emphasis "-" " "))
-
-       (and (string? font-features) (pos? (alength font-features))
-            (not= "none" font-features))
-       (obj/set! "fontFeatureSettings" (str/format "\"%s\"" font-features))
-
-       (and (string? annotation-clearance)
-            (pos? (alength annotation-clearance)))
-       (obj/set! "--annotation-clearance" annotation-clearance)
-
-       (some? auto-line-height)
-       (obj/set! "lineHeight" auto-line-height)
-
        (and (string? font-size) (pos? (alength font-size)))
        (obj/set! "fontSize" (str font-size "px"))
 
@@ -217,18 +241,8 @@
        (= grow-type :auto-width)
        (obj/set! "whiteSpace" "pre")
 
-       ;; Warichu (割注) CSS emulation: an inline-block at half size whose
-       ;; inline-size fits half the characters, so the browser wraps it into
-       ;; two half-size sub-lines within one inline position in either writing
-       ;; mode.
-       warichu?
-       (-> (obj/set! "display" "inline-block")
-           (obj/set! "fontSize" (if (and (string? font-size) (pos? (alength font-size)))
-                                  (str (/ (js/parseFloat font-size) 2) "px")
-                                  "50%"))
-           (obj/set! "lineHeight" "1")
-           (obj/set! "inlineSize"
-                     (str (js/Math.ceil (/ (alength (js/Array.from (:text data))) 2)) "em")))))))
+       :always
+       (add-japanese-text-styles! data)))))
 
 (defn generate-ruby-styles
   [shape data]

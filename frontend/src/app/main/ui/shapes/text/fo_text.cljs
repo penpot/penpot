@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as cc]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.text.writing-mode :as wm]
    [cuerdas.core :as str]
@@ -21,11 +22,8 @@
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
-        ruby  (:ruby node)
-        ruby? (and (not (true? (:ruby-hidden node)))
-                   (string? ruby)
-                   (not (str/blank? ruby)))]
-    (if ruby?
+        ruby  (jl/visible-ruby node)]
+    (if (some? ruby)
       [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
        [:span.text-node {:style style} text]
        [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]

@@ -5,12 +5,12 @@
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
 (ns frontend-tests.render-wasm.texts-test
-  "Unit tests for CJK script classification and the Han-unification
-   resolution policy used to pick Noto fallback fonts."
+  "Japanese text support in the WASM bridge: span serialization, editor
+   selection styles, IME composition caret placement, and the CJK script
+   classification used to pick Noto fallback fonts."
   (:require
    [app.common.fonts :as cfnt]
    [app.common.render-wasm.text-content :as tc]
-   [app.common.render-wasm.wasm :as wasm]
    [app.main.ui.workspace.shapes.text.v3-editor :as v3-editor]
    [app.render-wasm.api :as api]
    [app.render-wasm.api.texts :as texts]
@@ -148,119 +148,66 @@
     (t/is (not-any? #(contains? % :text-orientation) paragraphs))
     (t/is (= [nil "center" nil] (mapv :text-align paragraphs)))))
 
-(t/deftest write-spans-serializes-font-features-in-reserved-byte
-  (let [sentinel (js-obj)
-        previous (if (.hasOwnProperty wasm/serializers "font-features")
-                   (unchecked-get wasm/serializers "font-features")
-                   sentinel)]
-    (try
-      (aset wasm/serializers "font-features" #js {"none" 0 "palt" 1 "vpal" 2})
-      (let [buffer (js/ArrayBuffer. 256)
-            dview  (js/DataView. buffer)
-            span   {:text "日本語"
-                    :font-size "16"
-                    :font-weight "400"
-                    :font-features "vpal"}
-            paragraph {:font-size "16"
-                       :font-weight "400"
-                       :line-height "1"}]
-        (write-spans 0 dview [span] paragraph)
-        (t/is (= 2 (.getUint8 dview 8)))
-        (t/is (= 0 (.getUint8 dview 9)))
-        (t/is (= 0 (.getUint8 dview 14)))
-        (t/is (= 0 (.getUint8 dview 15))))
-      (finally
-        (if (identical? sentinel previous)
-          (js-delete wasm/serializers "font-features")
-          (aset wasm/serializers "font-features" previous))))))
+;; Byte offsets inside one span's attribute block (see `write-spans` and
+;; RawTextSpan in render-wasm).
+(def ^:private span-attr-offset
+  {:text-combine-upright 5
+   :font-features        8
+   :annotation-clearance 9
+   :ruby-size            10
+   :ruby-align           11
+   :ruby-overhang        12
+   :ruby-side            13
+   :padding              [14 15]
+   :ruby-length          72})
 
-(t/deftest write-spans-serializes-annotation-clearance-in-reserved-byte
-  (let [sentinel (js-obj)
-        previous (if (.hasOwnProperty wasm/serializers "annotation-clearance")
-                   (unchecked-get wasm/serializers "annotation-clearance")
-                   sentinel)]
-    (try
-      (aset wasm/serializers "annotation-clearance" #js {"none" 0 "auto" 1})
-      (let [buffer (js/ArrayBuffer. 256)
-            dview  (js/DataView. buffer)
-            span   {:text "漢字"
-                    :font-size "16"
-                    :font-weight "400"
-                    :annotation-clearance "auto"}
-            paragraph {:font-size "16"
-                       :font-weight "400"
-                       :line-height "1"}]
-        (write-spans 0 dview [span] paragraph)
-        (t/is (= 1 (.getUint8 dview 9)))
-        (t/is (= 0 (.getUint8 dview 14)))
-        (t/is (= 0 (.getUint8 dview 15))))
-      (finally
-        (if (identical? sentinel previous)
-          (js-delete wasm/serializers "annotation-clearance")
-          (aset wasm/serializers "annotation-clearance" previous))))))
+(def ^:private span-paragraph
+  {:font-size "16" :font-weight "400" :line-height "1"})
 
-(t/deftest write-spans-serializes-ruby-customization-bytes
-  (let [buffer (js/ArrayBuffer. 256)
-        dview  (js/DataView. buffer)
-        span   {:text "漢字"
-                :font-size "16"
-                :font-weight "400"
-                :ruby-size "quarter"
-                :ruby-align "space-between"
-                :ruby-overhang "none"
-                :ruby-side "under"}
-        paragraph {:font-size "16"
-                   :font-weight "400"
-                   :line-height "1"}]
-    (write-spans 0 dview [span] paragraph)
-    (t/is (= [2 3 1 1 0 0]
-             (mapv #(.getUint8 dview %) (range 10 16))))))
+(defn- serialized-span
+  "DataView over the attribute block `write-spans` produces for `span`."
+  [span]
+  (let [dview (js/DataView. (js/ArrayBuffer. 256))]
+    (write-spans 0 dview [(merge {:font-size "16" :font-weight "400"} span)] span-paragraph)
+    dview))
 
-(t/deftest write-spans-omits-hidden-ruby-bytes
-  (let [buffer    (js/ArrayBuffer. 256)
-        dview     (js/DataView. buffer)
-        paragraph {:font-size "16"
-                   :font-weight "400"
-                   :line-height "1"}]
-    (write-spans 0 dview [{:text "日"
-                           :ruby "にち"
-                           :ruby-hidden true
-                           :font-size "16"
-                           :font-weight "400"}]
-                 paragraph)
-    (t/is (= 0 (.getInt32 dview 72 true)))
-    (write-spans 0 dview [{:text "日"
-                           :ruby "にち"
-                           :ruby-hidden false
-                           :font-size "16"
-                           :font-weight "400"}]
-                 paragraph)
-    (t/is (pos? (.getInt32 dview 72 true)))))
+(defn- span-byte
+  [dview attr]
+  (.getUint8 dview (get span-attr-offset attr)))
+
+(defn- padding-bytes
+  [dview]
+  (mapv #(.getUint8 dview %) (:padding span-attr-offset)))
+
+(t/deftest write-spans-serializes-font-features
+  (let [dview (serialized-span {:text "日本語" :font-features "vpal"})]
+    (t/is (= 2 (span-byte dview :font-features)))
+    (t/is (= 0 (span-byte dview :annotation-clearance)))
+    (t/is (= [0 0] (padding-bytes dview)))))
+
+(t/deftest write-spans-serializes-annotation-clearance
+  (let [dview (serialized-span {:text "漢字" :annotation-clearance "auto"})]
+    (t/is (= 1 (span-byte dview :annotation-clearance)))
+    (t/is (= [0 0] (padding-bytes dview)))))
+
+(t/deftest write-spans-serializes-ruby-customization
+  (let [dview (serialized-span {:text "漢字"
+                                :ruby-size "quarter"
+                                :ruby-align "space-between"
+                                :ruby-overhang "none"
+                                :ruby-side "under"})]
+    (t/is (= [2 3 1 1]
+             (mapv #(span-byte dview %) [:ruby-size :ruby-align :ruby-overhang :ruby-side])))
+    (t/is (= [0 0] (padding-bytes dview)))))
+
+(t/deftest write-spans-omits-hidden-ruby
+  (let [ruby-length #(.getInt32 % (:ruby-length span-attr-offset) true)]
+    (t/is (= 0 (ruby-length (serialized-span {:text "日" :ruby "にち" :ruby-hidden true}))))
+    (t/is (pos? (ruby-length (serialized-span {:text "日" :ruby "にち" :ruby-hidden false}))))))
 
 (t/deftest write-spans-serializes-counted-digits-tcy
-  (let [sentinel (js-obj)
-        previous (if (.hasOwnProperty wasm/serializers "text-combine-upright")
-                   (unchecked-get wasm/serializers "text-combine-upright")
-                   sentinel)]
-    (try
-      (aset wasm/serializers "text-combine-upright"
-            #js {"none" 0 "all" 1 "digits" 2 "digits2" 3 "digits3" 4})
-      (let [buffer (js/ArrayBuffer. 256)
-            dview  (js/DataView. buffer)
-            span   {:text "平成31年"
-                    :font-size "16"
-                    :font-weight "400"
-                    :text-combine-upright "digits2"}
-            paragraph {:font-size "16"
-                       :font-weight "400"
-                       :line-height "1"}]
-        (write-spans 0 dview [span] paragraph)
-        ;; Byte 5 of the span attr block carries text-combine-upright.
-        (t/is (= 3 (.getUint8 dview 5))))
-      (finally
-        (if (identical? sentinel previous)
-          (js-delete wasm/serializers "text-combine-upright")
-          (aset wasm/serializers "text-combine-upright" previous))))))
+  (let [dview (serialized-span {:text "平成31年" :text-combine-upright "digits2"})]
+    (t/is (= 3 (span-byte dview :text-combine-upright)))))
 
 (t/deftest ruby-text-participates-in-live-and-reload-fallback-discovery
   (let [content {:children

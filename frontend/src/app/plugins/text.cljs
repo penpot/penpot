@@ -13,6 +13,7 @@
    [app.common.schema :as sm]
    [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -102,23 +103,56 @@
         result))))
 
 (def ^:private japanese-range-defaults
-  {:text-combine-upright "none"
-   :text-emphasis        "none"
-   :ruby                 nil
-   :ruby-size            "half"
-   :ruby-align           "space-around"
-   :ruby-overhang        "auto"
-   :ruby-side            "over"
-   :warichu              "none"
-   :font-features        "none"
-   :annotation-clearance "none"})
+  ;; A range without ruby reports null to plugins.
+  (assoc jl/span-attr-defaults :ruby nil))
 
 (defn- range-japanese-value
-  [range-data attr]
+  "Value of a Japanese span `attr` over a text range proxy's characters."
+  [range-proxy start end attr]
   (let [default (get japanese-range-defaults attr)]
-    (->> range-data
+    (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
          (map #(get % attr default))
          (u/mixed-value))))
+
+(defn- enum-value?
+  "Validator accepting the strings fully matched by `re`."
+  [re]
+  (fn [value]
+    (and (string? value) (some? (re-matches re value)))))
+
+(defn- optional-string?
+  [value]
+  (or (nil? value) (string? value)))
+
+(defn- attr-setter
+  "Property setter that checks `valid?` and the plugin's write access before
+   emitting `(update-event self attrs)` with `{attr value}`."
+  [plugin-id page-id prop attr valid? update-event]
+  (fn [self value]
+    (cond
+      (not (valid? value))
+      (u/not-valid plugin-id prop value)
+
+      (not (r/check-permission plugin-id "content:write"))
+      (u/not-valid plugin-id prop "Plugin doesn't have 'content:write' permission")
+
+      (not (u/page-active? page-id))
+      (u/not-valid plugin-id prop "Cannot modify a page that is not currently active")
+
+      :else
+      (st/emit! (update-event self {attr value})))))
+
+(defn- range-attr-setter
+  "Setter of a span attribute over the characters [start, end) of shape `id`."
+  [plugin-id page-id id start end prop attr valid?]
+  (attr-setter plugin-id page-id prop attr valid?
+               (fn [_ attrs] (dwt/update-text-range id start end attrs))))
+
+(defn- shape-attr-setter
+  "Setter of a text attribute over the whole text shape."
+  [plugin-id page-id prop attr valid?]
+  (attr-setter plugin-id page-id prop attr valid?
+               (fn [self attrs] (dwt/update-attrs (obj/get self "$id") attrs))))
 
 (defn text-range-proxy?
   [range]
@@ -394,223 +428,53 @@
 
     :fontFeatures
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :font-features)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches font-features-re value)))
-         (u/not-valid plugin-id :fontFeatures value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :fontFeatures "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :fontFeatures "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:font-features value}))))}
+     :get (fn [self] (range-japanese-value self start end :font-features))
+     :set (range-attr-setter plugin-id page-id id start end :fontFeatures :font-features (enum-value? font-features-re))}
 
     :textCombineUpright
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :text-combine-upright)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches text-combine-upright-re value)))
-         (u/not-valid plugin-id :textCombineUpright value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :textCombineUpright "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :textCombineUpright "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:text-combine-upright value}))))}
+     :get (fn [self] (range-japanese-value self start end :text-combine-upright))
+     :set (range-attr-setter plugin-id page-id id start end :textCombineUpright :text-combine-upright (enum-value? text-combine-upright-re))}
 
     :textEmphasis
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :text-emphasis)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches text-emphasis-re value)))
-         (u/not-valid plugin-id :textEmphasis value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :textEmphasis "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :textEmphasis "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:text-emphasis value}))))}
+     :get (fn [self] (range-japanese-value self start end :text-emphasis))
+     :set (range-attr-setter plugin-id page-id id start end :textEmphasis :text-emphasis (enum-value? text-emphasis-re))}
 
     :warichu
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :warichu)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches warichu-re value)))
-         (u/not-valid plugin-id :warichu value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :warichu "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :warichu "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:warichu value}))))}
+     :get (fn [self] (range-japanese-value self start end :warichu))
+     :set (range-attr-setter plugin-id page-id id start end :warichu :warichu (enum-value? warichu-re))}
 
     :annotationClearance
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :annotation-clearance)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches annotation-clearance-re value)))
-         (u/not-valid plugin-id :annotationClearance value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :annotationClearance "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :annotationClearance "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:annotation-clearance value}))))}
+     :get (fn [self] (range-japanese-value self start end :annotation-clearance))
+     :set (range-attr-setter plugin-id page-id id start end :annotationClearance :annotation-clearance (enum-value? annotation-clearance-re))}
 
     :ruby
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :ruby)))
-     :set
-     (fn [_ value]
-       (cond
-         (and (some? value) (not (string? value)))
-         (u/not-valid plugin-id :ruby value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :ruby "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :ruby "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:ruby value}))))}
+     :get (fn [self] (range-japanese-value self start end :ruby))
+     :set (range-attr-setter plugin-id page-id id start end :ruby :ruby optional-string?)}
 
     :rubySize
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :ruby-size)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches ruby-size-re value)))
-         (u/not-valid plugin-id :rubySize value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :rubySize "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :rubySize "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:ruby-size value}))))}
+     :get (fn [self] (range-japanese-value self start end :ruby-size))
+     :set (range-attr-setter plugin-id page-id id start end :rubySize :ruby-size (enum-value? ruby-size-re))}
 
     :rubyAlign
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :ruby-align)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches ruby-align-re value)))
-         (u/not-valid plugin-id :rubyAlign value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :rubyAlign "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :rubyAlign "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:ruby-align value}))))}
+     :get (fn [self] (range-japanese-value self start end :ruby-align))
+     :set (range-attr-setter plugin-id page-id id start end :rubyAlign :ruby-align (enum-value? ruby-align-re))}
 
     :rubyOverhang
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :ruby-overhang)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches ruby-overhang-re value)))
-         (u/not-valid plugin-id :rubyOverhang value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :rubyOverhang "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :rubyOverhang "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:ruby-overhang value}))))}
+     :get (fn [self] (range-japanese-value self start end :ruby-overhang))
+     :set (range-attr-setter plugin-id page-id id start end :rubyOverhang :ruby-overhang (enum-value? ruby-overhang-re))}
 
     :rubySide
     {:this true
-     :get
-     (fn [self]
-       (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
-         (range-japanese-value range-data :ruby-side)))
-     :set
-     (fn [_ value]
-       (cond
-         (or (not (string? value)) (not (re-matches ruby-side-re value)))
-         (u/not-valid plugin-id :rubySide value)
-
-         (not (r/check-permission plugin-id "content:write"))
-         (u/not-valid plugin-id :rubySide "Plugin doesn't have 'content:write' permission")
-
-         (not (u/page-active? page-id))
-         (u/not-valid plugin-id :rubySide "Cannot modify a page that is not currently active")
-
-         :else
-         (st/emit! (dwt/update-text-range id start end {:ruby-side value}))))}
+     :get (fn [self] (range-japanese-value self start end :ruby-side))
+     :set (range-attr-setter plugin-id page-id id start end :rubySide :ruby-side (enum-value? ruby-side-re))}
 
     :direction
     {:this true
@@ -1008,207 +872,51 @@
 
      {:name "writingMode"
       :get #(-> % u/proxy->shape text-props :writing-mode format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches writing-mode-re value)))
-            (u/not-valid plugin-id :writingMode value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :writingMode "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :writingMode "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:writing-mode value})))))}
+      :set (shape-attr-setter plugin-id page-id :writingMode :writing-mode (enum-value? writing-mode-re))}
 
      {:name "textOrientation"
       :get #(-> % u/proxy->shape text-props :text-orientation format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches text-orientation-re value)))
-            (u/not-valid plugin-id :textOrientation value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :textOrientation "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :textOrientation "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:text-orientation value})))))}
+      :set (shape-attr-setter plugin-id page-id :textOrientation :text-orientation (enum-value? text-orientation-re))}
 
      {:name "textCombineUpright"
       :get #(-> % u/proxy->shape text-props :text-combine-upright format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches text-combine-upright-re value)))
-            (u/not-valid plugin-id :textCombineUpright value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :textCombineUpright "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :textCombineUpright "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:text-combine-upright value})))))}
+      :set (shape-attr-setter plugin-id page-id :textCombineUpright :text-combine-upright (enum-value? text-combine-upright-re))}
 
      {:name "textEmphasis"
       :get #(-> % u/proxy->shape text-props :text-emphasis format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches text-emphasis-re value)))
-            (u/not-valid plugin-id :textEmphasis value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :textEmphasis "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :textEmphasis "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:text-emphasis value})))))}
+      :set (shape-attr-setter plugin-id page-id :textEmphasis :text-emphasis (enum-value? text-emphasis-re))}
 
      {:name "warichu"
       :get #(-> % u/proxy->shape text-props :warichu format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches warichu-re value)))
-            (u/not-valid plugin-id :warichu value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :warichu "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :warichu "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:warichu value})))))}
+      :set (shape-attr-setter plugin-id page-id :warichu :warichu (enum-value? warichu-re))}
 
      {:name "fontFeatures"
       :get #(-> % u/proxy->shape text-props :font-features format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches font-features-re value)))
-            (u/not-valid plugin-id :fontFeatures value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :fontFeatures "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :fontFeatures "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:font-features value})))))}
+      :set (shape-attr-setter plugin-id page-id :fontFeatures :font-features (enum-value? font-features-re))}
 
      {:name "annotationClearance"
       :get #(-> % u/proxy->shape text-props :annotation-clearance format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches annotation-clearance-re value)))
-            (u/not-valid plugin-id :annotationClearance value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :annotationClearance "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :annotationClearance "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:annotation-clearance value})))))}
+      :set (shape-attr-setter plugin-id page-id :annotationClearance :annotation-clearance (enum-value? annotation-clearance-re))}
 
      {:name "ruby"
       :get #(-> % u/proxy->shape text-props :ruby format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (and (some? value) (not (string? value)))
-            (u/not-valid plugin-id :ruby value)
-
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :ruby "Plugin doesn't have 'content:write' permission")
-
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :ruby "Cannot modify a page that is not currently active")
-
-            :else
-            (st/emit! (dwt/update-attrs id {:ruby value})))))}
+      :set (shape-attr-setter plugin-id page-id :ruby :ruby optional-string?)}
 
      {:name "rubySize"
       :get #(-> % u/proxy->shape text-props :ruby-size format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches ruby-size-re value)))
-            (u/not-valid plugin-id :rubySize value)
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :rubySize "Plugin doesn't have 'content:write' permission")
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :rubySize "Cannot modify a page that is not currently active")
-            :else
-            (st/emit! (dwt/update-attrs id {:ruby-size value})))))}
+      :set (shape-attr-setter plugin-id page-id :rubySize :ruby-size (enum-value? ruby-size-re))}
 
      {:name "rubyAlign"
       :get #(-> % u/proxy->shape text-props :ruby-align format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches ruby-align-re value)))
-            (u/not-valid plugin-id :rubyAlign value)
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :rubyAlign "Plugin doesn't have 'content:write' permission")
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :rubyAlign "Cannot modify a page that is not currently active")
-            :else
-            (st/emit! (dwt/update-attrs id {:ruby-align value})))))}
+      :set (shape-attr-setter plugin-id page-id :rubyAlign :ruby-align (enum-value? ruby-align-re))}
 
      {:name "rubyOverhang"
       :get #(-> % u/proxy->shape text-props :ruby-overhang format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches ruby-overhang-re value)))
-            (u/not-valid plugin-id :rubyOverhang value)
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :rubyOverhang "Plugin doesn't have 'content:write' permission")
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :rubyOverhang "Cannot modify a page that is not currently active")
-            :else
-            (st/emit! (dwt/update-attrs id {:ruby-overhang value})))))}
+      :set (shape-attr-setter plugin-id page-id :rubyOverhang :ruby-overhang (enum-value? ruby-overhang-re))}
 
      {:name "rubySide"
       :get #(-> % u/proxy->shape text-props :ruby-side format/format-mixed)
-      :set
-      (fn [self value]
-        (let [id (obj/get self "$id")]
-          (cond
-            (or (not (string? value)) (not (re-matches ruby-side-re value)))
-            (u/not-valid plugin-id :rubySide value)
-            (not (r/check-permission plugin-id "content:write"))
-            (u/not-valid plugin-id :rubySide "Plugin doesn't have 'content:write' permission")
-            (not (u/page-active? page-id))
-            (u/not-valid plugin-id :rubySide "Cannot modify a page that is not currently active")
-            :else
-            (st/emit! (dwt/update-attrs id {:ruby-side value})))))}
+      :set (shape-attr-setter plugin-id page-id :rubySide :ruby-side (enum-value? ruby-side-re))}
 
      {:name "textBounds"
       :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)})))

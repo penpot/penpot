@@ -11,6 +11,7 @@
    [app.main.ui.ds.controls.select :as select]
    [app.main.ui.shapes.text.html-text :as html-text]
    [app.main.ui.shapes.text.styles :as text-styles]
+   [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -29,11 +30,6 @@
    :font-features
    :annotation-clearance])
 
-(def ^:private radio-selected @#'tjl/radio-selected)
-(def ^:private span-input-value @#'tjl/span-input-value)
-(def ^:private span-select-value @#'tjl/span-select-value)
-(def ^:private with-mixed-span-option @#'tjl/with-mixed-span-option)
-(def ^:private ruby-common-props @#'tjl/ruby-common-props)
 
 (t/deftest japanese-layout-controls-follow-file-or-profile-configuration
   (t/is (false? (tjl/japanese-layout-config-enabled? {} {})))
@@ -105,13 +101,6 @@
     (t/is (str/includes? markup ">日</span>"))
     (t/is (not (str/includes? markup "<ruby")))))
 
-(t/deftest advanced-furigana-options-preserve-change-callbacks
-  (let [on-change identity
-        on-blur   identity
-        props     (ruby-common-props {} on-change on-blur)]
-    (t/is (identical? on-change (unchecked-get props "onChange")))
-    (t/is (identical? on-blur (unchecked-get props "onBlur")))))
-
 (t/deftest shape-level-furigana-presentation-only-updates-ruby-spans
   (let [shape   {:content
                  {:type "root"
@@ -140,15 +129,19 @@
     (t/is (= "quarter" (:ruby-size (second spans))))
     (t/is (false? (:ruby-hidden (second spans))))))
 
-(t/deftest mixed-japanese-span-values-have-distinct-control-states
-  (let [options (with-mixed-span-option
-                  (tjl/text-emphasis-options identity)
-                  :multiple)]
-    (t/is (= "mixed" (span-select-value :multiple "none")))
-    (t/is (= "mixed" (span-input-value :multiple)))
+(t/deftest mixed-span-values-select-a-disabled-mixed-option
+  (let [options (tjl/with-mixed-span-option (tjl/text-emphasis-options identity) :multiple)]
+    (t/is (= "mixed" (tjl/span-select-value :multiple "none")))
+    (t/is (= "none" (tjl/span-select-value nil "none")))
     (t/is (= "mixed" (:id (last options))))
     (t/is (true? (:disabled (last options))))
-    (t/is (= "" (radio-selected :multiple "none")))))
+    (t/is (= options (tjl/with-mixed-span-option options "none"))
+          "an unmixed value adds no entry")))
+
+(t/deftest mixed-radio-values-select-nothing
+  (t/is (= "" (radio-selected :multiple "none")))
+  (t/is (= "none" (radio-selected nil "none")))
+  (t/is (= "vertical-rl" (radio-selected :vertical-rl))))
 
 (t/deftest whole-text-selection-reports-every-differing-span-value-as-mixed
   (let [shape {:content

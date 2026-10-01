@@ -697,29 +697,16 @@
   [para]
   (apply + (map (fn [span] (count (:text span))) (:children para))))
 
-(def ^:private japanese-span-style-defaults
-  "Explicit UI defaults for Japanese span attributes. These values must be
-   present in every selection snapshot so moving onto an unstyled span clears
-   the previous span's controls instead of leaving stale values behind."
-  {:text-combine-upright "none"
-   :text-emphasis        "none"
-   :ruby                 ""
-   :ruby-hidden          false
-   :ruby-size            "half"
-   :ruby-align           "space-around"
-   :ruby-overhang        "auto"
-   :ruby-side            "over"
-   :warichu              "none"
-   :font-features        "none"
-   :annotation-clearance "none"})
-
 (defn- span-japanese-styles
+  "Japanese span attributes with their defaults filled in. Every selection
+   snapshot carries all of them, so moving onto an unstyled span clears the
+   previous span's controls instead of leaving stale values behind."
   [span]
   (reduce-kv
    (fn [styles attr default]
      (assoc styles attr (or (get span attr) default)))
    {}
-   japanese-span-style-defaults))
+   jl/span-attr-defaults))
 
 (defn- merge-selection-styles
   [result styles]

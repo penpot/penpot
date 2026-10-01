@@ -302,78 +302,58 @@
   [text-direction]
   (untranslate "text-direction" text-direction "ltr"))
 
+(defn- translate-enum
+  "Wasm discriminant of the `id` enum variant named `value`, falling back to
+   the `default` variant. 0 when the enum is not exported."
+  [id value default]
+  (if-let [values (unchecked-get wasm/serializers id)]
+    (d/nilv (unchecked-get values (d/name value))
+            (unchecked-get values default))
+    0))
+
 (defn translate-writing-mode
-  [writing-mode]
-  (let [values (unchecked-get wasm/serializers "writing-mode")
-        default (unchecked-get values "horizontal-tb")]
-    (d/nilv (unchecked-get values (d/name writing-mode)) default)))
+  [value]
+  (translate-enum "writing-mode" value "horizontal-tb"))
 
 (defn translate-text-orientation
-  [text-orientation]
-  (let [values (unchecked-get wasm/serializers "text-orientation")
-        default (unchecked-get values "mixed")]
-    (d/nilv (unchecked-get values (d/name text-orientation)) default)))
+  [value]
+  (translate-enum "text-orientation" value "mixed"))
 
 (defn translate-text-combine-upright
-  [text-combine-upright]
-  (let [values (unchecked-get wasm/serializers "text-combine-upright")
-        default (unchecked-get values "none")]
-    (d/nilv (unchecked-get values (d/name text-combine-upright)) default)))
+  [value]
+  (translate-enum "text-combine-upright" value "none"))
 
 (defn translate-text-emphasis
-  [text-emphasis]
-  (let [values (unchecked-get wasm/serializers "text-emphasis")
-        default (unchecked-get values "none")]
-    (d/nilv (unchecked-get values (d/name text-emphasis)) default)))
+  [value]
+  (translate-enum "text-emphasis" value "none"))
 
 (defn translate-warichu
-  [warichu]
-  (let [values (unchecked-get wasm/serializers "warichu")
-        default (unchecked-get values "none")]
-    (d/nilv (unchecked-get values (d/name warichu)) default)))
+  [value]
+  (translate-enum "warichu" value "none"))
 
 (defn translate-font-features
-  [font-features]
-  (if-let [values (unchecked-get wasm/serializers "font-features")]
-    (let [default (unchecked-get values "none")]
-      (d/nilv (unchecked-get values (d/name font-features)) default))
-    0))
+  [value]
+  (translate-enum "font-features" value "none"))
 
 (defn translate-annotation-clearance
-  [annotation-clearance]
-  (if-let [values (unchecked-get wasm/serializers "annotation-clearance")]
-    (let [default (unchecked-get values "none")]
-      (d/nilv (unchecked-get values (d/name annotation-clearance)) default))
-    0))
+  [value]
+  (translate-enum "annotation-clearance" value "none"))
 
 (defn translate-ruby-size
   [value]
-  (if-let [values (unchecked-get wasm/serializers "ruby-size")]
-    (let [default (unchecked-get values "half")]
-      (d/nilv (unchecked-get values (d/name value)) default))
-    0))
+  (translate-enum "ruby-size" value "half"))
 
 (defn translate-ruby-align
   [value]
-  (if-let [values (unchecked-get wasm/serializers "ruby-align")]
-    (let [default (unchecked-get values "space-around")]
-      (d/nilv (unchecked-get values (d/name value)) default))
-    0))
+  (translate-enum "ruby-align" value "space-around"))
 
 (defn translate-ruby-overhang
   [value]
-  (if-let [values (unchecked-get wasm/serializers "ruby-overhang")]
-    (let [default (unchecked-get values "auto")]
-      (d/nilv (unchecked-get values (d/name value)) default))
-    0))
+  (translate-enum "ruby-overhang" value "auto"))
 
 (defn translate-ruby-side
   [value]
-  (if-let [values (unchecked-get wasm/serializers "ruby-side")]
-    (let [default (unchecked-get values "over")]
-      (d/nilv (unchecked-get values (d/name value)) default))
-    0))
-
+  (translate-enum "ruby-side" value "over"))
 
 (defn translate-font-style
   [font-style]

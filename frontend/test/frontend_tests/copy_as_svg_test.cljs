@@ -38,223 +38,44 @@
   [re s]
   (count (re-seq re s)))
 
-(defn- setup-vertical-text
-  []
-  (let [shape   (-> (cts/setup-shape {:type :text
-                                      :x 10
-                                      :y 20
-                                      :width 40
-                                      :height 100})
-                    (assoc :name "Vertical text"
-                           :position-data
-                           [{:x 20
-                             :y 100
-                             :width 24
-                             :height 80
-                             :fills [{:fill-color "#112233"
-                                      :fill-opacity 1}]
-                             :font-family "Noto Sans CJK JP"
-                             :font-size "20"
-                             :font-weight "400"
-                             :writing-mode "vertical-rl"
-                             :text-orientation "upright"
-                             :font-features "vpal"
-                             :text "うA"}]))
+(def ^:private strip-defaults
+  {:fills [{:fill-color "#112233" :fill-opacity 1}]
+   :font-family "Noto Sans CJK JP"
+   :font-size "20"
+   :font-weight "400"})
+
+(defn- setup-text
+  "A text shape whose single position-data strip is `strip` (over
+  `strip-defaults`), with its objects and selection."
+  [{:keys [width height]} strip]
+  (let [shape   (-> (cts/setup-shape {:type :text :x 10 :y 20 :width width :height height})
+                    (assoc :name "Text"
+                           :position-data [(merge strip-defaults strip)]))
         file    (cths/add-sample-shape
                  (cthf/sample-file :file1 :page-label :page1)
-                 :vertical-text
+                 :text
                  shape)
-        page    (cthf/current-page file)
-        objects (:objects page)]
+        objects (:objects (cthf/current-page file))]
     {:objects objects
-     :shapes [(get objects (cthi/id :vertical-text))]}))
+     :shapes [(get objects (cthi/id :text))]}))
 
-(defn- setup-vertical-ruby-text
-  []
-  (let [shape   (-> (cts/setup-shape {:type :text
-                                      :x 10
-                                      :y 20
-                                      :width 60
-                                      :height 100})
-                    (assoc :name "Vertical ruby text"
-                           :position-data
-                           [{:x 20
-                             :y 100
-                             :width 24
-                             :height 80
-                             :fills [{:fill-color "#112233"
-                                      :fill-opacity 1}]
-                             :font-family "Noto Sans CJK JP"
-                             :font-size "20"
-                             :font-weight "400"
-                             :writing-mode "vertical-rl"
-                             :text-orientation "upright"
-                             :text "漢字"
-                             :ruby "かんじ"}]))
-        file    (cths/add-sample-shape
-                 (cthf/sample-file :file1 :page-label :page1)
-                 :vertical-ruby-text
-                 shape)
-        page    (cthf/current-page file)
-        objects (:objects page)]
-    {:objects objects
-     :shapes [(get objects (cthi/id :vertical-ruby-text))]}))
+(defn- vertical-strip
+  [attrs]
+  (merge {:x 20 :y 100 :width 24 :height 80
+          :writing-mode "vertical-rl"
+          :text-orientation "upright"}
+         attrs))
 
-(defn- setup-vertical-emphasis-text
-  []
-  (let [shape   (-> (cts/setup-shape {:type :text
-                                      :x 10
-                                      :y 20
-                                      :width 60
-                                      :height 100})
-                    (assoc :name "Vertical emphasis text"
-                           :position-data
-                           [{:x 20
-                             :y 100
-                             :width 24
-                             :height 80
-                             :fills [{:fill-color "#112233"
-                                      :fill-opacity 1}]
-                             :font-family "Noto Sans CJK JP"
-                             :font-size "20"
-                             :font-weight "400"
-                             :writing-mode "vertical-rl"
-                             :text-orientation "upright"
-                             :text "強調 あ"
-                             :text-emphasis "filled-dot"}]))
-        file    (cths/add-sample-shape
-                 (cthf/sample-file :file1 :page-label :page1)
-                 :vertical-emphasis-text
-                 shape)
-        page    (cthf/current-page file)
-        objects (:objects page)]
-    {:objects objects
-     :shapes [(get objects (cthi/id :vertical-emphasis-text))]}))
-
-(defn- setup-horizontal-emphasis-text
-  []
-  (let [shape   (-> (cts/setup-shape {:type :text
-                                      :x 10
-                                      :y 20
-                                      :width 120
-                                      :height 40})
-                    (assoc :name "Horizontal emphasis text"
-                           :position-data
-                           [{:x 20
-                             :y 60
-                             :width 100
-                             :height 20
-                             :fills [{:fill-color "#112233"
-                                      :fill-opacity 1}]
-                             :font-family "Noto Sans CJK JP"
-                             :font-size "20"
-                             :font-weight "400"
-                             :writing-mode "horizontal-tb"
-                             :text "強調、 あ"
-                             :text-emphasis "filled-dot"}]))
-        file    (cths/add-sample-shape
-                 (cthf/sample-file :file1 :page-label :page1)
-                 :horizontal-emphasis-text
-                 shape)
-        page    (cthf/current-page file)
-        objects (:objects page)]
-    {:objects objects
-     :shapes [(get objects (cthi/id :horizontal-emphasis-text))]}))
-
-(defn- setup-horizontal-stacked-annotations
-  []
-  (let [shape (-> (cts/setup-shape {:type :text
-                                    :x 10
-                                    :y 20
-                                    :width 120
-                                    :height 40})
-                  (assoc :name "Horizontal stacked annotations"
-                         :position-data
-                         [{:x 20
-                           :y 60
-                           :width 100
-                           :height 20
-                           :fills [{:fill-color "#112233" :fill-opacity 1}]
-                           :font-family "Noto Sans CJK JP"
-                           :font-size "20"
-                           :font-weight "400"
-                           :writing-mode "horizontal-tb"
-                           :text "漢字"
-                           :ruby "かんじ"
-                           :text-emphasis "filled-dot"
-                           :annotation-clearance "auto"
-                           :annotation-has-ruby true}]))
-        file (cths/add-sample-shape
-              (cthf/sample-file :file1 :page-label :page1)
-              :horizontal-stacked-annotations
-              shape)
-        page (cthf/current-page file)
-        objects (:objects page)]
-    {:objects objects
-     :shapes [(get objects (cthi/id :horizontal-stacked-annotations))]}))
+(defn- horizontal-strip
+  [attrs]
+  (merge {:x 20 :y 60 :width 100 :height 20
+          :writing-mode "horizontal-tb"}
+         attrs))
 
 (defn- setup-vertical-warichu-text
-  ([] (setup-vertical-warichu-text "割注入り"))
-  ([text]
-   (let [shape   (-> (cts/setup-shape {:type :text
-                                       :x 10
-                                       :y 20
-                                       :width 60
-                                       :height 100})
-                     (assoc :name "Vertical warichu text"
-                            :position-data
-                            [{:x 20
-                              :y 100
-                              :width 24
-                              :height 40
-                              :fills [{:fill-color "#112233"
-                                       :fill-opacity 1}]
-                              :font-family "Noto Sans CJK JP"
-                              :font-size "20"
-                              :font-weight "400"
-                              :writing-mode "vertical-rl"
-                              :text-orientation "upright"
-                              :text text
-                              :warichu "warichu"}]))
-         file    (cths/add-sample-shape
-                  (cthf/sample-file :file1 :page-label :page1)
-                  :vertical-warichu-text
-                  shape)
-         page    (cthf/current-page file)
-         objects (:objects page)]
-     {:objects objects
-      :shapes [(get objects (cthi/id :vertical-warichu-text))]})))
-
-(defn- setup-horizontal-warichu-text
-  ([] (setup-horizontal-warichu-text "割注入り"))
-  ([text]
-   (let [shape   (-> (cts/setup-shape {:type :text
-                                       :x 10
-                                       :y 20
-                                       :width 120
-                                       :height 40})
-                     (assoc :name "Horizontal warichu text"
-                            :position-data
-                            [{:x 20
-                              :y 60
-                              :width 40
-                              :height 20
-                              :fills [{:fill-color "#112233"
-                                       :fill-opacity 1}]
-                              :font-family "Noto Sans CJK JP"
-                              :font-size "20"
-                              :font-weight "400"
-                              :writing-mode "horizontal-tb"
-                              :text text
-                              :warichu "warichu"}]))
-         file    (cths/add-sample-shape
-                  (cthf/sample-file :file1 :page-label :page1)
-                  :horizontal-warichu-text
-                  shape)
-         page    (cthf/current-page file)
-         objects (:objects page)]
-     {:objects objects
-      :shapes [(get objects (cthi/id :horizontal-warichu-text))]})))
+  [text]
+  (setup-text {:width 60 :height 100}
+              (vertical-strip {:height 40 :text text :warichu "warichu"})))
 
 (deftest empty-selection-yields-empty-string
   (is (= "" (svg/generate-markup {} []))))
@@ -281,7 +102,8 @@
 
 (deftest vertical-text-svg-preserves-browser-layout-properties
   (testing "Static SVG carries the vertical writing properties used by browser exports"
-    (let [{:keys [objects shapes]} (setup-vertical-text)
+    (let [{:keys [objects shapes]} (setup-text {:width 40 :height 100}
+                                               (vertical-strip {:font-features "vpal" :text "うA"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"writing-mode:vertical-rl" markup))
       (is (re-find #"text-orientation:upright" markup))
@@ -291,7 +113,8 @@
 
 (deftest vertical-emphasis-svg-emits-static-marks
   (testing "Static SVG draws emphasis marks and skips whitespace characters"
-    (let [{:keys [objects shapes]} (setup-vertical-emphasis-text)
+    (let [{:keys [objects shapes]} (setup-text {:width 60 :height 100}
+                                               (vertical-strip {:text "強調 あ" :text-emphasis "filled-dot"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"強調 あ" markup))
       ;; 4 base chars: mark, mark, space (whitespace keeps its slot), mark.
@@ -301,7 +124,8 @@
 
 (deftest horizontal-emphasis-svg-emits-static-marks-above-the-text
   (testing "Static SVG draws horizontal emphasis and excludes punctuation and whitespace"
-    (let [{:keys [objects shapes]} (setup-horizontal-emphasis-text)
+    (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
+                                               (horizontal-strip {:text "強調、 あ" :text-emphasis "filled-dot"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"強調、 あ" markup))
       ;; Five Unicode base characters: two marks, punctuation and whitespace
@@ -317,7 +141,12 @@
 
 (deftest horizontal-auto-clearance-stacks-emphasis-outside-ruby
   (testing "Static SVG keeps ruby nearest the base and offsets emphasis by another half-em"
-    (let [{:keys [objects shapes]} (setup-horizontal-stacked-annotations)
+    (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
+                                               (horizontal-strip {:text "漢字"
+                                                                  :ruby "かんじ"
+                                                                  :text-emphasis "filled-dot"
+                                                                  :annotation-clearance "auto"
+                                                                  :annotation-has-ruby true}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"かんじ" markup))
       (is (re-find #"••" markup))
@@ -326,7 +155,7 @@
 
 (deftest vertical-warichu-svg-emits-two-sub-columns
   (testing "Static SVG splits a warichu strip into two half-size sub-columns"
-    (let [{:keys [objects shapes]} (setup-vertical-warichu-text)
+    (let [{:keys [objects shapes]} (setup-vertical-warichu-text "割注入り")
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"割注" markup))
       (is (re-find #"入り" markup))
@@ -354,7 +183,8 @@
 
 (deftest horizontal-warichu-svg-emits-two-stacked-sub-lines
   (testing "Static SVG splits horizontal warichu into top and bottom half-size lines"
-    (let [{:keys [objects shapes]} (setup-horizontal-warichu-text)
+    (let [{:keys [objects shapes]} (setup-text {:width 120 :height 40}
+                                               (horizontal-strip {:width 40 :text "割注入り" :warichu "warichu"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"割注" markup))
       (is (re-find #"入り" markup))
@@ -365,7 +195,8 @@
 
 (deftest vertical-ruby-svg-emits-static-annotation
   (testing "Static SVG keeps ruby visible without falling back to foreignObject"
-    (let [{:keys [objects shapes]} (setup-vertical-ruby-text)
+    (let [{:keys [objects shapes]} (setup-text {:width 60 :height 100}
+                                               (vertical-strip {:text "漢字" :ruby "かんじ"}))
           markup (svg/generate-markup objects shapes)]
       (is (re-find #"漢字" markup))
       (is (re-find #"かんじ" markup))

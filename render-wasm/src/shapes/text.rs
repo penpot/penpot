@@ -575,9 +575,7 @@ impl TextContent {
                 .iter()
                 .flat_map(|p| p.children())
                 .any(|span| {
-                    span.warichu
-                        || !span.ruby.trim().is_empty()
-                        || span.text_emphasis.mark_char().is_some()
+                    span.warichu || span.has_ruby() || span.text_emphasis.mark_char().is_some()
                 })
     }
 
@@ -798,8 +796,7 @@ impl TextContent {
         // arrives selrect-local; the content block is right-anchored.
         if self.is_vertical() {
             let bounds = self.bounds();
-            let max_height = super::text_vertical::wrap_height(self, bounds.height());
-            let layout = super::text_vertical::layout_from_content(self, max_height);
+            let layout = super::text_vertical::layout_for_box(self, bounds.height());
             let cx = point.x
                 - super::text_vertical::block_axis_offset(
                     bounds.width(),
@@ -1284,15 +1281,14 @@ impl TextContent {
         if self.is_vertical() {
             match self.grow_type() {
                 GrowType::AutoWidth => {
-                    let max_height = super::text_vertical::wrap_height(self, selrect.height());
-                    let (width, height) = super::text_vertical::measure_content(self, max_height);
+                    let (width, height) =
+                        super::text_vertical::measure_content(self, selrect.height());
                     self.size.width = width.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
                     self.size.height = height.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
                     self.size.max_width = self.size.width;
                 }
                 GrowType::AutoHeight => {
-                    let max_height = super::text_vertical::wrap_height(self, selrect.height());
-                    let (width, _) = super::text_vertical::measure_content(self, max_height);
+                    let (width, _) = super::text_vertical::measure_content(self, selrect.height());
                     self.size.width = width.ceil().max(DEFAULT_TEXT_CONTENT_SIZE);
                     self.size.height = selrect.height();
                     self.size.max_width = self.size.width;
@@ -1414,8 +1410,7 @@ impl TextContent {
         // Vertical writing: hit-test against the laid-out cells directly
         // (absolute coordinates, right-anchored to the selrect).
         if self.is_vertical() {
-            let max_height = super::text_vertical::wrap_height(self, shape.selrect.height());
-            let layout = super::text_vertical::layout_from_content(self, max_height);
+            let layout = super::text_vertical::layout_for_box(self, shape.selrect.height());
             return super::text_vertical::intersects(
                 &layout,
                 &shape.selrect,
@@ -1635,29 +1630,6 @@ impl Paragraph {
     }
 }
 
-/// Capitalize the first letter of each word, preserving all original whitespace.
-/// Matches CSS `text-transform: capitalize` behavior: a "word" starts after
-/// any non-letter character (whitespace, punctuation, digits, symbols).
-#[cfg(test)]
-fn capitalize_words(text: &str) -> String {
-    let mut result = String::with_capacity(text.len());
-    let mut capitalize_next = true;
-    for c in text.chars() {
-        if c.is_alphabetic() {
-            if capitalize_next {
-                result.extend(c.to_uppercase());
-            } else {
-                result.push(c);
-            }
-            capitalize_next = false;
-        } else {
-            result.push(c);
-            capitalize_next = true;
-        }
-    }
-    result
-}
-
 /// Add `text`, pushing every '\t' as a one em wide placeholder.
 pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size: f32) {
     let tab = PlaceholderStyle::new(
@@ -1674,28 +1646,6 @@ pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size:
         }
         builder.add_text(segment);
     }
-}
-
-/// Filter control characters below U+0020, preserving tabs and line breaks.
-/// Browser-dependent: Firefox drops them, others replace with space.
-#[cfg(test)]
-fn process_ignored_chars(text: &str, browser: u8) -> String {
-    text.chars()
-        .filter_map(|c| {
-            if c == '\t' || c == '\n' || c == '\r' || c == '\u{2028}' || c == '\u{2029}' {
-                return Some(c);
-            }
-            if c < '\u{0020}' {
-                if browser == Browser::Firefox as u8 {
-                    None
-                } else {
-                    Some(' ')
-                }
-            } else {
-                Some(c)
-            }
-        })
-        .collect()
 }
 
 /// Text after browser filtering and CSS text transformation, plus the source
@@ -1742,10 +1692,9 @@ fn apply_text_transform_with_source_ranges(
         let source_start = source_utf16;
         source_utf16 += source_char.len_utf16();
 
-        let processed = if source_char == '\n'
-            || source_char == '\r'
-            || source_char == '\u{2028}'
-            || source_char == '\u{2029}'
+        // Control characters below U+0020 are filtered (Firefox drops them,
+        // other browsers show a space); tabs and line breaks are kept.
+        let processed = if matches!(source_char, '\t' | '\n' | '\r' | '\u{2028}' | '\u{2029}')
             || source_char >= '\u{0020}'
         {
             Some(source_char)
@@ -1923,6 +1872,38 @@ impl TextSpan {
         self.annotation_clearance = clearance;
     }
 
+    /// Ruby annotation text, without surrounding whitespace.
+    pub fn ruby_text(&self) -> &str {
+        self.ruby.trim()
+    }
+
+    pub fn has_ruby(&self) -> bool {
+        !self.ruby_text().is_empty()
+    }
+
+    pub fn ruby_font_size(&self) -> f32 {
+        self.font_size * self.ruby_size.scale()
+    }
+
+    /// Warichu needs at least two characters to fill its two sub-lines.
+    pub fn is_warichu(&self) -> bool {
+        self.warichu && self.text.chars().count() >= 2
+    }
+
+    /// Automatic clearance stacks emphasis marks outside an over-side ruby.
+    pub fn stacks_emphasis_outside_ruby(&self) -> bool {
+        self.annotation_clearance.is_auto() && self.has_ruby() && self.ruby_side == RubySide::Over
+    }
+
+    /// Cross-axis offset of the emphasis marks past a stacked ruby layer.
+    pub fn emphasis_ruby_offset(&self) -> f32 {
+        if self.stacks_emphasis_outside_ruby() {
+            self.ruby_font_size()
+        } else {
+            0.0
+        }
+    }
+
     pub fn to_style(
         &self,
         content_bounds: &Rect,
@@ -1967,7 +1948,7 @@ impl TextSpan {
         };
 
         let annotation_layers = if self.annotation_clearance.is_auto() {
-            usize::from(!self.ruby.trim().is_empty()) + usize::from(!self.text_emphasis.is_none())
+            usize::from(self.has_ruby()) + usize::from(!self.text_emphasis.is_none())
         } else {
             0
         };
@@ -2281,8 +2262,7 @@ pub fn calculate_position_data(
         if skip_position_data {
             return Vec::new();
         }
-        let max_height = super::text_vertical::wrap_height(&text_content, shape.selrect.height());
-        let layout = super::text_vertical::layout_from_content(&text_content, max_height);
+        let layout = super::text_vertical::layout_for_box(&text_content, shape.selrect.height());
         return super::text_vertical::position_data(
             &layout,
             &shape.selrect,
@@ -2338,100 +2318,107 @@ mod tests {
         );
     }
 
+    fn capitalize(text: &str) -> String {
+        apply_text_transform_with_source_ranges(
+            text,
+            Browser::Chrome as u8,
+            Some(TextTransform::Capitalize),
+        )
+        .text
+    }
+
+    fn filter_ignored_chars(text: &str, browser: u8) -> String {
+        apply_text_transform_with_source_ranges(text, browser, None).text
+    }
+
     #[test]
     fn capitalize_basic_words() {
-        assert_eq!(capitalize_words("hello world"), "Hello World");
+        assert_eq!(capitalize("hello world"), "Hello World");
     }
 
     #[test]
     fn capitalize_preserves_leading_whitespace() {
-        assert_eq!(capitalize_words(" hello"), " Hello");
+        assert_eq!(capitalize(" hello"), " Hello");
     }
 
     #[test]
     fn capitalize_preserves_trailing_whitespace() {
-        assert_eq!(capitalize_words("hello "), "Hello ");
+        assert_eq!(capitalize("hello "), "Hello ");
     }
 
     #[test]
     fn capitalize_preserves_multiple_spaces() {
-        assert_eq!(capitalize_words("hello  world"), "Hello  World");
+        assert_eq!(capitalize("hello  world"), "Hello  World");
     }
 
     #[test]
     fn capitalize_whitespace_only() {
-        assert_eq!(capitalize_words(" "), " ");
-        assert_eq!(capitalize_words("  "), "  ");
+        assert_eq!(capitalize(" "), " ");
+        assert_eq!(capitalize("  "), "  ");
     }
 
     #[test]
     fn capitalize_empty_string() {
-        assert_eq!(capitalize_words(""), "");
+        assert_eq!(capitalize(""), "");
     }
 
     #[test]
     fn capitalize_single_char() {
-        assert_eq!(capitalize_words("a"), "A");
+        assert_eq!(capitalize("a"), "A");
     }
 
     #[test]
     fn capitalize_already_uppercase() {
-        assert_eq!(capitalize_words("HELLO WORLD"), "HELLO WORLD");
+        assert_eq!(capitalize("HELLO WORLD"), "HELLO WORLD");
     }
 
     #[test]
     fn capitalize_preserves_tabs_and_newlines() {
-        assert_eq!(capitalize_words("hello\tworld"), "Hello\tWorld");
-        assert_eq!(capitalize_words("hello\nworld"), "Hello\nWorld");
+        assert_eq!(capitalize("hello\tworld"), "Hello\tWorld");
+        assert_eq!(capitalize("hello\nworld"), "Hello\nWorld");
     }
 
     #[test]
     fn capitalize_after_punctuation() {
-        assert_eq!(capitalize_words("(readonly)"), "(Readonly)");
-        assert_eq!(capitalize_words("hello-world"), "Hello-World");
-        assert_eq!(capitalize_words("one/two/three"), "One/Two/Three");
+        assert_eq!(capitalize("(readonly)"), "(Readonly)");
+        assert_eq!(capitalize("hello-world"), "Hello-World");
+        assert_eq!(capitalize("one/two/three"), "One/Two/Three");
     }
 
     #[test]
     fn capitalize_after_digits() {
-        assert_eq!(capitalize_words("item1name"), "Item1Name");
+        assert_eq!(capitalize("item1name"), "Item1Name");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_spaces() {
-        assert_eq!(process_ignored_chars("hello world", 0), "hello world");
+    fn ignored_chars_preserves_spaces() {
+        assert_eq!(filter_ignored_chars("hello world", 0), "hello world");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_line_breaks() {
-        assert_eq!(process_ignored_chars("hello\nworld", 0), "hello\nworld");
-        assert_eq!(process_ignored_chars("hello\rworld", 0), "hello\rworld");
+    fn ignored_chars_preserves_line_breaks() {
+        assert_eq!(filter_ignored_chars("hello\nworld", 0), "hello\nworld");
+        assert_eq!(filter_ignored_chars("hello\rworld", 0), "hello\rworld");
     }
 
     #[test]
-    fn process_ignored_chars_preserves_tabs() {
-        assert_eq!(process_ignored_chars("hello\tworld", 0), "hello\tworld");
+    fn ignored_chars_preserves_tabs() {
+        assert_eq!(filter_ignored_chars("hello\tworld", 0), "hello\tworld");
         assert_eq!(
-            process_ignored_chars("hello\tworld", Browser::Firefox as u8),
+            filter_ignored_chars("hello\tworld", Browser::Firefox as u8),
             "hello\tworld"
         );
     }
 
     #[test]
-    fn process_ignored_chars_replaces_control_chars_chrome() {
+    fn ignored_chars_replaces_control_chars_chrome() {
         // U+0001 (SOH) should become space in non-Firefox
-        assert_eq!(
-            process_ignored_chars("a\x01b", Browser::Chrome as u8),
-            "a b"
-        );
+        assert_eq!(filter_ignored_chars("a\x01b", Browser::Chrome as u8), "a b");
     }
 
     #[test]
-    fn process_ignored_chars_removes_control_chars_firefox() {
-        assert_eq!(
-            process_ignored_chars("a\x01b", Browser::Firefox as u8),
-            "ab"
-        );
+    fn ignored_chars_removes_control_chars_firefox() {
+        assert_eq!(filter_ignored_chars("a\x01b", Browser::Firefox as u8), "ab");
     }
 
     fn test_paragraph(texts: &[&str]) -> Paragraph {
@@ -2742,291 +2729,5 @@ mod tests {
         assert_eq!(transformed.source_utf16_range(2..3), 1..2);
         assert_eq!(transformed.source_utf16_range(1..3), 1..2);
         assert_eq!(transformed.source_utf16_range(3..4), 2..3);
-    }
-
-    // apply_text_transform reads the browser from the design state.
-    fn init_state() {
-        crate::globals::design_init();
-    }
-
-    fn make_span(text: &str, letter_spacing: f32) -> TextSpan {
-        TextSpan {
-            text: text.to_string(),
-            font_family: FontFamily::new(Uuid::nil(), 400, shapes::FontStyle::Normal),
-            font_size: 16.0,
-            line_height: 1.0,
-            letter_spacing,
-            font_weight: 400,
-            font_variant_id: Uuid::nil(),
-            text_decoration: None,
-            text_transform: None,
-            text_direction: TextDirection::LTR,
-            text_orientation: TextOrientation::default(),
-            text_combine_upright: TextCombineUpright::default(),
-            text_emphasis: TextEmphasis::default(),
-            ruby: String::default(),
-            warichu: false,
-            font_features: FontFeatures::default(),
-            annotation_clearance: AnnotationClearance::default(),
-            ruby_size: RubySize::default(),
-            ruby_align: RubyAlign::default(),
-            ruby_overhang: RubyOverhang::default(),
-            ruby_side: RubySide::default(),
-            paragraph_position: u32::MAX,
-            span_position: u32::MAX,
-            fills: vec![],
-        }
-    }
-
-    fn make_paragraph(spans: Vec<TextSpan>, letter_spacing: f32) -> Paragraph {
-        Paragraph::new(
-            TextAlign::default(),
-            TextDirection::LTR,
-            None,
-            None,
-            1.0,
-            letter_spacing,
-            spans,
-        )
-    }
-
-    #[test]
-    fn layout_span_texts_applies_kinsoku() {
-        init_state();
-        let paragraph = make_paragraph(vec![make_span("雪国", 0.0), make_span("。です", 0.0)], 0.0);
-        let (texts, map) = paragraph.layout_span_texts();
-        assert_eq!(
-            texts,
-            vec!["雪国".to_string(), "\u{2060}。です".to_string()]
-        );
-        assert!(!map.is_empty());
-        assert_eq!(map.to_original(3), 2);
-    }
-
-    #[test]
-    fn layout_span_texts_skips_kinsoku_under_paragraph_letter_spacing() {
-        init_state();
-        let paragraph = make_paragraph(vec![make_span("雪国。", 0.0)], 2.0);
-        let (texts, map) = paragraph.layout_span_texts();
-        assert_eq!(texts, vec!["雪国。".to_string()]);
-        assert!(map.is_empty());
-    }
-
-    #[test]
-    fn layout_span_texts_skips_kinsoku_under_span_letter_spacing() {
-        init_state();
-        let paragraph = make_paragraph(vec![make_span("雪国。", 1.5)], 0.0);
-        let (texts, map) = paragraph.layout_span_texts();
-        assert_eq!(texts, vec!["雪国。".to_string()]);
-        assert!(map.is_empty());
-    }
-
-    #[test]
-    fn layout_span_texts_respects_text_transform() {
-        init_state();
-        let mut span = make_span("hello。", 0.0);
-        span.text_transform = Some(TextTransform::Uppercase);
-        let paragraph = make_paragraph(vec![span], 0.0);
-        let (texts, _) = paragraph.layout_span_texts();
-        assert_eq!(texts, vec!["HELLO\u{2060}。".to_string()]);
-    }
-
-    #[test]
-    fn layout_span_texts_identity_map_for_plain_text() {
-        init_state();
-        let paragraph = make_paragraph(vec![make_span("helloworld", 0.0)], 0.0);
-        let (texts, map) = paragraph.layout_span_texts();
-        assert_eq!(texts, vec!["helloworld".to_string()]);
-        assert!(map.is_empty());
-        assert_eq!(map.to_original(5), 5);
-        assert_eq!(map.to_shifted(5), 5);
-    }
-
-    #[test]
-    fn horizontal_ruby_is_atomic() {
-        init_state();
-        let mut group = make_span("日本", 0.0);
-        group.ruby = "にほん".to_string();
-        let paragraph = make_paragraph(vec![group], 0.0);
-        assert_eq!(
-            paragraph.layout_span_texts().0,
-            vec!["日\u{2060}本".to_string()]
-        );
-    }
-
-    #[test]
-    fn horizontal_annotation_uses_the_base_em_not_typographic_leading() {
-        let rect = skia::Rect::from_xywh(0.0, 66.0, 56.0, 90.0);
-
-        assert_eq!(
-            crate::shapes::text_japanese::horizontal_annotation_over_top(rect, 56.0),
-            88.0
-        );
-    }
-
-    #[test]
-    fn horizontal_warichu_collapses_to_one_builder_position() {
-        init_state();
-        let mut warichu = make_span("割注入り", 0.0);
-        warichu.warichu = true;
-        let paragraph = make_paragraph(vec![warichu, make_span("後", 0.0)], 0.0);
-
-        let ranges = horizontal_span_ranges(&paragraph);
-        assert_eq!(ranges[0].builder_start..ranges[0].builder_end, 0..3);
-        assert_eq!(ranges[1].builder_start..ranges[1].builder_end, 3..4);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 0);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 4), 3);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 5), 4);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 1), 4);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 2), 4);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 3), 4);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 4), 5);
-        assert_eq!(
-            horizontal_normal_selection_ranges(&paragraph, 1, 5),
-            vec![3..4]
-        );
-    }
-
-    #[test]
-    fn horizontal_builder_mapping_preserves_non_bmp_boundaries() {
-        init_state();
-        let paragraph = make_paragraph(vec![make_span("😀A", 0.0)], 0.0);
-
-        assert_eq!(horizontal_source_to_builder(&paragraph, 1), 2);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 2), 1);
-        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 3);
-        assert_eq!(horizontal_builder_to_source(&paragraph, 3), 2);
-    }
-
-    #[test]
-    fn horizontal_warichu_builder_emits_one_styled_placeholder() {
-        init_state();
-        let mut span = make_span("割注入り", 0.0);
-        span.warichu = true;
-        let mut style = skia::textlayout::TextStyle::default();
-        style.set_font_size(span.font_size);
-        let mut fonts = skia::textlayout::FontCollection::new();
-        fonts.set_default_font_manager(skia::FontMgr::new(), None);
-        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
-        builder.push_style(&style);
-        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
-        let mut laid_out = builder.build();
-        laid_out.layout(200.0);
-
-        let placeholders = laid_out.get_rects_for_placeholders();
-        assert_eq!(placeholders.len(), 1);
-        assert!(placeholders[0].rect.width() > 0.0);
-        assert!(placeholders[0].rect.height() > 0.0);
-        let has_style = laid_out
-            .get_line_metrics()
-            .iter()
-            .any(|line| !line.get_style_metrics(3..5).is_empty());
-        assert!(
-            has_style,
-            "the paint pass must recover the placeholder style"
-        );
-    }
-
-    #[test]
-    fn horizontal_warichu_allows_wrapping_after_the_atomic_box() {
-        init_state();
-        let mut span = make_span("割注入り", 0.0);
-        span.warichu = true;
-        let following = make_span("A", 0.0);
-        let mut style = skia::textlayout::TextStyle::default();
-        style.set_font_size(span.font_size);
-        let mut fonts = skia::textlayout::FontCollection::new();
-        fonts.set_default_font_manager(skia::FontMgr::new(), None);
-        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
-        builder.push_style(&style);
-        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
-        builder.push_style(&style);
-        builder.add_text(&following.text);
-
-        let mut laid_out = builder.build();
-        laid_out.layout(16.1);
-
-        assert_eq!(laid_out.get_rects_for_placeholders().len(), 1);
-        assert_eq!(laid_out.get_line_metrics().len(), 2);
-    }
-
-    #[test]
-    fn emphasis_excludes_whitespace_and_japanese_punctuation() {
-        for character in " \t\n、。，．「」『』（）［］【】〔〕〈〉《》‘’“”".chars()
-        {
-            assert!(
-                !emphasis_char_allowed(character),
-                "emphasis must skip {character:?}"
-            );
-        }
-        for character in "漢あA1・！？".chars() {
-            assert!(
-                emphasis_char_allowed(character),
-                "emphasis should mark {character:?}"
-            );
-        }
-    }
-
-    #[test]
-    fn horizontal_emphasis_tracks_eligible_unicode_characters() {
-        init_state();
-        let mut span = make_span("A😀。 B", 0.0);
-        span.text_emphasis = TextEmphasis::FilledDot;
-        let paragraph = make_paragraph(vec![span], 0.0);
-        let mut style = skia::textlayout::TextStyle::default();
-        style.set_font_size(16.0);
-        let mut fonts = skia::textlayout::FontCollection::new();
-        fonts.set_default_font_manager(skia::FontMgr::new(), None);
-        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
-        let (texts, _) = paragraph.layout_span_texts();
-        for (span, text) in paragraph.children().iter().zip(texts) {
-            builder.push_style(&style);
-            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
-        }
-        let mut laid_out = builder.build();
-        laid_out.layout(200.0);
-
-        let placements = horizontal_emphasis_placements(&paragraph, &laid_out);
-        assert_eq!(placements.len(), 3, "A, emoji and B receive one mark each");
-        assert!(placements
-            .iter()
-            .all(|placement| placement.rect.width() > 0.0));
-        assert!(horizontal_span_style(&laid_out, &horizontal_span_ranges(&paragraph)[0]).is_some());
-    }
-
-    #[test]
-    fn horizontal_emphasis_recovers_each_non_ascii_span_style() {
-        init_state();
-        let mut first = make_span("漢", 0.0);
-        first.text_emphasis = TextEmphasis::FilledDot;
-        let mut second = make_span("字", 0.0);
-        second.text_emphasis = TextEmphasis::OpenCircle;
-        let paragraph = make_paragraph(vec![first, second], 0.0);
-        let mut fonts = skia::textlayout::FontCollection::new();
-        fonts.set_default_font_manager(skia::FontMgr::new(), None);
-        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
-        let (texts, _) = paragraph.layout_span_texts();
-        for (index, (span, text)) in paragraph.children().iter().zip(texts).enumerate() {
-            let mut style = skia::textlayout::TextStyle::default();
-            style.set_font_size(if index == 0 { 16.0 } else { 24.0 });
-            builder.push_style(&style);
-            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
-        }
-        let mut laid_out = builder.build();
-        laid_out.layout(200.0);
-
-        let ranges = horizontal_span_ranges(&paragraph);
-        assert_eq!(
-            horizontal_span_style(&laid_out, &ranges[0])
-                .unwrap()
-                .font_size(),
-            16.0
-        );
-        assert_eq!(
-            horizontal_span_style(&laid_out, &ranges[1])
-                .unwrap()
-                .font_size(),
-            24.0
-        );
     }
 }

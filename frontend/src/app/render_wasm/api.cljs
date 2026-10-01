@@ -31,6 +31,7 @@
    [app.common.types.path.impl :as path.impl]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.helpers :as dsh]
@@ -2931,60 +2932,90 @@
 (def POSITION-DATA-U8-SIZE 36)
 (def POSITION-DATA-U32-SIZE (/ POSITION-DATA-U8-SIZE 4))
 
-(defn- ruby-font-scale
-  [ruby-size]
-  (case ruby-size
-    "third" (/ 1 3)
-    "quarter" 0.25
-    0.5))
-
-(defn- horizontal-ruby-slice
-  "Returns the whole-span ruby annotation for a horizontal base strip."
-  [element _start-pos _end-pos]
-  (let [text (:text element)
-        ruby (:ruby element)]
-    (when (and (not (true? (:ruby-hidden element)))
-               (string? text)
-               (seq text)
-               (string? ruby)
-               (seq ruby))
-      ruby)))
+(def ^:private POSITION-DATA-VERTICAL 2)
+(def ^:private POSITION-DATA-RUBY 3)
 
 (defn- ruby-strip-entry
-  "Position-data entry for a ruby annotation strip (direction 3): the
-   offsets index the span's ruby string and the geometry is the exact
-   gutter placement the canvas paints."
+  "Position-data entry for a ruby annotation strip: the offsets index the
+   span's ruby string and the geometry is the exact gutter placement the
+   canvas paints."
   [element {:keys [start-pos end-pos x y width height]}]
-  (let [ruby (get element :ruby)]
-    (when (and (not (true? (:ruby-hidden element)))
-               (string? ruby))
-      (let [text (subs ruby
-                       (min start-pos (count ruby))
-                       (min end-pos (count ruby)))
-            font-size (js/parseFloat (get element :font-size))]
-        (when (seq text)
-          (d/patch-object
-           (txt/get-default-text-attrs)
-           (d/without-nils
-            {:x x
-             :y (+ y height)
-             :width width
-             :height height
-             :direction "ltr"
-             :writing-mode "vertical-rl"
-             :text-orientation "upright"
-             :font-id (get element :font-id)
-             :font-family (get element :font-family)
-             :font-size (when-not (js/isNaN font-size)
-                          (dm/str (* (ruby-font-scale (:ruby-size element)) font-size) "px"))
-             :font-weight (get element :font-weight)
-             :font-style (get element :font-style)
-             :ruby-size (get element :ruby-size)
-             :ruby-align (get element :ruby-align)
-             :ruby-overhang (get element :ruby-overhang)
-             :ruby-side (get element :ruby-side)
-             :fills (get element :fills)
-             :text text})))))))
+  (when-let [ruby (jl/visible-ruby element)]
+    (let [text      (subs ruby
+                          (min start-pos (count ruby))
+                          (min end-pos (count ruby)))
+          font-size (js/parseFloat (get element :font-size))]
+      (when (seq text)
+        (d/patch-object
+         (txt/get-default-text-attrs)
+         (d/without-nils
+          {:x x
+           :y (+ y height)
+           :width width
+           :height height
+           :direction "ltr"
+           :writing-mode "vertical-rl"
+           :text-orientation "upright"
+           :font-id (get element :font-id)
+           :font-family (get element :font-family)
+           :font-size (when-not (js/isNaN font-size)
+                        (dm/str (* (jl/ruby-font-scale (:ruby-size element)) font-size) "px"))
+           :font-weight (get element :font-weight)
+           :font-style (get element :font-style)
+           :ruby-size (get element :ruby-size)
+           :ruby-align (get element :ruby-align)
+           :ruby-overhang (get element :ruby-overhang)
+           :ruby-side (get element :ruby-side)
+           :fills (get element :fills)
+           :text text}))))))
+
+(defn- text-strip-entry
+  "Position-data entry for a strip of base text. Be aware that for RTL texts
+   `start-pos` can be greater than `end-pos`."
+  [paragraph element {:keys [start-pos end-pos direction x y width height]}]
+  (when-let [element-text (:text element)]
+    (let [vertical? (= direction POSITION-DATA-VERTICAL)
+          ruby      (jl/visible-ruby element)]
+      (d/patch-object
+       (txt/get-default-text-attrs)
+       (d/without-nils
+        {:x x
+         :y (+ y height)
+         :width width
+         :height height
+         :direction       (dr/translate-direction direction)
+         ;; The SVG renderer draws vertical strips with CSS writing-mode.
+         :writing-mode    (when vertical? "vertical-rl")
+         ;; Glyph orientation is stored on the span or its paragraph.
+         :text-orientation (when vertical?
+                             (not-empty (or (get element :text-orientation)
+                                            (get paragraph :text-orientation))))
+         :font-id         (get element :font-id)
+         :font-family     (get element :font-family)
+         :font-size       (dm/str (get element :font-size) "px")
+         :font-weight     (get element :font-weight)
+         :text-transform  (get element :text-transform)
+         :text-decoration (get element :text-decoration)
+         :text-combine-upright (get element :text-combine-upright)
+         ;; Emphasis marks (圏点) and warichu are drawn by the static SVG
+         ;; renderer; "none" carries no information.
+         :text-emphasis   (let [emphasis (get element :text-emphasis)]
+                            (when (and (seq emphasis) (not= "none" emphasis))
+                              emphasis))
+         :warichu         (when (= "warichu" (get element :warichu)) "warichu")
+         :annotation-clearance (when (= "auto" (get element :annotation-clearance)) "auto")
+         :annotation-has-ruby  (when (some? ruby) true)
+         ;; Horizontal position data has no separate ruby strip, so the base
+         ;; entry carries the annotation for static SVG export.
+         :ruby            (when (and (not vertical?) (seq element-text)) ruby)
+         :ruby-size       (get element :ruby-size)
+         :ruby-align      (get element :ruby-align)
+         :ruby-overhang   (get element :ruby-overhang)
+         :ruby-side       (get element :ruby-side)
+         :letter-spacing  (dm/str (get element :letter-spacing) "px")
+         :font-style      (get element :font-style)
+         :fills           (get element :fills)
+         :text            (subs element-text start-pos end-pos)})))))
 
 (defn calculate-position-data
   [shape]
@@ -3013,82 +3044,14 @@
 
       (into []
             (keep
-             (fn [{:keys [paragraph span start-pos end-pos direction x y width height] :as entry}]
+             (fn [{:keys [paragraph span direction] :as entry}]
                (let [paragraph-node (-> content :children
                                         (get 0) :children ;; paragraph-set
                                         (get paragraph))
-                     element (-> paragraph-node :children ;; paragraph
-                                 (get span))
-                     element-text (:text element)]
-                 (if (= direction 3)
+                     element        (-> paragraph-node :children (get span))]
+                 (if (= direction POSITION-DATA-RUBY)
                    (ruby-strip-entry element entry)
-                   ;; Glyph orientation of a vertical strip; stored on the
-                   ;; span or its paragraph. Empty reads normalize to nil
-                   ;; (the SVG renderer then defaults to "mixed").
-                   (let [text-orientation
-                         (when (= direction 2)
-                           (let [orientation (or (get element :text-orientation)
-                                                 (get paragraph-node :text-orientation))]
-                             (when (seq orientation) orientation)))]
-
-                     ;; Add comprehensive nil-safety checks
-                     ;; Be aware that for RTL texts `start-pos` can be greatert han `end-pos`
-                     (when (and element element-text)
-                       (let [text (subs element-text start-pos end-pos)]
-                         (d/patch-object
-                          (txt/get-default-text-attrs)
-                          (d/without-nils
-                           {:x x
-                            :y (+ y height)
-                            :width width
-                            :height height
-                            :direction       (dr/translate-direction direction)
-                            ;; Direction 2 marks a vertical-rl column strip;
-                            ;; the SVG renderer draws it with CSS writing-mode.
-                            :writing-mode    (when (= direction 2) "vertical-rl")
-                            :text-orientation text-orientation
-                            :font-id         (get element :font-id)
-                            :font-family     (get element :font-family)
-                            :font-size       (dm/str (get element :font-size) "px")
-                            :font-weight     (get element :font-weight)
-                            :text-transform  (get element :text-transform)
-                            :text-decoration (get element :text-decoration)
-                            :text-combine-upright (get element :text-combine-upright)
-                            ;; Emphasis marks (圏点) are drawn by the static SVG
-                            ;; renderer; "none" carries no information.
-                            :text-emphasis   (let [emphasis (get element :text-emphasis)]
-                                               (when (and (string? emphasis)
-                                                          (seq emphasis)
-                                                          (not= "none" emphasis))
-                                                 emphasis))
-                            :annotation-clearance
-                            (let [clearance (get element :annotation-clearance)]
-                              (when (= "auto" clearance) clearance))
-                            :annotation-has-ruby
-                            (let [ruby (get element :ruby)]
-                              (when (and (not (true? (:ruby-hidden element)))
-                                         (string? ruby)
-                                         (seq ruby))
-                                true))
-                            ;; Horizontal position data has no separate ruby
-                            ;; strip, so carry the annotation on the base entry
-                            ;; for static SVG export. Vertical ruby has its own
-                            ;; direction-3 position entry.
-                            :ruby (when (not= direction 2)
-                                    (horizontal-ruby-slice
-                                     element start-pos end-pos))
-                            :ruby-size (get element :ruby-size)
-                            :ruby-align (get element :ruby-align)
-                            :ruby-overhang (get element :ruby-overhang)
-                            :ruby-side (get element :ruby-side)
-                            ;; Warichu spans render as two half-size sub-columns
-                            ;; in the static SVG; "none" carries no information.
-                            :warichu         (let [warichu (get element :warichu)]
-                                               (when (= "warichu" warichu) warichu))
-                            :letter-spacing  (dm/str (get element :letter-spacing) "px")
-                            :font-style      (get element :font-style)
-                            :fills           (get element :fills)
-                            :text            text})))))))))
+                   (text-strip-entry paragraph-node element entry)))))
             result))))
 
 (defn apply-canvas-blur

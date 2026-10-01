@@ -6,7 +6,8 @@
 
 (ns app.common.types.text.japanese-layout
   (:require
-   [app.common.data.macros :as dm]))
+   [app.common.data.macros :as dm]
+   [cuerdas.core :as str]))
 
 ;; Vertical writing (tategaki). Absent values behave as "horizontal-tb"
 ;; and "mixed", so plain horizontal text never stores these attrs.
@@ -49,6 +50,50 @@
 ;; "auto" reserves an additional half-em layer for ruby and emphasis.
 (def text-annotation-clearance-attrs
   [:annotation-clearance])
+
+;; Values of the span attrs above when a span does not store them.
+(def span-attr-defaults
+  {:text-combine-upright "none"
+   :text-emphasis        "none"
+   :ruby                 ""
+   :ruby-hidden          false
+   :ruby-size            "half"
+   :ruby-align           "space-around"
+   :ruby-overhang        "auto"
+   :ruby-side            "over"
+   :warichu              "none"
+   :font-features        "none"
+   :annotation-clearance "none"})
+
+;; Annotation font sizes relative to the base font size.
+(def emphasis-font-scale 0.5)
+(def warichu-font-scale 0.5)
+
+(defn ruby-font-scale
+  [ruby-size]
+  (case ruby-size
+    "third"   (/ 1 3)
+    "quarter" 0.25
+    0.5))
+
+(defn visible-ruby
+  "Ruby annotation text of a text node, or nil when it has none or the
+   annotation is hidden."
+  [node]
+  (let [ruby (:ruby node)]
+    (when (and (string? ruby)
+               (not (str/blank? ruby))
+               (not (true? (:ruby-hidden node))))
+      ruby)))
+
+(defn warichu-text?
+  "True when a text node renders as warichu: it needs two characters to fill
+   its two sub-lines."
+  [node]
+  (let [text (:text node)]
+    (and (= "warichu" (:warichu node))
+         (string? text)
+         (>= (count text) 2))))
 
 (defn content-writing-mode
   "Writing mode of a text content. Stored per paragraph but treated as a

@@ -30,6 +30,7 @@
    [app.main.ui.ds.controls.shared.searchable-options-dropdown :refer [searchable-options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text-japanese-layout :as tjl]
    [app.main.ui.workspace.sidebar.options.menus.token-typography-row :refer [token-typography-row*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options* typography-entry*]]
@@ -52,18 +53,6 @@
   "True when the token-typography-row feature flag is enabled.
   Evaluated once at module load time; cf/flags is immutable after startup."
   (contains? cf/flags :token-typography-row))
-
-(defn- radio-selected
-  ([value]
-   (radio-selected value ""))
-  ([value default]
-   (cond
-     (= value :multiple) ""
-     (or (nil? value)
-         (and (string? value) (empty? value))) default
-     (keyword? value) (d/name value)
-     (string? value) value
-     :else (str value))))
 
 (mf/defc text-align-options*
   [{:keys [values on-change on-blur]}]

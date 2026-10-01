@@ -9,9 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.text.writing-mode :as wm]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc render-text*
@@ -21,11 +21,8 @@
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
         class (when is-code (:$id node))
-        ruby  (:ruby node)
-        ruby? (and (not (true? (:ruby-hidden node)))
-                   (string? ruby)
-                   (not (str/blank? ruby)))]
-    (if ruby?
+        ruby  (jl/visible-ruby node)]
+    (if (some? ruby)
       [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
        [:span.text-node {:style style :class class} text]
        [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]

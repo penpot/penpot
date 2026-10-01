@@ -26,10 +26,10 @@
 ;; so negative values were refused. Pin the accept/reject contract of the
 ;; plugin setter here.
 
-(defn- apply-letter-spacing
-  "Sets `letterSpacing` on a text range proxy and returns the attributes sent
-  to the update event, or nil when the plugin rejected the value."
-  [value]
+(defn- apply-range-property
+  "Sets `property` on a text range proxy and returns the attributes sent to
+  the update event, or nil when the plugin rejected the value."
+  [property value]
   (let [captured (atom nil)
         range    (plugins.text/text-range-proxy
                   plugin-id (random-uuid) (random-uuid) (random-uuid) 0 4)]
@@ -41,19 +41,12 @@
                     (reset! captured attrs)
                     :update-text-range)
                   st/emit! mock/noop]
-      (set! (.-letterSpacing range) value)
+      (unchecked-set range property value)
       @captured)))
 
-(def ^:private font-features-re @#'plugins.text/font-features-re)
-(def ^:private annotation-clearance-re @#'plugins.text/annotation-clearance-re)
-(def ^:private ruby-size-re @#'plugins.text/ruby-size-re)
-(def ^:private ruby-align-re @#'plugins.text/ruby-align-re)
-(def ^:private ruby-overhang-re @#'plugins.text/ruby-overhang-re)
-(def ^:private ruby-side-re @#'plugins.text/ruby-side-re)
-
-(defn- valid-font-features? [s] (boolean (re-matches font-features-re s)))
-(defn- valid-annotation-clearance? [s]
-  (boolean (re-matches annotation-clearance-re s)))
+(defn- apply-letter-spacing
+  [value]
+  (apply-range-property "letterSpacing" value))
 
 (t/deftest letter-spacing-accepts-negative-values
   (t/is (= {:letter-spacing "-0.56"} (apply-letter-spacing "-0.56")))
@@ -70,28 +63,21 @@
   (t/is (nil? (apply-letter-spacing "1-2")))
   (t/is (nil? (apply-letter-spacing "--1"))))
 
-(t/deftest font-features-re-accepts-supported-japanese-proportional-features
-  (t/is (valid-font-features? "none"))
-  (t/is (valid-font-features? "palt"))
-  (t/is (valid-font-features? "vpal"))
-  (t/is (not (valid-font-features? "liga")))
-  (t/is (not (valid-font-features? "palt,vpal"))))
-
-(t/deftest annotation-clearance-re-accepts-supported-policies
-  (t/is (valid-annotation-clearance? "none"))
-  (t/is (valid-annotation-clearance? "auto"))
-  (t/is (not (valid-annotation-clearance? "always"))))
-
-(t/deftest ruby-customization-validates-supported-values
-  (t/is (every? #(re-matches ruby-size-re %) ["half" "third" "quarter"]))
-  (t/is (not (re-matches ruby-size-re "full")))
-  (t/is (every? #(re-matches ruby-align-re %)
-                ["space-around" "center" "start" "space-between"]))
-  (t/is (not (re-matches ruby-align-re "end")))
-  (t/is (every? #(re-matches ruby-overhang-re %) ["auto" "none"]))
-  (t/is (not (re-matches ruby-overhang-re "always")))
-  (t/is (every? #(re-matches ruby-side-re %) ["over" "under"]))
-  (t/is (not (re-matches ruby-side-re "right"))))
+(t/deftest japanese-range-properties-accept-only-supported-values
+  (doseq [[property attr accepted rejected]
+          [["fontFeatures" :font-features ["none" "palt" "vpal"] ["liga" "palt,vpal"]]
+           ["annotationClearance" :annotation-clearance ["none" "auto"] ["always"]]
+           ["rubySize" :ruby-size ["half" "third" "quarter"] ["full"]]
+           ["rubyAlign" :ruby-align ["space-around" "center" "start" "space-between"] ["end"]]
+           ["rubyOverhang" :ruby-overhang ["auto" "none"] ["always"]]
+           ["rubySide" :ruby-side ["over" "under"] ["right"]]
+           ["ruby" :ruby ["かんじ" nil] [42]]]]
+    (doseq [value accepted]
+      (t/is (= {attr value} (apply-range-property property value))
+            (str property " accepts " (pr-str value))))
+    (doseq [value rejected]
+      (t/is (nil? (apply-range-property property value))
+            (str property " rejects " (pr-str value))))))
 
 (t/deftest text-range-japanese-properties-read-span-values
   (let [file-id  (random-uuid)

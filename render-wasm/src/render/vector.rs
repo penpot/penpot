@@ -70,10 +70,8 @@ impl<'a> VectorRenderer<'a> {
         let bounds = text_content.bounds();
         let drop_shadows = shape.drop_shadow_paints();
         let strokes: Vec<&Stroke> = shape.visible_strokes().rev().collect();
-        let layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
-            let max_height = text_vertical::wrap_height(text_content, bounds.height());
-            text_vertical::layout_from_content(text_content, max_height)
-        });
+        let layout = (!drop_shadows.is_empty() || !strokes.is_empty())
+            .then(|| text_vertical::layout_for_box(text_content, bounds.height()));
 
         if let Some(layout) = &layout {
             for shadow in &drop_shadows {

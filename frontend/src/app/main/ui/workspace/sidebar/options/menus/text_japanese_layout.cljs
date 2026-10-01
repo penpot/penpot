@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.menus.text-japanese-layout
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.types.file :as ctf]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -16,23 +15,11 @@
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options* radio-selected]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.text.writing-mode :as wm]
    [rumext.v2 :as mf]))
-
-(defn- radio-selected
-  ([value]
-   (radio-selected value ""))
-  ([value default]
-   (cond
-     (= value :multiple) ""
-     (or (nil? value)
-         (and (string? value) (empty? value))) default
-     (keyword? value) (d/name value)
-     (string? value) value
-     :else (str value))))
 
 (def ^:private mixed-span-values
   #{:mixed :multiple "mixed" "multiple"})
@@ -47,13 +34,13 @@
     "mixed"
     (radio-selected value)))
 
-(defn- span-select-value
+(defn span-select-value
   [value default]
   (if (mixed-span-value? value)
     "mixed"
     (radio-selected value default)))
 
-(defn- with-mixed-span-option
+(defn with-mixed-span-option
   [options value]
   (cond-> options
     (mixed-span-value? value)
@@ -102,61 +89,57 @@
 ;; Sub-components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc writing-mode-options*
-  [{:keys [values on-change on-blur]}]
-  (let [writing-mode (radio-selected (:writing-mode values) "horizontal-tb")
-        options
-        (mf/with-memo []
-          [{:value "horizontal-tb"
-            :id    "horizontal-tb-writing-mode"
-            :label (tr "workspace.options.text-options.writing-mode-horizontal")
-            :icon  i/writing-mode-horizontal}
-           {:value "vertical-rl"
-            :id    "vertical-rl-writing-mode"
-            :label (tr "workspace.options.text-options.writing-mode-vertical")
-            :icon  i/writing-mode-vertical}])
-
+(mf/defc attr-radio-options*
+  "Radio group bound to one text attribute."
+  [{:keys [values on-change on-blur attr default-value name class options]}]
+  (let [selected (radio-selected (get values attr) default-value)
         handle-change
         (mf/use-fn
-         (mf/deps on-change on-blur)
+         (mf/deps attr on-change on-blur)
          (fn [value]
-           (on-change {:writing-mode value})
+           (on-change {attr value})
            (when (some? on-blur) (on-blur))))]
-
-    [:div {:class (stl/css :writing-mode-options)}
-     [:> radio-buttons* {:selected  writing-mode
+    [:div {:class class}
+     [:> radio-buttons* {:selected  selected
                          :on-change handle-change
-                         :name      "writing-mode-options"
+                         :name      name
                          :options   options}]]))
 
-(mf/defc text-orientation-options*
-  [{:keys [values on-change on-blur]}]
-  ;; The v2 editor can read the paragraph orientation back as an empty
-  ;; string when it is unset; treat that (and nil) as the "mixed" default.
-  (let [text-orientation (radio-selected (:text-orientation values) "mixed")
-        options
-        (mf/with-memo []
-          [{:value "mixed"
-            :id    "mixed-text-orientation"
-            :label (tr "workspace.options.text-options.text-orientation-mixed")
-            :icon  i/text-orientation-mixed}
-           {:value "upright"
-            :id    "upright-text-orientation"
-            :label (tr "workspace.options.text-options.text-orientation-upright")
-            :icon  i/text-orientation-upright}])
+(defn- writing-mode-options
+  []
+  [{:value "horizontal-tb"
+    :id    "horizontal-tb-writing-mode"
+    :label (tr "workspace.options.text-options.writing-mode-horizontal")
+    :icon  i/writing-mode-horizontal}
+   {:value "vertical-rl"
+    :id    "vertical-rl-writing-mode"
+    :label (tr "workspace.options.text-options.writing-mode-vertical")
+    :icon  i/writing-mode-vertical}])
 
-        handle-change
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [value]
-           (on-change {:text-orientation value})
-           (when (some? on-blur) (on-blur))))]
+(defn- text-orientation-options
+  []
+  [{:value "mixed"
+    :id    "mixed-text-orientation"
+    :label (tr "workspace.options.text-options.text-orientation-mixed")
+    :icon  i/text-orientation-mixed}
+   {:value "upright"
+    :id    "upright-text-orientation"
+    :label (tr "workspace.options.text-options.text-orientation-upright")
+    :icon  i/text-orientation-upright}])
 
-    [:div {:class (stl/css :text-orientation-options)}
-     [:> radio-buttons* {:selected  text-orientation
-                         :on-change handle-change
-                         :name      "text-orientation-options"
-                         :options   options}]]))
+;; Warichu (割注): a span-scoped toggle that renders the selection as two
+;; half-size lines within one inline position (top/bottom in horizontal
+;; flow, right/left in vertical flow).
+(defn- warichu-options
+  []
+  [{:value "none"
+    :id    "none-warichu"
+    :label (tr "workspace.options.text-options.warichu-none")
+    :icon  i/warichu-none}
+   {:value "warichu"
+    :id    "warichu-warichu"
+    :label (tr "workspace.options.text-options.warichu")
+    :icon  i/warichu}])
 
 (mf/defc text-combine-upright-options*
   ;; Digit TCY can be applied across a shape because it discovers eligible
@@ -268,7 +251,8 @@
                        :on-click    on-toggle-advanced
                        :icon        i/menu}]]))
 
-(mf/defc ruby-select-option*
+(mf/defc span-select-option*
+  "Select bound to one span attribute, with a disabled entry for mixed values."
   [{:keys [values on-change on-blur attr default-value label options]}]
   (let [value    (get values attr)
         selected (span-select-value value default-value)
@@ -329,22 +313,22 @@
                       {:id "under" :label (tr "workspace.options.text-options.ruby-side-under")}]]
     [:div {:class (stl/css :japanese-layout-controls)}
      [:> ruby-hidden-option* common-props]
-     [:> ruby-select-option* (mf/spread-props common-props
+     [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-size
                                                :default-value "half"
                                                :label (tr "workspace.options.text-options.ruby-size")
                                                :options size-options})]
-     [:> ruby-select-option* (mf/spread-props common-props
+     [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-align
                                                :default-value "space-around"
                                                :label (tr "workspace.options.text-options.ruby-align")
                                                :options align-options})]
-     [:> ruby-select-option* (mf/spread-props common-props
+     [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-overhang
                                                :default-value "auto"
                                                :label (tr "workspace.options.text-options.ruby-overhang")
                                                :options overhang-options})]
-     [:> ruby-select-option* (mf/spread-props common-props
+     [:> span-select-option* (mf/spread-props common-props
                                               {:attr :ruby-side
                                                :default-value "over"
                                                :label (tr "workspace.options.text-options.ruby-side")
@@ -381,37 +365,6 @@
                             :is-visible open?}
       [:> ruby-customization-options* common-props]]]))
 
-(mf/defc warichu-options*
-  ;; Warichu (割注): a span-scoped toggle that renders the selection as two
-  ;; half-size lines within one inline position (top/bottom in horizontal
-  ;; flow, right/left in vertical flow). Applies to the current selection
-  ;; through the shared node-attr on-change; "none" is the default.
-  [{:keys [values on-change on-blur]}]
-  (let [warichu (radio-selected (:warichu values) "none")
-        options
-        (mf/with-memo []
-          [{:value "none"
-            :id    "none-warichu"
-            :label (tr "workspace.options.text-options.warichu-none")
-            :icon  i/warichu-none}
-           {:value "warichu"
-            :id    "warichu-warichu"
-            :label (tr "workspace.options.text-options.warichu")
-            :icon  i/warichu}])
-
-        handle-change
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [value]
-           (on-change {:warichu value})
-           (when (some? on-blur) (on-blur))))]
-
-    [:div {:class (stl/css :warichu-options)}
-     [:> radio-buttons* {:selected  warichu
-                         :on-change handle-change
-                         :name      "warichu-options"
-                         :options   options}]]))
-
 (mf/defc font-features-options*
   ;; Japanese proportional metric alternates. `palt` is typically used for
   ;; horizontal composition and `vpal` for vertical composition; the value is
@@ -432,7 +385,7 @@
            (on-change {:font-features (if checked? feature "none")})
            (when (some? on-blur) (on-blur))))]
 
-    [:div {:class (stl/css :font-features-options :japanese-select-option)}
+    [:div {:class (stl/css :japanese-select-option)}
      [:span {:class (stl/css :japanese-option-label)}
       (tr "workspace.options.text-options.font-features")]
      [:> switch* {:default-checked enabled?
@@ -458,33 +411,6 @@
     {:id "open-sesame"
      :label (translate "workspace.options.text-options.text-emphasis-open-sesame")}]))
 
-(mf/defc text-emphasis-options*
-  ;; Emphasis marks (圏点 / bouten): a span-scoped style drawn beside each base
-  ;; character in vertical writing. Applies to the current selection through the
-  ;; shared node-attr on-change; "none" is the default.
-  [{:keys [values on-change on-blur]}]
-  (let [value (:text-emphasis values)
-        text-emphasis (span-select-value value "none")
-        options
-        (mf/with-memo []
-          (text-emphasis-options))
-        options (with-mixed-span-option options value)
-
-        handle-change
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [value]
-           (on-change {:text-emphasis value})
-           (when (some? on-blur) (on-blur))))]
-
-    [:div {:class (stl/css :text-emphasis-options :japanese-select-option)}
-     [:span {:class (stl/css :japanese-option-label)}
-      (tr "workspace.options.text-options.text-emphasis")]
-     [:> select* {:default-selected text-emphasis
-                  :aria-label (tr "workspace.options.text-options.text-emphasis")
-                  :options options
-                  :on-change handle-change}]]))
-
 (defn annotation-clearance-options
   ([]
    (annotation-clearance-options tr))
@@ -493,26 +419,6 @@
      :label (translate "workspace.options.text-options.annotation-clearance-none")}
     {:id "auto"
      :label (translate "workspace.options.text-options.annotation-clearance-auto")}]))
-
-(mf/defc annotation-clearance-options*
-  [{:keys [values on-change on-blur]}]
-  (let [value (:annotation-clearance values)
-        annotation-clearance (span-select-value value "none")
-        options (mf/with-memo [] (annotation-clearance-options))
-        options (with-mixed-span-option options value)
-        handle-change
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [value]
-           (on-change {:annotation-clearance value})
-           (when (some? on-blur) (on-blur))))]
-    [:div {:class (stl/css :annotation-clearance-options :japanese-select-option)}
-     [:span {:class (stl/css :japanese-option-label)}
-      (tr "workspace.options.text-options.annotation-clearance")]
-     [:> select* {:default-selected annotation-clearance
-                  :aria-label (tr "workspace.options.text-options.annotation-clearance")
-                  :options options
-                  :on-change handle-change}]]))
 
 (mf/defc japanese-layout-options*
   [{:keys [values ruby-values text-selection-active
@@ -525,26 +431,58 @@
         ruby-presentation-props (mf/props
                                  {:values    ruby-values
                                   :on-change on-ruby-presentation-change
-                                  :on-blur   on-blur})]
+                                  :on-blur   on-blur})
+        options                 (mf/with-memo []
+                                  {:writing-mode         (writing-mode-options)
+                                   :text-orientation     (text-orientation-options)
+                                   :warichu              (warichu-options)
+                                   :text-emphasis        (text-emphasis-options)
+                                   :annotation-clearance (annotation-clearance-options)})]
 
     [:div {:class (stl/css :japanese-layout-options)}
      [:div {:class (stl/css :japanese-layout-controls)}
       [:div {:class (stl/css :japanese-icon-options)}
-       [:> writing-mode-options* common-props]
+       [:> attr-radio-options* (mf/spread-props common-props
+                                                {:attr          :writing-mode
+                                                 :default-value "horizontal-tb"
+                                                 :name          "writing-mode-options"
+                                                 :class         (stl/css :writing-mode-options)
+                                                 :options       (:writing-mode options)})]
        (when ^boolean vertical?
          [:*
-          [:> text-orientation-options* common-props]
+          ;; The v2 editor can read the paragraph orientation back as an empty
+          ;; string when it is unset; that (and nil) selects "mixed".
+          [:> attr-radio-options* (mf/spread-props common-props
+                                                   {:attr          :text-orientation
+                                                    :default-value "mixed"
+                                                    :name          "text-orientation-options"
+                                                    :class         (stl/css :text-orientation-options)
+                                                    :options       (:text-orientation options)})]
           [:> text-combine-upright-options*
            (mf/spread-props common-props
                             {:text-selection-active text-selection-active})]])
        (when ^boolean text-selection-active
-         [:> warichu-options* common-props])]
+         [:> attr-radio-options* (mf/spread-props common-props
+                                                  {:attr          :warichu
+                                                   :default-value "none"
+                                                   :name          "warichu-options"
+                                                   :class         (stl/css :warichu-options)
+                                                   :options       (:warichu options)})])]
       (when ^boolean vertical?
         [:> text-combine-upright-count-options* common-props])
       [:> font-features-options* common-props]
+      ;; Emphasis marks (圏点 / bouten) apply to the selected characters.
       (when ^boolean text-selection-active
-        [:> text-emphasis-options* common-props])
-      [:> annotation-clearance-options* common-props]
+        [:> span-select-option* (mf/spread-props common-props
+                                                 {:attr          :text-emphasis
+                                                  :default-value "none"
+                                                  :label         (tr "workspace.options.text-options.text-emphasis")
+                                                  :options       (:text-emphasis options)})])
+      [:> span-select-option* (mf/spread-props common-props
+                                               {:attr          :annotation-clearance
+                                                :default-value "none"
+                                                :label         (tr "workspace.options.text-options.annotation-clearance")
+                                                :options       (:annotation-clearance options)})]
       (if text-selection-active
         [:> ruby-advanced-options* common-props]
         [:> ruby-presentation-options* ruby-presentation-props])]]))

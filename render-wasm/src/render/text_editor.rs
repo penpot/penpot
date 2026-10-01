@@ -146,8 +146,7 @@ fn vertical_layout_for_shape(
     shape: &Shape,
 ) -> (text_vertical::VerticalLayout, f32) {
     let selrect = shape.selrect();
-    let max_height = text_vertical::wrap_height(text_content, selrect.height());
-    let layout = text_vertical::layout_from_content(text_content, max_height);
+    let layout = text_vertical::layout_for_box(text_content, selrect.height());
     let origin_x =
         text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
     (layout, origin_x)

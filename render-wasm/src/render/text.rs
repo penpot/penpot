@@ -39,10 +39,8 @@ pub fn render_vertical_text(
         }
     }
     let strokes: Vec<Stroke> = shape.visible_strokes().rev().cloned().collect();
-    let layout = (!drop_shadows.is_empty() || !strokes.is_empty()).then(|| {
-        let max_height = text_vertical::wrap_height(text_content, bounds.height());
-        text_vertical::layout_from_content(text_content, max_height)
-    });
+    let layout = (!drop_shadows.is_empty() || !strokes.is_empty())
+        .then(|| text_vertical::layout_for_box(text_content, bounds.height()));
 
     if let Some(layout) = layout.as_ref().filter(|_| !drop_shadows.is_empty()) {
         let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
@@ -90,8 +88,7 @@ pub fn render_vertical_text(
         let grid_layout = match layout.as_ref() {
             Some(layout) => layout,
             None => {
-                let max_height = text_vertical::wrap_height(text_content, bounds.height());
-                owned_layout = text_vertical::layout_from_content(text_content, max_height);
+                owned_layout = text_vertical::layout_for_box(text_content, bounds.height());
                 &owned_layout
             }
         };
@@ -713,7 +710,7 @@ fn paint_text_with_emoji_overlay(
         }
 
         if ruby_per_paragraph {
-            crate::shapes::text_vertical::paint_horizontal_ruby(
+            crate::shapes::paint_horizontal_ruby(
                 canvas,
                 text_content,
                 para.source_paragraph,

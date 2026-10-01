@@ -1,14 +1,18 @@
-use super::text::{add_text_with_tabs, Paragraph, TextSpan};
+use super::text::{add_text_with_tabs, Paragraph, TextContent, TextSpan};
+use super::text_vertical::{
+    distribute_ruby_tops, shape_segment_with_fallbacks, single_glyph_blob, span_font_families,
+};
+use crate::globals::get_resources;
 use crate::math::Point;
-use crate::shapes::kinsoku;
-use crate::utils::get_font_collection;
+use crate::shapes::{kinsoku, merge_fills};
+use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
     self as skia,
     textlayout::{
         ParagraphBuilder, ParagraphStyle, PlaceholderAlignment, PlaceholderStyle, RectHeightStyle,
         RectWidthStyle, TextBaseline,
     },
-    Contains,
+    Canvas, Contains, Font, FontMgr, GlyphId,
 };
 
 pub const WARICHU_FONT_SCALE: f32 = 0.5;
@@ -32,7 +36,7 @@ pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku:
         let ruby_breaks: Vec<Option<Vec<usize>>> = paragraph
             .children()
             .iter()
-            .map(|span| (!span.ruby.trim().is_empty()).then(Vec::new))
+            .map(|span| span.has_ruby().then(Vec::new))
             .collect();
         if let Some((shifted, map)) =
             kinsoku::apply_to_span_texts_with_ruby_breaks(&texts, &ruby_breaks)
@@ -53,15 +57,9 @@ pub(crate) fn add_horizontal_span(
     text_style: &skia::textlayout::TextStyle,
     fonts: &skia::textlayout::FontCollection,
 ) {
-    if span.warichu && span.text.chars().count() >= 2 {
+    if span.is_warichu() {
         let text = span.apply_text_transform();
-        let split = super::text_vertical::warichu_split_chars(&text);
-        let split_byte = text
-            .char_indices()
-            .nth(split)
-            .map(|(index, _)| index)
-            .unwrap_or(text.len());
-        let (first, second) = text.split_at(split_byte);
+        let (first, second) = warichu_text_lines(&text);
         let mut mini_style = text_style.clone();
         mini_style.set_font_size(span.font_size * WARICHU_FONT_SCALE);
         mini_style.set_height(1.0);
@@ -133,7 +131,7 @@ pub(crate) fn horizontal_span_ranges(paragraph: &Paragraph) -> Vec<HorizontalSpa
             let shifted_end = shifted_cursor;
             let source_start = offset_map.to_original(shifted_start);
             let source_end = offset_map.to_original(shifted_end);
-            let warichu = span.warichu && span.text.chars().count() >= 2;
+            let warichu = span.is_warichu();
             let builder_start = builder_cursor;
             let style_anchor_start = if warichu {
                 builder_byte_cursor + '\u{FFFC}'.len_utf8()
@@ -254,7 +252,7 @@ fn horizontal_warichu_placeholders(
     let mut placeholders = laid_out.get_rects_for_placeholders().into_iter();
     let mut result = Vec::new();
     for (index, span) in paragraph.children().iter().enumerate() {
-        if span.warichu && span.text.chars().count() >= 2 {
+        if span.is_warichu() {
             if let Some(textbox) = placeholders.next() {
                 result.push((index, textbox.rect));
             }
@@ -295,7 +293,7 @@ pub(crate) fn horizontal_warichu_hit_test(
         if !rect.contains(&point) {
             continue;
         }
-        let split = super::text_vertical::warichu_split_chars(&span.apply_text_transform());
+        let split = warichu_split_chars(&span.apply_text_transform());
         let total = span.text.chars().count();
         let second = point.y >= rect.top() + rect.height() / 2.0;
         let (line_start, line_len) = if second {
@@ -319,7 +317,7 @@ pub(crate) fn horizontal_warichu_caret_rect(
         if source_offset < source_start || source_offset > source_end {
             continue;
         }
-        let split = super::text_vertical::warichu_split_chars(&span.apply_text_transform());
+        let split = warichu_split_chars(&span.apply_text_transform());
         let local = source_offset - source_start;
         let total = source_end - source_start;
         let (line_start, line_len, top) = if local >= split {
@@ -352,7 +350,7 @@ pub(crate) fn horizontal_warichu_range_rects(
         if selected_start >= selected_end {
             continue;
         }
-        let split = super::text_vertical::warichu_split_chars(&span.apply_text_transform());
+        let split = warichu_split_chars(&span.apply_text_transform());
         for (line_start, line_end, top) in [
             (span_start, span_start + split, rect.top()),
             (
@@ -392,7 +390,7 @@ pub(crate) fn horizontal_normal_selection_ranges(
             let span_end = span_start + span.text.chars().count();
             let selected_start = source_start.max(span_start);
             let selected_end = source_end.min(span_end);
-            let warichu = span.warichu && span.text.chars().count() >= 2;
+            let warichu = span.is_warichu();
             span_start = span_end;
             if warichu || selected_start >= selected_end {
                 return None;
@@ -405,8 +403,39 @@ pub(crate) fn horizontal_normal_selection_ranges(
         .collect()
 }
 
-fn warichu_text_lines(text: &str) -> (&str, &str) {
-    let split = super::text_vertical::warichu_split_chars(text);
+/// Char index where a warichu run splits into its two sub-lines: the
+/// balanced midpoint (first line longer), nudged so the second sub-line
+/// does not start with a line-start-prohibited character and the first
+/// does not end with a line-end-prohibited one. Nudging forward pulls the
+/// offending mark up into the first sub-line (jlreq); backward is the
+/// fallback, and the midpoint stands when no split satisfies kinsoku.
+pub(crate) fn warichu_split_chars(text: &str) -> usize {
+    let chars: Vec<char> = text.chars().collect();
+    let n = chars.len();
+    let mid = n.div_ceil(2);
+    let valid = |split: usize| {
+        split >= 1
+            && split < n
+            && !kinsoku::forbidden_at_line_start(chars[split])
+            && !kinsoku::forbidden_at_line_end(chars[split - 1])
+    };
+    if valid(mid) {
+        return mid;
+    }
+    for distance in 1..n {
+        if valid(mid + distance) {
+            return mid + distance;
+        }
+        if mid > distance && valid(mid - distance) {
+            return mid - distance;
+        }
+    }
+    mid
+}
+
+/// The two warichu sub-lines of `text`, split at `warichu_split_chars`.
+pub(crate) fn warichu_text_lines(text: &str) -> (&str, &str) {
+    let split = warichu_split_chars(text);
     let split_byte = text
         .char_indices()
         .nth(split)
@@ -415,7 +444,7 @@ fn warichu_text_lines(text: &str) -> (&str, &str) {
     text.split_at(split_byte)
 }
 
-fn warichu_mini_paragraph(
+fn mini_paragraph(
     text: &str,
     style: &skia::textlayout::TextStyle,
     width: f32,
@@ -448,17 +477,7 @@ pub(crate) fn paint_horizontal_warichu(
         let Some(span) = paragraph.children().get(range.span) else {
             continue;
         };
-        // Indexed style metrics expose builder UTF-8 byte positions even
-        // though glyph/line ranges use UTF-16 offsets.
-        let style_anchor = range.style_anchor_start
-            ..range.style_anchor_start + HORIZONTAL_WARICHU_STYLE_ANCHOR.len_utf8();
-        let style = laid_out.get_line_metrics().iter().find_map(|line| {
-            line.get_style_metrics(style_anchor.clone())
-                .into_iter()
-                .next()
-                .map(|(_, metric)| metric.text_style.clone())
-        });
-        let Some(mut style) = style else {
+        let Some(mut style) = horizontal_span_style(laid_out, range) else {
             continue;
         };
         style.set_font_size(span.font_size * WARICHU_FONT_SCALE);
@@ -467,8 +486,8 @@ pub(crate) fn paint_horizontal_warichu(
         style.set_letter_spacing(span.letter_spacing * WARICHU_FONT_SCALE);
         let transformed = span.apply_text_transform();
         let (first, second) = warichu_text_lines(&transformed);
-        let first_para = warichu_mini_paragraph(first, &style, rect.width());
-        let second_para = warichu_mini_paragraph(second, &style, rect.width());
+        let first_para = mini_paragraph(first, &style, rect.width());
+        let second_para = mini_paragraph(second, &style, rect.width());
         let half_height = rect.height() / 2.0;
         first_para.paint(canvas, (x + rect.left(), y + rect.top()));
         second_para.paint(canvas, (x + rect.left(), y + rect.top() + half_height));
@@ -546,8 +565,8 @@ pub(crate) fn horizontal_span_style(
     laid_out: &skia::textlayout::Paragraph,
     range: &HorizontalSpanRange,
 ) -> Option<skia::textlayout::TextStyle> {
-    // Indexed style metrics use builder UTF-8 byte positions (the same
-    // convention used by the warichu style anchor above).
+    // Indexed style metrics use builder UTF-8 byte positions, unlike the
+    // UTF-16 offsets of glyph and line ranges.
     let anchor = range.style_anchor_start..range.style_anchor_start + 1;
     laid_out.get_line_metrics().iter().find_map(|line| {
         line.get_style_metrics(anchor.clone())
@@ -595,7 +614,7 @@ pub(crate) fn paint_horizontal_emphasis(
         style.set_height(1.0);
         style.set_height_override(true);
         style.set_letter_spacing(0.0);
-        let mark_paragraph = warichu_mini_paragraph(&mark.to_string(), &style, f32::MAX);
+        let mark_paragraph = mini_paragraph(&mark.to_string(), &style, f32::MAX);
         let mark_ink = mark_paragraph
             .get_rects_for_range(
                 0..mark.len_utf16(),
@@ -621,18 +640,200 @@ pub(crate) fn paint_horizontal_emphasis(
             .filter(|placement| placement.span == range.span && placement.mark == mark)
         {
             let mark_x = x + placement.rect.center_x() - mark_width / 2.0;
-            let ruby_offset = if span.annotation_clearance.is_auto()
-                && !span.ruby.trim().is_empty()
-                && span.ruby_side == RubySide::Over
-            {
-                span.font_size * span.ruby_size.scale()
-            } else {
-                0.0
-            };
             let mark_y = y + horizontal_annotation_over_top(placement.rect, span.font_size)
                 - mark_ink_bottom
-                - ruby_offset;
+                - span.emphasis_ruby_offset();
             mark_paragraph.paint(canvas, (mark_x, mark_y));
+        }
+    }
+}
+
+/// Split `total` glyphs across segments proportionally to their extents
+/// (rounded per segment, remainder to the last) so no glyph is dropped.
+fn split_counts_by_extent(extents: &[f32], total: usize) -> Vec<usize> {
+    let mut counts = vec![0usize; extents.len()];
+    if extents.is_empty() || total == 0 {
+        return counts;
+    }
+    let sum: f32 = extents.iter().sum();
+    if sum <= 0.0 {
+        counts[extents.len() - 1] = total;
+        return counts;
+    }
+    let mut assigned = 0usize;
+    let last = extents.len() - 1;
+    for (index, extent) in extents.iter().enumerate() {
+        let count = if index == last {
+            total - assigned
+        } else {
+            (((extent / sum) * total as f32).round() as usize).min(total - assigned)
+        };
+        counts[index] = count;
+        assigned += count;
+    }
+    counts
+}
+
+fn next_horizontal_ruby_range(
+    offset_map: &kinsoku::OffsetMap,
+    utf16_cursor: &mut usize,
+    text: &str,
+) -> std::ops::Range<usize> {
+    let start = *utf16_cursor;
+    *utf16_cursor += text.encode_utf16().count();
+    offset_map.to_shifted(start)..offset_map.to_shifted(*utf16_cursor)
+}
+
+/// Baseline adjustment that attaches a glyph's visible ink edge to its base
+/// strip. Font-wide ascender/descender metrics include leading which makes
+/// horizontal ruby visibly detached for many Japanese faces.
+fn horizontal_ruby_ink_edge(font: &Font, glyph: GlyphId, fallback: f32, over: bool) -> f32 {
+    let mut bounds = [skia::Rect::default()];
+    font.get_bounds(&[glyph], &mut bounds, None);
+    let bound = bounds[0];
+    if bound.right > bound.left && bound.bottom > bound.top {
+        if over {
+            bound.bottom
+        } else {
+            bound.top
+        }
+    } else {
+        fallback
+    }
+}
+
+/// Paint ruby annotations for one horizontally laid-out paragraph. Draw-only:
+/// base rects come from the already laid-out skparagraph
+/// (`get_rects_for_range`), the annotation is shaped at half the span size
+/// and distributed over each line's base rect with the same jlreq
+/// distribution the vertical path uses (`distribute_ruby_tops` along the
+/// horizontal flow). Lines are not reflowed to reserve an annotation band;
+/// the ruby draws in the natural leading above the base line.
+pub(crate) fn paint_horizontal_ruby(
+    canvas: &Canvas,
+    text_content: &TextContent,
+    paragraph_index: usize,
+    laid_out: &skia::textlayout::Paragraph,
+    x: f32,
+    y: f32,
+) {
+    let Some(paragraph) = text_content.paragraphs().get(paragraph_index) else {
+        return;
+    };
+    if !paragraph.children().iter().any(TextSpan::has_ruby) {
+        return;
+    }
+    let font_provider = get_resources().fonts.font_provider();
+    let fallback_mgr = FontMgr::from(font_provider.clone());
+    let fallback_families: Vec<String> = get_fallback_fonts().iter().cloned().collect();
+    let bounds = text_content.bounds();
+    let (_, offset_map) = paragraph.layout_span_texts();
+
+    let mut utf16_cursor = 0usize;
+    for span in paragraph.children() {
+        let span_text = span.apply_text_transform();
+        let span_range = next_horizontal_ruby_range(&offset_map, &mut utf16_cursor, &span_text);
+        let ruby_text = span.ruby_text();
+        if ruby_text.is_empty() || span_range.is_empty() {
+            continue;
+        }
+        let ruby_font_size = span.ruby_font_size();
+        let families = span_font_families(span, &fallback_families);
+        let paint = merge_fills(&span.fills, bounds);
+        let rects = laid_out.get_rects_for_range(
+            span_range,
+            skia::textlayout::RectHeightStyle::Tight,
+            skia::textlayout::RectWidthStyle::Tight,
+        );
+        let shaped = shape_segment_with_fallbacks(
+            ruby_text,
+            ruby_font_size,
+            &families,
+            font_provider,
+            false,
+            span.font_features,
+            &fallback_mgr,
+        );
+        let glyphs: Vec<(usize, usize, f32)> = shaped
+            .iter()
+            .enumerate()
+            .flat_map(|(run_index, run)| {
+                (0..run.glyphs.len()).map(move |glyph| {
+                    (
+                        run_index,
+                        glyph,
+                        run.advances.get(glyph).copied().unwrap_or(ruby_font_size),
+                    )
+                })
+            })
+            .collect();
+        let extents: Vec<f32> = rects.iter().map(|rect| rect.rect.width()).collect();
+        let counts = split_counts_by_extent(&extents, glyphs.len());
+        let mut assigned = 0usize;
+        for (rect_box, count) in rects.iter().zip(counts) {
+            if count == 0 {
+                continue;
+            }
+            let slice = &glyphs[assigned..assigned + count];
+            assigned += count;
+            let advance = slice
+                .iter()
+                .map(|(_, _, advance)| *advance)
+                .fold(0.0f32, f32::max)
+                .max(1.0);
+            // Horizontal SkParagraph has already fixed the base geometry.
+            // When overhang is prohibited, fit the annotation strip to
+            // that geometry instead of allowing either end to escape it.
+            let glyph_scale = if span.ruby_overhang == RubyOverhang::None {
+                (rect_box.rect.width() / (advance * count as f32)).min(1.0)
+            } else {
+                1.0
+            };
+            let layout_advance = advance * glyph_scale;
+            let lefts = distribute_ruby_tops(
+                rect_box.rect.left(),
+                rect_box.rect.width(),
+                count,
+                layout_advance,
+                span.ruby_align,
+                span.ruby_overhang,
+            );
+            for ((run_index, glyph, glyph_advance), left) in slice.iter().zip(lefts) {
+                let run = &shaped[*run_index];
+                let (_, metrics) = run.font.metrics();
+                let baseline = match span.ruby_side {
+                    RubySide::Over => {
+                        y + horizontal_annotation_over_top(rect_box.rect, span.font_size)
+                            - horizontal_ruby_ink_edge(
+                                &run.font,
+                                run.glyphs[*glyph],
+                                metrics.descent,
+                                true,
+                            )
+                    }
+                    RubySide::Under => {
+                        y + rect_box.rect.bottom()
+                            - horizontal_ruby_ink_edge(
+                                &run.font,
+                                run.glyphs[*glyph],
+                                metrics.ascent,
+                                false,
+                            )
+                    }
+                };
+                if let Some(blob) = single_glyph_blob(&run.font, run.glyphs[*glyph]) {
+                    let gx = x + left + (layout_advance - glyph_advance * glyph_scale) / 2.0;
+                    if glyph_scale < 1.0 {
+                        canvas.save();
+                        canvas.translate((gx, baseline));
+                        canvas.scale((glyph_scale, 1.0));
+                        canvas.draw_text_blob(&blob, (0.0, 0.0), &paint);
+                        canvas.restore();
+                    } else {
+                        canvas.draw_text_blob(&blob, (gx, baseline), &paint);
+                    }
+                }
+            }
         }
     }
 }
@@ -781,5 +982,339 @@ pub enum RubySide {
 impl AnnotationClearance {
     pub fn is_auto(self) -> bool {
         matches!(self, AnnotationClearance::Auto)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{FontFamily, FontStyle, TextAlign, TextDirection, TextTransform};
+    use crate::Uuid;
+
+    #[test]
+    fn warichu_split_balances_and_respects_kinsoku() {
+        // Balanced midpoint when nothing forbids it, first line longer.
+        assert_eq!(warichu_split_chars("あいうえおか"), 3);
+        assert_eq!(warichu_split_chars("あいうえお"), 3);
+        // A comma at the midpoint may end the first sub-line...
+        assert_eq!(warichu_split_chars("あい、うえ"), 3);
+        // ...but must not start the second one: the split moves forward.
+        assert_eq!(warichu_split_chars("あいう、えお"), 4);
+        // An opening bracket must not end the first sub-line.
+        assert_eq!(warichu_split_chars("あい「うえお"), 4);
+        // Pathological all-forbidden text keeps the midpoint.
+        assert_eq!(warichu_split_chars("、、、、"), 2);
+    }
+
+    #[test]
+    fn horizontal_ruby_ranges_use_utf16_across_spans() {
+        let offset_map = crate::shapes::kinsoku::OffsetMap::default();
+        let mut cursor = 0;
+
+        assert_eq!(
+            next_horizontal_ruby_range(&offset_map, &mut cursor, "𠀀"),
+            0..2
+        );
+        assert_eq!(
+            next_horizontal_ruby_range(&offset_map, &mut cursor, "漢"),
+            2..3
+        );
+    }
+
+    #[test]
+    fn split_counts_by_extent_drops_no_glyph() {
+        assert_eq!(split_counts_by_extent(&[60.0, 40.0], 5), vec![3, 2]);
+        assert_eq!(split_counts_by_extent(&[100.0], 4), vec![4]);
+        assert_eq!(split_counts_by_extent(&[0.0, 0.0], 3), vec![0, 3]);
+        assert_eq!(
+            split_counts_by_extent(&[1.0, 1.0, 1.0], 2)
+                .iter()
+                .sum::<usize>(),
+            2
+        );
+        assert!(split_counts_by_extent(&[], 3).is_empty());
+    }
+
+    // apply_text_transform reads the browser from the design state.
+    fn init_state() {
+        crate::globals::design_init();
+    }
+
+    fn make_span(text: &str, letter_spacing: f32) -> TextSpan {
+        TextSpan {
+            text: text.to_string(),
+            font_family: FontFamily::new(Uuid::nil(), 400, FontStyle::Normal),
+            font_size: 16.0,
+            line_height: 1.0,
+            letter_spacing,
+            font_weight: 400,
+            font_variant_id: Uuid::nil(),
+            text_decoration: None,
+            text_transform: None,
+            text_direction: TextDirection::LTR,
+            text_orientation: TextOrientation::default(),
+            text_combine_upright: TextCombineUpright::default(),
+            text_emphasis: TextEmphasis::default(),
+            ruby: String::default(),
+            warichu: false,
+            font_features: FontFeatures::default(),
+            annotation_clearance: AnnotationClearance::default(),
+            ruby_size: RubySize::default(),
+            ruby_align: RubyAlign::default(),
+            ruby_overhang: RubyOverhang::default(),
+            ruby_side: RubySide::default(),
+            paragraph_position: u32::MAX,
+            span_position: u32::MAX,
+            fills: vec![],
+        }
+    }
+
+    fn make_paragraph(spans: Vec<TextSpan>, letter_spacing: f32) -> Paragraph {
+        Paragraph::new(
+            TextAlign::default(),
+            TextDirection::LTR,
+            None,
+            None,
+            1.0,
+            letter_spacing,
+            spans,
+        )
+    }
+
+    #[test]
+    fn layout_span_texts_applies_kinsoku() {
+        init_state();
+        let paragraph = make_paragraph(vec![make_span("雪国", 0.0), make_span("。です", 0.0)], 0.0);
+        let (texts, map) = paragraph.layout_span_texts();
+        assert_eq!(
+            texts,
+            vec!["雪国".to_string(), "\u{2060}。です".to_string()]
+        );
+        assert!(!map.is_empty());
+        assert_eq!(map.to_original(3), 2);
+    }
+
+    #[test]
+    fn layout_span_texts_skips_kinsoku_under_paragraph_letter_spacing() {
+        init_state();
+        let paragraph = make_paragraph(vec![make_span("雪国。", 0.0)], 2.0);
+        let (texts, map) = paragraph.layout_span_texts();
+        assert_eq!(texts, vec!["雪国。".to_string()]);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn layout_span_texts_skips_kinsoku_under_span_letter_spacing() {
+        init_state();
+        let paragraph = make_paragraph(vec![make_span("雪国。", 1.5)], 0.0);
+        let (texts, map) = paragraph.layout_span_texts();
+        assert_eq!(texts, vec!["雪国。".to_string()]);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn layout_span_texts_respects_text_transform() {
+        init_state();
+        let mut span = make_span("hello。", 0.0);
+        span.text_transform = Some(TextTransform::Uppercase);
+        let paragraph = make_paragraph(vec![span], 0.0);
+        let (texts, _) = paragraph.layout_span_texts();
+        assert_eq!(texts, vec!["HELLO\u{2060}。".to_string()]);
+    }
+
+    #[test]
+    fn layout_span_texts_identity_map_for_plain_text() {
+        init_state();
+        let paragraph = make_paragraph(vec![make_span("helloworld", 0.0)], 0.0);
+        let (texts, map) = paragraph.layout_span_texts();
+        assert_eq!(texts, vec!["helloworld".to_string()]);
+        assert!(map.is_empty());
+        assert_eq!(map.to_original(5), 5);
+        assert_eq!(map.to_shifted(5), 5);
+    }
+
+    #[test]
+    fn horizontal_ruby_is_atomic() {
+        init_state();
+        let mut group = make_span("日本", 0.0);
+        group.ruby = "にほん".to_string();
+        let paragraph = make_paragraph(vec![group], 0.0);
+        assert_eq!(
+            paragraph.layout_span_texts().0,
+            vec!["日\u{2060}本".to_string()]
+        );
+    }
+
+    #[test]
+    fn horizontal_annotation_uses_the_base_em_not_typographic_leading() {
+        let rect = skia::Rect::from_xywh(0.0, 66.0, 56.0, 90.0);
+
+        assert_eq!(horizontal_annotation_over_top(rect, 56.0), 88.0);
+    }
+
+    #[test]
+    fn horizontal_warichu_collapses_to_one_builder_position() {
+        init_state();
+        let mut warichu = make_span("割注入り", 0.0);
+        warichu.warichu = true;
+        let paragraph = make_paragraph(vec![warichu, make_span("後", 0.0)], 0.0);
+
+        let ranges = horizontal_span_ranges(&paragraph);
+        assert_eq!(ranges[0].builder_start..ranges[0].builder_end, 0..3);
+        assert_eq!(ranges[1].builder_start..ranges[1].builder_end, 3..4);
+        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 0);
+        assert_eq!(horizontal_source_to_builder(&paragraph, 4), 3);
+        assert_eq!(horizontal_source_to_builder(&paragraph, 5), 4);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 1), 4);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 2), 4);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 3), 4);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 4), 5);
+        assert_eq!(
+            horizontal_normal_selection_ranges(&paragraph, 1, 5),
+            vec![3..4]
+        );
+    }
+
+    #[test]
+    fn horizontal_builder_mapping_preserves_non_bmp_boundaries() {
+        init_state();
+        let paragraph = make_paragraph(vec![make_span("😀A", 0.0)], 0.0);
+
+        assert_eq!(horizontal_source_to_builder(&paragraph, 1), 2);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 2), 1);
+        assert_eq!(horizontal_source_to_builder(&paragraph, 2), 3);
+        assert_eq!(horizontal_builder_to_source(&paragraph, 3), 2);
+    }
+
+    #[test]
+    fn horizontal_warichu_builder_emits_one_styled_placeholder() {
+        init_state();
+        let mut span = make_span("割注入り", 0.0);
+        span.warichu = true;
+        let mut style = skia::textlayout::TextStyle::default();
+        style.set_font_size(span.font_size);
+        let mut fonts = skia::textlayout::FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
+        builder.push_style(&style);
+        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
+        let mut laid_out = builder.build();
+        laid_out.layout(200.0);
+
+        let placeholders = laid_out.get_rects_for_placeholders();
+        assert_eq!(placeholders.len(), 1);
+        assert!(placeholders[0].rect.width() > 0.0);
+        assert!(placeholders[0].rect.height() > 0.0);
+        let has_style = laid_out
+            .get_line_metrics()
+            .iter()
+            .any(|line| !line.get_style_metrics(3..5).is_empty());
+        assert!(
+            has_style,
+            "the paint pass must recover the placeholder style"
+        );
+    }
+
+    #[test]
+    fn horizontal_warichu_allows_wrapping_after_the_atomic_box() {
+        init_state();
+        let mut span = make_span("割注入り", 0.0);
+        span.warichu = true;
+        let following = make_span("A", 0.0);
+        let mut style = skia::textlayout::TextStyle::default();
+        style.set_font_size(span.font_size);
+        let mut fonts = skia::textlayout::FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
+        builder.push_style(&style);
+        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
+        builder.push_style(&style);
+        builder.add_text(&following.text);
+
+        let mut laid_out = builder.build();
+        laid_out.layout(16.1);
+
+        assert_eq!(laid_out.get_rects_for_placeholders().len(), 1);
+        assert_eq!(laid_out.get_line_metrics().len(), 2);
+    }
+
+    #[test]
+    fn emphasis_excludes_whitespace_and_japanese_punctuation() {
+        for character in " \t\n、。，．「」『』（）［］【】〔〕〈〉《》‘’“”".chars()
+        {
+            assert!(
+                !emphasis_char_allowed(character),
+                "emphasis must skip {character:?}"
+            );
+        }
+        for character in "漢あA1・！？".chars() {
+            assert!(
+                emphasis_char_allowed(character),
+                "emphasis should mark {character:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn horizontal_emphasis_tracks_eligible_unicode_characters() {
+        init_state();
+        let mut span = make_span("A😀。 B", 0.0);
+        span.text_emphasis = TextEmphasis::FilledDot;
+        let paragraph = make_paragraph(vec![span], 0.0);
+        let mut style = skia::textlayout::TextStyle::default();
+        style.set_font_size(16.0);
+        let mut fonts = skia::textlayout::FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
+        let (texts, _) = paragraph.layout_span_texts();
+        for (span, text) in paragraph.children().iter().zip(texts) {
+            builder.push_style(&style);
+            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
+        }
+        let mut laid_out = builder.build();
+        laid_out.layout(200.0);
+
+        let placements = horizontal_emphasis_placements(&paragraph, &laid_out);
+        assert_eq!(placements.len(), 3, "A, emoji and B receive one mark each");
+        assert!(placements
+            .iter()
+            .all(|placement| placement.rect.width() > 0.0));
+        assert!(horizontal_span_style(&laid_out, &horizontal_span_ranges(&paragraph)[0]).is_some());
+    }
+
+    #[test]
+    fn horizontal_emphasis_recovers_each_non_ascii_span_style() {
+        init_state();
+        let mut first = make_span("漢", 0.0);
+        first.text_emphasis = TextEmphasis::FilledDot;
+        let mut second = make_span("字", 0.0);
+        second.text_emphasis = TextEmphasis::OpenCircle;
+        let paragraph = make_paragraph(vec![first, second], 0.0);
+        let mut fonts = skia::textlayout::FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
+        let (texts, _) = paragraph.layout_span_texts();
+        for (index, (span, text)) in paragraph.children().iter().zip(texts).enumerate() {
+            let mut style = skia::textlayout::TextStyle::default();
+            style.set_font_size(if index == 0 { 16.0 } else { 24.0 });
+            builder.push_style(&style);
+            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
+        }
+        let mut laid_out = builder.build();
+        laid_out.layout(200.0);
+
+        let ranges = horizontal_span_ranges(&paragraph);
+        assert_eq!(
+            horizontal_span_style(&laid_out, &ranges[0])
+                .unwrap()
+                .font_size(),
+            16.0
+        );
+        assert_eq!(
+            horizontal_span_style(&laid_out, &ranges[1])
+                .unwrap()
+                .font_size(),
+            24.0
+        );
     }
 }
