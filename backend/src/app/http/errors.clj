@@ -164,6 +164,11 @@
   {::yres/status 404
    ::yres/body (ex-data err)})
 
+(defmethod handle-error :conflict
+  [err _ _]
+  {::yres/status 409
+   ::yres/body (ex-data err)})
+
 (defmethod handle-error :nitrate-unavailable
   [err request _]
   (binding [l/*context* (request->context request)]

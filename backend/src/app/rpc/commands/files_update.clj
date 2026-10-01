@@ -45,12 +45,12 @@
 (declare ^:private update-file*)
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
-(declare ^:private invalidate-caches!)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
 (declare update-file-data!)
 (declare persist-file!)
+(declare invalidate-caches!)
 (declare ^:private persist-branch-file!)
 (declare get-file)
 
@@ -400,7 +400,9 @@
     nil))
 
 
-(defn- invalidate-caches!
+(defn invalidate-caches!
+  "Drop the cached library summary of `file`. Every write path that
+  persists a file calls it under the `:redis-cache` flag."
   [cfg {:keys [id] :as file}]
   (rds/run! cfg (fn [{:keys [::rds/conn]}]
                   (let [key (files/file-summary-cache-key id)]

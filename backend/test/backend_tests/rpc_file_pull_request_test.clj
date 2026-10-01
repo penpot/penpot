@@ -11,6 +11,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -510,6 +511,152 @@
           (t/is (nil? (:error out)))
           (let [[row] (th/db-query :file-pull-request {:id (:id pr)})]
             (t/is (= "closed" (:status row)))))))))
+
+(t/deftest create-serializes-against-a-concurrent-merge
+  ;; the create must re-read the branch under the advisory lock: a merge
+  ;; that wins the race closes the branch while the create waits for the
+  ;; lock, so a create arriving afterwards must refuse instead of opening
+  ;; a review over a branch that is already merged and gone.
+  (with-redefs [cf/flags pr-flags]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "contested")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)]
+      (add-color* author branch-file-id "Brand")
+      (let [orig-lock db/xact-lock!
+            merging?  (atom false)
+            merged    (atom nil)]
+        (with-redefs [db/xact-lock!
+                      (fn [conn id]
+                        ;; the first lock the create takes is the signal:
+                        ;; merge the same branch through the pool in its
+                        ;; own transaction BEFORE the create locks
+                        (when (compare-and-set! merging? false true)
+                          (reset! merged (th/command! {::th/type :merge-file-branch
+                                                       ::rpc/profile-id (:id author)
+                                                       :branch-id branch-id})))
+                        (orig-lock conn id))]
+          (let [out (th/command! {::th/type :create-pull-request
+                                  ::rpc/profile-id (:id author)
+                                  :branch-id branch-id
+                                  :title "review me"})]
+            (t/is (= :merged (-> @merged :result :status)))
+            (t/is (= :branch-not-found (-> out :error ex-data :code)))
+            (t/is (= [] (th/db-query :file-pull-request {:file-branch-id branch-id})))))))))
+
+(t/deftest reopen-serializes-against-a-concurrent-merge
+  ;; the reopen must re-read the branch under the advisory lock too: the
+  ;; merge that wins the race closes the branch under the closed pull
+  ;; request's feet, so a reopen arriving afterwards must refuse instead
+  ;; of reviving a review over a branch that is already merged and gone.
+  (with-redefs [cf/flags pr-flags]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "contested")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)]
+      (add-color* author branch-file-id "Brand")
+      (let [pr (:result (create-pr* author branch-id {}))]
+        (t/is (nil? (:error (th/command! {::th/type :close-pull-request
+                                          ::rpc/profile-id (:id author)
+                                          :id (:id pr)}))))
+        (let [orig-lock db/xact-lock!
+              merging?  (atom false)
+              merged    (atom nil)]
+          (with-redefs [db/xact-lock!
+                        (fn [conn id]
+                          ;; the first lock the reopen takes is the signal:
+                          ;; merge the same branch through the pool in its
+                          ;; own transaction BEFORE the reopen locks
+                          (when (compare-and-set! merging? false true)
+                            (reset! merged (th/command! {::th/type :merge-file-branch
+                                                         ::rpc/profile-id (:id author)
+                                                         :branch-id branch-id})))
+                          (orig-lock conn id))]
+            (let [out (th/command! {::th/type :reopen-pull-request
+                                    ::rpc/profile-id (:id author)
+                                    :id (:id pr)})]
+              (t/is (= :merged (-> @merged :result :status)))
+              (t/is (= :branch-not-open (-> out :error ex-data :code)))
+              (t/is (= "closed" (:status (first (th/db-query :file-pull-request {:id (:id pr)}))))))))))))
+
+(t/deftest create-serializes-against-a-kept-concurrent-merge
+  ;; same race, but the merge keeps the branch: its row stays readable
+  ;; with status "merged" and its file is not deleted, so without the
+  ;; re-read the create sails past the stale status check and INSERTS a
+  ;; pull request for a branch the merge already closed.
+  (with-redefs [cf/flags pr-flags]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "contested")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)]
+      (add-color* author branch-file-id "Brand")
+      (let [orig-lock db/xact-lock!
+            merging?  (atom false)
+            merged    (atom nil)]
+        (with-redefs [db/xact-lock!
+                      (fn [conn id]
+                        ;; the first lock the create takes is the signal:
+                        ;; merge the same branch through the pool in its
+                        ;; own transaction BEFORE the create locks
+                        (when (compare-and-set! merging? false true)
+                          (reset! merged (th/command! {::th/type :merge-file-branch
+                                                       ::rpc/profile-id (:id author)
+                                                       :branch-id branch-id
+                                                       :keep-branch true})))
+                        (orig-lock conn id))]
+          (let [out (th/command! {::th/type :create-pull-request
+                                  ::rpc/profile-id (:id author)
+                                  :branch-id branch-id
+                                  :title "review me"})]
+            (t/is (= :merged (-> @merged :result :status)))
+            (t/is (= "merged" (:status (first (th/db-query :file-branch {:id branch-id})))))
+            (t/is (= :branch-not-open (-> out :error ex-data :code)))
+            (t/is (= [] (th/db-query :file-pull-request {:file-branch-id branch-id})))))))))
+
+(t/deftest reopen-serializes-against-a-kept-concurrent-merge
+  ;; same race for the reopen: the kept merge leaves the branch row
+  ;; readable with status "merged", so without the re-read the reopen
+  ;; sails past the stale status check and REOPENS the closed pull
+  ;; request over a branch the merge already closed.
+  (with-redefs [cf/flags pr-flags]
+    (let [author (th/create-profile* 1 {:is-active true})
+          file   (th/create-file* 1 {:profile-id (:id author)
+                                     :project-id (:default-project-id author)})
+          branch (create-branch* author file "contested")
+          branch-id      (:id branch)
+          branch-file-id (:branch-file-id branch)]
+      (add-color* author branch-file-id "Brand")
+      (let [pr (:result (create-pr* author branch-id {}))]
+        (t/is (nil? (:error (th/command! {::th/type :close-pull-request
+                                          ::rpc/profile-id (:id author)
+                                          :id (:id pr)}))))
+        (let [orig-lock db/xact-lock!
+              merging?  (atom false)
+              merged    (atom nil)]
+          (with-redefs [db/xact-lock!
+                        (fn [conn id]
+                          ;; the first lock the reopen takes is the signal:
+                          ;; merge the same branch through the pool in its
+                          ;; own transaction BEFORE the reopen locks
+                          (when (compare-and-set! merging? false true)
+                            (reset! merged (th/command! {::th/type :merge-file-branch
+                                                         ::rpc/profile-id (:id author)
+                                                         :branch-id branch-id
+                                                         :keep-branch true})))
+                          (orig-lock conn id))]
+            (let [out (th/command! {::th/type :reopen-pull-request
+                                    ::rpc/profile-id (:id author)
+                                    :id (:id pr)})]
+              (t/is (= :merged (-> @merged :result :status)))
+              (t/is (= "merged" (:status (first (th/db-query :file-branch {:id branch-id})))))
+              (t/is (= :branch-not-open (-> out :error ex-data :code)))
+              (t/is (= "closed" (:status (first (th/db-query :file-pull-request {:id (:id pr)}))))))))))))
 
 (t/deftest closed-pull-requests-listing
   (with-redefs [cf/flags pr-flags]

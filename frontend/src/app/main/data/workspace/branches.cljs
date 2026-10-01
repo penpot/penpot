@@ -459,34 +459,54 @@
 (defn update-branch-from-main
   "Bring main's changes into the branch (reverse of merge). `branch` is the
   branch row. With conflicts and no `resolutions`, opens the conflict
-  resolution modal in update mode; with resolutions, applies them."
+  resolution modal in update mode; with resolutions, applies them.
+
+  When the current diff in state is this branch's `:main->branch` diff,
+  its main revn is sent as `expected-main-revn` so the server refuses to
+  apply resolutions computed against a stale diff (`:file-modified`); in
+  that case the diff is re-fetched and the user is asked to review it
+  again (same as `merge-branch`)."
   ([branch] (update-branch-from-main branch nil))
   ([branch resolutions]
    (ptk/reify ::update-branch-from-main
      ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/concat
-        (rx/of (ev/event {::ev/name "update-branch-from-main"}))
-        (->> (rp/cmd! :update-branch-from-main (cond-> {:branch-id (:id branch)}
-                                                 (seq resolutions) (assoc :resolutions resolutions)))
-             (rx/mapcat
-              (fn [{:keys [status conflicts]}]
-                (case status
-                  ;; the open branch file just changed server-side: hard-reload
-                  ;; it so the pulled changes are shown
-                  :updated     (rx/of (ntf/success (tr "workspace.branches.update.success"))
-                                      (reload-file-window))
-                  ;; the returned conflicts are authoritative: they are the very
-                  ;; ones the command computes `resolved?` against, and the diff
-                  ;; the modal could fetch on its own is computed in another id
-                  ;; frame, which can disagree with them (vcs:tp-update-conflict-frame)
-                  :conflicts   (rx/of (open-conflict-resolutions {:branch branch
-                                                                  :mode :update
-                                                                  :conflicts conflicts}))
-                  :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
-                  (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
-             (rx/catch (fn [cause]
-                         (rx/of (refusal-notification cause (tr "workspace.branches.update.error")))))))))))
+     (watch [_ state _]
+       (let [branch-id (:id branch)
+             diff-st   (:workspace-branch-diff state)
+             main-revn (when (and (= branch-id (:branch-id diff-st))
+                                  (= :main->branch (:direction diff-st)))
+                         (get-in diff-st [:diff :meta :main-revn]))]
+         (rx/concat
+          (rx/of (ev/event {::ev/name "update-branch-from-main"}))
+          (->> (rp/cmd! :update-branch-from-main (cond-> {:branch-id branch-id}
+                                                   (seq resolutions)  (assoc :resolutions resolutions)
+                                                   (some? main-revn)  (assoc :expected-main-revn main-revn)))
+               (rx/mapcat
+                (fn [{:keys [status conflicts]}]
+                  (case status
+                    ;; the open branch file just changed server-side: hard-reload
+                    ;; it so the pulled changes are shown
+                    :updated     (rx/of (ntf/success (tr "workspace.branches.update.success"))
+                                        (reload-file-window))
+                    ;; the returned conflicts are authoritative: they are the very
+                    ;; ones the command computes `resolved?` against, and the diff
+                    ;; the modal could fetch on its own is computed in another id
+                    ;; frame, which can disagree with them (vcs:tp-update-conflict-frame)
+                    :conflicts   (rx/of (open-conflict-resolutions {:branch branch
+                                                                    :mode :update
+                                                                    :conflicts conflicts}))
+                    :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
+                    (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
+               (rx/catch
+                (fn [cause]
+                  (if (= :file-modified (:code (ex-data cause)))
+                    ;; main moved under our feet: reload the diff so the
+                    ;; user resolves against the current state (no
+                    ;; update-specific "main moved" key exists, so this
+                    ;; reuses merge's)
+                    (rx/of (ntf/warn (tr "workspace.branches.merge.main-moved"))
+                           (fetch-branch-diff branch-id :main->branch))
+                    (rx/of (refusal-notification cause (tr "workspace.branches.update.error")))))))))))))
 
 (defn set-conflict-resolution
   "Choose `:main` or `:branch` for a whole conflicting entity (by id). This

@@ -29,6 +29,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
@@ -224,9 +225,16 @@
 (defn- unpaired-media-rows
   "Full file_media_object rows of `file-id` that are used by `data` but have
   no counterpart in `pairs` — media added on this side since branching.
-  They must be copied into the target file when the merge/update applies."
+  They must be copied into the target file when the merge/update applies.
+
+  The used set is `cfh/collect-used-media` plus the library-color `:image`
+  ids it does not see but `bm/remap-refs` rewrites."
   [cfg file-id data pairs]
-  (let [used (into #{} (remove pairs) (cfh/collect-used-media data))]
+  (let [used (into #{}
+                   (remove pairs)
+                   (into (cfh/collect-used-media data)
+                         (keep #(get-in % [:image :id]))
+                         (vals (:colors data))))]
     (if (seq used)
       (->> (db/exec! cfg [sql:media-rows-by-id
                           (db/create-array (db/get-connection cfg) "uuid" used)])
@@ -328,9 +336,11 @@
 
 (defn- delete-branch!
   "Logically delete a branch and its branch file (with the team's deletion
-  delay), release the base snapshot, schedule the file object GC and notify
-  the branch file's open clients. Must run inside a transaction."
-  [{:keys [::mbus/msgbus ::db/conn] :as cfg}
+  delay), release the base snapshot, schedule the file object GC and
+  return the msgbus notification for the branch file's open clients —
+  the caller publishes it, and only once the transaction has committed
+  (`tx-run-notify!`). Must run inside a transaction."
+  [{:keys [::db/conn] :as cfg}
    {:keys [id branch-file-id] :as branch}
    {:keys [profile-id session-id status]}]
   (let [team (teams/get-team conn :profile-id profile-id :file-id branch-file-id)
@@ -351,15 +361,22 @@
     (wrk/submit! {::db/conn conn
                   ::wrk/task :delete-object
                   ::wrk/params {:object :file :deleted-at dt :id branch-file-id}})
-    (mbus/pub! msgbus
-               :topic branch-file-id
-               :message {:type :file-deleted
-                         :file-id branch-file-id
-                         :profile-id profile-id
-                         :session-id session-id})
-    nil))
+    {:topic branch-file-id
+     :message {:type :file-deleted
+               :file-id branch-file-id
+               :profile-id profile-id
+               :session-id session-id}}))
 
 ;; --- COMMAND: create-file-branch
+
+(defn- check-branch-name!
+  "Refuse a blank branch name. Shared by creation and rename so the API
+  cannot create a branch the rename would refuse."
+  [name]
+  (when (str/blank? name)
+    (ex/raise :type :validation
+              :code :invalid-branch-name
+              :hint "branch name cannot be blank")))
 
 (def ^:private schema:create-file-branch
   [:map {:title "create-file-branch"}
@@ -380,6 +397,7 @@
                 [:create-file-branch/global]]}
   [cfg {:keys [::rpc/profile-id file-id name description]}]
   (check-branching-enabled!)
+  (check-branch-name! name)
   (files/check-edition-permissions! cfg profile-id file-id)
 
   (let [tpoint   (ct/tpoint)
@@ -392,14 +410,6 @@
                 :hint "branches of branches are not supported"
                 :file-id file-id))
 
-    (-> cfg
-        (assoc ::quotes/profile-id profile-id)
-        (assoc ::quotes/project-id (:project-id file-row))
-        (assoc ::quotes/team-id (:team-id project))
-        (assoc ::quotes/file-id file-id)
-        (quotes/check! {::quotes/id ::quotes/branches-per-file}
-                       {::quotes/id ::quotes/branches-per-team}))
-
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
@@ -409,6 +419,20 @@
                   ;; branch's initial state (the empty op log over that
                   ;; base) are taken from the SAME state of main.
                   (db/xact-lock! conn file-id)
+
+                  ;; The quota check runs INSIDE the transaction and
+                  ;; AFTER the lock: two creators racing for the last
+                  ;; branch slot serialize on the lock, and the loser's
+                  ;; count must see the winner's committed row.
+                  ;; `quotes/check!` reads through `::db/conn`, so it
+                  ;; counts on this transaction's connection.
+                  (-> cfg
+                      (assoc ::quotes/profile-id profile-id)
+                      (assoc ::quotes/project-id (:project-id file-row))
+                      (assoc ::quotes/team-id (:team-id project))
+                      (assoc ::quotes/file-id file-id)
+                      (quotes/check! {::quotes/id ::quotes/branches-per-file}
+                                     {::quotes/id ::quotes/branches-per-team}))
 
                   ;; 1. Materialize the merge base: a system snapshot of
                   ;; main, kept long-lived so it is not pruned by the
@@ -441,7 +465,7 @@
 
                         meta-id (uuid/next)]
 
-                    (bfc/insert-file! cfg branch-file {::db/return-keys false})
+                    (bfc/insert-file-row! cfg branch-file {::db/return-keys false})
 
                     ;; 3. Mark the new file row as a branch so it is
                     ;; hidden from the project/team file listings.
@@ -543,7 +567,7 @@
   `base-revn` — the two revns are independent counters and must never be
   mixed."
   [{:keys [branch-revn source-revn base-revn base-branch-revn]}]
-  [(max 0 (- branch-revn (or base-branch-revn base-revn)))
+  [(max 0 (- branch-revn base-branch-revn))
    (max 0 (- source-revn base-revn))])
 
 (defn- branch-id-map
@@ -782,7 +806,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id branch-id direction]}]
   (check-branching-enabled!)
   (let [branch (db/get* conn :file-branch {:id branch-id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+    (when (nil? branch)
       (ex/raise :type :not-found
                 :code :branch-not-found
                 :hint "unable to find branch with the provided id"
@@ -803,6 +827,13 @@
                        (:data branch-file)
                        (branch-id-map cfg (:branch-file-id branch) (:source-file-id branch)))
           base-data   (branch-base-data branch-file)
+          ;; when the CURRENT merge-base snapshot row was created: the
+          ;; base moves whenever `update-branch-from-main` repositions it,
+          ;; and a pinned base carries a future `deleted-at`
+          base-at     (:created-at (db/get* conn :file-change
+                                            {:id (:base-snapshot-id branch)}
+                                            {::sql/columns [:created-at]
+                                             ::db/remove-deleted false}))
           ;; only the branch->main direction may be bounded to the pages
           ;; the branch touched: the other direction is main's changes and
           ;; nothing here knows which pages those are
@@ -810,16 +841,35 @@
                         (when-let [pages (affected-pages log)]
                           {:only-pages pages}))]
       ;; `:meta` carries the "when" of each side so the resolution UI can show
-      ;; how recent main/branch are (base is pinned at branch creation), plus
+      ;; how recent main/branch are (base is the snapshot its
+      ;; `base-snapshot-id` currently points at), plus
       ;; `:main-revn` so the client can do optimistic concurrency on merge
       ;; (`expected-main-revn`). The last editor's identity is intentionally
       ;; omitted: files do not store a reliable "modified-by".
       (-> (bm/compute-merge base-data main-data branch-data dir opts)
-          (assoc :meta {:base-at   (:created-at branch)
+          (assoc :meta {:base-at   base-at
                         :main-at   (:modified-at main-file)
                         :branch-at (:modified-at branch-file)
                         :main-revn (:revn main-file)})
           (audited tpoint :compare)))))
+
+;; --- Helpers: post-commit notification
+;;
+;; `app.db` offers no post-commit hook and `db/tx-run!` has committed
+;; when it returns, so the messages a transaction collects in `messages`
+;; leave here, right after the commit: a client that reloads on one of
+;; them reads the committed state, and a rolled back transaction
+;; publishes nothing.
+
+(defn- tx-run-notify!
+  "Run `f` in a transaction, then publish the `messages` it collected (a
+  volatile of `{:topic .. :message ..}` maps) and return its result."
+  [cfg msgbus messages f]
+  (let [result (db/tx-run! cfg f)]
+    (run! (fn [{:keys [topic message]}]
+            (mbus/pub! msgbus :topic topic :message message))
+          @messages)
+    result))
 
 ;; --- COMMAND: merge-file-branch
 
@@ -829,12 +879,12 @@
    ;; conflict resolutions keyed by entity id (uuid) or, for structural
    ;; conflicts, a keyword id like :active-themes. A resolution is either a
    ;; whole-entity choice (:main/:branch) or a per-attr map {attr -> side}.
-   [:resolutions {:optional true} [:map-of :any [:or :keyword [:map-of :keyword :keyword]]]]
+   [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
    [:expected-main-revn {:optional true} ::sm/int]
    ;; when false (the default) the branch and its file are logically
    ;; deleted right after a successful merge, in the SAME transaction (so
    ;; merged copies do not pile up); when true the branch is kept as
-   ;; "merged" and can be inspected/restored from the archived list.
+   ;; "merged", staying readable with status merged until it is deleted.
    [:keep-branch {:optional true} ::sm/boolean]])
 
 (sv/defmethod ::merge-file-branch
@@ -857,7 +907,7 @@
    {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn keep-branch]}]
   (check-branching-enabled!)
   (let [branch (db/get* cfg :file-branch {:id branch-id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+    (when (nil? branch)
       (ex/raise :type :not-found
                 :code :branch-not-found
                 :branch-id branch-id))
@@ -868,12 +918,15 @@
 
     (let [tpoint         (ct/tpoint)
           main-id        (:source-file-id branch)
-          branch-file-id (:branch-file-id branch)]
+          branch-file-id (:branch-file-id branch)
+          messages       (volatile! [])]
       ;; Only editors of main can integrate (same rule as Figma).
       (files/check-edition-permissions! cfg profile-id main-id)
 
-      (db/tx-run!
+      (tx-run-notify!
        cfg
+       msgbus
+       messages
        (fn [{:keys [::db/conn] :as cfg}]
          ;; Serialize against concurrent edits/merges on BOTH files (same
          ;; advisory lock the normal update-file path takes; stable order
@@ -882,7 +935,19 @@
          ;; the branch is marked merged (and possibly deleted) below.
          (run! (partial db/xact-lock! conn) (sort [main-id branch-file-id]))
 
-         (let [main-file   (-> (bfc/get-file cfg main-id :realize? true)
+         ;; the row read before the lock is stale by now: a competing
+         ;; merge, delete or archive may have committed while these
+         ;; locks were taken, so everything below works off the row as
+         ;; it stands under the lock
+         (let [branch      (or (db/get* conn :file-branch {:id branch-id})
+                               (ex/raise :type :not-found
+                                         :code :branch-not-found
+                                         :branch-id branch-id))
+               _           (when (not= "open" (:status branch))
+                             (ex/raise :type :validation
+                                       :code :branch-not-open
+                                       :branch-id branch-id))
+               main-file   (-> (bfc/get-file cfg main-id :realize? true)
                                (check-file-size-limits! :merge))
                _           (-> (branch-log cfg branch-file-id)
                                (check-oplog-depth-limit! branch-file-id :merge))
@@ -942,8 +1007,9 @@
                                                    :status "merged"
                                                    :deleted-at (ct/in-future delay)})
                      (when-not keep-branch
-                       (delete-branch! cfg branch {:profile-id profile-id
-                                                   :session-id session-id}))))]
+                       (vswap! messages conj
+                               (delete-branch! cfg branch {:profile-id profile-id
+                                                           :session-id session-id})))))]
              (cond
                (seq unresolved)
                (audited {:status :conflicts :conflicts conflicts} tpoint :merge)
@@ -990,10 +1056,24 @@
                                         (update :data #(cpc/process-changes % changes)))
                              libs   (bfc/get-resolved-file-libraries cfg merged)
                              errors (not-empty (cfv/validate-file merged libs))
-                             merged (if errors
-                                      (update merged :data cpc/process-changes
-                                              (cfr/repair-file merged libs errors))
-                                      merged)]
+                             repair (if errors
+                                      (cfr/repair-file merged libs errors)
+                                      [])
+                             merged (cond-> merged
+                                      (seq repair)
+                                      (update :data cpc/process-changes repair))
+
+                             ;; the validator, not the merge, decides
+                             ;; validity: the repaired result goes back
+                             ;; to it, and whatever stays broken refuses
+                             ;; the merge and rolls the transaction back
+                             errors (when errors
+                                      (not-empty (cfv/validate-file merged libs)))]
+                         (when errors
+                           (ex/raise :type :validation
+                                     :code :merge-result-invalid
+                                     :hint "the merge result still has validation errors after the repair"
+                                     :codes (into [] (comp (map :code) (distinct)) errors)))
 
                          ;; Change log (xlog), GC-eligible after the delay.
                          (db/insert! conn :file-change
@@ -1007,19 +1087,22 @@
                                       :revn (:revn merged)
                                       :version (:version merged)
                                       :features (into-array (:features merged))
-                                      :changes (blob/encode (vec changes))}
+                                      :changes (blob/encode (into (vec changes) repair))}
                                      {::db/return-keys false})
 
                          (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) merged)
 
+                         (when (contains? cf/flags :redis-cache)
+                           (fupd/invalidate-caches! cfg merged))
+
                          (finish-branch! ts)
 
-                         (mbus/pub! msgbus
-                                    :topic main-id
-                                    :message {:type :file-merged
-                                              :file-id main-id
-                                              :session-id session-id
-                                              :revn (:revn merged)})
+                         (vswap! messages conj
+                                 {:topic main-id
+                                  :message {:type :file-merged
+                                            :file-id main-id
+                                            :session-id session-id
+                                            :revn (:revn merged)}})
 
                          (audited {:status :merged :revn (:revn merged) :source-file-id main-id}
                                   tpoint :merge))))))))))))))
@@ -1031,7 +1114,8 @@
    [:branch-id ::sm/uuid]
    ;; resolutions in UI terms: id -> :main (take main) | :branch (keep
    ;; branch) | {attr -> side} (per-attr)
-   [:resolutions {:optional true} [:map-of :any [:or :keyword [:map-of :keyword :keyword]]]]])
+   [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
+   [:expected-main-revn {:optional true} ::sm/int]])
 
 (defn- persist-branch-update!
   "Persist the result of an update-from-main integration on a branch
@@ -1079,27 +1163,47 @@
    ::climit/id [[:update-branch-from-main/by-profile ::rpc/profile-id]
                 [:update-branch-from-main/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn]}]
   (check-branching-enabled!)
   (let [branch (db/get* cfg :file-branch {:id branch-id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+    (when (nil? branch)
       (ex/raise :type :not-found :code :branch-not-found :branch-id branch-id))
     (when (not= "open" (:status branch))
       (ex/raise :type :validation :code :branch-not-open :branch-id branch-id))
 
     (let [tpoint         (ct/tpoint)
           branch-file-id (:branch-file-id branch)
-          main-id        (:source-file-id branch)]
+          main-id        (:source-file-id branch)
+          messages       (volatile! [])]
       ;; Editing the branch -> need edition permissions on the branch file.
       (files/check-edition-permissions! cfg profile-id branch-file-id)
 
-      (db/tx-run!
+      (tx-run-notify!
        cfg
+       msgbus
+       messages
        (fn [{:keys [::db/conn] :as cfg}]
          (db/xact-lock! conn branch-file-id)
 
-         (let [main-file   (-> (bfc/get-file cfg main-id :realize? true)
+         ;; the row read before the lock is stale by now: a competing
+         ;; merge, delete or archive may have committed while this lock
+         ;; was taken, so everything below works off the row as it
+         ;; stands under the lock
+         (let [branch      (or (db/get* conn :file-branch {:id branch-id})
+                               (ex/raise :type :not-found
+                                         :code :branch-not-found
+                                         :branch-id branch-id))
+               _           (when (not= "open" (:status branch))
+                             (ex/raise :type :validation
+                                       :code :branch-not-open
+                                       :branch-id branch-id))
+               main-file   (-> (bfc/get-file cfg main-id :realize? true)
                                (check-file-size-limits! :update-from-main))
+               _           (when (and (some? expected-main-revn)
+                                      (not= expected-main-revn (:revn main-file)))
+                             (ex/raise :type :conflict
+                                       :code :file-modified
+                                       :hint "main was modified, recompute the diff and retry"))
                _           (-> (branch-log cfg branch-file-id)
                                (check-oplog-depth-limit! branch-file-id :update-from-main))
                branch-file (bfc/get-file cfg branch-file-id :realize? true)
@@ -1146,7 +1250,7 @@
                ;; (revn moved since the base was last positioned)
                branch-diverged?
                (pos? (- (:revn branch-file)
-                        (or (:base-branch-revn branch) (:base-revn branch))))
+                        (:base-branch-revn branch)))
 
                reposition-base!
                (fn [ts branch-revn]
@@ -1246,10 +1350,24 @@
                                        (update :data #(cpc/process-changes % applied)))
                            libs    (bfc/get-resolved-file-libraries cfg updated)
                            errors  (not-empty (cfv/validate-file updated libs))
-                           updated (if errors
-                                     (update updated :data cpc/process-changes
-                                             (cfr/repair-file updated libs errors))
-                                     updated)]
+                           repair  (if errors
+                                     (cfr/repair-file updated libs errors)
+                                     [])
+                           updated (cond-> updated
+                                     (seq repair)
+                                     (update :data cpc/process-changes repair))
+
+                           ;; the validator, not the update, decides
+                           ;; validity: the repaired result goes back to
+                           ;; it, and whatever stays broken refuses the
+                           ;; update and rolls the transaction back
+                           errors  (when errors
+                                     (not-empty (cfv/validate-file updated libs)))]
+                       (when errors
+                         (ex/raise :type :validation
+                                   :code :update-result-invalid
+                                   :hint "the update result still has validation errors after the repair"
+                                   :codes (into [] (comp (map :code) (distinct)) errors)))
 
                        (db/insert! conn :file-change
                                    {:id (uuid/next)
@@ -1262,7 +1380,7 @@
                                     :revn (:revn updated)
                                     :version (:version updated)
                                     :features (into-array (:features updated))
-                                    :changes (blob/encode (vec applied))}
+                                    :changes (blob/encode (into (vec applied) repair))}
                                    {::db/return-keys false})
 
                        ;; SQUASH: the new base (main's current state)
@@ -1282,14 +1400,17 @@
                                      :hint "the update produces branch-only changes that cannot be replayed"
                                      :kinds (vec unsupported)))
                          (persist-branch-update! cfg updated ts branch-id net-changes))
+
+                       (when (contains? cf/flags :redis-cache)
+                         (fupd/invalidate-caches! cfg updated))
                        (reposition-base! ts (:revn updated))
 
-                       (mbus/pub! msgbus
-                                  :topic branch-file-id
-                                  :message {:type :file-merged
-                                            :file-id branch-file-id
-                                            :session-id session-id
-                                            :revn (:revn updated)})
+                       (vswap! messages conj
+                               {:topic branch-file-id
+                                :message {:type :file-merged
+                                          :file-id branch-file-id
+                                          :session-id session-id
+                                          :revn (:revn updated)}})
 
                        (audited {:status :updated :revn (:revn updated)}
                                 tpoint :update-from-main)))))))))))))
@@ -1348,13 +1469,29 @@
 
                (let [libs   (bfc/get-resolved-file-libraries cfg file)
                      errors (not-empty (cfv/validate-file file libs))
-                     file   (if errors
-                              (update file :data cpc/process-changes
-                                      (cfr/repair-file file libs errors))
-                              file)]
+                     repair (if errors
+                              (cfr/repair-file file libs errors)
+                              [])
+                     file   (cond-> file
+                              (seq repair)
+                              (update :data cpc/process-changes repair))
+
+                     ;; the exit door never strands a user: the repaired
+                     ;; result goes back to the validator, and whatever
+                     ;; stays broken is logged, never refused
+                     errors (when errors
+                              (not-empty (cfv/validate-file file libs)))]
+
+                 (when errors
+                   (l/wrn :hint "materialised file still has validation errors"
+                          :file-id (str file-id)
+                          :codes (into [] (comp (map :code) (distinct)) errors)))
 
                  ;; the derived state becomes the file's own payload
                  (fupd/persist-file! (assoc cfg ::fupd/timestamp ts) file)
+
+                 (when (contains? cf/flags :redis-cache)
+                   (fupd/invalidate-caches! cfg file))
 
                  ;; from here the ordinary paths apply
                  (db/update! conn :file
@@ -1469,23 +1606,34 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name description]}]
   (check-branching-enabled!)
-  (when (and (some? name) (str/blank? name))
-    (ex/raise :type :validation
-              :code :invalid-branch-name
-              :hint "branch name cannot be blank"))
-  (let [branch (db/get* conn :file-branch {:id id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+  (when (some? name)
+    (check-branch-name! name))
+  (let [tpoint (ct/tpoint)
+        branch (db/get* conn :file-branch {:id id})]
+    (when (nil? branch)
       (ex/raise :type :not-found :code :branch-not-found :branch-id id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
-    (db/update! conn :file-branch
-                (cond-> {:updated-at (ct/now)}
-                  (some? name)        (assoc :name name)
-                  (some? description) (assoc :description description))
-                {:id id}
-                {::db/return-keys false})
-    {:id id
-     :name (or name (:name branch))
-     :description (or description (:description branch))}))
+    ;; Serialize against a merge of the same branch (which locks the
+    ;; branch file) and re-read the row under the lock: the branch may
+    ;; be merged and gone by now.
+    (db/xact-lock! conn (:branch-file-id branch))
+    (let [branch (db/get* conn :file-branch {:id id})]
+      (when (nil? branch)
+        (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+      (db/update! conn :file-branch
+                  (cond-> {:updated-at (ct/now)}
+                    (some? name)        (assoc :name name)
+                    (some? description) (assoc :description description))
+                  {:id id}
+                  {::db/return-keys false})
+      ;; the branch file carries its own name (set from the branch name
+      ;; at creation), so a rename has to reach the file row too
+      (when (some? name)
+        (files/rename-file conn {:id (:branch-file-id branch) :name name}))
+      (audited {:id id
+                :name (or name (:name branch))
+                :description (or description (:description branch))}
+               tpoint :rename-branch))))
 
 ;; --- COMMAND: archive-file-branch
 
@@ -1501,27 +1649,36 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id archived]}]
   (check-branching-enabled!)
-  (let [branch (db/get* conn :file-branch {:id id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+  (let [tpoint (ct/tpoint)
+        branch (db/get* conn :file-branch {:id id})]
+    (when (nil? branch)
       (ex/raise :type :not-found :code :branch-not-found :branch-id id))
-    (when (= "merged" (:status branch))
-      (ex/raise :type :validation :code :branch-merged :branch-id id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
-    (let [status (if (false? archived) "open" "archived")]
-      (db/update! conn :file-branch
-                  {:status status :updated-at (ct/now)}
-                  {:id id}
-                  {::db/return-keys false})
-      ;; archiving hides the branch from the default flow, so its review
-      ;; sandbox has no reason to stay open either
-      (when (= "archived" status)
-        (let [team (teams/get-team conn :profile-id profile-id
-                                   :file-id (:branch-file-id branch))
-              dt   (ct/in-future (ldel/get-deletion-delay team))]
-          (close-branch-pull-requests! cfg id {:profile-id profile-id
-                                               :status "closed"
-                                               :deleted-at dt})))
-      {:id id :status status})))
+    ;; Serialize against a merge of the same branch (which locks the
+    ;; branch file) and re-read the row under the lock: the branch may
+    ;; be merged and gone by now.
+    (db/xact-lock! conn (:branch-file-id branch))
+    (let [branch (db/get* conn :file-branch {:id id})]
+      (when (nil? branch)
+        (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+      (when (= "merged" (:status branch))
+        (ex/raise :type :validation :code :branch-merged :branch-id id))
+      (let [status (if (false? archived) "open" "archived")]
+        (db/update! conn :file-branch
+                    {:status status :updated-at (ct/now)}
+                    {:id id}
+                    {::db/return-keys false})
+        ;; archiving hides the branch from the default flow, so its review
+        ;; sandbox has no reason to stay open either
+        (when (= "archived" status)
+          (let [team (teams/get-team conn :profile-id profile-id
+                                     :file-id (:branch-file-id branch))
+                dt   (ct/in-future (ldel/get-deletion-delay team))]
+            (close-branch-pull-requests! cfg id {:profile-id profile-id
+                                                 :status "closed"
+                                                 :deleted-at dt})))
+        (audited {:id id :status status} tpoint
+                 (if (false? archived) :restore-branch :archive-branch))))))
 
 ;; --- COMMAND: delete-file-branch
 
@@ -1536,16 +1693,30 @@
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:delete-file-branch}
-  [cfg {:keys [::rpc/profile-id ::rpc/session-id id]}]
+  [{:keys [::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id ::rpc/session-id id]}]
   (check-branching-enabled!)
-  (let [branch (db/get* cfg :file-branch {:id id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+  (let [tpoint   (ct/tpoint)
+        branch   (db/get* cfg :file-branch {:id id})
+        messages (volatile! [])]
+    (when (nil? branch)
       (ex/raise :type :not-found :code :branch-not-found :branch-id id))
     (files/check-edition-permissions! cfg profile-id (:branch-file-id branch))
-    (db/tx-run!
+    (tx-run-notify!
      cfg
-     (fn [cfg]
-       (delete-branch! cfg branch {:profile-id profile-id
-                                   :session-id session-id
-                                   :status "archived"})
-       {:status :deleted}))))
+     msgbus
+     messages
+     (fn [{:keys [::db/conn] :as cfg}]
+       ;; Serialize against a merge of the same branch (which locks both
+       ;; files): without the lock a delete can commit while the merge
+       ;; runs, and the merge then deletes the branch a second time. The
+       ;; row is re-read under the lock: the branch may be gone by now.
+       (db/xact-lock! conn (:branch-file-id branch))
+       (let [branch (db/get* conn :file-branch {:id id})]
+         (when (nil? branch)
+           (ex/raise :type :not-found :code :branch-not-found :branch-id id))
+         ;; no `:status` here: a delete keeps the status the row carries
+         ;; (deleting a kept merged branch must not rewrite "merged")
+         (vswap! messages conj
+                 (delete-branch! cfg branch {:profile-id profile-id
+                                             :session-id session-id}))
+         (audited {:status :deleted} tpoint :delete-branch))))))

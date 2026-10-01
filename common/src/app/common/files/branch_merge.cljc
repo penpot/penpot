@@ -684,10 +684,11 @@
 
   Every payload `compute-changes` can emit is covered. `relink-refs` walks a
   whole map, so `:obj`, `:page`, `:params`, and a component's `:objects` are
-  complete on their own. The two payloads it cannot see are the values that
-  ARE the reference: a media object's `:id` (its `:media-id` is a storage key
-  and must not be touched), and an operation value that is the reference
-  itself. Token changes are left alone: no id in `id-map` is a token id."
+  complete on their own. The payloads it cannot see are the values that ARE
+  the reference: a media object's `:id` (its `:media-id` is a storage key and
+  must not be touched), a library color's `:image` id, and an operation value
+  that is the reference itself. Token changes are left alone: no id in
+  `id-map` is a token id."
   [changes id-map]
   (if (empty? id-map)
     changes
@@ -697,6 +698,9 @@
               (cond-> (relink change)
                 (uuid? (:id (:object change)))
                 (update-in [:object :id] lookup)
+
+                (uuid? (get-in change [:color :image :id]))
+                (update-in [:color :image :id] lookup)
 
                 (seq (:operations change))
                 (update :operations #(mapv (fn [op] (remap-op op id-map)) %))))

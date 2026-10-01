@@ -261,7 +261,7 @@
               :code :invalid-pull-request-title
               :hint "pull request title cannot be blank"))
   (let [branch (db/get* cfg :file-branch {:id branch-id})]
-    (when (or (nil? branch) (some? (:deleted-at branch)))
+    (when (nil? branch)
       (ex/raise :type :not-found
                 :code :branch-not-found
                 :branch-id branch-id))
@@ -298,64 +298,81 @@
            ;; concurrent create-pull-request on the same branch.
            (db/xact-lock! conn branch-file-id)
 
-           (when (db/exec-one! conn [sql:get-open-pull-request-for-branch branch-id])
-             (ex/raise :type :validation
-                       :code :pull-request-already-exists
-                       :hint "the branch already has an open pull request"
-                       :branch-id branch-id))
+           ;; Serialize against a merge of the same branch (which locks
+           ;; the branch file) and re-read the row under the lock: the
+           ;; branch may be merged and gone by now, so the stale row read
+           ;; before the transaction is dropped and everything below
+           ;; derives from the fresh one.
+           (let [branch         (db/get* conn :file-branch {:id branch-id})
+                 branch-file-id (:branch-file-id branch)
+                 target-id      (:source-file-id branch)]
+             (when (nil? branch)
+               (ex/raise :type :not-found
+                         :code :branch-not-found
+                         :branch-id branch-id))
+             (when (not= "open" (:status branch))
+               (ex/raise :type :validation
+                         :code :branch-not-open
+                         :branch-id branch-id))
 
-           (let [branch-file (bfc/get-file cfg branch-file-id :realize? true)
-                 snapshot    (pin-review-snapshot! cfg branch-file title profile-id)
-                 pr-id       (uuid/next)
-                 ts          (ct/now)]
+             (when (db/exec-one! conn [sql:get-open-pull-request-for-branch branch-id])
+               (ex/raise :type :validation
+                         :code :pull-request-already-exists
+                         :hint "the branch already has an open pull request"
+                         :branch-id branch-id))
 
-             (db/insert! conn :file-pull-request
-                         {:id pr-id
-                          :file-branch-id branch-id
-                          :source-file-id branch-file-id
-                          :target-file-id target-id
-                          :title title
-                          :description description
-                          :created-by profile-id
-                          :status "open"
-                          :review-snapshot-id (:id snapshot)
-                          :review-revn (:revn branch-file)
-                          :review-updated-at ts}
-                         {::db/return-keys false})
+             (let [branch-file (bfc/get-file cfg branch-file-id :realize? true)
+                   snapshot    (pin-review-snapshot! cfg branch-file title profile-id)
+                   pr-id       (uuid/next)
+                   ts          (ct/now)]
 
-             (doseq [reviewer-id reviewers]
-               (db/insert! conn :file-pull-request-review
-                           {:pull-request-id pr-id
-                            :profile-id reviewer-id}
-                           {::db/return-keys false}))
+               (db/insert! conn :file-pull-request
+                           {:id pr-id
+                            :file-branch-id branch-id
+                            :source-file-id branch-file-id
+                            :target-file-id target-id
+                            :title title
+                            :description description
+                            :created-by profile-id
+                            :status "open"
+                            :review-snapshot-id (:id snapshot)
+                            :review-revn (:revn branch-file)
+                            :review-updated-at ts}
+                           {::db/return-keys false})
 
-             (send-review-request-emails! conn
-                                          {:id pr-id
-                                           :source-file-id branch-file-id
-                                           :title title
-                                           :description description}
-                                          {:team-id team-id
-                                           :actor-id profile-id
-                                           :branch-name (:name branch)
-                                           :target-name (:name target-row)
-                                           :reviewers reviewers})
+               (doseq [reviewer-id reviewers]
+                 (db/insert! conn :file-pull-request-review
+                             {:pull-request-id pr-id
+                              :profile-id reviewer-id}
+                             {::db/return-keys false}))
 
-             (mbus/pub! msgbus
-                        :topic target-id
-                        :message {:type :pull-request-created
-                                  :file-id target-id
-                                  :pull-request-id pr-id
-                                  :profile-id profile-id})
+               (send-review-request-emails! conn
+                                            {:id pr-id
+                                             :source-file-id branch-file-id
+                                             :title title
+                                             :description description}
+                                            {:team-id team-id
+                                             :actor-id profile-id
+                                             :branch-name (:name branch)
+                                             :target-name (:name target-row)
+                                             :reviewers reviewers})
 
-             {:id pr-id
-              :file-branch-id branch-id
-              :source-file-id branch-file-id
-              :target-file-id target-id
-              :title title
-              :description description
-              :status "open"
-              :review-revn (:revn branch-file)
-              :reviewers reviewers})))))))
+               (mbus/pub! msgbus
+                          :topic target-id
+                          :message {:type :pull-request-created
+                                    :file-id target-id
+                                    :pull-request-id pr-id
+                                    :profile-id profile-id})
+
+               {:id pr-id
+                :file-branch-id branch-id
+                :source-file-id branch-file-id
+                :target-file-id target-id
+                :title title
+                :description description
+                :status "open"
+                :review-revn (:revn branch-file)
+                :reviewers reviewers}))))))))
 
 ;; --- COMMAND QUERY: get-file-pull-requests
 
@@ -813,7 +830,6 @@
 
     (let [branch (db/get* cfg :file-branch {:id (:file-branch-id pr)})]
       (when (or (nil? branch)
-                (some? (:deleted-at branch))
                 (not= "open" (:status branch)))
         (ex/raise :type :validation
                   :code :branch-not-open
@@ -824,6 +840,17 @@
        cfg
        (fn [{:keys [::db/conn] :as cfg}]
          (db/xact-lock! conn (:source-file-id pr))
+
+         ;; Serialize against a merge of the same branch (which locks the
+         ;; branch file) and re-read the row under the lock: the branch
+         ;; may be merged and gone by now.
+         (let [branch (db/get* conn :file-branch {:id (:file-branch-id pr)})]
+           (when (or (nil? branch)
+                     (not= "open" (:status branch)))
+             (ex/raise :type :validation
+                       :code :branch-not-open
+                       :hint "the pull request's branch is no longer open"
+                       :pull-request-id id)))
 
          (when (db/exec-one! conn [sql:get-open-pull-request-for-branch (:file-branch-id pr)])
            (ex/raise :type :validation

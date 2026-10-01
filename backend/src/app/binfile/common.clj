@@ -992,6 +992,32 @@
     (fdata/upsert! cfg file-data-params)
     nil))
 
+(defn insert-file-row!
+  "Insert only the `file` row of a new file, without writing the
+  `file_data` payload row. Used for branch creation: a branch stores no
+  data, so the create step must skip `encode-file` (its pointer-map
+  transform would write `file_data` rows for the branch) and the data
+  upsert. Returns nil."
+  [{:keys [::db/conn]} file & {:as opts}]
+  (when (:migrations file)
+    (fmigr/upsert-migrations! conn file))
+
+  (let [file-params (-> file
+                        (d/update-when :features into-array)
+                        (file->params))]
+    (try
+      (db/insert! conn :file
+                  file-params
+                  (assoc opts ::db/return-keys false))
+      (catch org.postgresql.util.PSQLException cause
+        (if (db/duplicate-key-error? cause)
+          (ex/raise :type :not-found
+                    :code :object-not-found
+                    :hint "file already exists"
+                    :cause cause)
+          (throw cause)))))
+  nil)
+
 (defn update-file-row!
   "Update only the `file` row of an existing file, without touching
   `file_data`. Used for branch file saves: a branch stores no data, so

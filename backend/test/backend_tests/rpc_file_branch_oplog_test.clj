@@ -17,6 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
@@ -64,9 +65,7 @@
           branch-file-id (:branch-file-id create)]
 
       (t/testing "the branch file stores no real data"
-        (let [rows (stored-data-rows branch-file-id)]
-          (t/is (= 1 (count rows)))
-          (t/is (empty? (-> rows first :data blob/decode :pages)))))
+        (t/is (empty? (stored-data-rows branch-file-id))))
 
       (t/testing "the op log starts empty"
         (t/is (empty? (oplog-rows branch-file-id))))
@@ -106,9 +105,7 @@
                    (blob/decode (:changes (first rows)))))))
 
       (t/testing "the stored data payload never grew"
-        (let [rows (stored-data-rows branch-file-id)]
-          (t/is (= 1 (count rows)))
-          (t/is (empty? (-> rows first :data blob/decode :pages)))))
+        (t/is (empty? (stored-data-rows branch-file-id))))
 
       (t/testing "the derived state carries the branch edit"
         (let [out (th/command! {::th/type :get-file
@@ -638,4 +635,118 @@
           (t/is (= revn-before (:revn (th/db-get :file {:id branch-file-id}))))
           (t/is (= xlog-before (count (th/db-query :file-change {:file-id branch-file-id})))))
         (t/testing "the branch still stores no data payload"
-          (t/is (= 1 (count (stored-data-rows branch-file-id)))))))))
+          (t/is (empty? (stored-data-rows branch-file-id))))))))
+
+;;; --- Regression tests
+
+(t/deftest create-checks-the-branch-quota-inside-the-lock
+  ;; Two designers racing for the LAST branch slot of one file: the
+  ;; loser is refused only if its quota count runs inside the
+  ;; transaction, after the advisory lock, where it sees the winner's
+  ;; committed branch. A count taken outside the lock lets both creates
+  ;; read "one slot left" and both insert.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile1  (th/create-profile* 1 {:is-active true})
+          profile2  (th/create-profile* 2 {:is-active true})
+          proj-id   (:default-project-id profile1)
+          file      (th/create-file* 1 {:profile-id (:id profile1)
+                                        :project-id proj-id
+                                        :is-shared false})
+          file-id   (:id file)
+          ;; the racer is a second designer: the per-profile climit
+          ;; serializes one designer's creates against themselves
+          _         (th/create-file-role* {:file-id file-id
+                                           :profile-id (:id profile2)
+                                           :role :editor})
+          real-lock db/xact-lock!
+          raced?    (atom false)]
+
+      (with-redefs [cf/get (th/config-get-mock {:quotes-branches-per-file 1})
+                    db/xact-lock!
+                    (fn [conn n]
+                      ;; on first entry into the transaction the racer
+                      ;; runs to completion (its own transaction, its own
+                      ;; connection, committed) BEFORE the outer create
+                      ;; takes the advisory lock
+                      (when (compare-and-set! raced? false true)
+                        (t/is (nil? (:error (th/command!
+                                             {::th/type :create-file-branch
+                                              ::rpc/profile-id (:id profile2)
+                                              :file-id file-id
+                                              :name "racer"})))))
+                      (real-lock conn n))]
+        (let [out  (th/command! {::th/type :create-file-branch
+                                 ::rpc/profile-id (:id profile1)
+                                 :file-id file-id
+                                 :name "outer"})
+              data (ex-data (:error out))
+              rows (th/db-query :file-branch {:source-file-id file-id})]
+
+          (t/testing "the loser is refused with the quota error"
+            (t/is (some? (:error out)))
+            (t/is (= :restriction (:type data)))
+            (t/is (= :max-quote-reached (:code data))))
+
+          (t/testing "exactly the racer's branch exists"
+            (t/is (= 1 (count rows)))
+            (t/is (= (:id profile2) (:created-by (first rows))))))))))
+
+(t/deftest create-refuses-a-blank-branch-name
+  ;; `::update-file-branch` refuses a blank name; creation used to
+  ;; accept one, leaving behind a branch the rename would reject.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          out     (th/command! {::th/type :create-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :file-id (:id file)
+                                :name "   "})
+          data    (ex-data (:error out))]
+      (t/is (some? (:error out)))
+      (t/is (= :validation (:type data)))
+      (t/is (= :invalid-branch-name (:code data)))
+      (t/is (empty? (th/db-query :file-branch {:source-file-id (:id file)}))))))
+
+(t/deftest create-writes-no-file-data-row
+  ;; The create docstring promises a branch file with NO data payload,
+  ;; and `pp:vcs:eht-derived-branch-never-persists-data` forbids the
+  ;; row: a payload on a branch file invites a third writer into a
+  ;; derived state that already has two. Only materializing the branch
+  ;; into an ordinary file creates it.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id
+                                      :is-shared false})
+          create  (create-branch* profile (:id file) "no-payload")
+          branch-file-id (:branch-file-id create)
+          color-id       (uuid/random)]
+
+      (t/testing "creation writes no file_data row at all"
+        (t/is (empty? (th/db-query :file-data {:file-id branch-file-id}))))
+
+      (t/testing "the branch still saves to its op log, without a payload"
+        (apply-change* profile branch-file-id
+                       {:type :add-color
+                        :color {:id color-id :name "C" :color "#112233" :opacity 1}})
+        (t/is (= 1 (count (oplog-rows branch-file-id))))
+        (t/is (empty? (stored-data-rows branch-file-id))))
+
+      (t/testing "the branch still reads"
+        (let [out (th/command! {::th/type :get-file
+                                ::rpc/profile-id (:id profile)
+                                :id branch-file-id})]
+          (t/is (nil? (:error out)))
+          (t/is (contains? (-> out :result :data :colors) color-id))))
+
+      (t/testing "materialize is what creates the payload row"
+        (let [out (th/command! {::th/type :materialize-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :file-id branch-file-id})]
+          (t/is (nil? (:error out)))
+          (t/is (= :materialized (-> out :result :status))))
+        (t/is (some? (th/db-get :file-data {:file-id branch-file-id :type "main"})))))))
