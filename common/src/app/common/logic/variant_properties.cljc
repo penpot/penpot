@@ -174,8 +174,11 @@
    The value may also be given, or else it will be an empty value, unless fill-values? is true, in
    which case the value will be set to a default value based on the property number.
 
-   The editing? flag, if set, will be added to the metadata of the properties, for later use."
-  [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
+   The editing? flag, if set, will be added to the metadata of the properties, for later use.
+
+   The skip-validation? flag is for callers that add the property while some shapes of the
+   container are not variants yet. They must validate the container themselves when done."
+  [changes variant-id & {:keys [fill-values? editing? property-name property-value skip-validation?]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -215,7 +218,13 @@
                          (pcb/update-shapes [main-id] #(update % :variant-name update-name)))]))
                 [1 changes]
                 related-components)]
-    changes))
+    ;; All components of the variant change, so validate the container
+    (cond-> changes
+      (and (seq related-components) (not skip-validation?))
+      (pcb/validate-shapes (pcb/get-page-id changes)
+                           [variant-id]
+                           (str "generate-add-new-property: " variant-id
+                                " name: " property-name)))))
 
 (defn- generate-make-shape-no-variant
   [changes shape]
@@ -268,7 +277,10 @@
 
 (defn generate-make-shapes-variant
   "Introduce some components into a variant, adding the variant-id and variant-name to the
-   main instances and the variant-id and variant-properties to the components."
+   main instances and the variant-id and variant-properties to the components.
+
+   It does not validate the shapes, as callers may run it before the shapes are inside the
+   container. The callers must validate the container when done."
   [changes shapes variant-container]
   (let [data           (pcb/get-library-data changes)
         objects        (pcb/get-objects changes)
@@ -310,7 +322,7 @@
                          (- total-props num-base-props))
 
         changes        (nth
-                        (iterate #(generate-add-new-property % variant-id) changes)
+                        (iterate #(generate-add-new-property % variant-id :skip-validation? true) changes)
                         num-new-props)
 
         changes        (pcb/update-shapes changes (map :id shapes)
