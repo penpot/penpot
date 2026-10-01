@@ -437,7 +437,11 @@ The flow:
        version history;
      * applies the change vector through `cpc/process-changes`, bumping `revn`;
      * **validates** the merged file (`cfv/validate-file`) and, if it finds
-       problems, runs `cfr/repair-file` and applies the repair changes;
+       problems, runs `cfr/repair-file` and applies the repair changes, then
+       re-validates: a result that is still invalid refuses with
+       `:merge-result-invalid`, so a bad repair never reaches main (the update
+       refuses `:update-result-invalid` the same way, and materialise logs the
+       result instead of refusing);
      * copies the `file_media_object` rows of media added on the branch into
        main, under the pre-allocated ids the changes reference;
      * writes a `file_change` (xlog) row, persists the file
@@ -536,8 +540,9 @@ permissions on the *branch* file, locks the *branch* file id, and applies main's
 changes (plus any conflicts resolved to `:main`) into the branch.
 
 It works like a merge with `compute-merge`/`compute-changes` run with the sides
-swapped, the same `:conflicts` / `:unsupported` gates, and the same safety
-snapshot. Two extra steps at the end keep the op log sound:
+swapped, the same `:conflicts` / `:unsupported` gates, the same re-validation
+refusal (`:update-result-invalid`), and the same safety snapshot. Two extra
+steps at the end keep the op log sound:
 
  * it **squashes the op log**: the repositioned base already carries
    everything main contributed, so the log is replaced with the net
@@ -616,19 +621,19 @@ branch's op log, attaches `:branch-operation`, `:branch-outcome` and
 `:branch-duration-ms` to its own audit event, because the generic RPC event
 records who called what and not how long it took, and duration is the number
 the first enterprise trial will be asked about. Creation, the listing,
-compare, merge, update-from-main, and materialise attach them through
-`audited`, and the listing adds `:branches-compared` and `:branches-cached`,
-the two numbers that explain its duration. The save attaches them on the
-`update-file` event, whose props it replaces. Every outcome these commands
-return carries them, the no-op merge, the idempotent materialise, and the
-`:conflicts` and `:unsupported` refusals included. A refusal raised as an
-error, such as a size gate's `:restriction` or `:file-modified`, carries
-none of them: the audit middleware records a call only when it returns, so
-the error writes no audit event at all.
+compare, merge, update-from-main, materialise, and the three small
+mutations (`update-file-branch`, `archive-file-branch`,
+`delete-file-branch`) attach them through `audited`, and the listing adds
+`:branches-compared` and `:branches-cached`, the two numbers that explain
+its duration. The save attaches them on the `update-file` event, whose
+props it replaces. Every outcome these commands return carries them, the
+no-op merge, the idempotent materialise, and the `:conflicts` and
+`:unsupported` refusals included. A refusal raised as an error, such as a
+size gate's `:restriction` or `:file-modified`, carries none of them: the
+audit middleware records a call only when it returns, so the error writes
+no audit event at all.
 
-Three mutations are the exception: `update-file-branch`,
-`archive-file-branch`, and `delete-file-branch` do not run through `audited`
-and carry only the generic event. Two reads are the same: the branch
+Two reads are the exception and carry only the generic event: the branch
 context, which the frontend asks for on every file open, and the limits.
 
 ## RPC API summary

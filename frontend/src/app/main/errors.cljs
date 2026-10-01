@@ -795,6 +795,10 @@
 
 (defmethod ptk/handle-error :not-found [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :bad-gateway [error] (handle-exceptional-state error))
+;; Refused optimistic-concurrency checks (:file-modified, :file-locked)
+;; got this surface as 500s. Keep it now the backend answers 409. Callers
+;; matching :code still find it in the error.
+(defmethod ptk/handle-error :conflict [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :service-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-unavailable [error] (handle-exceptional-state error))
 (defmethod ptk/handle-error :nitrate-not-configured [error] (handle-exceptional-state error))
