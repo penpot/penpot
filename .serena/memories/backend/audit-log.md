@@ -5,11 +5,11 @@ Penpot records what users do as events in the Postgres `audit_log` table. There 
 ## Purpose
 
 - The audit log answers "who did what, when, from where": every RPC mutation and selected frontend actions become a row with `name`, `type`, `profile-id`, `ip-addr`, `props` and `context`. Product analytics, abuse investigation and compliance exports all read from here, so keep events truthful and never put secrets in `props`.
-- It is also the trigger bus for side effects: the same event object fans out to webhooks, error reporting and telemetry without the RPC handler knowing. New features should reuse this bus instead of building parallel notification paths.
+- It is also the trigger bus for side effects: the same event object fans out to webhooks, error reporting and telemetry without the RPC handler knowing. New features should reuse this bus instead of building parallel notification paths. Archival consumers: Nexus and optionally Nitrate (Admin Console) via the archive task.
 
 ## Storage
 
-- Live `audit_log` columns: `id` uuid PK default `gen_random_uuid()`; `name`/`type` text NOT NULL; `created_at` timestamptz NOT NULL default `now()` (server time, the source of truth); `tracked_at` timestamptz default `now()` (client-claimed time, corrected on ingest); `profile_id` uuid NOT NULL; `source` text telling full rows (`backend`/`frontend`) apart from anonymized copies (`telemetry:backend`/`telemetry:frontend`); `ip_addr` inet; `props`/`context` jsonb holding transit-encoded maps; `archived_at` timestamptz set once Nexus acknowledges the row.
+- Live `audit_log` columns: `id` uuid PK default `gen_random_uuid()`; `name`/`type` text NOT NULL; `created_at` timestamptz NOT NULL default `now()` (server time, the source of truth); `tracked_at` timestamptz default `now()` (client-claimed time, corrected on ingest); `profile_id` uuid NOT NULL; `source` text telling full rows (`backend`/`frontend`) apart from anonymized copies (`telemetry:backend`/`telemetry:frontend`); `ip_addr` inet; `props`/`context` jsonb holding transit-encoded maps; `archived_at` timestamptz set once a successful archive-task chunk finishes (Nexus ack when `:nexus` is on; also set after nitrate-only when `:admin-console` is on without Nexus — see Archival).
 - Indexes: PK on `(id)`; partial `created_at WHERE archived_at IS NULL` serving the archive scan; partial `archived_at WHERE archived_at IS NOT NULL` serving the GC; `(source, created_at)` serving the telemetry scan. Each consumer has its own index, so a slow consumer never blocks the others.
 
 ## Backend producers (`app.loggers.audit`)
@@ -42,11 +42,15 @@ Penpot records what users do as events in the Postgres `audit_log` table. There 
 - The in-browser collector (`app.main.data.event`) only starts after `get-enabled-flags` confirms the backend wants events. It turns Potok events and explicit `ev/event` calls (nitrate membership changes, workspace file stats, crash reports) into a capped buffer (1024, chunks of 100, 2s debounce, current profile only) and sends fire-and-forget. `skip-audit?` exists for resumed dashboard actions so one user gesture is not counted twice.
 - Because collection is best-effort and includes `PerformanceObserver` noise (`performance-*` triggers), backend tests must never assert exact frontend event counts.
 
-## Archival to Nexus and retention
+## Archival to Nexus / Nitrate and retention
 
-- Long-term storage lives outside Penpot in Nexus. Every 5m the `:audit-log-archive` cron takes chunks of 128 unarchived rows (`FOR UPDATE SKIP LOCKED`), POSTs them as transit `{:events [...]}` authenticated with `x-shared-key: "nexus <key>"` (`:nexus-shared-key`, else derived from the instance secret), and marks `archived_at=now()` only on HTTP 204, in the same transaction. Anything else is retried on the next run; a missing URI with the flag on raises `:task-not-configured`.
-- Every 5m the `:audit-log-gc` cron deletes all archived rows (no age filter), so archive must run before GC or data ships never. Cron dedup is best-effort (`mem:prod-infra/core`): two backends can fire the archiver twice, which is why the Nexus endpoint must be idempotent and the DB only marks acknowledged rows.
-- Flags live in `common/flags.cljc` varia and are enabled as `PENPOT_FLAGS=enable-<name>`: `:audit-log`, `:audit-log-archive`, `:audit-log-gc`, `:audit-log-logger` (structured `app.audit` log). `:telemetry-enabled` config auto-adds `:enable-telemetry`.
+- Every 5m the `:audit-log-archive` **task** runs when **`:nexus` OR `:admin-console`** is on. It takes chunks of 128 unarchived rows (`FOR UPDATE SKIP LOCKED`).
+- **Nitrate (Admin Console):** when `:admin-console` is on, allowlisted event names are POSTed via `nitrate/call :ingest-audit-log` (JSON batch `{:events [...]}`). The allowlist only shapes the HTTP body.
+- **Nexus:** when `:nexus` is on, the full chunk is POSTed as transit `{:events [...]}` with `x-shared-key: "nexus <key>"`. Missing URI with that flag raises `:task-not-configured`.
+- **Both flags:** nitrate first, then Nexus on the same chunk.
+- **`archived_at`:** set for **every row in the chunk** after success. With Nexus off, Nexus is treated as skipped success so nitrate-only still marks (including non-allowlisted names that were never POSTed). With Nexus on, mark only on Nexus HTTP 204; nitrate/Nexus failures leave rows unarchived for retry (Nitrate ingest must be idempotent).
+- Every 5m the **`:audit-log-gc`** cron runs when **`:audit-log-gc` OR `:nexus` OR `:admin-console`**, and deletes all rows with `archived_at IS NOT NULL` (no age filter). Cron dedup is best-effort (`mem:prod-infra/core`).
+- Flags: `:audit-log`, `:nexus`, `:audit-log-gc`, `:audit-log-logger`, `:admin-console`. Enabled as `PENPOT_FLAGS=enable-<name>`. `:telemetry-enabled` config auto-adds `:enable-telemetry`.
 
 ## Tests
 
