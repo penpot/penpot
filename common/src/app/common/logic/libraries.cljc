@@ -241,7 +241,7 @@
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id params]
    (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {} params))
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id ids-map
-    {:keys [force-frame?]
+    {:keys [force-frame? swap-slot]
      :or {force-frame? false}}]
 
    (let [component     (ctf/get-component libraries file-id component-id)
@@ -257,6 +257,13 @@
          parent-id     (d/nilv (:id parent) parent-id)
          frame-id      (d/nilv (:frame-id parent) frame-id)
 
+         ;; A copy created by a swap keeps the slot of the shape it
+         ;; replaces. Set it from the start, so the validation below sees
+         ;; the copy complete
+         set-swap-slot #(cond-> %
+                          (nil? (ctk/get-swap-slot %))
+                          (ctk/set-swap-slot swap-slot))
+
          [new-shape new-shapes]
          (ctn/make-component-instance page
                                       component
@@ -269,8 +276,10 @@
                                         force-frame?
                                         (assoc :force-frame-id frame-id)))
 
+         new-shape     (set-swap-slot new-shape)
+
          first-shape
-         (cond-> (first new-shapes)
+         (cond-> (set-swap-slot (first new-shapes))
            (not (nil? parent-id))
            (assoc :parent-id parent-id)
            (and (not (nil? parent)) (= :frame (:type parent)))
@@ -2717,6 +2726,14 @@
         parent       (get objects (:parent-id shape))
         inside-comp? (ctn/in-any-component? objects parent)
 
+        ;; if the shape isn't inside a main component, it shouldn't have a swap slot
+        swap-slot    (when inside-comp?
+                       (ctf/find-swap-slot shape
+                                           page
+                                           {:id (:id file)
+                                            :data file}
+                                           libraries))
+
         [new-shape changes]
         ;; When we make a swap of an item, there can be copies which swap-slot points to that item
         ;; so we want to assign the item id to the new instanciated copy, to mantain that reference
@@ -2731,17 +2748,8 @@
                                         (:parent-id shape)
                                         (:frame-id shape)
                                         {(:id shape) (:id shape)} ;; keep the id of the original shape
-                                        {:force-frame? true})
-
-        new-shape (cond-> new-shape
-                    ;; if the shape isn't inside a main component, it shouldn't have a swap slot
-                    (and (nil? (ctk/get-swap-slot new-shape))
-                         inside-comp?)
-                    (ctk/set-swap-slot (ctf/find-swap-slot shape
-                                                           page
-                                                           {:id (:id file)
-                                                            :data file}
-                                                           libraries)))]
+                                        {:force-frame? true
+                                         :swap-slot swap-slot})]
 
     [new-shape (-> changes
                    ;; Restore the properties

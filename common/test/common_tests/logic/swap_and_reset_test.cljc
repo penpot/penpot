@@ -142,3 +142,51 @@
       (t/is (= :rect (:type (tho/bottom-shape-by-id file' (:id restored)))))
       (t/is (= rectangle-id (:component-id restored)))
       (t/is (nil? (ctk/get-swap-slot restored))))))
+
+(t/deftest test-swap-creates-copy-with-slot
+  ;; The new copy is added with its swap slot already set, so the
+  ;; validation made when it is instantiated sees it complete
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+
+                      (tho/add-frame :frame-rectangle)
+                      (ths/add-sample-shape :rectangle-shape :parent-label :frame-rectangle :type :rect)
+                      (thc/make-component :rectangle :frame-rectangle)
+
+                      (tho/add-frame :frame-circle)
+                      (ths/add-sample-shape :circle :parent-label :frame-circle :type :circle)
+                      (thc/make-component :circle :frame-circle)
+
+                      (tho/add-frame :frame-main)
+                      (thc/instantiate-component :rectangle :copy-rectangle :parent-label :frame-main)
+                      (thc/make-component :main :frame-main))
+
+        page      (thf/current-page file)
+        shape     (ths/get-shape file :copy-rectangle)
+
+        ;; ==== Action
+        [new-shape _ changes]
+        (cll/generate-component-swap (pcb/empty-changes nil (:id page))
+                                     (:objects page)
+                                     shape
+                                     (:data file)
+                                     page
+                                     {(:id file) file}
+                                     (:id (thc/get-component file :circle))
+                                     0
+                                     nil
+                                     {}
+                                     false)
+
+        add-change (->> (:redo-changes changes)
+                        (filter #(and (= :add-obj (:type %))
+                                      (= (:id shape) (:id %))))
+                        first)
+
+        file'      (thf/apply-changes file changes)
+        copy'      (ths/get-shape-by-id file' (:id shape))]
+
+    ;; ==== Check
+    (t/is (some? (ctk/get-swap-slot copy')))
+    (t/is (= (ctk/get-swap-slot copy') (ctk/get-swap-slot new-shape)))
+    (t/is (= (ctk/get-swap-slot copy') (ctk/get-swap-slot (:obj add-change))))))
