@@ -21,7 +21,6 @@ rules:
   dangerous-triggers:
     ignore:
       - auto-label.yml
-      - commit-checker.yml
   # Scope GitHub App tokens.
   github-app:
     ignore:
