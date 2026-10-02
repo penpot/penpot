@@ -1211,6 +1211,37 @@
     (t/is (seq (:redo-changes changes)))
     (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
 
+(t/deftest update-shapes-on-page-validates-the-instance
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :r01))
+        page    (thf/current-page file)
+        main    (ths/get-shape file :m01)
+
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            [(:id main)]
+                                            #(assoc % :x 10)
+                                            (:objects page)
+                                            {})]
+
+    (t/is (some #(= :validate-shapes (:type %)) (:redo-changes changes)))))
+
+(t/deftest update-shapes-with-skip-validation-does-not-validate
+  ;; Transforms only change geometry, so they skip the validation of the
+  ;; whole instance, which could stop on copies not synced yet.
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :r01))
+        page    (thf/current-page file)
+        main    (ths/get-shape file :m01)
+
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            [(:id main)]
+                                            #(assoc % :x 10)
+                                            (:objects page)
+                                            {:skip-validation? true})]
+
+    (t/is (seq (:redo-changes changes)))
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
+
 (t/deftest skip-validate-changes
   (let [changes [{:type :mod-obj :id (uuid/next)}
                  {:type :validate-shapes :page-id (uuid/next) :shape-ids []}
