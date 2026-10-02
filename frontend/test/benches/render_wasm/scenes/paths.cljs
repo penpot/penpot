@@ -49,27 +49,30 @@
   {:version 1
    :description "Curved paths"
    :params-schema schema:params}
-  (fn [params]
-    (let [params (merge default-params params)]
-      (sb/scene {:seed (:seed params)
-                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}
-                 :defaults {:path {:content (curved-content params)
-                                   :fills (sb/gen-vector (sb/gen-fill))
-                                   :strokes (sb/gen-vector (sb/gen-stroke 3))}}}
-                (doseq [_ (range (:count params))]
-                  (sb/path))))))
+  [params]
+  (let [params (merge default-params params)]
+    (sb/scene {:seed (:seed params)
+               :root {:x 0 :y 0 :width (:width params) :height (:height params)}
+               :defaults {:path {:content (curved-content params)
+                                 :fills (sb/gen-vector (sb/gen-fill))
+                                 :strokes (sb/gen-vector (sb/gen-stroke 3))}}}
+              (doseq [_ (range (:count params))]
+                (sb/path)))))
 
 
-(decl/defcase :paths/load :paths
+(decl/defcase :paths/load
   {:params default-params :view base-view :context :fresh}
-  (fn [rtx] (camera/load! rtx)))
+  [rtx]
+  (camera/load! rtx))
 
-(decl/defcase :paths/pan :paths
+(decl/defcase :paths/pan
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 160 :dy 40 :settle-ms 100}}
-  (fn [rtx] (camera/pan! rtx)))
+  [rtx]
+  (camera/pan! rtx))
 
-(decl/defcase :paths/zoom :paths
+(decl/defcase :paths/zoom
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.5 :settle-ms 100}}
-  (fn [rtx] (camera/zoom! rtx)))
+  [rtx]
+  (camera/zoom! rtx))
