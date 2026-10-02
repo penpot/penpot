@@ -7,31 +7,16 @@
 (ns benches.render-wasm.builder
   "Construction of benchmark scenes.
 
-  A `scene` consists of one seeded generator, one object map, and one label
-  map.
+  A `scene` consists of one seeded number generator, one object map, and one
+  label map.
 
-  Ancestry and order are implicit in the nesting of calls: shape constructors
-  add themselves to the current parent, in the sequence they are called.
-
-  Construction is synchronous by design: the scope and the current parent
-  are carried by dynamic vars, so `let`, `doseq` and functions defined
-  outside the scope all work inside a scene. Scene scopes cannot nest
-  and body exceptions unwind without leaving state behind. A container whose
-  body throws is marked unfinished and `finish!` rejects the instance, so a
-  caught exception cannot produce a half-built scene.
+  A container whose body throws is marked unfinished and `finish!` rejects the
+  instance, so a caught exception cannot produce a half-built scene.
 
   Default attributes follow the same theme: `*defaults*` maps a shape type to
   an attribute generator map, bound by the `scene` macro from the scope
   params. Per-shape attrs are merged over the generated values, so a recipe
-  can override anything locally and rebind `*defaults*` around a section.
-
-  Coordinates are page-absolute like in penpot. Frames use their state bounds
-  and groups derive their bounds from their children inside out.
-  A masked group takes the geometry of its first child.
-  Booleans derive content and geometry from their children with the standard
-  path engine and inherit style from the head child unless attrs supply it.
-
-  Masked groups and the frame/group/bool scopes live here; paths ticket07/08."
+  can override anything locally and rebind `*defaults*` around a section."
   (:require
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
@@ -87,11 +72,11 @@
   (uuid/custom (rng-int rng 0 4294967296)
                (rng-int rng 0 4294967296)))
 
-(defn- random-hex-color
+(defn- rng-hex-color
   [rng]
   (clr/rgb->hex [(rng-int rng 0 256) (rng-int rng 0 256) (rng-int rng 0 256)]))
 
-(defn- random-opacity
+(defn- rng-opacity
   [rng]
   (min 0.999 (round3 (rng-float rng 0.1 1))))
 
@@ -112,7 +97,7 @@
 (defn gen-hex-color
   "Generator of a random `#rrggbb` string."
   []
-  (fn [rng] (random-hex-color rng)))
+  (fn [rng] (rng-hex-color rng)))
 
 (defn gen-one-of
   "Generator that picks one value per draw. Rejects an empty collection."
@@ -126,8 +111,8 @@
   "Generator of one translucent solid fill."
   []
   (fn [rng]
-    {:fill-color (random-hex-color rng)
-     :fill-opacity (random-opacity rng)}))
+    {:fill-color (rng-hex-color rng)
+     :fill-opacity (rng-opacity rng)}))
 
 (defn gen-stroke
   "Centered stroke like the interim rectangle workload."
@@ -135,8 +120,8 @@
   (fn [rng]
     {:stroke-width width
      :stroke-alignment :center
-     :stroke-color (random-hex-color rng)
-     :stroke-opacity (random-opacity rng)}))
+     :stroke-color (rng-hex-color rng)
+     :stroke-opacity (rng-opacity rng)}))
 
 (defn gen-vector
   "Composes generators into a generator of a vector, one value per
