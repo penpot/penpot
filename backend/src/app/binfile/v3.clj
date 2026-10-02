@@ -1313,7 +1313,8 @@
   format. There are some options available for customize the output:
 
   `::bfc/export-type`: determines how linked libraries are handled.
-  Valid values: `:include-libraries` (include linked libraries),
+  Valid values:
+  `:include-libraries` (include linked libraries),
   `:merge-libraries` (embed library assets in the file),
   `:detach-libraries` (treat assets as basic objects),
   `:link-later` (preserve component metadata for relinking on import)."
