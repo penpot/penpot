@@ -81,7 +81,7 @@ Some important concepts for users:
 
 Connect the tabs you want to use:
 
-* **Remote MCP**: choose **MCP: Connect** in the dashboard sidebar or **MCP → Connect** in a file's toolbar. Use **Disconnect** in the same place to disconnect that tab.
+* **Remote MCP**: choose **MCP → Connect** in the dashboard sidebar or a file's toolbar. Use **Disconnect** in the same place to disconnect that tab.
 * **Local MCP**: run the plugin in each file and connect it to your local server. Each plugin connection has its own session ID.
 * Connecting or disconnecting one tab does not disconnect the others.
 * A connected tab stays connected while navigating between the dashboard and files. Its session ID stays the same; requests operate on the currently open file.
