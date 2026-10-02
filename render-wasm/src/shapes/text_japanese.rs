@@ -65,14 +65,7 @@ pub(crate) fn add_horizontal_span(
         mini_style.set_height(1.0);
         mini_style.set_height_override(true);
         mini_style.set_letter_spacing(span.letter_spacing * WARICHU_FONT_SCALE);
-        let measure = |line: &str| {
-            let mut mini = ParagraphBuilder::new(&ParagraphStyle::default(), fonts);
-            mini.push_style(&mini_style);
-            mini.add_text(line);
-            let mut paragraph = mini.build();
-            paragraph.layout(f32::MAX);
-            paragraph.longest_line()
-        };
+        let measure = |line: &str| mini_paragraph(line, &mini_style, fonts).longest_line();
         let width = measure(first).max(measure(second)).max(0.01);
         let height = span.font_size.max(0.01);
         builder.add_placeholder(&PlaceholderStyle::new(
@@ -482,16 +475,18 @@ pub(crate) fn warichu_text_lines(text: &str) -> (&str, &str) {
     text.split_at(split_byte)
 }
 
+/// Single-line paragraph for an annotation run. Laid out unbounded: a
+/// re-layout at its own `longest_line()` can wrap the last glyph.
 fn mini_paragraph(
     text: &str,
     style: &skia::textlayout::TextStyle,
-    width: f32,
+    fonts: &skia::textlayout::FontCollection,
 ) -> skia::textlayout::Paragraph {
-    let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), get_font_collection());
+    let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), fonts);
     builder.push_style(style);
     builder.add_text(text);
     let mut paragraph = builder.build();
-    paragraph.layout(width.max(0.01));
+    paragraph.layout(f32::MAX);
     paragraph
 }
 
@@ -524,8 +519,8 @@ pub(crate) fn paint_horizontal_warichu(
         style.set_letter_spacing(span.letter_spacing * WARICHU_FONT_SCALE);
         let transformed = span.apply_text_transform();
         let (first, second) = warichu_text_lines(&transformed);
-        let first_para = mini_paragraph(first, &style, rect.width());
-        let second_para = mini_paragraph(second, &style, rect.width());
+        let first_para = mini_paragraph(first, &style, get_font_collection());
+        let second_para = mini_paragraph(second, &style, get_font_collection());
         let half_height = rect.height() / 2.0;
         first_para.paint(canvas, (x + rect.left(), y + rect.top()));
         second_para.paint(canvas, (x + rect.left(), y + rect.top() + half_height));
@@ -668,7 +663,7 @@ pub(crate) fn paint_horizontal_emphasis(
         style.set_height(1.0);
         style.set_height_override(true);
         style.set_letter_spacing(0.0);
-        let mark_paragraph = mini_paragraph(&mark.to_string(), &style, f32::MAX);
+        let mark_paragraph = mini_paragraph(&mark.to_string(), &style, get_font_collection());
         let mark_ink = mark_paragraph
             .get_rects_for_range(
                 0..mark.len_utf16(),
@@ -1285,6 +1280,26 @@ mod tests {
 
         assert_eq!(laid_out.get_rects_for_placeholders().len(), 1);
         assert_eq!(laid_out.get_line_metrics().len(), 2);
+    }
+
+    #[test]
+    fn warichu_sub_lines_paint_on_one_line() {
+        let mut fonts = skia::textlayout::FontCollection::new();
+        fonts.set_default_font_manager(skia::FontMgr::new(), None);
+        for (text, size, letter_spacing) in [
+            ("書き下ろし", 13.0, 0.75),
+            ("浅煎り・", 13.0, 0.0),
+            ("税込・", 53.0, -1.5),
+            ("架空の", 7.5, 0.0),
+        ] {
+            let mut style = skia::textlayout::TextStyle::default();
+            style.set_font_size(size);
+            style.set_height(1.0);
+            style.set_height_override(true);
+            style.set_letter_spacing(letter_spacing);
+            let paragraph = mini_paragraph(text, &style, &fonts);
+            assert_eq!(paragraph.line_number(), 1, "{text:?} must not wrap");
+        }
     }
 
     #[test]
