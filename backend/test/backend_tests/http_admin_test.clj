@@ -1,0 +1,57 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
+(ns backend-tests.http-admin-test
+  "Tests for the `/admin` static file serving."
+  (:require
+   [app.http.admin :as admin]
+   [backend-tests.helpers :as th]
+   [clojure.test :as t]
+   [cuerdas.core :as str]
+   [yetti.response :as-alias yres]))
+
+(t/use-fixtures :once th/state-init)
+(t/use-fixtures :each th/database-reset)
+
+(defn- run-handler
+  [path]
+  (admin/admin-handler {} {:path-params (when (some? path) {:path path})}))
+
+(defn- content-type
+  [response]
+  (get (::yres/headers response) "content-type"))
+
+(t/deftest root-serves-index
+  (let [response (run-handler nil)]
+    (t/is (= 200 (::yres/status response)))
+    (t/is (= "text/html" (content-type response)))
+    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+
+(t/deftest unknown-subpath-falls-back-to-index
+  ;; Subpath support: a deep reload never 404s.
+  (let [response (run-handler "error-reports/some-id")]
+    (t/is (= 200 (::yres/status response)))
+    (t/is (= "text/html" (content-type response)))
+    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+
+(t/deftest traversal-attempt-falls-back-to-index
+  (let [response (run-handler "../../config")]
+    (t/is (= 200 (::yres/status response)))
+    (t/is (= "text/html" (content-type response)))
+    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+
+(t/deftest missing-file-falls-back-to-index
+  ;; The type matches the body: an HTML index, not the requested JS.
+  (let [response (run-handler "js/does-not-exist.js")]
+    (t/is (= 200 (::yres/status response)))
+    (t/is (= "text/html" (content-type response)))
+    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+
+(t/deftest content-type-mapping
+  (t/is (= "text/html" (#'admin/content-type-for "index.html")))
+  (t/is (= "text/javascript" (#'admin/content-type-for "js/main.js")))
+  (t/is (= "text/css" (#'admin/content-type-for "css/admin.css")))
+  (t/is (nil? (#'admin/content-type-for "no-extension"))))

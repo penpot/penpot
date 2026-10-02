@@ -16,6 +16,7 @@
    [app.db :as-alias db]
    [app.email :as-alias email]
    [app.http :as-alias http]
+   [app.http.admin :as-alias http.admin]
    [app.http.assets :as-alias http.assets]
    [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
@@ -362,6 +363,7 @@
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
+    ::http.admin/routes  (ig/ref ::http.admin/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
@@ -369,6 +371,9 @@
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}
+
+   ::http.admin/routes
+   {}
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
