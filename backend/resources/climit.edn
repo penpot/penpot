@@ -51,4 +51,10 @@
  {:permits 4}
 
  :import-binfile/by-profile
+ {:permits 1 :queue 2}
+
+ :create-import-job/global
+ {:permits 4}
+
+ :create-import-job/by-profile
  {:permits 1 :queue 2}}

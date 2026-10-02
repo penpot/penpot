@@ -9,9 +9,11 @@
 
   Every job is defined as a job-def map returned by the `ig/init-key` of its
   module: {::name, ::schema, ::handler, ::decoder, ::validator} — decoder and
-  validator are precompiled at init time. The registry of job-defs is plain
-  integrant wiring (::jobs/defs); submit, dispatch and management consume it
-  by reference.
+  validator are precompiled at init time. A job-def may also carry the
+  optional metadata {::family, ::resource-role}, which the consumers of the
+  job (quotes, storage helpers) read from the registry: the substrate never
+  reads them. The registry of job-defs is plain integrant wiring (::jobs/defs);
+  submit, dispatch and management consume it by reference.
 
   Two execution modes are provided:
   - `submit` (durable): validates + JSON-encodes params and inserts a row
@@ -34,7 +36,7 @@
   follow the job without polling the database.
 
   Reserved ledger columns (`profile_id`, `error`, `result`, `resource_id`,
-  `expires_at`) are only written by `submit` (profile and resource
+  `expires_at`) are only written by `submit` (profile, resource and expiry
   references) and by the terminal writers; `submit` never infers them from
   `params`."
   (:require
@@ -79,14 +81,20 @@
   whether to schedule again. A handler has no use for the counter, and
   the attempt number would lie anyway: the `noop` retry strategy runs
   again without incrementing it, so a durable \"which execution is this\"
-  number would need a second counter that nothing bounds."
+  number would need a second counter that nothing bounds.
+
+  `profile-id` is the owner of a user-facing job and nil for an internal
+  one. It travels here so a handler can revalidate permissions and check
+  who owns the resource it is working on without a second query."
   [:map {:closed true
          :title "job-context"}
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:label [:maybe ::sm/text]]
    ;; technical reference kept for garbage collection
-   [:resource-id [:maybe ::sm/uuid]]])
+   [:resource-id [:maybe ::sm/uuid]]
+   ;; owner of a user-facing job; nil for an internal job
+   [:profile-id [:maybe ::sm/uuid]]])
 
 (def check-context
   "Validate a handler context; raises with the malli explanation when it
@@ -94,7 +102,7 @@
   (sm/check-fn schema:context))
 
 (defn make-context
-  "Build the handler context from a job row: exactly the four keys a
+  "Build the handler context from a job row: exactly the five keys a
   handler may see, and nothing else. The result is a plain map, not the
   database row, and it is not modified afterwards.
 
@@ -104,7 +112,8 @@
   (check-context {:id          (:id job)
                   :name        (:name job)
                   :label       (if (str/blank? (:label job)) nil (:label job))
-                  :resource-id (:resource-id job)}))
+                  :resource-id (:resource-id job)
+                  :profile-id  (:profile-id job)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB DEFINITIONS (registry)
@@ -120,6 +129,12 @@
 (def ^:private schema:job-def
   [:map {:title "job-def"}
    [::name schema:job-name]
+   ;; Optional metadata of the job family, read from the registry by the
+   ;; consumers that need it (quotes, storage helpers, a future job
+   ;; listing). `app.jobs` itself never reads them: they are not part of
+   ;; the execution contract.
+   [::family {:optional true} ::sm/keyword]
+   [::resource-role {:optional true} ::sm/keyword]
    [::schema any?]
    ;; every handler is [context params]. A job-def already closes over its
    ;; own dependencies, so nothing else is handed to it: a handler cannot
@@ -208,9 +223,9 @@
 
 (def ^:private sql:insert-new-job
   "insert into job (id, name, tenant, params, queue, label, priority,
-                    max_retries, profile_id, resource_id, created_at,
-                    modified_at, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    max_retries, profile_id, resource_id, expires_at,
+                    created_at, modified_at, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    returning id")
 
 ;; `tenant` is part of the match, not an extra: without it this DELETE
@@ -240,7 +255,11 @@
    [::profile-id {:optional true} ::sm/uuid]
    ;; Technical reference (storage object) kept for garbage collection. It
    ;; is a column, never part of `params`, and it is never inferred from it.
-   [::resource-id {:optional true} ::sm/uuid]])
+   [::resource-id {:optional true} ::sm/uuid]
+   ;; Retention of the job: when it is set, the jobs GC deletes the row
+   ;; (and reclaims its resource) once the instant has passed. User-facing
+   ;; jobs set it at creation; internal jobs leave it nil.
+   [::expires-at {:optional true} ::ct/inst]])
 
 (def check-options
   (sm/check-fn schema:options))
@@ -261,13 +280,17 @@
   encodes them as plain JSON and inserts a row into the `job` table.
   Fire-and-forget: returns the job id immediately.
 
+  The optional ledger columns (`::profile-id`, `::resource-id` and
+  `::expires-at`) are validated and stored as columns; nothing is inferred
+  from `params`.
+
   NOTE: the dedupe DELETE and the INSERT run atomically: joined to
   the caller's transaction when the cfg provides `::db/conn`, wrapped
   in their own transaction otherwise. Concurrent cross-backend
   submissions can, in rare race conditions, produce duplicated 'new'
   rows (accepted risk, see prod-infra documentation)."
   [cfg {:keys [::params ::name ::delay ::queue ::priority ::max-retries
-               ::dedupe ::label ::profile-id ::resource-id]
+               ::dedupe ::label ::profile-id ::resource-id ::expires-at]
         :or   {delay 0 queue :default priority 100 max-retries 3 label ""}
         :as   options}]
 
@@ -319,7 +342,7 @@
                                 :replace (or deleted 0))
                          (db/exec-one! conn [sql:insert-new-job id job-name tenant payload queue
                                              label priority max-retries
-                                             profile-id resource-id
+                                             profile-id resource-id expires-at
                                              now now scheduled-at])))]
     ;; Both statements always run inside db/tx-run!: joined to the
     ;; caller's transaction when the cfg provides a connection,

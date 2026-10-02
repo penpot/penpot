@@ -888,6 +888,48 @@
     (t/is (= 204 (::yres/status response)))))
 
 ;; ----------------------------------------------------------------
+;; Tests: objects-handler — job-resource bucket ownership
+;; ----------------------------------------------------------------
+
+(t/deftest objects-handler-job-resource-owner-can-access
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "job-resource" "artifact" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id owner)}
+        response (assets/objects-handler cfg request)]
+    (t/is (= 204 (::yres/status response)))))
+
+(t/deftest objects-handler-job-resource-non-owner-gets-404
+  ;; The artifact of a job belongs to the profile that owns the job.
+  (let [storage   (-> (:app.storage/storage th/*system*)
+                      (configure-storage-backend))
+        cfg       (make-handler-cfg storage)
+        owner     (th/create-profile* 1)
+        stranger  (th/create-profile* 2)
+        object    (create-storage-object! storage "job-resource" "artifact" {:profile-id (:id owner)})
+        request   {:path-params {:id (str (:id object))}
+                   ::session/profile-id (:id stranger)}
+        response  (assets/objects-handler cfg request)]
+    (t/is (= 404 (::yres/status response)))))
+
+(t/deftest objects-handler-job-resource-released-object-gets-404
+  ;; Once the job is gone and the GC has reclaimed the artifact, the route
+  ;; has nothing to serve.
+  (let [storage  (-> (:app.storage/storage th/*system*)
+                     (configure-storage-backend))
+        cfg      (make-handler-cfg storage)
+        owner    (th/create-profile* 1)
+        object   (create-storage-object! storage "job-resource" "artifact" {:profile-id (:id owner)})
+        request  {:path-params {:id (str (:id object))}
+                  ::session/profile-id (:id owner)}]
+    (t/is (= 204 (::yres/status (assets/objects-handler cfg request))))
+    (sto/del-object! storage (:id object))
+    (t/is (= 404 (::yres/status (assets/objects-handler cfg request))))))
+
+;; ----------------------------------------------------------------
 ;; Tests: asset request metrics
 ;; ----------------------------------------------------------------
 

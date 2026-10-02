@@ -9,6 +9,7 @@
 - Params with `::sm/params` are decoded/conformed through the JSON transformer and successful IObj results get `:encode/json` metadata. Legacy spec conforming only applies when no Malli params schema exists. Client params are stripped of qualified keys (`d/without-qualified`) before merging with the server auth context, so request bodies cannot override `::profile-id`, `::auth-type`, or `::token-perms`.
 - Params schemas are open by default, so undeclared client keys reach the handler unless the map is `:closed true`. Creation commands (`create-file`, `create-project`, `create-team`, `create-team-with-invitations`, `upload-file-media-object`, `create-file-media-object-from-url`, `assemble-file-media-object`) use closed schemas: a client-provided `:id` fails with `:params-validation`. Their internal creation functions still accept an optional explicit `:id` for imports, duplicates and deterministic test fixtures.
 - Nil RPC bodies become HTTP 204 unless explicit status metadata is present. Stream bodies default to `application/octet-stream` when no content type is set.
+- The upload schema (`media.v/schema:upload`) takes a `:path` from the caller, and a Transit body can tag any string as a `path`, so a command that reads such an upload reads a file the client named. `create-import-job` avoids that boundary by accepting only a chunked upload (`:upload-id`); the commands that still take a plain file (the legacy `import-binfile`, the media and font uploads) trust it, and the guard belongs where uploads are accepted, not in each command.
 
 ## DB helpers
 
@@ -36,6 +37,7 @@
 ## Config and HTTP/session middleware
 
 - `app.config/config` and `flags` are dynamic `defonce` vars populated from `PENPOT_*` env vars through the shared schema string transformer. Tests and tooling can bind them.
+- Duration config values are parsed as ISO-8601 with the `PT` prefix, so a day is written in hours (`:jobs-retention` and `:jobs-user-ttl` default to a week, and an operator writes `168h`): `7d` does not parse, and the value fails validation at boot instead of being silently ignored.
 - `parse-flags` automatically adds `:disable-secure-session-cookies` when `public-uri` is plain HTTP and not localhost. This changes cookie defaults without an explicit env flag.
 - The backend sets Clojure `*assert*` globally from the `:backend-asserts` feature flag. Assertion-dependent checks can therefore differ by runtime flags.
 - Request body parsing is mostly POST-oriented and supports Transit JSON plus plain JSON. Plain JSON request keys are kebab-decoded before being merged into `:params`.
