@@ -57,7 +57,7 @@ penpot.ui.onMessage<
                 penpotVersion: penpotVersionPrefix,
             });
         }
-        // connect only when requested in this workspace
+        // connect only when requested in this tab
         if (isIntegratedRemoteMcp && mcp?.isConnectionRequested()) {
             penpot.ui.sendMessage({
                 type: "start-server",
@@ -66,15 +66,22 @@ penpot.ui.onMessage<
             });
         }
     } else if (typeof message === "object" && message.type === "connection-metadata-request") {
-        const file = penpot.currentFile;
-        if (file && message.sessionId) {
+        const workspace = penpotMgmt.workspace;
+        if (message.sessionId) {
             const initialization: PluginConnectionInit & { penpotUserSessionId?: string } = {
                 type: "initialize",
-                session: { sessionId: message.sessionId, fileId: file.id, fileName: file.name },
+                session: {
+                    sessionId: message.sessionId,
+                    fileId: workspace.fileId,
+                    fileName: workspace.fileName,
+                    workspaceState: workspace.status,
+                },
                 penpotUserSessionId: penpot.currentUser.sessionId,
             };
             penpot.ui.sendMessage(initialization);
         }
+    } else if (typeof message === "object" && message.type === "context-request") {
+        sendWorkspaceContext();
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown", message.sessionId);
     } else if (typeof message === "object" && message.task && message.id) {
@@ -84,6 +91,21 @@ penpot.ui.onMessage<
         });
     }
 });
+
+/** Sends the current workspace metadata without replacing the connection. */
+function sendWorkspaceContext(): void {
+    const workspace = penpotMgmt.workspace;
+    penpot.ui.sendMessage({
+        type: "context-update",
+        context: {
+            fileId: workspace.fileId,
+            fileName: workspace.fileName,
+            workspaceState: workspace.status,
+        },
+    });
+}
+
+penpotMgmt.on("workspacechange", sendWorkspaceContext);
 
 /**
  * Handles plugin task requests received from the MCP server via WebSocket.

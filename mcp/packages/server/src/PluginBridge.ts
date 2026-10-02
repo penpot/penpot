@@ -27,8 +27,9 @@ const connectionInitSchema = z.object({
     type: z.literal("initialize"),
     session: z.object({
         sessionId: z.string().min(1).max(128),
-        fileId: z.string().min(1).max(128),
-        fileName: z.string(),
+        fileId: z.string().min(1).max(128).nullable(),
+        fileName: z.string().nullable(),
+        workspaceState: z.enum(["none", "loading", "ready"]).optional(),
     }),
 });
 
@@ -170,6 +171,13 @@ export class PluginBridge implements TaskDispatchHost {
                         return;
                     }
                     connection.frozen = false;
+                    if (message?.type === "context-update") {
+                        const context = connectionInitSchema.shape.session
+                            .omit({ sessionId: true })
+                            .parse(message.context);
+                        Object.assign(connection.session, context);
+                        return;
+                    }
                     if (message?.type === "heartbeat") {
                         return;
                     }

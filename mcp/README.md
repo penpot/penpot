@@ -33,6 +33,16 @@ This repository thus contains not only the MCP server implementation itself
 but also the supporting Penpot MCP Plugin 
 (see section [Repository Structure](#repository-structure) below).
 
+## Global plugin lifecycle
+
+- The MCP plugin stays loaded across dashboard and workspace navigation, including when the integration runs with its UI hidden.
+- Enabling the integration loads the plugin; connecting remains an explicit action in the current tab. Logout closes it.
+- The MCP session ID is a short, 10-character Base32 hash of `penpot.currentUser.sessionId` alone. File metadata changes without replacing the WebSocket connection or execution `storage`.
+- `penpotMgmt.workspace` reports `none`, `loading` or `ready`, with file and team metadata. Subscribe through `penpotMgmt.on("workspacechange", callback)`.
+- `await penpotMgmt.openFile(fileId, {teamId})` opens a file in the same tab and waits for its page to be ready. The team defaults to the current team; failed navigation rejects the promise.
+- The `penpot` facade stays live. File operations require a ready workspace; reacquire file, page and shape references after navigation.
+- Global plugins declare `"scope": "global"` in their manifest. Management metadata and navigation currently require `content:read` permission.
+
 ## Demonstration
 
 [![Video](https://v32155.1blu.de/penpot/PenpotFest2025_thumbnail.png)](https://v32155.1blu.de/penpot/PenpotFest2025.mp4)
@@ -243,7 +253,7 @@ of the prompt input area.
 Connect the files you want to use:
 
 * Open each file in a separate Penpot tab, run the plugin, and connect it to the same MCP server.
-* Each connection has its own short session ID, shown in the plugin UI with a **Copy** button.
+* Each browser tab uses a short session ID derived only from `penpot.currentUser.sessionId`, shown in the plugin UI with a **Copy** button. The ID stays the same across workspace navigation.
 * Multiple tabs can connect to the same file. Connecting or disconnecting one tab does not disconnect the others.
 
 Choose a session for your agent:

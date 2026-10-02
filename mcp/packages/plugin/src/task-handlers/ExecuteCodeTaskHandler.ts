@@ -178,6 +178,7 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
         // initialize context, making penpot, penpotUtils, storage and the custom console available
         this.context = {
             penpot: penpot,
+            penpotMgmt: penpotMgmt,
             storage: {},
             console: new ExecuteCodeTaskConsole(),
             penpotUtils: PenpotUtils,
@@ -217,7 +218,7 @@ export class ExecuteCodeTaskHandler extends TaskHandler<ExecuteCodeTaskParams> {
             // wait for layout updates prior to executing the supplied code (if method is available)
             try {
                 // @ts-ignore - TODO Penpot.waitForLayoutUpdate is not yet in the released types
-                if (penpot.waitForLayoutUpdate) {
+                if (penpotMgmt.workspace.status === "ready" && penpot.waitForLayoutUpdate) {
                     // @ts-ignore
                     await penpot.waitForLayoutUpdate();
                 }

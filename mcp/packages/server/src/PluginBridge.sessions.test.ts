@@ -143,3 +143,29 @@ test("invalid initialization metadata cannot register a session", async () => {
     assert.equal((await closed)[0], 1008);
     await assert.rejects(bridge.executePluginTask(new PluginTask("test", {})), /No Penpot sessions/);
 });
+
+test("a dashboard session remains routable while its workspace metadata changes", async () => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}?userToken=alice`);
+    sockets.push(socket);
+    await once(socket, "open");
+    const initialized = once(socket, "message");
+    socket.send(
+        JSON.stringify({
+            type: "initialize",
+            session: { sessionId: "tab", fileId: null, fileName: null, workspaceState: "none" },
+        })
+    );
+    await initialized;
+    socket.on("message", (raw) => {
+        const request = JSON.parse(raw.toString());
+        socket.send(JSON.stringify({ id: request.id, success: true, data: "ok" }));
+    });
+    for (const context of [
+        { fileId: "file-1", fileName: "Design", workspaceState: "ready" },
+        { fileId: null, fileName: null, workspaceState: "none" },
+    ]) {
+        socket.send(JSON.stringify({ type: "context-update", context }));
+        assert.equal((await bridge.executePluginTask(new PluginTask("test", {}), "tab")).data, "ok");
+        assert.deepEqual(bridge.getUserConnections("alice")!.getSessions(), [{ sessionId: "tab", ...context }]);
+    }
+});

@@ -98,9 +98,14 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
     );
 
     // The plugin code really ran inside the sandbox: the manager registers
-    // `themechange` + `finish`, and the plugin code adds its own `finish`
+    // `themechange` + `finish` + `logout`, and the plugin code adds its own `finish`
     // listener through the public API.
-    expect(fixture.listenerTypes).toEqual(['themechange', 'finish', 'finish']);
+    expect(fixture.listenerTypes).toEqual([
+      'themechange',
+      'finish',
+      'logout',
+      'finish',
+    ]);
     expect(getPlugins()).toHaveLength(1);
 
     // The user-facing behavior from #11001: host-side augmentation of a
@@ -112,7 +117,7 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
     expect(() => {
       freshWrapper.toString = () => 'patched-by-runtime';
     }).not.toThrow();
-    expect(fixture.listenerTypes.length).toBe(3);
+    expect(fixture.listenerTypes.length).toBe(4);
   });
 
   it('denies the write API without permission and leaves the host untouched', async () => {
@@ -165,5 +170,80 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
     );
     expect(fixture.createRectangle).toHaveBeenCalledTimes(1);
     expect(lastCompartmentGlobalThis()['__selectionFrozen']).toBe(true);
+  });
+  it('keeps a global sandbox through navigation and other plugin loads, then closes it on logout', async () => {
+    const fixture = makeHostFixture();
+    let workspace = {
+      status: 'none',
+      fileId: null,
+      fileName: null,
+      teamId: null,
+    };
+    const listeners = new Map<
+      symbol,
+      { type: string; callback: (value?: unknown) => void }
+    >();
+    const context = {
+      ...fixture.context,
+      management: {
+        get workspace() {
+          return workspace;
+        },
+        openFile: async () => {},
+      },
+      addListener(type: string, callback: (value?: unknown) => void) {
+        const id = Symbol();
+        listeners.set(id, { type, callback });
+        return id;
+      },
+      removeListener(id: symbol) {
+        listeners.delete(id);
+      },
+    } as unknown as Context;
+    setContextBuilder(() => context);
+    const manifest = {
+      ...makeManifest(
+        'globalThis.savedPenpot = penpot; globalThis.probe = penpotMgmt.workspace.status;',
+        ['content:read', 'content:write'],
+      ),
+      pluginId: 'global-plugin',
+      scope: 'global' as const,
+    };
+    await loadPlugin(manifest);
+    const globalPlugin = getPlugins().find(
+      (plugin) => plugin.manifest.pluginId === 'global-plugin',
+    )!;
+    const globals = globalPlugin.compartment.compartment.globalThis;
+    expect(globals['probe']).toBe('none');
+    expect(() =>
+      globalPlugin.compartment.compartment.evaluate('penpot.createRectangle()'),
+    ).toThrow(/No workspace/);
+    for (const listener of [...listeners.values()]) {
+      if (listener.type === 'finish') listener.callback();
+    }
+    await loadPlugin(makeManifest('globalThis.workspacePlugin = true;', []));
+    expect(getPlugins()).toContain(globalPlugin);
+    await loadPlugin(manifest);
+    expect(
+      getPlugins().filter(
+        (plugin) => plugin.manifest.pluginId === 'global-plugin',
+      ),
+    ).toHaveLength(1);
+    workspace = { ...workspace, status: 'ready' };
+    globalPlugin.compartment.compartment.evaluate(
+      'penpot.createRectangle(); globalThis.sameFacade = savedPenpot === penpot;',
+    );
+    expect(globals['sameFacade']).toBe(true);
+    expect(fixture.createRectangle).toHaveBeenCalledOnce();
+    await expect(
+      loadPlugin(makeManifest('throw new Error("failure");', [])),
+    ).rejects.toThrow('failure');
+    expect(getPlugins()).toContain(globalPlugin);
+    for (const listener of [...listeners.values()]) {
+      if (listener.type === 'logout') listener.callback();
+    }
+    expect(getPlugins()).toHaveLength(0);
+    expect(globals['penpotMgmt']).toBeUndefined();
+    expect(listeners.size).toBe(0);
   });
 });

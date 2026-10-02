@@ -8,6 +8,7 @@ interface McpOptions {
 
 declare global {
     const mcp: undefined | McpOptions;
+    const penpotMgmt: import("../../../../plugins/libs/plugin-types").PenpotMgmt;
 }
 
 export {};

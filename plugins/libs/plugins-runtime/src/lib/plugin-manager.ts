@@ -40,11 +40,10 @@ export async function createPluginManager(
     modal?.setTheme(theme);
   });
 
-  const listenerId: symbol = context.addListener('finish', () => {
-    closePlugin();
-
-    context?.removeListener(listenerId);
+  const listenerId = context.addListener('finish', () => {
+    if (manifest.scope !== 'global') closePlugin();
   });
+  const logoutId = context.addListener('logout', () => closePlugin());
 
   let listeners: symbol[] = [];
 
@@ -60,7 +59,11 @@ export async function createPluginManager(
   };
 
   const closePlugin = () => {
+    if (destroyed) return;
+    destroyed = true;
     removeAllEventListeners();
+    destroyListener(listenerId);
+    destroyListener(logoutId);
 
     timeouts.forEach(clearTimeout);
     timeouts.clear();
@@ -73,8 +76,6 @@ export async function createPluginManager(
       modal.remove();
       modal = null;
     }
-
-    destroyed = true;
 
     onCloseCallback();
   };

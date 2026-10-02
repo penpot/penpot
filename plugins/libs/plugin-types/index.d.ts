@@ -4,7 +4,7 @@
  */
 export interface Penpot extends Omit<
   Context,
-  'addListener' | 'removeListener'
+  'addListener' | 'removeListener' | 'management'
 > {
   readonly ui: {
     /**
@@ -778,10 +778,32 @@ export interface CommonLayout {
   remove(): void;
 }
 
+/** Current workspace of this browser tab. */
+export interface WorkspaceContext {
+  readonly status: 'none' | 'loading' | 'ready';
+  readonly fileId: string | null;
+  readonly fileName: string | null;
+  readonly teamId: string | null;
+}
+
+/** Application management API available to global plugins. */
+export interface PenpotMgmt {
+  readonly workspace: WorkspaceContext;
+  /** Opens a file in this tab and resolves once its workspace and page are ready. */
+  openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
+  /** Subscribes to workspace availability and metadata changes. */
+  on(
+    type: 'workspacechange',
+    callback: (workspace: WorkspaceContext) => void,
+  ): symbol;
+  off(listenerId: symbol): void;
+}
+
 /**
  * Represents the context of Penpot, providing access to various Penpot functionalities and data.
  */
 export interface Context {
+  readonly management?: Pick<PenpotMgmt, 'workspace' | 'openFile'>;
   /**
    * Returns the current penpot version.
    */
@@ -1556,6 +1578,8 @@ export interface Ellipse extends ShapeBase {
  * ```
  */
 export interface EventsMap {
+  readonly workspacechange: WorkspaceContext;
+  readonly logout: void;
   /**
    * The `pagechange` event is triggered when the active page in the project is changed.
    */
@@ -5757,4 +5781,5 @@ export interface Viewport {
 
 declare global {
   const penpot: Penpot;
+  const penpotMgmt: PenpotMgmt;
 }

@@ -7,6 +7,7 @@ export const manifestSchema = z.object({
   code: z.string(),
   icon: z.string().optional(),
   version: z.number().optional(),
+  scope: z.enum(['workspace', 'global']).optional(),
   description: z.string().max(200).optional(),
   permissions: z.array(
     z.enum([

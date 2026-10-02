@@ -49,8 +49,10 @@ export class ExecuteCodeTool extends Tool<ExecuteCodeArgs> {
             "Executes JavaScript code in the Penpot plugin context.\n" +
             "IMPORTANT: Before using this tool, make sure you have read the 'Penpot High-Level Overview' and know " +
             "which Penpot API functionality is necessary and how to use it.\n" +
-            "You have access two main objects: `penpot` (the Penpot API, of type `Penpot`), `penpotUtils`, " +
-            "and `storage`.\n" +
+            "You have access to `penpot` (the Penpot API, of type `Penpot`), `penpotMgmt`, `penpotUtils`, and `storage`.\n" +
+            "`penpotMgmt.workspace.status` is none, loading or ready. Use `await penpotMgmt.openFile(fileId, {teamId})` " +
+            "to open a file and wait until it is ready; teamId defaults to the current team. " +
+            "File operations require a ready workspace. Storage survives navigation; reacquire file and shape objects after changing files.\n" +
             "`storage` is an object in which arbitrary data can be stored, simply by adding a new attribute; " +
             "stored attributes can be referenced in future calls to this tool, so any intermediate results that " +
             "could come in handy later should be stored in `storage` instead of just a fleeting variable; " +

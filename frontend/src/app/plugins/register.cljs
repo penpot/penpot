@@ -102,6 +102,7 @@
          {:plugin-id plugin-id
           :url (str plugin-url)
           :version vers
+          :scope (obj/get manifest "scope")
           :name name
           :description desc
           :host origin

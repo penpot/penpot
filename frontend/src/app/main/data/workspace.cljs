@@ -55,7 +55,6 @@
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.mcp :as mcp]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.path :as dwdp]
@@ -77,7 +76,6 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.plugins.register :as preg]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
@@ -259,15 +257,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       (rx/of (dp/check-open-plugin)
-              (fdf/fix-deleted-fonts-for-local-library file-id))
-       (if (contains? cf/flags :mcp)
-         ;; We wait the plugin runtime to be ready before launch the
-         ;; mcp initialization
-         (->> (rx/from (preg/wait-for-runtime))
-              (rx/map (fn [_] (mcp/init))))
-         (rx/empty))))))
+      (rx/of (dp/check-open-plugin)
+             (fdf/fix-deleted-fonts-for-local-library file-id)))))
 
 (defn- compute-shape-stats
   "Compute shape statistics in a single pass over pages-index.

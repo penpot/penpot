@@ -17,6 +17,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -255,6 +256,13 @@
         (get default-project :id)
 
         team-id     (get team :id)
+        mcp-state   (mf/deref refs/mcp)
+        mcp-requested? (:connection-requested mcp-state)
+        toggle-mcp  (mf/use-fn
+                     (mf/deps mcp-requested?)
+                     #(st/emit! (if mcp-requested?
+                                  (mcp/user-disconnect-mcp)
+                                  (mcp/connect-mcp))))
 
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
@@ -381,6 +389,21 @@
                      :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
+
+       (when (and (contains? cf/flags :mcp)
+                  (:enabled mcp-state)
+                  (:token-valid mcp-state))
+         [:div {:class (stl/css :sidebar-content-section)}
+          [:ul {:class (stl/css :sidebar-nav)}
+           [:li {:class (stl/css :sidebar-nav-item)}
+            [:> link* {:action toggle-mcp
+                       :keyboard-action toggle-mcp
+                       :class (stl/css :sidebar-link)}
+             [:span {:class (stl/css :element-title)}
+              "MCP: "
+              (if mcp-requested?
+                (tr "workspace.header.menu.mcp.plugin.status.disconnect")
+                (tr "workspace.header.menu.mcp.plugin.status.connect"))]]]]])
 
        [:div {:class (stl/css :sidebar-content-section)
               :data-testid "pinned-projects"}

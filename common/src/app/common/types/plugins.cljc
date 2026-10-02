@@ -58,6 +58,7 @@
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
+   [:scope {:optional true} [:enum "workspace" "global"]]
    [:name [:string {:max (:name registry-entry-max-lengths)}]]
    [:description {:optional true} [:string {:max (:description registry-entry-max-lengths)}]]
    [:host [:string {:max (:host registry-entry-max-lengths)}]]
