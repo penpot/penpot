@@ -230,7 +230,8 @@
                                  (log/dbg :hint "import-binfile: end")))))
                    (rx/filter sse/end-of-stream?)
                    (rx/mapcat (fn [message]
-                                (let [{:keys [resolution]} (sse/get-payload message)]
+                                (let [{:keys [resolution]}
+                                      (sse/get-payload message)]
                                   (when (seq resolution)
                                     (vswap! resolutions merge resolution))
                                   (->> (rx/from entries)

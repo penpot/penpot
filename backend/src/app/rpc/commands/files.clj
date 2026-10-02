@@ -7,6 +7,7 @@
 (ns app.rpc.commands.files
   (:require
    [app.binfile.common :as bfc]
+   [app.binfile.v3 :as bfv3]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -1141,20 +1142,8 @@
                                        :library-file-id library-id
                                        :synced-at (ct/now)}))
 
-(def ^:private
-  schema:link-file-to-library
-  [:map {:title "link-file-to-library"}
-   [:file-id ::sm/uuid]
-   [:library-id ::sm/uuid]])
-
-(sv/defmethod ::link-file-to-library
-  "Link a file to a library. Returns the recursive list of libraries used by that library"
-  {::doc/added "1.17"
-   ::webhooks/event? true
-   ::sm/params schema:link-file-to-library
-   ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
-
+(defn- check-library-link!
+  [cfg conn profile-id file-id library-id]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
@@ -1168,10 +1157,68 @@
     (when (contains? transitive-deps file-id)
       (ex/raise :type :validation
                 :code :circular-library-reference
-                :hint "linking this library would create a circular dependency")))
+                :hint "linking this library would create a circular dependency"))))
+
+(def ^:private
+  schema:link-file-to-library
+  [:map {:title "link-file-to-library"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
+
+(sv/defmethod ::link-file-to-library
+  "Link a file to a library. Returns the recursive list of libraries used by that library"
+  {::doc/added "1.17"
+   ::webhooks/event? true
+   ::sm/params schema:link-file-to-library
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
+  (check-library-link! cfg conn profile-id file-id library-id)
 
   (link-file-to-library conn params)
   (bfc/get-libraries cfg [library-id]))
+
+(def ^:private schema:resolve-import-token-source
+  [:map {:title "resolve-import-token-source"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]
+   [:tokens-status-names {:optional true} [:map]]])
+
+(sv/defmethod ::resolve-import-token-source
+  "Resolve the chosen token-source library and state of an imported file in one step."
+  {::doc/added "2.19"
+   ::webhooks/event? true
+   ::sm/params schema:resolve-import-token-source
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id library-id tokens-status-names]}]
+  (check-library-link! cfg conn profile-id file-id library-id)
+  (bfv3/resolve-import-token-source! cfg file-id library-id tokens-status-names))
+
+;; --- QUERY COMMAND: consume-tokens-source-fallback-notification
+
+(def ^:private schema:consume-tokens-source-fallback-notification
+  [:map {:title "consume-tokens-source-fallback-notification"}
+   [:file-id ::sm/uuid]])
+
+(sv/defmethod ::consume-tokens-source-fallback-notification
+  "Consume the one-shot tokens-source fallback notification stored on import/resolution. Checks read permissions, locks the file and its metadata, returns the fallback outcome once and clears it. Metadata-only change: revn and modified-at are untouched."
+  {::doc/added "2.19"
+   ::sm/params schema:consume-tokens-source-fallback-notification
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id]}]
+  (check-read-permissions! cfg profile-id file-id)
+  (db/get-by-id conn :file file-id {::sql/columns [:id] ::db/for-update true})
+  (let [row      (db/get* conn :file-data {:file-id file-id :id file-id :type "main"}
+                          {::sql/columns [:metadata] ::db/for-update true})
+        metadata (feat.fdata/decode-metadata (:metadata row))
+        outcome  (:tokens-source-fallback-notification metadata)]
+    (if (#{:tokens-source-fallback-local :tokens-source-deactivated} outcome)
+      (do
+        (db/update! conn :file-data
+                    {:metadata (db/json (dissoc metadata :tokens-source-fallback-notification))}
+                    {:file-id file-id :id file-id}
+                    {::db/return-keys false})
+        {:tokens-source-fallback-notification outcome})
+      {:tokens-source-fallback-notification nil})))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 

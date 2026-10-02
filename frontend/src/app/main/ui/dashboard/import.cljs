@@ -178,6 +178,21 @@
              0
              resolution))
 
+(defn pending-library-resolution-request
+  [file-id pending-entry library-id]
+  (cond
+    (and (:tokens-source? pending-entry) library-id)
+    {:command :resolve-import-token-source
+     :params (cond-> {:file-id file-id
+                      :library-id library-id}
+               (some? (:tokens-status-names pending-entry))
+               (assoc :tokens-status-names (:tokens-status-names pending-entry)))}
+
+    library-id
+    {:command :link-file-to-library
+     :params {:file-id file-id
+              :library-id library-id}}))
+
 (defn- analyze-entries
   [state entries]
   (let [features (get @st/state :features)]
@@ -213,7 +228,8 @@
             (if-let [resolution  (-> (:libraries-resolution message)
                                      (not-empty))]
               (reset! library-resolution-data* resolution)
-              (swap! state update-entry-status message)))))))
+              (when (:status message)
+                (swap! state update-entry-status message))))))))
 
 (mf/defc import-entry*
   {::mf/memo true
@@ -375,21 +391,19 @@
   (fn []
     (mapv #(assoc % :status :analyze) entries)))
 
-(defn- link-files-to-library!
-  "Call the link-file-to-library RPC for each file-id with the given
-  library-id. Returns an observable that completes when all links are done."
-  [file-ids library-id]
-  (->> (rx/from file-ids)
-       (rx/merge-map (fn [file-id]
-                       (->> (rp/cmd! :link-file-to-library
-                                     {:file-id file-id
-                                      :library-id library-id})
-                            (rx/catch (fn [cause]
-                                        (log/error :hint "failed to link library"
-                                                   :file-id file-id
-                                                   :library-id library-id
-                                                   :cause cause)
-                                        (rx/of nil))))))))
+(defn- resolve-library-link!
+  [file-id pending-entry library-id]
+  (if-let [{:keys [command params]} (pending-library-resolution-request file-id
+                                                                        pending-entry
+                                                                        library-id)]
+    (->> (rp/cmd! command params)
+         (rx/catch (fn [cause]
+                     (log/error :hint "failed to resolve imported library"
+                                :file-id file-id
+                                :library-id library-id
+                                :cause cause)
+                     (rx/of nil))))
+     (rx/of nil)))
 
 (mf/defc library-resolution*
   {::mf/private true}
@@ -871,9 +885,10 @@
                    (fn [[file-id resolution-file]]
                      (->> (rx/from (:pending resolution-file))
                           (rx/merge-map
-                           (fn [{:keys [id]}]
-                             (when-let [selected-lib (get-in slc [file-id id])]
-                               (link-files-to-library! [file-id] selected-lib)))))))
+                          (fn [{:keys [id] :as pending-entry}]
+                            (resolve-library-link! file-id
+                                                   pending-entry
+                                                    (get-in slc [file-id id])))))))
                   (rx/subs! (constantly nil)
                             (constantly nil)
                             (fn []
