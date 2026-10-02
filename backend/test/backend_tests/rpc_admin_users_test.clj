@@ -188,13 +188,16 @@
       (t/is (nil? (:next-since page2)))
       (t/is (nil? (:next-id page2))))))
 
-(t/deftest list-excludes-deleted
+(t/deftest list-includes-deleted-with-stamp
   (let [admin   (th/create-profile* 1)
         gone    (th/create-profile* 2)
         _       (set-flags! (:id gone) {:deleted-at (ct/now)})
         run     (as-superuser admin)
-        out     (run "get-admin-profiles" {})]
-    (t/is (= [(:id admin)] (mapv :id (:items out))))))
+        out     (run "get-admin-profiles" {})
+        by-id   (into {} (map (juxt :id identity)) (:items out))]
+    (t/is (= 2 (count (:items out))))
+    (t/is (some? (:deleted-at (get by-id (:id gone)))))
+    (t/is (nil? (:deleted-at (get by-id (:id admin)))))))
 
 ;; ----------------------------------------------------------------
 ;; Detail
@@ -234,13 +237,14 @@
     (t/is (= :profile-not-found
              (caught-code #(run "get-admin-profile" {:id (uuid/next)}))))))
 
-(t/deftest detail-deleted-gives-not-found
+(t/deftest detail-deleted-returns-with-stamp
   (let [admin (th/create-profile* 1)
         gone  (th/create-profile* 2)
         _     (set-flags! (:id gone) {:deleted-at (ct/now)})
-        run   (as-superuser admin)]
-    (t/is (= :profile-not-found
-             (caught-code #(run "get-admin-profile" {:id (:id gone)}))))))
+        run   (as-superuser admin)
+        out   (run "get-admin-profile" {:id (:id gone)})]
+    (t/is (= (:id gone) (:id out)))
+    (t/is (some? (:deleted-at out)))))
 
 ;; ----------------------------------------------------------------
 ;; Block / unblock
@@ -296,6 +300,21 @@
              (caught-code #(run "block-admin-profile" {:id (uuid/next)}))))
     (t/is (= :profile-not-found
              (caught-code #(run "unblock-admin-profile" {:id (uuid/next)}))))))
+
+(t/deftest writes-refuse-deleted
+  (let [admin (th/create-profile* 1)
+        gone  (th/create-profile* 2)
+        _     (set-flags! (:id gone) {:deleted-at (ct/now)})
+        run   (as-superuser admin)]
+    (t/is (= :profile-not-found
+             (caught-code #(run "block-admin-profile" {:id (:id gone)}))))
+    (t/is (= :profile-not-found
+             (caught-code #(run "unblock-admin-profile" {:id (:id gone)}))))
+    (t/is (= :profile-not-found
+             (caught-code #(run "resend-admin-verification" {:id (:id gone)}))))
+    (let [out (run "delete-admin-profiles" {:emails [(:email gone)]})]
+      (t/is (= [] (:deleted out)))
+      (t/is (= [(:email gone)] (:not-found out))))))
 
 (t/deftest unblock-clears-flag
   (let [admin (th/create-profile* 1)
@@ -390,8 +409,10 @@
     (t/is (zero? (session-count (:id user2))))
     (t/is (= 2 (count @jobs)))
     (t/is (every? #(= :delete-object (:task %)) @jobs))
-    (t/is (= {:items []} (run "get-admin-profiles" {:search "profile2.test"}))
-          "marked profiles leave the listing")))
+    (let [out (run "get-admin-profiles" {:search "profile2.test"})]
+      (t/is (= 1 (count (:items out)))
+            "a marked profile still lists under its own search")
+      (t/is (some? (:deleted-at (first (:items out))))))))
 
 (t/deftest delete-skips-self
   (let [admin (th/create-profile* 1)

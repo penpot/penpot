@@ -73,6 +73,7 @@ EOF
 ```
 
 Default port is 6064. Use `-p <PORT>` for a different port. Use `-t <MS>` to override the 120s timeout. Do not start the nREPL server — assume it is already running.
+Reloading a namespace with `:reload` only affects the REPL session: the running server keeps serving old code until you evaluate `(restart)` in nREPL, which reloads the whole system.
 
 ### Interactive REPL
 

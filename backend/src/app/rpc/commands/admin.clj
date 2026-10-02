@@ -115,8 +115,7 @@
   [{:keys [since since-id search is-blocked is-active is-demo limit]
     :or {limit profiles-default-limit}}]
   (let [clauses    (keep identity
-                         [{:where "(deleted_at IS NULL OR deleted_at > now())"}
-                          (when (and (string? search) (not (str/blank? search)))
+                         [(when (and (string? search) (not (str/blank? search)))
                             {:where "(email ILIKE ? OR fullname ILIKE ?)"
                              :params [(str "%" search "%") (str "%" search "%")]})
                           (when (some? is-blocked)
@@ -135,9 +134,10 @@
         sql-params (mapcat :params clauses)
         sql        (str "SELECT id, email, fullname, created_at, "
                         "is_active, COALESCE(is_blocked, false) AS is_blocked, "
-                        "is_demo, auth_backend "
+                        "is_demo, auth_backend, deleted_at "
                         "FROM profile "
-                        "WHERE " (str/join " AND " sql-parts) " "
+                        (when (seq sql-parts)
+                          (str "WHERE " (str/join " AND " sql-parts) " "))
                         "ORDER BY created_at DESC, id DESC "
                         "LIMIT ?")]
     (into [sql] (concat sql-params [limit]))))
@@ -211,7 +211,8 @@
    ::sm/params schema:get-admin-profile-params
    ::sm/result schema:admin-profile}
   [cfg {:keys [id]}]
-  (if-let [row (db/get-by-id cfg :profile id {::db/check-deleted false})]
+  (if-let [row (db/get-by-id cfg :profile id {::db/check-deleted false
+                                              ::db/remove-deleted false})]
     (d/without-nils
      {:id           (:id row)
       :email        (:email row)
@@ -222,6 +223,7 @@
       :is-demo      (boolean (:is-demo row))
       :is-muted     (boolean (:is-muted row))
       :auth-backend (:auth-backend row)
+      :deleted-at   (:deleted-at row)
       :owned-teams  (db/exec! cfg [sql:admin-owned-teams id])
       :member-teams (db/exec! cfg [sql:admin-member-teams id])})
     (ex/raise :type :not-found
@@ -233,17 +235,26 @@
    [:id ::sm/uuid]
    [:is-blocked ::sm/boolean]])
 
+(defn- get-live-profile
+  "Fetch a profile that is neither missing nor marked for deletion.
+  Reads use `get-admin-profile` (which returns deleted rows with
+  their stamp); writes go through here."
+  [cfg id]
+  (let [row (db/get-by-id cfg :profile id {::db/check-deleted false
+                                           ::db/remove-deleted false})]
+    (if (and row (nil? (:deleted-at row)))
+      row
+      (ex/raise :type :not-found
+                :code :profile-not-found
+                :hint (str "profile " id " not found")))))
+
 (defn- set-blocked-flag!
   [cfg id blocked?]
-  (if (db/get-by-id cfg :profile id {::db/check-deleted false})
-    (do
-      (db/update! cfg :profile {:is-blocked blocked?} {:id id})
-      (when blocked?
-        (session/invalidate-all cfg id))
-      {:id id :is-blocked blocked?})
-    (ex/raise :type :not-found
-              :code :profile-not-found
-              :hint (str "profile " id " not found"))))
+  (get-live-profile cfg id)
+  (db/update! cfg :profile {:is-blocked blocked?} {:id id})
+  (when blocked?
+    (session/invalidate-all cfg id))
+  {:id id :is-blocked blocked?})
 
 (sv/defmethod ::block-admin-profile
   {::doc/added "2.20"
@@ -279,17 +290,14 @@
    ::sm/params schema:get-admin-profile-params
    ::sm/result schema:admin-resend-result}
   [cfg {:keys [id]}]
-  (if-let [row (db/get-by-id cfg :profile id {::db/check-deleted false})]
+  (let [row (get-live-profile cfg id)]
     (if (:is-active row)
       (ex/raise :type :validation
                 :code :already-active
                 :hint "the profile is already active")
       (do
         (cmd.auth/send-email-verification! cfg row)
-        {:id (:id row) :email (:email row)}))
-    (ex/raise :type :not-found
-              :code :profile-not-found
-              :hint (str "profile " id " not found"))))
+        {:id (:id row) :email (:email row)}))))
 
 (def schema:delete-admin-profiles-params
   [:map {:title "delete-admin-profiles-params"}
