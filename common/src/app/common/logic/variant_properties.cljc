@@ -176,8 +176,8 @@
 
    The editing? flag, if set, will be added to the metadata of the properties, for later use.
 
-   The skip-validation? flag is for callers that add the property while some shapes of the
-   container are not variants yet. They must validate the container themselves when done."
+   The skip-validation? flag is used when this function is part of a higher level operation.
+   The validation must be done after the whole operation is complete."
   [changes variant-id & {:keys [fill-values? editing? property-name property-value skip-validation?]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
@@ -247,7 +247,7 @@
   (if (empty? shapes)
     changes
     ;; Only the extracted main instances change. The container is not
-    ;; validated, as the caller may not have moved the shapes out of it yet
+    ;; validated because this is only a partial operation
     (-> (reduce generate-make-shape-no-variant changes shapes)
         (pcb/validate-shapes (pcb/get-page-id changes)
                              (mapv :id shapes)
@@ -279,8 +279,8 @@
   "Introduce some components into a variant, adding the variant-id and variant-name to the
    main instances and the variant-id and variant-properties to the components.
 
-   It does not validate the shapes, as callers may run it before the shapes are inside the
-   container. The callers must validate the container when done."
+   It does not validate the shapes because this is only a partial operation. The validation
+   must be done after the whole operation is complete."
   [changes shapes variant-container]
   (let [data           (pcb/get-library-data changes)
         objects        (pcb/get-objects changes)
