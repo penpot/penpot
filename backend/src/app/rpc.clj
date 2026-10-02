@@ -127,7 +127,15 @@
                                (-> (assoc ::auth-type :token)
                                    (assoc ::token-perms (set (::actoken/perms request #{})))))
                              (cond-> key-id
-                               (assoc ::auth-key-id key-id)))
+                               (assoc ::auth-key-id key-id))
+                             ;; Server-side only: request bodies cannot forge
+                             ;; it (qualified keys are stripped before the
+                             ;; merge). Upload maps are only trusted when they
+                             ;; arrive over multipart.
+                             (assoc ::is-multipart
+                                    (str/starts-with?
+                                     (str (yreq/get-header request "content-type"))
+                                     "multipart/")))
 
             data         (with-meta data
                            {::http/request request})
@@ -228,10 +236,23 @@
       (fn [cfg params]
         (let [request-params (-> params meta ::http/request :params decode)]
           (if (validate request-params)
-            (let [result (f cfg (merge params (d/without-qualified request-params)))]
-              (if (instance? clojure.lang.IObj result)
-                (vary-meta result assoc :encode/json encode)
-                result))
+            (let [merged (merge params (d/without-qualified request-params))]
+              ;; Upload temp files are created server-side by the multipart
+              ;; parser, so an upload map smuggled in a transit/JSON body can
+              ;; point :path at any internal server file. Methods declare
+              ;; their upload keys with ::multipart-only-params and they are
+              ;; only accepted when ::is-multipart arrived server-side with
+              ;; the request (request bodies cannot forge qualified keys).
+              (when (some #(and (contains? merged %)
+                                (not (::is-multipart merged)))
+                          (::multipart-only-params mdata))
+                (ex/raise :type :validation
+                          :code :params-validation
+                          :hint "upload requires multipart"))
+              (let [result (f cfg merged)]
+                (if (instance? clojure.lang.IObj result)
+                  (vary-meta result assoc :encode/json encode)
+                  result)))
             (ex/raise :type :validation
                       :code :params-validation
                       ::sm/explain (explain request-params))))))

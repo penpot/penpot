@@ -286,7 +286,8 @@
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::audit/skip true
-   ::sm/params schema:create-file-object-thumbnail}
+   ::sm/params schema:create-file-object-thumbnail
+   ::rpc/multipart-only-params [:media]}
 
   [cfg {:keys [::rpc/profile-id file-id object-id media tag]}]
   (media.v/validate-media-type! media)
@@ -387,7 +388,8 @@
                 [:file-thumbnail-ops/global]]
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
-   ::sm/params schema:create-file-thumbnail}
+   ::sm/params schema:create-file-thumbnail
+   ::rpc/multipart-only-params [:media]}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
   (media.v/validate-media-type! (:media params))
