@@ -28,3 +28,48 @@ body {
   min-height: 100vh;
   padding: var(--admin-space-lg);
 }
+
+.admin-sidebar {
+  display: flex;
+  gap: var(--admin-space-md);
+  margin-bottom: var(--admin-space-lg);
+}
+
+.admin-sidebar-link {
+  color: var(--admin-text);
+  text-decoration: none;
+}
+
+.admin-sidebar-link:hover {
+  color: var(--admin-accent);
+}
+
+.admin-header h1 {
+  font-size: 1.5rem;
+  margin: 0 0 var(--admin-space-md);
+}
+
+.admin-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.admin-table th,
+.admin-table td {
+  border: 1px solid var(--admin-surface);
+  padding: var(--admin-space-sm);
+  text-align: left;
+}
+
+.admin-toast {
+  position: fixed;
+  bottom: var(--admin-space-lg);
+  right: var(--admin-space-lg);
+  background: var(--admin-surface);
+  padding: var(--admin-space-md);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-toast-error {
+  border-left-color: var(--admin-danger);
+}
