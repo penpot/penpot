@@ -368,7 +368,10 @@
 
 (defn- decode-row
   [row]
-  (decode-json-col row :params))
+  (-> row
+      (decode-json-col :params)
+      (decode-json-col :result)
+      (decode-json-col :error)))
 
 (defn get-job
   "Retrieve the job row (with the raw JSON params decoded to a plain map)."

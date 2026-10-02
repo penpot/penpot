@@ -571,3 +571,90 @@
 
     (t/testing "and no job row was left behind"
       (t/is (zero? (count-jobs))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; READ
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-job!
+  [profile-id job-id]
+  (th/command! {::th/type       :get-job
+                ::rpc/profile-id profile-id
+                :id             job-id}))
+
+(defn- claim-job!
+  "Drive a pending job to `running`, as the dispatcher would: the terminal
+  writers only accept a job that is being executed."
+  [job-id]
+  (jobs/claim th/*system* job-id
+              (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at))))
+
+(t/deftest get-job-answers-with-the-state-of-the-job
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))
+        out     (get-job! (:id profile) job-id)]
+
+    (t/is (th/success? out))
+    (let [result (:result out)]
+      (t/is (= job-id (:id result)))
+      (t/is (= "pending" (:status result)))
+      (t/is (= "export-binfile" (:name result)))
+      (t/is (ct/inst? (:created-at result)))
+      (t/is (ct/inst? (:expires-at result)))
+
+      (t/testing "a job that has not finished has nothing to report yet"
+        (t/is (not (contains? result :result)))
+        (t/is (not (contains? result :error)))))))
+
+(t/deftest get-job-answers-with-the-result-of-a-finished-job
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+
+    (t/is (pos? (claim-job! job-id)))
+    (t/is (pos? (jobs/complete th/*system* :job-id job-id
+                               :result {:value 42 :file-ids [file-id]})))
+
+    (let [result (:result (get-job! (:id profile) job-id))]
+      (t/is (= "completed" (:status result)))
+      (t/testing "the result comes back as the map the handler produced"
+        ;; the row holds plain json, so a uuid comes back as the text it is
+        (t/is (= {:value 42 :file-ids [(str file-id)]} (:result result))))
+      (t/is (not (contains? result :error))))))
+
+(t/deftest get-job-answers-with-the-error-of-a-failed-job
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+
+    (t/is (pos? (claim-job! job-id)))
+    (t/is (pos? (jobs/fail th/*system* job-id {:type :internal
+                                               :code :boom
+                                               :hint "boom"})))
+
+    (let [result (:result (get-job! (:id profile) job-id))]
+      (t/is (= "failed" (:status result)))
+      (t/testing "the error is the public summary, with its keywords back"
+        (t/is (= {:type :internal :code :boom :hint "boom"} (:error result))))
+      (t/testing "and it carries no result"
+        (t/is (not (contains? result :result)))))))
+
+(t/deftest get-job-hides-a-job-of-another-profile
+  (let [owner   (th/create-profile* 1)
+        other   (th/create-profile* 2)
+        file-id (first (:file-ids (import-fixture! owner)))
+        job-id  (:id (:result (create-export-job! (:id owner) #{file-id})))]
+
+    (t/testing "the owner reads it"
+      (t/is (th/success? (get-job! (:id owner) job-id))))
+
+    (t/testing "another profile gets the answer of a job that does not exist"
+      (let [out (get-job! (:id other) job-id)]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))
+
+    (t/testing "and so does an unknown id"
+      (let [out (get-job! (:id owner) (uuid/next))]
+        (t/is (not (th/success? out)))
+        (t/is (= :not-found (th/ex-type (:error out))))))))

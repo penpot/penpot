@@ -271,3 +271,60 @@
           ;; already in storage by the time we get here, or the creation
           ;; failed and it is of no use to anyone
           (fs/delete path))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; READ
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:get-job
+  [:map {:title "get-job" :closed true}
+   [:id ::sm/uuid]])
+
+(def ^:private schema:job-detail
+  "The summary of a job plus what only exists once it is over: the result
+  it produced or, when it failed, its public error."
+  [:map {:title "job-detail"}
+   [:id ::sm/uuid]
+   [:status ::sm/text]
+   [:name ::sm/text]
+   [:created-at ::ct/inst]
+   [:expires-at [:maybe ::ct/inst]]
+   [:result {:optional true} :any]
+   [:error {:optional true} :any]])
+
+(defn- job-detail
+  "The job the caller owns, as the answer of `get-job`. A job that does
+  not exist and a job of another profile get the same answer: the caller
+  cannot tell them apart."
+  [cfg profile-id job-id]
+  (let [job (jobs/get-job cfg job-id)]
+    (when-not (and (some? job) (= profile-id (:profile-id job)))
+      (ex/raise :type :not-found
+                :code :job-not-found
+                :hint "the job does not exist or belongs to another profile"
+                :job-id job-id))
+    (cond-> {:id         (:id job)
+             :status     (jobs/get-user-status (:status job))
+             :name       (:name job)
+             :created-at (:created-at job)
+             :expires-at (:expires-at job)}
+      (some? (:result job))
+      (assoc :result (:result job))
+
+      (some? (:error job))
+      (assoc :error (jobs/decode-job-error (:error job))))))
+
+(sv/defmethod ::get-job
+  "Read a job the caller created: its state and, once it is over, what it
+  produced or why it failed.
+
+  The result of a finished job is the plain JSON the row holds, because a
+  result has no schema of its own like the params do: a uuid comes back as
+  the text it is on disk. The progress and the history of the job are not
+  part of the answer: a client that follows a job takes its progress from
+  the websocket, and the event log still has no read surface."
+  {::doc/added "2.20"
+   ::sm/params schema:get-job
+   ::sm/result schema:job-detail}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (job-detail cfg profile-id (:id params)))
