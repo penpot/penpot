@@ -348,10 +348,15 @@
 ;; `conj` empty set initialization
 (def conj* (fnil conj (d/ordered-set)))
 
+(defn- track-change!
+  [self k]
+  (when-let [changes shape/*shape-changes*]
+    (let [id (:id self)]
+      (.set changes id (conj* (.get changes id) k)))))
+
 (defn- impl-assoc
   [self k v]
-  (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) conj* k))
+  (track-change! self k)
 
   (case k
     :id
@@ -379,8 +384,7 @@
 
 (defn- impl-dissoc
   [self k]
-  (when shape/*shape-changes*
-    (vswap! shape/*shape-changes* update (:id self) conj* k))
+  (track-change! self k)
 
   (case k
     :id
