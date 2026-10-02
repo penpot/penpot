@@ -8,9 +8,11 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [beicon.v2.core :as rx]))
 
 (defn workspace-context
   [state]
@@ -70,9 +72,51 @@
                   (finish (js/Error. "File navigation was superseded"))))))
            (st/emit! (rt/nav :workspace {:team-id team-id :file-id file-id}))))))))
 
+(defn list-projects
+  [options]
+  (let [team-id (if-let [id (obj/get options "teamId")]
+                  (uuid/parse* id)
+                  (:current-team-id @st/state))]
+    (if (nil? team-id)
+      (js/Promise.reject (js/Error. "Expected a team UUID"))
+      (js/Promise.
+       (fn [resolve reject]
+         (->> (rp/cmd! :get-projects {:team-id team-id})
+              (rx/map (fn [projects]
+                        (clj->js
+                         (mapv (fn [project]
+                                 {:id (str (:id project))
+                                  :teamId (str (:team-id project))
+                                  :name (:name project)
+                                  :isDefault (boolean (:is-default project))
+                                  :fileCount (:count project)})
+                               (remove :deleted-at projects)))))
+              (rx/subs! resolve reject)))))))
+
+(defn list-files
+  [options]
+  (let [project-id (uuid/parse* (obj/get options "projectId"))]
+    (if (nil? project-id)
+      (js/Promise.reject (js/Error. "Expected a project UUID"))
+      (js/Promise.
+       (fn [resolve reject]
+         (->> (rp/cmd! :get-project-files {:project-id project-id})
+              (rx/map (fn [files]
+                        (clj->js
+                         (mapv (fn [file]
+                                 {:id (str (:id file))
+                                  :teamId (str (:team-id file))
+                                  :projectId (str (:project-id file))
+                                  :name (:name file)
+                                  :modifiedAt (.toISOString ^js (:modified-at file))})
+                               files))))
+              (rx/subs! resolve reject)))))))
+
 (defn create-context
   []
   (obj/reify {:name "PenpotManagementContext"}
     :workspace
     {:get (fn [] (clj->js (workspace-context @st/state)))}
-    :openFile open-file))
+    :openFile open-file
+    :listProjects list-projects
+    :listFiles list-files))

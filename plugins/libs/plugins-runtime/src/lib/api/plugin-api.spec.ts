@@ -54,6 +54,60 @@ describe('Plugin api', () => {
     vi.clearAllMocks();
   });
 
+  describe('management listing', () => {
+    it.each(['none', 'loading', 'ready'])(
+      'lists metadata with workspace status %s',
+      async (status) => {
+        const projects = [{ id: 'project-id' }];
+        const files = [{ id: 'file-id' }];
+        const management = {
+          workspace: { status },
+          listProjects: vi.fn().mockResolvedValue(projects),
+          listFiles: vi.fn().mockResolvedValue(files),
+        };
+        const { penpotMgmt } = createApi({
+          ...pluginManager,
+          manifest: { ...pluginManager.manifest, scope: 'global' },
+          context: { ...pluginManager.context, management },
+        } as any);
+
+        await expect(penpotMgmt.listProjects()).resolves.toEqual(projects);
+        expect(management.listProjects).toHaveBeenLastCalledWith(undefined);
+        await penpotMgmt.listProjects({ teamId: 'team-id' });
+        expect(management.listProjects).toHaveBeenLastCalledWith({
+          teamId: 'team-id',
+        });
+        await expect(
+          penpotMgmt.listFiles({ projectId: 'project-id' }),
+        ).resolves.toEqual(files);
+        expect(management.listFiles).toHaveBeenCalledWith({
+          projectId: 'project-id',
+        });
+      },
+    );
+
+    it('requires content:read before querying metadata', () => {
+      const management = {
+        listProjects: vi.fn(),
+        listFiles: vi.fn(),
+      };
+      const { penpotMgmt } = createApi({
+        ...pluginManager,
+        manifest: {
+          ...pluginManager.manifest,
+          permissions: [],
+          scope: 'global',
+        },
+        context: { ...pluginManager.context, management },
+      } as any);
+
+      expect(() => penpotMgmt.listProjects()).toThrow();
+      expect(() => penpotMgmt.listFiles({ projectId: 'project-id' })).toThrow();
+      expect(management.listProjects).not.toHaveBeenCalled();
+      expect(management.listFiles).not.toHaveBeenCalled();
+    });
+  });
+
   describe('ui', () => {
     describe.concurrent('permissions', () => {
       const api = createApi({
