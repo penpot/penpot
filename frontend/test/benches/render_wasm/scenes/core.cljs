@@ -28,29 +28,24 @@
 ;; Runtime contract
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Ticket 14 will define rtx as the case execution context. Its proposed
-;; fields are:
+;; The browser executor supplies rtx to each compiled case body:
 ;;
 ;;   :case    the collected case descriptor (id, scene, params, view,
 ;;            context, completion, batch-size, operation)
 ;;   :scene   the built scene snapshot {:objects ... :refs ...}
 ;;   :module  the WASM module handle, bound by the driver after init
-;;   :slices  recorded render slices; helpers conj here
-;;   :metrics recorded phase timings
-;;   :now     zero-arg clock fn
-;;   :frame   zero-arg promise of the next rAF timestamp
-;;   :sleep   (fn [ms] ...) promise
-;;   :check   zero-arg guard covering cancellation, deadline, context loss
+;;   :view    the prepared full camera view
+;;   :hooks   injected clock, scheduling, guard and renderer calls
 ;;
-;; Case run functions take one runtime argument. The current bridge uses case
-;; metadata and does not run these functions.
+;; Standard bodies return a measurement or Promise of one. Ticket 14 extends
+;; this runtime for general custom operations.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Node/browser dependency contract (case execution pending in ticket 14)
+;; Node/browser dependency contract
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Scene declarations and bodies load in both Node and browser. Ticket 14's
-;; browser driver will execute bodies. Their transitive imports must stay safe
+;; Scene declarations and bodies load in both Node and browser. The browser
+;; executor calls the bodies. Their transitive imports must stay safe
 ;; for Node; removing :run! from descriptors does not isolate dependencies.
 ;;
 ;; If an operation needs a browser API/helper, keep that import in a browser
@@ -106,6 +101,8 @@
    [:params-schema vector?]
    [:build fn?]])
 
+;; Ticket 14 owns operation argument schemas and collection-time validation.
+;; Keep the reserved operation map open until that contract is defined.
 (def schema:registered-case
   [:map {:closed true}
    [:id qualified-keyword?]
