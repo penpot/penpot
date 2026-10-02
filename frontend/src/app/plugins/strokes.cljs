@@ -13,7 +13,16 @@
 
 (defn stroke-proxy
   [stroke-data on-change!]
-  (let [state (atom stroke-data)]
+  (let [state           (atom stroke-data)
+        set-side-width! (fn [key value]
+                          (let [previous @state]
+                            (swap! state assoc key value)
+                            (try
+                              (when (false? (on-change!))
+                                (reset! state previous))
+                              (catch :default cause
+                                (reset! state previous)
+                                (throw cause)))))]
     (obj/reify {:name "StrokeProxy"}
       :strokeColor
       {:get (fn [] (:stroke-color @state))
@@ -40,6 +49,22 @@
       :strokeWidth
       {:get (fn [] (:stroke-width @state))
        :set (fn [v] (swap! state assoc :stroke-width v) (on-change!))}
+
+      :strokeWidthTop
+      {:get (fn [] (:stroke-width-top @state))
+       :set (fn [v] (set-side-width! :stroke-width-top v))}
+
+      :strokeWidthRight
+      {:get (fn [] (:stroke-width-right @state))
+       :set (fn [v] (set-side-width! :stroke-width-right v))}
+
+      :strokeWidthBottom
+      {:get (fn [] (:stroke-width-bottom @state))
+       :set (fn [v] (set-side-width! :stroke-width-bottom v))}
+
+      :strokeWidthLeft
+      {:get (fn [] (:stroke-width-left @state))
+       :set (fn [v] (set-side-width! :stroke-width-left v))}
 
       :strokeAlignment
       {:get (fn [] (format/format-key (:stroke-alignment @state)))
