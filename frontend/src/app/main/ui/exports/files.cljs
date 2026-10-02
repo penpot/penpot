@@ -20,6 +20,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
+   [app.main.ui.jobs.progress :as jp]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
@@ -40,6 +41,14 @@
            (= file-id (:id %))
            (assoc :export-success? true
                   :loading false))
+        files))
+
+(defn- mark-file-progress
+  "The milestone the job of a file is in, to show it while it runs."
+  [files file-id progress]
+  (mapv #(cond-> %
+           (= file-id (:id %))
+           (assoc :progress progress))
         files))
 
 (defn- initialize-state
@@ -70,7 +79,15 @@
         [:> text* {:class (stl/css :file-name-label)
                    :as "span"
                    :typography t/body-large}
-         (:name file)]]
+         (:name file)]
+
+        (when (some? (:progress file))
+          [:> text* {:class (stl/css :status-message)
+                     :as "span"
+                     :typography t/body-large
+                     :role "status"
+                     :aria-live "polite"}
+           (jp/milestone-text (:progress file))])]
 
        [:> context-notification {:level level
                                  :content (:name file)}])]))
@@ -97,9 +114,15 @@
            (swap! state* assoc :status :exporting)
            (->> (fexp/export-files :files files :type selected)
                 (rx/subs!
-                 (fn [{:keys [file-id error filename uri] :as result}]
-                   (if error
+                 (fn [{:keys [file-id error filename uri progress]}]
+                   (cond
+                     (some? progress)
+                     (swap! state* update :files mark-file-progress file-id progress)
+
+                     (some? error)
                      (swap! state* update :files mark-file-error file-id)
+
+                     :else
                      (do
                        (swap! state* update :files mark-file-success file-id)
                        (dom/trigger-download-uri filename "application/penpot" uri))))))))

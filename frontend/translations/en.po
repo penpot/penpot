@@ -2608,6 +2608,58 @@ msgstr "The token will expire on %s"
 msgid "integrations.token.will-not-expire"
 msgstr "The token has no expiration date"
 
+#: src/app/main/ui/jobs/progress.cljs:26
+msgid "jobs.progress.stage.colors"
+msgstr "Processing the colors"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+msgid "jobs.progress.stage.components"
+msgstr "Processing the components"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+msgid "jobs.progress.stage.files"
+msgstr "Processing the files"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+msgid "jobs.progress.stage.manifest"
+msgstr "Reading the package"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+msgid "jobs.progress.stage.media"
+msgstr "Processing the media"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+msgid "jobs.progress.stage.metadata"
+msgstr "Reading the metadata"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+msgid "jobs.progress.stage.pages"
+msgstr "Processing the pages"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+msgid "jobs.progress.stage.relations"
+msgstr "Processing the library relations"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+msgid "jobs.progress.stage.storage-objects"
+msgstr "Processing the storage objects"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+msgid "jobs.progress.stage.thumbnails"
+msgstr "Processing the thumbnails"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+msgid "jobs.progress.stage.tokens"
+msgstr "Processing the tokens"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+msgid "jobs.progress.stage.typographies"
+msgstr "Processing the typographies"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.unknown"
+msgstr "Working"
+
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
 msgstr "Mark all as read"
