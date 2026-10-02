@@ -39,7 +39,7 @@
      {:id :rects/zoom ...}]"
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.scenes.core :as core]
+   [benches.render-wasm.declarations :as decl]
    benches.render-wasm.scenes.masks
    benches.render-wasm.scenes.paths
    benches.render-wasm.scenes.plus
@@ -64,7 +64,7 @@
     (thunk)
     (catch :default cause
       (let [data (ex-data cause)]
-        (if (contains? #{::core/invalid-case ::core/non-serializable-case} (:type data))
+        (if (contains? #{::decl/invalid-case ::decl/non-serializable-case} (:type data))
           (throw (ex-info (ex-message cause)
                           (assoc data :type ::invalid-case)
                           cause))
@@ -95,7 +95,7 @@
                       {:type ::invalid-case
                        :id id
                        :scene scene})))
-    (as-invalid-case! #(core/check-registered-case! registered))
+    (as-invalid-case! #(decl/check-registered-case! registered))
     (check-params! id scene (:params-schema entry) params)
     registered))
 
@@ -104,23 +104,23 @@
   version/description/seed attached, internal keys stripped, transit wire
   checked."
   [master-seed registered scene-entry]
-  (let [projected (-> (core/project-case registered)
+  (let [projected (-> (decl/project-case registered)
                       (assoc :scene-version (:version scene-entry)
                              :scene-description (:description scene-entry)
-                             :scene-seed (core/derive-seed master-seed
+                             :scene-seed (decl/derive-seed master-seed
                                                            (:scene registered)
                                                            (:params registered))))]
-    (as-invalid-case! #(core/check-collected-case projected))))
+    (as-invalid-case! #(decl/check-collected-case projected))))
 
 (defn scene-ids
   "Registered scene ids in declaration order."
   []
-  (mapv :id (core/scenes)))
+  (mapv :id (decl/scenes)))
 
 (defn case-ids
   "Registered case ids in declaration order."
   []
-  (mapv :id (core/cases)))
+  (mapv :id (decl/cases)))
 
 (defn collect-cases
   "Selected benchmark cases as plain data.
@@ -130,10 +130,10 @@
   [{:keys [master-seed] :as options}]
   (check-master-seed! master-seed)
   (let [pattern       (:filter options)
-        scene-by-id   (into {} (map (juxt :id identity)) (core/scenes))]
-    (doseq [scene (core/scenes)]
-      (core/check-registered-scene! scene))
-    (let [selected (->> (core/cases)
+        scene-by-id   (into {} (map (juxt :id identity)) (decl/scenes))]
+    (doseq [scene (decl/scenes)]
+      (decl/check-registered-scene! scene))
+    (let [selected (->> (decl/cases)
                         (map #(validate-case! % scene-by-id))
                         (filter (fn [registered]
                                   (or (str/blank? pattern)

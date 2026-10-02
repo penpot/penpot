@@ -6,7 +6,7 @@
   test namespace tells a complete story without copying bodies."
   (:require
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.builder :as builder]))
+   [benches.render-wasm.builder :as builder]))
 
 (defn failure-data
   "Returns the ex-data of the thrown failure, or nil when `f` passes."

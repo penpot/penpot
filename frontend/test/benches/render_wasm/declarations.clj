@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.core
+(ns benches.render-wasm.declarations
   "Registration macros for renderer benchmark scenes and cases.
 
   The macros expand to calls to `register-scene!`/`register-case!` in
-  `core.cljs`. Registration is done there so it can be inspected and tested.")
+  `declarations.cljs`. Registration is done there so it can be inspected and tested.")
 
 (defmacro defscene
   "Registers a scene and returns its id.
@@ -18,7 +18,7 @@
      `:params-schema`.
    - `build` resolves to a one-argument function of the scene parameters."
   [id opts build]
-  `(benches.render-wasm.scenes.core/register-scene!
+  `(benches.render-wasm.declarations/register-scene!
     (assoc ~opts :id ~id :ns ~(str *ns*) :build ~build)))
 
 (defn- one-argument-fn-form?
@@ -43,9 +43,9 @@
     `(let [~options ~opts]
        (when (contains? ~options :run!)
          (throw (ex-info (str "defcase " ~id " requires its run function as the fourth argument")
-                         {:type :benches.render-wasm.scenes.core/invalid-run-function
+                         {:type :benches.render-wasm.declarations/invalid-run-function
                           :id ~id})))
-       (benches.render-wasm.scenes.core/register-case!
+       (benches.render-wasm.declarations/register-case!
         (assoc ~options :id ~id :scene ~scene :ns ~(str *ns*)
                ~@(when run-fn [:run! run-fn]))))))
 

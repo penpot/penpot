@@ -8,9 +8,9 @@
   "Plus signs made of two open line subpaths"
   (:require
    [app.common.types.path :as path]
-   [benches.render-wasm.scenes.builder :as sb :include-macros true]
-   [benches.render-wasm.scenes.camera :as camera]
-   [benches.render-wasm.scenes.core :as core :include-macros true]))
+   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.runtime.camera :as camera]))
 
 (def ^:private default-params
   {:count 1000 :width 1920 :height 1080})
@@ -44,7 +44,7 @@
               (doseq [_ (range (:count params))]
                 (sb/path)))))
 
-(core/defscene :plus
+(decl/defscene :plus
   {:version 1
    :description "Plus signs made of two open line subpaths"
    :params-schema schema:params}
@@ -52,16 +52,16 @@
 
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
-(core/defcase :plus/load :plus
+(decl/defcase :plus/load :plus
   {:params default-params :view base-view :context :fresh}
   (fn [rtx] (camera/load! rtx)))
 
-(core/defcase :plus/pan :plus
+(decl/defcase :plus/pan :plus
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 140 :dy 60 :settle-ms 100}}
   (fn [rtx] (camera/pan! rtx)))
 
-(core/defcase :plus/zoom :plus
+(decl/defcase :plus/zoom :plus
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.4 :settle-ms 100}}
   (fn [rtx] (camera/zoom! rtx)))

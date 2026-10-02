@@ -181,7 +181,7 @@
   {:target :node-script
    :output-to "target/renderer-benchmarks/runner.cjs"
    :output-dir "target/renderer-benchmarks/runner/"
-   :main benches.render-wasm.runner/-main
+   :main benches.render-wasm.node.runner/-main
    :devtools {:autoload false}
 
    :compiler-options
@@ -199,7 +199,7 @@
   {:target :node-script
    :output-to "target/renderer-benchmarks/pilot.cjs"
    :output-dir "target/renderer-benchmarks/pilot/"
-   :main benches.render-wasm.pilot/-main
+   :main benches.render-wasm.node.pilot/-main
    :devtools {:autoload false}
 
    :compiler-options
@@ -223,7 +223,7 @@
 
    :modules
    {:browser
-    {:exports {default benches.render-wasm.browser/bridge}}}
+    {:exports {default benches.render-wasm.browser.bridge/bridge}}}
 
    :compiler-options
    {:output-feature-set :es2020

@@ -9,10 +9,10 @@
    [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [benches.render-wasm.cases :as cases]
-   [benches.render-wasm.scenes.common :as common]
    [benches.render-wasm.scenes.masks :as masks]
    [benches.render-wasm.scenes.paths :as paths]
    [benches.render-wasm.scenes.plus :as plus]
+   [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 

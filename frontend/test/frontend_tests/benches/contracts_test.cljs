@@ -9,7 +9,7 @@
    [app.common.schema :as sm]
    [app.common.transit :as transit]
    [benches.render-wasm.cases :as cases]
-   [benches.render-wasm.scenes.core :as core :include-macros true]
+   [benches.render-wasm.declarations :as decl :include-macros true]
    [cljs.test :as t :include-macros true]))
 
 (defrecord Point [x y])
@@ -22,13 +22,13 @@
   (swap! body-calls conj :touched)
   rtx)
 
-(core/defscene :contracts-scene
+(decl/defscene :contracts-scene
   {:version 1
    :description "Synthetic scene for contract tests"
    :params-schema [:map {:closed true}]}
   (fn [params] params))
 
-(core/defcase :contracts-scene/case :contracts-scene
+(decl/defcase :contracts-scene/case :contracts-scene
   {:params {}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh}
@@ -51,13 +51,13 @@
   "Registers a synthetic scene and case under `scene-id`, runs `f`, then
   unregisters both so the live registry survives."
   [scene-id case-params f]
-  (core/register-scene! {:id scene-id
+  (decl/register-scene! {:id scene-id
                          :ns "contracts-test"
                          :version 1
                          :description "synthetic"
                          :params-schema [:map {:closed true} [:count [:int {:min 1 :max 100000}]]]
                          :build (fn [params] params)})
-  (core/register-case! {:id (keyword (name scene-id) "case")
+  (decl/register-case! {:id (keyword (name scene-id) "case")
                         :scene scene-id
                         :ns "contracts-test"
                         :params case-params
@@ -66,11 +66,11 @@
   (try
     (f)
     (finally
-      (core/unregister-case! (keyword (name scene-id) "case"))
-      (core/unregister-scene! scene-id))))
+      (decl/unregister-case! (keyword (name scene-id) "case"))
+      (decl/unregister-scene! scene-id))))
 
 (t/deftest defscene-registers-metadata-and-build
-  (let [scene (core/registered-scene :rects)]
+  (let [scene (decl/registered-scene :rects)]
     (t/is (= :rects (:id scene)))
     (t/is (= "benches.render-wasm.scenes.rects" (:ns scene)))
     (t/is (= 1 (:version scene)))
@@ -85,7 +85,7 @@
 
 (t/deftest real-rectangle-bodies-stay-out-of-node-descriptors
   (let [ids [:rects/load :rects/pan :rects/zoom]]
-    (t/is (every? #(fn? (:run! (core/registered-case %))) ids))
+    (t/is (every? #(fn? (:run! (decl/registered-case %))) ids))
     (t/is (= ids (mapv :id (rect-cases)))
           "collection succeeds with the executable bodies present")
     (t/is (every? #(not (contains? % :run!)) (rect-cases)))))
@@ -94,7 +94,7 @@
   (doseq [case-desc (rect-cases)]
     (t/is (not (contains? case-desc :run!)) (str (:id case-desc)))
     (t/is (not (contains? case-desc :ns)) (str (:id case-desc)))
-    (t/is (core/transit-round-trips? case-desc) (str (:id case-desc)))))
+    (t/is (decl/transit-round-trips? case-desc) (str (:id case-desc)))))
 
 (t/deftest rects-cases-carry-declared-view-context-and-completion
   (let [collected (rect-cases)]
@@ -122,19 +122,19 @@
 
 (t/deftest derive-seed-depends-on-scene-and-params-only
   (let [params {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}
-        base   (core/derive-seed 42 :rects params)]
+        base   (decl/derive-seed 42 :rects params)]
     (t/is (= 2602546180 base))
-    (t/is (= base (core/derive-seed 42 :rects (into {} (reverse (seq params))))))
-    (t/is (= 2993218129 (core/derive-seed 43 :rects params)))
-    (t/is (not= base (core/derive-seed 42 :rects (assoc params :count 10))))
-    (t/is (not= base (core/derive-seed 42 :paths params)))))
+    (t/is (= base (decl/derive-seed 42 :rects (into {} (reverse (seq params))))))
+    (t/is (= 2993218129 (decl/derive-seed 43 :rects params)))
+    (t/is (not= base (decl/derive-seed 42 :rects (assoc params :count 10))))
+    (t/is (not= base (decl/derive-seed 42 :paths params)))))
 
 (t/deftest derive-seed-rejects-keys-it-cannot-tell-apart
-  (t/is (= ::core/invalid-params
-           (:type (failure-data #(core/derive-seed 42 :rects {"count" 1})))))
-  (t/is (= ::core/invalid-params
-           (:type (failure-data #(core/derive-seed 42 :rects {:rects/count 1})))))
-  (t/is (= :rects (:scene (failure-data #(core/derive-seed 42 :rects {"count" 1}))))))
+  (t/is (= ::decl/invalid-params
+           (:type (failure-data #(decl/derive-seed 42 :rects {"count" 1})))))
+  (t/is (= ::decl/invalid-params
+           (:type (failure-data #(decl/derive-seed 42 :rects {:rects/count 1})))))
+  (t/is (= :rects (:scene (failure-data #(decl/derive-seed 42 :rects {"count" 1}))))))
 
 (t/deftest unknown-params-are-rejected
   (with-synthetic-scene :contracts-unknown-params {:count 1 :bogus 2}
@@ -155,7 +155,7 @@
         (t/is (some? (::sm/explain data)))))))
 
 (t/deftest rects-workload-ranges-are-rejected
-  (let [schema (:params-schema (core/registered-scene :rects))
+  (let [schema (:params-schema (decl/registered-scene :rects))
         good   {:count 1000 :width 1920 :height 1080 :min-size 20 :max-size 100}]
     (t/is (true? (sm/validate schema good)))
     (t/testing "reversed size range"
@@ -169,16 +169,16 @@
 
 (t/deftest view-coordinates-are-finite
   (let [good {:scale 1 :x 0 :y 0}]
-    (t/is (true? (sm/validate core/schema:view good)))
+    (t/is (true? (sm/validate decl/schema:view good)))
     (doseq [bad [(assoc good :scale js/Infinity)
                  (assoc good :x js/NaN)
                  (assoc good :y js/Infinity)
                  (assoc good :viewport {:width js/NaN})]]
-      (t/is (false? (sm/validate core/schema:view bad)) (pr-str bad)))))
+      (t/is (false? (sm/validate decl/schema:view bad)) (pr-str bad)))))
 
 (t/deftest transit-rejects-unencodable-values
-  (t/is (false? (core/transit-round-trips? {:v (fn [] 1)})))
-  (t/is (false? (core/transit-round-trips? {:point (->Point 1 2)}))))
+  (t/is (false? (decl/transit-round-trips? {:v (fn [] 1)})))
+  (t/is (false? (decl/transit-round-trips? {:point (->Point 1 2)}))))
 
 (t/deftest transit-wire-preserves-json-lossy-shapes
   (doseq [value [{:foo 1 "foo" 2}
@@ -198,21 +198,21 @@
     (t/is (js/Number.isNaN (:nan decoded)))
     (t/is (= js/Infinity (:positive decoded)))
     (t/is (= js/-Infinity (:negative decoded)))
-    (t/is (core/transit-round-trips? value))
-    (t/is (nil? (failure-data #(core/check-collected-case case-desc))))))
+    (t/is (decl/transit-round-trips? value))
+    (t/is (nil? (failure-data #(decl/check-collected-case case-desc))))))
 
 (t/deftest unencodable-collected-values-are-rejected
   (let [good (first (rect-cases))]
     (doseq [bad [(assoc good :operation {:run (fn [] 1)})
                  (assoc good :operation {:point (->Point 1 2)})]]
-      (t/is (= ::core/non-serializable-case
-               (:type (failure-data #(core/check-collected-case bad))))
+      (t/is (= ::decl/non-serializable-case
+               (:type (failure-data #(decl/check-collected-case bad))))
             (pr-str bad)))))
 
 (t/deftest duplicate-scene-id-from-another-namespace-is-rejected
-  (t/is (= ::core/duplicate-scene
+  (t/is (= ::decl/duplicate-scene
            (:type (failure-data
-                   #(core/register-scene! {:id :rects
+                   #(decl/register-scene! {:id :rects
                                            :ns "another-namespace"
                                            :version 1
                                            :description "x"
@@ -221,51 +221,51 @@
 
 (t/deftest same-namespace-registration-replaces
   (try
-    (core/register-scene! {:id :contracts-replaced
+    (decl/register-scene! {:id :contracts-replaced
                            :ns "contracts-test"
                            :version 1
                            :description "first"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (core/register-scene! {:id :contracts-replaced
+    (decl/register-scene! {:id :contracts-replaced
                            :ns "contracts-test"
                            :version 2
                            :description "second"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (t/is (= "second" (:description (core/registered-scene :contracts-replaced))))
+    (t/is (= "second" (:description (decl/registered-scene :contracts-replaced))))
     (finally
-      (core/unregister-scene! :contracts-replaced))))
+      (decl/unregister-scene! :contracts-replaced))))
 
 (t/deftest duplicate-case-id-from-another-namespace-is-rejected
   (try
-    (core/register-scene! {:id :contracts-dup
+    (decl/register-scene! {:id :contracts-dup
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (core/register-case! {:id :contracts-dup/case
+    (decl/register-case! {:id :contracts-dup/case
                           :scene :contracts-dup
                           :ns "contracts-test"
                           :params {}
                           :view {:scale 1 :x 0 :y 0}
                           :context :fresh})
-    (t/is (= ::core/duplicate-case
+    (t/is (= ::decl/duplicate-case
              (:type (failure-data
-                     #(core/register-case! {:id :contracts-dup/case
+                     #(decl/register-case! {:id :contracts-dup/case
                                             :scene :contracts-dup
                                             :ns "another-namespace"
                                             :params {}
                                             :view {:scale 1 :x 0 :y 0}
                                             :context :fresh})))))
     (finally
-      (core/unregister-case! :contracts-dup/case)
-      (core/unregister-scene! :contracts-dup))))
+      (decl/unregister-case! :contracts-dup/case)
+      (decl/unregister-scene! :contracts-dup))))
 
 (t/deftest unknown-scene-reference-is-rejected
   (try
-    (core/register-case! {:id :contracts-missing/case
+    (decl/register-case! {:id :contracts-missing/case
                           :scene :contracts-missing
                           :ns "contracts-test"
                           :params {}
@@ -276,17 +276,17 @@
                      #(cases/collect-cases {:master-seed 42
                                             :filter "contracts-missing/"})))))
     (finally
-      (core/unregister-case! :contracts-missing/case))))
+      (decl/unregister-case! :contracts-missing/case))))
 
 (t/deftest case-id-must-be-namespaced-by-its-scene
   (try
-    (core/register-scene! {:id :contracts-other
+    (decl/register-scene! {:id :contracts-other
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (core/register-case! {:id :contracts-other/case
+    (decl/register-case! {:id :contracts-other/case
                           :scene :rects
                           :ns "contracts-test"
                           :params {}
@@ -297,47 +297,47 @@
                      #(cases/collect-cases {:master-seed 42
                                             :filter "contracts-other/"})))))
     (finally
-      (core/unregister-case! :contracts-other/case)
-      (core/unregister-scene! :contracts-other))))
+      (decl/unregister-case! :contracts-other/case)
+      (decl/unregister-scene! :contracts-other))))
 
 (t/deftest scene-without-params-schema-is-rejected
   (try
-    (core/register-scene! {:id :contracts-noschema
+    (decl/register-scene! {:id :contracts-noschema
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :build (fn [params] params)})
-    (t/is (= ::core/invalid-scene
+    (t/is (= ::decl/invalid-scene
              (:type (failure-data #(cases/collect-cases {:master-seed 42})))))
     (finally
-      (core/unregister-scene! :contracts-noschema))))
+      (decl/unregister-scene! :contracts-noschema))))
 
 (t/deftest malformed-params-schema-is-rejected
   (try
-    (core/register-scene! {:id :contracts-badschema
+    (decl/register-scene! {:id :contracts-badschema
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map [:count]]
                            :build (fn [params] params)})
     (let [data (failure-data #(cases/collect-cases {:master-seed 42}))]
-      (t/is (= ::core/invalid-scene (:type data)))
+      (t/is (= ::decl/invalid-scene (:type data)))
       (t/is (= :contracts-badschema (:id data))))
     (finally
-      (core/unregister-scene! :contracts-badschema))))
+      (decl/unregister-scene! :contracts-badschema))))
 
 (t/deftest qualified-scene-id-is-rejected
   (try
-    (core/register-scene! {:id :contracts-ns/scene
+    (decl/register-scene! {:id :contracts-ns/scene
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (t/is (= ::core/invalid-scene
+    (t/is (= ::decl/invalid-scene
              (:type (failure-data #(cases/collect-cases {:master-seed 42})))))
     (finally
-      (core/unregister-scene! :contracts-ns/scene))))
+      (decl/unregister-scene! :contracts-ns/scene))))
 
 (t/deftest invalid-declarations-fail-outside-the-filter
   (with-synthetic-scene :contracts-global {:count 1 :bogus 2}
@@ -348,13 +348,13 @@
 
 (t/deftest incomplete-case-declaration-is-rejected
   (try
-    (core/register-scene! {:id :contracts-incomplete
+    (decl/register-scene! {:id :contracts-incomplete
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (core/register-case! {:id :contracts-incomplete/case
+    (decl/register-case! {:id :contracts-incomplete/case
                           :scene :contracts-incomplete
                           :ns "contracts-test"
                           :params {}
@@ -363,41 +363,41 @@
              (:type (failure-data #(cases/collect-cases {:master-seed 42
                                                          :filter "contracts-incomplete/"})))))
     (finally
-      (core/unregister-case! :contracts-incomplete/case)
-      (core/unregister-scene! :contracts-incomplete))))
+      (decl/unregister-case! :contracts-incomplete/case)
+      (decl/unregister-scene! :contracts-incomplete))))
 
 (t/deftest records-do-not-survive-the-wire
   (let [point (->Point 1 2)]
-    (t/is (false? (core/transit-round-trips? point)))
-    (t/is (false? (core/transit-round-trips? {:point point})))))
+    (t/is (false? (decl/transit-round-trips? point)))
+    (t/is (false? (decl/transit-round-trips? {:point point})))))
 
 (t/deftest case-replacement-preserves-order-and-unregister-removes
   (try
-    (core/register-scene! {:id :contracts-replacecase
+    (decl/register-scene! {:id :contracts-replacecase
                            :ns "contracts-test"
                            :version 1
                            :description "x"
                            :params-schema [:map]
                            :build (fn [params] params)})
-    (core/register-case! {:id :contracts-replacecase/case
+    (decl/register-case! {:id :contracts-replacecase/case
                           :scene :contracts-replacecase
                           :ns "contracts-test"
                           :params {}
                           :view {:scale 1 :x 0 :y 0}
                           :context :fresh})
-    (core/register-case! {:id :contracts-replacecase/case
+    (decl/register-case! {:id :contracts-replacecase/case
                           :scene :contracts-replacecase
                           :ns "contracts-test"
                           :params {}
                           :view {:scale 2 :x 0 :y 0}
                           :context :fresh})
-    (t/is (= 1 (count (filter #(= :contracts-replacecase/case (:id %)) (core/cases)))))
-    (t/is (= {:scale 2 :x 0 :y 0} (:view (core/registered-case :contracts-replacecase/case))))
-    (core/unregister-case! :contracts-replacecase/case)
-    (t/is (nil? (core/registered-case :contracts-replacecase/case)))
+    (t/is (= 1 (count (filter #(= :contracts-replacecase/case (:id %)) (decl/cases)))))
+    (t/is (= {:scale 2 :x 0 :y 0} (:view (decl/registered-case :contracts-replacecase/case))))
+    (decl/unregister-case! :contracts-replacecase/case)
+    (t/is (nil? (decl/registered-case :contracts-replacecase/case)))
     (finally
-      (core/unregister-case! :contracts-replacecase/case)
-      (core/unregister-scene! :contracts-replacecase))))
+      (decl/unregister-case! :contracts-replacecase/case)
+      (decl/unregister-scene! :contracts-replacecase))))
 
 (t/deftest invalid-master-seed-is-rejected
   (doseq [seed [-1 4294967296 "42"]]
@@ -420,17 +420,17 @@
   (let [collected (cases/collect-cases {:master-seed 42 :filter "contracts-scene/"})]
     (t/is (= [:contracts-scene/case] (mapv :id collected)))
     (t/is (not (contains? (first collected) :run!)))
-    (t/is (core/transit-round-trips? (first collected))))
+    (t/is (decl/transit-round-trips? (first collected))))
   (t/is (empty? @body-calls))
-  (let [entry (core/registered-case :contracts-scene/case)]
+  (let [entry (decl/registered-case :contracts-scene/case)]
     (t/is (= "frontend-tests.benches.contracts-test" (:ns entry)))
     (t/is (fn? (:run! entry)))
     (t/is (= :runtime ((:run! entry) :runtime)))
     (t/is (= [:touched] @body-calls))))
 
 (t/deftest defcase-rejects-run-function-in-options
-  (t/is (= :benches.render-wasm.scenes.core/invalid-run-function
+  (t/is (= :benches.render-wasm.declarations/invalid-run-function
            (:type (failure-data
-                   #(core/defcase :contracts-scene/unchecked :contracts-scene
+                   #(decl/defcase :contracts-scene/unchecked :contracts-scene
                       {:run! (fn [x y] [x y])})))))
-  (t/is (nil? (core/registered-case :contracts-scene/unchecked))))
+  (t/is (nil? (decl/registered-case :contracts-scene/unchecked))))

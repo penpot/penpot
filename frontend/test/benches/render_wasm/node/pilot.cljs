@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.pilot
+(ns benches.render-wasm.node.pilot
   "Interim diagnostic: loads `:rects/load` in headless Chromium and prints
   a Transit record with the bridge result on stdout.
 
@@ -146,7 +146,7 @@
         root     (frontend-root)
         bundle   (path/join root "target" "renderer-benchmarks" "browser")
         js-dir   (path/join root "resources" "public" "js")
-        html     (path/join root "test" "benches" "render_wasm" "pilot.html")
+        html     (path/join root "test" "benches" "render_wasm" "browser" "pilot.html")
         seed     (:seed opts)
         selected (some #(when (= (:id %) (:case-id opts)) %)
                        (cases/collect-cases {:master-seed seed}))

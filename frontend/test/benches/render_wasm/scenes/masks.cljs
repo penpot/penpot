@@ -7,9 +7,9 @@
 (ns benches.render-wasm.scenes.masks
   "Fixed grid of masked groups with circle masks and ordered descendants."
   (:require
-   [benches.render-wasm.scenes.builder :as sb :include-macros true]
-   [benches.render-wasm.scenes.camera :as camera]
-   [benches.render-wasm.scenes.core :as core :include-macros true]))
+   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.runtime.camera :as camera]))
 
 (def ^:private default-params
   {:width 1920 :height 1080})
@@ -37,7 +37,7 @@
                                         :height 205
                                         :fills [{:fill-color (if (even? j) "#1254b8" "#ff8b38")}]}))))))))
 
-(core/defscene :masks
+(decl/defscene :masks
   {:version 1
    :description "Twenty-four circle masks with ordered striped descendants"
    :params-schema schema:params}
@@ -45,16 +45,16 @@
 
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
-(core/defcase :masks/load :masks
+(decl/defcase :masks/load :masks
   {:params default-params :view base-view :context :fresh}
   (fn [rtx] (camera/load! rtx)))
 
-(core/defcase :masks/pan :masks
+(decl/defcase :masks/pan :masks
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 120 :dy 40 :settle-ms 100}}
   (fn [rtx] (camera/pan! rtx)))
 
-(core/defcase :masks/zoom :masks
+(decl/defcase :masks/zoom :masks
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.6 :settle-ms 100}}
   (fn [rtx] (camera/zoom! rtx)))

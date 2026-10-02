@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.builder
+(ns benches.render-wasm.builder
   "Construction macros for renderer benchmark scenes.
 
   Runtime helpers and scope state live in the sibling `builder.cljs`.
@@ -40,11 +40,11 @@
   "Runs `body` in a scene scope and returns the validated snapshot."
   [params & body]
   `(let [params# ~params
-         state#  (benches.render-wasm.scenes.builder/start params#)]
-     (binding [benches.render-wasm.scenes.builder/*state* state#
-               benches.render-wasm.scenes.builder/*defaults* (:defaults params#)]
+         state#  (benches.render-wasm.builder/start params#)]
+     (binding [benches.render-wasm.builder/*state* state#
+               benches.render-wasm.builder/*defaults* (:defaults params#)]
        ~@body
-       (benches.render-wasm.scenes.builder/finish! state#))))
+       (benches.render-wasm.builder/finish! state#))))
 
 (defmacro rect
   "Adds one rectangle to the current scene scope and returns its uuid.
@@ -55,23 +55,23 @@
   the instance `:refs`; duplicates and other label types are rejected. `attrs`
   override the defaults attribute by attribute."
   ([]
-   `(benches.render-wasm.scenes.builder/rect!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/rect!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      nil
      {}))
 
   ([label-or-attrs]
-   `(benches.render-wasm.scenes.builder/rect!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/rect!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label-or-attrs
      {}))
 
   ([label attrs]
-   `(benches.render-wasm.scenes.builder/rect!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/rect!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label
      ~attrs)))
 
@@ -85,21 +85,21 @@
   override the defaults attribute by attribute.
   "
   ([]
-   `(benches.render-wasm.scenes.builder/path!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/path!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      nil
      {}))
   ([label-or-attrs]
-   `(benches.render-wasm.scenes.builder/path!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/path!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label-or-attrs
      {}))
   ([label attrs]
-   `(benches.render-wasm.scenes.builder/path!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/path!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label
      ~attrs)))
 
@@ -112,23 +112,23 @@
   the instance `:refs`; duplicates and other label types are rejected. `attrs`
   override the defaults attribute by attribute."
   ([]
-   `(benches.render-wasm.scenes.builder/circle!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/circle!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      nil
      {}))
 
   ([label-or-attrs]
-   `(benches.render-wasm.scenes.builder/circle!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/circle!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label-or-attrs
      {}))
 
   ([label attrs]
-   `(benches.render-wasm.scenes.builder/circle!
-     benches.render-wasm.scenes.builder/*state*
-     benches.render-wasm.scenes.builder/*defaults*
+   `(benches.render-wasm.builder/circle!
+     benches.render-wasm.builder/*state*
+     benches.render-wasm.builder/*defaults*
      ~label
      ~attrs)))
 
@@ -142,12 +142,12 @@
   coordinates. Empty frames are allowed."
   [label-or-attrs & body]
   (if (or (keyword? label-or-attrs) (vector? label-or-attrs))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :frame
        ~(first body)
        ~label-or-attrs
        (fn [] ~@(rest body)))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :frame
        ~label-or-attrs
        nil
@@ -164,12 +164,12 @@
   one child."
   [label-or-attrs & body]
   (if (or (keyword? label-or-attrs) (vector? label-or-attrs))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :group
        ~(first body)
        ~label-or-attrs
        (fn [] ~@(rest body)))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :group
        ~label-or-attrs
        nil
@@ -191,12 +191,12 @@
   frames."
   [label-or-attrs & body]
   (if (or (keyword? label-or-attrs) (vector? label-or-attrs))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :bool
        ~(first body)
        ~label-or-attrs
        (fn [] ~@(rest body)))
-    `(benches.render-wasm.scenes.builder/with-container
+    `(benches.render-wasm.builder/with-container
        :bool
        ~label-or-attrs
        nil

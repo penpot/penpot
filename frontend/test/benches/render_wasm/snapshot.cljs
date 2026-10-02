@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.common
+(ns benches.render-wasm.snapshot
   "Utilities shared by generated and saved-page scenes.
 
   A scene snapshot is

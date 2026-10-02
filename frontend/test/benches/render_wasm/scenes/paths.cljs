@@ -9,9 +9,9 @@
   (:require
    [app.common.schema :as sm]
    [app.common.types.path :as path]
-   [benches.render-wasm.scenes.builder :as sb :include-macros true]
-   [benches.render-wasm.scenes.camera :as camera]
-   [benches.render-wasm.scenes.core :as core :include-macros true]))
+   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.runtime.camera :as camera]))
 
 (def ^:private default-params
   {:count 1000 :width 1920 :height 1080})
@@ -49,7 +49,7 @@
               (doseq [_ (range (:count params))]
                 (sb/path)))))
 
-(core/defscene :paths
+(decl/defscene :paths
   {:version 1
    :description "Curved paths"
    :params-schema schema:params}
@@ -57,16 +57,16 @@
 
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
-(core/defcase :paths/load :paths
+(decl/defcase :paths/load :paths
   {:params default-params :view base-view :context :fresh}
   (fn [rtx] (camera/load! rtx)))
 
-(core/defcase :paths/pan :paths
+(decl/defcase :paths/pan :paths
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 160 :dy 40 :settle-ms 100}}
   (fn [rtx] (camera/pan! rtx)))
 
-(core/defcase :paths/zoom :paths
+(decl/defcase :paths/zoom :paths
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.5 :settle-ms 100}}
   (fn [rtx] (camera/zoom! rtx)))

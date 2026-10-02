@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.runner
+(ns benches.render-wasm.node.runner
   "Node CLI entry for the CLJS renderer benchmark suite.
 
   Scaffolding only. Commands, options, result reporting and failure

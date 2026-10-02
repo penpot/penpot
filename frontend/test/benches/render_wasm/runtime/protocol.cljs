@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.protocol
+(ns benches.render-wasm.runtime.protocol
   "Shared render-completion protocol for the renderer benchmarks.
 
   The WASM renderer finishes progressively in tile budgets: one `_render`

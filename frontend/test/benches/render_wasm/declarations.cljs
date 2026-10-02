@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.core
+(ns benches.render-wasm.declarations
   "Registry and contract for renderer benchmark scenes and cases.
 
   Scene namespaces register themselves through the `defscene` and
-  `defcase` macros in `core.clj`. This namespace imports no browser or
+  `defcase` macros in `declarations.clj`. This namespace imports no browser or
   renderer code.
 
   - A scene declares an id, a version, a human description, a closed
