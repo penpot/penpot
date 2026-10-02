@@ -38,68 +38,71 @@ export function usersDeletePage(root, { onNavigate }) {
   area.setAttribute("aria-label", "Emails to delete");
   root.appendChild(area);
 
-  const previewButton = document.createElement("button");
-  previewButton.className = "admin-button";
-  previewButton.textContent = "Preview";
-  root.appendChild(previewButton);
+  const countLine = document.createElement("p");
+  countLine.className = "admin-count";
+  countLine.textContent = "Paste at least one email.";
+  root.appendChild(countLine);
+
+  const confirmWrap = document.createElement("div");
+  confirmWrap.className = "admin-confirm";
+
+  const input = document.createElement("input");
+  input.className = "admin-input";
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.setAttribute("aria-label", "Type the count to confirm deletion");
+  confirmWrap.appendChild(input);
+
+  const confirm = document.createElement("button");
+  confirm.className = "admin-button admin-button-danger";
+  confirm.textContent = "Delete";
+  confirm.disabled = true;
+  confirmWrap.appendChild(confirm);
+  root.appendChild(confirmWrap);
 
   const body = document.createElement("div");
   root.appendChild(body);
 
-  previewButton.addEventListener("click", () => {
+  function emailCount() {
+    return parseEmails(area.value).length;
+  }
+
+  function refresh() {
+    const count = emailCount();
+    confirm.textContent = count > 0 ? `Delete ${count}` : "Delete";
+    if (count === 0) {
+      countLine.textContent = "Paste at least one email.";
+      confirm.disabled = true;
+      return;
+    }
+    if (count > MAX_EMAILS) {
+      countLine.textContent = `Too many emails: ${count} (max ${MAX_EMAILS}).`;
+      confirm.disabled = true;
+      return;
+    }
+    countLine.textContent =
+      `${count} email` + (count === 1 ? "" : "s") +
+      ` — type ${count} above to confirm. This cannot be undone.`;
+    confirm.disabled = input.value.trim() !== String(count);
+  }
+
+  area.addEventListener("input", refresh);
+  input.addEventListener("input", refresh);
+
+  confirm.addEventListener("click", async () => {
     const emails = parseEmails(area.value);
-    body.replaceChildren();
-    if (emails.length === 0) {
-      showToast("Paste at least one email.", "error");
-      return;
+    confirm.disabled = true;
+    try {
+      const data = await rpc("delete-admin-profiles", { emails });
+      body.replaceChildren();
+      body.appendChild(resultBlock(data));
+    } catch {
+      showToast("Could not delete the users.", "error");
+      refresh();
     }
-    if (emails.length > MAX_EMAILS) {
-      showToast(`Too many emails: ${emails.length} (max ${MAX_EMAILS}).`, "error");
-      return;
-    }
-    body.appendChild(confirmBlock(emails));
   });
 
-  function confirmBlock(emails) {
-    const wrap = document.createElement("div");
-    wrap.className = "admin-confirm";
-
-    const label = document.createElement("p");
-    label.textContent =
-      `${emails.length} email` + (emails.length === 1 ? "" : "s") +
-      " will be marked for deletion. " +
-      `Type ${emails.length} to confirm. This cannot be undone.`;
-    wrap.appendChild(label);
-
-    const input = document.createElement("input");
-    input.className = "admin-input";
-    input.type = "text";
-    input.inputMode = "numeric";
-    input.setAttribute("aria-label", "Type the count to confirm deletion");
-    wrap.appendChild(input);
-
-    const confirm = document.createElement("button");
-    confirm.className = "admin-button admin-button-danger";
-    confirm.textContent = `Delete ${emails.length}`;
-    confirm.disabled = true;
-    input.addEventListener("input", () => {
-      confirm.disabled = input.value.trim() !== String(emails.length);
-    });
-    confirm.addEventListener("click", async () => {
-      confirm.disabled = true;
-      try {
-        const data = await rpc("delete-admin-profiles", { emails });
-        body.replaceChildren();
-        body.appendChild(resultBlock(data));
-      } catch {
-        showToast("Could not delete the users.", "error");
-        confirm.disabled = false;
-      }
-    });
-    wrap.appendChild(confirm);
-
-    return wrap;
-  }
+  refresh();
 
   function resultBlock(data) {
     const wrap = document.createElement("div");

@@ -16,9 +16,11 @@ import { usersDeletePage } from "./pages/users-delete.js";
 import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
-  { query: "", label: "Dashboard" },
-  { query: "?screen=error-reports", label: "Error reports" },
-  { query: "?screen=users", label: "Users" },
+  // Home targets the path itself, not an empty query: pushing ""
+  // would inherit the current query string and go nowhere.
+  { query: location.pathname, label: "Dashboard", screens: [""] },
+  { query: "?screen=error-reports", label: "Error reports", screens: ["error-reports", "error-report"] },
+  { query: "?screen=users", label: "Users", screens: ["users", "user", "users-delete"] },
 ];
 
 let sessionStatus = "anonymous";
@@ -56,7 +58,7 @@ function renderAuthed(root) {
     history.pushState({}, "", query);
     renderAuthed(root);
   };
-  layout.appendChild(renderSidebar(NAV_ITEMS, navigate, location.search));
+  layout.appendChild(renderSidebar(NAV_ITEMS, navigate, screenParams().get("screen") ?? ""));
   const content = document.createElement("main");
   content.className = "admin-content";
   layout.appendChild(content);

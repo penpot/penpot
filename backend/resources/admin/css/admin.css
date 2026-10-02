@@ -100,6 +100,7 @@ body {
 }
 
 .admin-textarea {
+  display: block;
   background: var(--admin-surface);
   color: var(--admin-text);
   border: 1px solid #3d3d3d;
@@ -305,6 +306,44 @@ body {
 .admin-badge-status-active {
   background: #274d2d;
   color: #9bda9f;
+}
+
+.admin-badge-status-deleted {
+  background: #402b3d;
+  color: #d896d8;
+}
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--admin-space-md);
+  margin-top: var(--admin-space-md);
+}
+
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-space-xs);
+  background: var(--admin-surface);
+  border: 1px solid #3d3d3d;
+  border-left: 3px solid var(--admin-accent);
+  border-radius: 0 8px 8px 0;
+  padding: var(--admin-space-md) var(--admin-space-lg);
+  color: var(--admin-text);
+  text-decoration: none;
+}
+
+.admin-card:hover {
+  border-color: var(--admin-accent);
+}
+
+.admin-card strong {
+  font-size: 1rem;
+}
+
+.admin-card span {
+  color: var(--admin-muted);
+  font-size: 0.875rem;
 }
 
 .admin-pager {

@@ -12,6 +12,7 @@ const ROWS = [
   ["id", "Id"],
   ["fullname", "Name"],
   ["createdAt", "Created"],
+  ["deletedAt", "Deleted"],
   ["authBackend", "Auth backend"],
 ];
 
@@ -72,7 +73,9 @@ export function userDetailPage(root, { id, onNavigate }) {
       const term = document.createElement("dt");
       term.textContent = label;
       const desc = document.createElement("dd");
-      desc.textContent = key === "createdAt" ? formatDate(data[key]) : String(data[key]);
+      desc.textContent = key === "createdAt" || key === "deletedAt"
+        ? formatDate(data[key])
+        : String(data[key]);
       list.appendChild(term);
       list.appendChild(desc);
     }
@@ -96,6 +99,16 @@ export function userDetailPage(root, { id, onNavigate }) {
       item.textContent = `${team.name} — ${roleOf(team)}`;
       return item;
     }));
+
+    if (data.deletedAt) {
+      const notice = document.createElement("p");
+      notice.className = "admin-count";
+      notice.textContent =
+        `This user was marked for deletion on ${formatDate(data.deletedAt)}. ` +
+        "No actions are available.";
+      body.appendChild(notice);
+      return;
+    }
 
     body.appendChild(actionsBar(data));
   }

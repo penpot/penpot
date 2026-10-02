@@ -6,9 +6,10 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
+import { readQuery, writeQuery } from "../url.js";
 
 const SOURCES = ["logging", "audit-log", "rlimit", "legacy-v1", "legacy-v2"];
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 const SOURCE_BADGES = {
   logging: "admin-badge-source-logging",
@@ -38,9 +39,10 @@ function sourceCell(source) {
 }
 
 export function errorReportsPage(root, { onNavigate }) {
+  const fromUrl = readQuery(["source", "hint"]);
   const state = {
-    source: "",
-    hint: "",
+    source: SOURCES.includes(fromUrl.source) ? fromUrl.source : "",
+    hint: fromUrl.hint ?? "",
     items: [],
     nextSince: null,
     nextId: null,
@@ -66,6 +68,7 @@ export function errorReportsPage(root, { onNavigate }) {
     option.textContent = source;
     sourceSelect.appendChild(option);
   }
+  sourceSelect.value = state.source;
   controls.appendChild(sourceSelect);
 
   const hintInput = document.createElement("input");
@@ -73,6 +76,12 @@ export function errorReportsPage(root, { onNavigate }) {
   hintInput.type = "search";
   hintInput.placeholder = "Search hint…";
   hintInput.setAttribute("aria-label", "Search by hint");
+  hintInput.value = state.hint;
+  hintInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      searchButton.click();
+    }
+  });
   controls.appendChild(hintInput);
 
   const searchButton = document.createElement("button");
@@ -154,6 +163,7 @@ export function errorReportsPage(root, { onNavigate }) {
   async function load({ append = false } = {}) {
     state.loading = true;
     paint();
+    writeQuery({ source: state.source, hint: state.hint });
     const params = { limit: PAGE_SIZE };
     if (state.source) {
       params.source = state.source;

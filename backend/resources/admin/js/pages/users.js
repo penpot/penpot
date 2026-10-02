@@ -7,10 +7,12 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
+import { readQuery, writeQuery } from "../url.js";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 const STATUS_BADGES = {
+  deleted: "admin-badge-status-deleted",
   blocked: "admin-badge-status-blocked",
   inactive: "admin-badge-status-inactive",
   demo: "admin-badge-status-demo",
@@ -18,9 +20,10 @@ const STATUS_BADGES = {
 };
 
 const COLUMNS = [
-  { key: "email", label: "Email", class: "admin-cell-email" },
   { key: "fullname", label: "Name", class: "admin-cell-name" },
+  { key: "email", label: "Email", class: "admin-cell-email" },
   { key: "createdAt", label: "Created", class: "admin-cell-date" },
+  { key: "deletedAt", label: "Deleted", class: "admin-cell-date" },
   { key: "status", label: "Status", class: "admin-cell-status" },
 ];
 
@@ -36,6 +39,9 @@ function formatDate(iso) {
 }
 
 export function statusOf(item) {
+  if (item.deletedAt) {
+    return "deleted";
+  }
   if (item.isBlocked) {
     return "blocked";
   }
@@ -73,9 +79,15 @@ function flagSelect(filter) {
 }
 
 export function usersPage(root, { onNavigate }) {
+  const fromUrl = readQuery(["search", "isBlocked", "isActive", "isDemo"]);
+  const flagOrEmpty = (value) => (value === "true" || value === "false" ? value : "");
   const state = {
-    search: "",
-    flags: { isBlocked: "", isActive: "", isDemo: "" },
+    search: fromUrl.search ?? "",
+    flags: {
+      isBlocked: flagOrEmpty(fromUrl.isBlocked),
+      isActive: flagOrEmpty(fromUrl.isActive),
+      isDemo: flagOrEmpty(fromUrl.isDemo),
+    },
     items: [],
     nextSince: null,
     nextId: null,
@@ -93,11 +105,18 @@ export function usersPage(root, { onNavigate }) {
   searchInput.type = "search";
   searchInput.placeholder = "Search email or name…";
   searchInput.setAttribute("aria-label", "Search by email or name");
+  searchInput.value = state.search;
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      searchButton.click();
+    }
+  });
   controls.appendChild(searchInput);
 
   const selects = {};
   for (const filter of FLAG_FILTERS) {
     const select = flagSelect(filter);
+    select.value = state.flags[filter.param];
     selects[filter.param] = select;
     controls.appendChild(select);
   }
@@ -170,13 +189,14 @@ export function usersPage(root, { onNavigate }) {
     const rows = state.items.map((item) => ({
       ...item,
       createdAt: formatDate(item.createdAt),
+      deletedAt: item.deletedAt ? formatDate(item.deletedAt) : "—",
       status: statusOf(item),
     }));
     const table = renderTable(COLUMNS, rows);
     const bodyRows = table.querySelector("tbody").rows;
     for (let i = 0; i < bodyRows.length; i++) {
       const row = bodyRows[i];
-      row.cells[3].replaceChildren(statusCell(rows[i].status));
+      row.cells[4].replaceChildren(statusCell(rows[i].status));
       row.addEventListener("click", () =>
         onNavigate("?screen=user&id=" + encodeURIComponent(state.items[i].id)));
     }
@@ -191,6 +211,7 @@ export function usersPage(root, { onNavigate }) {
   async function load({ append = false } = {}) {
     state.loading = true;
     paint();
+    writeQuery({ search: state.search, ...state.flags });
     const params = { limit: PAGE_SIZE };
     if (state.search) {
       params.search = state.search;
