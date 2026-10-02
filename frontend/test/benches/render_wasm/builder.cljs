@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.builder
+(ns benches.render-wasm.builder
   "Construction of benchmark scenes.
 
   A `scene` consists of one seeded generator, one object map, and one label
@@ -41,7 +41,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.common :as common]))
+   [benches.render-wasm.snapshot :as common]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Poor-man's seeded PRNG

@@ -13,9 +13,9 @@
   (:require
    [app.common.render-wasm.wasm :as wasm]
    [app.common.transit :as transit]
-   [benches.render-wasm.browser :as browser]
+   [benches.render-wasm.browser.bridge :as browser]
    [benches.render-wasm.cases :as cases]
-   [benches.render-wasm.scenes.core :as core]
+   [benches.render-wasm.declarations :as decl]
    [cljs.test :as t :include-macros true]))
 
 ;; Forward declaration: entry-test helpers below build args against the
@@ -96,14 +96,14 @@
 (t/deftest wrong-scene-body-fails-before-claim
   (let [id :rects/wrong-scene
         descriptor (load-case)]
-    (core/register-case! {:id id :scene :other :ns "lifecycle-test"
+    (decl/register-case! {:id id :scene :other :ns "lifecycle-test"
                           :run! (fn [_] nil)})
     (try
       (let [request (transit/encode-str {:case (assoc descriptor :id id)})
             parsed  (@#'browser/parse-load-request request)]
         (t/is (= "invalid-args" (get-in parsed [:error :phase]))))
       (finally
-        (core/unregister-case! id)))))
+        (decl/unregister-case! id)))))
 
 (t/deftest non-finite-view-values-fail-before-timers
   (t/async done
@@ -119,9 +119,9 @@
 
 (t/deftest viewport-defaults-apply-at-use
   (t/is (= {:width 1920 :height 1080 :dpr 2}
-           (core/resolve-viewport {:scale 1 :x 0 :y 0})))
+           (decl/resolve-viewport {:scale 1 :x 0 :y 0})))
   (t/is (= {:width 800 :height 600 :dpr 2}
-           (core/resolve-viewport {:scale 1 :x 0 :y 0
+           (decl/resolve-viewport {:scale 1 :x 0 :y 0
                                    :viewport {:width 800 :height 600}}))))
 
 (t/deftest dispose-resets-lifecycle-state
@@ -470,7 +470,7 @@
   vector, wire contract, failing fn name, fake message and WASM code."
   [cause fn-name message-pattern]
   (t/is (vector? cause) "cause is plain-data vector")
-  (t/is (core/transit-round-trips? cause) "cause satisfies wire contract")
+  (t/is (decl/transit-round-trips? cause) "cause satisfies wire contract")
   (t/is (some #(= fn-name (:fn %)) cause) "cause names the failing WASM fn")
   (t/is (some #(and (string? (:message %))
                     (re-find message-pattern (:message %)))
@@ -539,7 +539,7 @@
     (t/is (= "aborted" (:phase m)))
     (t/is (= "boom" (:message m)) "top message stays as-is")
     (t/is (vector? cause) "cause is plain-data vector")
-    (t/is (core/transit-round-trips? cause) "hostile values become strings")
+    (t/is (decl/transit-round-trips? cause) "hostile values become strings")
     (t/is (every? (fn [entry]
                     (every? (fn [[_ v]]
                               (or (not (string? v)) (<= (count v) 500)))
@@ -568,7 +568,7 @@
           cause     (:cause m)
           outer     (first cause)]
       (t/is (= "failed" (:status m)))
-      (t/is (core/transit-round-trips? cause) "throwing value still crosses the wire")
+      (t/is (decl/transit-round-trips? cause) "throwing value still crosses the wire")
       (t/is (= "unrenderable value" (:fn outer))
             "stringification failure falls back")))
   (t/testing "causes pr-str cannot render fall back to plain strings"
@@ -583,7 +583,7 @@
           m         result
           cause     (:cause m)]
       (t/is (= "failed" (:status m)))
-      (t/is (core/transit-round-trips? cause) "throwing cause still crosses the wire")
+      (t/is (decl/transit-round-trips? cause) "throwing cause still crosses the wire")
       (t/is (= "unrenderable cause" (:message (first cause)))
             "level fallback holds"))))
 

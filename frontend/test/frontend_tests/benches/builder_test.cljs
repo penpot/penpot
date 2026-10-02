@@ -7,9 +7,9 @@
 (ns frontend-tests.benches.builder-test
   (:require
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.builder :as b :include-macros true]
-   [benches.render-wasm.scenes.common :as common]
+   [benches.render-wasm.builder :as b :include-macros true]
    [benches.render-wasm.scenes.rects :as rects]
+   [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 

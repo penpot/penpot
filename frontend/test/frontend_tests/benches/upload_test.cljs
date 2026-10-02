@@ -5,18 +5,18 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.benches.upload-test
-  "Test routing contract for `benches.render-wasm.upload/upload-scene!`.
+  "Test routing contract for `benches.render-wasm.browser.upload/upload-scene!`.
 
   Byte layouts are proven by `frontend-tests.render-wasm.serialization-test`
   and `process-objects-test`; this suite pins: the order comes from
-  `scenes.common/upload-order`, the batch helper is called exactly once with
+  `snapshot/upload-order`, the batch helper is called exactly once with
   the caller's opts, and the prepared vector is returned in order."
   (:require
    [app.common.render-wasm.api.upload :as upload]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.common :as common]
-   [benches.render-wasm.upload :as bench-upload]
+   [benches.render-wasm.browser.upload :as bench-upload]
+   [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]))
 
 (defn- sample-snapshot

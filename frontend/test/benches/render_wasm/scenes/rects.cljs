@@ -15,14 +15,14 @@
   browser executor; collection keeps only plain descriptors."
   (:require
    [app.common.schema :as sm]
-   [benches.render-wasm.scenes.builder :as sb :include-macros true]
-   [benches.render-wasm.scenes.camera :as camera]
-   [benches.render-wasm.scenes.core :as core :include-macros true]))
+   [benches.render-wasm.builder :as sb :include-macros true]
+   [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.runtime.camera :as camera]))
 
 ;; This namespace is also loaded by Node discovery. Keep operation helpers
 ;; portable: browser API/helper imports belong in browser adapters supplied
 ;; through rtx, not in this require list or its transitive dependencies.
-;; See scenes.core's dependency contract before adding a capability.
+;; See declarations' dependency contract before adding a capability.
 
 (def ^:private default-params
   {:count 1000
@@ -74,7 +74,7 @@
               (doseq [_ (range (:count params))]
                 (sb/rect)))))
 
-(core/defscene :rects
+(decl/defscene :rects
   {:version 1
    :description "Seeded rectangles with translucent fills and centered strokes"
    :params-schema schema:params}
@@ -83,13 +83,13 @@
 (def ^:private base-view
   {:scale 1 :x 0 :y 0})
 
-(core/defcase :rects/load :rects
+(decl/defcase :rects/load :rects
   {:params default-params
    :view base-view
    :context :fresh}
   (fn [rtx] (camera/load! rtx)))
 
-(core/defcase :rects/pan :rects
+(decl/defcase :rects/pan :rects
   {:params default-params
    :view base-view
    :context :reuse
@@ -97,7 +97,7 @@
    :operation {:steps 20 :dx 200 :dy 0 :settle-ms 100}}
   (fn [rtx] (camera/pan! rtx)))
 
-(core/defcase :rects/zoom :rects
+(decl/defcase :rects/zoom :rects
   {:params default-params
    :view base-view
    :context :reuse
