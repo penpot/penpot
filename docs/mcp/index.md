@@ -64,7 +64,7 @@ Watch more applications in the **[Penpot MCP video playlist](https://www.youtube
 There are three key pieces:
 
 * **MCP server**: a service that exposes tools to your AI client. It receives requests from the client and forwards them to Penpot.
-* **MCP plugin in Penpot**: a plugin that runs inside Penpot and connects your open file to the MCP server. It is what allows the server to access the currently focused page.
+* **MCP plugin in Penpot**: a plugin that runs inside Penpot and connects your open file to the MCP server. It allows the server to access that file and its pages.
 * **MCP client**: the tool where you write prompts (Cursor, Claude Code, Copilot-style tools, etc.). It connects to the MCP server using a server URL and an MCP key (or your active Penpot session in the current local setup).
 
 ![How the AI client, Penpot MCP server, plugin, and design file connect](/img/mcp/mcp-flow.webp)
@@ -74,8 +74,23 @@ There are three key pieces:
 Some important concepts for users:
 * **Integrations page**: MCP is configured under **Your account → Integrations → MCP Server**. Here you enable or disable MCP, get the server URL and manage the MCP key.
 * **MCP key**: a personal, non-recoverable token that authenticates your AI client with the MCP server. Only one key can exist per user at a time. This is used by the remote MCP setup.
-* **Currently focused page**: MCP always operates on the page you have in focus in Penpot. If you change the focused page (even in another browser window), the MCP context follows that page.
-* **Active MCP tab**: MCP can only be active in one browser tab at a time. If you have Penpot open in several tabs, you choose explicitly which one owns MCP before running agents.
+* **MCP session**: a connection from a Penpot tab to the MCP server, identified by a short session ID. Several tabs can connect independently, including tabs showing the same file.
+* **Current page**: the page open in the selected session. Switching browser focus to another tab does not change which session the agent uses.
+
+### Working with multiple files
+
+Connect the tabs you want to use:
+
+* **Remote MCP**: open each file and choose **MCP → Connect** in the toolbar. Use **Disconnect** in the same menu to disconnect that tab.
+* **Local MCP**: run the plugin in each file and connect it to your local server. Each plugin connection has its own session ID.
+* Connecting or disconnecting one tab does not disconnect the others.
+
+Choose a session for your agent:
+
+* With exactly one connected session, the server selects it automatically when the agent does not specify a session ID.
+* With several connected sessions, the server lists them and asks the agent to have you select one. The agent then passes that session ID with its requests.
+* You can also give the agent an ID directly. For remote MCP, open the toolbar's **MCP** menu and choose **Copy session ID**. For local MCP, use **Copy** beside the session ID in the plugin window.
+* For example: "Use Penpot session `o37vgcqsvt` and list the pages in that file."
 
 ### Tools and capabilities
 
@@ -98,7 +113,7 @@ Because **remote MCP** does not expose local file-system access:
 
 ### Agents can edit designs
 
-**Be mindful:** when MCP is connected, your AI client can run **write operations** that change the currently focused Penpot page (create, rename, move, delete, restyle, etc.). To stay safe:
+**Be mindful:** when MCP is connected, your AI client can run **write operations** that change the file in the selected session (create, rename, move, delete, restyle, etc.). To stay safe:
 
 * Start with **read-only** actions (inspect, list, export) to verify your setup.
 * Ask the agent to **describe the intended changes** before applying them.
@@ -142,7 +157,7 @@ If you just want to try Penpot AI workflows quickly through the MCP, follow this
    See the section **Connect your MCP client** for more details on how to connect.
 
 5. #### Open a Penpot file and connect MCP
-   In Penpot, open a design file and use **File → MCP Server → Connect** to connect the plugin to your current file.
+   In Penpot, open a design file and choose **MCP → Connect** in the toolbar. Enabling MCP does not connect a file automatically.
 
 ![Managing MCP Server from Penpot Integrations](/img/mcp/mcp-manage.webp)
 
@@ -156,9 +171,12 @@ When this happens, MCP fails fast instead of waiting for a long task timeout:
 
 * In Chrome and Chromium-based browsers, the plugin can report when the tab is being frozen.
 * In Firefox, Safari, and other browsers that do not expose the same freeze event, MCP uses plugin heartbeats. If the browser stops running the plugin JavaScript, the heartbeat becomes stale and the MCP server reports that the Penpot tab appears to be suspended.
-* If the browser unloads the tab completely, the plugin disconnects and MCP reports that no Penpot plugin instance is connected.
+* If the browser unloads the tab completely, its plugin disconnects and that session is no longer available. Other connected sessions remain available.
 
-To recover, open or focus the Penpot tab again, wait until MCP reconnects, and retry the prompt.
+To recover:
+
+* If the tab was only suspended, focus it, wait until MCP reconnects, and retry the prompt.
+* If the tab was unloaded or reloaded, open the file and connect again. Copy the new session ID if your agent was using the previous one.
 
 To reduce the chances of the browser putting Penpot to sleep during long MCP sessions:
 
@@ -239,7 +257,7 @@ Note: For clients that do not support HTTP servers directly (like Claude Desktop
 
 ### Final check
 
-In Penpot, open a file and connect the plugin from **File → MCP Server → Connect**, then run a read-only prompt first.
+In Penpot, open a file and choose **MCP → Connect** in the toolbar, then run a read-only prompt first.
 
 
 ***
@@ -253,7 +271,7 @@ Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted 
 
 1. Open **Your account → Integrations**.
 2. In the **MCP Server** section, read the short description to confirm that feature is available for your account.
-3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions.
+3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions. You still need to connect each file explicitly.
 4. If this is your first time, Penpot will ask you to **generate an MCP key**. The key is shown only once, store it safely.
    * Treat the MCP key like a password/token: do not share it in screenshots, logs, or code samples.
 5. Once enabled, you will see:
@@ -309,11 +327,11 @@ Once everything is configured, day-to-day use of Penpot MCP follows a simple pat
 1. **Enable MCP**
    * Go to **Your account → Integrations → MCP Server** and set **Status** to **Enabled**.
 2. **Connect plugin**:
-   * Open a design file and use **File → MCP Server → Connect**.
+   * Open a design file and choose **MCP → Connect** in the toolbar. Repeat in each tab you want the agent to access.
 3. **Run prompts**:
    * Open your MCP client and start with read-only prompts first (`list`, `inspect`, `analyze`), then continue with write actions.
 
-MCP always acts on the **currently focused page** in the active Penpot tab.
+Requests target the selected MCP session. See [Working with multiple files](#working-with-multiple-files) to choose a session.
 
 #### Manage
 
@@ -343,7 +361,7 @@ Security recommendations to highlight in the Help Center:
 
 * Treat your MCP key like a password or access token, do not share it in screenshots or code samples.
 * Regenerate the key if you suspect it may have leaked.
-* Remember that disabling MCP Server or disconnecting the plugin stops agents from modifying your files, even if a client is still configured.
+* Disabling MCP Server disconnects your integrated sessions. Disconnecting one tab stops access through that connection; other connected sessions remain available.
 
 ***
 
@@ -375,7 +393,7 @@ Leave this terminal running while you use MCP.
 
 5. Run the plugin and click **Connect to MCP server**.
 
-6. Make sure the plugin shows **Connected** and keep the plugin window open while working with AI agents.
+6. Make sure the plugin shows **Connected** and keep the plugin window open while working with AI agents. The plugin displays the session ID and a **Copy** button.
 
 > Some Chromium-based browsers may block the connection from `https://design.penpot.app` to `http://localhost`. If that happens, explicitly allow local network access or use a browser like Firefox.
 
@@ -420,7 +438,7 @@ Once everything is configured, day-to-day use of Penpot MCP follows a simple pat
 
    Open your MCP client and start with read-only prompts first (`list`, `inspect`, `analyze`), then continue with write actions.
 
-MCP always acts on the **currently focused page** in the active Penpot tab.
+Requests target the selected MCP session. See [Working with multiple files](#working-with-multiple-files) to choose a session.
 
 #### Manage
 

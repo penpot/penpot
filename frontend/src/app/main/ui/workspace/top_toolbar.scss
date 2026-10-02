@@ -83,7 +83,7 @@
   inset-inline-start: 50%;
   transform: translateX(-50%);
   margin-block-start: var(--sp-xxs);
-  padding: var(--sp-xxs) 0;
+  padding: var(--sp-xxs);
   border-radius: $br-8;
   border: #{$b-1} solid var(--menu-border-color);
   background-color: var(--menu-background-color);
@@ -158,21 +158,35 @@
   top: $sz-36;
 }
 
+// Same look as the workspace main menu (`.base-menu` in main_menu.scss).
+// The toolbar overrides `--menu-background-color`, so restore the global
+// menu value here.
 .toolbar-mcp-dropdown {
-  box-shadow: 0 0 $sz-12 0 var(--color-shadow-dark);
+  --menu-background-color: var(--color-background-tertiary);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   z-index: var(--z-index-dropdown);
   margin: 0;
   padding: var(--sp-xs);
-  border: $b-1 solid var(--panel-border-color);
+  border: $b-2 solid var(--panel-border-color);
   border-radius: $br-8;
   background-color: var(--menu-background-color);
+  box-shadow: 0 0 $sz-12 0 var(--menu-shadow-color);
 }
 
 .toolbar-mcp-dropdown-info {
   @include t.use-typography("body-small");
 
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   padding: var(--sp-s) var(--sp-m);
+  border-radius: $br-8;
   color: var(--color-foreground-secondary);
+  background-color: var(--color-background-primary);
+  font-size: px2rem(11);
   white-space: nowrap;
 }
 
@@ -184,10 +198,12 @@
   padding: var(--sp-s) var(--sp-m);
   border-radius: $br-8;
   color: var(--menu-foreground-color);
+  background-color: var(--menu-background-color);
   white-space: nowrap;
 
   &:hover {
-    background-color: var(--menu-background-color-hover);
+    --menu-foreground-color: var(--menu-foreground-color-hover);
+    --menu-background-color: var(--menu-background-color-hover);
   }
 }
 
