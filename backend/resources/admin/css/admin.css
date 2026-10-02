@@ -259,10 +259,22 @@ body {
   white-space: nowrap;
 }
 
-.admin-cell-count {
-  width: 90px;
+.admin-table .admin-cell-count {
+  width: 64px;
   white-space: nowrap;
   text-align: right;
+}
+
+.admin-table .admin-cell-right {
+  text-align: right;
+}
+
+.admin-table .admin-cell-left {
+  text-align: left;
+}
+
+.admin-table .admin-cell-center {
+  text-align: center;
 }
 
 .admin-badge {

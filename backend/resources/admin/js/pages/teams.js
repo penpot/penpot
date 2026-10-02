@@ -10,16 +10,29 @@ import { readQuery, writeQuery } from "../url.js";
 
 const PAGE_SIZE = 25;
 
+const DEFAULT_BADGES = {
+  yes: "admin-badge-status-active",
+  no: "admin-badge-status-inactive",
+};
+
 const COLUMNS = [
   { key: "name", label: "Name", class: "admin-cell-name" },
+  { key: "owner", label: "Owner", class: "admin-cell-email admin-cell-left" },
   { key: "totalMembers", label: "Members", class: "admin-cell-count" },
-  { key: "createdAt", label: "Created", class: "admin-cell-date" },
-  { key: "isDefault", label: "Default", class: "admin-cell-status" },
+  { key: "createdAt", label: "Created", class: "admin-cell-date admin-cell-right" },
+  { key: "isDefault", label: "Default", class: "admin-cell-status admin-cell-center" },
 ];
 
 function formatDate(iso) {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? String(iso ?? "") : date.toLocaleString();
+}
+
+export function defaultCell(value) {
+  const badge = document.createElement("span");
+  badge.className = "admin-badge " + (DEFAULT_BADGES[value] || DEFAULT_BADGES.no);
+  badge.textContent = value;
+  return badge;
 }
 
 export function teamsPage(root, { onNavigate }) {
@@ -105,13 +118,15 @@ export function teamsPage(root, { onNavigate }) {
 
     const rows = state.items.map((item) => ({
       ...item,
+      owner: item.owner ?? "—",
       createdAt: formatDate(item.createdAt),
-      isDefault: item.isDefault ? "default" : "—",
+      isDefault: item.isDefault ? "yes" : "no",
     }));
     const table = renderTable(COLUMNS, rows);
     const bodyRows = table.querySelector("tbody").rows;
     for (let i = 0; i < bodyRows.length; i++) {
       const row = bodyRows[i];
+      row.cells[4].replaceChildren(defaultCell(rows[i].isDefault));
       row.addEventListener("click", () =>
         onNavigate("?screen=team&id=" + encodeURIComponent(state.items[i].id)));
     }

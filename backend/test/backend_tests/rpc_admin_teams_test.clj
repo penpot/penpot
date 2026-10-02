@@ -130,6 +130,7 @@
     (t/is (= (:id team) (:id item)))
     (t/is (= (:name team) (:name item)))
     (t/is (= 1 (:total-members item)))
+    (t/is (= (:email admin) (:owner item)))
     (t/is (false? (:is-default item)))
     (t/is (not (contains? item :features)))))
 

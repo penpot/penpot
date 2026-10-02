@@ -373,7 +373,8 @@
    [:name ::sm/text]
    [:created-at ct/schema:inst]
    [:is-default ::sm/boolean]
-   [:total-members ::sm/int]])
+   [:total-members ::sm/int]
+   [:owner {:optional true} ::sm/text]])
 
 (def schema:get-admin-teams-params
   [:map {:title "get-admin-teams-params"}
@@ -402,7 +403,11 @@
         sql-parts  (map :where clauses)
         sql-params (mapcat :params clauses)
         sql        (str "SELECT t.id, t.name, t.created_at, t.is_default, "
-                        "(SELECT count(*) FROM team_profile_rel WHERE team_id = t.id) AS total_members "
+                        "(SELECT count(*) FROM team_profile_rel WHERE team_id = t.id) AS total_members, "
+                        "(SELECT p.email FROM team_profile_rel AS tpr "
+                        "JOIN profile AS p ON (p.id = tpr.profile_id) "
+                        "WHERE tpr.team_id = t.id AND tpr.is_owner IS true "
+                        "ORDER BY p.email ASC LIMIT 1) AS owner "
                         "FROM team AS t "
                         "WHERE t.deleted_at IS NULL "
                         (when (seq sql-parts)
