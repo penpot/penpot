@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.upload
+(ns benches.render-wasm.browser.upload
   "Benchmark scene upload.
 
   In order to emulate editor behaviour, `upload-scene!` derives
@@ -18,7 +18,7 @@
   (`benches.render-wasm.cases`)"
   (:require
    [app.common.render-wasm.serialize-shape :as serialize-shape]
-   [benches.render-wasm.scenes.common :as common]))
+   [benches.render-wasm.snapshot :as common]))
 
 (defn prepare-scene
   "Derives the parent-before-child shape vector from a validated `snapshot`.
@@ -32,7 +32,7 @@
 
   - `snapshot` is `{:objects {uuid shape} :refs {label uuid}}` per the ticket02
     contract; it must already be validated (see
-    `benches.render-wasm.scenes.common/validate!`).
+    `benches.render-wasm.snapshot/validate!`).
   - `opts` carries `:include-layout?` and `:include-fills-strokes?` through to
     the batch writer.
 
