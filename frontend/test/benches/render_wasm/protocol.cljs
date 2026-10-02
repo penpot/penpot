@@ -9,18 +9,17 @@
 
   The WASM renderer finishes progressively in tile budgets: one `_render`
   call returns a frame type and the caller keeps calling until `FRAME_TYPE_FULL`.
-  This namespace implements a driver loop as three functions over an injected
-  `hooks` map. Callers can use the same timing and continuation rules for
+  This namespace implements a driver loop and camera sessions over an injected
+  `hooks` map. Callers use the same timing and continuation rules for
   rendering and interaction:
 
   - `drain` drives `_render` to `FRAME_TYPE_FULL`, collecting one slice per
     call.
   - `restore` puts the camera back to the case's initial view, then drains.
     Callers run it outside timing.
-  - `interact` replays a deterministic gesture of small camera moves with
-    cheap cached previews, waits out the declared settle, then drains to
-    `FRAME_TYPE_FULL`. The caller's interaction timer includes the camera
-    start, gesture, settle wait, camera end and final drain.
+  - `start-camera!`, `preview-view!`, `animate-view!`, `sleep!` and
+    `finish-camera!` form one Promise-aware camera session. `interact` is a
+    thin adapter for callers with a predeclared frame vector.
 
   `hooks` supplies clock, scheduling and renderer operations. The browser
   supplies real capabilities; tests supply fakes.
@@ -62,16 +61,19 @@
   - `:cached-slices` one map per gesture frame:
     - `:timestamp` rAF stamp of the input
     - `:duration-ms`: the timed `_render-from-cache` call.
+    - `:view-and-preview-ms`: the view update and cached-preview call span.
     Cached previews have their own shape: no flags or frame type.
   - `:viewport-ready-ms` first Full-or-ViewportReady completion measured
     from the drain origin. An immediate Full supplies both boundaries, so
     they are equal there.
   - `:full-ms` Full completion measured from the drain origin.
+  - `:interact-ms` from before `_set_view_start` through final Full.
   - `:active-ms` from before `_set_view_start` to after the last cached
-    preview and its guard check.
+    preview and its guard check, or an authored sleep after that preview.
+  - `:authored-sleeps` requested and actual durations of optional pauses.
   - `:settling-requested-ms` the declared settle wait passed in.
-  - `:settling-actual-ms` from the end of the last cached preview to
-    finalization start, recorded separately from the declared value.
+  - `:settling-actual-ms` from the end of the active span to finalization
+    start, recorded separately from the declared value.
   - `:set-view-end-ms` wall time of the `_set_view_end` call itself.
     Finalization starts before `_set_view_end`, so the final drain times
     include it; the call time is still reported on its own.
@@ -223,57 +225,103 @@
     (catch :default cause
       (js/Promise.reject cause))))
 
-(defn- replay-frame
-  [{:keys [now frame check render-from-cache set-view]}
-   state
-   view
-   last-frame?]
-  (-> (frame)
-      (.then
-       (fn [timestamp]
-         (check)
-         (let [input-ms (now)]
-           (set-view view)
-           (let [t0          (now)
-                 _           (render-from-cache)
-                 duration-ms (- (now) t0)]
-             (check)
-             (cond-> (-> state
-                         (assoc :last-input-ms input-ms)
-                         (update :cached-slices conj
-                                 {:timestamp   timestamp
-                                  :duration-ms duration-ms}))
-               last-frame?
-               (assoc :active-end-ms (now)))))))))
+(defn start-camera!
+  "Starts a measured camera session after the caller's untimed preparation.
+  `rtx` supplies `:hooks` and the current full `:view`."
+  [{:keys [hooks view]} {:keys [settle-ms]}]
+  (try
+    (when-not (and (number? settle-ms)
+                   (js/Number.isFinite settle-ms)
+                   (<= 0 settle-ms))
+      (throw (ex-info "settle-ms must be a nonnegative finite number"
+                      {:type ::invalid-settle-ms :settle-ms settle-ms})))
+    (let [{:keys [now check set-view-start]} hooks]
+      (check)
+      (let [started-ms (now)]
+        (set-view-start)
+        (js/Promise.resolve
+         {:hooks          hooks
+          :view           view
+          :settle-ms      settle-ms
+          :started-ms     started-ms
+          :last-input-ms  started-ms
+          :active-end-ms  (now)
+          :cached-slices  []
+          :authored-sleeps []})))
+    (catch :default cause
+      (js/Promise.reject cause))))
 
+(defn preview-view!
+  "Awaits a session or session promise, then submits one cached preview after
+  exactly one rAF. The call span includes `_set_view` and cache rendering."
+  [session-p view]
+  (-> (js/Promise.resolve session-p)
+      (.then (fn [{:keys [hooks] :as session}]
+               (let [{:keys [now frame check render-from-cache set-view]} hooks]
+                 (check)
+                 (-> (frame)
+                     (.then (fn [timestamp]
+                              (check)
+                              (let [input-ms (now)
+                                    call-start (now)]
+                                (set-view view)
+                                (let [cache-start (now)]
+                                  (render-from-cache)
+                                  (let [cache-end (now)]
+                                    (check)
+                                    (assoc session
+                                           :view view
+                                           :last-input-ms input-ms
+                                           :active-end-ms (now)
+                                           :cached-slices
+                                           (conj (:cached-slices session)
+                                                 {:timestamp timestamp
+                                                  :duration-ms (- cache-end cache-start)
+                                                  :view-and-preview-ms (- cache-end call-start)})))))))))))))
 
-(defn- replay-gesture
-  [{:keys [now] :as hooks} frames started-ms]
-  (if (empty? frames)
-    (js/Promise.resolve
-     {:cached-slices []
-      :last-input-ms started-ms
-      :active-end-ms (now)})
+(defn animate-view!
+  "Submits exactly `steps` serial, linearly interpolated full views."
+  [session-p {:keys [to steps]}]
+  (-> (js/Promise.resolve session-p)
+      (.then (fn [{from :view :as session}]
+               (when-not (and (integer? steps) (pos? steps))
+                 (throw (ex-info "camera steps must be a positive integer"
+                                 {:type ::invalid-steps :steps steps})))
+               (reduce (fn [session-p i]
+                         (let [t (/ i steps)]
+                           (preview-view! session-p
+                                          {:scale (+ (:scale from) (* t (- (:scale to) (:scale from))))
+                                           :x (+ (:x from) (* t (- (:x to) (:x from))))
+                                           :y (+ (:y from) (* t (- (:y to) (:y from))))})))
+                       (js/Promise.resolve session)
+                       (range 1 (inc steps)))))))
 
-    (let [last-index (dec (count frames))]
-      (reduce-kv
-       (fn [state-p index view]
-         (.then state-p
-                #(replay-frame hooks
-                               %
-                               view
-                               (= index last-index))))
-       (js/Promise.resolve
-        {:cached-slices []
-         :last-input-ms started-ms})
-       frames))))
-
+(defn sleep!
+  "Awaits an authored pause inside the active span and records its actual time."
+  [session-p requested-ms]
+  (-> (js/Promise.resolve session-p)
+      (.then (fn [{:keys [hooks] :as session}]
+               (let [{:keys [now sleep check]} hooks]
+                 (when-not (and (number? requested-ms)
+                                (js/Number.isFinite requested-ms)
+                                (<= 0 requested-ms))
+                   (throw (ex-info "sleep duration must be a nonnegative finite number"
+                                   {:type ::invalid-sleep :requested-ms requested-ms})))
+                 (check)
+                 (let [started-ms (now)]
+                   (-> (sleep requested-ms)
+                       (.then (fn [_]
+                                (check)
+                                (let [ended-ms (now)]
+                                  (-> session
+                                      (assoc :active-end-ms ended-ms)
+                                      (update :authored-sleeps conj
+                                              {:requested-ms requested-ms
+                                               :actual-ms (- ended-ms started-ms)}))))))))))))
 
 (defn- finish-interaction
   [{:keys [now check set-view-end] :as hooks}
-   settle-ms
-   started-ms
-   {:keys [cached-slices last-input-ms active-end-ms]}]
+   {:keys [settle-ms started-ms cached-slices last-input-ms active-end-ms authored-sleeps]}]
   (check)
 
   (let [finalization-start (now)
@@ -289,7 +337,9 @@
            (fn [{:keys [slices viewport-ready-ms full-ms]}]
              {:cached-slices             cached-slices
               :slices                    slices
+              :interact-ms               (- (now) started-ms)
               :active-ms                 (- active-end-ms started-ms)
+              :authored-sleeps           authored-sleeps
               :settling-requested-ms     settle-ms
               :settling-actual-ms        (- finalization-start active-end-ms)
               :set-view-end-ms           set-view-end-ms
@@ -298,16 +348,15 @@
               :last-input-to-full-ms     (- (now) last-input-ms)}))))))
 
 
-(defn- settle-and-finish
-  [{:keys [sleep] :as hooks}
-   settle-ms
-   started-ms
-   gesture-state]
-  (-> (sleep settle-ms)
-      (.then #(finish-interaction hooks
-                                  settle-ms
-                                  started-ms
-                                  gesture-state))))
+(defn finish-camera!
+  "Awaits a session, settles, ends the camera and drains through Full."
+  [session-p]
+  (-> (js/Promise.resolve session-p)
+      (.then (fn [{:keys [hooks settle-ms] :as session}]
+               ((:check hooks))
+               (-> ((:sleep hooks) settle-ms)
+                   (.then (fn [_]
+                            (finish-interaction hooks session))))))))
 
 
 (defn interact
@@ -317,11 +366,10 @@
   The flow is:
 
   interact
-    ├─ set-view-start
-    ├─ replay-gesture
-    │    └─ replay-frame × N
-    ├─ settle
-    └─ finish-interaction
+    ├─ start-camera!
+    ├─ preview-view! × N
+    └─ finish-camera!
+         ├─ settle
          ├─ set-view-end
          └─ drain
 
@@ -330,15 +378,10 @@
    `settle-ms` elapses, `_set_view_end` is timed on its own, and a SyncTiles
    immediate drain runs with its origin at finalization start, so the final
    times include `_set_view_end` while reporting it separately."
-  [{:keys [now check set-view-start] :as hooks}
+  [hooks
    {:keys [frames settle-ms]}]
-  (try
-    (let [started-ms (do (check) (now))]
-      (set-view-start)
-      (-> (replay-gesture hooks (vec frames) started-ms)
-          (.then #(settle-and-finish hooks
-                                     settle-ms
-                                     started-ms
-                                     %))))
-    (catch :default cause
-      (js/Promise.reject cause))))
+  (-> (reduce preview-view!
+              (start-camera! {:hooks hooks :view (first frames)}
+                             {:settle-ms settle-ms})
+              frames)
+      (finish-camera!)))
