@@ -34,7 +34,6 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; FIXME: this is a workaround until we export this class on beicon library
@@ -613,12 +612,12 @@
   [{:keys [data route] :as props}]
 
   (let [type        (:type data)
-        path        (:path route)
         params      (:query-params route)
 
-        workspace?  (str/includes? path "workspace")
-        dashboard?  (str/includes? path "dashboard")
-        view?       (str/includes? path "view")
+        screen      (get params :screen)
+        workspace?  (= screen "workspace")
+        dashboard?  (= screen "dashboard")
+        view?       (= screen "view")
 
         ;; We store the request access info int this state
         info*       (mf/use-state nil)
