@@ -1,6 +1,11 @@
 import { describe, it, vi, expect, beforeAll } from 'vitest';
 import 'ses';
-import { loadPlugin, setContextBuilder, getPlugins } from './load-plugin';
+import {
+  loadPlugin,
+  setContextBuilder,
+  getPlugins,
+  ɵunloadPlugin,
+} from './load-plugin';
 import type { Context } from '@penpot/plugin-types';
 import type { Manifest } from './models/manifest.model.js';
 
@@ -69,7 +74,7 @@ function makeHostFixture() {
     // public penpot API. Plugin code must never see it (see B-2 below).
     __internalSecret: 'host-internal',
   } as unknown as Context;
-  return { context, listenerTypes, createRectangle, selection };
+  return { context, listeners, listenerTypes, createRectangle, selection };
 }
 
 function lastCompartmentGlobalThis(): Record<string, unknown> {
@@ -171,6 +176,70 @@ describe('loadPlugin real initialization path (regression for #11001)', () => {
     expect(fixture.createRectangle).toHaveBeenCalledTimes(1);
     expect(lastCompartmentGlobalThis()['__selectionFrozen']).toBe(true);
   });
+  it.each(['before', 'after'])(
+    'discards a cancelled global load that completes %s its replacement',
+    async (order) => {
+      const fixture = makeHostFixture();
+      setContextBuilder(() => fixture.context);
+      const manifest = {
+        ...makeManifest('plugin.js', []),
+        host: 'https://plugins.test/',
+        scope: 'global' as const,
+      };
+      ɵunloadPlugin(manifest.pluginId);
+      let finishFetch!: (response: object) => void;
+      const response = new Promise((resolve) => {
+        finishFetch = resolve;
+      });
+      const fetch = vi.fn().mockReturnValue(response);
+      vi.stubGlobal('fetch', fetch);
+      try {
+        const cancelled = loadPlugin(manifest);
+        await loadPlugin(manifest);
+        expect(fetch).toHaveBeenCalledOnce();
+        ɵunloadPlugin(manifest.pluginId);
+        const replacement = () =>
+          loadPlugin({
+            ...manifest,
+            host: '',
+            code: 'globalThis.marker = "replacement";',
+          });
+        if (order === 'after') await replacement();
+        finishFetch({
+          ok: true,
+          text: async () => 'globalThis.marker = "cancelled";',
+        });
+        await cancelled;
+        if (order === 'before') {
+          expect(getPlugins()).toHaveLength(0);
+          expect(fixture.listeners.size).toBe(0);
+          await replacement();
+        }
+        expect(getPlugins()).toHaveLength(1);
+        expect(lastCompartmentGlobalThis()['marker']).toBe('replacement');
+        expect(fixture.listeners.size).toBe(3);
+      } finally {
+        ɵunloadPlugin(manifest.pluginId);
+        vi.unstubAllGlobals();
+      }
+    },
+  );
+
+  it('allows retrying a global plugin after a failed load', async () => {
+    const fixture = makeHostFixture();
+    setContextBuilder(() => fixture.context);
+    const manifest = {
+      ...makeManifest('throw new Error("load failed");', []),
+      scope: 'global' as const,
+    };
+    await expect(loadPlugin(manifest)).rejects.toThrow('load failed');
+    expect(getPlugins()).toHaveLength(0);
+    await loadPlugin({ ...manifest, code: 'globalThis.marker = "retry";' });
+    expect(lastCompartmentGlobalThis()['marker']).toBe('retry');
+    ɵunloadPlugin(manifest.pluginId);
+    expect(fixture.listeners.size).toBe(0);
+  });
+
   it('keeps a global sandbox through navigation and other plugin loads, then closes it on logout', async () => {
     const fixture = makeHostFixture();
     let workspace = {

@@ -5,6 +5,7 @@ import { Manifest } from './models/manifest.model.js';
 import { createPlugin } from './create-plugin.js';
 
 let plugins: Awaited<ReturnType<typeof createPlugin>>[] = [];
+const pendingPlugins = new Map<Manifest['pluginId'], symbol>();
 
 export type ContextBuilder = (id: string) => Context;
 
@@ -49,6 +50,7 @@ export const loadPlugin = async function (
   closeCallback?: () => void,
   apiExtensions?: object,
 ) {
+  const loadId = Symbol();
   try {
     const context = contextBuilder && contextBuilder(manifest.pluginId);
 
@@ -58,6 +60,7 @@ export const loadPlugin = async function (
 
     if (manifest.scope === 'global') {
       if (
+        pendingPlugins.has(manifest.pluginId) ||
         plugins.some(
           (plugin) => plugin.manifest?.pluginId === manifest.pluginId,
         )
@@ -83,7 +86,9 @@ export const loadPlugin = async function (
     // `createSandbox`'s proxy handler applies `ses.safeReturn` to values
     // crossing into the sandbox. Compartment isolation and intrinsics
     // hardening are performed by createSandbox, not here.
-    let plugin: Awaited<ReturnType<typeof createPlugin>> | undefined = undefined;
+    pendingPlugins.set(manifest.pluginId, loadId);
+    let plugin: Awaited<ReturnType<typeof createPlugin>> | undefined =
+      undefined;
     plugin = await createPlugin(
       context,
       manifest,
@@ -96,10 +101,18 @@ export const loadPlugin = async function (
       },
       apiExtensions,
     );
+    if (pendingPlugins.get(manifest.pluginId) !== loadId) {
+      plugin.plugin.close();
+      return;
+    }
     plugins.push(plugin);
   } catch (error) {
     if (manifest.scope !== 'global') closeAllPlugins();
     throw error;
+  } finally {
+    if (pendingPlugins.get(manifest.pluginId) === loadId) {
+      pendingPlugins.delete(manifest.pluginId);
+    }
   }
 };
 
@@ -117,6 +130,7 @@ export const ɵloadPluginByUrl = async function (manifestUrl: string) {
 };
 
 export const ɵunloadPlugin = function (id: Manifest['pluginId']) {
+  pendingPlugins.delete(id);
   const plugin = plugins.find((plugin) => plugin.manifest.pluginId === id);
 
   if (plugin) {
