@@ -30,6 +30,7 @@
   (let [response (run-handler nil)]
     (t/is (= 200 (::yres/status response)))
     (t/is (= "text/html" (content-type response)))
+    (t/is (= "no-store" (get (::yres/headers response) "cache-control")))
     (t/is (str/includes? (::yres/body response) "id=\"app\""))))
 
 (t/deftest bare-path-redirects-to-trailing-slash

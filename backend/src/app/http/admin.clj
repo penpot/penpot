@@ -77,7 +77,11 @@
   [_cfg request]
   (if-let [rel (resolve-resource (some-> request :path-params :path))]
     {::yres/status  200
-     ::yres/headers {"content-type" (content-type-for rel)}
+     ::yres/headers {"content-type"  (content-type-for rel)
+                     ;; The panel ships unversioned filenames and changes
+                     ;; often: never let browsers cache it, or the sidebar
+                     ;; keeps pointing at screens that no longer exist.
+                     "cache-control" "no-store"}
      ::yres/body    (slurp (io/resource (str resource-prefix rel)) :encoding "UTF-8")}
     {::yres/status  404
      ::yres/headers {"content-type" "text/plain"}
