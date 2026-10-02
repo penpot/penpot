@@ -192,6 +192,25 @@ body {
   white-space: nowrap;
 }
 
+.admin-cell-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-cell-name {
+  width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--admin-muted);
+}
+
+.admin-cell-status {
+  width: 110px;
+  white-space: nowrap;
+}
+
 .admin-badge {
   display: inline-block;
   font-size: 0.75rem;
@@ -219,6 +238,26 @@ body {
 .admin-badge-source-legacy {
   background: #3a3a3a;
   color: var(--admin-muted);
+}
+
+.admin-badge-status-blocked {
+  background: #5c2b2b;
+  color: #ee9a9a;
+}
+
+.admin-badge-status-inactive {
+  background: #3a3a3a;
+  color: var(--admin-muted);
+}
+
+.admin-badge-status-demo {
+  background: #1d3a5f;
+  color: #7fb3e8;
+}
+
+.admin-badge-status-active {
+  background: #274d2d;
+  color: #9bda9f;
 }
 
 .admin-pager {

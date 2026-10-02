@@ -11,10 +11,12 @@ import { renderSidebar } from "./components/sidebar.js";
 import { dashboardPage } from "./pages/dashboard.js";
 import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
+import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
   { query: "", label: "Dashboard" },
   { query: "?screen=error-reports", label: "Error reports" },
+  { query: "?screen=users", label: "Users" },
 ];
 
 let sessionStatus = "anonymous";
@@ -63,6 +65,8 @@ function renderAuthed(root) {
     errorReportsPage(content, { onNavigate: navigate });
   } else if (params.get("screen") === "error-report" && params.get("id")) {
     errorDetailPage(content, { id: params.get("id"), onNavigate: navigate });
+  } else if (params.get("screen") === "users") {
+    usersPage(content, { onNavigate: navigate });
   } else {
     dashboardPage(content, { onNavigate: navigate });
   }
