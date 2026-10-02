@@ -617,6 +617,14 @@
                              :section [:workspace]
                              :fn #(st/emit! (toggle-layout-flag :snap-ruler-guides))}
 
+   :export-selection    {:tooltip (ds/alt (ds/meta-shift "E"))
+                         :label (fn [] (tr "shortcuts.export-selection"))
+                         :command (ds/c-mod "alt+shift+e")
+                         :subsections [:basics :main-menu]
+                         :section [:workspace :basics]
+                         :fn #(st/emit!
+                               (de/export-selected-shapes {:origin "workspace:shortcuts"}))}
+
    :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
                              :label (fn [] (tr "shortcuts.toggle-snap-guides"))
                              ;;https://github.com/ccampbell/mousetrap/issues/85
