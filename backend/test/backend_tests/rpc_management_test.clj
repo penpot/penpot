@@ -54,9 +54,9 @@
                            :size 7}}
         config  (assoc cf/config :public-uri "https://example.com/penpot")
         out1    (binding [cf/config config]
-                  (th/management-command! params))
+                  (th/multipart-management-command! params))
         out2    (binding [cf/config config]
-                  (th/management-command! params))]
+                  (th/multipart-management-command! params))]
     (t/is (nil? (:error out1)))
     (t/is (nil? (:error out2)))
     (t/is (str/starts-with? (str (get-in out1 [:result :uri]))
@@ -75,7 +75,7 @@
                            :path path
                            :mtype "text/html"
                            :size 27}}
-        out     (th/management-command! params)]
+        out     (th/multipart-management-command! params)]
     (t/is (some? (:error out)))
     (t/is (= :validation (th/ex-type (:error out))))
     (t/is (= :media-type-not-allowed (th/ex-code (:error out))))))
@@ -666,3 +666,16 @@
       (t/is (vector? result))
       (t/is (= 1 (count result)))
       (t/is (= "test" (:id (first result)))))))
+
+(t/deftest upload-tempfile-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (let [profile (th/create-profile* 1 {:is-active true})
+        params  {::th/type :upload-tempfile
+                 ::rpc/profile-id (:id profile)
+                 :content {:filename "evil.png"
+                           :path (fs/path "/etc/passwd")
+                           :mtype "image/png"
+                           :size 123}}
+        out     (th/management-command! params)]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))

@@ -908,7 +908,7 @@
                   :name "testfile"
                   :content mfile}
 
-          out      (th/command! params)]
+          out      (th/multipart-command! params)]
       (t/is (nil? (:error out))))
 
     (let [params {::th/type :delete-team
@@ -1438,4 +1438,18 @@
                               :id sent-id})]
     (t/is (th/ex-info? (:error out)))
     (t/is (th/ex-of-type? (:error out) :validation))
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
+
+(t/deftest update-team-photo-rejects-forged-file
+  ;; Same transit-forgery vector as profile photos: without a multipart
+  ;; request the wrapper must reject it at params validation.
+  (let [prof (th/create-profile* 1)
+        team (th/create-team* 1 {:profile-id (:id prof)})
+        out  (th/command! {::th/type :update-team-photo
+                           ::rpc/profile-id (:id prof)
+                           :team-id (:id team)
+                           :file {:filename "evil.jpg"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")
+                                  :mtype "image/jpeg"}})]
     (t/is (th/ex-of-code? (:error out) :params-validation))))

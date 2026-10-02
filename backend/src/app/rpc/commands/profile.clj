@@ -307,6 +307,7 @@
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
    ::sm/params schema:update-profile-photo
+   ::rpc/multipart-only-params [:file]
    ::sm/result :nil}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
