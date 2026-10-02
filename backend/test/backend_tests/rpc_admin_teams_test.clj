@@ -158,6 +158,14 @@
       (t/is (not= (-> page1 :items first :id)
                   (-> page2 :items first :id))))))
 
+(t/deftest list-finds-by-exact-id
+  (let [admin (th/create-profile* 1)
+        team  (th/create-team* 1 {:profile-id (:id admin)})
+        _     (th/create-team* 2 {:profile-id (:id admin)})
+        run   (as-superuser admin)
+        out   (run "get-teams" {:search (str (:id team))})]
+    (t/is (= [(:id team)] (mapv :id (:items out))))))
+
 ;; ----------------------------------------------------------------
 ;; Detail
 ;; ----------------------------------------------------------------
@@ -284,3 +292,86 @@
     (t/is (= :team-not-found
              (caught-code #(run "disable-team-feature"
                                 {:team-id (:id team) :feature "text-editor/v2"}))))))
+
+;; ----------------------------------------------------------------
+;; Member roles
+;; ----------------------------------------------------------------
+
+(defn- role-of
+  [member]
+  (cond (:is-owner member) :owner
+        (:is-admin member) :admin
+        (:can-edit member) :editor
+        :else              :viewer))
+
+(defn- roles-by-id
+  [run team-id]
+  (into {}
+        (map (juxt :id role-of))
+        (run "get-team-members" {:team-id team-id})))
+
+(defn- create-team-with-editor!
+  []
+  (let [admin  (th/create-profile* 1)
+        editor (th/create-profile* 2)
+        team   (th/create-team* 1 {:profile-id (:id admin)})
+        _      (th/create-team-role* {:team-id (:id team)
+                                      :profile-id (:id editor)
+                                      :role :editor})]
+    {:admin admin :editor editor :team team}))
+
+(t/deftest update-role-guard
+  (let [profile (th/create-profile* 1)
+        run     (as-session #{} profile)]
+    (t/is (= :superuser-required
+             (caught-code #(run "update-team-member-role"
+                                {:team-id (uuid/next)
+                                 :member-id (uuid/next)
+                                 :role "admin"}))))))
+
+(t/deftest update-role-promotes-and-demotes
+  (let [{:keys [admin editor team]} (create-team-with-editor!)
+        run (as-superuser admin)]
+    (t/is (= :editor (get (roles-by-id run (:id team)) (:id editor))))
+    (run "update-team-member-role"
+         {:team-id (:id team) :member-id (:id editor) :role "admin"})
+    (t/is (= :admin (get (roles-by-id run (:id team)) (:id editor))))
+    (run "update-team-member-role"
+         {:team-id (:id team) :member-id (:id editor) :role "viewer"})
+    (t/is (= :viewer (get (roles-by-id run (:id team)) (:id editor))))))
+
+(t/deftest update-role-promote-to-owner-transfers-seat
+  (let [{:keys [admin editor team]} (create-team-with-editor!)
+        run   (as-superuser admin)
+        _     (run "update-team-member-role"
+                   {:team-id (:id team) :member-id (:id editor) :role "owner"})
+        roles (roles-by-id run (:id team))]
+    (t/is (= :owner (get roles (:id editor))))
+    (t/is (= :admin (get roles (:id admin))))))
+
+(t/deftest update-role-cannot-demote-owner-directly
+  (let [{:keys [admin team]} (create-team-with-editor!)
+        run (as-superuser admin)]
+    (t/is (= :cant-change-role-to-owner
+             (caught-code #(run "update-team-member-role"
+                                {:team-id (:id team)
+                                 :member-id (:id admin)
+                                 :role "admin"}))))))
+
+(t/deftest update-role-unknown-member-gives-not-found
+  (let [{:keys [admin team]} (create-team-with-editor!)
+        run (as-superuser admin)]
+    (t/is (= :member-does-not-exist
+             (caught-code #(run "update-team-member-role"
+                                {:team-id (:id team)
+                                 :member-id (uuid/next)
+                                 :role "admin"}))))))
+
+(t/deftest update-role-unknown-team-gives-not-found
+  (let [{:keys [admin editor]} (create-team-with-editor!)
+        run (as-superuser admin)]
+    (t/is (= :team-not-found
+             (caught-code #(run "update-team-member-role"
+                                {:team-id (uuid/next)
+                                 :member-id (:id editor)
+                                 :role "admin"}))))))

@@ -15,9 +15,11 @@
    [app.common.features :as cfeat]
    [app.common.schema :as-alias sm]
    [app.common.time :as ct]
+   [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]
@@ -52,10 +54,15 @@
 (defn- build-teams-list-query
   [{:keys [since since-id search limit]
     :or {limit teams-default-limit}}]
-  (let [clauses    (keep identity
+  (let [search-id (when (and (string? search) (not (str/blank? search)))
+                    (uuid/parse* search))
+        clauses    (keep identity
                          [(when (and (string? search) (not (str/blank? search)))
-                            {:where "t.name ILIKE ?"
-                             :params [(str "%" search "%")]})
+                            (if search-id
+                              {:where "(t.name ILIKE ? OR t.id = ?)"
+                               :params [(str "%" search "%") search-id]}
+                              {:where "t.name ILIKE ?"
+                               :params [(str "%" search "%")]}))
                           (when since
                             {:where "(t.created_at, t.id) < (?::timestamptz, ?::uuid)"
                              :params [since (or since-id uuid/zero)]})])
@@ -224,3 +231,51 @@
    ::sm/result schema:team-feature-result}
   [cfg {:keys [team-id feature]}]
   (set-team-feature! cfg team-id feature false))
+
+;; --- Mutation: Team Member Role
+
+(def schema:update-team-member-role-params
+  [:map {:title "update-team-member-role"}
+   [:team-id ::sm/uuid]
+   [:member-id ::sm/uuid]
+   [:role types.team/schema:role]])
+
+(sv/defmethod ::update-team-member-role
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:update-team-member-role-params}
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [team-id member-id role]}]
+  (let [role    (keyword role)
+        _       (get-live-team cfg team-id)
+        members (db/exec! cfg [sql:team-members team-id])
+        member  (d/seek #(= member-id (:id %)) members)]
+    (when-not member
+      (ex/raise :type :not-found
+                :code :member-does-not-exist))
+
+    ;; Ownership moves by promoting someone else: the current
+    ;; owner keeps the seat until then, so it is never vacant.
+    (when (:is-owner member)
+      (ex/raise :type :validation
+                :code :cant-change-role-to-owner))
+
+    (mbus/pub! msgbus
+               :topic member-id
+               :message {:type :team-role-change
+                         :topic member-id
+                         :team-id team-id
+                         :role role})
+
+    ;; Only allow single owner on team.
+    (when (= role :owner)
+      (db/update! conn :team-profile-rel
+                  {:is-owner false}
+                  {:team-id team-id
+                   :is-owner true}))
+
+    (db/update! conn :team-profile-rel
+                (get types.team/permissions-for-role role)
+                {:team-id team-id
+                 :profile-id member-id})
+    nil))

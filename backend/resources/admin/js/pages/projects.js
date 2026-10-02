@@ -15,10 +15,10 @@ import { readQuery, writeQuery } from "../url.js";
 const PAGE_SIZE = 25;
 
 const COLUMNS = [
-  { key: "name", label: "Name", class: "admin-cell-name" },
-  { key: "teamName", label: "Team", class: "admin-cell-left" },
+  { key: "name", label: "Name", class: "admin-cell-name admin-cell-fill" },
+  { key: "teamName", label: "Team", class: "admin-cell-team" },
   { key: "totalFiles", label: "Files", class: "admin-cell-count" },
-  { key: "modifiedAt", label: "Modified", class: "admin-cell-date admin-cell-right" },
+  { key: "modifiedAt", label: "Modified", class: "admin-cell-date" },
 ];
 
 function formatDate(iso) {
@@ -40,6 +40,7 @@ export function projectsPage(root, { onNavigate }) {
   };
 
   root.appendChild(renderHeader("Projects"));
+  const titleEl = root.querySelector("h1");
 
   const controls = document.createElement("div");
   controls.className = "admin-controls";
@@ -74,6 +75,8 @@ export function projectsPage(root, { onNavigate }) {
   clearButton.addEventListener("click", () => {
     searchInput.value = "";
     state.search = "";
+    state.teamId = null;
+    state.teamName = null;
     state.nextSince = null;
     state.nextId = null;
     load();
@@ -81,27 +84,8 @@ export function projectsPage(root, { onNavigate }) {
   controls.appendChild(clearButton);
   root.appendChild(controls);
 
-  const teamFilter = document.createElement("div");
-  teamFilter.className = "admin-controls";
-  teamFilter.hidden = true;
-  const teamChip = document.createElement("span");
-  teamChip.className = "admin-count";
-  teamFilter.appendChild(teamChip);
-  const teamClear = document.createElement("button");
-  teamClear.className = "admin-button admin-button-ghost";
-  teamClear.textContent = "Show all teams";
-  teamClear.addEventListener("click", () => {
-    state.teamId = null;
-    state.teamName = null;
-    state.nextSince = null;
-    state.nextId = null;
-    load();
-  });
-  teamFilter.appendChild(teamClear);
-  root.appendChild(teamFilter);
-
   const countLine = document.createElement("p");
-  countLine.className = "admin-count";
+  countLine.className = "admin-count admin-count-spaced";
   root.appendChild(countLine);
 
   const tableWrap = document.createElement("div");
@@ -116,6 +100,22 @@ export function projectsPage(root, { onNavigate }) {
   pager.appendChild(nextButton);
   root.appendChild(pager);
 
+  function refreshTitle() {
+    titleEl.replaceChildren();
+    if (state.teamId !== null) {
+      const crumbButton = document.createElement("button");
+      crumbButton.className = "admin-crumb";
+      crumbButton.textContent = "Team: " + (state.teamName ?? state.teamId);
+      crumbButton.setAttribute(
+        "aria-label", "Back to Team: " + (state.teamName ?? state.teamId));
+      crumbButton.addEventListener("click", () =>
+        onNavigate("?screen=team&id=" + encodeURIComponent(state.teamId)));
+      titleEl.appendChild(crumbButton);
+      titleEl.append(" > ");
+    }
+    titleEl.append("Projects");
+  }
+
   function paint() {
     tableWrap.replaceChildren();
     if (state.loading && !state.loadedOnce) {
@@ -128,24 +128,26 @@ export function projectsPage(root, { onNavigate }) {
         (state.nextSince === null ? " (all)" : " — more available");
     }
 
-    teamFilter.hidden = state.teamId === null;
-    if (state.teamId !== null) {
-      teamChip.textContent = "Team filter: " + (state.teamName ?? state.teamId);
-    }
+    refreshTitle();
 
-    const rows = state.items.map((item) => ({
-      ...item,
-      totalFiles: String(item.totalFiles ?? 0),
-      modifiedAt: formatDate(item.modifiedAt),
-    }));
-    const table = renderTable(COLUMNS, rows);
-    const bodyRows = table.querySelector("tbody").rows;
-    for (let i = 0; i < bodyRows.length; i++) {
-      const row = bodyRows[i];
-      row.addEventListener("click", () =>
-        onNavigate("?screen=project&id=" + encodeURIComponent(state.items[i].id)));
+    if (state.items.length > 0) {
+      const rows = state.items.map((item) => ({
+        ...item,
+        totalFiles: String(item.totalFiles ?? 0),
+        modifiedAt: formatDate(item.modifiedAt),
+      }));
+      const table = renderTable(COLUMNS, rows);
+      // Pack the columns: name eats the slack, the rest shrink to
+      // their content (see `.admin-table-auto` in admin.css).
+      table.classList.add("admin-table-auto");
+      const bodyRows = table.querySelector("tbody").rows;
+      for (let i = 0; i < bodyRows.length; i++) {
+        const row = bodyRows[i];
+        row.addEventListener("click", () =>
+          onNavigate("?screen=project&id=" + encodeURIComponent(state.items[i].id)));
+      }
+      tableWrap.appendChild(table);
     }
-    tableWrap.appendChild(table);
     nextButton.disabled = state.loading || state.nextSince === null;
     searchButton.disabled = state.loading;
     clearButton.disabled = state.loading;

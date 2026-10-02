@@ -16,10 +16,10 @@ import { readQuery, writeQuery } from "../url.js";
 const PAGE_SIZE = 25;
 
 const COLUMNS = [
-  { key: "name", label: "Name", class: "admin-cell-name" },
-  { key: "projectName", label: "Project", class: "admin-cell-left" },
-  { key: "teamName", label: "Team", class: "admin-cell-left" },
-  { key: "modifiedAt", label: "Modified", class: "admin-cell-date admin-cell-right" },
+  { key: "name", label: "Name", class: "admin-cell-name admin-cell-fill" },
+  { key: "projectName", label: "Project", class: "admin-cell-project" },
+  { key: "teamName", label: "Team", class: "admin-cell-team" },
+  { key: "modifiedAt", label: "Modified", class: "admin-cell-date" },
 ];
 
 function formatDate(iso) {
@@ -43,6 +43,7 @@ export function filesPage(root, { onNavigate }) {
   };
 
   root.appendChild(renderHeader("Files"));
+  const titleEl = root.querySelector("h1");
 
   const controls = document.createElement("div");
   controls.className = "admin-controls";
@@ -77,6 +78,10 @@ export function filesPage(root, { onNavigate }) {
   clearButton.addEventListener("click", () => {
     searchInput.value = "";
     state.search = "";
+    state.teamId = null;
+    state.teamName = null;
+    state.projectId = null;
+    state.projectName = null;
     state.nextSince = null;
     state.nextId = null;
     load();
@@ -101,46 +106,8 @@ export function filesPage(root, { onNavigate }) {
   controls.appendChild(importLabel);
   root.appendChild(controls);
 
-  const teamFilter = document.createElement("div");
-  teamFilter.className = "admin-controls";
-  teamFilter.hidden = true;
-  const teamChip = document.createElement("span");
-  teamChip.className = "admin-count";
-  teamFilter.appendChild(teamChip);
-  const teamClear = document.createElement("button");
-  teamClear.className = "admin-button admin-button-ghost";
-  teamClear.textContent = "Show all teams";
-  teamClear.addEventListener("click", () => {
-    state.teamId = null;
-    state.teamName = null;
-    state.nextSince = null;
-    state.nextId = null;
-    load();
-  });
-  teamFilter.appendChild(teamClear);
-  root.appendChild(teamFilter);
-
-  const projectFilter = document.createElement("div");
-  projectFilter.className = "admin-controls";
-  projectFilter.hidden = true;
-  const projectChip = document.createElement("span");
-  projectChip.className = "admin-count";
-  projectFilter.appendChild(projectChip);
-  const projectClear = document.createElement("button");
-  projectClear.className = "admin-button admin-button-ghost";
-  projectClear.textContent = "Show all projects";
-  projectClear.addEventListener("click", () => {
-    state.projectId = null;
-    state.projectName = null;
-    state.nextSince = null;
-    state.nextId = null;
-    load();
-  });
-  projectFilter.appendChild(projectClear);
-  root.appendChild(projectFilter);
-
   const countLine = document.createElement("p");
-  countLine.className = "admin-count";
+  countLine.className = "admin-count admin-count-spaced";
   root.appendChild(countLine);
 
   const tableWrap = document.createElement("div");
@@ -155,6 +122,39 @@ export function filesPage(root, { onNavigate }) {
   pager.appendChild(nextButton);
   root.appendChild(pager);
 
+  function refreshTitle() {
+    titleEl.replaceChildren();
+    const crumbs = [];
+    if (state.teamId !== null) {
+      crumbs.push({
+        label: "Team: " + (state.teamName ?? state.teamId),
+        query: "?screen=team&id=" + encodeURIComponent(state.teamId),
+      });
+    }
+    if (state.projectId !== null) {
+      crumbs.push({
+        label: "Project: " + (state.projectName ?? state.projectId),
+        query: "?screen=project&id=" + encodeURIComponent(state.projectId),
+      });
+    }
+    crumbs.push({ label: "Files" });
+    crumbs.forEach((crumb, index) => {
+      if (index > 0) {
+        titleEl.append(" > ");
+      }
+      if (crumb.query) {
+        const crumbButton = document.createElement("button");
+        crumbButton.className = "admin-crumb";
+        crumbButton.textContent = crumb.label;
+        crumbButton.setAttribute("aria-label", "Back to " + crumb.label);
+        crumbButton.addEventListener("click", () => onNavigate(crumb.query));
+        titleEl.appendChild(crumbButton);
+      } else {
+        titleEl.append(crumb.label);
+      }
+    });
+  }
+
   function paint() {
     tableWrap.replaceChildren();
     if (state.loading && !state.loadedOnce) {
@@ -167,28 +167,25 @@ export function filesPage(root, { onNavigate }) {
         (state.nextSince === null ? " (all)" : " — more available");
     }
 
-    teamFilter.hidden = state.teamId === null;
-    if (state.teamId !== null) {
-      teamChip.textContent = "Team filter: " + (state.teamName ?? state.teamId);
-    }
+    refreshTitle();
 
-    projectFilter.hidden = state.projectId === null;
-    if (state.projectId !== null) {
-      projectChip.textContent = "Project filter: " + (state.projectName ?? state.projectId);
+    if (state.items.length > 0) {
+      const rows = state.items.map((item) => ({
+        ...item,
+        modifiedAt: formatDate(item.modifiedAt),
+      }));
+      const table = renderTable(COLUMNS, rows);
+      // Pack the columns: name eats the slack, the rest shrink to
+      // their content (see `.admin-table-auto` in admin.css).
+      table.classList.add("admin-table-auto");
+      const bodyRows = table.querySelector("tbody").rows;
+      for (let i = 0; i < bodyRows.length; i++) {
+        const row = bodyRows[i];
+        row.addEventListener("click", () =>
+          onNavigate("?screen=file&id=" + encodeURIComponent(state.items[i].id)));
+      }
+      tableWrap.appendChild(table);
     }
-
-    const rows = state.items.map((item) => ({
-      ...item,
-      modifiedAt: formatDate(item.modifiedAt),
-    }));
-    const table = renderTable(COLUMNS, rows);
-    const bodyRows = table.querySelector("tbody").rows;
-    for (let i = 0; i < bodyRows.length; i++) {
-      const row = bodyRows[i];
-      row.addEventListener("click", () =>
-        onNavigate("?screen=file&id=" + encodeURIComponent(state.items[i].id)));
-    }
-    tableWrap.appendChild(table);
     nextButton.disabled = state.loading || state.nextSince === null;
     searchButton.disabled = state.loading;
     clearButton.disabled = state.loading;

@@ -54,8 +54,8 @@ export function teamsPage(root, { onNavigate }) {
   const searchInput = document.createElement("input");
   searchInput.className = "admin-input";
   searchInput.type = "search";
-  searchInput.placeholder = "Search by name…";
-  searchInput.setAttribute("aria-label", "Search by team name");
+  searchInput.placeholder = "Search by name or id…";
+  searchInput.setAttribute("aria-label", "Search by team name or id");
   searchInput.value = state.search;
   searchInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {

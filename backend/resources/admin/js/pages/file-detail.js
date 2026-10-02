@@ -89,7 +89,14 @@ export function fileDetailPage(root, { id, onNavigate }) {
     const teamTerm = document.createElement("dt");
     teamTerm.textContent = "Team";
     const teamDesc = document.createElement("dd");
-    teamDesc.textContent = String(file.teamName ?? "—");
+    const teamLink = document.createElement("a");
+    teamLink.textContent = String(file.teamName ?? file.teamId ?? "—");
+    teamLink.href = "?screen=team&id=" + encodeURIComponent(file.teamId);
+    teamLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      onNavigate("?screen=team&id=" + encodeURIComponent(file.teamId));
+    });
+    teamDesc.appendChild(teamLink);
     list.appendChild(teamTerm);
     list.appendChild(teamDesc);
     return list;

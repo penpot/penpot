@@ -29,6 +29,21 @@ body {
   padding: var(--admin-space-lg);
 }
 
+/* Links keep readable tones on the dark background in both
+states: unvisited light blue (7.6:1 on the background), visited
+light lavender (8.1:1), so the two are told apart without going
+dark. Both clear WCAG AAA for normal text. */
+a {
+  color: #7fb3e8;
+}
+a:visited {
+  color: #c4a8ee;
+}
+a:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
 .admin-layout {
   display: flex;
   gap: var(--admin-space-lg);
@@ -71,11 +86,32 @@ body {
   margin: 0 0 var(--admin-space-md);
 }
 
+/* Title crumb: clickable back to the team or project page, but
+wearing plain title text instead of link styling. */
+.admin-crumb {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.admin-crumb:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
 .admin-controls {
   display: flex;
   gap: var(--admin-space-sm);
   margin-bottom: var(--admin-space-sm);
   flex-wrap: wrap;
+}
+
+/* `hidden` must win over the flex above: an empty filter bar
+takes no space at all. */
+.admin-controls[hidden] {
+  display: none;
 }
 
 .admin-input,
@@ -200,6 +236,12 @@ body {
   margin: var(--admin-space-sm) 0 var(--admin-space-md);
 }
 
+/* Count line under a filter bar: extra air above it so it does
+not stick to the controls. */
+.admin-count-spaced {
+  margin-top: var(--admin-space-lg);
+}
+
 .admin-table {
   border-collapse: collapse;
   width: 100%;
@@ -235,7 +277,7 @@ body {
 }
 
 .admin-cell-date {
-  width: 185px;
+  width: 215px;
   white-space: nowrap;
   font-size: 0.8125rem;
   color: var(--admin-muted);
@@ -291,6 +333,36 @@ body {
 
 .admin-table .admin-cell-left {
   text-align: left;
+}
+
+.admin-table .admin-cell-project,
+.admin-table .admin-cell-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* Auto-layout tables: columns shrink to their content (capped
+with ellipsis) instead of spreading across the table. The column
+carrying `.admin-cell-fill` eats the leftover space. */
+.admin-table-auto {
+  table-layout: auto;
+}
+.admin-table-auto .admin-cell-name {
+  min-width: 220px;
+  max-width: 280px;
+}
+.admin-table-auto .admin-cell-project,
+.admin-table-auto .admin-cell-team {
+  max-width: 260px;
+}
+.admin-table-auto .admin-cell-date {
+  width: auto;
+}
+.admin-table-auto .admin-cell-fill {
+  width: 100%;
+  max-width: none;
 }
 
 .admin-table .admin-cell-center {
