@@ -76,12 +76,71 @@
   (contains? cf/flags :wasm-shapes-batch))
 
 ;; Prefetched `_set_shapes_batch` bytes for the next cold load.
-;; Shape: {:file-id uuid :page-id uuid :promise Promise<Uint8Array|nil>}
+;; Shape: {:file-id uuid :page-id uuid :promise Promise :u8 Uint8Array?
+;;         :preview-painted? bool}
 (defonce ^:private cold-load-batch* (atom nil))
+
+(declare paint-after-structural-ingest!)
+(declare stop-progressive-render!)
 
 (defn clear-cold-load-batch!
   []
   (reset! cold-load-batch* nil))
+
+(defn- batch-shape-count
+  "Shape count is the leading LE u32 of an encode-shapes-batch buffer."
+  [u8]
+  (when (and u8 (>= (.-byteLength ^js u8) 4))
+    (let [view (js/DataView. (.-buffer ^js u8)
+                             (.-byteOffset ^js u8)
+                             (.-byteLength ^js u8))]
+      (.getUint32 view 0 true))))
+
+(defn- store-batch-bytes!
+  [file-id page-id u8]
+  (swap! cold-load-batch*
+         (fn [entry]
+           (if (and entry
+                    (= file-id (:file-id entry))
+                    (= page-id (:page-id entry)))
+             (assoc entry :u8 u8)
+             entry))))
+
+(defn try-early-structural-paint!
+  "Flush + sync-paint a prefetched server batch without CLJS shape maps.
+   Fires only when an early canvas is already live AND the batch arrived
+   before get-file unmounted it. Never blocks get-file or workspace mount.
+   Does not consume the batch — set-objects re-ingests on the real viewport."
+  ([]
+   (try-early-structural-paint! nil))
+  ([{:keys [zoom vbox background]}]
+   (when (and (wasm-shapes-batch-enabled?) (wasm/live?))
+     (let [{:keys [u8 preview-painted?] :as entry} @cold-load-batch*
+           n (batch-shape-count u8)]
+       (when (and (some? entry)
+                  (some? u8)
+                  (number? n)
+                  (pos? n)
+                  (not preview-painted?))
+         (let [zoom (or zoom 1)
+               vbox (or vbox {:x 0 :y 0 :width 1920 :height 1080})
+               rgba (when background (sr-clr/hex->u32argb background 1))]
+           (stop-progressive-render!)
+           (when rgba
+             (h/call wasm/internal-module "_set_canvas_background" rgba))
+           (h/call wasm/internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+           (h/call wasm/internal-module "_init_shapes_pool" n)
+           (upload/flush-shapes-batch-bytes! u8)
+           (paint-after-structural-ingest! nil)
+           (swap! cold-load-batch*
+                  (fn [e]
+                    (cond-> e
+                      (and e (= (:file-id e) (:file-id entry))
+                           (= (:page-id e) (:page-id entry)))
+                      (assoc :preview-painted? true))))
+           (ug/dispatch! (ug/event "penpot:wasm:render"))
+           (js/console.info "[wasm-batch] early structural paint" n "shapes")
+           true))))))
 
 (defn prefetch-cold-load-batch!
   "Start downloading the server-encoded shapes batch for `file-id`/`page-id`.
@@ -91,7 +150,7 @@
     (let [t0 (js/performance.now)
           prom
           (p/create
-           (fn [resolve reject]
+           (fn [resolve _reject]
              (->> (rp/cmd! :get-file-wasm-shapes-batch
                            {:file-id file-id
                             :page-id page-id})
@@ -104,7 +163,9 @@
                         "[wasm-batch] download"
                         (.-byteLength u8) "bytes in"
                         (.toFixed ms 1) "ms")
-                       (resolve u8)))
+                       (store-batch-bytes! file-id page-id u8)
+                       (resolve u8)
+                       (try-early-structural-paint!)))
                    (fn [err]
                      (js/console.warn "[wasm-batch] download failed" err)
                      (resolve nil))))))]

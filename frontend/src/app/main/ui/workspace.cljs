@@ -44,11 +44,13 @@
    [app.main.ui.workspace.tokens.themes.create-modal]
    [app.main.ui.workspace.viewport :refer [viewport*]]
    [app.main.ui.workspace.webgl-unavailable-modal]
+   [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [goog.events :as events]
    [okulary.core :as l]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (mf/defc workspace-content*
@@ -193,6 +195,53 @@
                               :layout layout}]
       [:> workspace-loader*])))
 
+(mf/defc early-wasm-batch-canvas*
+  "Optional preview canvas while get-file is still in flight. If the batch
+   arrives first, paints geometry immediately. Unmounts as soon as the file
+   loads — never delays workspace-inner."
+  {::mf/private true}
+  [{:keys [background]}]
+  (let [canvas-ref (mf/use-ref nil)]
+    (mf/with-effect [background]
+      (when-let [canvas (mf/ref-val canvas-ref)]
+        (let [unmounted?  (volatile! false)
+              interval-id (volatile! nil)
+              try-paint
+              (fn []
+                (when-not @unmounted?
+                  (when (wasm.api/try-early-structural-paint!
+                         {:background background})
+                    (when-let [id @interval-id]
+                      (js/clearInterval id)
+                      (vreset! interval-id nil)))))]
+          (->> @wasm.api/module
+               (p/fmap
+                (fn [ready?]
+                  (when (and ready? (not @unmounted?))
+                    (when (try
+                            (wasm.api/init-canvas-context canvas)
+                            (catch :default e
+                              (js/console.error
+                               "early-wasm-batch-canvas init failed" e)
+                              false))
+                      (wasm.api/resize-canvas! canvas)
+                      (try-paint)
+                      (vreset! interval-id (js/setInterval try-paint 50)))))))
+          (fn []
+            (vreset! unmounted? true)
+            (when-let [id @interval-id] (js/clearInterval id))
+            (wasm.api/clear-canvas)))))
+
+    [:canvas {:id "render-early-batch"
+              :data-testid "canvas-wasm-early-batch"
+              :ref canvas-ref
+              :style {:position "absolute"
+                      :inset 0
+                      :width "100%"
+                      :height "100%"
+                      :z-index 2
+                      :pointer-events "none"}}]))
+
 (mf/defc workspace*
   {::mf/wrap [mf/memo]}
   [{:keys [team-id project-id file-id page-id layout-name]}]
@@ -219,10 +268,19 @@
         design-tokens?   (features/use-feature "design-tokens/v1")
 
         wasm-renderer-enabled? (features/use-feature "render-wasm/v1")
+        wasm-batch-enabled?    (wasm.api/wasm-shapes-batch-enabled?)
 
         first-frame-rendered?  (mf/use-state false)
 
         background-color (:background-color wglobal)]
+
+    (mf/with-effect []
+      (let [handle-wasm-render
+            (fn [_]
+              (reset! first-frame-rendered? true))
+            listener-key (events/listen js/document "penpot:wasm:render" handle-wasm-render)]
+        (fn []
+          (events/unlistenByKey listener-key))))
 
     (mf/with-effect []
       (st/emit! (dps/initialize-persistence)
@@ -252,14 +310,6 @@
     (mf/with-effect [file-id page-id]
       (reset! first-frame-rendered? false))
 
-    (mf/with-effect []
-      (let [handle-wasm-render
-            (fn [_]
-              (reset! first-frame-rendered? true))
-            listener-key (events/listen js/document "penpot:wasm:render" handle-wasm-render)]
-        (fn []
-          (events/unlistenByKey listener-key))))
-
     [:> (mf/provider ctx/current-project-id) {:value project-id}
      [:> (mf/provider ctx/current-file-id) {:value file-id}
       [:> (mf/provider ctx/current-page-id) {:value page-id}
@@ -272,6 +322,12 @@
                             :touch-action "none"
                             :position "relative"}}
           [:> context-menu*]
+          ;; Parallel preview only: never blocks get-file / workspace-inner.
+          (when (and wasm-renderer-enabled?
+                     wasm-batch-enabled?
+                     (uuid? page-id)
+                     (not file-loaded?))
+            [:> early-wasm-batch-canvas* {:background background-color}])
           (when (and file-loaded? page-id)
             [:> workspace-inner*
              {:page-id page-id
@@ -279,12 +335,10 @@
               :file file
               :wglobal wglobal
               :layout layout}])
-          (when (or (not (and file-loaded? page-id))
-                    ;; in wasm renderer, extend the pixel loader until the first frame is rendered
-                    ;; but do not apply it when switching pages
-                    (and wasm-renderer-enabled?
-                         (not file-loaded?)
-                         (not @first-frame-rendered?)))
+          (when (or (not page-id)
+                    (and (not file-loaded?)
+                         (or (not wasm-renderer-enabled?)
+                             (not @first-frame-rendered?))))
             [:> workspace-loader*])]]]]]]))
 
 (mf/defc workspace-page*
