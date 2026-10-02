@@ -11,14 +11,14 @@
   },
   "type": "module",
   "devDependencies": {
-    "@playwright/mcp": "^0.0.78",
-    "@playwright/test": "^1.62.0",
-    "@types/node": "^26.1.2",
+    "@playwright/mcp": "^0.0.83",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
     "commander": "^15.0.0",
-    "dotenv": "^17.4.2",
-    "esbuild": "^0.28.1",
-    "mdts": "^0.20.6",
+    "dotenv": "^18.0.4",
+    "esbuild": "^0.28.2",
+    "mdts": "^0.21.0",
     "nrepl-client": "^0.3.0",
-    "playwright": "1.62.1"
+    "playwright": "^1.63.0"
   }
 }
