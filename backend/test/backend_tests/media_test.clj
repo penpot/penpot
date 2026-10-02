@@ -188,6 +188,21 @@
       (t/is (not (clojure.string/includes? result "alert")))
       (t/is (clojure.string/includes? result "<rect")))))
 
+(t/deftest sanitize-svg-prefixed-xlink-namespace-href
+  (t/testing "sanitize-svg removes javascript: URLs from href written with a prefix bound to the xlink namespace"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:y=\"http://www.w3.org/1999/xlink\" width=\"100\" height=\"100\"><a y:href=\"javascript:alert('xss')\"><rect width=\"50\" height=\"50\"/></a></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (not (clojure.string/includes? result "javascript:")))
+      (t/is (not (clojure.string/includes? result "alert")))
+      (t/is (clojure.string/includes? result "<a")))))
+
+(t/deftest sanitize-svg-preserved-prefixed-attrs
+  (t/testing "sanitize-svg preserves legitimate attributes written with a namespace prefix"
+    (let [svg "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\"><text xml:space=\"preserve\">hola</text></svg>"
+          result (svg/sanitize-svg svg)]
+      (t/is (clojure.string/includes? result "xml:space"))
+      (t/is (clojure.string/includes? result "hola")))))
+
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"
     (let [path (fs/create-tempfile :prefix "penpot-test-" :suffix ".jpg")]
