@@ -13,16 +13,16 @@
       - `:objects` is a Penpot page object map.
       - `:refs` is a snapshot-local lookup from custom labels to object uuids.
 
-  A scene snapshot is just static data. It is independent of
-  camera, operations, WASM buffers and renderer calls, and it never mutates after
-  upload.
+  A scene snapshot is just static data. It is independent of camera, operations,
+  WASM buffers and renderer calls, and it never mutates after upload.
 
-  Validation uses penpot's facilities, so that benchmark scenes follow editor
-  semantics. We do check reachability from the root here because neither the
-  editor validator nor file loading guarantees it.
+  In order for benchmark scenes to follow editor semantics faithfully,
+  validation uses penpot's facilities. We do perform a manual check for
+  reachability from the root here because neither the editor validator nor file
+  loading guarantees it.
 
   Authoring and scoped construction are ticket17; containers ticket18/19;
-  case declarations ticket20; saved-page loading ticket21.
+  saved-page loading ticket21.
 
   Which shape types may own children is container semantics owned by
   ticket18/19; this contract only checks hierarchy consistency."
@@ -79,12 +79,9 @@
 (defn- check-child-links!
   "Guard the reachability walk against malformed child links.
 
-  `:shapes` must be a vector when present, and every listed child that
-  exists must point back at the listing shape. This keeps each child with a
-  single parent, so the descendant walk visits a forest instead of fanning
-  out over shared children or looping on a cycle. Production validation
-  repeats these checks for reachable shapes; this one only protects our own
-  traversal order."
+   `objects` is an object map keyed by id. A `shape` can have children
+   in `:shapes`. When present, `:shapes` must be a vector, and each listed
+   child that exists must point back to the listing shape."
   [objects]
   (doseq [[id shape] objects
           :let [children (:shapes shape)]]
@@ -174,9 +171,6 @@
   Throws `ex-info` with `{:type ::invalid-snapshot :hint ...}` when the
   snapshot is invalid. Schema failures also carry `::sm/explain`.
 
-  Reachability runs before the production validator, because that walk
-  follows `:shapes` links and would not terminate on a reachable cycle.
-
   Explicit `throw`s are used instead of assertions so the checks survive
   elided assertions."
   [instance]
@@ -184,6 +178,8 @@
   (let [objects (:objects instance)]
     (check-root! instance)
     (check-object-ids! objects)
+    ;; Reachability must run before the production validator, because that walk
+    ;; follows `:shapes` links and would not terminate on a reachable cycle
     (check-reachability! objects)
     (check-referential-integrity! instance)
     (check-refs! instance))
@@ -192,12 +188,12 @@
 (defn upload-order
   "Returns the instance objects as a vector in parent-before-child order.
 
-  The root comes first and each shape's `:shapes` order is followed, using
-  the shared tree traversal. That traversal reverses children of flex
-  containers marked reverse; upload order carries no renderer semantics
-  because a shape's child list is uploaded from its own `:shapes` vector.
+  First root, then `:shapes` in order.
 
-  Assumes a validated instance: every child id exists."
+  Note that upload order carries no renderer semantics because a shape's child
+  list is uploaded from its own `:shapes` vector.
+
+  Assumes a validated instance (every child id exists)."
   [instance]
   (vec (gts/get-children-seq uuid/zero (:objects instance))))
 
