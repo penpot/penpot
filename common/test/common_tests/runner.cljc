@@ -22,6 +22,7 @@
    [common-tests.files-migrations-0026-test]
    [common-tests.files-migrations-test]
    [common-tests.files.helpers-test]
+   [common-tests.files.merge-test]
    [common-tests.files.shapes-builder-test]
    [common-tests.files.validate-test]
    [common-tests.geom-align-test]
@@ -104,6 +105,7 @@
    'common-tests.files-changes-test
    'common-tests.files-builder-test
    'common-tests.files.helpers-test
+   'common-tests.files.merge-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test

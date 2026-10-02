@@ -514,7 +514,10 @@
     :fn (mg/resource "app/migrations/sql/0155-drop-http-session-table.sql")}
 
    {:name "0156-add-storage-object-json-dedup-index"
-    :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}])
+    :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}
+
+   {:name "0157-add-file-branch-table"
+    :fn (mg/resource "app/migrations/sql/0157-add-file-branch-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

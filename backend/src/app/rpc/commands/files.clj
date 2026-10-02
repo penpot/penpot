@@ -134,6 +134,7 @@
    [:is-shared ::sm/boolean]
    [:project-id ::sm/uuid]
    [:created-at ::ct/inst]
+   [:branch-count {:optional true} [::sm/int {:min 0}]]
    [:data {:optional true} ::sm/any]])
 
 (def schema:permissions-mixin
@@ -282,7 +283,12 @@
           f.vern,
           f.is_shared,
           ft.media_id AS thumbnail_id,
-          p.team_id
+          p.team_id,
+          (select count(*)
+             from file_branch as fb
+            inner join file as bf on (bf.id = fb.file_id)
+            where fb.core_file_id = f.id
+              and bf.deleted_at is null) AS branch_count
      from file as f
      inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id
@@ -290,6 +296,7 @@
                                         and ft.deleted_at is null)
     where f.project_id = ?
       and f.deleted_at is null
+      and not exists (select 1 from file_branch as fb where fb.file_id = f.id)
     order by f.modified_at desc")
 
 (defn get-project-files
@@ -777,7 +784,12 @@
             f.is_shared,
             ft.media_id AS thumbnail_id,
             row_number() over w as row_num,
-            p.team_id
+            p.team_id,
+            (select count(*)
+               from file_branch as fb
+              inner join file as bf on (bf.id = fb.file_id)
+              where fb.core_file_id = f.id
+                and bf.deleted_at is null) AS branch_count
        from file as f
       inner join project as p on (p.id = f.project_id)
        left join file_thumbnail as ft on (ft.file_id = f.id
@@ -786,6 +798,7 @@
       where p.team_id = ?
         and p.deleted_at is null
         and f.deleted_at is null
+        and not exists (select 1 from file_branch as fb where fb.file_id = f.id)
      window w as (partition by f.project_id order by f.modified_at desc)
       order by f.modified_at desc
    )
@@ -1079,7 +1092,7 @@
   [:map {:title "delete-file"}
    [:id ::sm/uuid]])
 
-(defn- delete-file
+(defn delete-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [team (teams/get-team conn

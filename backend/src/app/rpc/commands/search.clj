@@ -50,6 +50,7 @@
     inner join projects as pr on (f.project_id = pr.id)
     where f.name ilike ('%' || ? || '%')
       and (f.deleted_at is null)
+      and not exists (select 1 from file_branch as fb where fb.file_id = f.id)
     order by f.created_at asc")
 
 (defn search-files

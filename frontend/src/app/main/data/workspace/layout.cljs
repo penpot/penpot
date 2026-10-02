@@ -20,6 +20,7 @@
     :comments
     :assets
     :document-history
+    :design-branches
     :hide-palettes
     :colorpalette
     :element-options

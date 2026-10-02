@@ -21,10 +21,11 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.exports.assets :refer [progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.workspace.branches :as branches]
    [app.main.ui.workspace.presence :refer [active-sessions*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -183,7 +184,8 @@
              (st/emit! :interrupt
                        (dw/clear-edition-mode)))
 
-           (st/emit! (-> (dwh/initialize-history)
+           (st/emit! (dw/remove-layout-flag :design-branches)
+                     (-> (dwh/initialize-history)
                          (vary-meta assoc ::ev/origin "workspace-header")))))
 
         open-share-dialog
@@ -235,6 +237,16 @@
                                :history-button true)
           :on-click toggle-history}
          deprecated-icon/history]])
+
+     (when-not ^boolean read-only?
+       [:div {:class (stl/css :history-section)}
+        [:button
+         {:title "Design branches"
+          :aria-label "Design branches"
+          :class (stl/css-case :selected (contains? layout :design-branches)
+                               :history-button true)
+          :on-click branches/toggle-panel}
+         [:> icon* {:icon-id i/merge-nodes}]]])
 
      (when display-share-button?
        [:a {:class (stl/css :viewer-btn)

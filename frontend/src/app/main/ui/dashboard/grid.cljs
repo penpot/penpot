@@ -247,10 +247,13 @@
         [:span {:class date-class
                 :title (tr "dashboard.deleted.will-be-deleted-at" time)}
          time])
-      (let [time (ct/timeago (:modified-at file))]
+      (let [time     (ct/timeago (:modified-at file))
+            branches (:branch-count file 0)]
         [:span {:class date-class
                 :title (tr "dashboard.grid.last-modified-at" time)}
-         time]))))
+         time
+         (when (pos? branches)
+           (str " · " branches (if (= 1 branches) " branch" " branches")))]))))
 
 (defn create-counter-element
   [_element file-count]

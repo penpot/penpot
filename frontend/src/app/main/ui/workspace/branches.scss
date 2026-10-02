@@ -1,0 +1,207 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+
+.panel {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--color-foreground-secondary);
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-foreground-secondary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-xs) var(--sp-s) var(--sp-xs) var(--sp-l);
+  color: var(--color-foreground-primary);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.content {
+  display: grid;
+  gap: var(--sp-l);
+  padding: var(--sp-s);
+  overflow-y: auto;
+}
+
+.section {
+  display: grid;
+  gap: var(--sp-s);
+
+  h3,
+  p {
+    margin: 0;
+    color: var(--color-foreground-secondary);
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  width: 100%;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-4;
+  background: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-background-quaternary);
+  }
+
+  &.current {
+    cursor: default;
+    outline: $b-1 solid var(--color-accent-primary);
+  }
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-foreground-primary);
+}
+
+.muted {
+  color: var(--color-foreground-secondary);
+}
+
+.status {
+  font-size: px2rem(11);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-core {
+  color: var(--color-accent-primary);
+}
+
+.status-open {
+  color: var(--color-accent-success);
+}
+
+.status-merged {
+  color: var(--color-foreground-secondary);
+}
+
+.create {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-s);
+  align-items: center;
+}
+
+.change {
+  display: grid;
+  gap: var(--sp-xxs);
+  padding: var(--sp-xs) var(--sp-s);
+  border-radius: $br-4;
+  background: var(--color-background-tertiary);
+}
+
+.change-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-width: 0;
+}
+
+.op {
+  font-size: px2rem(11);
+  text-transform: uppercase;
+}
+
+.op-add {
+  color: var(--color-accent-success);
+}
+
+.op-del {
+  color: var(--color-accent-error);
+}
+
+.op-mod {
+  color: var(--color-accent-warning);
+}
+
+.conflict {
+  display: grid;
+  gap: var(--sp-xs);
+  padding: var(--sp-s);
+  border: $b-1 solid var(--color-accent-warning);
+  border-radius: $br-4;
+}
+
+.values {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-xxs) var(--sp-s);
+  margin: 0;
+  font-family: monospace;
+  font-size: px2rem(11);
+  word-break: break-all;
+
+  dd {
+    margin: 0;
+  }
+}
+
+.merge {
+  justify-self: stretch;
+}
+
+.excluded {
+  opacity: 0.5;
+}
+
+.group {
+  display: grid;
+  gap: var(--sp-xs);
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  min-width: 0;
+  font-weight: 600;
+}

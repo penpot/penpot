@@ -40,6 +40,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks.resize :as r]
+   [app.main.ui.workspace.branches :as branches]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -628,6 +629,16 @@
            (when (kbd/enter? event)
              (on-show-version-history event))))
 
+        on-show-branches
+        branches/toggle-panel
+
+        on-show-branches-key-down
+        (mf/use-fn
+         (mf/deps on-show-branches)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-show-branches event))))
+
         on-pin-version
         (mf/use-fn
          (fn [_]
@@ -717,6 +728,13 @@
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.show-version-history")]
          [:> shortcuts* {:id :toggle-history}]]
+
+        [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                                 :on-click    on-show-branches
+                                 :on-key-down on-show-branches-key-down
+                                 :id          "file-menu-design-branches"}
+         [:span {:class (stl/css :item-name)}
+          "Design branches"]]
 
         [:div {:class (stl/css :separator)}]])
 
