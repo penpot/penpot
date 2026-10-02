@@ -263,9 +263,8 @@
         (t/is (pos? (count reports))))
 
       (t/testing "with the payload of the job contract, and nothing else"
-        (t/is (every? #(pos? (:current %)) reports))
-        (t/is (every? #(string? (:stage %)) reports))
-        (t/is (every? #(<= (count (keys %)) 3) reports)))
+        (t/is (every? keyword? (map :stage reports)))
+        (t/is (every? #(<= (count (keys %)) 2) reports)))
 
       (t/testing "about the job of the context, not one the caller named"
         (t/is (every? #(= job-id (:job-id %)) @calls))))))

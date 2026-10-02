@@ -403,52 +403,93 @@
 (def ^:private known-retry-reasons
   #{"backoff" "noop"})
 
-(def ^:private max-stage-length 250)
+(def ^:private max-progress-key-length
+  "Longest accepted `:stage` or counter key. They name a vocabulary, they
+  are not a place for data, so the cap only keeps a runaway key out of the
+  log."
+  64)
+
+(def schema:progress-counter
+  "Counter of one scope of a job: `current` is how many units are done and
+  `total` how many there are, when the worker knows it."
+  [:map {:closed true
+         :title "job-progress-counter"}
+   [:current ::sm/int]
+   [:total {:optional true} ::sm/int]])
 
 (def schema:progress
-  "Progress report of a job: `current` is mandatory, `total` and `stage` are
-  optional, and no other key is accepted. `stage` is a short human label,
-  not a place for exception messages or params."
+  "Progress milestone of a job: the activity in course and the counters of
+  the scopes around it, each one under its own key.
+
+  `:stage` is a stable keyword the client resolves (a translation, an
+  icon...), never a display string, and `:counters` is open on purpose: a
+  worker reports the scopes it knows and names the counter of the activity
+  after its own stage, so a client can render `counters[stage]` without a
+  table of equivalences. Neither is a place for names, params or exception
+  text: the payload is keywords and integers only."
   [:map {:closed true
          :title "job-progress"}
-   [:current ::sm/int]
-   [:total {:optional true} ::sm/int]
-   [:stage {:optional true} ::sm/text]])
+   [:stage    ::sm/keyword]
+   [:counters {:optional true} [:map-of ::sm/keyword schema:progress-counter]]])
 
 (def check-progress
-  "Validate a progress report against its schema."
+  "Validate the shape of a progress milestone."
   (sm/check-fn schema:progress))
 
+(defn- check-counter
+  "Check the range rules of one counter: a non-negative `current` and a
+  positive `total` never lower than its `current`."
+  [key counter]
+  (when (neg? (:current counter))
+    (ex/raise :type :validation
+              :code :invalid-progress
+              :hint "progress counter current must not be negative"
+              :counter key
+              :progress counter))
+  (when-let [total (:total counter)]
+    (when (or (not (pos? total))
+              (> (:current counter) total))
+      (ex/raise :type :validation
+                :code :invalid-progress
+                :hint "progress counter total must be positive and not lower than current"
+                :counter key
+                :progress counter))))
+
 (defn validate-progress
-  "Check the range rules a schema cannot express: non-negative `current`,
-  positive `total`, `current` never greater than `total` and a short
-  `stage`."
+  "Check what the schema cannot express: non-negative counters, a positive
+  total never lower than its `current`, and stage and counter keys short
+  enough to be a name and not a payload."
   [progress]
   (let [progress (check-progress progress)]
-    (when (neg? (:current progress))
-      (ex/raise :type :validation
-                :code :invalid-progress
-                :hint "progress current must not be negative"
-                :progress progress))
-    (when-let [total (:total progress)]
-      (when (or (not (pos? total))
-                (> (:current progress) total))
+    (doseq [key (cons (:stage progress) (keys (:counters progress)))]
+      (when (> (count (name key)) max-progress-key-length)
         (ex/raise :type :validation
                   :code :invalid-progress
-                  :hint "progress total must be positive and not lower than current"
+                  :hint (str "progress key must not be longer than "
+                             max-progress-key-length " characters")
+                  :key key
                   :progress progress)))
-    (when (and (:stage progress)
-               (> (count (:stage progress)) max-stage-length))
-      (ex/raise :type :validation
-                :code :invalid-progress
-                :hint (str "progress stage must not be longer than "
-                           max-stage-length " characters")
-                :progress progress))
+    (doseq [[key counter] (:counters progress)]
+      (check-counter key counter))
     progress))
+
+(defn decode-progress
+  "Read back a stored progress payload as a Clojure map: `:stage` and the
+  counter keys come back as the strings the database holds, so they are
+  keywordized here, and a payload that is already a map is returned as is."
+  [progress]
+  (when (some? progress)
+    (-> (cond-> progress
+          (db/pgobject? progress)
+          (db/decode-json-pgobject))
+        (d/update-when :stage keyword)
+        (d/update-when :counters
+                       (fn [counters]
+                         (into {} (map (fn [[k v]] [(keyword k) v])) counters))))))
 
 (def ^:private event-payload-keys
   {"start"    #{:attempt}
-   "progress" #{:current :total :stage}
+   "progress" #{:stage :counters}
    "retry"    #{:attempt :reason}
    "end"      #{:outcome}})
 

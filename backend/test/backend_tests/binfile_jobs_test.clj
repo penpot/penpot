@@ -87,7 +87,7 @@
                        WHERE job_id = ? AND kind = 'progress'
                        ORDER BY created_at ASC, id ASC"
                      job-id])
-       (mapv #(db/decode-json-pgobject (:payload %)))))
+       (mapv #(jobs/decode-progress (:payload %)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ADAPTER
@@ -108,13 +108,16 @@
       (t/is (fs/exists? output))
       (t/is (= [file-id] (mapv :id (:files (v3/get-manifest th/*system* output))))))
 
-    (t/testing "the progress of the core became progress events of the job"
+    (t/testing "the progress of the core became milestones of the job"
       (let [events (progress-events job-id)]
         (t/is (pos? (count events)))
-        (t/is (every? #(pos? (:current %)) events))
-        (t/is (every? #(string? (:stage %)) events))
-        (t/testing "and nothing else: the event contract has three keys"
-          (t/is (every? #(<= (count (keys %)) 3) events)))))))
+        (t/is (every? keyword? (map :stage events)))
+        (t/testing "the first one is the file in course, with its position"
+          (let [event (first events)]
+            (t/is (= :files (:stage event)))
+            (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))))
+        (t/testing "and nothing else: the event is the stage and the counters"
+          (t/is (every? #(<= (count (keys %)) 2) events)))))))
 
 (t/deftest import-through-the-adapter-imports-the-package
   (let [profile  (th/create-profile* 1)
@@ -140,6 +143,78 @@
 
     (t/testing "the job reported its progress"
       (t/is (pos? (count (progress-events job-id)))))))
+
+(t/deftest the-adapter-composes-a-milestone-per-tap
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        job-id  (make-job! (:id profile) nil)
+        reports (atom [])]
+
+    ;; the substrate throttles the durable events, so the whole stream of
+    ;; milestones is only visible with the writes intercepted
+    (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
+                                   (swap! reports conj (:progress options))
+                                   1)]
+      (bfj/export-files (job-cfg) (job-context job-id)
+                        {:ids         #{file-id}
+                         :export-type :detach-libraries
+                         :output      (tmp/tempfile* :suffix ".penpot")}))
+
+    (t/testing "the file opens the run with its position"
+      (let [event (first @reports)]
+        (t/is (= :files (:stage event)))
+        (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))))
+
+    (t/testing "the stages inside the file carry it as context, with their own counter"
+      (let [event (first (filter #(= :pages (:stage %)) @reports))]
+        (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))
+        (t/is (pos? (get-in event [:counters :pages :current])))
+        (t/is (pos? (get-in event [:counters :pages :total])))))
+
+    (t/testing "and every milestone is a stage and its counters, and nothing else"
+      (t/is (every? #(<= (count (keys %)) 2) @reports)))))
+
+(t/deftest the-import-adapter-composes-the-same-milestones
+  (let [profile (th/create-profile* 1)
+        team    (teams/get-team th/*system*
+                                :profile-id (:id profile)
+                                :project-id (:default-project-id profile))
+        staged  (js/put-resource th/*system* (:id profile)
+                                 {:content  (sto/content (fixture-path))
+                                  :filename "package.penpot"
+                                  :mtype    "application/zip"})
+        job-id  (make-job! (:id profile) (:resource-id staged))
+        context (job-context job-id)
+        reports (atom [])]
+
+    (with-redefs [jobs/heartbeat (fn [_cfg & {:as options}]
+                                   (swap! reports conj (:progress options))
+                                   1)]
+      (bfj/import-files (job-cfg) context
+                        {:profile-id (:id profile)
+                         :project-id (:default-project-id profile)
+                         :team       team
+                         :name       "imported"
+                         :input      (js/load-input th/*system* context)
+                         :version    3}))
+
+    (t/testing "the run opens with the manifest, which has no units to count"
+      (let [event (first @reports)]
+        (t/is (= :manifest (:stage event)))
+        (t/is (nil? (:counters event)))))
+
+    (t/testing "the file carries its position"
+      (let [event (first (filter #(= :files (:stage %)) @reports))]
+        (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))))
+
+    (t/testing "a stage inside the file carries it as context, with its own counter"
+      (let [event (first (filter #(= :pages (:stage %)) @reports))]
+        (t/is (= {:current 1 :total 1} (get-in event [:counters :files])))
+        (t/is (pos? (get-in event [:counters :pages :current])))
+        (t/is (pos? (get-in event [:counters :pages :total])))))
+
+    (t/testing "and every milestone is a stage and its counters, and nothing else"
+      (t/is (every? #(<= (count (keys %)) 2) @reports)))))
 
 (t/deftest a-job-that-is-no-longer-active-stops-the-work
   (let [profile (th/create-profile* 1)

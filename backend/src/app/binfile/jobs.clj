@@ -10,8 +10,11 @@
   A job has no SSE channel, so the `:progress` points that `bf.v1` and
   `bf.v3` emit become `progress` events of the job through
   `jobs/heartbeat`, which throttles them to one per second and drops the
-  ones that do not fit. The event keeps only `current` and `stage`: the
-  ids the taps carry are not part of the job event contract.
+  ones that do not fit. The adapter turns a tap into a self-contained
+  milestone: a `:stage` of a single vocabulary (the two formats name the
+  same work differently) and the counters of the tap, with the file in
+  course as context. The ids the taps carry are not part of the job event
+  contract.
 
   The adapter checks that the job is still active before it starts and
   once the run returns. The progress listener cannot stop the core, so a
@@ -65,30 +68,84 @@
   (when-let [status (inactive-status cfg context)]
     (raise-cancelled context status)))
 
-(defn- progress-event
-  "The job event a progress tap becomes: how many units the core has
-  reported and which section it is on, and nothing else."
-  [current section]
-  (cond-> {:current current}
-    (some? section)
-    (assoc :stage (name section))))
+(def ^:private stage-of
+  "The stage a tap section becomes: one vocabulary for the two formats, so
+  a client resolves each stage once. The counter of the activity is named
+  after its own stage, which is what lets a client render
+  `counters[stage]` without a table of equivalences."
+  {:file            :files
+   :page            :pages
+   :media           :media
+   :thumbnail       :thumbnails
+   :thumbnails      :thumbnails
+   :component       :components
+   :color           :colors
+   :typography      :typographies
+   :tokens-lib      :tokens
+   :tokens-status   :tokens
+   :storage-object  :storage-objects
+   :storage-objects :storage-objects
+   :relations       :relations
+   :manifest        :manifest
+   :v1/metadata     :metadata
+   :v1/files        :files
+   :v1/rels         :relations
+   :v1/sobjects     :storage-objects})
+
+(defn- stage
+  "The stage of a tap section; a section without a name of its own keeps
+  it, so a new tap is never dropped from the stream."
+  [section]
+  (get stage-of section section))
+
+(defn- counter
+  "The counter a tap reports, when it reports one: a tap that only marks a
+  point of the run has no units to count."
+  [{:keys [current total]}]
+  (when (some? current)
+    (cond-> {:current current}
+      (some? total)
+      (assoc :total total))))
+
+(defn- milestone
+  "The milestone a tap becomes: what the job is doing now and the counters
+  the tap knows, with the file in course as the outer context of the
+  stages inside it.
+
+  Each milestone is self-contained, so a client that misses one (the
+  substrate throttles the events) still renders the truth from the next."
+  [file-counter {:keys [section] :as tap}]
+  (let [stage (stage section)
+        own   (counter tap)
+        files (if (= :files stage) (or own file-counter) file-counter)]
+    (cond-> {:stage stage}
+      (or (some? files) (some? own))
+      (assoc :counters (cond-> (if (some? files) {:files files} {})
+                         (some? own) (assoc stage own))))))
 
 (defn- with-progress
-  "Run `f` with the progress taps of the core turned into job events.
+  "Run `f` with the progress taps of the core turned into milestones of the
+  job.
+
+  Every tap is reported: the substrate throttles the durable events to one
+  per second, and a milestone that does not fit loses no information
+  because the next one carries the same state.
 
   The listener runs on a thread of its own, so it only reports progress:
   it cannot stop the core, and an exception raised there would be
   swallowed. A job that is no longer active is noticed once the run
   returns, which is what makes the transaction of the caller roll back."
   [cfg context f]
-  (let [counter  (volatile! 0)
-        job-id   (:id context)
+  (let [job-id   (:id context)
+        file     (volatile! nil)
         on-event (fn [[type data]]
                    (when (= :progress type)
-                     (vswap! counter inc)
-                     (jobs/heartbeat cfg
-                                     :job-id job-id
-                                     :progress (progress-event @counter (:section data)))))
+                     (let [milestone (milestone @file data)]
+                       (when-let [files (get-in milestone [:counters :files])]
+                         (vreset! file files))
+                       (jobs/heartbeat cfg
+                                       :job-id job-id
+                                       :progress milestone))))
         result   (events/run-with! f on-event)]
     (check-active cfg context)
     result))

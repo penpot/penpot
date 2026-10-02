@@ -297,7 +297,7 @@
                   (fn [{:keys [::db/conn]}]
                     (jobs/heartbeat (assoc cfg ::db/conn conn)
                                     :job-id job-id
-                                    :progress {:current 1}
+                                    :progress {:stage :work}
                                     ::jobs/force? true)))
       (t/testing "the report is stored and counted, the caller rollback drops neither"
         (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event

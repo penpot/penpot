@@ -39,7 +39,8 @@
   [cfg params]
   (when (::jobs/job-id cfg)
     (jobs/heartbeat cfg)
-    (jobs/heartbeat cfg :progress {:current 1 :stage "half"}))
+    (jobs/heartbeat cfg :progress {:stage :half
+                                   :counters {:work {:current 1 :total 2}}}))
   params)
 
 (def schema:echo-params
@@ -101,7 +102,7 @@
                       WHERE job_id = ? AND kind = 'progress'
                       ORDER BY created_at ASC, id ASC"
                      job-id])
-       (mapv #(db/decode-json-pgobject (:payload %)))))
+       (mapv #(jobs/decode-progress (:payload %)))))
 
 (defn- fake-msgbus
   "A minimal msgbus that records every publication on the atom."
@@ -191,43 +192,69 @@
         job-id (jobs/submit cfg {::jobs/name   :echo
                                  ::jobs/params (make-params)})]
 
-    (t/testing "current is mandatory"
-      (t/is (thrown? Exception
-                     (jobs/heartbeat cfg :job-id job-id :progress {:total 10}))))
-
-    (t/testing "unknown keys are rejected"
+    (t/testing "stage is mandatory"
       (t/is (thrown? Exception
                      (jobs/heartbeat cfg :job-id job-id
-                                     :progress {:current 1 :step 1}))))
+                                     :progress {:counters {:work {:current 1}}}))))
 
-    (t/testing "current must not be negative"
+    (t/testing "stage must be a keyword, not a label"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage "work"}))))
+
+    (t/testing "unknown keys are rejected, at the top and inside a counter"
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage :work :step 1})))
+      (t/is (thrown? Exception
+                     (jobs/heartbeat cfg :job-id job-id
+                                     :progress {:stage :work
+                                                :counters {:work {:current 1
+                                                                  :step 1}}}))))
+
+    (t/testing "a counter current must not be negative"
       (t/is (thrown-with-msg? Exception #"negative"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current -1}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current -1}}}))))
 
-    (t/testing "total must be positive"
+    (t/testing "a counter total must be positive"
       (t/is (thrown-with-msg? Exception #"positive"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 0 :total 0}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current 0
+                                                                           :total 0}}}))))
 
-    (t/testing "current must not be greater than total"
+    (t/testing "a counter current must not be greater than its total"
       (t/is (thrown-with-msg? Exception #"not lower than current"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 5 :total 4}))))
+                                              :progress {:stage :work
+                                                         :counters {:work {:current 5
+                                                                           :total 4}}}))))
 
-    (t/testing "stage is limited to 250 characters"
-      (t/is (thrown-with-msg? Exception #"250"
+    (t/testing "keys are limited to a name and not a payload"
+      (t/is (thrown-with-msg? Exception #"64"
                               (jobs/heartbeat cfg :job-id job-id
-                                              :progress {:current 1
-                                                         :stage (apply str (repeat 251 "x"))})))
+                                              :progress {:stage (keyword (apply str (repeat 65 "x")))}))))
+
+    (t/testing "a milestone without counters is accepted"
+      (t/is (= 2 (jobs/heartbeat cfg :job-id job-id :progress {:stage :relations}))))
+
+    (t/testing "a milestone with counters is accepted and stored as it is"
+      (swap! jobs/progresses dissoc job-id)
+      (swap! jobs/heartbeats dissoc job-id)
       (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1
-                                            :stage (apply str (repeat 250 "x"))})))
-      (t/is (= [{:current 1 :stage (apply str (repeat 250 "x"))}]
+                                 :progress {:stage :pages
+                                            :counters {:files {:current 2 :total 5}
+                                                       :pages {:current 3 :total 8}}})))
+      (t/is (= [{:stage :relations}
+                {:stage :pages
+                 :counters {:files {:current 2 :total 5}
+                            :pages {:current 3 :total 8}}}]
                (get-progresss job-id))))
 
     (t/testing "a rejected report never reaches the durable log"
-      (t/is (= 1 (count (get-progresss job-id)))))))
+      (t/is (= 2 (count (get-progresss job-id)))))))
 
 (t/deftest progress-event-publishes-msgbus-for-profile-jobs
   (let [cfg        (make-cfg (get-job-defs))
@@ -238,7 +265,8 @@
                                          ::jobs/params     (make-params)
                                          ::jobs/profile-id profile-id})]
     (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
-                                :progress {:current 3 :total 7})))
+                                :progress {:stage :pages
+                                           :counters {:files {:current 3 :total 7}}})))
     (t/testing "the event is published on the topic of the job profile"
       (t/is (= 1 (count @messages)))
       (let [{:keys [topic message]} (first @messages)]
@@ -247,7 +275,9 @@
         (t/is (= job-id (:job-id message)))
         (t/is (= profile-id (:profile-id message)))
         (t/is (= "progress" (:kind message)))
-        (t/is (= {:current 3 :total 7} (:payload message)))
+        (t/is (= {:stage :pages
+                  :counters {:files {:current 3 :total 7}}}
+                 (:payload message)))
         (t/is (some? (:event-id message)))
         (t/is (some? (:created-at message)))))))
 
@@ -257,7 +287,7 @@
         job-cfg  (assoc cfg ::mbus/msgbus (fake-msgbus messages))
         job-id   (jobs/submit job-cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
-    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id :progress {:current 1})))
+    (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id :progress {:stage :work})))
     (t/testing "the event is stored but nothing is published"
       (t/is (= 1 (count (get-progresss job-id))))
       (t/is (= [] @messages)))))
@@ -272,7 +302,7 @@
       (t/is (thrown-with-msg? Exception #"require ::mbus/msgbus"
                               (jobs/heartbeat cfg
                                               :job-id job-id
-                                              :progress {:current 1}
+                                              :progress {:stage :work}
                                               ::jobs/force? true)))
       (t/is (= [] (get-progresss job-id))
             "the event must not be stored without its notification"))
@@ -281,7 +311,7 @@
       (th/db-update! :job {:modified-at (ct/in-past {:minutes 5})} {:id job-id})
       (swap! jobs/heartbeats dissoc job-id)
       (t/is (= 1 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1})))
+                                 :progress {:stage :work})))
       (t/is (= [] (get-progresss job-id))))))
 
 (t/deftest submit-validates-params-with-job-schema
@@ -578,13 +608,17 @@
 
     (t/testing "first progress report appends a progress event"
       (t/is (= 2 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 1 :total 10})))
-      (t/is (= [{:current 1 :total 10}] (get-progresss job-id))))
+                                 :progress {:stage :pages
+                                            :counters {:pages {:current 1 :total 10}}})))
+      (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}]
+               (get-progresss job-id))))
 
     (t/testing "immediate second progress report is throttled"
       (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 2 :total 10})))
-      (t/is (= [{:current 1 :total 10}] (get-progresss job-id)))
+                                 :progress {:stage :pages
+                                            :counters {:pages {:current 2 :total 10}}})))
+      (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}]
+               (get-progresss job-id)))
 
       (t/testing "after the throttle window elapses it appends again"
         (swap! @#'jobs/progresses
@@ -592,9 +626,11 @@
                  (update-in m [job-id]
                             #(ct/minus %
                                        (ct/duration {:seconds 2})))))
-        (jobs/heartbeat cfg :job-id job-id :progress {:current 3 :total 10})
-        (t/is (= [{:current 1 :total 10}
-                  {:current 3 :total 10}]
+        (jobs/heartbeat cfg :job-id job-id
+                        :progress {:stage :pages
+                                   :counters {:pages {:current 3 :total 10}}})
+        (t/is (= [{:stage :pages :counters {:pages {:current 1 :total 10}}}
+                  {:stage :pages :counters {:pages {:current 3 :total 10}}}]
                  (get-progresss job-id))))))
 
   (let [cfg    (make-cfg (get-job-defs))
@@ -604,7 +640,7 @@
       (th/db-update! :job {:status "completed"} {:id job-id})
       (swap! @#'jobs/progresses dissoc job-id)
       (t/is (= 0 (jobs/heartbeat cfg :job-id job-id
-                                 :progress {:current 9})))
+                                 :progress {:stage :work})))
       (t/is (= [] (get-progresss job-id))))))
 
 (t/deftest throttle-prune-removes-stale-entries-keeps-fresh
@@ -794,7 +830,7 @@
 
     (t/testing "progress reporting is a no-op when *job-id* is nil"
       (binding [jobs/*job-id* nil]
-        (t/is (nil? (jobs/heartbeat cfg :progress {:current 1}))))
+        (t/is (nil? (jobs/heartbeat cfg :progress {:stage :work}))))
       (t/is (= [] (get-progresss job-id))
             "no progress event should be stored"))))
 
@@ -812,7 +848,7 @@
           ;; reset the throttle so should-write? would allow the write
           (swap! jobs/progresses dissoc job-id)
           (binding [jobs/*job-id* job-id]
-            (t/is (= 0 (jobs/heartbeat cfg :progress {:current 1}))))
+            (t/is (= 0 (jobs/heartbeat cfg :progress {:stage :work}))))
           (t/is (= [] (get-progresss job-id))))))))
 
 (t/deftest defs-halt-clears-module-registry
@@ -849,8 +885,8 @@
                 (fn [{:keys [::db/conn]}]
                   (jobs/heartbeat (assoc cfg ::db/conn conn)
                                   :job-id job-id
-                                  :progress {:current 1})))
-    (t/is (= [{:current 1}] (get-progresss job-id)))))
+                                  :progress {:stage :work})))
+    (t/is (= [{:stage :work}] (get-progresss job-id)))))
 
 (t/deftest progress-notification-survives-a-rolled-back-caller
   (let [cfg        (make-cfg (get-job-defs))
@@ -866,9 +902,9 @@
                 (fn [{:keys [::db/conn]}]
                   (jobs/heartbeat (assoc job-cfg ::db/conn conn)
                                   :job-id job-id
-                                  :progress {:current 1})))
+                                  :progress {:stage :work})))
     (t/testing "the event is stored"
-      (t/is (= [{:current 1}] (get-progresss job-id))))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))
     (t/testing "and the notification went out with its own commit"
       (t/is (= 1 (count @messages)))
       (t/is (= "progress" (:kind (:message (first @messages))))))))
@@ -881,7 +917,7 @@
       (t/is (thrown? Exception
                      (jobs/heartbeat th/*pool*
                                      :job-id job-id
-                                     :progress {:current 1}))))))
+                                     :progress {:stage :work}))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1020,8 +1056,8 @@
           "a job-id without a context still delivers a nil context")
     (t/testing "the job-id is what makes the durable writes reach the row"
       (t/is (pos? (jobs/heartbeat cfg :job-id job-id
-                                  :progress {:current 1})))
-      (t/is (= [{:current 1}] (get-progresss job-id))))))
+                                  :progress {:stage :work})))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LIFECYCLE EVENTS
@@ -1440,7 +1476,7 @@
         job-id (mk-running cfg)]
     (t/testing "a progress report and a completion of the same job, at once"
       (let [[_writes completed] (race #(jobs/heartbeat cfg :job-id job-id
-                                                       :progress {:current 1}
+                                                       :progress {:stage :work}
                                                        ::jobs/force? true)
                                       #(jobs/complete cfg :job-id job-id :result {:v 1}))]
         (t/is (= 1 completed) "the completion always wins, it owns the row")
@@ -1454,7 +1490,7 @@
       (t/testing "a job that ended is not resurrected by a late report"
         (let [before (get-kinds job-id)]
           (t/is (zero? (jobs/heartbeat cfg :job-id job-id
-                                       :progress {:current 2}
+                                       :progress {:stage :work}
                                        ::jobs/force? true)))
           (t/is (= before (get-kinds job-id)) "the late report stored nothing"))))))
 
@@ -1472,9 +1508,9 @@
                                          ::jobs/params     (make-params)
                                          ::jobs/profile-id profile-id})]
     (t/is (pos? (jobs/heartbeat job-cfg :job-id job-id
-                                :progress {:current 1})))
+                                :progress {:stage :work})))
     (t/testing "the event was stored"
-      (t/is (= [{:current 1}] (get-progresss job-id))))
+      (t/is (= [{:stage :work}] (get-progresss job-id))))
     (t/testing "and the msgbus on that cfg was reachable from the callback"
       (t/is (= 1 (count @messages)))
       (t/is (= "progress" (:kind (:message (first @messages))))))))
