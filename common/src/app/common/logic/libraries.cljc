@@ -241,7 +241,7 @@
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id params]
    (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {} params))
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id ids-map
-    {:keys [force-frame?]
+    {:keys [force-frame? swap-slot]
      :or {force-frame? false}}]
 
    (let [component     (ctf/get-component libraries file-id component-id)
@@ -257,6 +257,13 @@
          parent-id     (d/nilv (:id parent) parent-id)
          frame-id      (d/nilv (:frame-id parent) frame-id)
 
+         ;; A copy created by a swap keeps the slot of the shape it
+         ;; replaces. Set it from the start, so the validation below sees
+         ;; the copy complete
+         set-swap-slot #(cond-> %
+                          (nil? (ctk/get-swap-slot %))
+                          (ctk/set-swap-slot swap-slot))
+
          [new-shape new-shapes]
          (ctn/make-component-instance page
                                       component
@@ -269,8 +276,10 @@
                                         force-frame?
                                         (assoc :force-frame-id frame-id)))
 
+         new-shape     (set-swap-slot new-shape)
+
          first-shape
-         (cond-> (first new-shapes)
+         (cond-> (set-swap-slot (first new-shapes))
            (not (nil? parent-id))
            (assoc :parent-id parent-id)
            (and (not (nil? parent)) (= :frame (:type parent)))
@@ -317,10 +326,16 @@
          (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                  changes
                  (rest new-shapes))
-         
-         ids-to-validate (cond-> [(:id first-shape)]
-                           grid-parent?
-                           (conj (:parent-id first-shape)))
+
+         ;; A copy nested inside another component can't be validated on
+         ;; its own, as the validator needs the context of its ancestors.
+         ;; Validate the root of the enclosing instance instead, which also
+         ;; checks the parents that may change (e.g. layouts)
+         ids-to-validate (if (ctk/instance-root? first-shape)
+                           (cond-> [(:id first-shape)]
+                             grid-parent?
+                             (conj (:parent-id first-shape)))
+                           (ctn/get-all-instance-roots objects [(:parent-id first-shape)]))
 
          changes (if (seq ids-to-validate)
                    (pcb/validate-shapes changes
@@ -438,9 +453,13 @@
      (prepare-restore-component changes library-data component-id page nil nil nil nil)))
 
   ([changes library-data component-id page position old-id parent-id frame-id]
-   (let [library-data      (or (pcb/get-library-data changes) library-data)
+   (let [library-data      (if (pcb/has-library-data? changes)
+                             (pcb/get-library-data changes)
+                             library-data)
          component         (ctkl/get-deleted-component library-data component-id)
-         objects           (or (pcb/get-objects changes) (:objects page))
+         objects           (if (pcb/has-objects? changes)
+                             (pcb/get-objects changes)
+                             (:objects page))
          parent            (get objects parent-id)
          main-inst         (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
@@ -471,6 +490,7 @@
                              (assoc :component-root true))
 
          restoring-into-parent (get objects (:parent-id first-shape))
+         into-variant?         (ctk/is-variant-container? restoring-into-parent)
 
          changes           (-> changes
                                (pcb/with-page page)
@@ -489,9 +509,16 @@
                                       (nil? restoring-into-parent)))
                              (clvp/generate-make-shapes-no-variant [first-shape])
                              ;; Add variant info and rename when restoring into a variant-container
-                             (ctk/is-variant-container? restoring-into-parent)
-                             (clvp/generate-make-shapes-variant [first-shape] restoring-into-parent))]
-     {:changes (pcb/restore-component changes component-id (:id page) minusdelta)
+                             into-variant?
+                             (clvp/generate-make-shapes-variant [first-shape] restoring-into-parent))
+         changes           (cond-> (pcb/restore-component changes component-id (:id page) minusdelta)
+                             ;; generate-make-shapes-variant does not validate, so validate the
+                             ;; container with the restored component inside
+                             into-variant?
+                             (pcb/validate-shapes (:id page)
+                                                  [(:id restoring-into-parent)]
+                                                  (str "prepare-restore-component: " component-id)))]
+     {:changes changes
       :shape (first moved-shapes)})))
 
 ;; ---- General library synchronization functions ----
@@ -2707,6 +2734,14 @@
         parent       (get objects (:parent-id shape))
         inside-comp? (ctn/in-any-component? objects parent)
 
+        ;; if the shape isn't inside a main component, it shouldn't have a swap slot
+        swap-slot    (when inside-comp?
+                       (ctf/find-swap-slot shape
+                                           page
+                                           {:id (:id file)
+                                            :data file}
+                                           libraries))
+
         [new-shape changes]
         ;; When we make a swap of an item, there can be copies which swap-slot points to that item
         ;; so we want to assign the item id to the new instanciated copy, to mantain that reference
@@ -2721,17 +2756,8 @@
                                         (:parent-id shape)
                                         (:frame-id shape)
                                         {(:id shape) (:id shape)} ;; keep the id of the original shape
-                                        {:force-frame? true})
-
-        new-shape (cond-> new-shape
-                    ;; if the shape isn't inside a main component, it shouldn't have a swap slot
-                    (and (nil? (ctk/get-swap-slot new-shape))
-                         inside-comp?)
-                    (ctk/set-swap-slot (ctf/find-swap-slot shape
-                                                           page
-                                                           {:id (:id file)
-                                                            :data file}
-                                                           libraries)))]
+                                        {:force-frame? true
+                                         :swap-slot swap-slot})]
 
     [new-shape (-> changes
                    ;; Restore the properties
@@ -2914,7 +2940,14 @@
        (clvp/generate-update-property-value new-component-id (-> component :variant-properties count dec) value)
 
        :always
-       (pcb/change-parent (:id parent) [shape] 0))]))
+       (pcb/change-parent (:id parent) [shape] 0)
+
+       ;; generate-make-shapes-variant does not validate, so validate the
+       ;; container once the shape is inside it
+       into-new-variant?
+       (pcb/validate-shapes page-id
+                            [(:id parent)]
+                            (str "duplicate-variant: " (:id component) " into " (:id parent))))]))
 
 
 (defn generate-duplicate-component-change
@@ -3184,11 +3217,13 @@
                (map #(vector (:old-id %) (-> % :obj :id))))
               (:redo-changes changes))
 
-        copied-components
-        (ctn/get-all-instance-roots (:objects page) ids)
-
+        ;; Look for the instance roots from the new shapes, where they have
+        ;; been pasted. A copy pasted inside another component is a nested
+        ;; copy, so the root of the enclosing instance is validated instead
+        ;; of the copy alone
         ids-to-validate
-        (map #(get ids-map % %) copied-components)
+        (ctn/get-all-instance-roots (pcb/get-objects changes)
+                                    (keep ids-map ids))
 
         changes (if (seq ids-to-validate)
                   (pcb/validate-shapes changes

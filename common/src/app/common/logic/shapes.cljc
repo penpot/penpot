@@ -84,7 +84,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? extra-context]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? skip-validation? extra-context]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -107,10 +107,16 @@
                   (not ignore-touched)
                   (generate-unapply-tokens objects changed-sub-attr changed-item-index))
 
-        page-id (pcb/get-page-id changes)
+        ;; Only validate changes on a page (not on a component container)
+        page-id (when (pcb/has-page-id? changes)
+                  (pcb/get-page-id changes))
         modified-components (ctn/get-all-instance-roots objects ids)
 
-        changes (if (and page-id (seq modified-components))
+        ;; skip-validation? is for updates that can't break the references
+        ;; between components (e.g. geometry only). The validation covers
+        ;; the whole instance, so it could stop on copies that other
+        ;; changes have not synced yet.
+        changes (if (and page-id (seq modified-components) (not skip-validation?))
                   (pcb/validate-shapes changes
                                        page-id
                                        modified-components
@@ -267,8 +273,9 @@
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
-         page    (or (pcb/get-page changes)
-                     (ctpl/get-page data page-id))
+         page    (if (pcb/has-page? changes)
+                   (pcb/get-page changes)
+                   (ctpl/get-page data page-id))
          ids     (cfh/clean-loops objects ids)
 
          in-component-copy?
@@ -585,7 +592,19 @@
                                   (conj to-delete (:id parent))
                                   to-delete)))
                             #{}
-                            (remove #(= % parent-id) all-parents))]
+                            (remove #(= % parent-id) all-parents))
+
+        ;; Variant containers changed by the move: the ones the variants come
+        ;; from (unless they are deleted for being empty) and the one they go
+        ;; into. The shapes taken out of a variant are validated by
+        ;; generate-make-shapes-no-variant
+        variant-cont-to-validate
+        (cond-> (into #{}
+                      (comp (keep :variant-id)
+                            (remove empty-variant-cont))
+                      variant-shapes)
+          (ctk/is-variant-container? parent)
+          (conj parent-id))]
 
     (-> changes
         ;; Remove layout-item properties and tokens when moving a shape outside a layout
@@ -698,7 +717,12 @@
 
         ;; Remove parents when are a variant-container that becomes empty
         (cond-> (seq empty-variant-cont)
-          (#(second (generate-delete-shapes % empty-variant-cont {})))))))
+          (#(second (generate-delete-shapes % empty-variant-cont {}))))
+
+        (cond-> (seq variant-cont-to-validate)
+          (pcb/validate-shapes (pcb/get-page-id changes)
+                               variant-cont-to-validate
+                               (str "generate-relocate: " (vec ids) " to parent " parent-id))))))
 
 (defn change-show-in-viewer
   [shape hide?]

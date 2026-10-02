@@ -17,6 +17,7 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
+   [app.common.test-helpers.variants :as thv]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape-tree :as ctst]
@@ -492,7 +493,43 @@
     (t/is (ctk/instance-of? copy1-root' (:id file') (:id component')))
     (t/is (ctk/is-main-of? main1-root' copy1-root'))
     (t/is (ctk/is-main-of? main1-child' copy1-child'))
-    (t/is (ctst/parent-of? copy1-root' copy1-child'))))
+    (t/is (ctst/parent-of? copy1-root' copy1-child'))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id new-shape)]))))
+
+(t/deftest test-instantiate-component-inside-main-validates-root
+  ;; A copy nested in a main can't be validated on its own: the root of the
+  ;; main is validated instead
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :component1 :main1-root :main1-child)
+                      (tho/add-simple-component :component2 :main2-root :main2-child))
+
+        page      (thf/current-page file)
+        component (thc/get-component file :component1)
+        main2-id  (thi/id :main2-root)
+
+        ;; ==== Action
+        [new-shape changes]
+        (cll/generate-instantiate-component (-> (pcb/empty-changes nil (:id page))
+                                                (pcb/with-objects (:objects page)))
+                                            (:objects page)
+                                            (:id file)
+                                            (:id component)
+                                            (gpt/point 1000 1000)
+                                            page
+                                            {(:id file) file}
+                                            nil
+                                            main2-id
+                                            main2-id
+                                            {})
+
+        file'     (thf/apply-changes file changes)
+        copy1'    (ths/get-shape-by-id file' (:id new-shape))]
+
+    ;; ==== Check
+    (t/is (= main2-id (:parent-id copy1')))
+    (t/is (not (ctk/instance-root? copy1')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [main2-id]))))
 
 (t/deftest test-instantiate-component-from-lib
   (let [;; ==== Setup
@@ -656,3 +693,188 @@
     (t/is (some? copy1-root'))
     (t/is (not (ctk/instance-head? copy1-root')))
     (t/is (not (ctk/in-component-copy? copy1-root')))))
+
+(defn- delete-shapes
+  [file labels]
+  (let [page    (thf/current-page file)
+        [_ changes]
+        (cls/generate-delete-shapes (pcb/empty-changes)
+                                    file
+                                    page
+                                    (:objects page)
+                                    (into #{} (map thi/id) labels)
+                                    {:components-v2 true})]
+    (thf/apply-changes file changes)))
+
+(defn- restore-changes
+  "Build the changes of restoring a deleted component as the workspace does,
+  without any library data or objects in the changes builder."
+  [file component-label]
+  (let [page (thf/current-page file)]
+    (cll/generate-restore-component (pcb/empty-changes)
+                                    (:data file)
+                                    (thi/id component-label)
+                                    (:id file)
+                                    page
+                                    (:objects page))))
+
+(t/deftest test-restore-component-without-library-data
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1
+                                                        :main1-root
+                                                        :main1-child
+                                                        :copy1-root)
+                    (delete-shapes [:main1-root]))
+
+        ;; ==== Action
+        changes (restore-changes file :component1)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        component1' (thc/get-component file' :component1)
+        main1-root' (ths/get-shape file' :main1-root)]
+
+    ;; ==== Check
+    (t/is (some? component1'))
+    (t/is (some? main1-root'))))
+
+(t/deftest test-restore-variant-after-deleting-its-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:v01]))
+
+        ;; ==== Action
+        changes (restore-changes file :c01)
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        c01'    (thc/get-component file' :c01)
+        m01'    (ths/get-shape file' :m01)]
+
+    ;; ==== Check
+    ;; The container no longer exists, so the main is restored as a
+    ;; component that is not a variant
+    (t/is (some? c01'))
+    (t/is (some? m01'))
+    (t/is (nil? (:variant-id c01')))
+    (t/is (nil? (:variant-id m01')))))
+
+(defn- validates-shapes?
+  "Check that some :validate-shapes change validates exactly `shape-ids`."
+  [changes shape-ids]
+  (some #(and (= :validate-shapes (:type %))
+              (= (set shape-ids) (set (:shape-ids %))))
+        (:redo-changes changes)))
+
+(t/deftest test-restore-variant-into-its-container-validates-container
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (delete-shapes [:m02]))
+
+        ;; ==== Action
+        changes (restore-changes file :c02)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (= (thi/id :v01) (:parent-id (ths/get-shape file' :m02))))
+    (t/is (validates-shapes? changes [(thi/id :v01)]))))
+
+(t/deftest test-paste-variant-into-other-variant-validates-container
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                      (thv/add-variant :v02 :c03 :m03 :c04 :m04)
+                      (ths/update-shape :v02 :name "Other")
+                      (ths/update-shape :m03 :name "Other")
+                      (ths/update-shape :m04 :name "Other")
+                      (thc/update-component :c03 {:name "Other"})
+                      (thc/update-component :c04 {:name "Other"}))
+        page      (thf/current-page file)
+        shape-id  (thi/id :m01)
+        v02-id    (thi/id :v02)
+
+        ;; ==== Action
+        ;; Paste a copy of m01 into v02, as the workspace does
+        objects   (update (:objects page) shape-id assoc :parent-id v02-id :frame-id v02-id)
+        changes   (-> (pcb/empty-changes nil)
+                      (pcb/with-page-id (:id page))
+                      (pcb/with-library-data (:data file))
+                      (pcb/with-objects (:objects page))
+                      (cll/generate-duplicate-changes objects page #{shape-id} (gpt/point 0 0)
+                                                      {(:id file) file} (:data file) (:id file)))
+        file'     (thf/apply-changes file changes)
+        v02'      (ths/get-shape file' :v02)]
+
+    ;; ==== Check
+    (t/is (= 3 (count (:shapes v02'))))
+    (t/is (validates-shapes? changes [v02-id]))))
+
+(defn- paste-changes
+  "Build the changes of pasting a copy of the shape into the parent, as the
+  workspace does."
+  [file shape-label parent-label]
+  (let [page      (thf/current-page file)
+        shape-id  (thi/id shape-label)
+        parent-id (thi/id parent-label)
+        objects   (update (:objects page) shape-id assoc :parent-id parent-id :frame-id parent-id)]
+    (-> (pcb/empty-changes nil)
+        (pcb/with-page-id (:id page))
+        (pcb/with-library-data (:data file))
+        (pcb/with-objects (:objects page))
+        (cll/generate-duplicate-changes objects page #{shape-id} (gpt/point 0 0)
+                                        {(:id file) file} (:data file) (:id file)))))
+
+(defn- pasted-id
+  [changes shape-label]
+  (->> (:redo-changes changes)
+       (filter #(and (= :add-obj (:type %))
+                     (= (thi/id shape-label) (:old-id %))))
+       first
+       :obj
+       :id))
+
+(t/deftest test-paste-main-into-main-validates-enclosing-root
+  ;; Pasting a main into another main creates a nested copy, that can't be
+  ;; validated on its own: the root of the enclosing main is validated
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :component1 :main1-root :main1-child)
+                    (tho/add-simple-component :component2 :main2-root :main2-child))
+
+        ;; ==== Action
+        changes (paste-changes file :main2-root :main1-root)
+        file'   (thf/apply-changes file changes)
+        copy'   (ths/get-shape-by-id file' (pasted-id changes :main2-root))]
+
+    ;; ==== Check
+    (t/is (= (thi/id :main1-root) (:parent-id copy')))
+    (t/is (not (ctk/instance-root? copy')))
+    (t/is (validates-shapes? changes [(thi/id :main1-root)]))))
+
+(t/deftest test-paste-copy-at-root-validates-new-copy
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component-with-copy :component1
+                                                        :main1-root
+                                                        :main1-child
+                                                        :copy1-root))
+        page    (thf/current-page file)
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (cll/generate-duplicate-changes (:objects page) page #{(thi/id :copy1-root)}
+                                                    (gpt/point 0 0)
+                                                    {(:id file) file} (:data file) (:id file)))
+        new-id  (pasted-id changes :copy1-root)
+        file'   (thf/apply-changes file changes)]
+
+    ;; ==== Check
+    (t/is (ctk/instance-root? (ths/get-shape-by-id file' new-id)))
+    (t/is (validates-shapes? changes [new-id]))))
+

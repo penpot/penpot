@@ -41,12 +41,12 @@
                                         {:apply-changes-local-library? true}))
                                      changes
                                      related-components)
-                  
-                  ids-to-validate (map :main-instance-id related-components)
 
+                  ;; All components of the variant change, so validate the
+                  ;; container, which also checks every main instance
                   changes (pcb/validate-shapes changes
                                                (pcb/get-page-id changes)
-                                               ids-to-validate
+                                               [variant-id]
                                                (str "generate-update-property-name: " variant-id
                                                     " pos: " pos " new-name: " new-name))]
               changes)))))))
@@ -74,11 +74,11 @@
                               changes
                               related-components)
 
-              ids-to-validate (map :main-instance-id related-components)
-
+              ;; All components of the variant change, so validate the
+              ;; container, which also checks every main instance
               changes (pcb/validate-shapes changes
                                            (pcb/get-page-id changes)
-                                           ids-to-validate
+                                           [variant-id]
                                            (str "generate-remove-property: " variant-id " pos: " pos))]
           changes)
         changes))))
@@ -99,7 +99,11 @@
           (-> changes
               (pcb/update-component component-id #(assoc-in % [:variant-properties pos :value] value)
                                     {:apply-changes-local-library? true})
-              (pcb/update-shapes [main-id] #(assoc % :variant-name name))))
+              (pcb/update-shapes [main-id] #(assoc % :variant-name name))
+              (pcb/validate-shapes (pcb/get-page-id changes)
+                                   [main-id]
+                                   (str "generate-update-property-value: " component-id
+                                        " pos: " pos " value: " value))))
         changes))))
 
 (defn generate-set-variant-error
@@ -115,7 +119,11 @@
           (-> changes
               (pcb/update-shapes [main-id] (if (nil? value)
                                              #(dissoc % :variant-error)
-                                             #(assoc % :variant-error value)))))
+                                             #(assoc % :variant-error value)))
+              (pcb/validate-shapes (pcb/get-page-id changes)
+                                   [main-id]
+                                   (str "generate-set-variant-error: " component-id
+                                        " value: " value))))
         changes))))
 
 (defn generate-reorder-variant-poperties
@@ -127,22 +135,35 @@
     changes
     (let [data               (pcb/get-library-data changes)
           objects            (pcb/get-objects changes)
-          related-components (cfv/find-variant-components data objects variant-id)]
-      (reduce (fn [changes component]
-                (let [props   (:variant-properties component)
-                      props'  (d/reorder props from-pos to-space-between-pos)
-                      main-id (:main-instance-id component)
-                      name    (ctv/properties-to-name props')]
-                  (if (not= props props')
-                    (-> changes
-                        (pcb/update-component (:id component)
-                                              #(assoc % :variant-properties props')
-                                              {:apply-changes-local-library? true})
-                        (pcb/update-shapes [main-id]
-                                           #(assoc % :variant-name name)))
-                    changes)))
-              changes
-              related-components))))
+          related-components (cfv/find-variant-components data objects variant-id)
+
+          changes'           (reduce (fn [changes component]
+                                       (let [props   (:variant-properties component)
+                                             props'  (d/reorder props from-pos to-space-between-pos)
+                                             main-id (:main-instance-id component)
+                                             name    (ctv/properties-to-name props')]
+                                         (if (not= props props')
+                                           (-> changes
+                                               (pcb/update-component (:id component)
+                                                                     #(assoc % :variant-properties props')
+                                                                     {:apply-changes-local-library? true})
+                                               (pcb/update-shapes [main-id]
+                                                                  #(assoc % :variant-name name)))
+                                           changes)))
+                                     changes
+                                     related-components)]
+
+      ;; Nothing to validate if the order did not change
+      (if (identical? changes changes')
+        changes
+        ;; All the components of the variant change, so validate the
+        ;; container, which checks every main instance and that all of them
+        ;; keep the same order of properties
+        (pcb/validate-shapes changes'
+                             (pcb/get-page-id changes')
+                             [variant-id]
+                             (str "generate-reorder-variant-poperties: " variant-id
+                                  " from: " from-pos " to: " to-space-between-pos))))))
 
 (defn generate-add-new-property
   "Add a new variant property to all components in the variant and their respective main instances.
@@ -153,8 +174,11 @@
    The value may also be given, or else it will be an empty value, unless fill-values? is true, in
    which case the value will be set to a default value based on the property number.
 
-   The editing? flag, if set, will be added to the metadata of the properties, for later use."
-  [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
+   The editing? flag, if set, will be added to the metadata of the properties, for later use.
+
+   The skip-validation? flag is used when this function is part of a higher level operation.
+   The validation must be done after the whole operation is complete."
+  [changes variant-id & {:keys [fill-values? editing? property-name property-value skip-validation?]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -194,7 +218,13 @@
                          (pcb/update-shapes [main-id] #(update % :variant-name update-name)))]))
                 [1 changes]
                 related-components)]
-    changes))
+    ;; All components of the variant change, so validate the container
+    (cond-> changes
+      (and (seq related-components) (not skip-validation?))
+      (pcb/validate-shapes (pcb/get-page-id changes)
+                           [variant-id]
+                           (str "generate-add-new-property: " variant-id
+                                " name: " property-name)))))
 
 (defn- generate-make-shape-no-variant
   [changes shape]
@@ -214,7 +244,14 @@
   "Extract some components from a variant, removing the variant-id and variant-name from the 
    main instances and the variant-id and variant-properties from the components."
   [changes shapes]
-  (reduce generate-make-shape-no-variant changes shapes))
+  (if (empty? shapes)
+    changes
+    ;; Only the extracted main instances change. The container is not
+    ;; validated because this is only a partial operation
+    (-> (reduce generate-make-shape-no-variant changes shapes)
+        (pcb/validate-shapes (pcb/get-page-id changes)
+                             (mapv :id shapes)
+                             (str "generate-make-shapes-no-variant: " (mapv :id shapes))))))
 
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
@@ -240,7 +277,10 @@
 
 (defn generate-make-shapes-variant
   "Introduce some components into a variant, adding the variant-id and variant-name to the
-   main instances and the variant-id and variant-properties to the components."
+   main instances and the variant-id and variant-properties to the components.
+
+   It does not validate the shapes because this is only a partial operation. The validation
+   must be done after the whole operation is complete."
   [changes shapes variant-container]
   (let [data           (pcb/get-library-data changes)
         objects        (pcb/get-objects changes)
@@ -282,7 +322,7 @@
                          (- total-props num-base-props))
 
         changes        (nth
-                        (iterate #(generate-add-new-property % variant-id) changes)
+                        (iterate #(generate-add-new-property % variant-id :skip-validation? true) changes)
                         num-new-props)
 
         changes        (pcb/update-shapes changes (map :id shapes)

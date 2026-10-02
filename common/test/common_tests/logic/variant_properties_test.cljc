@@ -79,7 +79,8 @@
     (t/is (= (-> comp01' :variant-properties first :name) "NewName1"))
     (t/is (= (-> comp01' :variant-properties last :name) "NewName2"))
     (t/is (= (-> comp02' :variant-properties first :name) "NewName1"))
-    (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))))
+    (t/is (= (-> comp02' :variant-properties last :name) "NewName2"))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 (t/deftest test-update-property-name-duplicate
   (let [file    (-> (thf/sample-file :file1)
@@ -188,7 +189,8 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 ;; =============================================================================
 ;; generate-update-property-value tests
@@ -249,7 +251,9 @@
 
     ;; ==== Check
     (t/is (= (-> comp01' :variant-properties first :value) "NewValue1"))
-    (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))))
+    (t/is (= (-> comp02' :variant-properties first :value) "NewValue2"))
+    ;; The last call validates the main instance of comp02
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp02)]))))
 
 (t/deftest test-update-property-value-duplicate-value
   (let [file    (-> (thf/sample-file :file1)
@@ -274,7 +278,24 @@
         comp02' (thc/get-component file' :c02)]
 
     (t/is (= "SharedValue" (-> comp01' :variant-properties first :value)))
-    (t/is (= "SharedValue" (-> comp02' :variant-properties first :value)))))
+    (t/is (= "SharedValue" (-> comp02' :variant-properties first :value)))
+    ;; The last call validates the main instance of comp02
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp02)]))))
+
+(t/deftest test-update-property-value-validates-main
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-update-property-value (:id comp01) 0 "NewValue"))]
+
+    ;; Only the main instance of the updated component changes
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 ;; =============================================================================
 ;; generate-set-variant-error tests
@@ -316,7 +337,8 @@
 
         main01' (ths/get-shape file' :m01)]
 
-    (t/is (= "MyError" (:variant-error main01')))))
+    (t/is (= "MyError" (:variant-error main01')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 (t/deftest test-set-variant-error-add-and-clear
   (let [file    (-> (thf/sample-file :file1)
@@ -337,7 +359,24 @@
 
         main01' (ths/get-shape file' :m01)]
 
-    (t/is (nil? (:variant-error main01')))))
+    (t/is (nil? (:variant-error main01')))
+    ;; The last call, which clears the error, validates the same main instance
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
+
+(t/deftest test-set-variant-error-validates-main
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        comp01  (thc/get-component file :c01)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-set-variant-error (:id comp01) "MyError"))]
+
+    ;; Only the main instance of the component changes
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:main-instance-id comp01)]))))
 
 ;; =============================================================================
 ;; generate-reorder-variant-poperties tests
@@ -395,7 +434,8 @@
         comp01' (thc/get-component file' :c01)]
 
     (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-    (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))))
+    (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 (t/deftest test-reorder-variant-properties-clamped-pos
   (let [file    (-> (thf/sample-file :file1)
@@ -412,13 +452,32 @@
           file'   (thf/apply-changes file changes)
           comp01' (thc/get-component file' :c01)]
       (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-      (t/is (= "Property 1" (-> comp01' :variant-properties last :name))))
+      (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+      (t/is (thf/validates-shapes-last? changes (:id page) [v-id])))
 
     (let [changes (clvp/generate-reorder-variant-poperties base-changes v-id 1 -1)
           file'   (thf/apply-changes file changes)
           comp01' (thc/get-component file' :c01)]
       (t/is (= "Property 2" (-> comp01' :variant-properties first :name)))
-      (t/is (= "Property 1" (-> comp01' :variant-properties last :name))))))
+      (t/is (= "Property 1" (-> comp01' :variant-properties last :name)))
+      (t/is (thf/validates-shapes-last? changes (:id page) [v-id])))))
+
+(t/deftest test-reorder-variant-properties-validates-container
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-reorder-variant-poperties v-id 0 2))]
+
+    ;; All the components of the variant change, so validate the container,
+    ;; which checks every main instance and that all of them keep the same
+    ;; order of properties
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
 
 ;; =============================================================================
 ;; generate-add-new-property tests
@@ -470,7 +529,23 @@
     (t/is (= (count (:variant-properties comp01')) 2))
     (t/is (= (count (:variant-properties comp02)) 1))
     (t/is (= (count (:variant-properties comp02')) 2))
-    (t/is (= (-> comp01' :variant-properties last :value) ""))))
+    (t/is (= (-> comp01' :variant-properties last :value) ""))
+    (t/is (thf/validates-shapes-last? changes (:id page) [v-id]))))
+
+(t/deftest test-add-new-property-skip-validation
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id :skip-validation? true))]
+
+    (t/is (seq (:redo-changes changes)))
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))))
 
 (t/deftest test-add-new-property-with-values
   (let [;; ==== Setup
@@ -598,7 +673,25 @@
     (t/is (nil? (:variant-id comp01')))
     (t/is (nil? (:variant-properties comp01')))
     (t/is (nil? (:variant-id main01')))
-    (t/is (nil? (:variant-name main01')))))
+    (t/is (nil? (:variant-name main01')))
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id main01)]))))
+
+(t/deftest test-make-shapes-no-variant-validates-shapes
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        page    (thf/current-page file)
+        main01  (ths/get-shape file :m01)
+        main02  (ths/get-shape file :m02)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-make-shapes-no-variant [main01 main02]))]
+
+    ;; Only the extracted main instances change. The container is not
+    ;; validated, as the caller may not have moved the shapes out of it yet
+    (t/is (thf/validates-shapes-last? changes (:id page) [(:id main01) (:id main02)]))))
 
 ;; =============================================================================
 ;; generate-make-shapes-variant tests
@@ -655,3 +748,28 @@
     (t/is (= "Property 1" (-> c03' :variant-properties first :name)))
     (t/is (= "Frame1" (-> c03' :variant-properties first :value)))
     (t/is (= "Frame1" (-> m03' :variant-name)))))
+
+(t/deftest test-make-shapes-variant-with-new-properties-does-not-validate
+  ;; The shape is already inside the container but it is not a variant yet,
+  ;; as when a component is restored into a variant. The function adds a new
+  ;; property to the siblings while the shape is not a variant, so it must
+  ;; not validate: the caller validates the container when done
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02)
+                    (tho/add-simple-component :c03 :m03 :sh03
+                                              :root-params {:parent-label :v01
+                                                            :name "Big / Red"}))
+        page    (thf/current-page file)
+
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-make-shapes-variant [(ths/get-shape file :m03)]
+                                                       (ths/get-shape file :v01)))
+
+        file'   (thf/apply-changes file changes)]
+
+    (t/is (not-any? #(= :validate-shapes (:type %)) (:redo-changes changes)))
+    (t/is (= 2 (count (:variant-properties (thc/get-component file' :c01)))))
+    (t/is (= 2 (count (:variant-properties (thc/get-component file' :c03)))))))

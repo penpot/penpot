@@ -1105,6 +1105,12 @@
 
 ;; --- Validate Shapes
 
+(defn skip-validate-changes
+  "Remove the :validate-shapes changes, for data where the shapes can't
+  be validated (e.g. without the full file or its libraries)."
+  [changes]
+  (remove #(= :validate-shapes (:type %)) changes))
+
 #?(:clj
    (defmethod process-change :validate-shapes
      [data _ _]
@@ -1114,11 +1120,6 @@
    (defmethod process-change :validate-shapes
      [data {:keys [page-id shape-ids context]} libraries]
      (when libraries
-       (println "Validating shapes: \n"
-                "  file-id:" (str (:id data)) "\n"
-                "  page-id:" (str page-id) "\n"
-                "  shape-ids:" (str shape-ids) "\n"
-                "  context:" context)
        (let [file {:id (:id data) :data data}
              errors (reduce (fn [acc shape-id]
                               (if-let [page (ctpl/get-page data page-id)]

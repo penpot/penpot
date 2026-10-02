@@ -270,8 +270,6 @@
                   "Shape expected to be main instance"
                   shape file page))
   (when-not (= (:component-file shape) (:id file))
-    (prn "shape" (:id shape) (:name shape) (:component-file shape))
-    (prn "file" (:id file) (:name file))
     (report-error :component-main-external
                   "Main instance should refer to a component in the same file"
                   shape file page))

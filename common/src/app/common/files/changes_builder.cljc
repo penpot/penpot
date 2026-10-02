@@ -197,6 +197,8 @@
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
+                               ;; Validation only makes sense on the real file data
+                               (cfc/skip-validate-changes)
                                (map #(-> %
                                          (assoc :page-id uuid/zero)
                                          (dissoc :component-id))))
@@ -1237,6 +1239,25 @@
   [changes]
   (assert-page-id! changes)
   (::page-id (meta changes)))
+
+;; The getters above assert that their context has been given. Use these
+;; predicates when a caller has a fallback for a missing context.
+
+(defn has-library-data?
+  [changes]
+  (contains? (meta changes) ::library-data))
+
+(defn has-objects?
+  [changes]
+  (contains? (meta changes) ::file-data))
+
+(defn has-page?
+  [changes]
+  (contains? (meta changes) ::page))
+
+(defn has-page-id?
+  [changes]
+  (contains? (meta changes) ::page-id))
 
 (defn set-text-content
   [changes id content prev-content]
