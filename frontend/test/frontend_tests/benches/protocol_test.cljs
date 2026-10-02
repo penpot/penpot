@@ -9,7 +9,7 @@
   Browser entry tests cover load and warm pan with a fake module."
   (:require
    [app.common.render-wasm.wasm :as wasm]
-   [benches.render-wasm.protocol :as protocol]
+   [benches.render-wasm.runtime.protocol :as protocol]
    [cljs.test :as t :include-macros true]))
 
 (defn- fake-clock
@@ -114,7 +114,7 @@
                                (t/is false (str "must reject for frame type " bad))
                                (done)))
                       (.catch (fn [cause]
-                                (t/is (= :benches.render-wasm.protocol/unexpected-frame-type
+                                (t/is (= :benches.render-wasm.runtime.protocol/unexpected-frame-type
                                          (:type (ex-data cause)))
                                       (str "frame type " bad))
                                 (step (rest remaining))))))))]
