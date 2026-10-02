@@ -1120,11 +1120,6 @@
    (defmethod process-change :validate-shapes
      [data {:keys [page-id shape-ids context]} libraries]
      (when libraries
-       (println "Validating shapes: \n"
-                "  file-id:" (str (:id data)) "\n"
-                "  page-id:" (str page-id) "\n"
-                "  shape-ids:" (str shape-ids) "\n"
-                "  context:" context)
        (let [file {:id (:id data) :data data}
              errors (reduce (fn [acc shape-id]
                               (if-let [page (ctpl/get-page data page-id)]
