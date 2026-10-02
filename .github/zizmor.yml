@@ -6,9 +6,9 @@
 # Remove a file from a list in the same PR that fixes it, and the whole rule
 # entry once its list is empty.
 rules:
-  # Pending: wrangler is added with `pnpm add wrangler@latest` before each
-  # deploy because it is not a dependency of the plugins workspace. Fixed by
-  # adding it to plugins/package.json (devDependencies) and dropping that line.
+  # Accepted: wrangler is added with `pnpm add wrangler@latest` before each
+  # deploy instead of being a dependency of the plugins workspace. Only used
+  # to publish to Cloudflare; not worth adding to the workspace.
   adhoc-packages:
     ignore:
       - plugins-deploy-api-doc.yml
@@ -23,9 +23,8 @@ rules:
   # Style nudge towards the `$/...` syntax; not worth enforcing.
   self-repository:
     disable: true
-  # Accepted for now: penpotapp/devenv is our own image, built and pushed by
-  # build-docker-devenv.yml. Pinning it by digest means bumping ten files on
-  # every rebuild; revisit once Renovate can do that automatically.
+  # Accepted: penpotapp/devenv is our own image, built and pushed by
+  # build-docker-devenv.yml, so the floating tag is intentional.
   unpinned-images:
     ignore:
       - plugins-deploy-package.yml
