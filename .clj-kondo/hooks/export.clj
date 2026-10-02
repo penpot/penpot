@@ -10,6 +10,20 @@
                   sname])]
     {:node result}))
 
+(defn benches-defscene
+  [{:keys [node]}]
+  (let [[_ _ opts argv & body] (:children node)]
+    (if (and argv (api/vector-node? argv))
+      {:node (api/list-node (into [(api/token-node (quote fn)) argv] body))}
+      {:node node})))
+
+(defn benches-defcase
+  [{:keys [node]}]
+  (let [[_ _ opts argv & body] (:children node)]
+    (if (and (seq body) argv (api/vector-node? argv))
+      {:node (api/list-node (into [(api/token-node (quote fn)) argv] body))}
+      {:node node})))
+
 (def registry (atom {}))
 
 
