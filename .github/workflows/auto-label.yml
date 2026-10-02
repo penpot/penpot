@@ -13,6 +13,8 @@ permissions: {}
 
 jobs:
   triage:
+    # Dependabot PRs are labelled by dependabot.yml and do not need triage.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
