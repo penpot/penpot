@@ -7,9 +7,15 @@
 
 import { checkSuperuserSession } from "./auth.js";
 import { renderHeader } from "./components/header.js";
+import { renderSidebar } from "./components/sidebar.js";
 import { dashboardPage } from "./pages/dashboard.js";
 import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
+
+const NAV_ITEMS = [
+  { query: "", label: "Dashboard" },
+  { query: "?screen=error-reports", label: "Error reports" },
+];
 
 let sessionStatus = "anonymous";
 
@@ -40,17 +46,25 @@ function renderAuthed(root) {
     deniedView(root);
     return;
   }
-  const params = screenParams();
+  const layout = document.createElement("div");
+  layout.className = "admin-layout";
   const navigate = (query) => {
     history.pushState({}, "", query);
     renderAuthed(root);
   };
+  layout.appendChild(renderSidebar(NAV_ITEMS, navigate, location.search));
+  const content = document.createElement("main");
+  content.className = "admin-content";
+  layout.appendChild(content);
+  root.appendChild(layout);
+
+  const params = screenParams();
   if (params.get("screen") === "error-reports") {
-    errorReportsPage(root, { onNavigate: navigate });
+    errorReportsPage(content, { onNavigate: navigate });
   } else if (params.get("screen") === "error-report" && params.get("id")) {
-    errorDetailPage(root, { id: params.get("id"), onNavigate: navigate });
+    errorDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else {
-    dashboardPage(root, { onNavigate: navigate });
+    dashboardPage(content, { onNavigate: navigate });
   }
 }
 

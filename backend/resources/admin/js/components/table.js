@@ -10,6 +10,9 @@ export function renderTable(columns, rows) {
   const headRow = document.createElement("tr");
   for (const column of columns) {
     const cell = document.createElement("th");
+    if (column.class) {
+      cell.className = column.class;
+    }
     cell.textContent = column.label;
     headRow.appendChild(cell);
   }
@@ -21,6 +24,9 @@ export function renderTable(columns, rows) {
     const rowEl = document.createElement("tr");
     for (const column of columns) {
       const cell = document.createElement("td");
+      if (column.class) {
+        cell.className = column.class;
+      }
       const value = row[column.key];
       cell.textContent = value === null || value === undefined ? "" : String(value);
       rowEl.appendChild(cell);
