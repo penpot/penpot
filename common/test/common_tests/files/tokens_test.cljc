@@ -1477,3 +1477,193 @@
         ;; set-theme-active false removes non-existent id
         (let [status' (cfo/set-theme-active all-invalid tokens-lib invalid-theme-id false)]
           (t/is (not (ctos/theme-active? status' invalid-theme-id))))))))
+
+;; absorb-tokens-lib
+
+(defn- make-sample-tokens-lib
+  "A tokens-lib with a set (and a token in it) for each label. Each set
+   is named as its label, and its id is registered in thi under it."
+  [& set-labels]
+  (reduce (fn [tokens-lib set-label]
+            (let [set-id (thi/new-id! set-label)]
+              (-> tokens-lib
+                  (ctob/add-set (ctob/make-token-set :id set-id
+                                                     :name (name set-label)))
+                  (ctob/add-token set-id (ctob/make-token :name (str (name set-label) "-token")
+                                                          :type :border-radius
+                                                          :value 10)))))
+          (ctob/make-tokens-lib)
+          set-labels))
+
+(defn- make-sample-tokens-status
+  "A tokens-status with the sets of the given labels active. The sets
+   must have been created before by make-sample-tokens-lib."
+  [& set-labels]
+  (ctos/make-tokens-status :active-set-ids (into #{} (map thi/id) set-labels)))
+
+(defn- make-sample-data
+  "File data with the given tokens-lib, tokens-status and tokens-source.
+   Those not given are left unset."
+  [label & {:keys [tokens-lib tokens-status tokens-source]}]
+  (-> (ctf/file-data (thf/sample-file label))
+      (cfo/ensure-tokens-lib)
+      (cfo/update-tokens-lib (constantly tokens-lib))
+      (cfo/update-tokens-status (constantly tokens-status))
+      (cfo/set-tokens-source tokens-source)))
+
+(t/deftest test-absorb-tokens-lib
+  (t/testing "copies the tokens-lib of the library and unsets the tokens-source"
+    (let [library-data (make-sample-data :library
+                                         :tokens-lib (make-sample-tokens-lib :lib-set))
+          file-data    (make-sample-data :file1
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= (cfo/get-tokens-lib library-data) (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))
+      (t/is (true? (cfo/effective-tokens-source? file-data' (:id file-data'))))
+      (t/is (true? (cfo/editable-tokens? file-data')))))
+
+  (t/testing "replaces the own tokens-lib of the file"
+    (let [library-data (make-sample-data :library
+                                         :tokens-lib (make-sample-tokens-lib :lib-set))
+          file-data    (make-sample-data :file1
+                                         :tokens-lib (make-sample-tokens-lib :own-set)
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= (cfo/get-tokens-lib library-data) (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "copies an empty tokens-lib of the library"
+    (let [empty-lib    (ctob/make-tokens-lib)
+          library-data (make-sample-data :library :tokens-lib empty-lib)
+          file-data    (make-sample-data :file1
+                                         :tokens-lib (make-sample-tokens-lib :own-set)
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= empty-lib (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "unsets the tokens-source even if the file had no tokens-source"
+    (let [library-data (make-sample-data :library
+                                         :tokens-lib (make-sample-tokens-lib :lib-set))
+          file-data    (make-sample-data :file1)
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= (cfo/get-tokens-lib library-data) (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "does not change anything else in the file"
+    (let [library-data (make-sample-data :library
+                                         :tokens-lib (make-sample-tokens-lib :lib-set))
+          file-data    (make-sample-data :file1
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= (dissoc file-data :tokens-lib :tokens-status :tokens-source)
+               (dissoc file-data' :tokens-lib :tokens-status :tokens-source))))))
+
+(t/deftest test-absorb-tokens-lib-status
+  (t/testing "preserves the tokens-status of the file"
+    (let [library-lib    (make-sample-tokens-lib :lib-set :other-set)
+          file-status    (make-sample-tokens-status :lib-set)
+          library-status (make-sample-tokens-status :other-set)
+          library-data   (make-sample-data :library
+                                           :tokens-lib library-lib
+                                           :tokens-status library-status)
+          file-data      (make-sample-data :file1
+                                           :tokens-status file-status
+                                           :tokens-source (:id library-data))
+          file-data'     (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= file-status (cfo/get-tokens-status file-data')))
+      (t/is (not= library-status (cfo/get-tokens-status file-data')))))
+
+  (t/testing "preserves an empty tokens-status of the file"
+    (let [library-lib    (make-sample-tokens-lib :lib-set)
+          file-status    (ctos/make-tokens-status)
+          library-status (make-sample-tokens-status :lib-set)
+          library-data   (make-sample-data :library
+                                           :tokens-lib library-lib
+                                           :tokens-status library-status)
+          file-data      (make-sample-data :file1
+                                           :tokens-status file-status
+                                           :tokens-source (:id library-data))
+          file-data'     (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= file-status (cfo/get-tokens-status file-data')))))
+
+  (t/testing "copies the tokens-status of the library if the file has none"
+    (let [library-lib    (make-sample-tokens-lib :lib-set)
+          library-status (make-sample-tokens-status :lib-set)
+          library-data   (make-sample-data :library
+                                           :tokens-lib library-lib
+                                           :tokens-status library-status)
+          file-data      (make-sample-data :file1
+                                           :tokens-source (:id library-data))
+          file-data'     (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= library-status (cfo/get-tokens-status file-data')))
+      (t/is (= #{(thi/id :lib-set)}
+               (ctos/get-active-set-ids (cfo/get-tokens-status file-data'))))
+      (t/is (some? (ctob/get-set (cfo/get-tokens-lib file-data') (thi/id :lib-set))))))
+
+  (t/testing "leaves the tokens-status unset if neither the file nor the library have one"
+    (let [library-data (make-sample-data :library
+                                         :tokens-lib (make-sample-tokens-lib :lib-set))
+          file-data    (make-sample-data :file1
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (nil? (cfo/get-tokens-status file-data'))))))
+
+(t/deftest test-absorb-tokens-lib-library-without-tokens
+  (t/testing "library without tokens-lib: keeps the tokens-lib and tokens-status of the file, and unsets the tokens-source"
+    (let [file-lib       (make-sample-tokens-lib :own-set)
+          file-status    (make-sample-tokens-status :own-set)
+          library-status (ctos/make-tokens-status :active-set-ids #{(uuid/next)})
+          library-data   (make-sample-data :library
+                                           :tokens-status library-status)
+          file-data      (make-sample-data :file1
+                                           :tokens-lib file-lib
+                                           :tokens-status file-status
+                                           :tokens-source (:id library-data))
+          file-data'     (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= file-lib (cfo/get-tokens-lib file-data')))
+      (t/is (= file-status (cfo/get-tokens-status file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "library without tokens-lib: does not copy the tokens-status of the library"
+    (let [library-status (ctos/make-tokens-status :active-set-ids #{(uuid/next)})
+          library-data   (make-sample-data :library
+                                           :tokens-status library-status)
+          file-data      (make-sample-data :file1
+                                           :tokens-source (:id library-data))
+          file-data'     (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (nil? (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-status file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "library without any tokens attribute"
+    (let [library-data (ctf/file-data (thf/sample-file :library))
+          file-lib     (make-sample-tokens-lib :own-set)
+          file-data    (make-sample-data :file1
+                                         :tokens-lib file-lib
+                                         :tokens-source (:id library-data))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (= file-lib (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data')))))
+
+  (t/testing "neither the file nor the library have tokens"
+    (let [library-data (ctf/file-data (thf/sample-file :library))
+          file-data    (ctf/file-data (thf/sample-file :file1))
+          file-data'   (cfo/absorb-tokens-lib file-data library-data)]
+      (t/is (nil? (cfo/get-tokens-lib file-data')))
+      (t/is (nil? (cfo/get-tokens-status file-data')))
+      (t/is (nil? (cfo/get-tokens-source file-data'))))))
+
+(t/deftest test-absorb-tokens-lib-no-library-data
+  (t/testing "nil library-data: the file is returned unchanged"
+    (let [file-lib  (make-sample-tokens-lib :own-set)
+          file-data (make-sample-data :file1
+                                      :tokens-lib file-lib
+                                      :tokens-status (make-sample-tokens-status :own-set)
+                                      :tokens-source (uuid/next))]
+      (t/is (identical? file-data (cfo/absorb-tokens-lib file-data nil)))))
+
+  (t/testing "nil library-data and a file without tokens"
+    (let [file-data (ctf/file-data (thf/sample-file :file1))]
+      (t/is (identical? file-data (cfo/absorb-tokens-lib file-data nil))))))
