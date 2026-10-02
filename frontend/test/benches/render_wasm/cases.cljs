@@ -40,6 +40,9 @@
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.scenes.core :as core]
+   benches.render-wasm.scenes.masks
+   benches.render-wasm.scenes.paths
+   benches.render-wasm.scenes.plus
    benches.render-wasm.scenes.rects
    [clojure.string :as str]))
 
