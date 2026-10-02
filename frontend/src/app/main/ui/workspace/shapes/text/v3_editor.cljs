@@ -15,14 +15,17 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.text.clipboard :as text-clipboard]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -78,6 +81,16 @@
       {:start-para (:para after)  :start-offset (:offset after)
        :end-para   (:para before) :end-offset   (:offset before)})))
 
+(defn- commit-restyled-content
+  "Save `content` restyled after an insertion, renaming the shape after its text."
+  [shape-id content]
+  (let [text (txt/content->text content)
+        name (when (not= text "") (txt/generate-shape-name text))]
+    (st/emit! (dwt/v2-update-text-shape-content
+               shape-id content
+               :update-name? true
+               :name name))))
+
 (defn- sync-with-pending-caret-styles!
   "Commit an insertion that consumed a pending caret style: sync the new text,
    then restyle the just-typed `range` into its own span. `before` is the
@@ -87,12 +100,43 @@
     ;; Sync first so the cached content stays index-aligned with WASM.
     (text-editor/text-editor-sync-content)
     (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
-      (let [text (txt/content->text content)
-            name (when (not= text "") (txt/generate-shape-name text))]
-        (st/emit! (dwt/v2-update-text-shape-content
-                   shape-id content
-                   :update-name? true
-                   :name name)))
+      (commit-restyled-content shape-id content)
+      (sync-wasm-text-editor-content!))))
+
+;; Bigger HTML is pasted as plain text rather than walked.
+(def ^:private max-paste-html-length 1000000)
+
+(defn- clipboard->fragment
+  "The paste fragment for `data`: its HTML when allowed and it has text, else its plain text."
+  [^js data html-paste?]
+  (let [html (when html-paste? (.getData data "text/html"))]
+    (or (when (< 0 (count html) max-paste-html-length)
+          (text-clipboard/html->fragment html))
+        (text-clipboard/text->fragment (.getData data "text/plain")))))
+
+(defn- selection-start
+  "Start of the WASM selection as {:para :offset}: where pasted text goes."
+  []
+  (when-let [{:keys [anchor-para anchor-offset focus-para focus-offset]}
+             (text-editor/text-editor-get-selection)]
+    (if (or (< anchor-para focus-para)
+            (and (= anchor-para focus-para) (<= anchor-offset focus-offset)))
+      {:para anchor-para :offset anchor-offset}
+      {:para focus-para :offset focus-offset})))
+
+(defn- paste-fragment
+  "Insert the text of `fragment`, then restyle it with the fragment overrides."
+  [fragment]
+  (let [shape-id (text-editor/text-editor-get-active-shape-id)
+        start    (selection-start)]
+    (text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
+    (if (and (some? start) (text-paste/styled? fragment))
+      (do
+        ;; Sync first so the cached content stays index-aligned with WASM.
+        (text-editor/text-editor-sync-content)
+        (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start)]
+          (commit-restyled-content shape-id content)
+          (sync-wasm-text-editor-content!)))
       (sync-wasm-text-editor-content!))))
 
 (defn- reset-input-node
@@ -273,13 +317,12 @@
            (dom/prevent-default event)
            ;; Pasted text keeps the surrounding style; drop any pending caret style.
            (text-editor/clear-pending-caret-styles!)
-           (let [clipboard-data (.-clipboardData event)
-                 text (.getData clipboard-data "text/plain")]
-             (when (and text (seq text))
-               (text-editor/text-editor-insert-text text)
-               (sync-wasm-text-editor-content!)
-               (wasm.api/request-render-preserving-target "text-paste"))
-             (reset-input-node (mf/ref-val contenteditable-ref)))))
+           (when-let [fragment (some-> (.-clipboardData event)
+                                       (clipboard->fragment
+                                        (features/active-feature? @st/state "text-editor-wasm/v1-html-paste")))]
+             (paste-fragment fragment)
+             (wasm.api/request-render-preserving-target "text-paste"))
+           (reset-input-node (mf/ref-val contenteditable-ref))))
 
         on-copy
         (mf/use-fn
