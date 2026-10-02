@@ -18,6 +18,7 @@
    [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -350,3 +351,75 @@
     (t/is (= :profile-not-found
              (caught-code #(run "resend-admin-verification"
                                 {:id (uuid/next)}))))))
+
+;; ----------------------------------------------------------------
+;; Delete in bulk by email
+;; ----------------------------------------------------------------
+
+(t/deftest delete-guard
+  (let [profile (th/create-profile* 1)]
+    (t/is (= :superuser-required
+             (caught-code #((as-session #{} profile)
+                            "delete-admin-profiles"
+                            {:emails ["a@test.com"]}))))
+    (t/is (= :authentication-required
+             (caught-code #(call #{} nil nil #{}
+                                 "delete-admin-profiles"
+                                 {:emails ["a@test.com"]}))))))
+(t/deftest delete-marks-profiles-and-closes-sessions
+  (let [admin (th/create-profile* 1)
+        user2 (th/create-profile* 2)
+        user3 (th/create-profile* 3)
+        _     (open-session! (:id user2))
+        run   (as-superuser admin)
+        jobs  (atom [])]
+    (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/params]}]
+                                (swap! jobs conj {:task task :params params})
+                                nil)]
+      (let [out (run "delete-admin-profiles"
+                     {:emails [(:email user2)
+                               "ghost@test.com"
+                               (:email user3)]})]
+        (t/is (= 3 (:total out)))
+        (t/is (= (set [(:id user2) (:id user3)]) (set (:deleted out))))
+        (t/is (= ["ghost@test.com"] (:not-found out)))
+        (t/is (= [] (:skipped-self out)))))
+    (t/is (some? (:deleted-at (db/get* th/*system* :profile {:id (:id user2)}
+                                       {::db/remove-deleted false})))
+          "the row stays until the collector purges it")
+    (t/is (zero? (session-count (:id user2))))
+    (t/is (= 2 (count @jobs)))
+    (t/is (every? #(= :delete-object (:task %)) @jobs))
+    (t/is (= {:items []} (run "get-admin-profiles" {:search "profile2.test"}))
+          "marked profiles leave the listing")))
+
+(t/deftest delete-skips-self
+  (let [admin (th/create-profile* 1)
+        run   (as-superuser admin)]
+    (let [out (run "delete-admin-profiles" {:emails [(:email admin)]})]
+      (t/is (= [(:email admin)] (:skipped-self out)))
+      (t/is (= [] (:deleted out))))
+    (t/is (nil? (:deleted-at (db/get* th/*system* :profile {:id (:id admin)})))
+          "the operator row is untouched")))
+
+(t/deftest delete-normalizes-email-case
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2)
+        run   (as-superuser admin)
+        jobs  (atom [])]
+    (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/params]}]
+                                (swap! jobs conj {:task task :params params})
+                                nil)]
+      (let [out (run "delete-admin-profiles"
+                     {:emails [(str/upper-case (:email user))]})]
+        (t/is (= [(:id user)] (:deleted out)))
+        (t/is (= 1 (count @jobs)))))))
+
+(t/deftest delete-validates-batch-size
+  (let [admin (th/create-profile* 1)
+        run   (as-superuser admin)]
+    (t/is (= :params-validation
+             (caught-code #(run "delete-admin-profiles" {:emails []}))))
+    (t/is (= :params-validation
+             (caught-code #(run "delete-admin-profiles"
+                                {:emails (mapv str (range 101))}))))))

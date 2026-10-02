@@ -21,13 +21,17 @@
    [app.common.schema :as-alias sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.session :as session]
+   [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.error-reports :as error-reports]
+   [app.rpc.commands.profile :as cmd.profile]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]
+   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (sv/defmethod ::get-admin-error-reports
@@ -286,3 +290,63 @@
     (ex/raise :type :not-found
               :code :profile-not-found
               :hint (str "profile " id " not found"))))
+
+(def schema:delete-admin-profiles-params
+  [:map {:title "delete-admin-profiles-params"}
+   [:emails [:vector {:min 1 :max 100} ::sm/email]]])
+
+(def schema:delete-admin-profiles-result
+  [:map
+   [:total ::sm/int]
+   [:deleted [:vector ::sm/uuid]]
+   [:not-found [:vector ::sm/text]]
+   [:skipped-self [:vector ::sm/text]]])
+
+(defn- delete-admin-profile-by-email!
+  [cfg email deleted-at cause operator-id]
+  (let [email (str/lower (str/trim email))]
+    (if-let [profile (some-> (db/get* cfg :profile {:email email})
+                             (cmd.profile/decode-row))]
+      (if (= (:id profile) operator-id)
+        :self
+        (do
+          (audit/insert cfg
+                        {:name "delete-profile"
+                         :type "action"
+                         :profile-id (:id profile)
+                         :tracked-at deleted-at
+                         :props (audit/profile->props profile)
+                         :context {:triggered-by "admin-panel"
+                                   :cause cause
+                                   :operator-id operator-id}})
+          (db/update! cfg :profile
+                      {:deleted-at deleted-at}
+                      {:id (:id profile)})
+          (session/invalidate-all cfg (:id profile))
+          (wrk/submit! {::db/conn (::db/conn cfg)
+                        ::wrk/task :delete-object
+                        ::wrk/params {:object :profile
+                                      :deleted-at deleted-at
+                                      :id (:id profile)}})
+          (:id profile)))
+      nil)))
+
+(sv/defmethod ::delete-admin-profiles
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:delete-admin-profiles-params
+   ::sm/result schema:delete-admin-profiles-result}
+  [cfg {:keys [emails ::rpc/profile-id]}]
+  (let [deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))
+        cause      "explicit call to delete-admin-profiles"]
+    (reduce (fn [acc raw-email]
+              (let [email  (str/lower (str/trim raw-email))
+                    result (delete-admin-profile-by-email!
+                            cfg email deleted-at cause profile-id)]
+                (cond
+                  (= :self result) (update acc :skipped-self conj email)
+                  (nil? result)    (update acc :not-found conj email)
+                  :else            (update acc :deleted conj result))))
+            {:total (count emails) :deleted [] :not-found [] :skipped-self []}
+            emails)))
