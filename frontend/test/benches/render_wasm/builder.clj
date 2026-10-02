@@ -7,7 +7,7 @@
 (ns benches.render-wasm.builder
   "Construction macros for renderer benchmark scenes.
 
-  Runtime helpers and scope state live in the sibling `builder.cljs`.
+  For runtime helpers and scope state see `builder.cljs`.
 
   Usage:
 
@@ -24,13 +24,20 @@
         (rect {:x 0 :y 0 :width 100 :height 100})
         (rect {:x 50 :y 50 :width 100 :height 100})))
 
+  Ancestry and order are implicit in the nesting of calls: shape constructors
+  add themselves to the current parent, in the sequence they are called.
+  Coordinates are page-absolute like in penpot. Frames use their state bounds
+  and groups derive their bounds from their children inside out.
+  A masked group takes the geometry of its first child.
+  Booleans derive content and geometry from their children with the standard
+  path engine and inherit style from the head child unless attrs supply it.
+
   `params` is a map with `:seed` (required), optional `:root` attributes for
   the canonical root frame, and optional `:defaults` with one attribute
   generator map per shape type.
 
-  Consumers require this namespace with `:include-macros true` (or
-  `:require-macros`) to use the macros; the runtime helpers live under the
-  same alias.
+  Require this namespace with `:include-macros true` (or `:require-macros`)
+  to use the macros.
 
   The scope is carried by the dynamic `*state*`, so ordinary `let`, `doseq`
   and functions defined outside the scope work inside the body. Scopes
