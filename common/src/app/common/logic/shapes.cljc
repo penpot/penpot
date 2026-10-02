@@ -84,7 +84,7 @@
     (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? extra-context]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr changed-item-index ignore-tree ignore-touched with-objects? translation? skip-grid-reassignment? skip-validation? extra-context]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -112,7 +112,11 @@
                   (pcb/get-page-id changes))
         modified-components (ctn/get-all-instance-roots objects ids)
 
-        changes (if (and page-id (seq modified-components))
+        ;; skip-validation? is for updates that can't break the references
+        ;; between components (e.g. geometry only). The validation covers
+        ;; the whole instance, so it could stop on copies that other
+        ;; changes have not synced yet.
+        changes (if (and page-id (seq modified-components) (not skip-validation?))
                   (pcb/validate-shapes changes
                                        page-id
                                        modified-components
