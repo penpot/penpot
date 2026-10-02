@@ -39,6 +39,10 @@ impl GlyphDraw {
     }
 
     fn draw(&self, canvas: &Canvas, paint: &Paint) {
+        if crate::render::svg::writing_svg() {
+            canvas.draw_path(&self.path(), paint);
+            return;
+        }
         match &self.transform {
             None => {
                 canvas.draw_text_blob(&self.blob, self.offset, paint);
@@ -53,10 +57,14 @@ impl GlyphDraw {
     }
 
     fn into_path(self) -> skia::Path {
-        let path = text_blob_path(self.blob, self.offset);
-        match self.transform {
+        self.path()
+    }
+
+    fn path(&self) -> skia::Path {
+        let path = text_blob_path(self.blob.clone(), self.offset);
+        match &self.transform {
             None => path,
-            Some(transform) => path.make_transform(&transform),
+            Some(transform) => path.make_transform(transform),
         }
     }
 }
@@ -141,14 +149,20 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
             run_start,
             run_count,
             first_count,
+            first_top,
+            second_top,
             ..
         } => {
             let (first, second) =
                 layout.runs[run_start..run_start + run_count].split_at(first_count);
             let quarter = cell.font_size / 4.0;
             // vertical-rl: the first sub-line reads first, on the right half.
-            let mut draws = warichu_line_draws(first, x_center + quarter, y_top);
-            draws.extend(warichu_line_draws(second, x_center - quarter, y_top));
+            let mut draws = warichu_line_draws(first, x_center + quarter, y_top + first_top);
+            draws.extend(warichu_line_draws(
+                second,
+                x_center - quarter,
+                y_top + second_top,
+            ));
             draws
         }
     }

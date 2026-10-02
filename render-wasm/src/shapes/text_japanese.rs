@@ -4,6 +4,7 @@ use super::text_vertical::{
 };
 use crate::globals::get_resources;
 use crate::math::Point;
+use crate::shapes::japanese::{classify, shed_pair_aki, JapaneseClass};
 use crate::shapes::{kinsoku, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use skia_safe::{
@@ -47,13 +48,49 @@ pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku:
     (texts, kinsoku::OffsetMap::default())
 }
 
+/// Char indices, per span of the layout `texts`, of the characters whose
+/// advance loses a half-em to the punctuation aki rules of `shed_pair_aki`:
+/// a closing mark sheds its trailing aki, and the character before an
+/// opening bracket gives up the bracket's leading aki. Inserted word joiners
+/// are transparent. Spans with `palt` already set punctuation proportionally.
+pub(crate) fn horizontal_aki_sheds(paragraph: &Paragraph, texts: &[String]) -> Vec<Vec<usize>> {
+    let mut sheds: Vec<Vec<usize>> = vec![Vec::new(); texts.len()];
+    // (span, char index in the span text, class) of every real character.
+    let chars: Vec<(usize, usize, Option<JapaneseClass>)> = texts
+        .iter()
+        .enumerate()
+        .flat_map(|(span, text)| {
+            let proportional = paragraph
+                .children()
+                .get(span)
+                .is_some_and(|span| span.font_features == FontFeatures::Palt);
+            text.chars()
+                .enumerate()
+                .filter(|(_, ch)| *ch != kinsoku::WORD_JOINER)
+                .map(move |(index, ch)| (span, index, (!proportional).then(|| classify(ch))))
+        })
+        .collect();
+    for pair in chars.windows(2) {
+        let [(before_span, before_index, Some(before)), (_, _, Some(after))] = *pair else {
+            continue;
+        };
+        let (trailing, leading) = shed_pair_aki(before, after);
+        if trailing || leading {
+            sheds[before_span].push(before_index);
+        }
+    }
+    sheds
+}
+
 /// Add a span to a horizontal paragraph builder. A warichu span becomes one
 /// inline placeholder so its two lines wrap as a unit; its glyphs are painted
-/// after layout.
+/// after layout. The characters at `sheds` (from `horizontal_aki_sheds`)
+/// set a half-em narrower.
 pub(crate) fn add_horizontal_span(
     builder: &mut ParagraphBuilder,
     span: &TextSpan,
     builder_text: &str,
+    sheds: &[usize],
     text_style: &skia::textlayout::TextStyle,
     fonts: &skia::textlayout::FontCollection,
 ) {
@@ -88,8 +125,34 @@ pub(crate) fn add_horizontal_span(
         builder.add_text(HORIZONTAL_WARICHU_STYLE_ANCHOR.to_string());
         builder.add_text(HORIZONTAL_WARICHU_BREAK_ANCHOR.to_string());
     } else {
-        add_text_with_tabs(builder, builder_text, span.font_size);
+        add_text_with_sheds(builder, span, builder_text, sheds, text_style);
     }
+}
+
+/// Add `text`, setting the characters at `sheds` a half-em narrower through
+/// letter-spacing so the builder text stays unchanged.
+fn add_text_with_sheds(
+    builder: &mut ParagraphBuilder,
+    span: &TextSpan,
+    text: &str,
+    sheds: &[usize],
+    text_style: &skia::textlayout::TextStyle,
+) {
+    let mut shed_style = text_style.clone();
+    shed_style.set_letter_spacing(text_style.letter_spacing() - span.font_size * 0.5);
+    let mut piece_start = 0;
+    for (index, (byte, ch)) in text.char_indices().enumerate() {
+        if !sheds.contains(&index) {
+            continue;
+        }
+        let end = byte + ch.len_utf8();
+        add_text_with_tabs(builder, &text[piece_start..byte], span.font_size);
+        builder.push_style(&shed_style);
+        builder.add_text(&text[byte..end]);
+        builder.pop();
+        piece_start = end;
+    }
+    add_text_with_tabs(builder, &text[piece_start..], span.font_size);
 }
 
 #[derive(Debug, Clone)]
@@ -1241,7 +1304,7 @@ mod tests {
         fonts.set_default_font_manager(skia::FontMgr::new(), None);
         let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
         builder.push_style(&style);
-        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
+        add_horizontal_span(&mut builder, &span, &span.text, &[], &style, &fonts);
         let mut laid_out = builder.build();
         laid_out.layout(200.0);
 
@@ -1271,7 +1334,7 @@ mod tests {
         fonts.set_default_font_manager(skia::FontMgr::new(), None);
         let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), &fonts);
         builder.push_style(&style);
-        add_horizontal_span(&mut builder, &span, &span.text, &style, &fonts);
+        add_horizontal_span(&mut builder, &span, &span.text, &[], &style, &fonts);
         builder.push_style(&style);
         builder.add_text(&following.text);
 
@@ -1317,6 +1380,62 @@ mod tests {
                 "emphasis should mark {character:?}"
             );
         }
+    }
+
+    #[test]
+    fn horizontal_aki_sheds_follow_punctuation_pairs() {
+        init_state();
+        let texts = vec!["あ。」い、".to_string(), "「「う".to_string()];
+        let paragraph =
+            make_paragraph(texts.iter().map(|text| make_span(text, 0.0)).collect(), 0.0);
+        assert_eq!(
+            horizontal_aki_sheds(&paragraph, &texts),
+            vec![vec![1, 4], vec![0]],
+            "。 before 」, 、 before 「 across spans, and 「 before 「"
+        );
+    }
+
+    #[test]
+    fn horizontal_aki_sheds_skip_word_joiners_and_palt() {
+        init_state();
+        let joined = vec!["。\u{2060}」".to_string()];
+        let paragraph = make_paragraph(vec![make_span(&joined[0], 0.0)], 0.0);
+        assert_eq!(horizontal_aki_sheds(&paragraph, &joined), vec![vec![0]]);
+
+        let mut palt = make_span("。」", 0.0);
+        palt.font_features = FontFeatures::Palt;
+        let paragraph = make_paragraph(vec![palt], 0.0);
+        assert_eq!(
+            horizontal_aki_sheds(&paragraph, &["。」".to_string()]),
+            vec![Vec::<usize>::new()]
+        );
+    }
+
+    #[test]
+    fn horizontal_shed_sets_the_closing_mark_half_an_em_narrower() {
+        init_state();
+        let mut resources =
+            crate::render::RenderResources::try_new_headless().expect("headless resources");
+        let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+        let width = |span: TextSpan| {
+            let mut content = super::super::text::TextContent::new(
+                crate::math::Rect::from_xywh(0.0, 0.0, 400.0, 100.0),
+                crate::shapes::GrowType::Fixed,
+            );
+            content.add_paragraph(make_paragraph(vec![span], 0.0));
+            let mut groups = content.paragraph_builder_group_from_text(None);
+            let mut paragraph = groups[0][0].build();
+            paragraph.layout(1000.0);
+            paragraph.max_intrinsic_width()
+        };
+        let mut palt = make_span("。」", 0.0);
+        palt.font_features = FontFeatures::Palt;
+        let solid = width(make_span("。」", 0.0));
+        let spaced = width(palt);
+        assert!(
+            (spaced - solid - 8.0).abs() < 0.01,
+            "the period sheds half of its 16px em: {spaced} vs {solid}"
+        );
     }
 
     #[test]
@@ -1392,7 +1511,7 @@ mod tests {
         let (texts, _) = paragraph.layout_span_texts();
         for (span, text) in paragraph.children().iter().zip(texts) {
             builder.push_style(&style);
-            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
+            add_horizontal_span(&mut builder, span, &text, &[], &style, &fonts);
         }
         let mut laid_out = builder.build();
         laid_out.layout(200.0);
@@ -1425,7 +1544,7 @@ mod tests {
             let mut style = skia::textlayout::TextStyle::default();
             style.set_font_size(if index == 0 { 16.0 } else { 24.0 });
             builder.push_style(&style);
-            add_horizontal_span(&mut builder, span, &text, &style, &fonts);
+            add_horizontal_span(&mut builder, span, &text, &[], &style, &fonts);
         }
         let mut laid_out = builder.build();
         laid_out.layout(200.0);

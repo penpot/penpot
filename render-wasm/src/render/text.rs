@@ -3,9 +3,9 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
-        vertical_align_offset, Paragraph as TextParagraph, ParagraphBuilderGroup, ParagraphLayout,
-        Stroke, StrokeKind, TextContent, TextDecorationSegment,
+        add_horizontal_span, calculate_text_layout_data, horizontal_aki_sheds, set_paint_fill,
+        text_vertical, vertical_align_offset, Paragraph as TextParagraph, ParagraphBuilderGroup,
+        ParagraphLayout, Stroke, StrokeKind, TextContent, TextDecorationSegment,
     },
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -155,7 +155,8 @@ pub fn stroke_paragraph_builder_group_from_text(
             std::collections::HashMap::new();
 
         let (span_texts, _) = paragraph.layout_span_texts();
-        for (span, text) in paragraph.children().iter().zip(span_texts.iter()) {
+        let sheds = horizontal_aki_sheds(paragraph, &span_texts);
+        for ((span, text), sheds) in paragraph.children().iter().zip(&span_texts).zip(&sheds) {
             let (stroke_paints, stroke_layer_opacity) =
                 get_text_stroke_paints(stroke, bounds, remove_stroke_alpha);
 
@@ -177,7 +178,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                add_horizontal_span(builder, span, text, &stroke_style, fonts);
+                add_horizontal_span(builder, span, text, sheds, &stroke_style, fonts);
             }
         }
 

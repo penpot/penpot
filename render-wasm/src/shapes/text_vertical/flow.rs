@@ -3,7 +3,7 @@
 // (aki, oikomi, inter-script spacing) and pick column breaks (kinsoku,
 // burasage, oidashi).
 
-use crate::shapes::japanese::{classify, pair_rule, JapaneseClass};
+use crate::shapes::japanese::{classify, pair_rule, shed_pair_aki, JapaneseClass};
 use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
 use crate::shapes::TextAlign;
 
@@ -13,6 +13,10 @@ const INTER_SCRIPT_SPACING_EM: f32 = 0.25;
 
 /// Amounts below this are treated as zero by the spacing passes.
 const EPSILON: f32 = 0.0001;
+
+/// Overflow below this still fits a column: shape heights carry float noise
+/// (a 19em box can measure 417.99998px for 418px of text).
+pub(super) const FIT_TOLERANCE: f32 = 0.01;
 
 /// An item placed along the column. `ch` is set for single-character cells
 /// and drives kinsoku at column breaks; rotated runs have none and never
@@ -44,6 +48,9 @@ pub(super) struct FlowCell {
     pub script: FlowScript,
     /// Letter-spacing included at the end of the cell's extent.
     pub trailing_spacing: f32,
+    /// A later span's cell of the previous cell's warichu piece: it has no
+    /// flow extent and takes the piece's box after placement.
+    pub shares_previous_box: bool,
 }
 
 impl FlowCell {
@@ -59,6 +66,7 @@ impl FlowCell {
             keep_with_previous: false,
             script,
             trailing_spacing,
+            shares_previous_box: false,
         }
     }
 
@@ -66,7 +74,7 @@ impl FlowCell {
         FlowItem {
             extent: self.cell.extent,
             ch: self.ch,
-            keep_with_previous: self.keep_with_previous,
+            keep_with_previous: self.keep_with_previous || self.shares_previous_box,
         }
     }
 
@@ -100,7 +108,9 @@ fn can_hang(c: char) -> bool {
 
 /// True when `item` would overflow a column already filled to `cursor`.
 fn overflows(cursor: f32, item: &FlowItem, max_height: f32) -> bool {
-    cursor > 0.0 && cursor + item.extent > max_height && !item.ch.is_some_and(can_hang)
+    cursor > 0.0
+        && cursor + item.extent > max_height + FIT_TOLERANCE
+        && !item.ch.is_some_and(can_hang)
 }
 
 /// First item of the next column when `items[i]` overflows the column
@@ -268,27 +278,10 @@ pub(super) fn flow_classes(cells: &[FlowCell], ruby_spans: &[bool]) -> Vec<Optio
         .collect()
 }
 
-fn embedded_leading_aki(class: JapaneseClass) -> f32 {
-    match class {
-        JapaneseClass::OpeningBracket => 0.5,
-        JapaneseClass::MiddleDot => 0.25,
-        _ => 0.0,
-    }
-}
-
-fn embedded_trailing_aki(class: JapaneseClass) -> f32 {
-    match class {
-        JapaneseClass::ClosingBracket | JapaneseClass::FullStop | JapaneseClass::Comma => 0.5,
-        JapaneseClass::MiddleDot => 0.25,
-        _ => 0.0,
-    }
-}
-
 /// JLREQ punctuation and cl-30 adjacency. Full-width fonts include a half-em
 /// aki in punctuation advances. Ordinary text keeps it; at the internal
-/// boundaries of §3.1.4 one half-em goes: closing sequences set solid,
-/// closing→opening keeps one half-em, opening sequences set solid after the
-/// first bracket, and middle dots keep their quarter-em sides.
+/// boundaries of §3.1.4 one half-em goes (see `shed_pair_aki`), and middle
+/// dots keep their quarter-em sides.
 pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], classes: &[Option<JapaneseClass>]) {
     for (i, flow) in cells.iter_mut().enumerate() {
         let Some(ch) = flow.ch else {
@@ -298,20 +291,15 @@ pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], classes: &[Option<Jap
         let closing = class.is_trailing_aki_punctuation();
         let opening = class == JapaneseClass::OpeningBracket;
         let shed = if closing {
-            classes.get(i + 1).copied().flatten().is_some_and(|next| {
-                0.5 + embedded_leading_aki(next)
-                    > pair_rule(class, next).preferred_em + f32::EPSILON
-            })
+            classes
+                .get(i + 1)
+                .copied()
+                .flatten()
+                .is_some_and(|next| shed_pair_aki(class, next).0)
         } else if opening {
             i.checked_sub(1)
                 .and_then(|previous| classes[previous])
-                .is_some_and(|previous| {
-                    // A preceding trailing-aki mark owns the reduction for
-                    // closing→opening, so never remove both halves.
-                    !previous.is_trailing_aki_punctuation()
-                        && embedded_trailing_aki(previous) + 0.5
-                            > pair_rule(previous, class).preferred_em + f32::EPSILON
-                })
+                .is_some_and(|previous| shed_pair_aki(previous, class).1)
         } else {
             false
         };
@@ -490,10 +478,24 @@ fn discard_explicit_spacing_at_column_edges(
     changed
 }
 
-/// JLREQ oikomi: before wrapping a non-hanging item, try to keep it in the
-/// column by reducing legal aki in table priority order. When the whole
-/// deficit cannot be recovered, leave the line to the oidashi/kinsoku
-/// planner.
+/// True when breaking the column before `cells[i]`, with the column filled
+/// to `cursor`, needs line adjustment: the break would violate kinsoku or
+/// split a kept group, or would leave the column short of `max_height` (a
+/// rotated run or other uneven extent). A column that is already full breaks
+/// without it.
+fn break_needs_adjustment(cells: &[FlowCell], i: usize, cursor: f32, max_height: f32) -> bool {
+    let flow = &cells[i];
+    let previous_ch = i.checked_sub(1).and_then(|previous| cells[previous].ch);
+    flow.keep_with_previous
+        || flow.ch.is_some_and(forbidden_at_line_start)
+        || previous_ch.is_some_and(forbidden_at_line_end)
+        || max_height - cursor > FIT_TOLERANCE
+}
+
+/// JLREQ oikomi: before wrapping a non-hanging item whose break needs line
+/// adjustment, try to keep it in the column by reducing legal aki in table
+/// priority order. When the whole deficit cannot be recovered, leave the
+/// line to the oidashi/kinsoku planner.
 pub(super) fn apply_ordered_oikomi(
     cells: &mut [FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -507,9 +509,11 @@ pub(super) fn apply_ordered_oikomi(
     let mut cursor = 0.0f32;
     for i in 0..cells.len() {
         if overflows(cursor, &cells[i].item(), max_height) {
-            let deficit = cursor + cells[i].cell.extent - max_height;
-            cursor -= compress_line(cells, classes, pair_spacing_em, column_start..i, deficit);
-            if cursor + cells[i].cell.extent > max_height + EPSILON {
+            if break_needs_adjustment(cells, i, cursor, max_height) {
+                let deficit = cursor + cells[i].cell.extent - max_height;
+                cursor -= compress_line(cells, classes, pair_spacing_em, column_start..i, deficit);
+            }
+            if cursor + cells[i].cell.extent > max_height + FIT_TOLERANCE {
                 column_start = i;
                 cursor = 0.0;
             }
@@ -730,6 +734,13 @@ mod tests {
             placements,
             vec![(0, 0.0), (0, 10.0), (1, 0.0), (1, 10.0), (2, 0.0)]
         );
+    }
+
+    #[test]
+    fn plan_columns_ignores_float_noise_in_the_budget() {
+        let items: Vec<FlowItem> = "あいう".chars().map(|c| item(22.0, c)).collect();
+        let placements = plan_columns(&items, 66.0 - 0.00002);
+        assert!(placements.iter().all(|(column, _)| *column == 0));
     }
 
     #[test]
@@ -1273,6 +1284,49 @@ mod tests {
         assert!(
             (gap - (20.0 * INTER_SCRIPT_SPACING_EM - 2.0)).abs() < 0.01,
             "oikomi should recover the two-pixel deficit from the script gap, got {gap}"
+        );
+    }
+
+    #[test]
+    fn oikomi_keeps_a_full_column_solid() {
+        // Five cells fill the column exactly; the sixth く may start a column,
+        // so the commas keep their aki instead of compressing to pull it in.
+        let budget = 5.0 * EM;
+        let content = make_content(&["く、く、くく"], budget);
+        let layout = layout_with_height(&provider(VMTX_TEST_FONT), &content, budget);
+        assert_eq!(layout.cells[4].column, 0);
+        assert_eq!(layout.cells[5].column, 1);
+        for comma in [1, 3] {
+            assert!(
+                (layout.cells[comma].extent - EM).abs() < 0.01,
+                "comma {comma} keeps its aki, got {}",
+                layout.cells[comma].extent
+            );
+        }
+    }
+
+    #[test]
+    fn oikomi_fills_a_column_left_short_by_a_rotated_run() {
+        // The Latin run leaves the column uneven; reducing the comma aki
+        // pulls the last く in instead of leaving the column short.
+        let text = "くaく、くく";
+        let provider = provider(VMTX_TEST_FONT);
+        let natural = layout_with_height(&provider, &make_content(&[text], 1000.0), 1000.0);
+        let total: f32 = natural.cells.iter().map(|cell| cell.extent).sum();
+        let budget = total - 2.0;
+        let layout = layout_with_height(&provider, &make_content(&[text], budget), budget);
+        let last = layout.cells.last().expect("cells");
+        assert_eq!(last.column, 0, "oikomi keeps the last く in the column");
+    }
+
+    #[test]
+    fn oikomi_keeps_a_line_start_forbidden_character_in_the_column() {
+        let budget = 5.0 * EM;
+        let content = make_content(&["く、く、く」"], budget);
+        let layout = layout_with_height(&provider(VMTX_TEST_FONT), &content, budget);
+        assert_eq!(
+            layout.cells[5].column, 0,
+            "」 cannot start a column, so oikomi keeps it in place"
         );
     }
 

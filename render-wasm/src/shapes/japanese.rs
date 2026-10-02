@@ -129,6 +129,40 @@ impl JapaneseClass {
     pub const fn is_trailing_aki_punctuation(self) -> bool {
         matches!(self, Self::ClosingBracket | Self::FullStop | Self::Comma)
     }
+
+    /// Aki (in em) a full-width font builds into the glyph before its ink.
+    pub const fn embedded_leading_aki_em(self) -> f32 {
+        match self {
+            Self::OpeningBracket => 0.5,
+            Self::MiddleDot => 0.25,
+            _ => 0.0,
+        }
+    }
+
+    /// Aki (in em) a full-width font builds into the glyph after its ink.
+    pub const fn embedded_trailing_aki_em(self) -> f32 {
+        match self {
+            Self::ClosingBracket | Self::FullStop | Self::Comma => 0.5,
+            Self::MiddleDot => 0.25,
+            _ => 0.0,
+        }
+    }
+}
+
+/// Whether the half-em aki between `before` and `after` goes (JLREQ §3.1.4):
+/// closing sequences set solid, closing→opening keeps one half-em, opening
+/// sequences set solid after the first bracket. Returns (shed the trailing
+/// aki of `before`, shed the leading aki of `after`); a closing mark owns the
+/// reduction, so both halves never go.
+pub fn shed_pair_aki(before: JapaneseClass, after: JapaneseClass) -> (bool, bool) {
+    let preferred = pair_rule(before, after).preferred_em + f32::EPSILON;
+    if before.is_trailing_aki_punctuation() {
+        (0.5 + after.embedded_leading_aki_em() > preferred, false)
+    } else if after == JapaneseClass::OpeningBracket {
+        (false, before.embedded_trailing_aki_em() + 0.5 > preferred)
+    } else {
+        (false, false)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

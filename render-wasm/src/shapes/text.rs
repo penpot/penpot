@@ -660,7 +660,10 @@ impl TextContent {
         // unusable for tight bounds.  Fall back to content_rect.
         // Vertical writing takes its bounds from content_rect; the
         // skparagraph line metrics below describe an unused horizontal layout.
-        if self.grow_type() == GrowType::AutoWidth || self.is_vertical() {
+        if self.is_vertical() {
+            return self.vertical_extrect(selrect, valign);
+        }
+        if self.grow_type() == GrowType::AutoWidth {
             return self.content_rect(selrect, valign);
         }
 
@@ -740,6 +743,22 @@ impl TextContent {
         }
 
         bounds
+    }
+
+    /// Content rect of vertical text grown to the laid-out column block, which
+    /// overflows a fixed shape that is too narrow for its columns.
+    fn vertical_extrect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
+        let mut rect = self.content_rect(selrect, valign);
+        let layout = super::text_vertical::layout_for_box(self, selrect.height());
+        let left = selrect.left()
+            + super::text_vertical::block_axis_offset(selrect.width(), layout.width, valign);
+        rect.join(Rect::from_xywh(
+            left,
+            selrect.top(),
+            layout.width,
+            layout.height,
+        ));
+        rect
     }
 
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
@@ -981,7 +1000,8 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             let mut has_text = false;
             let (span_texts, _) = paragraph.layout_span_texts();
-            for (span, text) in paragraph.children().iter().zip(span_texts.iter()) {
+            let sheds = super::text_japanese::horizontal_aki_sheds(paragraph, &span_texts);
+            for ((span, text), sheds) in paragraph.children().iter().zip(&span_texts).zip(&sheds) {
                 let text_style = if let Some((layer, image_id)) = opaque_image_layer {
                     let mut style = span.to_style(
                         &self.bounds(),
@@ -1043,7 +1063,7 @@ impl TextContent {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                add_horizontal_span(&mut builder, span, text, &text_style, fonts);
+                add_horizontal_span(&mut builder, span, text, sheds, &text_style, fonts);
             }
             if !has_text {
                 builder.add_text(" ");

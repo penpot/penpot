@@ -18,11 +18,11 @@ use super::annotations::{
     grow_ruby_bases, layout_emphasis, layout_ruby, ruby_base_units, spread_ruby_base_cells,
     EmphasisMark, RubyCell,
 };
-use super::cells::{Fonts, SpanCells};
+use super::cells::{Fonts, SpanCells, WarichuNote};
 use super::flow::{
     align_offset_along_column, apply_inter_script_spacing, apply_ordered_oikomi, flow_classes,
     is_bounded, materialize_explicit_pair_spacing, ordered_expansion_offsets,
-    plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki, FlowCell,
+    plan_with_edge_trimming, preferred_pair_spacing, shed_punctuation_aki, FlowCell, FIT_TOLERANCE,
 };
 use super::shaping::ShapedRun;
 
@@ -50,13 +50,20 @@ pub enum CellKind {
         run_count: usize,
         scale: f32,
     },
+    /// One span's share of a warichu piece. Every cell of a piece has the
+    /// piece's box; the `*_top`/`*_extent` pairs place this span's glyphs
+    /// along each sub-line, relative to `top`.
     Warichu {
         /// First `first_count` runs are the right sub-line, the rest the left.
         run_start: usize,
         run_count: usize,
         first_count: usize,
-        /// UTF-16 length of the first sub-line (split point from `start`).
+        /// UTF-16 length of the first sub-line part (split point from `start`).
         first_chars: usize,
+        first_top: f32,
+        first_extent: f32,
+        second_top: f32,
+        second_extent: f32,
     },
 }
 
@@ -142,9 +149,10 @@ impl VerticalLayout {
 
 /// Horizontal offset of vertical content within its shape. `VerticalAlign`
 /// top/center/bottom mean block start/center/end: right/center/left in
-/// vertical-rl.
+/// vertical-rl. Content wider than the shape keeps that anchor and overflows
+/// toward the block end, so a start-anchored block grows leftward.
 pub fn block_axis_offset(container_width: f32, content_width: f32, align: VerticalAlign) -> f32 {
-    let slack = (container_width - content_width).max(0.0);
+    let slack = container_width - content_width;
     match align {
         VerticalAlign::Top => slack,
         VerticalAlign::Center => slack / 2.0,
@@ -224,19 +232,24 @@ impl ColumnGeometry {
     }
 }
 
-/// The paragraph's cells in flow order, before spacing and placement, plus
-/// the UTF-16 start of every span in the paragraph's layout text.
-fn build_paragraph_flow(
-    fonts: &Fonts,
+/// The paragraph's cells in flow order, before spacing and placement, the
+/// UTF-16 start of every span in the paragraph's layout text, and its warichu
+/// notes. Notes break into pieces at the paragraph UTF-16 `warichu_splits`.
+#[allow(clippy::too_many_arguments)]
+fn build_paragraph_flow<'a>(
+    fonts: &'a Fonts,
     paragraph_index: usize,
-    paragraph: &Paragraph,
-    transforms: &[AppliedTextTransform],
+    paragraph: &'a Paragraph,
+    transforms: &'a [AppliedTextTransform],
     bounds: Rect,
+    warichu_splits: &[usize],
     runs: &mut Vec<ShapedRun>,
     paints: &mut Vec<skia::Paint>,
-) -> (Vec<FlowCell>, Vec<usize>) {
+) -> (Vec<FlowCell>, Vec<usize>, Vec<WarichuNote<'a>>) {
     let mut flow = Vec::new();
     let mut span_starts = Vec::with_capacity(transforms.len());
+    let mut notes: Vec<WarichuNote<'a>> = Vec::new();
+    let mut note_members = Vec::new();
     let mut offset = 0usize;
     for (span_index, (span, transform)) in paragraph.children().iter().zip(transforms).enumerate() {
         span_starts.push(offset);
@@ -252,13 +265,107 @@ fn build_paragraph_flow(
             paints.len() - 1,
             offset,
         );
-        span_cells.push(&transform.text, runs, &mut flow);
+        if span.warichu {
+            note_members.push((span_cells, transform.text.as_str()));
+        } else {
+            flush_warichu_note(
+                &mut note_members,
+                &mut notes,
+                warichu_splits,
+                runs,
+                &mut flow,
+            );
+            span_cells.push(&transform.text, runs, &mut flow);
+        }
         offset += transform.text.encode_utf16().count();
     }
+    flush_warichu_note(
+        &mut note_members,
+        &mut notes,
+        warichu_splits,
+        runs,
+        &mut flow,
+    );
     keep_transform_expansions_together(&mut flow, transforms, &span_starts);
-    (flow, span_starts)
+    (flow, span_starts, notes)
 }
 
+/// Push the warichu note gathered in `members`, if any, and keep it.
+fn flush_warichu_note<'a>(
+    members: &mut Vec<(SpanCells<'a>, &'a str)>,
+    notes: &mut Vec<WarichuNote<'a>>,
+    warichu_splits: &[usize],
+    runs: &mut Vec<ShapedRun>,
+    flow: &mut Vec<FlowCell>,
+) {
+    if members.is_empty() {
+        return;
+    }
+    let note = WarichuNote::new(std::mem::take(members));
+    note.push(warichu_splits, runs, flow);
+    notes.push(note);
+}
+
+/// Most warichu breaks planned per paragraph.
+const MAX_WARICHU_SPLITS: usize = 64;
+
+/// Next break that lets a warichu piece start where the planner left room
+/// for it, as a paragraph UTF-16 offset.
+fn next_warichu_split(
+    notes: &[WarichuNote],
+    flow: &[FlowCell],
+    placements: &[(usize, f32)],
+    splits: &[usize],
+    max_height: f32,
+) -> Option<usize> {
+    warichu_overflows(flow, placements, max_height)
+        .into_iter()
+        .find_map(|(i, room)| {
+            let start = flow[i].cell.start;
+            let note = notes.iter().find(|note| note.contains(start))?;
+            note.split_for_room(start, splits, room)
+                .filter(|split| !splits.contains(split))
+        })
+}
+
+/// Warichu pieces the planner moved whole to a later column, or that overrun
+/// their column, with the room left for them where they should start: after
+/// the cells kinsoku carried along, at the bottom of the previous column.
+fn warichu_overflows(
+    flow: &[FlowCell],
+    placements: &[(usize, f32)],
+    max_height: f32,
+) -> Vec<(usize, f32)> {
+    if !is_bounded(max_height) {
+        return Vec::new();
+    }
+    let columns = placements.last().map_or(0, |(column, _)| column + 1);
+    let mut column_used = vec![0.0f32; columns];
+    let mut column_first = vec![usize::MAX; columns];
+    for (i, (cell, (column, top))) in flow.iter().zip(placements).enumerate() {
+        column_used[*column] = column_used[*column].max(top + cell.cell.extent);
+        column_first[*column] = column_first[*column].min(i);
+    }
+    let mut overflows = Vec::new();
+    for (i, (cell, (column, top))) in flow.iter().zip(placements).enumerate() {
+        if !matches!(cell.cell.kind, CellKind::Warichu { .. }) || cell.shares_previous_box {
+            continue;
+        }
+        if top + cell.cell.extent > max_height + FIT_TOLERANCE {
+            overflows.push((i, max_height - top));
+        } else if *column > 0 {
+            let carried: f32 = flow[column_first[*column]..i]
+                .iter()
+                .map(|carried| carried.cell.extent)
+                .sum();
+            let room = max_height - column_used[column - 1] - carried;
+            if room > FIT_TOLERANCE {
+                overflows.push((i, room));
+            }
+        }
+    }
+    overflows
+}
 /// A CSS transform may expand one source character into several cells
 /// (`ß` -> `SS`). Keep them in one column so the SVG fallback renders each
 /// source slice once.
@@ -379,31 +486,59 @@ pub fn layout_vertical(
 
     for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
         let transforms = &span_transforms[paragraph_index];
-        let (mut flow, span_starts) = build_paragraph_flow(
-            &fonts,
-            paragraph_index,
-            paragraph,
-            transforms,
-            bounds,
-            &mut runs,
-            &mut paints,
-        );
-        let ruby_units = ruby_base_units(paragraph, transforms, &span_starts);
         let ruby_spans: Vec<bool> = paragraph
             .children()
             .iter()
             .map(TextSpan::has_ruby)
             .collect();
 
-        apply_inter_script_spacing(&mut flow);
-        let classes = flow_classes(&flow, &ruby_spans);
-        shed_punctuation_aki(&mut flow, &classes);
-        materialize_explicit_pair_spacing(&mut flow, &classes);
-        grow_ruby_bases(&mut flow, &ruby_units);
-        let mut pair_spacing_em = preferred_pair_spacing(&classes);
-        apply_ordered_oikomi(&mut flow, &classes, &mut pair_spacing_em, max_height);
-        let placements =
-            plan_with_edge_trimming(&mut flow, &classes, &mut pair_spacing_em, max_height);
+        // Plan, then break the first warichu piece that does not fit where
+        // it starts and plan again, until every piece fits.
+        let (run_mark, paint_mark) = (runs.len(), paints.len());
+        let mut warichu_splits: Vec<usize> = Vec::new();
+        let (flow, span_starts, ruby_units, classes, pair_spacing_em, placements) = loop {
+            runs.truncate(run_mark);
+            paints.truncate(paint_mark);
+            let (mut flow, span_starts, notes) = build_paragraph_flow(
+                &fonts,
+                paragraph_index,
+                paragraph,
+                transforms,
+                bounds,
+                &warichu_splits,
+                &mut runs,
+                &mut paints,
+            );
+            let ruby_units = ruby_base_units(paragraph, transforms, &span_starts);
+
+            apply_inter_script_spacing(&mut flow);
+            let classes = flow_classes(&flow, &ruby_spans);
+            shed_punctuation_aki(&mut flow, &classes);
+            materialize_explicit_pair_spacing(&mut flow, &classes);
+            grow_ruby_bases(&mut flow, &ruby_units);
+            let mut pair_spacing_em = preferred_pair_spacing(&classes);
+            apply_ordered_oikomi(&mut flow, &classes, &mut pair_spacing_em, max_height);
+            let placements =
+                plan_with_edge_trimming(&mut flow, &classes, &mut pair_spacing_em, max_height);
+            let split = if warichu_splits.len() < MAX_WARICHU_SPLITS {
+                next_warichu_split(&notes, &flow, &placements, &warichu_splits, max_height)
+            } else {
+                None
+            };
+            match split {
+                Some(split) => warichu_splits.push(split),
+                None => {
+                    break (
+                        flow,
+                        span_starts,
+                        ruby_units,
+                        classes,
+                        pair_spacing_em,
+                        placements,
+                    )
+                }
+            }
+        };
         let tops = aligned_tops(
             &flow,
             &classes,
@@ -423,11 +558,21 @@ pub fn layout_vertical(
 
         let paragraph_cell_start = cells.len();
         for ((flow, (column, _)), top) in flow.into_iter().zip(placements).zip(tops) {
-            cells.push(VerticalCell {
+            let mut cell = VerticalCell {
                 column: column_base + column,
                 top,
                 ..flow.cell
-            });
+            };
+            if flow.shares_previous_box {
+                if let Some(piece) = cells.last() {
+                    cell.top = piece.top;
+                    cell.extent = piece.extent;
+                    cell.minimum_oikomi_extent = piece.minimum_oikomi_extent;
+                    cell.ink_top = piece.ink_top;
+                    cell.ink_bottom = piece.ink_bottom;
+                }
+            }
+            cells.push(cell);
         }
         spread_ruby_base_cells(&mut cells[paragraph_cell_start..], &ruby_units, max_height);
         span_utf16_starts.push(span_starts);
@@ -505,6 +650,97 @@ pub fn measure_content(text_content: &TextContent, height: f32) -> (f32, f32) {
 mod tests {
     use super::super::test_support::*;
     use super::*;
+    use crate::shapes::TextOrientation;
+
+    fn warichu_span(text: &str) -> TextSpan {
+        TextSpan {
+            warichu: true,
+            text_orientation: TextOrientation::Upright,
+            ..make_span(text)
+        }
+    }
+
+    /// Cells that start a warichu piece, in flow order.
+    fn warichu_pieces(layout: &VerticalLayout) -> Vec<&VerticalCell> {
+        let mut pieces: Vec<&VerticalCell> = Vec::new();
+        for cell in &layout.cells {
+            if !matches!(cell.kind, CellKind::Warichu { .. }) {
+                continue;
+            }
+            let same_box = pieces
+                .last()
+                .is_some_and(|piece| piece.column == cell.column && piece.top == cell.top);
+            if !same_box {
+                pieces.push(cell);
+            }
+        }
+        pieces
+    }
+
+    #[test]
+    fn warichu_breaks_at_the_column_end() {
+        // Four ems of base text leave two ems; ten half-size characters need
+        // two and a half, so four per sub-line stay and the rest wrap.
+        let budget = 6.0 * EM;
+        let content = spans_content(
+            vec![make_span("くくくく"), warichu_span("あくあくあくあくあく")],
+            budget,
+        );
+        let layout = layout_with_height(&provider(VMTX_TEST_FONT), &content, budget);
+        let pieces = warichu_pieces(&layout);
+        assert_eq!(pieces.len(), 2, "the note breaks into two pieces");
+        let (first, second) = (pieces[0], pieces[1]);
+        assert_eq!(first.column, 0);
+        assert!((first.top - 4.0 * EM).abs() < 0.01);
+        assert!(first.top + first.extent <= budget + 0.01);
+        assert_eq!(first.end - first.start, 8, "four characters per sub-line");
+        assert_eq!(second.column, 1);
+        assert_eq!(second.top, 0.0);
+        assert_eq!((second.start, second.end), (first.end, 14));
+    }
+
+    #[test]
+    fn adjacent_warichu_spans_form_one_note() {
+        let content = spans_content(vec![warichu_span("くあく"), warichu_span("あくあ")], 400.0);
+        let layout = layout_with_height(&provider(VMTX_TEST_FONT), &content, 400.0);
+        assert_eq!(warichu_pieces(&layout).len(), 1, "one note, one piece");
+        let [first, second] = &layout.cells[..] else {
+            panic!("one cell per span, got {}", layout.cells.len());
+        };
+        assert_eq!((first.span, second.span), (0, 1));
+        assert_eq!((first.top, first.extent), (second.top, second.extent));
+        let (
+            CellKind::Warichu {
+                first_chars: first_span_chars,
+                first_extent,
+                ..
+            },
+            CellKind::Warichu {
+                first_chars: second_span_chars,
+                second_top,
+                second_extent,
+                ..
+            },
+        ) = (first.kind, second.kind)
+        else {
+            panic!("expected warichu cells");
+        };
+        assert_eq!(
+            first_span_chars, 3,
+            "the first span fills the first sub-line"
+        );
+        assert_eq!(second_span_chars, 0, "the second span fills the second");
+        assert_eq!(
+            second_top, 0.0,
+            "the second sub-line starts at the piece top"
+        );
+        assert!((first_extent - second_extent).abs() < 0.01);
+        assert!(
+            (first.extent - 3.0 * EM / 2.0).abs() < 0.01,
+            "three half-size characters per sub-line, got {}",
+            first.extent
+        );
+    }
 
     #[test]
     fn layout_cells_tile_the_text() {
@@ -572,7 +808,9 @@ mod tests {
         assert_eq!(block_axis_offset(200.0, 40.0, VerticalAlign::Top), 160.0);
         assert_eq!(block_axis_offset(200.0, 40.0, VerticalAlign::Center), 80.0);
         assert_eq!(block_axis_offset(200.0, 40.0, VerticalAlign::Bottom), 0.0);
-        assert_eq!(block_axis_offset(20.0, 40.0, VerticalAlign::Top), 0.0);
+        assert_eq!(block_axis_offset(20.0, 40.0, VerticalAlign::Top), -20.0);
+        assert_eq!(block_axis_offset(20.0, 40.0, VerticalAlign::Center), -10.0);
+        assert_eq!(block_axis_offset(20.0, 40.0, VerticalAlign::Bottom), 0.0);
     }
 
     #[test]

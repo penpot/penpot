@@ -1,14 +1,17 @@
 // Builders that turn one span's text into flow cells: one per upright glyph
-// cluster, one per rotated (sideways) run, and one per tate-chu-yoko or
-// warichu composite.
+// cluster, one per rotated (sideways) run, and one per tate-chu-yoko
+// composite. Warichu notes span several spans and build their own cells.
+
+use std::ops::Range;
 
 use skia_safe::{textlayout::TypefaceFontProvider, FontMgr};
 
 use crate::shapes::japanese::{classify, JapaneseClass};
-use crate::shapes::text_japanese::{warichu_text_lines, WARICHU_FONT_SCALE};
+use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
+use crate::shapes::text_japanese::{warichu_split_chars, WARICHU_FONT_SCALE};
 use crate::shapes::{FontFeatures, TextCombineUpright, TextSpan};
 
-use super::flow::{minimum_oikomi_extent, FlowCell, FlowScript};
+use super::flow::{minimum_oikomi_extent, FlowCell, FlowScript, FIT_TOLERANCE};
 use super::font_tables::{upright_baseline, vertical_metrics, vpal_table};
 use super::layout::{CellKind, VerticalCell};
 use super::orientation::{
@@ -156,9 +159,6 @@ impl<'a> SpanCells<'a> {
         {
             return;
         }
-        if self.span.is_warichu() && self.push_warichu(text, runs, cells) {
-            return;
-        }
         // `digits` merges each run of 2..=max digits into one upright cell.
         let pieces = match combine.digits_max() {
             Some(max) => split_digit_runs(text, max),
@@ -245,46 +245,6 @@ impl<'a> SpanCells<'a> {
             None,
             FlowScript::Upright,
             letter_spacing,
-        ));
-        true
-    }
-
-    /// Warichu (割注): the span becomes one composite cell holding two
-    /// half-size sub-lines side by side in the column (the first on the
-    /// right, jlreq reading order), split by `warichu_split_chars`. Returns
-    /// false when a sub-line shapes empty.
-    fn push_warichu(
-        &self,
-        text: &str,
-        runs: &mut Vec<ShapedRun>,
-        cells: &mut Vec<FlowCell>,
-    ) -> bool {
-        let half_size = self.span.font_size * WARICHU_FONT_SCALE;
-        let (first_text, second_text) = warichu_text_lines(text);
-        let first_runs = self.shape(first_text, half_size, true);
-        let second_runs = self.shape(second_text, half_size, true);
-        if first_runs.is_empty() || second_runs.is_empty() {
-            return false;
-        }
-        let line_extent = |runs: &[ShapedRun]| runs.iter().map(|r| r.advance).sum::<f32>();
-        let extent =
-            line_extent(&first_runs).max(line_extent(&second_runs)) + self.span.letter_spacing;
-        let kind = CellKind::Warichu {
-            run_start: runs.len(),
-            run_count: first_runs.len() + second_runs.len(),
-            first_count: first_runs.len(),
-            first_chars: first_text.encode_utf16().count(),
-        };
-        runs.extend(first_runs);
-        runs.extend(second_runs);
-        // Two half-em sub-columns fill the em, the default `h_advance`.
-        let end = self.start + text.encode_utf16().count();
-        let cell = self.cell(kind, self.start, end, extent);
-        cells.push(FlowCell::new(
-            cell,
-            None,
-            FlowScript::Upright,
-            self.span.letter_spacing,
         ));
         true
     }
@@ -432,6 +392,279 @@ impl<'a> SpanCells<'a> {
             ..self.cell(CellKind::Rotated { run: run_index }, start, end, extent)
         };
         FlowCell::new(cell, None, script, letter_spacing)
+    }
+}
+
+/// Most characters a warichu piece split moves back to keep kinsoku.
+const MAX_WARICHU_KINSOKU_SHIFT: usize = 4;
+
+/// One character of a warichu note.
+#[derive(Debug, Clone, Copy)]
+struct NoteChar {
+    ch: char,
+    /// Index of the owning span in the note's members.
+    member: usize,
+    /// UTF-8 offset in the member's text.
+    utf8: usize,
+    /// Paragraph UTF-16 offset.
+    utf16: usize,
+}
+
+/// One span's share of a shaped warichu piece: its characters on each
+/// sub-line and where they start along the piece.
+struct PieceSegment {
+    member: usize,
+    chars: Range<usize>,
+    first_runs: Vec<ShapedRun>,
+    second_runs: Vec<ShapedRun>,
+    first_chars: usize,
+    first_top: f32,
+    first_extent: f32,
+    second_top: f32,
+    second_extent: f32,
+}
+
+/// A shaped warichu piece: the part of a note set in one column.
+struct ShapedPiece {
+    segments: Vec<PieceSegment>,
+    extent: f32,
+    font_size: f32,
+    letter_spacing: f32,
+}
+
+/// Warichu (割注): consecutive warichu spans of a paragraph set as one note
+/// of two half-size sub-lines (the first on the right, jlreq reading order).
+/// The note breaks into pieces at paragraph UTF-16 `splits`, one per column.
+/// Each piece emits one cell per span it touches; the first carries the
+/// piece's flow extent and the rest share its box.
+pub(super) struct WarichuNote<'a> {
+    members: Vec<(SpanCells<'a>, &'a str)>,
+    chars: Vec<NoteChar>,
+}
+
+impl<'a> WarichuNote<'a> {
+    pub(super) fn new(members: Vec<(SpanCells<'a>, &'a str)>) -> Self {
+        let mut chars = Vec::new();
+        for (member, (span_cells, text)) in members.iter().enumerate() {
+            let mut utf16 = span_cells.start;
+            for (utf8, ch) in text.char_indices() {
+                chars.push(NoteChar {
+                    ch,
+                    member,
+                    utf8,
+                    utf16,
+                });
+                utf16 += ch.len_utf16();
+            }
+        }
+        Self { members, chars }
+    }
+
+    /// True when `utf16` (paragraph offset) falls inside the note.
+    pub(super) fn contains(&self, utf16: usize) -> bool {
+        match (self.chars.first(), self.chars.last()) {
+            (Some(first), Some(last)) => {
+                (first.utf16..last.utf16 + last.ch.len_utf16()).contains(&utf16)
+            }
+            _ => false,
+        }
+    }
+
+    /// Push the note's cells, or its spans' normal cells when it cannot be
+    /// set as warichu (fewer than two characters, or a sub-line that shapes
+    /// empty).
+    pub(super) fn push(
+        &self,
+        splits: &[usize],
+        runs: &mut Vec<ShapedRun>,
+        cells: &mut Vec<FlowCell>,
+    ) {
+        if self.chars.len() >= 2 {
+            let shaped: Option<Vec<ShapedPiece>> = self
+                .pieces(splits)
+                .into_iter()
+                .map(|piece| self.shape_piece(piece))
+                .collect();
+            if let Some(pieces) = shaped {
+                for piece in pieces {
+                    self.push_piece(piece, runs, cells);
+                }
+                return;
+            }
+        }
+        for (span_cells, text) in &self.members {
+            span_cells.push(text, runs, cells);
+        }
+    }
+
+    /// Paragraph UTF-16 offset where the piece starting at `piece_start`
+    /// should break so its first part fits in `room`, or None when no part
+    /// of at least one character per sub-line fits. The break keeps two
+    /// characters on each side and moves back to keep kinsoku.
+    pub(super) fn split_for_room(
+        &self,
+        piece_start: usize,
+        splits: &[usize],
+        room: f32,
+    ) -> Option<usize> {
+        let piece = self
+            .pieces(splits)
+            .into_iter()
+            .find(|piece| self.chars[piece.start].utf16 == piece_start)?;
+        if piece.len() < 4 {
+            return None;
+        }
+        let half_size = self.max_font_size(piece.clone()) * WARICHU_FONT_SCALE;
+        let estimate = 2 * (room / half_size.max(1.0)).floor().max(0.0) as usize;
+        let longest = (estimate + 2).min(piece.len() - 2);
+        let mut cut = longest;
+        while cut >= 2 {
+            let mut at = piece.start + cut;
+            let mut shift = 0;
+            while at > piece.start + 2
+                && shift < MAX_WARICHU_KINSOKU_SHIFT
+                && (forbidden_at_line_start(self.chars[at].ch)
+                    || forbidden_at_line_end(self.chars[at - 1].ch))
+            {
+                at -= 1;
+                shift += 1;
+            }
+            let fits = self
+                .shape_piece(piece.start..at)
+                .is_some_and(|shaped| shaped.extent <= room + FIT_TOLERANCE);
+            if fits {
+                return Some(self.chars[at].utf16);
+            }
+            cut = (at - piece.start).min(cut) - 1;
+        }
+        None
+    }
+
+    /// Char index ranges of the pieces cut at `splits`.
+    fn pieces(&self, splits: &[usize]) -> Vec<Range<usize>> {
+        let mut pieces = Vec::new();
+        let mut start = 0;
+        for (index, note_char) in self.chars.iter().enumerate().skip(1) {
+            if splits.contains(&note_char.utf16) {
+                pieces.push(start..index);
+                start = index;
+            }
+        }
+        pieces.push(start..self.chars.len());
+        pieces
+    }
+
+    fn max_font_size(&self, chars: Range<usize>) -> f32 {
+        self.chars[chars]
+            .iter()
+            .map(|c| self.members[c.member].0.span.font_size)
+            .fold(0.0, f32::max)
+    }
+
+    /// Member text of the chars `range`, which belong to one member.
+    fn member_text(&self, range: Range<usize>) -> &'a str {
+        let first = self.chars[range.start];
+        let text = self.members[first.member].1;
+        let end = self
+            .chars
+            .get(range.end)
+            .filter(|next| next.member == first.member)
+            .map_or(text.len(), |next| next.utf8);
+        &text[first.utf8..end]
+    }
+
+    /// Shape one sub-line part of a member; empty parts shape to no runs.
+    fn shape_part(&self, member: usize, range: Range<usize>) -> Option<(Vec<ShapedRun>, f32)> {
+        if range.is_empty() {
+            return Some((Vec::new(), 0.0));
+        }
+        let span_cells = &self.members[member].0;
+        let half_size = span_cells.span.font_size * WARICHU_FONT_SCALE;
+        let runs = span_cells.shape(self.member_text(range), half_size, true);
+        if runs.is_empty() {
+            return None;
+        }
+        let advance = runs.iter().map(|r| r.advance).sum();
+        Some((runs, advance))
+    }
+
+    fn shape_piece(&self, piece: Range<usize>) -> Option<ShapedPiece> {
+        let text: String = self.chars[piece.clone()].iter().map(|c| c.ch).collect();
+        let split = piece.start + warichu_split_chars(&text);
+        let mut segments = Vec::new();
+        let (mut first_cursor, mut second_cursor) = (0.0f32, 0.0f32);
+        let mut index = piece.start;
+        while index < piece.end {
+            let member = self.chars[index].member;
+            let end = (index..piece.end)
+                .find(|&i| self.chars[i].member != member)
+                .unwrap_or(piece.end);
+            let first = index.min(split)..end.min(split);
+            let second = index.max(split)..end.max(split);
+            let first_chars = self.chars[first.clone()]
+                .iter()
+                .map(|c| c.ch.len_utf16())
+                .sum();
+            let (first_runs, first_extent) = self.shape_part(member, first)?;
+            let (second_runs, second_extent) = self.shape_part(member, second)?;
+            segments.push(PieceSegment {
+                member,
+                chars: index..end,
+                first_runs,
+                second_runs,
+                first_chars,
+                first_top: first_cursor,
+                first_extent,
+                second_top: second_cursor,
+                second_extent,
+            });
+            first_cursor += first_extent;
+            second_cursor += second_extent;
+            index = end;
+        }
+        let letter_spacing = self.chars[piece.clone()]
+            .iter()
+            .map(|c| self.members[c.member].0.span.letter_spacing)
+            .fold(0.0, f32::max);
+        Some(ShapedPiece {
+            segments,
+            extent: first_cursor.max(second_cursor) + letter_spacing,
+            font_size: self.max_font_size(piece),
+            letter_spacing,
+        })
+    }
+
+    fn push_piece(&self, piece: ShapedPiece, runs: &mut Vec<ShapedRun>, cells: &mut Vec<FlowCell>) {
+        for (index, segment) in piece.segments.into_iter().enumerate() {
+            let span_cells = &self.members[segment.member].0;
+            let kind = CellKind::Warichu {
+                run_start: runs.len(),
+                run_count: segment.first_runs.len() + segment.second_runs.len(),
+                first_count: segment.first_runs.len(),
+                first_chars: segment.first_chars,
+                first_top: segment.first_top,
+                first_extent: segment.first_extent,
+                second_top: segment.second_top,
+                second_extent: segment.second_extent,
+            };
+            runs.extend(segment.first_runs);
+            runs.extend(segment.second_runs);
+            let last = self.chars[segment.chars.end - 1];
+            let start = self.chars[segment.chars.start].utf16;
+            let end = last.utf16 + last.ch.len_utf16();
+            // Two half-em sub-columns fill the em, the default `h_advance`.
+            let cell = VerticalCell {
+                font_size: piece.font_size,
+                ..span_cells.cell(kind, start, end, piece.extent)
+            };
+            let mut flow = FlowCell::new(cell, None, FlowScript::Upright, piece.letter_spacing);
+            if index > 0 {
+                flow.shares_previous_box = true;
+                flow.cell.extent = 0.0;
+                flow.cell.minimum_oikomi_extent = 0.0;
+            }
+            cells.push(flow);
+        }
     }
 }
 

@@ -61,27 +61,54 @@ fn span_entry(
     }
 }
 
-/// The two sub-line strips of a warichu cell: the first on the right half of
-/// the base band, the second on the left, each holding its own characters.
+/// Flow placement (top relative to the cell, extent) of a warichu cell's
+/// part of its first (right) or second (left) sub-line.
+fn warichu_line_span(cell: &VerticalCell, first_line: bool) -> (f32, f32) {
+    match cell.kind {
+        CellKind::Warichu {
+            first_top,
+            first_extent,
+            second_top,
+            second_extent,
+            ..
+        } => {
+            if first_line {
+                (first_top, first_extent)
+            } else {
+                (second_top, second_extent)
+            }
+        }
+        _ => (0.0, cell.extent),
+    }
+}
+
+/// The sub-line strips of a warichu cell: its first sub-line part on the
+/// right half of the base band, its second on the left, each holding its own
+/// characters. A cell with no characters on a sub-line has no strip there.
 fn warichu_entries(
     layout: &VerticalLayout,
     cell: &VerticalCell,
     first_chars: usize,
     origin: (f32, f32),
-) -> [PositionData; 2] {
+) -> Vec<PositionData> {
     let column = &layout.columns[cell.column];
     let center = origin.0 + column_base_center(column);
     let half = cell.font_size / 2.0;
     let split = cell.start + first_chars;
-    let line = |range: Range<usize>, x: f32| {
+    let line = |range: Range<usize>, x: f32, first_line: bool| {
         let source = source_utf16_range(layout, cell.paragraph, cell.span, range);
-        let rect = (x, origin.1 + cell.top, half, cell.extent);
+        let (top, extent) = warichu_line_span(cell, first_line);
+        let rect = (x, origin.1 + cell.top + top, half, extent);
         span_entry(layout, cell, source, rect, DIRECTION_VERTICAL_RL)
     };
     [
-        line(cell.start..split, center),
-        line(split..cell.end, center - half),
+        (cell.start..split, center, true),
+        (split..cell.end, center - half, false),
     ]
+    .into_iter()
+    .filter(|(range, _, _)| !range.is_empty())
+    .map(|(range, x, first_line)| line(range, x, first_line))
+    .collect()
 }
 
 /// Position-data entries for the v2 editor / exports: consecutive cells of
@@ -278,10 +305,22 @@ pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usiz
         return Some((paragraph, 0));
     }
 
-    for cell in &column_cells {
+    for (index, cell) in column_cells.iter().enumerate() {
         if y < cell.top + cell.extent {
             let (cell_start, cell_end) = cell_scalar_range(layout, cell)?;
             let chars = (cell_end - cell_start).max(1);
+            // Cells of one warichu piece share its box: pass on to the next
+            // span's cell when the point is past this one's sub-line part.
+            if let CellKind::Warichu { .. } = cell.kind {
+                let first_line = x >= column_base_center(&layout.columns[cell.column]);
+                let (top, extent) = warichu_line_span(cell, first_line);
+                let next_shares_box = column_cells.get(index + 1).is_some_and(|next| {
+                    matches!(next.kind, CellKind::Warichu { .. }) && next.top == cell.top
+                });
+                if next_shares_box && (extent <= 0.0 || y >= cell.top + top + extent) {
+                    continue;
+                }
+            }
             let offset = match cell.kind {
                 CellKind::Rotated { .. } => {
                     // Proportional position along the rotated run.
@@ -303,13 +342,15 @@ pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usiz
                     let centre = column_base_center(column);
                     let first =
                         warichu_first_line_len(layout, cell, first_chars, cell_start, chars)?;
-                    let (lo, hi) = if x >= centre {
+                    let first_line = x >= centre;
+                    let (lo, hi) = if first_line {
                         (0, first)
                     } else {
                         (first, chars)
                     };
+                    let (top, extent) = warichu_line_span(cell, first_line);
                     let line_chars = (hi - lo).max(1);
-                    let frac = ((y - cell.top) / cell.extent.max(1.0)).clamp(0.0, 1.0);
+                    let frac = ((y - cell.top - top) / extent.max(1.0)).clamp(0.0, 1.0);
                     cell_start + lo + ((frac * line_chars as f32).round() as usize).min(hi - lo)
                 }
                 CellKind::Upright { .. } | CellKind::SyntheticRotated { .. } => {
@@ -374,11 +415,12 @@ pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> O
                     };
                     let line_chars = line_chars.max(1);
                     let frac = (within - line_start) as f32 / line_chars as f32;
+                    let (top, extent) = warichu_line_span(cell, within < first);
                     Rect::from_xywh(
                         band_x,
-                        cell.top + frac * cell.extent,
+                        cell.top + top + frac * extent,
                         half,
-                        cell.extent / line_chars as f32,
+                        extent / line_chars as f32,
                     )
                 }
                 _ => {
@@ -425,6 +467,19 @@ pub fn range_rects(
         }
         let column = &layout.columns[cell.column];
         let chars = (cell_end - cell_start).max(1);
+        if let CellKind::Warichu { first_chars, .. } = cell.kind {
+            let Some(first) = warichu_first_line_len(layout, cell, first_chars, cell_start, chars)
+            else {
+                continue;
+            };
+            rects.extend(warichu_range_rects(
+                layout,
+                cell,
+                (cell_start, cell_start + first, cell_end),
+                (start, end),
+            ));
+            continue;
+        }
         let sel_top = if start > cell_start {
             cell.top + ((start - cell_start) as f32 / chars as f32) * cell.extent
         } else {
@@ -453,6 +508,36 @@ pub fn range_rects(
         ));
     }
     rects
+}
+
+/// Selection rects of the scalar range `start..end` over a warichu cell's
+/// two sub-line parts, given as (cell start, first-part end, cell end).
+fn warichu_range_rects(
+    layout: &VerticalLayout,
+    cell: &VerticalCell,
+    (cell_start, split, cell_end): (usize, usize, usize),
+    (start, end): (usize, usize),
+) -> Vec<Rect> {
+    let centre = column_base_center(&layout.columns[cell.column]);
+    let half = cell.font_size / 2.0;
+    [
+        (cell_start, split, centre, true),
+        (split, cell_end, centre - half, false),
+    ]
+    .into_iter()
+    .filter_map(|(line_start, line_end, left, first_line)| {
+        let from = start.max(line_start);
+        let to = end.min(line_end);
+        if from >= to {
+            return None;
+        }
+        let (top, extent) = warichu_line_span(cell, first_line);
+        let per_char = extent / (line_end - line_start) as f32;
+        let sel_top = cell.top + top + (from - line_start) as f32 * per_char;
+        let sel_bottom = cell.top + top + (to - line_start) as f32 * per_char;
+        Some(Rect::from_ltrb(left, sel_top, left + half, sel_bottom))
+    })
+    .collect()
 }
 
 #[cfg(test)]
