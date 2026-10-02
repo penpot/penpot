@@ -52,16 +52,29 @@
 (def ^:private dangerous-attrs-pattern #"(?i)^on\w+$")
 (def ^:private javascript-href-pattern #"(?i)^javascript:")
 
+(defn- local-name
+  "Return the local name of a parsed tag or attribute keyword.
+
+   The XML parser interns qualified names with the prefix included in
+   the keyword name and no keyword namespace: `<x:script>` parses as
+   the keyword `:x:script`. Dangerous elements and attributes behave
+   the same in the browser regardless of the prefix used, so matching
+   is done on the local name: the part after the last `:`."
+  [k]
+  (if (str/includes? (name k) ":")
+    (-> (name k) (str/split ":") last)
+    (name k)))
+
 (defn- sanitize-svg-element
   "Recursively sanitize an SVG element by removing dangerous tags and attributes."
   [{:keys [tag attrs content] :as element}]
   (when (and (map? element) tag)
-    (let [dangerous-tags #{:script :foreignObject :set :animate :animateTransform :animateColor :animateMotion}]
-      (when-not (contains? dangerous-tags tag)
+    (let [dangerous-tags #{"script" "foreignObject" "set" "animate" "animateTransform" "animateColor" "animateMotion"}]
+      (when-not (contains? dangerous-tags (local-name tag))
         (let [clean-attrs (->> attrs
                                (remove (fn [[k v]]
-                                         (or (re-matches dangerous-attrs-pattern (name k))
-                                             (and (#{:href :xlink:href} k)
+                                         (or (re-matches dangerous-attrs-pattern (local-name k))
+                                             (and (= "href" (local-name k))
                                                   (string? v)
                                                   (re-find javascript-href-pattern (str/trim v))))))
                                (into {}))
