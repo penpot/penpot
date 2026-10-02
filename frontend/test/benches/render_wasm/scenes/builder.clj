@@ -50,10 +50,10 @@
   "Adds one rectangle to the current scene scope and returns its uuid.
 
   Forms: `(rect)`, `(rect attrs)`, `(rect label)`, `(rect label attrs)`.
-  A one-argument call is resolved at runtime: a map is `attrs`, anything
-  else is a label. `label` must be a keyword or vector, stored in the
-  instance `:refs`; duplicates and other label types are rejected. `attrs`
-  override the generated defaults attribute by attribute."
+  A one-argument call is resolved at runtime: a map is interpreted as attributes
+  and anything else is a label. `label` must be a keyword or vector, stored in
+  the instance `:refs`; duplicates and other label types are rejected. `attrs`
+  override the defaults attribute by attribute."
   ([]
    `(benches.render-wasm.scenes.builder/rect!
      benches.render-wasm.scenes.builder/*state*
@@ -75,14 +75,42 @@
      ~label
      ~attrs)))
 
+(defmacro path
+  "Adds one path to the current scene scope.
+
+  Forms: `(path)`, `(path attrs)`, `(path label)`, `(path label attrs)`.
+  A one-argument call is resolved at runtime: a map is interpreted as attributes
+  and anything else is a label. `label` must be a keyword or vector, stored in
+  the instance `:refs`; duplicates and other label types are rejected. `attrs`
+  override the defaults attribute by attribute.
+  "
+  ([]
+   `(benches.render-wasm.scenes.builder/path!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     nil
+     {}))
+  ([label-or-attrs]
+   `(benches.render-wasm.scenes.builder/path!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     ~label-or-attrs
+     {}))
+  ([label attrs]
+   `(benches.render-wasm.scenes.builder/path!
+     benches.render-wasm.scenes.builder/*state*
+     benches.render-wasm.scenes.builder/*defaults*
+     ~label
+     ~attrs)))
+
 (defmacro circle
   "Adds one ellipse to the current scene scope and returns its uuid.
 
   Forms: `(circle)`, `(circle attrs)`, `(circle label)`, `(circle label attrs)`.
-  A one-argument call is resolved at runtime: a map is `attrs`, anything
-  else is a label. `label` must be a keyword or vector, stored in the
-  instance `:refs`; duplicates and other label types are rejected. `attrs`
-  override the generated defaults attribute by attribute."
+  A one-argument call is resolved at runtime: a map is interpreted as attributes
+  and anything else is a label. `label` must be a keyword or vector, stored in
+  the instance `:refs`; duplicates and other label types are rejected. `attrs`
+  override the defaults attribute by attribute."
   ([]
    `(benches.render-wasm.scenes.builder/circle!
      benches.render-wasm.scenes.builder/*state*
@@ -154,11 +182,13 @@
   Forms: `(bool attrs & body)` and `(bool label attrs & body)`. `label` is a
   literal keyword or vector stored in the instance `:refs`. `attrs` must
   carry `:bool-type` (`:union`, `:difference`, `:intersection` or
-  `:exclude`). Content and geometry derive from the children after they
-  finalize, so geometry, content and transform attrs are rejected. Fills,
-  strokes, shadows and blurs are inherited from the head child (first for
-  `:difference`, last otherwise) unless attrs supply them. A bool needs at
-  least one child and cannot contain frames."
+  `:exclude`).
+
+  Content and geometry derive from the children after they finalize, so geometry,
+  content and transform attrs are rejected. Fills, strokes, shadows and blurs
+  are inherited from the head child (first for `:difference`, last otherwise)
+  unless attrs supply them. A bool needs at least one child and cannot contain
+  frames."
   [label-or-attrs & body]
   (if (or (keyword? label-or-attrs) (vector? label-or-attrs))
     `(benches.render-wasm.scenes.builder/with-container

@@ -258,6 +258,21 @@
     (add-object! state label shape)
     id))
 
+(defn path!
+  "Adds one path to the scope and returns its uuid.
+  Runtime primitive behind the `path` macro."
+  [state defaults label attrs]
+  (let [state         (ensure-state state)
+        [label attrs] (normalize-label-and-attrs label attrs)
+        rng           (:rng @state)
+        attrs         (resolve-attrs rng (:path defaults) attrs)
+        id            (rng-uuid rng)
+        shape         (cts/setup-shape (merge attrs
+                                              {:id id
+                                               :type :path}))]
+    (add-object! state label shape)
+    id))
+
 (defn circle!
   "Adds one circle to the scope and returns its uuid.
   Runtime primitive behind the `circle` macro."
