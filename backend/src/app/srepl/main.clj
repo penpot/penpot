@@ -144,6 +144,33 @@
                    (db/get-update-count)
                    (pos?)))))))
 
+(defn ensure-test-user!
+  "Ensure an active profile with a known password exists (dev only).
+
+  Returns {:id :email}, creating the profile with its default team
+  and project when the email is not taken. Intended for manual
+  browser passes and agent-driven checks against devenv."
+  [& {:keys [email password fullname]
+      :or {password "Test123!" fullname "Test User"}}]
+  (assert (= "devenv" (cf/get :host)) "dev only")
+  (assert (string? email) "expected email")
+  (assert (string? password) "expected password")
+
+  (some-> sys/system
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [email (str/lower email)]
+               (if-let [profile (db/get* conn :profile {:email email}
+                                         {:columns [:id :email]})]
+                 (select-keys profile [:id :email])
+                 (let [profile (auth/create-profile
+                                system {:email email
+                                        :fullname fullname
+                                        :is-active true
+                                        :password (derive-password password)})]
+                   (auth/create-profile-rels system profile)
+                   (select-keys profile [:id :email]))))))))
+
 (defn parse-emails
   "Parse the emails into a seq of cleaned emails. Accepts a single
   email, a comma separated list of emails or a coll of emails.
