@@ -103,24 +103,27 @@
 
 (defn- usage
   []
-  "pilot [--seed N] [--timeout-ms N] [--screenshot PATH]")
+  "pilot [--case SCENE/NAME] [--seed N] [--timeout-ms N] [--screenshot PATH]")
 
 (defn- parse-args
   [argv]
   (let [opts (loop [args argv
-                    opts {:seed default-seed :timeout-ms default-timeout-ms}]
+                    opts {:seed default-seed :timeout-ms default-timeout-ms
+                          :case-id :rects/load}]
                (if (empty? args)
                  opts
                  (let [[flag value & rest-args] args]
                    (cond
                      (= flag "--seed") (recur rest-args (assoc opts :seed (js/parseInt value 10)))
+                     (= flag "--case") (recur rest-args (assoc opts :case-id (when value (keyword value))))
                      (= flag "--timeout-ms") (recur rest-args (assoc opts :timeout-ms (js/parseInt value 10)))
                      (= flag "--screenshot") (recur rest-args (assoc opts :screenshot value))
                      :else (recur rest-args (assoc opts ::invalid flag))))))
         valid-seed?    (fn [n] (and (integer? n) (<= 0 n 4294967295)))
         valid-timeout? (fn [n] (and (integer? n) (pos? n)))]
     (if (and (nil? (::invalid opts))
-             (valid-seed? (:seed opts)) (valid-timeout? (:timeout-ms opts)))
+             (valid-seed? (:seed opts)) (valid-timeout? (:timeout-ms opts))
+             (some #{(:case-id opts)} (cases/case-ids)))
       opts
       (do
         (.error js/console (str "pilot: invalid args " (pr-str opts)))
@@ -145,6 +148,8 @@
         js-dir   (path/join root "resources" "public" "js")
         html     (path/join root "test" "benches" "render_wasm" "pilot.html")
         seed     (:seed opts)
+        selected (some #(when (= (:id %) (:case-id opts)) %)
+                       (cases/collect-cases {:master-seed seed}))
         deadline (:timeout-ms opts)]
     (-> (start-server! bundle js-dir html)
         (.then
@@ -163,12 +168,8 @@
                                   ;; as an expression, so inline the args
                                   ;; into an IIFE; a passed arg would
                                   ;; never arrive.
-                                  (let [collected (first (cases/collect-cases
-                                                          {:master-seed seed
-                                                           :filter "rects/load"}))
-                                        request   (t/encode-str
-                                                   {:seed (:scene-seed collected)
-                                                    :case collected
+                                  (let [request   (t/encode-str
+                                                   {:case selected
                                                     :module-url "/js/render-wasm.js"
                                                     :wasm-url "/js/render-wasm.wasm"})
                                         call      (str "(async () => window.__benchBridge.loadScene("
@@ -178,6 +179,9 @@
                  attach-screenshot-path
                  (fn [^js page ^js version] (fn [result]
                                               (let [out {:seed seed
+                                                         :case (:id selected)
+                                                         :scored false
+                                                         :attempts 1
                                                          :result (t/decode-str result)
                                                          :browser {:chromium version}}]
                                                 (if-let [shot (:screenshot opts)]
@@ -214,7 +218,10 @@
                                             (.then (evaluate-load page))
                                             (.then (attach-screenshot-path page version))
                                             (.then (fn [out]
-                                                     (-> (.close pw-browser)
+                                                     (-> (.evaluate page "window.__benchBridge.dispose()")
+                                                         (.then (fn [_] (.close page)))
+                                                         (.then (fn [_] (.close context)))
+                                                         (.then (fn [_] (.close pw-browser)))
                                                          (.then (fn [_] out)))))
                                             (.catch (fn [cause]
                                                       (.close pw-browser)
@@ -229,7 +236,8 @@
                           (-> (close!)
                               (.then (fn [_]
                                        (print-result! out)
-                                       (js/process.exit 0))))))
+                                       (js/process.exit
+                                        (if (= "ok" (get-in out [:result :status])) 0 1)))))))
                  (.catch (fn [cause]
                            ;; The work chain may have left a browser open
                            ;; (guard timeout, blocked page, post-launch
