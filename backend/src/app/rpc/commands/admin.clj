@@ -156,3 +156,68 @@
          :next-since (when has-more? (:created-at last-item))
          :next-id    (when has-more? (:id last-item))})
       {:items []})))
+
+(def schema:admin-owned-team
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:members ::sm/int]])
+
+(def schema:admin-member-team
+  [:map
+   [:id ::sm/uuid]
+   [:name ::sm/text]
+   [:is-owner ::sm/boolean]
+   [:is-admin ::sm/boolean]])
+
+(def schema:admin-profile
+  [:merge schema:admin-profile-summary
+   [:map
+    [:is-muted ::sm/boolean]
+    [:owned-teams [:vector schema:admin-owned-team]]
+    [:member-teams [:vector schema:admin-member-team]]]])
+
+(def schema:get-admin-profile-params
+  [:map
+   [:id ::sm/uuid]])
+
+(def ^:private sql:admin-owned-teams
+  (str "SELECT t.id, t.name, "
+       "(SELECT count(*) FROM team_profile_rel WHERE team_id = t.id) AS members "
+       "FROM team AS t "
+       "JOIN team_profile_rel AS tp ON (tp.team_id = t.id) "
+       "WHERE tp.profile_id = ? AND tp.is_owner IS true AND t.deleted_at IS NULL "
+       "ORDER BY t.name ASC"))
+
+(def ^:private sql:admin-member-teams
+  (str "SELECT t.id, t.name, "
+       "COALESCE(tp.is_owner, false) AS is_owner, "
+       "COALESCE(tp.is_admin, false) AS is_admin "
+       "FROM team AS t "
+       "JOIN team_profile_rel AS tp ON (tp.team_id = t.id) "
+       "WHERE tp.profile_id = ? AND NOT COALESCE(tp.is_owner, false) "
+       "AND t.deleted_at IS NULL "
+       "ORDER BY t.name ASC"))
+
+(sv/defmethod ::get-admin-profile
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::sm/params schema:get-admin-profile-params
+   ::sm/result schema:admin-profile}
+  [cfg {:keys [id]}]
+  (if-let [row (db/get-by-id cfg :profile id {::db/check-deleted false})]
+    (d/without-nils
+     {:id           (:id row)
+      :email        (:email row)
+      :fullname     (:fullname row)
+      :created-at   (:created-at row)
+      :is-active    (boolean (:is-active row))
+      :is-blocked   (boolean (:is-blocked row))
+      :is-demo      (boolean (:is-demo row))
+      :is-muted     (boolean (:is-muted row))
+      :auth-backend (:auth-backend row)
+      :owned-teams  (db/exec! cfg [sql:admin-owned-teams id])
+      :member-teams (db/exec! cfg [sql:admin-member-teams id])})
+    (ex/raise :type :not-found
+              :code :profile-not-found
+              :hint (str "profile " id " not found"))))

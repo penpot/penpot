@@ -193,3 +193,49 @@
         run     (as-superuser admin)
         out     (run "get-admin-profiles" {})]
     (t/is (= [(:id admin)] (mapv :id (:items out))))))
+
+;; ----------------------------------------------------------------
+;; Detail
+;; ----------------------------------------------------------------
+
+(t/deftest detail-guard
+  (let [profile (th/create-profile* 1)]
+    (t/is (= :superuser-required
+             (caught-code #((as-session #{} profile)
+                            "get-admin-profile" {:id (:id profile)}))))
+    (t/is (= :authentication-required
+             (caught-code #(call #{} nil nil #{}
+                                 "get-admin-profile" {:id (:id profile)}))))))
+
+(t/deftest detail-returns-profile-with-teams
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2 {:fullname "Detail User"})
+        _     (th/create-team-role* {:team-id (:default-team-id admin)
+                                     :profile-id (:id user)
+                                     :role :editor})
+        run   (as-superuser admin)
+        out   (run "get-admin-profile" {:id (:id user)})]
+    (t/is (= (:id user) (:id out)))
+    (t/is (= "Detail User" (:fullname out)))
+    (t/is (false? (:is-blocked out)))
+    (t/is (not (contains? out :password)))
+    (t/is (not (contains? out :props)))
+    (t/is (= 1 (count (:owned-teams out))))
+    (t/is (= "Default" (:name (first (:owned-teams out)))))
+    (t/is (= 1 (:members (first (:owned-teams out)))))
+    (t/is (= 1 (count (:member-teams out))))
+    (t/is (false? (:is-owner (first (:member-teams out)))))))
+
+(t/deftest detail-unknown-id-gives-not-found
+  (let [profile (th/create-profile* 1)
+        run     (as-superuser profile)]
+    (t/is (= :profile-not-found
+             (caught-code #(run "get-admin-profile" {:id (uuid/next)}))))))
+
+(t/deftest detail-deleted-gives-not-found
+  (let [admin (th/create-profile* 1)
+        gone  (th/create-profile* 2)
+        _     (set-flags! (:id gone) {:deleted-at (ct/now)})
+        run   (as-superuser admin)]
+    (t/is (= :profile-not-found
+             (caught-code #(run "get-admin-profile" {:id (:id gone)}))))))
