@@ -24,6 +24,8 @@
    shadow.lazy/loadable hooks.export/rumext-lazycomponent
    app.util.i18n/tr hooks.i18n/tr-dynamic
    app.common.i18n/tr hooks.i18n/tr-dynamic
+   benches.render-wasm.declarations/defscene hooks.export/benches-defscene
+   benches.render-wasm.declarations/defcase hooks.export/benches-defcase
    }}
 
  :output
