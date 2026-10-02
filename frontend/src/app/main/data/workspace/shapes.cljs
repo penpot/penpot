@@ -184,6 +184,26 @@
                               ::update-shapes-buffer-event))))
            (rx/empty)))))))
 
+(defn- any-group-like?
+  "Whether any of `ids` or their ancestors is group-like."
+  [objects ids]
+  (let [cache (js/Map.)
+        group-like?
+        (fn group-like? [id]
+          (let [cached (.get cache id)]
+            (if (some? cached)
+              cached
+              (let [shape     (get objects id)
+                    parent-id (:parent-id shape)
+                    result    (boolean
+                               (or (cfh/group-like-shape? shape)
+                                   (and (some? parent-id)
+                                        (not= parent-id id)
+                                        (group-like? parent-id))))]
+                (.set cache id result)
+                result))))]
+    (boolean (some group-like? ids))))
+
 (defn update-shapes
   ([ids update-fn]
    (update-shapes ids update-fn nil))
@@ -212,10 +232,15 @@
                objects   (dsh/lookup-page-objects state page-id)
                ids       (into [] (filter some?) ids)
 
+               ;; Parent resizing only reads the builder objects for groups
+               skip-local?
+               (and translation? (not (any-group-like? objects ids)))
+
                changes
                (-> (pcb/empty-changes it page-id)
                    (pcb/set-save-undo? save-undo?)
                    (pcb/set-stack-undo? stack-undo?)
+                   (pcb/skip-local skip-local?)
                    (cls/generate-update-shapes ids
                                                update-fn
                                                objects
