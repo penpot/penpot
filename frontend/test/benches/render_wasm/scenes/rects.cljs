@@ -11,12 +11,12 @@
   fills and centered strokes, all drawn from the scope's seeded generator.
   `build` produces the scene snapshot; `defscene` and `defcase` declare
   the scene and its standard cases. The three cases share parameters, so
-  they render the same scene. The path and effect scenes arrive in
-  tickets 07/08. The bridge supplies the current pan and zoom gestures;
-  scene case bodies arrive with ticket 14."
+  they render the same scene. Each case body runs through the compiled
+  browser executor; collection keeps only plain descriptors."
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.scenes.builder :as sb :include-macros true]
+   [benches.render-wasm.scenes.camera :as camera]
    [benches.render-wasm.scenes.core :as core :include-macros true]))
 
 ;; This namespace is also loaded by Node discovery. Keep operation helpers
@@ -86,16 +86,21 @@
 (core/defcase :rects/load :rects
   {:params default-params
    :view base-view
-   :context :fresh})
+   :context :fresh}
+  (fn [rtx] (camera/load! rtx)))
 
 (core/defcase :rects/pan :rects
   {:params default-params
    :view base-view
    :context :reuse
-   :completion :render-full})
+   :completion :render-full
+   :operation {:steps 20 :dx 200 :dy 0 :settle-ms 100}}
+  (fn [rtx] (camera/pan! rtx)))
 
 (core/defcase :rects/zoom :rects
   {:params default-params
    :view base-view
    :context :reuse
-   :completion :render-full})
+   :completion :render-full
+   :operation {:steps 20 :factor 1.5 :settle-ms 100}}
+  (fn [rtx] (camera/zoom! rtx)))
