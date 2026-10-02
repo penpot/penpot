@@ -35,11 +35,13 @@
   "Transit request for `browser/load-scene`. `overrides` change the
   collected case descriptor."
   [seed overrides]
-  (transit/encode-str
-   {:seed seed
-    :case (merge (load-case) overrides)
-    :module-url (factory-url)
-    :wasm-url "./fake.wasm"}))
+  (let [base (or (some #(when (= (:id %) (:id overrides)) %)
+                       (cases/collect-cases {:master-seed 42}))
+                 (load-case))]
+    (transit/encode-str
+     {:case (merge base {:scene-seed seed} overrides)
+      :module-url (factory-url)
+      :wasm-url "./fake.wasm"})))
 
 (defn- expect-failed-args
   "Calls `load-scene` with `args` (never touching DOM/FFI: validation runs
@@ -62,11 +64,11 @@
 
 (t/deftest missing-seed-fails-before-timers
   (t/async done
-    (expect-failed-args (transit/encode-str {:case (load-case)}) true done)))
+    (expect-failed-args (transit/encode-str {:case (dissoc (load-case) :scene-seed)}) true done)))
 
 (t/deftest missing-case-fails-before-timers
   (t/async done
-    (expect-failed-args (transit/encode-str {:seed 42}) true done)))
+    (expect-failed-args (transit/encode-str {}) true done)))
 
 (t/deftest malformed-transit-fails-before-timers
   (t/async done
@@ -86,6 +88,22 @@
                             :viewport {:width -5}}})
      true
      done)))
+
+(t/deftest missing-compiled-body-fails-before-claim
+  (t/async done
+    (expect-failed-args (scene-args 42 {:id :rects/missing}) true done)))
+
+(t/deftest wrong-scene-body-fails-before-claim
+  (let [id :rects/wrong-scene
+        descriptor (load-case)]
+    (core/register-case! {:id id :scene :other :ns "lifecycle-test"
+                          :run! (fn [_] nil)})
+    (try
+      (let [request (transit/encode-str {:case (assoc descriptor :id id)})
+            parsed  (@#'browser/parse-load-request request)]
+        (t/is (= "invalid-args" (get-in parsed [:error :phase]))))
+      (finally
+        (core/unregister-case! id)))))
 
 (t/deftest non-finite-view-values-fail-before-timers
   (t/async done
@@ -418,6 +436,20 @@
                        (cleanup)
                        (done)))))))
 
+(t/deftest rejected-camera-body-releases-owner
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (unchecked-set js/globalThis "__benchThrowIn" "_render_from_cache")
+        (load-result (scene-args 7 {:id :rects/pan :context :reuse})
+                     (fn [m]
+                       (t/is (= "failed" (:status m)))
+                       (t/is (= "interact" (:phase m)))
+                       (t/is (= 1 (effect-count (read-calls) "remove")))
+                       (t/is (nil? @@#'browser/canvas*))
+                       (cleanup)
+                       (done)))))))
+
 (t/deftest rejected-import-resolves-module-init-failure
   (t/async done
     ;; Needs the entry env for the import polyfill, even though the import
@@ -425,8 +457,7 @@
     (with-entry-env
       (fn [cleanup]
         (load-result (transit/encode-str
-                      {:seed 7
-                       :case (load-case)
+                      {:case (assoc (load-case) :scene-seed 7)
                        :module-url "data:text/javascript,this is not valid javascript((("})
                      (fn [m]
                        (t/is (= "failed" (:status m)))
