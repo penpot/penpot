@@ -23,6 +23,7 @@
    [clojure.set :as set]
    [clojure.test :as t]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once (t/compose-fixtures
@@ -2055,3 +2056,18 @@
       (t/is (th/success? out))
       (let [[params] (:call-args @email-mock)]
         (t/is (= "" (:user-name params)))))))
+
+(t/deftest upload-organization-logo-rejects-forged-content
+  ;; Same transit-forgery vector through the management API: without a
+  ;; multipart request the wrapper must reject it at params validation.
+  (with-mocks [nitrate-mock {:target 'app.nitrate/call :return nil}]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          params  {::th/type :upload-organization-logo
+                   ::rpc/profile-id (:id profile)
+                   :organization-id (uuid/random)
+                   :content {:filename "evil.png"
+                             :path (fs/path "/etc/passwd")
+                             :mtype "image/png"
+                             :size 123}}
+          out     (th/management-command! params)]
+      (t/is (th/ex-of-code? (:error out) :params-validation)))))

@@ -470,6 +470,13 @@
 
     (-> params
         (assoc :app.rpc/request-at (ct/now))
+        ;; Mirror of the production flag in `app.rpc/make-rpc-handler`:
+        ;; upload maps are only trusted over multipart. Tests declare it
+        ;; with a content-type header on the supplied request map.
+        (assoc ::rpc/is-multipart
+               (str/starts-with?
+                (str (yreq/get-header request "content-type"))
+                "multipart/"))
         (with-meta {:app.http/request request}))))
 
 (defn command!
@@ -492,6 +499,33 @@
                 :hint (str/ffmt "management rpc method '%' not found" (name type))))
     (let [params (prepare-rpc-params data)]
       (try-on! (method-fn params)))))
+
+(def multipart-headers
+  {"content-type" "multipart/form-data; boundary=test"})
+
+(defn with-multipart
+  "Attach a multipart content-type to RPC test params, declaring that the
+  upload maps they carry arrived over multipart (as the production
+  multipart parser would deliver them). Preserves any request metadata
+  already present on the data."
+  [data]
+  (let [request (-> data meta :app.http/request)]
+    (vary-meta data assoc :app.http/request
+               (assoc (if (map? request) request {})
+                      :headers (merge multipart-headers
+                                      (when (map? request)
+                                        (:headers request)))))))
+
+(defn multipart-command!
+  "Like `command!` but declares the request as multipart, for calls that
+  carry upload maps (`:file`, `:content`, `:media`)."
+  [data]
+  (command! (with-multipart data)))
+
+(defn multipart-management-command!
+  "Like `management-command!` but declares the request as multipart."
+  [data]
+  (management-command! (with-multipart data)))
 
 (defn run-task!
   ([name]

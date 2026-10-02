@@ -7,6 +7,7 @@
 (ns backend-tests.http-middleware-test
   (:require
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -19,6 +20,7 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.access-token]
+   [app.storage.schema :as stsch]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
@@ -669,3 +671,23 @@
     (t/is (= "safe user-facing hint" (:hint body)))
     (t/is (nil? (:state body)))
     (t/is (nil? (:path body)))))
+
+(t/deftest validation-error-body-with-raw-explain-is-json-serializable
+  ;; A :validation error whose ex-data carries the raw malli explain
+  ;; (storage invalid-storage-metadata) must produce a response body
+  ;; that survives JSON encoding. Before the fix the live schema
+  ;; object inside the explain broke the writer mid-stream and the
+  ;; client received a truncated body.
+  (let [cause    (try
+                   (stsch/encode-metadata {})
+                   (catch clojure.lang.ExceptionInfo cause cause))
+        response (http-errors/handle cause {})
+        body     (::yres/body response)]
+    (t/is (= 400 (::yres/status response)))
+    (t/is (= :validation (:type body)))
+    (t/is (= :invalid-storage-metadata (:code body)))
+    (t/is (nil? (:app.common.schema/explain body)))
+    (let [encoded (json/encode body :key-fn json/write-camel-key)
+          decoded (json/decode encoded :key-fn json/read-kebab-key)]
+      (t/is (str/includes? encoded "invalid-storage-metadata"))
+      (t/is (string? (:explain decoded))))))

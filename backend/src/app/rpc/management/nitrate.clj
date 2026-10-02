@@ -135,6 +135,7 @@
   collection when replacing an existing one."
   {::doc/added "2.18"
    ::sm/params schema:upload-organization-logo
+   ::rpc/multipart-only-params [:content]
    ::sm/result schema:upload-organization-logo-result
    ::nitrate/sso false}
   [{:keys [::sto/storage]} {:keys [content organization-id previous-id]}]
