@@ -24,6 +24,7 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.error-reports :as error-reports]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]
@@ -261,3 +262,27 @@
    ::sm/result schema:admin-block-result}
   [cfg {:keys [id]}]
   (set-blocked-flag! cfg id false))
+
+(def schema:admin-resend-result
+  [:map
+   [:id ::sm/uuid]
+   [:email ::sm/text]])
+
+(sv/defmethod ::resend-admin-verification
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:get-admin-profile-params
+   ::sm/result schema:admin-resend-result}
+  [cfg {:keys [id]}]
+  (if-let [row (db/get-by-id cfg :profile id {::db/check-deleted false})]
+    (if (:is-active row)
+      (ex/raise :type :validation
+                :code :already-active
+                :hint "the profile is already active")
+      (do
+        (cmd.auth/send-email-verification! cfg row)
+        {:id (:id row) :email (:email row)}))
+    (ex/raise :type :not-found
+              :code :profile-not-found
+              :hint (str "profile " id " not found"))))

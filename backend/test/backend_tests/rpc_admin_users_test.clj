@@ -15,6 +15,7 @@
    [app.http :as-alias http]
    [app.rpc :as rpc]
    [app.util.services :as sv]
+   [app.worker :as wrk]
    [backend-tests.helpers :as th]
    [clojure.set :as set]
    [clojure.test :as t]))
@@ -302,3 +303,50 @@
     (run "block-admin-profile" {:id (:id user)})
     (t/is (= {:id (:id user) :is-blocked false}
              (run "unblock-admin-profile" {:id (:id user)})))))
+
+;; ----------------------------------------------------------------
+;; Resend verification
+;; ----------------------------------------------------------------
+
+(t/deftest resend-guard
+  (let [profile (th/create-profile* 1)]
+    (t/is (= :superuser-required
+             (caught-code #((as-session #{} profile)
+                            "resend-admin-verification" {:id (:id profile)}))))
+    (t/is (= :authentication-required
+             (caught-code #(call #{} nil nil #{}
+                                 "resend-admin-verification"
+                                 {:id (:id profile)}))))))
+
+(t/deftest resend-schedules-email-for-inactive
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2)
+        run   (as-superuser admin)
+        sent  (atom nil)]
+    (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/params]}]
+                                (reset! sent {:task task :params params})
+                                nil)]
+      (let [out (run "resend-admin-verification" {:id (:id user)})]
+        (t/is (= {:id (:id user) :email (:email user)} out))))
+    (t/is (= :sendmail (:task @sent)))
+    (t/is (= (:email user) (:to (:params @sent))))))
+
+(t/deftest resend-active-refused
+  (let [admin  (th/create-profile* 1)
+        active (th/create-profile* 2 {:is-active true})
+        run    (as-superuser admin)
+        sent   (atom nil)]
+    (with-redefs [wrk/submit! (fn [& {:keys [::wrk/task ::wrk/params]}]
+                                (reset! sent {:task task :params params})
+                                nil)]
+      (t/is (= :already-active
+               (caught-code #(run "resend-admin-verification"
+                                  {:id (:id active)})))))
+    (t/is (nil? @sent) "no email is scheduled")))
+
+(t/deftest resend-unknown-id-gives-not-found
+  (let [admin (th/create-profile* 1)
+        run   (as-superuser admin)]
+    (t/is (= :profile-not-found
+             (caught-code #(run "resend-admin-verification"
+                                {:id (uuid/next)}))))))
