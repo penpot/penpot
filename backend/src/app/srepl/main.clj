@@ -25,11 +25,11 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.features.object-cascade :as cascade]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
@@ -706,7 +706,7 @@
   [file-id]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! sys/system
-                (fn [{:keys [::db/conn] :as system}]
+                (fn [system]
                   (when-let [file (db/get* system :file
                                            {:id file-id}
                                            {::db/remove-deleted false
@@ -718,7 +718,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-file!"}})
 
-                    (#'files/restore-files conn [file-id]))
+                    (cascade/run-cascade system :file file-id {:deleted-at nil}))
                   :restored))))
 
 (defn delete-project!
@@ -742,19 +742,6 @@
                                           :id project-id})))
     :deleted))
 
-(defn- restore-project*
-  [{:keys [::db/conn] :as cfg} project-id]
-  (db/update! conn :project
-              {:deleted-at nil}
-              {:id project-id})
-
-  (doseq [{:keys [id]} (db/query conn :file
-                                 {:project-id project-id}
-                                 {::sql/columns [:id]})]
-    (#'files/restore-files conn [id]))
-
-  :restored)
-
 (defn restore-project!
   "Mark a project and all related objects as not deleted"
   [project-id]
@@ -771,7 +758,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
-                    (restore-project* system project-id))))))
+                    (cascade/run-cascade system :project project-id {:deleted-at nil}))))))
 
 (defn delete-team!
   "Mark a team for deletion"
@@ -794,23 +781,6 @@
                                           :id team-id})))
     :deleted))
 
-(defn- restore-team*
-  [{:keys [::db/conn] :as cfg} team-id]
-  (db/update! conn :team
-              {:deleted-at nil}
-              {:id team-id})
-
-  (db/update! conn :team-font-variant
-              {:deleted-at nil}
-              {:team-id team-id})
-
-  (doseq [{:keys [id]} (db/query conn :project
-                                 {:team-id team-id}
-                                 {::sql/columns [:id]})]
-    (restore-project* cfg id))
-
-  :restored)
-
 (defn restore-team!
   "Mark a team and all related objects as not deleted"
   [team-id]
@@ -828,7 +798,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
-                    (restore-team* system team-id))))))
+                    (cascade/run-cascade system :team team-id {:deleted-at nil}))))))
 
 (defn delete-profile!
   "Mark a profile for deletion."
@@ -867,13 +837,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-profile!"}})
 
-                    (db/update! system :profile
-                                {:deleted-at nil}
-                                {:id profile-id}
-                                {::db/return-keys false})
-
-                    (doseq [{:keys [id]} (profile/get-owned-teams system profile-id)]
-                      (restore-team* system id))
+                    (cascade/run-cascade system :profile profile-id {:deleted-at nil})
 
                     :restored)))))
 

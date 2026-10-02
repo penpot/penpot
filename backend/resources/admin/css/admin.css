@@ -109,8 +109,9 @@ wearing plain title text instead of link styling. */
 }
 
 /* `hidden` must win over the flex above: an empty filter bar
-takes no space at all. */
-.admin-controls[hidden] {
+or confirm row takes no space at all. */
+.admin-controls[hidden],
+.admin-confirm[hidden] {
   display: none;
 }
 

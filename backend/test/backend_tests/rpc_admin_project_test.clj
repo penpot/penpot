@@ -152,12 +152,15 @@
     (t/is (contains? ids (:id project)))
     (t/is (not (contains? ids (:id (:project other)))))))
 
-(t/deftest list-hides-deleted-projects
+(t/deftest list-shows-deleted-projects
   (let [{:keys [profile project]} (create-project! 1)
         _     (mark-deleted! :project (:id project))
         run   (as-superuser profile)
-        out   (run "get-projects" {:search (:name project)})]
-    (t/is (= [] (:items out)))))
+        out   (run "get-projects" {:search (:name project)})
+        item  (first (:items out))]
+    (t/is (= 1 (count (:items out))))
+    (t/is (= (:id project) (:id item)))
+    (t/is (some? (:deleted-at item)))))
 
 (t/deftest list-hides-projects-of-deleted-teams
   (let [{:keys [profile team project]} (create-project! 1)

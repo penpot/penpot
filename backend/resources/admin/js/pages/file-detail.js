@@ -8,6 +8,7 @@
 
 import { rpc, transferUrl } from "../api.js";
 import { renderHeader } from "../components/header.js";
+import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
 
@@ -60,6 +61,37 @@ export function fileDetailPage(root, { id, onNavigate }) {
     body.appendChild(validateBlock());
     body.appendChild(repairBlock());
     body.appendChild(exportBlock());
+    if (file.deletedAt) {
+      body.appendChild(deletedNotice("This file was marked for deletion."));
+      body.appendChild(restoreBlock({
+        command: "restore-file",
+        id,
+        label: "this file",
+        confirmName: file.name,
+        onRestored: async () => {
+          let parentGone = false;
+          try {
+            const found = await rpc("get-projects", { search: file.projectId });
+            const project = (found.items ?? []).find((item) => item.id === file.projectId) ?? null;
+            parentGone = project !== null && !!project.deletedAt;
+          } catch {
+            parentGone = false;
+          }
+          if (parentGone) {
+            body.replaceChildren();
+            body.appendChild(deletedNotice("Restored, but its project is still deleted."));
+            const link = document.createElement("button");
+            link.className = "admin-button admin-button-ghost";
+            link.textContent = "Open its project";
+            link.addEventListener("click", () =>
+              onNavigate("?screen=project&id=" + encodeURIComponent(file.projectId)));
+            body.appendChild(link);
+          } else {
+            load();
+          }
+        },
+      }));
+    }
   }
 
   function infoBlock(file) {

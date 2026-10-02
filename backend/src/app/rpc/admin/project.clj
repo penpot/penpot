@@ -11,10 +11,12 @@
   permission), not here, so a new command cannot forget it."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.schema :as-alias sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.object-cascade :as cascade]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.util.services :as sv]
@@ -32,7 +34,8 @@
    [:is-default ::sm/boolean]
    [:total-files ::sm/int]
    [:created-at ct/schema:inst]
-   [:modified-at ct/schema:inst]])
+   [:modified-at ct/schema:inst]
+   [:deleted-at {:optional true} ct/schema:inst]])
 
 (def schema:get-projects-params
   [:map {:title "get-projects-params"}
@@ -75,11 +78,10 @@
                         "(SELECT count(*) FROM file AS f "
                         "WHERE f.project_id = p.id "
                         "AND f.deleted_at IS NULL) AS total_files, "
-                        "p.created_at, p.modified_at "
+                        "p.created_at, p.modified_at, p.deleted_at "
                         "FROM project AS p "
                         "JOIN team AS t ON (t.id = p.team_id) "
-                        "WHERE p.deleted_at IS NULL "
-                        "AND t.deleted_at IS NULL "
+                        "WHERE t.deleted_at IS NULL "
                         (when (seq sql-parts)
                           (str "AND " (str/join " AND " sql-parts) " "))
                         "ORDER BY p.modified_at DESC, p.id DESC "
@@ -106,3 +108,30 @@
          :next-since (when has-more? (:modified-at last-item))
          :next-id    (when has-more? (:id last-item))})
       {:items []})))
+
+(def schema:restore-project-params
+  [:map {:title "restore-project"}
+   [:id ::sm/uuid]
+   [:recursive {:optional true} ::sm/boolean]])
+
+(def schema:restore-project-result
+  [:map
+   [:id ::sm/uuid]
+   [:recursive ::sm/boolean]])
+
+(sv/defmethod ::restore-project
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:restore-project-params
+   ::sm/result schema:restore-project-result}
+  [cfg {:keys [id recursive]}]
+  (let [row (db/get* cfg :project {:id id} {::db/remove-deleted false})]
+    (when-not row
+      (ex/raise :type :not-found
+                :code :project-not-found
+                :hint (str "project " id " not found"))))
+  (cascade/run-cascade cfg :project id
+                       {:deleted-at nil
+                        :recursive? (boolean recursive)})
+  {:id id :recursive (boolean recursive)})

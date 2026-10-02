@@ -134,13 +134,16 @@
     (t/is (false? (:is-default item)))
     (t/is (not (contains? item :features)))))
 
-(t/deftest list-hides-deleted-teams
+(t/deftest list-shows-deleted-teams
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
         run   (as-superuser admin)
-        out   (run "get-teams" {:search (:name team)})]
-    (t/is (= [] (:items out)))))
+        out   (run "get-teams" {:search (:name team)})
+        item  (first (:items out))]
+    (t/is (= 1 (count (:items out))))
+    (t/is (= (:id team) (:id item)))
+    (t/is (some? (:deleted-at item)))))
 
 (t/deftest list-search-and-pagination
   (let [admin (th/create-profile* 1)
@@ -190,13 +193,14 @@
     (t/is (= :team-not-found
              (caught-code #(run "get-team" {:id (uuid/next)}))))))
 
-(t/deftest detail-deleted-gives-not-found
+(t/deftest detail-deleted-returns-with-stamp
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
-        run   (as-superuser admin)]
-    (t/is (= :team-not-found
-             (caught-code #(run "get-team" {:id (:id team)}))))))
+        run   (as-superuser admin)
+        out   (run "get-team" {:id (:id team)})]
+    (t/is (= (:id team) (:id out)))
+    (t/is (some? (:deleted-at out)))))
 
 ;; ----------------------------------------------------------------
 ;; Members
@@ -278,20 +282,15 @@
              (caught-code #(run "disable-team-feature"
                                 {:team-id missing :feature "text-editor/v2"}))))))
 
-(t/deftest writes-refuse-deleted-team
+(t/deftest writes-work-on-deleted-team
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
         run   (as-superuser admin)]
-    (t/is (= :team-not-found
-             (caught-code #(run "get-team-members"
-                                {:team-id (:id team)}))))
-    (t/is (= :team-not-found
-             (caught-code #(run "enable-team-feature"
-                                {:team-id (:id team) :feature "text-editor/v2"}))))
-    (t/is (= :team-not-found
-             (caught-code #(run "disable-team-feature"
-                                {:team-id (:id team) :feature "text-editor/v2"}))))))
+    (t/is (= 1 (count (run "get-team-members" {:team-id (:id team)}))))
+    (let [out (run "enable-team-feature"
+                   {:team-id (:id team) :feature "text-editor/v2"})]
+      (t/is (some #{"text-editor/v2"} (:features out))))))
 
 ;; ----------------------------------------------------------------
 ;; Member roles

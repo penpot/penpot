@@ -7,6 +7,7 @@
 
 import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
+import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 
 function formatDate(iso) {
@@ -60,6 +61,37 @@ export function projectDetailPage(root, { id, onNavigate }) {
     header.querySelector("h1").textContent = project.name;
     body.replaceChildren();
     body.appendChild(infoBlock(project));
+    if (project.deletedAt) {
+      body.appendChild(deletedNotice("This project was marked for deletion."));
+      body.appendChild(restoreBlock({
+        command: "restore-project",
+        id,
+        label: "this project",
+        confirmName: project.name,
+        onRestored: async () => {
+          let parentGone = false;
+          try {
+            const found = await rpc("get-teams", { search: project.teamId });
+            const team = (found.items ?? []).find((item) => item.id === project.teamId) ?? null;
+            parentGone = team !== null && !!team.deletedAt;
+          } catch {
+            parentGone = false;
+          }
+          if (parentGone) {
+            body.replaceChildren();
+            body.appendChild(deletedNotice("Restored, but its team is still deleted."));
+            const link = document.createElement("button");
+            link.className = "admin-button admin-button-ghost";
+            link.textContent = "Open its team";
+            link.addEventListener("click", () =>
+              onNavigate("?screen=team&id=" + encodeURIComponent(project.teamId)));
+            body.appendChild(link);
+          } else {
+            load();
+          }
+        },
+      }));
+    }
   }
 
   function infoBlock(project) {

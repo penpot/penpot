@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.object-cascade :as cascade]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
@@ -39,6 +40,7 @@
    [:is-active ::sm/boolean]
    [:is-blocked ::sm/boolean]
    [:is-demo ::sm/boolean]
+   [:deleted-at {:optional true} ct/schema:inst]
    [:auth-backend {:optional true} ::sm/text]])
 
 (def schema:get-profiles-params
@@ -305,3 +307,31 @@
                   :else            (update acc :deleted conj result))))
             {:total (count emails) :deleted [] :not-found [] :skipped-self []}
             emails)))
+
+(def schema:restore-profile-params
+  [:map {:title "restore-profile"}
+   [:id ::sm/uuid]
+   [:recursive {:optional true} ::sm/boolean]])
+
+(def schema:restore-profile-result
+  [:map
+   [:id ::sm/uuid]
+   [:recursive ::sm/boolean]])
+
+(sv/defmethod ::restore-profile
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:restore-profile-params
+   ::sm/result schema:restore-profile-result}
+  [cfg {:keys [id recursive]}]
+  (let [row (db/get-by-id cfg :profile id {::db/check-deleted false
+                                           ::db/remove-deleted false})]
+    (when-not row
+      (ex/raise :type :not-found
+                :code :profile-not-found
+                :hint (str "profile " id " not found"))))
+  (cascade/run-cascade cfg :profile id
+                       {:deleted-at nil
+                        :recursive? (boolean recursive)})
+  {:id id :recursive (boolean recursive)})

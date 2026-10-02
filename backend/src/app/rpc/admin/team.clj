@@ -19,6 +19,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.object-cascade :as cascade]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
@@ -35,6 +36,7 @@
    [:created-at ct/schema:inst]
    [:is-default ::sm/boolean]
    [:total-members ::sm/int]
+   [:deleted-at {:optional true} ct/schema:inst]
    [:owner {:optional true} ::sm/text]])
 
 (def schema:get-teams-params
@@ -68,16 +70,15 @@
                              :params [since (or since-id uuid/zero)]})])
         sql-parts  (map :where clauses)
         sql-params (mapcat :params clauses)
-        sql        (str "SELECT t.id, t.name, t.created_at, t.is_default, "
+        sql        (str "SELECT t.id, t.name, t.created_at, t.is_default, t.deleted_at, "
                         "(SELECT count(*) FROM team_profile_rel WHERE team_id = t.id) AS total_members, "
                         "(SELECT p.email FROM team_profile_rel AS tpr "
                         "JOIN profile AS p ON (p.id = tpr.profile_id) "
                         "WHERE tpr.team_id = t.id AND tpr.is_owner IS true "
                         "ORDER BY p.email ASC LIMIT 1) AS owner "
                         "FROM team AS t "
-                        "WHERE t.deleted_at IS NULL "
                         (when (seq sql-parts)
-                          (str "AND " (str/join " AND " sql-parts) " "))
+                          (str "WHERE " (str/join " AND " sql-parts) " "))
                         "ORDER BY t.created_at DESC, t.id DESC "
                         "LIMIT ?")]
     (into [sql] (concat sql-params [limit]))))
@@ -115,15 +116,15 @@
    [:id ::sm/uuid]])
 
 (defn- get-live-team
-  "Fetch a team that is neither missing nor marked for deletion."
+  "Fetch a team that is not missing. Deleted teams are returned
+  with their stamp: the panel shows them with a restore option."
   [cfg id]
   (let [row (db/get-by-id cfg :team id {::db/check-deleted false
                                         ::db/remove-deleted false})]
-    (if (and row (nil? (:deleted-at row)))
-      row
-      (ex/raise :type :not-found
-                :code :team-not-found
-                :hint (str "team " id " not found")))))
+    (or row
+        (ex/raise :type :not-found
+                  :code :team-not-found
+                  :hint (str "team " id " not found")))))
 
 (defn- team-feature-sets
   [row]
@@ -150,6 +151,7 @@
       :is-default         (boolean (:is-default team))
       :total-members      members
       :total-projects     projects
+      :deleted-at         (:deleted-at team)
       :features           (vec (sort (:own sets)))
       :effective-features (vec (sort (:effective sets)))})))
 
@@ -279,3 +281,31 @@
                 {:team-id team-id
                  :profile-id member-id})
     nil))
+
+(def schema:restore-team-params
+  [:map {:title "restore-team"}
+   [:id ::sm/uuid]
+   [:recursive {:optional true} ::sm/boolean]])
+
+(def schema:restore-team-result
+  [:map
+   [:id ::sm/uuid]
+   [:recursive ::sm/boolean]])
+
+(sv/defmethod ::restore-team
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:restore-team-params
+   ::sm/result schema:restore-team-result}
+  [cfg {:keys [id recursive]}]
+  (let [row (db/get-by-id cfg :team id {::db/check-deleted false
+                                        ::db/remove-deleted false})]
+    (when-not row
+      (ex/raise :type :not-found
+                :code :team-not-found
+                :hint (str "team " id " not found"))))
+  (cascade/run-cascade cfg :team id
+                       {:deleted-at nil
+                        :recursive? (boolean recursive)})
+  {:id id :recursive (boolean recursive)})

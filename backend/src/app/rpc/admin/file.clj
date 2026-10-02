@@ -20,6 +20,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.object-cascade :as cascade]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as doc]
    [app.srepl.helpers :as h]
@@ -144,7 +145,8 @@
    [:project-name ::sm/text]
    [:team-id ::sm/uuid]
    [:team-name ::sm/text]
-   [:modified-at ct/schema:inst]])
+   [:modified-at ct/schema:inst]
+   [:deleted-at {:optional true} ct/schema:inst]])
 
 (def schema:get-files-params
   [:map {:title "get-files-params"}
@@ -189,12 +191,12 @@
                         "p.name AS project_name, "
                         "p.team_id AS team_id, "
                         "t.name AS team_name, "
-                        "f.modified_at "
+                        "f.modified_at, f.deleted_at "
                         "FROM file AS f "
                         "JOIN project AS p ON (p.id = f.project_id) "
                         "JOIN team AS t ON (t.id = p.team_id) "
-                        "WHERE f.deleted_at IS NULL "
-                        "AND p.deleted_at IS NULL "
+                        "WHERE p.deleted_at IS NULL "
+                        "AND t.deleted_at IS NULL "
                         (when (seq sql-parts)
                           (str "AND " (str/join " AND " sql-parts) " "))
                         "ORDER BY f.modified_at DESC, f.id DESC "
@@ -221,3 +223,30 @@
          :next-since (when has-more? (:modified-at last-item))
          :next-id    (when has-more? (:id last-item))})
       {:items []})))
+
+(def schema:restore-file-params
+  [:map {:title "restore-file"}
+   [:id ::sm/uuid]
+   [:recursive {:optional true} ::sm/boolean]])
+
+(def schema:restore-file-result
+  [:map
+   [:id ::sm/uuid]
+   [:recursive ::sm/boolean]])
+
+(sv/defmethod ::restore-file
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:restore-file-params
+   ::sm/result schema:restore-file-result}
+  [cfg {:keys [id recursive]}]
+  (let [row (db/get* cfg :file {:id id} {::db/remove-deleted false})]
+    (when-not row
+      (ex/raise :type :not-found
+                :code :file-not-found
+                :hint (str "file " id " not found"))))
+  (cascade/run-cascade cfg :file id
+                       {:deleted-at nil
+                        :recursive? (boolean recursive)})
+  {:id id :recursive (boolean recursive)})

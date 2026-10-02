@@ -5,6 +5,7 @@
 
 import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
+import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 import { statusCell, statusOf } from "./users.js";
 
@@ -104,9 +105,17 @@ export function userDetailPage(root, { id, onNavigate }) {
       const notice = document.createElement("p");
       notice.className = "admin-count";
       notice.textContent =
-        `This user was marked for deletion on ${formatDate(data.deletedAt)}. ` +
-        "No actions are available.";
+        `This user was marked for deletion on ${formatDate(data.deletedAt)}.`;
       body.appendChild(notice);
+      body.appendChild(restoreBlock({
+        command: "restore-profile",
+        id,
+        label: "this user",
+        confirmName: data.email,
+        warn: "Recursive restore also brings back the teams this user owned, " +
+          "with their projects and files.",
+        onRestored: () => load(),
+      }));
       return;
     }
 
@@ -189,7 +198,7 @@ export function userDetailPage(root, { id, onNavigate }) {
     wrap.className = "admin-confirm";
 
     const label = document.createElement("p");
-    label.textContent = `Type ${data.email} to delete this user. This cannot be undone.`;
+    label.textContent = `Type ${data.email} to delete this user. It can be restored from here afterwards.`;
     wrap.appendChild(label);
 
     const input = document.createElement("input");
@@ -210,7 +219,7 @@ export function userDetailPage(root, { id, onNavigate }) {
       try {
         await rpc("delete-profiles", { emails: [data.email] });
         showToast("User deleted.");
-        onNavigate("?screen=users");
+        load();
       } catch {
         showToast("Could not delete the user.", "error");
         confirm.disabled = false;

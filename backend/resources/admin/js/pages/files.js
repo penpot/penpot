@@ -12,6 +12,7 @@ import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
 import { readQuery, writeQuery } from "../url.js";
+import { statusCell } from "./users.js";
 
 const PAGE_SIZE = 25;
 
@@ -20,6 +21,8 @@ const COLUMNS = [
   { key: "projectName", label: "Project", class: "admin-cell-project" },
   { key: "teamName", label: "Team", class: "admin-cell-team" },
   { key: "modifiedAt", label: "Modified", class: "admin-cell-date" },
+  { key: "deletedAt", label: "Deleted", class: "admin-cell-date" },
+  { key: "status", label: "Status", class: "admin-cell-status" },
 ];
 
 function formatDate(iso) {
@@ -173,6 +176,8 @@ export function filesPage(root, { onNavigate }) {
       const rows = state.items.map((item) => ({
         ...item,
         modifiedAt: formatDate(item.modifiedAt),
+        deletedAt: item.deletedAt ? formatDate(item.deletedAt) : "—",
+        status: item.deletedAt ? "deleted" : "active",
       }));
       const table = renderTable(COLUMNS, rows);
       // Pack the columns: name eats the slack, the rest shrink to
@@ -181,6 +186,7 @@ export function filesPage(root, { onNavigate }) {
       const bodyRows = table.querySelector("tbody").rows;
       for (let i = 0; i < bodyRows.length; i++) {
         const row = bodyRows[i];
+        row.cells[5].replaceChildren(statusCell(rows[i].status));
         row.addEventListener("click", () =>
           onNavigate("?screen=file&id=" + encodeURIComponent(state.items[i].id)));
       }

@@ -5,6 +5,7 @@
 
 import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
+import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 
 // Mirror of `supported-features` in `common/src/app/common/features.cljc`.
@@ -46,8 +47,13 @@ function roleOf(membership) {
   if (membership.isAdmin) {
     return "admin";
   }
-  return "member";
+  if (membership.canEdit) {
+    return "editor";
+  }
+  return "viewer";
 }
+
+const MEMBER_ROLES = ["owner", "admin", "editor", "viewer"];
 
 export function teamDetailPage(root, { id, onNavigate }) {
   const header = renderHeader("Team");
@@ -130,6 +136,17 @@ export function teamDetailPage(root, { id, onNavigate }) {
 
     body.appendChild(featuresBlock(data));
     body.appendChild(membersBlock(members ?? []));
+
+    if (data.deletedAt) {
+      body.appendChild(deletedNotice("This team was marked for deletion."));
+      body.appendChild(restoreBlock({
+        command: "restore-team",
+        id,
+        label: "this team",
+        confirmName: data.name,
+        onRestored: () => load(),
+      }));
+    }
   }
 
   function featuresBlock(data) {
@@ -202,14 +219,70 @@ export function teamDetailPage(root, { id, onNavigate }) {
       section.appendChild(empty);
       return section;
     }
-    const items = document.createElement("ul");
-    items.className = "admin-list";
-    for (const member of members) {
-      const item = document.createElement("li");
-      item.textContent = `${member.fullname} <${member.email}> — ${roleOf(member)}`;
-      items.appendChild(item);
+    const table = document.createElement("table");
+    table.className = "admin-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    for (const label of ["Member", "Role"]) {
+      const cell = document.createElement("th");
+      cell.textContent = label;
+      headRow.appendChild(cell);
     }
-    section.appendChild(items);
+    head.appendChild(headRow);
+    table.appendChild(head);
+    const body = document.createElement("tbody");
+    for (const member of members) {
+      body.appendChild(memberRow(member));
+    }
+    table.appendChild(body);
+    section.appendChild(table);
     return section;
+  }
+
+  function memberRow(member) {
+    const row = document.createElement("tr");
+    const who = document.createElement("td");
+    who.textContent = `${member.fullname} <${member.email}>`;
+    row.appendChild(who);
+
+    const roleCell = document.createElement("td");
+    const select = document.createElement("select");
+    select.className = "admin-select";
+    select.setAttribute("aria-label", `Role of ${member.email}`);
+    for (const role of MEMBER_ROLES) {
+      const option = document.createElement("option");
+      option.value = role;
+      option.textContent = role;
+      select.appendChild(option);
+    }
+    select.value = roleOf(member);
+    if (member.isOwner) {
+      // Ownership moves by promoting someone else, which demotes
+      // the current owner; the backend rejects direct demotion.
+      select.disabled = true;
+      select.title = "Promote another member to transfer ownership.";
+    }
+    select.addEventListener("change", async () => {
+      const previous = roleOf(member);
+      const next = select.value;
+      if ((previous === "owner" || next === "owner") && !window.confirm(
+        `Make ${member.email} ${next}? The previous owner becomes admin.`)) {
+        select.value = previous;
+        return;
+      }
+      select.disabled = true;
+      try {
+        await rpc("update-team-member-role", { teamId: id, memberId: member.id, role: next });
+        showToast(`${member.email} is now ${next}.`);
+        load();
+      } catch {
+        showToast("Could not change the role.", "error");
+        select.value = previous;
+        select.disabled = false;
+      }
+    });
+    roleCell.appendChild(select);
+    row.appendChild(roleCell);
+    return row;
   }
 }

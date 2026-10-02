@@ -7,6 +7,7 @@ import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
 import { readQuery, writeQuery } from "../url.js";
+import { statusCell } from "./users.js";
 
 const PAGE_SIZE = 25;
 
@@ -21,6 +22,8 @@ const COLUMNS = [
   { key: "totalMembers", label: "Members", class: "admin-cell-count" },
   { key: "createdAt", label: "Created", class: "admin-cell-date admin-cell-right" },
   { key: "isDefault", label: "Default", class: "admin-cell-status admin-cell-center" },
+  { key: "deletedAt", label: "Deleted", class: "admin-cell-date" },
+  { key: "status", label: "Status", class: "admin-cell-status" },
 ];
 
 function formatDate(iso) {
@@ -121,12 +124,15 @@ export function teamsPage(root, { onNavigate }) {
       owner: item.owner ?? "—",
       createdAt: formatDate(item.createdAt),
       isDefault: item.isDefault ? "yes" : "no",
+      deletedAt: item.deletedAt ? formatDate(item.deletedAt) : "—",
+      status: item.deletedAt ? "deleted" : "active",
     }));
     const table = renderTable(COLUMNS, rows);
     const bodyRows = table.querySelector("tbody").rows;
     for (let i = 0; i < bodyRows.length; i++) {
       const row = bodyRows[i];
       row.cells[4].replaceChildren(defaultCell(rows[i].isDefault));
+      row.cells[6].replaceChildren(statusCell(rows[i].status));
       row.addEventListener("click", () =>
         onNavigate("?screen=team&id=" + encodeURIComponent(state.items[i].id)));
     }

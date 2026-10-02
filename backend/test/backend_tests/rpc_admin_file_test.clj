@@ -255,12 +255,15 @@
     (t/is (contains? ids (:id file)))
     (t/is (not (contains? ids (:id (:file other)))))))
 
-(t/deftest list-hides-deleted-files
+(t/deftest list-shows-deleted-files
   (let [{:keys [profile file]} (create-file! 1)
         _     (th/mark-file-deleted* {:id (:id file)})
         run   (as-superuser profile)
-        out   (run "get-files" {:search (:name file)})]
-    (t/is (= [] (:items out)))))
+        out   (run "get-files" {:search (:name file)})
+        item  (first (:items out))]
+    (t/is (= 1 (count (:items out))))
+    (t/is (= (:id file) (:id item)))
+    (t/is (some? (:deleted-at item)))))
 
 (t/deftest list-search-and-pagination
   (let [{:keys [profile file]} (create-file! 1)
