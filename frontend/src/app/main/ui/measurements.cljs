@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.path :as path]
+   [app.common.types.path.helpers :as path.helpers]
    [app.common.uuid :as uuid]
    [app.main.constants :as mconst]
    [app.main.ui.formats :as fmt]
@@ -239,6 +240,21 @@
       (<= (+ cy (/ badge-height 2))
           (+ (:y vbox) (:height vbox)))))
 
+(defn- line-badge-position
+  "Badge center and rotation for a badge running along the segment `p1`-`p2`.
+  The direction is flipped when needed so the text stays upright."
+  [p1 p2 offset]
+  (let [dir       (gpt/subtract p2 p1)
+        angle     (gpt/angle dir)
+        upright?  (and (> angle -90) (<= angle 90))
+        dir       (if upright? dir (gpt/negate dir))
+        rot       (if upright? angle (+ angle 180))
+        mid-point (gpt/lerp p1 p2 0.5)
+        normal    (gpt/normal-left dir)]
+    {:cx  (+ (:x mid-point) (* (:x normal) offset))
+     :cy  (+ (:y mid-point) (* (:y normal) offset))
+     :rot rot}))
+
 (mf/defc selection-size-badge*
   [{:keys [zoom shapes vbox]}]
   (let [badge-height     (/ selection-badge-height zoom)
@@ -249,7 +265,6 @@
 
         single-shape     (and (= (count shapes) 1) (first shapes))
 
-        ;; Straight paths use endpoint controls instead of a size badge.
         single-line?     (and single-shape
                               (cfh/path-shape? single-shape)
                               (path/single-line? (dm/get-prop single-shape :content)))
@@ -269,86 +284,88 @@
         ;; including component instances and shapes with transforms.
         selrect      (gsh/shapes->rect shapes)
 
-        ;; For single shapes we show the original dimensions,
-        ;; for multiple shapes show the bounding box
-        shape-width  (if single-shape
-                       (or (dm/get-prop single-shape :width)
-                           (:width selrect))
-                       (:width selrect))
-        shape-height (if single-shape
-                       (or (dm/get-prop single-shape :height)
-                           (:height selrect))
-                       (:height selrect))
+        ;; For single shapes we show the same dimensions as the measures
+        ;; inputs (the shape :selrect, which ignores rotation and also
+        ;; exists for paths); for multiple shapes show the bounding box
+        shape-rect   (if single-shape
+                       (dm/get-prop single-shape :selrect)
+                       selrect)
+        shape-width  (:width shape-rect)
+        shape-height (:height shape-rect)
 
         text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
 
         text-width   (* (count text) badge-char-width)
         badge-width  (+ text-width (* 2 badge-padding-x))
+        offset       (+ badge-gap (/ badge-height 2))
 
-        hidden?      (or single-line?
-                         (< shape-width badge-width)
-                         (< shape-height badge-height))]
+        [line-p1 line-p2]
+        (when single-line?
+          (let [content (dm/get-prop single-shape :content)]
+            [(path.helpers/segment->point (nth content 0))
+             (path.helpers/segment->point (nth content 1))]))
+
+        ;; Paths can be flat (zero width or height), so only their
+        ;; longest side counts when checking that the badge fits.
+        path?        (and single-shape (cfh/path-shape? single-shape))
+
+        hidden?      (cond
+                       single-line?
+                       (< (gpt/distance line-p1 line-p2) badge-width)
+
+                       path?
+                       (< (max shape-width shape-height) badge-width)
+
+                       :else
+                       (or (< shape-width badge-width)
+                           (< shape-height badge-height)))]
 
     (when-not ^boolean hidden?
-      (if has-rotation?
-        (let [edge       (get-edge-for-badge rotation)
-              points     (dm/get-prop single-shape :points)
-              offset     (+ badge-gap (/ badge-height 2))
+      (let [{:keys [cx cy rot]}
+            (cond
+              single-line?
+              (let [position (line-badge-position line-p1 line-p2 offset)]
+                (if (fits-above-vbox-bottom? (:cy position) badge-height vbox)
+                  position
+                  ;; Same rotation, opposite side of the line.
+                  (let [flipped (line-badge-position line-p1 line-p2 (- offset))]
+                    (assoc flipped :rot (:rot position)))))
 
-              ;; Rotation follows the original edge even if the position
-              ;; flips to the opposite one for lack of space, so the text
-              ;; stays upright.
-              badge-rot  (+ rotation (edge-rot-offset edge))
+              has-rotation?
+              (let [edge     (get-edge-for-badge rotation)
+                    points   (dm/get-prop single-shape :points)
+                    position (edge-badge-position points edge offset)
+                    position (if (fits-above-vbox-bottom? (:cy position) badge-height vbox)
+                               position
+                               (edge-badge-position points (opposite-edge edge) offset))]
+                ;; Rotation follows the original edge even if the position
+                ;; flips to the opposite one for lack of space, so the text
+                ;; stays upright.
+                (assoc position :rot (+ rotation (edge-rot-offset edge))))
 
-              position   (edge-badge-position points edge offset)
-              position   (if (fits-above-vbox-bottom? (:cy position) badge-height vbox)
-                           position
-                           (edge-badge-position points (opposite-edge edge) offset))
+              :else
+              (let [below-cy (+ (:y selrect) (:height selrect) offset)]
+                {:cx  (+ (:x selrect) (/ (:width selrect) 2))
+                 :cy  (if (fits-above-vbox-bottom? below-cy badge-height vbox)
+                        below-cy
+                        (- (:y selrect) offset))
+                 :rot 0}))]
 
-              badge-x    (- (/ badge-width 2))
-              badge-y    (- (/ badge-height 2))
-              badge-cx   (:cx position)
-              badge-cy   (:cy position)]
-
-          [:g.selection-size-badge {:pointer-events "none"
-                                    :transform (dm/str "translate(" badge-cx "," badge-cy ") rotate(" badge-rot ")")}
-           [:rect {:x badge-x
-                   :y badge-y
-                   :width badge-width
-                   :height badge-height
-                   :rx badge-radius
-                   :ry badge-radius
-                   :style {:fill badge-bg-color}}]
-           [:text {:class (stl/css :badge-text)
-                   :x 0
-                   :y 0
-                   :text-anchor "middle"
-                   :dominant-baseline "middle"}
-            text]])
-
-        (let [badge-x     (- (/ badge-width 2))
-              badge-y     (- (/ badge-height 2))
-              badge-cx    (+ (:x selrect) (/ (:width selrect) 2))
-              below-cy    (+ (:y selrect) (:height selrect) badge-gap (/ badge-height 2))
-              badge-cy    (if (fits-above-vbox-bottom? below-cy badge-height vbox)
-                            below-cy
-                            (- (:y selrect) badge-gap (/ badge-height 2)))]
-
-          [:g.selection-size-badge {:pointer-events "none"
-                                    :transform (dm/str "translate(" badge-cx "," badge-cy ")")}
-           [:rect {:x badge-x
-                   :y badge-y
-                   :width badge-width
-                   :height badge-height
-                   :rx badge-radius
-                   :ry badge-radius
-                   :style {:fill badge-bg-color}}]
-           [:text {:class (stl/css :badge-text)
-                   :x 0
-                   :y 0
-                   :text-anchor "middle"
-                   :dominant-baseline "middle"}
-            text]])))))
+        [:g.selection-size-badge {:pointer-events "none"
+                                  :transform (dm/str "translate(" cx "," cy ") rotate(" rot ")")}
+         [:rect {:x (- (/ badge-width 2))
+                 :y (- (/ badge-height 2))
+                 :width badge-width
+                 :height badge-height
+                 :rx badge-radius
+                 :ry badge-radius
+                 :style {:fill badge-bg-color}}]
+         [:text {:class (stl/css :badge-text)
+                 :x 0
+                 :y 0
+                 :text-anchor "middle"
+                 :dominant-baseline "middle"}
+          text]]))))
 
 (mf/defc distance-display* [{:keys [from to zoom bounds]}]
   (let [fixed-x (if (gsh/fully-contained? from to)
