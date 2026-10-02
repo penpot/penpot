@@ -13,14 +13,20 @@
    [benches.render-wasm.declarations :as decl :include-macros true]
    [benches.render-wasm.runtime.camera :as camera]))
 
-(def ^:private default-params
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Config
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const ^:private default-params
   {:count 1000 :width 1920 :height 1080})
 
-(def ^:private schema:params
+(def ^:const ^:private schema:params
   [:map {:closed true}
    [:count [:int {:min 1 :max 100000}]]
    [:width ::sm/positive-safe-number]
    [:height ::sm/positive-safe-number]])
+
+(def ^:const ^:private base-view {:scale 1 :x 0 :y 0})
 
 (defn- curved-content
   [{:keys [width height]}]
@@ -38,24 +44,21 @@
         {:command :line-to :params {:x x :y (+ y h)}}
         {:command :close-path}]))))
 
-(defn build
-  [params]
-  (let [params (merge default-params params)]
-    (sb/scene {:seed (:seed params)
-               :root {:x 0 :y 0 :width (:width params) :height (:height params)}
-               :defaults {:path {:content (curved-content params)
-                                 :fills (sb/gen-vector (sb/gen-fill))
-                                 :strokes (sb/gen-vector (sb/gen-stroke 3))}}}
-              (doseq [_ (range (:count params))]
-                (sb/path)))))
 
 (decl/defscene :paths
   {:version 1
    :description "Curved paths"
    :params-schema schema:params}
-  build)
+  (fn [params]
+    (let [params (merge default-params params)]
+      (sb/scene {:seed (:seed params)
+                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}
+                 :defaults {:path {:content (curved-content params)
+                                   :fills (sb/gen-vector (sb/gen-fill))
+                                   :strokes (sb/gen-vector (sb/gen-stroke 3))}}}
+                (doseq [_ (range (:count params))]
+                  (sb/path))))))
 
-(def ^:private base-view {:scale 1 :x 0 :y 0})
 
 (decl/defcase :paths/load :paths
   {:params default-params :view base-view :context :fresh}
