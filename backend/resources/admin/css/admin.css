@@ -126,6 +126,36 @@ body {
   font-weight: 400;
 }
 
+.admin-button-danger {
+  background: #5c2b2b;
+  color: #ee9a9a;
+}
+
+.admin-actions {
+  display: flex;
+  gap: var(--admin-space-sm);
+  margin-top: var(--admin-space-lg);
+  flex-wrap: wrap;
+}
+
+.admin-confirm {
+  display: flex;
+  gap: var(--admin-space-sm);
+  margin-top: var(--admin-space-lg);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-confirm p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.admin-list {
+  margin: 0;
+  padding-left: var(--admin-space-lg);
+}
+
 .admin-count {
   color: var(--admin-muted);
   font-size: 0.875rem;

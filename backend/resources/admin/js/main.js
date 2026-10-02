@@ -11,6 +11,7 @@ import { renderSidebar } from "./components/sidebar.js";
 import { dashboardPage } from "./pages/dashboard.js";
 import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
+import { userDetailPage } from "./pages/user-detail.js";
 import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
@@ -67,6 +68,8 @@ function renderAuthed(root) {
     errorDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else if (params.get("screen") === "users") {
     usersPage(content, { onNavigate: navigate });
+  } else if (params.get("screen") === "user" && params.get("id")) {
+    userDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else {
     dashboardPage(content, { onNavigate: navigate });
   }

@@ -35,7 +35,7 @@ function formatDate(iso) {
   return Number.isNaN(date.getTime()) ? String(iso ?? "") : date.toLocaleString();
 }
 
-function statusOf(item) {
+export function statusOf(item) {
   if (item.isBlocked) {
     return "blocked";
   }
@@ -48,7 +48,7 @@ function statusOf(item) {
   return "active";
 }
 
-function statusCell(status) {
+export function statusCell(status) {
   const badge = document.createElement("span");
   badge.className = "admin-badge " + (STATUS_BADGES[status] || STATUS_BADGES.active);
   badge.textContent = status;
