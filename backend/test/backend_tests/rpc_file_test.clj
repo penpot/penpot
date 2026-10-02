@@ -1373,6 +1373,73 @@
         ;; (app.common.pprint/pprint rows)
         (t/is (= 1 (count rows)))))))
 
+(t/deftest file-data-for-thumbnail-frame-on-other-page
+  (let [prof     (th/create-profile* 1 {:is-active true})
+        file     (th/create-file* 1 {:profile-id (:id prof)
+                                     :project-id (:default-project-id prof)
+                                     :is-shared false})
+        page1-id (get-in file [:data :pages 0])
+        page2-id (uuid/next)
+        rect-id  (uuid/next)
+        frame-id (uuid/next)
+
+        get-data (fn []
+                   (th/command! {::th/type :get-file-data-for-thumbnail
+                                 ::rpc/profile-id (:id prof)
+                                 :file-id (:id file)
+                                 :features cfeat/supported-features}))]
+
+    (th/update-file* {:file-id (:id file)
+                      :profile-id (:id prof)
+                      :revn 0
+                      :vern 0
+                      :changes [{:type :add-obj
+                                 :page-id page1-id
+                                 :id rect-id
+                                 :parent-id uuid/zero
+                                 :frame-id uuid/zero
+                                 :obj (cts/setup-shape
+                                       {:id rect-id
+                                        :name "rect"
+                                        :type :rect})}
+                                {:type :add-page
+                                 :id page2-id
+                                 :name "page 2"}
+                                {:type :add-obj
+                                 :page-id page2-id
+                                 :id frame-id
+                                 :parent-id uuid/zero
+                                 :frame-id uuid/zero
+                                 :obj (cts/setup-shape
+                                       {:id frame-id
+                                        :name "frame"
+                                        :type :frame})}]})
+
+    (t/testing "no marked frame falls back to the first page"
+      (let [{:keys [error result]} (get-data)]
+        (t/is (nil? error))
+        (t/is (= page1-id (get-in result [:page :id])))
+        (t/is (nil? (get-in result [:page :thumbnail-frame-id])))
+        (t/is (contains? (get-in result [:page :objects]) rect-id))))
+
+    (th/update-file* {:file-id (:id file)
+                      :profile-id (:id prof)
+                      :revn 1
+                      :vern 0
+                      :changes [{:type :mod-obj
+                                 :page-id page2-id
+                                 :id frame-id
+                                 :operations [{:type :set
+                                               :attr :use-for-thumbnail
+                                               :val true}]}]})
+
+    (t/testing "marked frame on another page is used"
+      (let [{:keys [error result]} (get-data)]
+        (t/is (nil? error))
+        (t/is (= page2-id (get-in result [:page :id])))
+        (t/is (= frame-id (get-in result [:page :thumbnail-frame-id])))
+        (t/is (contains? (get-in result [:page :objects]) frame-id))))))
+
 (t/deftest file-thumbnail-ops
   (let [prof (th/create-profile* 1 {:is-active true})
         file (th/create-file* 1 {:profile-id (:id prof)
