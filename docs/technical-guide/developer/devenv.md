@@ -66,8 +66,9 @@ The devenv runs as separate compose projects:
   * `penpotdev-wsN` project per runtime instance.
      - `ws0` (a.k.a. `main`) is the current state of your repo;
      - `ws1` and up are clones that you maintain explicitly under `${PENPOT_WORKSPACES_DIR}/wsN/`
-       (default `~/.penpot/penpot_workspaces/`). You can explicitly sync them
-       with the `--sync` flag (automatic on first start).
+       (default `${XDG_DATA_HOME:-~/.local/share}/penpot-devenv/workspaces/`, or
+       `~/.penpot/penpot_workspaces/` when that directory already exists). You
+       can explicitly sync them with the `--sync` flag (automatic on first start).
 
 Each call to `run-devenv` brings up one instance. Workspaces are independent
 and can be started and stopped in any order:
