@@ -14,6 +14,44 @@ export function basePath() {
   return APP_ROOT;
 }
 
+// Deployment-root relative URL for a panel path (for link hrefs).
+export function hrefFor(path) {
+  return APP_ROOT + path;
+}
+
+function matchPattern(pattern, path) {
+  const names = pattern.split("/").filter(Boolean);
+  const parts = path.split("/").filter(Boolean);
+  if (names.length !== parts.length) {
+    return null;
+  }
+  const params = {};
+  for (let i = 0; i < names.length; i++) {
+    if (names[i].startsWith(":")) {
+      params[names[i].slice(1)] = decodeURIComponent(parts[i]);
+    } else if (names[i] !== parts[i]) {
+      return null;
+    }
+  }
+  return params;
+}
+
+function findRoute(path) {
+  if (routes.has(path)) {
+    return { handler: routes.get(path), params: {} };
+  }
+  for (const [pattern, handler] of routes) {
+    if (!pattern.includes(":")) {
+      continue;
+    }
+    const params = matchPattern(pattern, path);
+    if (params) {
+      return { handler, params };
+    }
+  }
+  return { handler: routes.get("*"), params: {} };
+}
+
 const routes = new Map();
 
 export function register(path, handler) {
@@ -33,10 +71,10 @@ function currentPath() {
 
 function render() {
   const root = document.getElementById("app");
-  const handler = routes.get(currentPath()) || routes.get("*");
+  const { handler, params } = findRoute(currentPath());
   if (handler) {
     root.replaceChildren();
-    handler(root);
+    handler(root, params);
   }
 }
 

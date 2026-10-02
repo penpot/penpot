@@ -4,10 +4,13 @@
 import { renderHeader } from "../components/header.js";
 import { renderSidebar } from "../components/sidebar.js";
 
+const NAV_ITEMS = [
+  { path: "/", label: "Dashboard" },
+  { path: "/error-reports", label: "Error reports" },
+];
+
 export function dashboardPage(root, { onNavigate }) {
-  root.appendChild(
-    renderSidebar([{ path: "/", label: "Dashboard" }], onNavigate)
-  );
+  root.appendChild(renderSidebar(NAV_ITEMS, onNavigate));
   root.appendChild(renderHeader("Dashboard"));
 
   const main = document.createElement("main");

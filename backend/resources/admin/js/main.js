@@ -6,6 +6,7 @@
 import { checkSuperuserSession } from "./auth.js";
 import { renderHeader } from "./components/header.js";
 import { dashboardPage } from "./pages/dashboard.js";
+import { errorReportsPage } from "./pages/error-reports.js";
 import { basePath, navigate, register, start } from "./router.js";
 
 function loadingView(root) {
@@ -30,6 +31,7 @@ function deniedView(root) {
 }
 
 register("/", loadingView);
+register("/error-reports", (root) => errorReportsPage(root, { onNavigate: navigate }));
 register("*", loadingView);
 
 async function boot() {
