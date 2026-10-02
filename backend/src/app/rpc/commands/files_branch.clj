@@ -66,8 +66,8 @@
 ;; Nothing in this feature limited size before, so the failure mode at
 ;; enterprise scale was a timeout: an operation that never returns and a
 ;; user who cannot tell whether it is working. Every limit below is a
-;; measured cost divided into a 30 s budget and then halved, taken from
-;; the numbers in `pp:vcs:tp-measurement-harness`:
+;; measured cost divided into a 30 s budget and then halved, from the
+;; numbers below:
 ;;
 ;;  * a merge on the 21,169-shape design system costs about 6 s, which is
 ;;    0.28 ms per shape, so 30 s is about 105,000 shapes -> 50,000.
@@ -75,8 +75,8 @@
 ;;    per page, so the page limit is far above any real design system and
 ;;    exists to bound the presence pass -> 500.
 ;;  * one value-derived squash already emits about 19,000 changes for a
-;;    one-page delta (`pp:vcs:tp-squash-rewrites-most-of-the-file`), so a
-;;    depth limit has to clear that with room -> 100,000 changes.
+;;    one-page delta, so a depth limit has to clear that with room ->
+;;    100,000 changes.
 ;;
 ;; A refusal names the limit, the actual value, and what to do instead.
 ;; None of them truncates anything.

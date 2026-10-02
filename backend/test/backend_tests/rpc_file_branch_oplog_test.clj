@@ -713,11 +713,10 @@
       (t/is (empty? (th/db-query :file-branch {:source-file-id (:id file)}))))))
 
 (t/deftest create-writes-no-file-data-row
-  ;; The create docstring promises a branch file with NO data payload,
-  ;; and `pp:vcs:eht-derived-branch-never-persists-data` forbids the
-  ;; row: a payload on a branch file invites a third writer into a
-  ;; derived state that already has two. Only materializing the branch
-  ;; into an ordinary file creates it.
+  ;; The create docstring promises a branch file with NO data payload:
+  ;; a payload on a branch file invites a third writer into a derived
+  ;; state that already has two. Only materializing the branch into an
+  ;; ordinary file creates it.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
           proj-id (:default-project-id profile)
