@@ -259,6 +259,12 @@ body {
   white-space: nowrap;
 }
 
+.admin-cell-count {
+  width: 90px;
+  white-space: nowrap;
+  text-align: right;
+}
+
 .admin-badge {
   display: inline-block;
   font-size: 0.75rem;

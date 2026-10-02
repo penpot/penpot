@@ -13,6 +13,8 @@ import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
 import { userDetailPage } from "./pages/user-detail.js";
 import { usersDeletePage } from "./pages/users-delete.js";
+import { teamsPage } from "./pages/teams.js";
+import { teamDetailPage } from "./pages/team-detail.js";
 import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
@@ -21,6 +23,7 @@ const NAV_ITEMS = [
   { query: location.pathname, label: "Dashboard", screens: [""] },
   { query: "?screen=error-reports", label: "Error reports", screens: ["error-reports", "error-report"] },
   { query: "?screen=users", label: "Users", screens: ["users", "user", "users-delete"] },
+  { query: "?screen=teams", label: "Teams", screens: ["teams", "team"] },
 ];
 
 let sessionStatus = "anonymous";
@@ -75,6 +78,10 @@ function renderAuthed(root) {
     userDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else if (params.get("screen") === "users-delete") {
     usersDeletePage(content, { onNavigate: navigate });
+  } else if (params.get("screen") === "teams") {
+    teamsPage(content, { onNavigate: navigate });
+  } else if (params.get("screen") === "team" && params.get("id")) {
+    teamDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else {
     dashboardPage(content, { onNavigate: navigate });
   }
