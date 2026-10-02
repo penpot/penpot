@@ -23,35 +23,38 @@
   {:version 1
    :description "Twenty-four circle masks with ordered striped descendants"
    :params-schema schema:params}
-  (fn [params]
-    (let [params (merge default-params params)]
-      (sb/scene {:seed (:seed params)
-                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}}
-                (doseq [i (range 24)]
-                  (let [x (+ 25 (* 310 (mod i 6)))
-                        y (+ 25 (* 255 (quot i 6)))]
-                    (sb/group [:mask i] {:masked-group true}
-                              (sb/circle {:x x :y y :width 180 :height 180
-                                          :fills [{:fill-color "#ffffff"}]})
-                              (doseq [j (range 8)]
-                                (sb/rect {:x (+ x (* 28 j) -22)
-                                          :y (- y 12)
-                                          :width 25
-                                          :height 205
-                                          :fills [{:fill-color (if (even? j) "#1254b8" "#ff8b38")}]})))))))))
+  [params]
+  (let [params (merge default-params params)]
+    (sb/scene {:seed (:seed params)
+               :root {:x 0 :y 0 :width (:width params) :height (:height params)}}
+              (doseq [i (range 24)]
+                (let [x (+ 25 (* 310 (mod i 6)))
+                      y (+ 25 (* 255 (quot i 6)))]
+                  (sb/group [:mask i] {:masked-group true}
+                            (sb/circle {:x x :y y :width 180 :height 180
+                                        :fills [{:fill-color "#ffffff"}]})
+                            (doseq [j (range 8)]
+                              (sb/rect {:x (+ x (* 28 j) -22)
+                                        :y (- y 12)
+                                        :width 25
+                                        :height 205
+                                        :fills [{:fill-color (if (even? j) "#1254b8" "#ff8b38")}]}))))))))
 
 (def ^:const ^:private base-view {:scale 1 :x 0 :y 0})
 
-(decl/defcase :masks/load :masks
+(decl/defcase :masks/load
   {:params default-params :view base-view :context :fresh}
-  (fn [rtx] (camera/load! rtx)))
+  [rtx]
+  (camera/load! rtx))
 
-(decl/defcase :masks/pan :masks
+(decl/defcase :masks/pan
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 120 :dy 40 :settle-ms 100}}
-  (fn [rtx] (camera/pan! rtx)))
+  [rtx]
+  (camera/pan! rtx))
 
-(decl/defcase :masks/zoom :masks
+(decl/defcase :masks/zoom
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.6 :settle-ms 100}}
-  (fn [rtx] (camera/zoom! rtx)))
+  [rtx]
+  (camera/zoom! rtx))

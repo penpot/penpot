@@ -26,13 +26,15 @@
   {:version 1
    :description "Synthetic scene for contract tests"
    :params-schema [:map {:closed true}]}
-  (fn [params] params))
+  [params]
+  params)
 
-(decl/defcase :contracts-scene/case :contracts-scene
+(decl/defcase :contracts-scene/case
   {:params {}
    :view {:scale 1 :x 0 :y 0}
    :context :fresh}
-  (fn [ctx] (touch! ctx)))
+  [ctx]
+  (touch! ctx))
 
 (defn- failure-data
   [f]
@@ -431,6 +433,14 @@
 (t/deftest defcase-rejects-run-function-in-options
   (t/is (= :benches.render-wasm.declarations/invalid-run-function
            (:type (failure-data
-                   #(decl/defcase :contracts-scene/unchecked :contracts-scene
+                   #(decl/defcase :contracts-scene/unchecked
                       {:run! (fn [x y] [x y])})))))
   (t/is (nil? (decl/registered-case :contracts-scene/unchecked))))
+
+(t/deftest defcase-rejects-unqualified-id
+  (t/is (= :benches.render-wasm.declarations/invalid-run-function
+           (:type (failure-data
+                   #(decl/defcase :bare
+                      {:params {}
+                       :view {:scale 1 :x 0 :y 0}
+                       :context :fresh}))))))
