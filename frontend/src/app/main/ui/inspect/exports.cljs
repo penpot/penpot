@@ -14,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.exports.preview :refer [export-preview*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
@@ -26,7 +27,7 @@
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
-  [{:keys [shapes page-id file-id share-id type] :as props}]
+  [{:keys [shapes page-id file-id share-id type from] :or {from :viewer} :as props}]
   (let [exports     (mf/use-state [])
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
@@ -215,5 +216,10 @@
          :disabled in-progress?}
         (if in-progress?
           (tr "workspace.options.exporting-object")
-          (tr "workspace.options.export-object" (c (count shapes))))])]))
-
+          (tr "workspace.options.export-object" (c (count shapes))))])
+     (when (and (= 1 (count shapes)) (seq @exports))
+       [:> export-preview* {:key (-> shapes first :id)
+                            :object-id (-> shapes first :id)
+                            :exports @exports
+                            :from from
+                            :page-id page-id}])]))

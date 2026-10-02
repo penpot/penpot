@@ -7185,6 +7185,22 @@ msgstr[1] "Export %s elements"
 msgid "workspace.options.export.add-export"
 msgstr "Add export"
 
+#: src/app/main/ui/exports/preview.cljs:158
+msgid "workspace.options.export.preview"
+msgstr "Preview"
+
+#: src/app/main/ui/exports/preview.cljs:88
+msgid "workspace.options.export.preview-error"
+msgstr "Could not load the preview"
+
+#: src/app/main/ui/exports/preview.cljs:84, src/app/main/ui/exports/preview.cljs:144
+msgid "workspace.options.export.preview-image"
+msgstr "Export preview"
+
+#: src/app/main/ui/exports/preview.cljs:130
+msgid "workspace.options.export.preview-preset"
+msgstr "Preview export preset"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:228, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:263
 msgid "workspace.options.export.remove-export"
 msgstr "Remove export"

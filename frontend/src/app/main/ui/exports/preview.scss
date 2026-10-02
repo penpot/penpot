@@ -1,0 +1,80 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+
+.preview {
+  --export-preview-size: 15rem;
+
+  grid-column: 1 / -1;
+  min-inline-size: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding: var(--sp-s);
+}
+
+.canvas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-self: center;
+  inline-size: min(100%, calc(var(--export-preview-size) * var(--export-preview-ratio)));
+  aspect-ratio: var(--export-preview-ratio);
+  overflow: hidden;
+  background: repeating-conic-gradient(rgb(212 212 212) 0% 25%, rgb(255 255 255) 0% 50%);
+  background-size: var(--sp-s) var(--sp-s);
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: $br-4;
+}
+
+.opaque {
+  background: rgb(255 255 255);
+}
+
+.image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.svg {
+  display: flex;
+  justify-content: center;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.svg-image {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.dimensions,
+.status {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.dimensions {
+  text-align: center;
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  padding: var(--sp-m);
+  text-align: center;
+  background: var(--color-background-primary);
+}
