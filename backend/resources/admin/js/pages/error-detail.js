@@ -8,6 +8,7 @@
 import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { showToast } from "../components/toast.js";
+import { backUrl } from "../url.js";
 
 const KNOWN_FIRST = [
   "id",
@@ -57,7 +58,7 @@ export function errorDetailPage(root, { id, onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=error-reports"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=error-reports")));
   root.appendChild(back);
 
   const body = document.createElement("div");

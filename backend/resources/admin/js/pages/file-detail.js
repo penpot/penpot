@@ -11,6 +11,7 @@ import { renderHeader } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
+import { backUrl } from "../url.js";
 
 const ERROR_COLUMNS = [
   { key: "code", label: "Code", class: "admin-cell-name" },
@@ -26,7 +27,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=files"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=files")));
   root.appendChild(back);
 
   const body = document.createElement("div");

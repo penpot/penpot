@@ -6,7 +6,7 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
-import { readQuery, writeQuery } from "../url.js";
+import { readQuery, writeQuery, detailUrl } from "../url.js";
 
 const SOURCES = ["logging", "audit-log", "rlimit", "legacy-v1", "legacy-v2"];
 const PAGE_SIZE = 25;
@@ -150,7 +150,7 @@ export function errorReportsPage(root, { onNavigate }) {
       const item = state.items[i];
       row.cells[1].replaceChildren(sourceCell(item.source));
       row.addEventListener("click", () =>
-        onNavigate("?screen=error-report&id=" + encodeURIComponent(item.id)));
+        onNavigate(detailUrl("error-report", item.id)));
     }
     tableWrap.appendChild(table);
     nextButton.disabled = state.loading || state.nextSince === null;

@@ -9,6 +9,7 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
+import { backUrl } from "../url.js";
 
 function formatDate(iso) {
   const date = new Date(iso);
@@ -25,7 +26,7 @@ export function projectDetailPage(root, { id, onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=projects"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=projects")));
   bar.appendChild(back);
 
   const filesLink = document.createElement("button");

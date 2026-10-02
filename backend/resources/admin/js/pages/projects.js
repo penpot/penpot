@@ -10,7 +10,7 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
-import { readQuery, writeQuery } from "../url.js";
+import { readQuery, writeQuery, detailUrl } from "../url.js";
 import { statusCell } from "./users.js";
 
 const PAGE_SIZE = 25;
@@ -150,7 +150,7 @@ export function projectsPage(root, { onNavigate }) {
         const row = bodyRows[i];
         row.cells[5].replaceChildren(statusCell(rows[i].status));
         row.addEventListener("click", () =>
-          onNavigate("?screen=project&id=" + encodeURIComponent(state.items[i].id)));
+          onNavigate(detailUrl("project", state.items[i].id)));
       }
       tableWrap.appendChild(table);
     }

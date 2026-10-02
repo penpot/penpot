@@ -8,6 +8,7 @@ import { renderHeader } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 import { statusCell, statusOf } from "./users.js";
+import { backUrl } from "../url.js";
 
 const ROWS = [
   ["id", "Id"],
@@ -39,7 +40,7 @@ export function userDetailPage(root, { id, onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=users"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=users")));
   root.appendChild(back);
 
   const body = document.createElement("div");

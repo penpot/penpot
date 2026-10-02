@@ -7,6 +7,7 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
+import { backUrl } from "../url.js";
 
 // Mirror of `supported-features` in `common/src/app/common/features.cljc`.
 // It only paints the toggles; the backend still validates every name.
@@ -65,7 +66,7 @@ export function teamDetailPage(root, { id, onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=teams"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=teams")));
   bar.appendChild(back);
 
   const filesLink = document.createElement("button");

@@ -6,6 +6,7 @@
 import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { showToast } from "../components/toast.js";
+import { backUrl } from "../url.js";
 
 const MAX_EMAILS = 100;
 
@@ -22,7 +23,7 @@ export function usersDeletePage(root, { onNavigate }) {
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("?screen=users"));
+  back.addEventListener("click", () => onNavigate(backUrl("?screen=users")));
   root.appendChild(back);
 
   const hint = document.createElement("p");
@@ -142,7 +143,7 @@ export function usersDeletePage(root, { onNavigate }) {
     const done = document.createElement("button");
     done.className = "admin-button admin-button-ghost";
     done.textContent = "Back to list";
-    done.addEventListener("click", () => onNavigate("?screen=users"));
+    done.addEventListener("click", () => onNavigate(backUrl("?screen=users")));
     wrap.appendChild(done);
 
     return wrap;

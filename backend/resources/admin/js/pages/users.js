@@ -7,7 +7,7 @@ import { rpc } from "../api.js";
 import { renderHeader } from "../components/header.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
-import { readQuery, writeQuery } from "../url.js";
+import { readQuery, writeQuery, detailUrl, withFrom } from "../url.js";
 
 const PAGE_SIZE = 25;
 
@@ -154,7 +154,7 @@ export function usersPage(root, { onNavigate }) {
   const bulkButton = document.createElement("button");
   bulkButton.className = "admin-button admin-button-ghost";
   bulkButton.textContent = "Delete by email…";
-  bulkButton.addEventListener("click", () => onNavigate("?screen=users-delete"));
+  bulkButton.addEventListener("click", () => onNavigate(withFrom("?screen=users-delete")));
   controls.appendChild(bulkButton);
   root.appendChild(controls);
 
@@ -198,7 +198,7 @@ export function usersPage(root, { onNavigate }) {
       const row = bodyRows[i];
       row.cells[4].replaceChildren(statusCell(rows[i].status));
       row.addEventListener("click", () =>
-        onNavigate("?screen=user&id=" + encodeURIComponent(state.items[i].id)));
+        onNavigate(detailUrl("user", state.items[i].id)));
     }
     tableWrap.appendChild(table);
     nextButton.disabled = state.loading || state.nextSince === null;
