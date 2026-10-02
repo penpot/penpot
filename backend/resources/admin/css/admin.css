@@ -144,6 +144,19 @@ body {
   pointer-events: none;
 }
 
+/* Stacked checkbox labels (export options, repair snapshot). */
+.admin-check {
+  display: flex;
+  gap: var(--admin-space-xs);
+  margin-top: var(--admin-space-sm);
+  align-items: center;
+}
+
+/* Result area below an action button. */
+.admin-result {
+  margin-top: var(--admin-space-md);
+}
+
 .admin-button-ghost {
   background: transparent;
   color: var(--admin-text);

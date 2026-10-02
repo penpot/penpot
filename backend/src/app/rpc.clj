@@ -481,6 +481,7 @@
           'app.rpc.admin.errors
           'app.rpc.admin.file
           'app.rpc.admin.profile
+          'app.rpc.admin.project
           'app.rpc.admin.team)
          (map (partial process-method cfg wrap))
          (into {}))))

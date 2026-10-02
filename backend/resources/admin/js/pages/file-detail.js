@@ -65,14 +65,33 @@ export function fileDetailPage(root, { id, onNavigate }) {
   function infoBlock(file) {
     const list = document.createElement("dl");
     list.className = "admin-detail";
-    for (const [key, label] of [["id", "Id"], ["projectName", "Project"], ["teamName", "Team"]]) {
-      const term = document.createElement("dt");
-      term.textContent = label;
-      const desc = document.createElement("dd");
-      desc.textContent = String(file[key] ?? "—");
-      list.appendChild(term);
-      list.appendChild(desc);
-    }
+    const idTerm = document.createElement("dt");
+    idTerm.textContent = "Id";
+    const idDesc = document.createElement("dd");
+    idDesc.textContent = String(file.id ?? "—");
+    list.appendChild(idTerm);
+    list.appendChild(idDesc);
+
+    const projectTerm = document.createElement("dt");
+    projectTerm.textContent = "Project";
+    const projectDesc = document.createElement("dd");
+    const projectLink = document.createElement("a");
+    projectLink.textContent = String(file.projectName ?? file.projectId ?? "—");
+    projectLink.href = "?screen=project&id=" + encodeURIComponent(file.projectId);
+    projectLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      onNavigate("?screen=project&id=" + encodeURIComponent(file.projectId));
+    });
+    projectDesc.appendChild(projectLink);
+    list.appendChild(projectTerm);
+    list.appendChild(projectDesc);
+
+    const teamTerm = document.createElement("dt");
+    teamTerm.textContent = "Team";
+    const teamDesc = document.createElement("dd");
+    teamDesc.textContent = String(file.teamName ?? "—");
+    list.appendChild(teamTerm);
+    list.appendChild(teamDesc);
     return list;
   }
 
@@ -89,6 +108,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
     section.appendChild(button);
 
     const result = document.createElement("div");
+    result.className = "admin-result";
     section.appendChild(result);
 
     button.addEventListener("click", async () => {
@@ -138,6 +158,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
     section.appendChild(hint);
 
     const snapshotLabel = document.createElement("label");
+    snapshotLabel.className = "admin-check";
     const snapshot = document.createElement("input");
     snapshot.type = "checkbox";
     snapshot.checked = true;
@@ -148,11 +169,13 @@ export function fileDetailPage(root, { id, onNavigate }) {
     const confirmWrap = document.createElement("div");
     confirmWrap.className = "admin-confirm";
 
+    const confirmText = document.createElement("p");
+    confirmWrap.appendChild(confirmText);
+
     const input = document.createElement("input");
     input.className = "admin-input";
     input.type = "text";
     input.inputMode = "numeric";
-    input.setAttribute("aria-label", "Type the error count to confirm repair");
     confirmWrap.appendChild(input);
 
     const confirm = document.createElement("button");
@@ -162,6 +185,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
     section.appendChild(confirmWrap);
 
     const result = document.createElement("div");
+    result.className = "admin-result";
     section.appendChild(result);
 
     function expected() {
@@ -171,9 +195,13 @@ export function fileDetailPage(root, { id, onNavigate }) {
     function refresh() {
       const count = expected();
       if (count === null) {
+        confirmText.textContent = "Validate first: the error count to type appears here.";
         confirm.disabled = true;
         return;
       }
+      confirmText.textContent = `Type ${count} to confirm the repair.`;
+      input.placeholder = String(count);
+      input.setAttribute("aria-label", `Type ${count} to confirm repair`);
       confirm.textContent = count > 0 ? `Repair ${count}` : "Repair (nothing to fix)";
       confirm.disabled = input.value.trim() !== String(count) || count === 0;
     }
@@ -216,6 +244,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
     section.appendChild(heading);
 
     const libsLabel = document.createElement("label");
+    libsLabel.className = "admin-check";
     const libs = document.createElement("input");
     libs.type = "checkbox";
     libsLabel.appendChild(libs);
@@ -223,6 +252,7 @@ export function fileDetailPage(root, { id, onNavigate }) {
     section.appendChild(libsLabel);
 
     const embedLabel = document.createElement("label");
+    embedLabel.className = "admin-check";
     const embed = document.createElement("input");
     embed.type = "checkbox";
     embedLabel.appendChild(embed);

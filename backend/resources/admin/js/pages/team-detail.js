@@ -53,11 +53,29 @@ export function teamDetailPage(root, { id, onNavigate }) {
   const header = renderHeader("Team");
   root.appendChild(header);
 
+  const bar = document.createElement("div");
+  bar.className = "admin-actions";
+
   const back = document.createElement("button");
   back.className = "admin-button admin-button-ghost";
   back.textContent = "Back to list";
   back.addEventListener("click", () => onNavigate("?screen=teams"));
-  root.appendChild(back);
+  bar.appendChild(back);
+
+  const filesLink = document.createElement("button");
+  filesLink.className = "admin-button admin-button-ghost";
+  filesLink.textContent = "View files";
+  filesLink.addEventListener("click", () =>
+    onNavigate("?screen=files&teamId=" + encodeURIComponent(id)));
+  bar.appendChild(filesLink);
+
+  const projectsLink = document.createElement("button");
+  projectsLink.className = "admin-button admin-button-ghost";
+  projectsLink.textContent = "View projects";
+  projectsLink.addEventListener("click", () =>
+    onNavigate("?screen=projects&teamId=" + encodeURIComponent(id)));
+  bar.appendChild(projectsLink);
+  root.appendChild(bar);
 
   const body = document.createElement("div");
   body.textContent = "Loading…";
@@ -109,13 +127,6 @@ export function teamDetailPage(root, { id, onNavigate }) {
     }
     body.replaceChildren();
     body.appendChild(list);
-
-    const filesLink = document.createElement("button");
-    filesLink.className = "admin-button admin-button-ghost";
-    filesLink.textContent = "View files";
-    filesLink.addEventListener("click", () =>
-      onNavigate("?screen=files&teamId=" + encodeURIComponent(data.id)));
-    body.appendChild(filesLink);
 
     body.appendChild(featuresBlock(data));
     body.appendChild(membersBlock(members ?? []));

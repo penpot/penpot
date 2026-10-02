@@ -17,6 +17,8 @@ import { teamsPage } from "./pages/teams.js";
 import { teamDetailPage } from "./pages/team-detail.js";
 import { filesPage } from "./pages/files.js";
 import { fileDetailPage } from "./pages/file-detail.js";
+import { projectsPage } from "./pages/projects.js";
+import { projectDetailPage } from "./pages/project-detail.js";
 import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
@@ -26,6 +28,7 @@ const NAV_ITEMS = [
   { query: "?screen=error-reports", label: "Error reports", screens: ["error-reports", "error-report"] },
   { query: "?screen=users", label: "Users", screens: ["users", "user", "users-delete"] },
   { query: "?screen=teams", label: "Teams", screens: ["teams", "team"] },
+  { query: "?screen=projects", label: "Projects", screens: ["projects", "project"] },
   { query: "?screen=files", label: "Files", screens: ["files", "file"] },
 ];
 
@@ -87,6 +90,10 @@ function renderAuthed(root) {
     teamDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else if (params.get("screen") === "files") {
     filesPage(content, { onNavigate: navigate });
+  } else if (params.get("screen") === "projects") {
+    projectsPage(content, { onNavigate: navigate });
+  } else if (params.get("screen") === "project" && params.get("id")) {
+    projectDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else if (params.get("screen") === "file" && params.get("id")) {
     fileDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else {

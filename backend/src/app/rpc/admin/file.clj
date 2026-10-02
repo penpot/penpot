@@ -153,7 +153,8 @@
    [:limit {:optional true}
     [:and ::sm/int [:fn #(<= 1 % files-max-limit)]]]
    [:search {:optional true} ::sm/text]
-   [:team-id {:optional true} ::sm/uuid]])
+   [:team-id {:optional true} ::sm/uuid]
+   [:project-id {:optional true} ::sm/uuid]])
 
 (def schema:get-files-result
   [:map
@@ -162,7 +163,7 @@
    [:next-id {:optional true} ::sm/uuid]])
 
 (defn- build-files-list-query
-  [{:keys [since since-id search team-id limit]
+  [{:keys [since since-id search team-id project-id limit]
     :or {limit files-default-limit}}]
   (let [search-id (when (and (string? search) (not (str/blank? search)))
                     (uuid/parse* search))
@@ -176,6 +177,9 @@
                          (when (uuid? team-id)
                            {:where "p.team_id = ?"
                             :params [team-id]})
+                         (when (uuid? project-id)
+                           {:where "f.project_id = ?"
+                            :params [project-id]})
                          (when since
                            {:where "(f.modified_at, f.id) < (?::timestamptz, ?::uuid)"
                             :params [since (or since-id uuid/zero)]})])

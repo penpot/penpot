@@ -245,6 +245,16 @@
     (t/is (contains? ids (:id file)))
     (t/is (not (contains? ids (:id (:file other)))))))
 
+(t/deftest list-filters-by-project
+  (let [{:keys [profile file]} (create-file! 1)
+        other (create-file! 2)
+        run   (as-superuser profile)
+        project-id (:project-id (first (:items (run "get-files" {:search (:name file)}))))
+        out   (run "get-files" {:project-id project-id})
+        ids   (set (map :id (:items out)))]
+    (t/is (contains? ids (:id file)))
+    (t/is (not (contains? ids (:id (:file other)))))))
+
 (t/deftest list-hides-deleted-files
   (let [{:keys [profile file]} (create-file! 1)
         _     (th/mark-file-deleted* {:id (:id file)})
