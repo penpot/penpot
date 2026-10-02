@@ -1,5 +1,5 @@
 // Bulk delete by email: paste a list, preview the count, confirm
-// by typing the number, and run delete-admin-profiles. The answer
+// by typing the number, and run delete-profiles. The answer
 // paints deleted, not-found, and skipped-self groups separately.
 // Everything is painted as text.
 
@@ -93,7 +93,7 @@ export function usersDeletePage(root, { onNavigate }) {
     const emails = parseEmails(area.value);
     confirm.disabled = true;
     try {
-      const data = await rpc("delete-admin-profiles", { emails });
+      const data = await rpc("delete-profiles", { emails });
       body.replaceChildren();
       body.appendChild(resultBlock(data));
     } catch {

@@ -469,9 +469,28 @@
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
+   :app.rpc/admin-methods
+   {:app.auth/superusers  (ig/ref :app.auth/superusers)
+    ::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)
+    ::rds/pool           (ig/ref ::rds/pool)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::session/manager    (ig/ref ::session/manager)
+    ::ldap/provider      (ig/ref ::ldap/provider)
+    ::sto/storage        (ig/ref ::sto/storage)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
+    ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    ::rds/client         (ig/ref ::rds/client)
+    ::rpc/climit         (ig/ref ::rpc/climit)
+    ::rpc/rlimit         (ig/ref ::rpc/rlimit)
+    ::setup/templates    (ig/ref ::setup/templates)
+    ::setup/props        (ig/ref ::setup/props)}
+
    ::rpc/routes
    {::rpc/methods            (ig/ref :app.rpc/methods)
     ::rpc/management-methods (ig/ref :app.rpc/management-methods)
+    ::rpc/admin-methods      (ig/ref :app.rpc/admin-methods)
 
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)

@@ -383,7 +383,6 @@
   [cfg]
   (let [cfg (assoc cfg ::module "main" ::type "command" ::metrics-id :rpc-main-timing)]
     (->> (sv/scan-ns
-          'app.rpc.commands.admin
           'app.rpc.commands.access-token
           'app.rpc.commands.audit
           'app.rpc.commands.auth
@@ -474,6 +473,43 @@
     (resolve-management-methods cfg)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ADMIN METHODS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- resolve-admin-methods
+  [cfg]
+  (let [cfg (assoc cfg ::module "admin" ::type "command" ::metrics-id :rpc-admin-timing)]
+    (->> (sv/scan-ns
+          'app.rpc.admin.errors
+          'app.rpc.admin.profile
+          'app.rpc.admin.team)
+         (map (partial process-method cfg wrap))
+         (into {}))))
+
+(def ^:private schema:admin-methods-params
+  [:map {:title "admin-methods-params"}
+   ::session/manager
+   ::http.client/client
+   ::db/pool
+   ::rds/pool
+   ::mbus/msgbus
+   ::sto/storage
+   ::mtx/metrics
+   [::ldap/provider [:maybe ::ldap/provider]]
+   [::climit [:maybe ::climit]]
+   [::rlimit [:maybe ::rlimit]]
+   ::setup/props])
+
+(defmethod ig/assert-key ::admin-methods
+  [_ params]
+  (assert (sm/check schema:admin-methods-params params)))
+
+(defmethod ig/init-key ::admin-methods
+  [_ cfg]
+  (let [cfg (d/without-nils cfg)]
+    (resolve-admin-methods cfg)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ROUTES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -497,10 +533,11 @@
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (session/manager? (::session/manager params)) "expect valid session manager")
   (assert (valid-methods? (::methods params)) "expect valid methods map")
-  (assert (valid-methods? (::management-methods params)) "expect valid methods map"))
+  (assert (valid-methods? (::management-methods params)) "expect valid methods map")
+  (assert (valid-methods? (::admin-methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods ::management-methods ::setup/shared-keys] :as cfg}]
+  [_ {:keys [::methods ::management-methods ::admin-methods ::setup/shared-keys] :as cfg}]
 
   (let [public-uri (cf/get :public-uri)]
     ["/api"
@@ -527,6 +564,14 @@
                   :label "main"
                   :base-uri (u/join public-uri "/api/main")
                   :description "MAIN API")]
+
+     ["/admin"
+      ["/methods/:method-name"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (make-rpc-handler admin-methods)}]]
 
      ;; BACKWARD COMPATIBILITY
      ["/_doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]

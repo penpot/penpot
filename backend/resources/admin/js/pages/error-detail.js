@@ -69,7 +69,7 @@ export function errorDetailPage(root, { id, onNavigate }) {
   async function load() {
     let data;
     try {
-      data = await rpc("get-admin-error-report", { id });
+      data = await rpc("get-error-report", { id });
     } catch (err) {
       body.replaceChildren();
       if (err.status === 404) {

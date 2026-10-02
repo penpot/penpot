@@ -1,4 +1,4 @@
-// Minimal RPC client against the main API.
+// Minimal RPC client against the admin API.
 //
 // The API root is derived from this module's own URL: the panel is
 // served at `<root>/admin/js/api.js` and the API lives at
@@ -11,10 +11,11 @@
 // errors with a `status` field so callers can tell "no session" and
 // "no permission" apart.
 
-const API_ROOT = new URL("../../api/main/methods/", import.meta.url);
+const API_ROOT = new URL("../../api/admin/methods/", import.meta.url);
+const MAIN_API_ROOT = new URL("../../api/main/methods/", import.meta.url);
 
-export async function rpc(command, params = {}) {
-  const response = await fetch(new URL(command, API_ROOT), {
+async function call(root, command, params = {}) {
+  const response = await fetch(new URL(command, root), {
     method: "POST",
     credentials: "same-origin",
     headers: {
@@ -40,4 +41,12 @@ export async function rpc(command, params = {}) {
   }
 
   return response.json();
+}
+
+export async function rpc(command, params = {}) {
+  return call(API_ROOT, command, params);
+}
+
+export async function rpcMain(command, params = {}) {
+  return call(MAIN_API_ROOT, command, params);
 }

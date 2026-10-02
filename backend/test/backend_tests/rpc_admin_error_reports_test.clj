@@ -41,7 +41,7 @@
   (some (fn [[f mdata]]
           (when (= cmd-name (::sv/name mdata))
             [f mdata]))
-        (sv/scan-ns 'app.rpc.commands.admin)))
+        (sv/scan-ns 'app.rpc.admin.errors)))
 
 (defn- call
   "Invoke an admin command through the real wrapper chain with a
@@ -85,38 +85,38 @@
 (t/deftest listed-session-lists-and-reads
   (let [profile (th/create-profile* 1)
         run     (as-session #{(:id profile)} profile)]
-    (t/is (= {:items []} (run "get-admin-error-reports" {})))))
+    (t/is (= {:items []} (run "get-error-reports" {})))))
 
 (t/deftest unlisted-session-rejected
   (let [profile (th/create-profile* 1)
         run     (as-session #{} profile)]
     (t/is (= :superuser-required
-             (caught-code #(run "get-admin-error-reports" {}))))
+             (caught-code #(run "get-error-reports" {}))))
     (t/is (= :superuser-required
-             (caught-code #(run "get-admin-error-report" {:id (uuid/next)}))))))
+             (caught-code #(run "get-error-report" {:id (uuid/next)}))))))
 
 (t/deftest unlisted-token-without-scope-rejected
   (let [profile (th/create-profile* 1)]
     (t/is (= :superuser-required
              (caught-code #(call #{} :token (:id profile) #{}
-                                 "get-admin-error-reports" {}))))))
+                                 "get-error-reports" {}))))))
 
 (t/deftest token-with-granted-superuser-passes
   (let [profile (th/create-profile* 1)]
     (t/is (= {:items []}
              (call #{} :token (:id profile) #{"superuser"}
-                   "get-admin-error-reports" {})))))
+                   "get-error-reports" {})))))
 
 (t/deftest anonymous-rejected
   (t/is (= :authentication-required
            (caught-code #(call #{} nil nil #{}
-                               "get-admin-error-reports" {})))))
+                               "get-error-reports" {})))))
 
 (t/deftest invalid-params-still-validated-for-listed-caller
   (let [profile (th/create-profile* 1)
         run     (as-session #{(:id profile)} profile)]
     (t/is (= :params-validation
-             (caught-code #(run "get-admin-error-reports" {:limit 500}))))))
+             (caught-code #(run "get-error-reports" {:limit 500}))))))
 
 ;; ----------------------------------------------------------------
 ;; Listing
@@ -126,7 +126,7 @@
   (let [profile (th/create-profile* 1)
         run     (as-session #{(:id profile)} profile)]
     (insert-report! {:source 3 :content {:hint "boom" :tenant "devenv" :version "2.20"}})
-    (let [out (run "get-admin-error-reports" {})]
+    (let [out (run "get-error-reports" {})]
       (t/is (= 1 (count (:items out))))
       (t/is (= "logging" (:source (first (:items out)))))
       (t/is (= "boom" (:hint (first (:items out))))))))
@@ -136,7 +136,7 @@
         run     (as-session #{(:id profile)} profile)]
     (insert-report! {:source 3 :content {:hint "backend"}})
     (insert-report! {:source 4 :content {:hint "audit"}})
-    (let [out (run "get-admin-error-reports" {:source "audit-log"})]
+    (let [out (run "get-error-reports" {:source "audit-log"})]
       (t/is (= 1 (count (:items out))))
       (t/is (= "audit-log" (:source (first (:items out))))))))
 
@@ -146,13 +146,13 @@
     (insert-report! {:source 3 :content {:hint "one"}})
     (insert-report! {:source 3 :content {:hint "two"}})
     (insert-report! {:source 3 :content {:hint "three"}})
-    (let [page1 (run "get-admin-error-reports" {:limit 2})]
+    (let [page1 (run "get-error-reports" {:limit 2})]
       (t/is (= 2 (count (:items page1))))
       (t/is (some? (:next-since page1)))
       (t/is (some? (:next-id page1)))
-      (let [page2 (run "get-admin-error-reports" {:limit 2
-                                                  :since (:next-since page1)
-                                                  :since-id (:next-id page1)})]
+      (let [page2 (run "get-error-reports" {:limit 2
+                                            :since (:next-since page1)
+                                            :since-id (:next-id page1)})]
         (t/is (= 1 (count (:items page2))))
         (t/is (nil? (:next-since page2)))))))
 
@@ -168,7 +168,7 @@
                      :content {:hint "rlimit hit"
                                :report "stacktrace here"
                                :context "extra context"}})
-    (let [out (run "get-admin-error-report" {:id id})]
+    (let [out (run "get-error-report" {:id id})]
       (t/is (= id (:id out)))
       (t/is (= "rlimit" (:source out)))
       (t/is (= "rlimit hit" (:hint out)))
@@ -179,4 +179,4 @@
   (let [profile (th/create-profile* 1)
         run     (as-session #{(:id profile)} profile)]
     (t/is (= :report-not-found
-             (caught-code #(run "get-admin-error-report" {:id (uuid/next)}))))))
+             (caught-code #(run "get-error-report" {:id (uuid/next)}))))))

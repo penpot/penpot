@@ -50,7 +50,7 @@ export function userDetailPage(root, { id, onNavigate }) {
   async function load() {
     let data;
     try {
-      data = await rpc("get-admin-profile", { id });
+      data = await rpc("get-profile", { id });
     } catch (err) {
       body.replaceChildren();
       if (err.status === 404) {
@@ -145,7 +145,7 @@ export function userDetailPage(root, { id, onNavigate }) {
     toggle.addEventListener("click", async () => {
       toggle.disabled = true;
       try {
-        await rpc(data.isBlocked ? "unblock-admin-profile" : "block-admin-profile",
+        await rpc(data.isBlocked ? "unblock-profile" : "block-profile",
           { id: data.id });
         showToast(data.isBlocked ? "User unblocked." : "User blocked.");
         load();
@@ -162,7 +162,7 @@ export function userDetailPage(root, { id, onNavigate }) {
     resend.addEventListener("click", async () => {
       resend.disabled = true;
       try {
-        await rpc("resend-admin-verification", { id: data.id });
+        await rpc("resend-verification", { id: data.id });
         showToast("Verification email scheduled.");
       } catch {
         showToast("Could not schedule the verification email.", "error");
@@ -208,7 +208,7 @@ export function userDetailPage(root, { id, onNavigate }) {
     confirm.addEventListener("click", async () => {
       confirm.disabled = true;
       try {
-        await rpc("delete-admin-profiles", { emails: [data.email] });
+        await rpc("delete-profiles", { emails: [data.email] });
         showToast("User deleted.");
         onNavigate("?screen=users");
       } catch {

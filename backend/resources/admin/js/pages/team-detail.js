@@ -70,8 +70,8 @@ export function teamDetailPage(root, { id, onNavigate }) {
     let members;
     try {
       [data, members] = await Promise.all([
-        rpc("get-admin-team", { id }),
-        rpc("get-admin-team-members", { teamId: id }),
+        rpc("get-team", { id }),
+        rpc("get-team-members", { teamId: id }),
       ]);
     } catch (err) {
       body.replaceChildren();
@@ -141,7 +141,7 @@ export function teamDetailPage(root, { id, onNavigate }) {
           return;
         }
         try {
-          await rpc(turnOn ? "enable-admin-team-feature" : "disable-admin-team-feature",
+          await rpc(turnOn ? "enable-team-feature" : "disable-team-feature",
             { teamId: data.id, feature });
           showToast(turnOn ? `Enabled ${feature}.` : `Disabled ${feature}.`);
           load();

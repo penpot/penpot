@@ -176,7 +176,7 @@ export function errorReportsPage(root, { onNavigate }) {
       params.sinceId = state.nextId;
     }
     try {
-      const data = await rpc("get-admin-error-reports", params);
+      const data = await rpc("get-error-reports", params);
       state.items = append ? state.items.concat(data.items) : data.items;
       state.nextSince = data.nextSince ?? null;
       state.nextId = data.nextId ?? null;

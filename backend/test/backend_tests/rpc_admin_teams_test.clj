@@ -31,7 +31,7 @@
   (some (fn [[f mdata]]
           (when (= cmd-name (::sv/name mdata))
             [f mdata]))
-        (sv/scan-ns 'app.rpc.commands.admin)))
+        (sv/scan-ns 'app.rpc.admin.team)))
 
 (defn- call
   "Invoke an admin command through the real wrapper chain with a
@@ -80,41 +80,41 @@
   (let [profile (th/create-profile* 1)
         run     (as-session #{} profile)]
     (t/is (= :superuser-required
-             (caught-code #(run "get-admin-teams" {}))))
+             (caught-code #(run "get-teams" {}))))
     (t/is (= :superuser-required
-             (caught-code #(run "get-admin-team" {:id (uuid/next)}))))
+             (caught-code #(run "get-team" {:id (uuid/next)}))))
     (t/is (= :superuser-required
-             (caught-code #(run "get-admin-team-members" {:team-id (uuid/next)}))))
+             (caught-code #(run "get-team-members" {:team-id (uuid/next)}))))
     (t/is (= :superuser-required
-             (caught-code #(run "enable-admin-team-feature"
+             (caught-code #(run "enable-team-feature"
                                 {:team-id (uuid/next) :feature "components/v2"}))))
     (t/is (= :superuser-required
-             (caught-code #(run "disable-admin-team-feature"
+             (caught-code #(run "disable-team-feature"
                                 {:team-id (uuid/next) :feature "components/v2"}))))))
 
 (t/deftest unlisted-token-without-scope-rejected
   (let [profile (th/create-profile* 1)]
     (t/is (= :superuser-required
              (caught-code #(call #{} :token (:id profile) #{}
-                                 "get-admin-teams" {}))))))
+                                 "get-teams" {}))))))
 
 (t/deftest token-with-granted-superuser-passes
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         out   (call #{} :token (:id admin) #{"superuser"}
-                    "get-admin-teams" {:search (:name team)})]
+                    "get-teams" {:search (:name team)})]
     (t/is (= [(:id team)] (mapv :id (:items out))))))
 
 (t/deftest anonymous-rejected
   (t/is (= :authentication-required
            (caught-code #(call #{} nil nil #{}
-                               "get-admin-teams" {})))))
+                               "get-teams" {})))))
 
 (t/deftest invalid-params-still-validated-for-listed-caller
   (let [profile (th/create-profile* 1)
         run     (as-superuser profile)]
     (t/is (= :params-validation
-             (caught-code #(run "get-admin-teams" {:limit 500}))))))
+             (caught-code #(run "get-teams" {:limit 500}))))))
 
 ;; ----------------------------------------------------------------
 ;; Listing
@@ -124,7 +124,7 @@
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         run   (as-superuser admin)
-        out   (run "get-admin-teams" {:search (:name team)})
+        out   (run "get-teams" {:search (:name team)})
         item  (first (:items out))]
     (t/is (= 1 (count (:items out))))
     (t/is (= (:id team) (:id item)))
@@ -139,7 +139,7 @@
         team  (th/create-team* 1 {:profile-id (:id admin)})
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
         run   (as-superuser admin)
-        out   (run "get-admin-teams" {:search (:name team)})]
+        out   (run "get-teams" {:search (:name team)})]
     (t/is (= [] (:items out)))))
 
 (t/deftest list-search-and-pagination
@@ -147,13 +147,13 @@
         _t1   (th/create-team* 1 {:profile-id (:id admin)})
         _t2   (th/create-team* 2 {:profile-id (:id admin)})
         run   (as-superuser admin)
-        page1 (run "get-admin-teams" {:search "team" :limit 1})]
+        page1 (run "get-teams" {:search "team" :limit 1})]
     (t/is (= 1 (count (:items page1))))
     (t/is (some? (:next-since page1)))
     (t/is (some? (:next-id page1)))
-    (let [page2 (run "get-admin-teams" {:search "team" :limit 1
-                                        :since (:next-since page1)
-                                        :since-id (:next-id page1)})]
+    (let [page2 (run "get-teams" {:search "team" :limit 1
+                                  :since (:next-since page1)
+                                  :since-id (:next-id page1)})]
       (t/is (= 1 (count (:items page2))))
       (t/is (not= (-> page1 :items first :id)
                   (-> page2 :items first :id))))))
@@ -166,7 +166,7 @@
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         run   (as-superuser admin)
-        out   (run "get-admin-team" {:id (:id team)})]
+        out   (run "get-team" {:id (:id team)})]
     (t/is (= (:id team) (:id out)))
     (t/is (= (:name team) (:name out)))
     (t/is (= 1 (:total-members out)))
@@ -180,7 +180,7 @@
   (let [profile (th/create-profile* 1)
         run     (as-superuser profile)]
     (t/is (= :team-not-found
-             (caught-code #(run "get-admin-team" {:id (uuid/next)}))))))
+             (caught-code #(run "get-team" {:id (uuid/next)}))))))
 
 (t/deftest detail-deleted-gives-not-found
   (let [admin (th/create-profile* 1)
@@ -188,7 +188,7 @@
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
         run   (as-superuser admin)]
     (t/is (= :team-not-found
-             (caught-code #(run "get-admin-team" {:id (:id team)}))))))
+             (caught-code #(run "get-team" {:id (:id team)}))))))
 
 ;; ----------------------------------------------------------------
 ;; Members
@@ -202,7 +202,7 @@
                                       :profile-id (:id editor)
                                       :role :editor})
         run    (as-superuser admin)
-        out    (run "get-admin-team-members" {:team-id (:id team)})
+        out    (run "get-team-members" {:team-id (:id team)})
         by-id  (into {} (map (juxt :id identity) out))]
     (t/is (= 2 (count out)))
     (t/is (true? (:is-owner (get by-id (:id admin)))))
@@ -213,7 +213,7 @@
   (let [profile (th/create-profile* 1)
         run     (as-superuser profile)]
     (t/is (= :team-not-found
-             (caught-code #(run "get-admin-team-members"
+             (caught-code #(run "get-team-members"
                                 {:team-id (uuid/next)}))))))
 
 ;; ----------------------------------------------------------------
@@ -224,9 +224,9 @@
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         run   (as-superuser admin)
-        out   (run "enable-admin-team-feature"
+        out   (run "enable-team-feature"
                    {:team-id (:id team) :feature "text-editor/v2"})
-        again (run "enable-admin-team-feature"
+        again (run "enable-team-feature"
                    {:team-id (:id team) :feature "text-editor/v2"})]
     (t/is (= (:id team) (:id out)))
     (t/is (some #{"text-editor/v2"} (:features out)))
@@ -236,11 +236,11 @@
   (let [admin (th/create-profile* 1)
         team  (th/create-team* 1 {:profile-id (:id admin)})
         run   (as-superuser admin)
-        _     (run "enable-admin-team-feature"
+        _     (run "enable-team-feature"
                    {:team-id (:id team) :feature "text-editor/v2"})
-        out   (run "disable-admin-team-feature"
+        out   (run "disable-team-feature"
                    {:team-id (:id team) :feature "text-editor/v2"})
-        again (run "disable-admin-team-feature"
+        again (run "disable-team-feature"
                    {:team-id (:id team) :feature "text-editor/v2"})]
     (t/is (not (some #{"text-editor/v2"} (:features out))))
     (t/is (= (:features out) (:features again)))))
@@ -249,14 +249,14 @@
   (let [admin  (th/create-profile* 1)
         team   (th/create-team* 1 {:profile-id (:id admin)})
         run    (as-superuser admin)
-        before (run "get-admin-team" {:id (:id team)})]
+        before (run "get-team" {:id (:id team)})]
     (t/is (= :feature-not-supported
-             (caught-code #(run "enable-admin-team-feature"
+             (caught-code #(run "enable-team-feature"
                                 {:team-id (:id team) :feature "nope/missing"}))))
     (t/is (= :feature-not-supported
-             (caught-code #(run "disable-admin-team-feature"
+             (caught-code #(run "disable-team-feature"
                                 {:team-id (:id team) :feature "nope/missing"}))))
-    (let [after (run "get-admin-team" {:id (:id team)})]
+    (let [after (run "get-team" {:id (:id team)})]
       (t/is (= (:features before) (:features after))))))
 
 (t/deftest toggles-on-unknown-team-give-not-found
@@ -264,10 +264,10 @@
         run     (as-superuser profile)
         missing (uuid/next)]
     (t/is (= :team-not-found
-             (caught-code #(run "enable-admin-team-feature"
+             (caught-code #(run "enable-team-feature"
                                 {:team-id missing :feature "text-editor/v2"}))))
     (t/is (= :team-not-found
-             (caught-code #(run "disable-admin-team-feature"
+             (caught-code #(run "disable-team-feature"
                                 {:team-id missing :feature "text-editor/v2"}))))))
 
 (t/deftest writes-refuse-deleted-team
@@ -276,11 +276,11 @@
         _     (db/update! th/*system* :team {:deleted-at (ct/now)} {:id (:id team)})
         run   (as-superuser admin)]
     (t/is (= :team-not-found
-             (caught-code #(run "get-admin-team-members"
+             (caught-code #(run "get-team-members"
                                 {:team-id (:id team)}))))
     (t/is (= :team-not-found
-             (caught-code #(run "enable-admin-team-feature"
+             (caught-code #(run "enable-team-feature"
                                 {:team-id (:id team) :feature "text-editor/v2"}))))
     (t/is (= :team-not-found
-             (caught-code #(run "disable-admin-team-feature"
+             (caught-code #(run "disable-team-feature"
                                 {:team-id (:id team) :feature "text-editor/v2"}))))))

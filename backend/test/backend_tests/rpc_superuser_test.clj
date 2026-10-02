@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns backend-tests.rpc-superuser-test
-  "Tests for the `superuser` permission in the main RPC API."
+  "Tests for the `superuser` permission in the RPC APIs."
   (:require
    [app.auth :as-alias auth]
    [app.common.data :as d]
@@ -18,7 +18,6 @@
    [app.util.services :as sv]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (t/use-fixtures :once th/state-init)
@@ -313,16 +312,24 @@
       (t/is (false? (:is-superuser out))))))
 
 ;; ----------------------------------------------------------------
-;; Wiring: no separate module anymore
+;; Wiring: admin lives on its own endpoint, outside main
 ;; ----------------------------------------------------------------
 
 (t/deftest admin-namespace-contributes-no-methods-to-main
-  ;; The namespace is registered but empty: a home for future commands.
-  (t/is (not (contains? (:app.rpc/methods th/*system*) :get-admin-profile))))
+  ;; Short names exist in both maps; each endpoint resolves its own
+  ;; namespace, so there is no real collision.
+  (let [main-methods  (:app.rpc/methods th/*system*)
+        admin-methods (:app.rpc/admin-methods th/*system*)]
+    (t/is (= "app.rpc.admin.profile" (:ns (first (get admin-methods :get-profile)))))
+    (t/is (= "app.rpc.admin.team" (:ns (first (get admin-methods :get-team)))))
+    (t/is (= "app.rpc.admin.errors" (:ns (first (get admin-methods :get-error-reports)))))
+    (t/is (= "app.rpc.commands.profile" (:ns (first (get main-methods :get-profile)))))
+    (t/is (= "app.rpc.commands.teams" (:ns (first (get main-methods :get-team)))))
+    (t/is (= "app.rpc.commands.error-reports" (:ns (first (get main-methods :get-error-reports)))))))
 
-(t/deftest admin-route-is-gone-and-existing-routes-stand
+(t/deftest admin-route-exists-alongside-other-routes
   (let [paths (route-paths "" (:app.rpc/routes th/*system*))]
-    (t/is (not-any? #(str/starts-with? % "/api/admin") paths))
+    (t/is (some #{"/api/admin/methods/:method-name"} paths))
     (t/is (some #{"/api/main/methods/:method-name"} paths))
     (t/is (some #{"/api/management/methods/:method-name"} paths))
     ;; still the deprecated alias of main, out of scope for this change
