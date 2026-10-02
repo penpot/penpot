@@ -83,6 +83,13 @@
   (let [collected (rect-cases)]
     (t/is (= [:rects/load :rects/pan :rects/zoom] (mapv :id collected)))))
 
+(t/deftest real-rectangle-bodies-stay-out-of-node-descriptors
+  (let [ids [:rects/load :rects/pan :rects/zoom]]
+    (t/is (every? #(fn? (:run! (core/registered-case %))) ids))
+    (t/is (= ids (mapv :id (rect-cases)))
+          "collection succeeds with the executable bodies present")
+    (t/is (every? #(not (contains? % :run!)) (rect-cases)))))
+
 (t/deftest collected-cases-survive-the-wire
   (doseq [case-desc (rect-cases)]
     (t/is (not (contains? case-desc :run!)) (str (:id case-desc)))

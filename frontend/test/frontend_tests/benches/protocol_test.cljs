@@ -220,3 +220,64 @@
           (.catch (fn [cause]
                     (t/is false (str "must resolve, threw: " cause))
                     (done)))))))
+
+(t/deftest camera-session-chains-promises-and-records-authored-sleep
+  (t/async done
+    (let [clock   (fake-clock 0)
+          views   (atom [])
+          events  (atom [])
+          hooks   (assoc (drain-hooks {:clock clock :script [2] :calls (atom [])})
+                         :frame (fn []
+                                  (swap! events conj :frame)
+                                  ((:advance! clock) 16)
+                                  (js/Promise.resolve ((:now clock))))
+                         :set-view (fn [view]
+                                     (swap! views conj view)
+                                     ((:advance! clock) 2))
+                         :render-from-cache (fn []
+                                              (swap! events conj :cached)
+                                              ((:advance! clock) 3))
+                         :set-view-end (fn []
+                                         (swap! events conj :end)
+                                         ((:advance! clock) 5)))
+          base    {:scale 1 :x 0 :y 0}
+          target  {:scale 2 :x 100 :y 40}]
+      (-> (protocol/start-camera! {:hooks hooks :view base} {:settle-ms 100})
+          (protocol/animate-view! {:to target :steps 3})
+          (protocol/sleep! 25)
+          (protocol/finish-camera!)
+          (.then (fn [m]
+                   (t/is (apply < (map :x @views))
+                         "intermediate camera views advance toward the target")
+                   (t/is (= target (last @views)))
+                   (t/is (= [:frame :cached :frame :cached :frame :cached :end] @events))
+                   (t/is (= 3 (count (:cached-slices m))))
+                   (t/is (= [5 5 5] (mapv :view-and-preview-ms (:cached-slices m)))
+                         "call span also includes the view update")
+                   (t/is (= [3 3 3] (mapv :duration-ms (:cached-slices m))))
+                   (t/is (= [{:requested-ms 25 :actual-ms 25}] (:authored-sleeps m)))
+                   (t/is (= 88 (:active-ms m))
+                         "three rAF waits, view/cache calls and authored pause")
+                   (t/is (= 100 (:settling-actual-ms m)))
+                   (t/is (= 193 (:interact-ms m))
+                         "active, settle and camera end are one span")
+                   (done)))
+          (.catch (fn [cause]
+                    (t/is false (str "must resolve, threw: " cause))
+                    (done)))))))
+
+(t/deftest camera-session-rejects-hook-errors
+  (t/async done
+    (let [clock (fake-clock 0)
+          hooks (assoc (drain-hooks {:clock clock :script [2] :calls (atom [])})
+                       :render-from-cache (fn [] (throw (ex-info "cache failed" {:phase "preview"}))))]
+      (-> (protocol/start-camera! {:hooks hooks :view {:scale 1 :x 0 :y 0}}
+                                  {:settle-ms 100})
+          (protocol/preview-view! {:scale 1 :x 10 :y 0})
+          (protocol/finish-camera!)
+          (.then (fn [_]
+                   (t/is false "preview error must reject")
+                   (done)))
+          (.catch (fn [cause]
+                    (t/is (= "cache failed" (ex-message cause)))
+                    (done)))))))
