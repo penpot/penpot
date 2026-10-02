@@ -9187,8 +9187,9 @@ msgstr "An error occurred while creating the pull request"
 msgid "workspace.pull-requests.create.info"
 msgstr ""
 "Reviewers will open the branch itself, so any edit they make changes the "
-"branch. Try interactions plays the branch as it is at this moment. You can "
-"keep working on the branch and publish newer changes at any time."
+"branch. Try interactions plays the branch as published now, and later edits "
+"show there only after newer changes are published. You can keep working on "
+"the branch and publish newer changes at any time."
 
 #: src/app/main/ui/workspace/sidebar/pull_requests.cljs:159
 msgid "workspace.pull-requests.create.name-label"
