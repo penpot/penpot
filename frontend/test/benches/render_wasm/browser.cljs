@@ -40,7 +40,6 @@
 (def schema:load-scene-args
   "Decoded Transit request for `load-scene`."
   [:map {:closed true}
-   [:seed [:int {:min 0 :max 4294967295}]] ;; derived in `collect-cases`
    [:case map?]
    [:module-url {:optional true} string?]
    [:wasm-url {:optional true} string?]])
@@ -51,11 +50,6 @@
   bounds runaway drains. The Node outer timeout stays the backstop for
   synchronously blocked pages."
   30000)
-
-(def ^:const ^:private gesture-settle-ms
-  "Declared settle wait for warm gestures. The actual wait is recorded
-  separately by `protocol/interact`."
-  100)
 
 (defn- browser-hooks
   "Browser hooks for one owner epoch and deadline."
@@ -85,34 +79,6 @@
    :set-view-end      #(h/call wasm/internal-module "_set_view_end")})
 
 
-;; TODO(tickets 07/08): Move gestures into scene cases. These rectangle ID
-;; checks reject every new warm case; the bridge should run its gesture.
-(defn- linear-frames
-  "Linear interpolation of `{:scale :x :y}` views from `from` to `to` over
-  `n` frames."
-  [from to n]
-  (mapv (fn [i]
-          (let [t (/ (inc i) n)]
-            {:scale (+ (:scale from) (* t (- (:scale to) (:scale from))))
-             :x     (+ (:x from) (* t (- (:x to) (:x from))))
-             :y     (+ (:y from) (* t (- (:y to) (:y from))))}))
-        (range n)))
-
-(defn- gesture-frames
-  "Builds rectangle pan or zoom frames from the case view. Other case ids
-  throw because the bridge has no gesture for them."
-  [case view]
-  (cond
-    (= (:id case) :rects/pan)
-    (linear-frames view (update view :x + 200) 20)
-
-    (= (:id case) :rects/zoom)
-    (linear-frames view (update view :scale * 1.5) 20)
-
-    :else
-    (throw (ex-info (str "no gesture declared for case " (:id case))
-                    {:phase "gesture"
-                     :case  (:id case)}))))
 
 ;; Monotonic owner generation. Every async continuation compares its
 ;; captured epoch and drops stale results silently; dispose/load bump it.
@@ -215,28 +181,6 @@
     (dispose!)
     true))
 
-(defn- render-ok
-  "Maps one drain result to the bridge value.
-
-  Success keeps the owner live for explicit disposal. Failures release the owner
-  only if it still is current (i.e. it owns the page resources) to avoid
-  disposing of resources belonging to a newer owner in case of a stale failure."
-  [epoch module-ms graphics-ms upload-ms alive? drain-result snapshot seed ctx width height dpr renderer]
-  (if-not alive?
-    (do
-      (dispose-if-current! epoch)
-      (fail/fail-data {:phase "first-render"
-                       :message "disposed or context lost during render"}))
-    (assoc drain-result
-           :status "ok"
-           :module-init-ms module-ms
-           :graphics-init-ms graphics-ms
-           :upload-ms upload-ms
-           :first-render-ms (:full-ms drain-result)
-           :render-frames (count (:slices drain-result))
-           :scene {:shapes (count (:objects snapshot))
-                   :seed seed}
-           :effective-graphics (read-graphics ctx width height dpr renderer))))
 
 (defn- read-graphics
   "Records effective graphics settings: requested CSS size and DPR
@@ -340,63 +284,57 @@
     (aset (.-style ^js canvas) "height" (str height "px"))
     canvas))
 
-(defn- warm-ok
-  "Maps an interaction to the bridge result. Success keeps the owner live;
-  failure releases it if this attempt still owns the page."
-  [epoch module-ms graphics-ms upload-ms interact-ms alive? interaction snapshot seed ctx width height dpr renderer]
-  (if-not alive?
+(defn- case-ok
+  "Adds lifecycle and graphics data to one compiled body's measurement."
+  [epoch live? case-desc seed dims graphics measurement]
+  (guard-current! epoch "render")
+  (if-not (live?)
     (do
       (dispose-if-current! epoch)
-      (fail/fail-data {:phase "interact"
-                       :message "disposed or context lost during interaction"}))
-    (merge interaction
-           {:status "ok"
-            :module-init-ms module-ms
-            :graphics-init-ms graphics-ms
-            :upload-ms upload-ms
-            :interact-ms interact-ms
-            :scene {:shapes (count (:objects snapshot))
-                    :seed seed}
-            :effective-graphics (read-graphics ctx width height dpr renderer)})))
+      (fail/fail-data {:phase (if (= :reuse (:context case-desc))
+                                "interact"
+                                "first-render")
+                       :message "disposed or context lost during case"}))
+    (let [{:keys [module-ms graphics-ms renderer ctx snapshot upload-ms]} graphics
+          {:keys [width height dpr]} dims]
+      (cond-> (merge measurement
+                     {:status "ok"
+                      :module-init-ms module-ms
+                      :graphics-init-ms graphics-ms
+                      :upload-ms upload-ms
+                      :scene {:shapes (count (:objects snapshot))
+                              :seed seed}
+                      :effective-graphics (read-graphics (:context ctx) width height dpr renderer)})
+        (= :fresh (:context case-desc))
+        (assoc :first-render-ms (:full-ms measurement)
+               :render-frames (count (:slices measurement)))))))
 
-(defn- run-fresh
-  "Times one drain for a fresh-context case. Resolves the bridge value
-  through `render-ok`; drain failures resolve through `terminal-failure`."
-  [epoch hooks seed dims g live?]
-  (let [{:keys [module-ms graphics-ms renderer ctx snapshot upload-ms]} g
-        {:keys [width height dpr]} dims]
-    (-> (protocol/drain hooks {:flags 0 :origin ((:now hooks)) :immediate false})
-        (.then (fn [drain-result]
-                 (render-ok epoch module-ms graphics-ms upload-ms
-                            (live?) drain-result snapshot seed
-                            (:context ctx) width height dpr renderer)))
-        (.catch (fn [cause]
-                  (terminal-failure epoch cause "first-render"))))))
-
-(defn- run-warm
-  "Restores the initial view and drains outside timing, then times one
-  gesture for a reuse-context case. Resolves the bridge value through
-  `warm-ok`; gesture failures resolve through `terminal-failure`."
-  [epoch hooks case-desc seed dims g live?]
-  (let [{:keys [module-ms graphics-ms renderer ctx snapshot upload-ms view]} g
-        {:keys [width height dpr]} dims]
-    (-> (protocol/restore hooks view)
+(defn- run-case
+  "Awaits untimed restore for reuse cases, then calls the compiled body once.
+  Its synchronous return is assimilated into the same Promise result path."
+  [{:keys [epoch dims hooks live?]} case-desc local-case graphics]
+  (let [reuse? (= :reuse (:context case-desc))
+        prep   (if reuse?
+                 (-> (protocol/restore hooks (:view graphics))
+                     (.catch (fn [cause]
+                               (if (fail/stale? cause)
+                                 (throw cause)
+                                 (throw (ex-info "restore failed" {:phase "restore"} cause))))))
+                 (js/Promise.resolve nil))
+        rtx    {:case case-desc
+                :scene (:snapshot graphics)
+                :module wasm/internal-module
+                :view (:view graphics)
+                :hooks hooks}]
+    (-> prep
         (.then (fn [_]
-                 (guard-current! epoch "interact")
-                 (let [t0 ((:now hooks))]
-                   (-> (protocol/interact
-                        hooks
-                        {:frames (gesture-frames case-desc view)
-                         :settle-ms gesture-settle-ms})
-                       (.then (fn [interaction]
-                                (warm-ok epoch module-ms graphics-ms upload-ms
-                                         (- ((:now hooks)) t0) (live?) interaction
-                                         snapshot seed (:context ctx)
-                                         width height dpr renderer)))
-                       (.catch (fn [cause]
-                                 (terminal-failure epoch cause "interact")))))))
+                 (guard-current! epoch "render")
+                 (js/Promise.resolve ((:run! local-case) rtx))))
+        (.then (fn [measurement]
+                 (case-ok epoch live? case-desc (:scene-seed case-desc)
+                          dims graphics measurement)))
         (.catch (fn [cause]
-                  (terminal-failure epoch cause "restore"))))))
+                  (terminal-failure epoch cause (if reuse? "interact" "first-render")))))))
 
 (defn- parse-load-request
   "Decodes and validates the request before claiming the page. Failure
@@ -406,14 +344,22 @@
     (let [params (t/decode-str request)]
       (if-not (sm/validate schema:load-scene-args params)
         {:error (fail/fail-data {:phase "invalid-args"
-                                 :message "load-scene needs a Transit request with seed and case"})}
+                                 :message "load-scene needs a Transit request with case"})}
         (let [case-desc (:case params)
-              scene     (core/registered-scene (:scene case-desc))]
+              checked   (core/check-collected-case case-desc)
+              scene     (core/registered-scene (:scene checked))
+              local     (core/registered-case (:id checked))]
           (when (nil? scene)
-            (throw (ex-info (str "unknown scene: " (:scene case-desc))
+            (throw (ex-info (str "unknown scene: " (:scene checked))
+                            {:phase "invalid-args"})))
+          (when-not (and local
+                         (fn? (:run! local))
+                         (= (:scene local) (:scene checked)))
+            (throw (ex-info (str "missing case body for " (:id checked))
                             {:phase "invalid-args"})))
           {:params params
-           :case-desc (core/check-collected-case case-desc)
+           :case-desc checked
+           :local-case local
            :scene scene})))
     (catch :default cause
       {:error (fail/fail-data {:phase "invalid-args"
@@ -524,7 +470,7 @@
               (count (:objects (:snapshot graphics))))
       (h/call wasm/internal-module "_begin_loading")
       (try
-        ;; Rects carry no layout; per-scene upload options arrive with 07/08.
+        ;; Current procedural scenes upload without layout data.
         (serialize-shape/serialize-shapes-batch
          (:ordered graphics)
          {:include-layout? false
@@ -540,27 +486,23 @@
                         {:phase "upload"}
                         cause))))))
 
-;; TODO(ticket 14): Run the declared case body here. Context dispatch skips
-;; `:run!`, so custom cases cannot execute through this bridge.
 (defn- render-scene
-  "Runs the fresh or reuse completion path after upload."
-  [{:keys [epoch dims hooks live?]} case-desc seed graphics]
+  "Runs the compiled case body after upload and any untimed preparation."
+  [{:keys [epoch] :as attempt} case-desc local-case graphics]
   (guard-current! epoch "render")
-  (if (= (:context case-desc) :fresh)
-    (run-fresh epoch hooks seed dims graphics live?)
-    (run-warm epoch hooks case-desc seed dims graphics live?)))
+  (run-case attempt case-desc local-case graphics))
 
 (defn load-scene
-  "Loads one collected case to Full. Takes a Transit request with `:seed`,
-  `:case` and optional module/WASM URLs; resolves to a Transit result.
+  "Loads one collected case to Full. Takes a Transit request with `:case`
+  and optional module/WASM URLs; resolves to a Transit result.
   Validation precedes ownership and all timers. Fresh cases time upload
   and one drain; reuse cases restore and drain outside interaction timing."
   [request]
   (let [epoch* (volatile! nil)
         result (try
-                 (let [{:keys [error params case-desc scene]}
+                 (let [{:keys [error params case-desc local-case scene]}
                        (parse-load-request request)
-                       seed (:seed params)]
+                       seed (:scene-seed case-desc)]
                    (if error
                      (js/Promise.resolve error)
                      (let [{:keys [epoch dims] :as attempt} (begin-load! case-desc)]
@@ -573,7 +515,7 @@
                            (.then (fn [graphics]
                                     (upload-scene! epoch case-desc graphics)))
                            (.then (fn [graphics]
-                                    (render-scene attempt case-desc seed graphics)))
+                                    (render-scene attempt case-desc local-case graphics)))
                            (.catch (fn [cause]
                                      (terminal-failure epoch cause "aborted")))))))
                  (catch :default cause
