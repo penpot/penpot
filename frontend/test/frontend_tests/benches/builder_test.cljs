@@ -8,14 +8,15 @@
   (:require
    [app.common.uuid :as uuid]
    [benches.render-wasm.builder :as b :include-macros true]
-   [benches.render-wasm.scenes.rects :as rects]
+   [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.scenes.rects]
    [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 
 (defn- build
   ([] (build {}))
-  ([params] (rects/build (merge {:seed 42 :count 5} params))))
+  ([params] ((:build (decl/registered-scene :rects)) (merge {:seed 42 :count 5} params))))
 
 (defn- add-tile
   "Helper defined outside a scene scope, called from inside one."
@@ -27,7 +28,7 @@
   (t/is (not= (build) (build {:seed 43}))))
 
 (t/deftest rectangle-workload-keeps-default-count
-  (let [instance (rects/build {:seed 42})
+  (let [instance (build {:seed 42 :count 1000})
         rects    (helpers/root-shapes instance)]
     (t/is (= 1000 (count rects)))
     (t/is (< 1 (count (distinct (map :x rects)))))))

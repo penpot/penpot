@@ -9,7 +9,7 @@
 
   Distributes rectangles over the canvas with varied sizes, translucent
   fills and centered strokes, all drawn from the scope's seeded generator.
-  `build` produces the scene snapshot; `defscene` and `defcase` declare
+  The `defscene` body produces the scene snapshot; `defcase` declares
   the scene and its standard cases. The three cases share parameters, so
   they render the same scene."
   (:require
@@ -57,9 +57,10 @@
    :r3      (sb/gen-int 0 24)
    :r4      (sb/gen-int 0 24)})
 
-(defn build
-  "Builds the seeded rectangle scene. `params` requires `:seed`; the other
-  keys default to the standard case parameters."
+(decl/defscene :rects
+  {:version 1
+   :description "Seeded rectangles with translucent fills and centered strokes"
+   :params-schema schema:params}
   [params]
   (let [params (merge default-params params)]
     (sb/scene {:seed (:seed params)
@@ -71,33 +72,30 @@
               (doseq [_ (range (:count params))]
                 (sb/rect)))))
 
-(decl/defscene :rects
-  {:version 1
-   :description "Seeded rectangles with translucent fills and centered strokes"
-   :params-schema schema:params}
-  build)
-
 (def ^:private base-view
   {:scale 1 :x 0 :y 0})
 
-(decl/defcase :rects/load :rects
+(decl/defcase :rects/load
   {:params default-params
    :view base-view
    :context :fresh}
-  (fn [rtx] (camera/load! rtx)))
+  [rtx]
+  (camera/load! rtx))
 
-(decl/defcase :rects/pan :rects
+(decl/defcase :rects/pan
   {:params default-params
    :view base-view
    :context :reuse
    :completion :render-full
    :operation {:steps 20 :dx 200 :dy 0 :settle-ms 100}}
-  (fn [rtx] (camera/pan! rtx)))
+  [rtx]
+  (camera/pan! rtx))
 
-(decl/defcase :rects/zoom :rects
+(decl/defcase :rects/zoom
   {:params default-params
    :view base-view
    :context :reuse
    :completion :render-full
    :operation {:steps 20 :factor 1.5 :settle-ms 100}}
-  (fn [rtx] (camera/zoom! rtx)))
+  [rtx]
+  (camera/zoom! rtx))
