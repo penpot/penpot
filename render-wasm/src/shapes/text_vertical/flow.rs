@@ -1,7 +1,7 @@
-// Column planning and JLREQ spacing along the vertical flow. The passes run
-// on a paragraph's `FlowCell`s before they are placed: they adjust cell
-// extents (aki, oikomi, inter-script spacing) and pick the column breaks
-// (kinsoku, burasage, oidashi).
+// Column planning and JLREQ spacing along the vertical flow. These passes run
+// on a paragraph's `FlowCell`s before placement: they adjust cell extents
+// (aki, oikomi, inter-script spacing) and pick column breaks (kinsoku,
+// burasage, oidashi).
 
 use crate::shapes::japanese::{classify, pair_rule, JapaneseClass};
 use crate::shapes::kinsoku::{forbidden_at_line_end, forbidden_at_line_start};
@@ -14,16 +14,14 @@ const INTER_SCRIPT_SPACING_EM: f32 = 0.25;
 /// Amounts below this are treated as zero by the spacing passes.
 const EPSILON: f32 = 0.0001;
 
-/// A placeable item in the vertical flow: its extent along the column and,
-/// for single-character cells, the character (used for kinsoku decisions
-/// at column breaks). Rotated runs carry no character and are unsplittable.
+/// An item placed along the column. `ch` is set for single-character cells
+/// and drives kinsoku at column breaks; rotated runs have none and never
+/// split.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct FlowItem {
     pub extent: f32,
     pub ch: Option<char>,
-    /// This item and its predecessor came from the same source character
-    /// after a length-expanding text transform, so a column break must not
-    /// split them.
+    /// Same source char as the previous item (text transform); keep together.
     pub keep_with_previous: bool,
 }
 
@@ -40,8 +38,7 @@ pub(super) enum FlowScript {
 /// spacing passes and the column planner need.
 pub(super) struct FlowCell {
     pub cell: VerticalCell,
-    /// The character of single-character cells; classifies the cell for aki
-    /// and kinsoku.
+    /// Character of a single-character cell; classifies it for aki and kinsoku.
     pub ch: Option<char>,
     pub keep_with_previous: bool,
     pub script: FlowScript,
@@ -73,10 +70,10 @@ impl FlowCell {
         }
     }
 
-    /// Reduce the cell to a half-em frame (plus its letter-spacing). Opening
-    /// punctuation keeps its ink in the trailing half of the em, so
-    /// `pull_glyph` lifts it into the compressed cell, against the preceding
-    /// character. Returns false when the cell is already that narrow.
+    /// Shrink the cell to a half-em frame plus its letter-spacing. Opening
+    /// punctuation has its ink in the trailing half of the em, so
+    /// `pull_glyph` lifts it into the shrunk cell. Returns false when the
+    /// cell is already that narrow.
     fn shed_to_half_em(&mut self, pull_glyph: bool) -> bool {
         let target = 0.5 * self.cell.font_size + self.trailing_spacing;
         if target >= self.cell.extent {
@@ -94,10 +91,9 @@ pub(super) fn flow_items(cells: &[FlowCell]) -> Vec<FlowItem> {
     cells.iter().map(FlowCell::item).collect()
 }
 
-/// Punctuation allowed to hang past the column bottom (ぶら下げ / burasage): the
-/// ideographic and full-width comma and period. When such a mark is the item
-/// that would overflow the column, it protrudes into the margin instead of
-/// wrapping (itself and its predecessor) to the next column.
+/// Punctuation that may hang past the column bottom (ぶら下げ / burasage): the
+/// ideographic and full-width comma and period. A mark that would overflow
+/// the column hangs into the margin.
 fn can_hang(c: char) -> bool {
     matches!(c, '、' | '。' | '，' | '．')
 }
@@ -107,14 +103,13 @@ fn overflows(cursor: f32, item: &FlowItem, max_height: f32) -> bool {
     cursor > 0.0 && cursor + item.extent > max_height && !item.ch.is_some_and(can_hang)
 }
 
-/// First item of the next column when `items[i]` overflows the column that
-/// starts at `column_start`. Kinsoku: a break may not leave a
-/// forbidden-at-line-end character at the column bottom nor put a
-/// forbidden-at-line-start character at the next column top; offending
-/// predecessors move to the new column (oidashi), bounded so a pathological
-/// run cannot empty its column. `None` keeps `items[i]` in the column: it
+/// First item of the next column when `items[i]` overflows the column
+/// starting at `column_start`. Kinsoku: no forbidden-at-line-end char at the
+/// column bottom and no forbidden-at-line-start char at the next column top;
+/// offending predecessors move to the new column (oidashi), at most
+/// `MAX_KINSOKU_SHIFT` of them. `None` keeps `items[i]` in the column when it
 /// closes an atomic composite (group ruby or an expanded source scalar) that
-/// began at the column head, which has no legal internal break.
+/// began at the column head.
 fn column_break(
     items: &[FlowItem],
     column_start: usize,
@@ -143,9 +138,8 @@ fn column_break(
         break_at = skip_kept(break_at - 1);
         shifted += 1;
     }
-    // Give up on the shift when the moved items plus the current one would
-    // overflow the new column too: overflowing the wrap budget is worse than
-    // the kinsoku violation.
+    // Drop the shift if it would overflow the new column too: a kinsoku
+    // violation is better than overflowing the wrap budget.
     let shifted_extent: f32 = items[break_at..i].iter().map(|it| it.extent).sum();
     if break_at < i && shifted_extent + items[i].extent > max_height {
         break_at = i;
@@ -153,12 +147,12 @@ fn column_break(
     Some(break_at)
 }
 
-/// Assign items to columns: returns (column-index, offset-from-top) per
-/// item. An item that overflows the column height starts a new column (see
-/// `column_break`); items taller than the column occupy one on their own.
-/// Burasage marks never overflow: the next non-hanging item still sees the
-/// overflowed cursor and wraps normally, and oidashi never pulls the hung
-/// marks because they are forbidden-at-line-start, not -end.
+/// Assign items to columns, returning (column index, offset from top) per
+/// item. An item that overflows starts a new column (see `column_break`); an
+/// item taller than the column gets one to itself. Burasage marks never
+/// overflow: the next non-hanging item sees the overflowed cursor and wraps,
+/// and oidashi never pulls a hung mark since it is forbidden-at-line-start,
+/// not -end.
 pub(super) fn plan_columns(items: &[FlowItem], max_height: f32) -> Vec<(usize, f32)> {
     let mut placements: Vec<(usize, f32)> = Vec::with_capacity(items.len());
     let mut column = 0usize;
@@ -189,13 +183,11 @@ pub(super) fn is_bounded(max_height: f32) -> bool {
     max_height.is_finite() && max_height > 0.0 && max_height < f32::MAX
 }
 
-/// Offset of a column's content along the column (vertical/inline) axis for
-/// a given `text-align`. In `vertical-rl` the inline axis runs top->bottom, so
-/// Left/Start anchor to the top, Right/End to the bottom and Center to the
-/// middle of the wrap budget. `budget` is the column wrap height (the box
-/// height); an unbounded budget (auto-width, columns are snug) yields no shift.
-/// Justify yields no uniform shift here — its space is distributed between
-/// cells by `ordered_expansion_offsets`.
+/// Offset of a column's content along the inline axis for `text-align`. In
+/// `vertical-rl` that axis runs top to bottom: Left/Start anchor to the top,
+/// Right/End to the bottom, Center to the middle of `budget` (the column wrap
+/// height). An unbounded budget (auto-width) and Justify yield no shift;
+/// `ordered_expansion_offsets` spreads justify space between cells.
 pub(super) fn align_offset_along_column(align: TextAlign, budget: f32, used: f32) -> f32 {
     if !is_bounded(budget) {
         return 0.0;
@@ -208,10 +200,9 @@ pub(super) fn align_offset_along_column(align: TextAlign, budget: f32, used: f32
     }
 }
 
-/// Japanese inter-script spacing at an upright CJK <-> rotated alphabetic or
-/// numeric boundary. Punctuation and explicit whitespace do not create an
-/// automatic gap. Use the smaller adjacent font size so a large neighboring
-/// run cannot create a disproportionate gap.
+/// Japanese inter-script spacing at an upright CJK <-> rotated alphanumeric
+/// boundary; punctuation and whitespace get none. Scales by the smaller
+/// adjacent font size so a large neighbour cannot widen the gap.
 fn inter_script_spacing(
     previous: FlowScript,
     previous_font_size: f32,
@@ -241,11 +232,10 @@ fn inter_script_spacing(
     }
 }
 
-/// Give every upright <-> Western boundary its inter-script gap. The
-/// preceding cell's flow advance is adjusted so the *visible ink* edges have
-/// the target gap: logical advances alone are asymmetric around mixed
-/// fonts/glyphs (e.g. `うpenあ`) because their side bearings differ. The
-/// preceding cell's explicit trailing letter-spacing is preserved.
+/// Give every upright <-> Western boundary its inter-script gap, measured
+/// between ink edges: side bearings differ across fonts, so advances alone
+/// would space `うpenあ` unevenly. Adjusts the preceding cell's extent and
+/// keeps its trailing letter-spacing.
 pub(super) fn apply_inter_script_spacing(cells: &mut [FlowCell]) {
     for i in 1..cells.len() {
         let target_gap = inter_script_spacing(
@@ -299,12 +289,11 @@ fn embedded_trailing_aki(class: JapaneseClass) -> f32 {
     }
 }
 
-/// JLREQ punctuation and cl-30 adjacency. Full-width fonts bake the half-em
-/// aki into punctuation advances. That preferred aki stays in ordinary text,
-/// but one half-em goes at the internal boundaries defined by §3.1.4:
-/// closing punctuation sequences set solid, closing→opening retains a single
-/// half-em, opening sequences set solid after the first bracket, and
-/// middle-dot adjacency retains its own quarter-em side spacing.
+/// JLREQ punctuation and cl-30 adjacency. Full-width fonts include a half-em
+/// aki in punctuation advances. Ordinary text keeps it; at the internal
+/// boundaries of §3.1.4 one half-em goes: closing sequences set solid,
+/// closing→opening keeps one half-em, opening sequences set solid after the
+/// first bracket, and middle dots keep their quarter-em sides.
 pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], classes: &[Option<JapaneseClass>]) {
     for (i, flow) in cells.iter_mut().enumerate() {
         let Some(ch) = flow.ch else {
@@ -337,10 +326,9 @@ pub(super) fn shed_punctuation_aki(cells: &mut [FlowCell], classes: &[Option<Jap
     }
 }
 
-/// Smallest legal flow extent after oikomi. Full-width Japanese punctuation
-/// normally carries removable aki inside its one-em advance, but `vpal` may
-/// have removed that aki already. Clamp the floor to the actual shaped extent
-/// so a proportional half-em glyph frame can never be compressed again.
+/// Smallest legal flow extent after oikomi. Full-width punctuation floors at
+/// a half-em frame, or at its shaped extent when `vpal` has already removed
+/// the aki.
 pub(super) fn minimum_oikomi_extent(
     ch: Option<char>,
     extent: f32,
@@ -429,10 +417,9 @@ pub(super) fn preferred_pair_spacing(classes: &[Option<JapaneseClass>]) -> Vec<f
         .collect()
 }
 
-/// cl-04 question/exclamation marks carry an explicit one-em space after
-/// their character frame. Unlike bracket/comma/full-stop aki, this space is
-/// not embedded in the font's full-width advance, so it must exist in the
-/// flow extent before oikomi is allowed to reduce it.
+/// cl-04 question/exclamation marks take a one-em space after their frame.
+/// Fonts leave it out of the advance (unlike bracket aki), so this adds it
+/// to the flow extent, where oikomi can reduce it.
 pub(super) fn materialize_explicit_pair_spacing(
     cells: &mut [FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -457,8 +444,8 @@ fn spacing_owner(before: JapaneseClass, after: JapaneseClass, boundary: usize) -
         after,
         JapaneseClass::OpeningBracket | JapaneseClass::MiddleDot
     ) {
-        // Sequence layout removes any redundant preceding trailing half; the
-        // remaining aki is the next glyph's embedded leading space.
+        // After sequence shedding, the remaining aki is the next glyph's
+        // embedded leading space.
         (boundary + 1, true)
     } else {
         (boundary, false)
@@ -478,8 +465,8 @@ fn reduce_cell_spacing(cells: &mut [FlowCell], index: usize, amount: f32, leadin
     amount
 }
 
-/// Explicit spacing at a column edge is discarded (no trailing `！` space at
-/// the column bottom). Returns true when any spacing was removed.
+/// Discard explicit spacing at column edges (no trailing `！` space at a
+/// column bottom). Returns true when it removed any.
 fn discard_explicit_spacing_at_column_edges(
     cells: &mut [FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -509,9 +496,9 @@ fn discard_explicit_spacing_at_column_edges(
 }
 
 /// JLREQ oikomi: before wrapping a non-hanging item, try to keep it in the
-/// current column by reducing only legal aki, in table priority order. If the
-/// complete deficit cannot be recovered, leave the line untouched for the
-/// subsequent oidashi/kinsoku planner.
+/// column by reducing legal aki in table priority order. When the whole
+/// deficit cannot be recovered, leave the line to the oidashi/kinsoku
+/// planner.
 pub(super) fn apply_ordered_oikomi(
     cells: &mut [FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -604,13 +591,12 @@ fn compress_line(
     removed_from_line
 }
 
-/// Plan the columns, then trim spacing that a break left at a column edge
-/// and re-plan, since a shorter line may pull one more cell into the
-/// preceding column. Each round only shrinks a previously untrimmed cell, so
-/// the loops are bounded by the cell count.
+/// Plan the columns, then trim spacing a break left at a column edge and
+/// re-plan, since a shorter line may pull another cell into the column. Each
+/// round shrinks a not-yet-trimmed cell, so the cell count bounds the loops.
 ///
-/// Wrapped opening brackets use the JIS X 4051 tentsuki policy: their leading
-/// half-em is discarded at a column head.
+/// Opening brackets at a column head follow the JIS X 4051 tentsuki policy
+/// and drop their leading half-em.
 pub(super) fn plan_with_edge_trimming(
     cells: &mut [FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -643,9 +629,9 @@ pub(super) fn plan_with_edge_trimming(
 }
 
 /// Ordered oidashi expansion for justified columns. Stages 1–3 respect the
-/// table caps; if slack remains, stage 4 distributes it equally across every
-/// otherwise-expandable boundary, as required by JLREQ §3.8.4. Returns the
-/// extra flow offset of every cell. The last column is not justified.
+/// table caps; stage 4 spreads any remaining slack evenly over every
+/// expandable boundary (JLREQ §3.8.4). Returns each cell's extra flow offset.
+/// Skips the last column.
 pub(super) fn ordered_expansion_offsets(
     cells: &[FlowCell],
     classes: &[Option<JapaneseClass>],
@@ -760,10 +746,8 @@ mod tests {
 
     #[test]
     fn plan_columns_burasage_hangs_comma_period() {
-        // 。 overflows the two-cell column; instead of oidashi (pushing い down
-        // with it), burasage lets it hang past the column bottom. The invariant
-        // "no forbidden-at-line-start char at a column top" still holds — 。
-        // never reaches the next column's top.
+        // 。 overflows the two-cell column; burasage hangs it past the column
+        // bottom, so no oidashi pushes い down and 。 never starts a column.
         let items = vec![
             item(10.0, 'あ'),
             item(10.0, 'い'),
@@ -800,10 +784,8 @@ mod tests {
 
     #[test]
     fn plan_columns_kinsoku_shift_never_overflows_budget() {
-        // A two-item budget: moving the trailing 「「 down with the
-        // overflowing い would put three items (30.0) in a 20.0 column;
-        // the shift is dropped instead, keeping every column within the
-        // wrap budget.
+        // A two-item budget: moving 「「 down with the overflowing い would put
+        // three items (30.0) in a 20.0 column, so the planner drops the shift.
         let items = vec![
             item(10.0, 'あ'),
             item(10.0, '「'),
@@ -914,8 +896,7 @@ mod tests {
     fn closing_then_opening_keeps_half_em_aki() {
         // く」「く: the closing bracket sheds its trailing half, but the
         // opening bracket after it keeps its full em (leading half blank), so
-        // the pair keeps the half-em aki JIS X 4051 asks for instead of
-        // setting solid.
+        // the pair keeps the half-em aki of JIS X 4051.
         let content = make_content(&["く」「く"], 1000.0);
         let layout = layout_with(&provider(VMTX_TEST_FONT), &content);
         assert_eq!(layout.cells.len(), 4, "one cell per character");
@@ -1122,9 +1103,8 @@ mod tests {
 
     #[test]
     fn vpal_oikomi_preserves_half_em_punctuation_frame() {
-        // vpal has already removed the opening bracket's leading aki. A tight
-        // fixed-height column must wrap instead of offering that same half-em
-        // to oikomi and collapsing the glyph frame a second time.
+        // vpal has removed the opening bracket's leading aki, so in a tight
+        // fixed-height column oikomi cannot shrink the frame and text wraps.
         let provider = provider(VPAL_TEST_FONT);
         let content = vpal_content("あ「あ");
         let natural = layout_with(&provider, &content);

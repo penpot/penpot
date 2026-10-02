@@ -114,8 +114,8 @@ impl ShapedRun {
         )
     }
 
-    /// Spread the glyphs apart by `letter_spacing` per glyph, mirroring the
-    /// horizontal per-glyph spacing. Returns the spaced run advance.
+    /// Spreads the glyphs by `letter_spacing` each, like horizontal
+    /// per-glyph spacing. Returns the spaced run advance.
     pub(super) fn spread_glyphs(&mut self, letter_spacing: f32) -> f32 {
         if letter_spacing != 0.0 {
             for (i, position) in self.positions.iter_mut().enumerate() {
@@ -125,9 +125,9 @@ impl ShapedRun {
         self.advance + letter_spacing * self.glyphs.len() as f32
     }
 
-    /// Normalize ASCII word spaces inside a sideways Western run to JLREQ's
-    /// preferred one-third em. Shaping retains the source scalar and break
-    /// opportunity; only its advance and following glyph positions change.
+    /// Sets ASCII word spaces in a sideways Western run to JLREQ's one-third
+    /// em. The space keeps its scalar and break opportunity; only its advance
+    /// and the following glyph positions change.
     pub(super) fn normalize_word_spaces(&mut self, segment_text: &str, font_size: f32) {
         let clusters: Vec<(usize, usize)> = self.cluster_spans().collect();
         let mut accumulated_shift = 0.0f32;
@@ -232,10 +232,9 @@ fn feature(tag: &[u8; 4]) -> Feature {
     }
 }
 
-/// `vpal` is deliberately absent: SkShaper shapes on a horizontal line,
-/// where HarfBuzz would apply the feature's y-placement deltas as glyph
-/// offsets without its advance deltas. Vertical layout applies the parsed
-/// GPOS `vpal` metrics to upright cells itself.
+/// Omits `vpal`: SkShaper shapes on a horizontal line, where HarfBuzz would
+/// apply its y-placement deltas as glyph offsets without the advance deltas.
+/// Vertical layout applies the parsed GPOS `vpal` to upright cells itself.
 fn font_feature(font_features: FontFeatures) -> Option<Feature> {
     match font_features {
         FontFeatures::None => None,
@@ -321,10 +320,9 @@ fn typeface_chunks(text: &str, typefaces: &[Typeface]) -> Vec<(Range<usize>, usi
     chunks
 }
 
-/// Shape a segment with explicit per-character font fallback. Penpot's
-/// `TypefaceFontProvider` can resolve named families, but its character
-/// fallback hook is not available consistently in every Skia build. Resolve
-/// coverage here so missing glyphs never depend on that hook.
+/// Shape a segment with explicit per-character font fallback.
+/// `TypefaceFontProvider` resolves named families, but some Skia builds lack
+/// its character fallback hook, so glyph coverage is resolved here.
 pub(crate) fn shape_segment_with_fallbacks(
     text: &str,
     font_size: f32,
@@ -438,8 +436,8 @@ mod tests {
         let shift = run.rotated_baseline_shift;
         assert!(((top + bottom) / 2.0 + shift).abs() < 0.01);
 
-        // Lowercase ink does not occupy the face's full ascent/descent band;
-        // this guards against regressing to font-wide metric centring.
+        // Lowercase ink does not fill the face's ascent/descent band, so ink
+        // centring differs from font-wide metric centring.
         let (_, metrics) = run.font.metrics();
         let metrics_shift = rotated_baseline_shift(metrics.ascent, metrics.descent);
         assert!((shift - metrics_shift).abs() > 0.1);

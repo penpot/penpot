@@ -710,8 +710,8 @@ pub extern "C" fn text_editor_move_cursor(
 // ============================================================================
 
 /// Caret rectangle in page coordinates (the unrotated selrect space of the
-/// text overlay), reported independently of the blink phase. The frontend
-/// keeps the IME capture surface on it.
+/// text overlay), regardless of the blink phase. The frontend keeps the IME
+/// capture surface on it.
 #[no_mangle]
 pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
     with_state!(state, {
@@ -725,7 +725,7 @@ pub extern "C" fn text_editor_get_cursor_rect() -> *mut u8 {
         };
 
         // A preview update clears the layout; rebuild it so the rect is
-        // current right away instead of after the next render.
+        // current before the next render.
         update_text_layout_if_needed(state, shape_id);
 
         let Some(shape) = state.shapes.get(&shape_id) else {

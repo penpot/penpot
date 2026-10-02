@@ -33,10 +33,9 @@ pub enum CellKind {
         glyph: usize,
         count: usize,
     },
-    /// A character that participates in upright Japanese flow and kinsoku,
-    /// but whose font has no `vert`/`vrt2` alternate. It is rotated per cell
-    /// instead of becoming a sideways run so wrapping and editor offsets stay
-    /// character-granular.
+    /// An upright-flow character whose font lacks a `vert`/`vrt2` alternate,
+    /// rotated in its own cell so wrapping, kinsoku and editor offsets stay
+    /// per character.
     SyntheticRotated {
         run: usize,
         glyph: usize,
@@ -46,21 +45,17 @@ pub enum CellKind {
         run: usize,
     },
     TateChuYoko {
-        /// Composite of one or more shaped runs (fallback fonts each add a
-        /// run) laid side by side; `[run_start, run_start + run_count)`.
+        /// Runs `[run_start, run_start + run_count)`, laid side by side.
         run_start: usize,
         run_count: usize,
         scale: f32,
     },
     Warichu {
-        /// Two half-size sub-lines stacked side by side within the column:
-        /// runs `[run_start, run_start + first_count)` are the first (right)
-        /// sub-line, the rest up to `run_start + run_count` the second (left).
+        /// First `first_count` runs are the right sub-line, the rest the left.
         run_start: usize,
         run_count: usize,
         first_count: usize,
-        /// UTF-16 length of the first sub-line's text (the split point,
-        /// relative to the cell's `start`).
+        /// UTF-16 length of the first sub-line (split point from `start`).
         first_chars: usize,
     },
 }
@@ -75,14 +70,11 @@ pub struct VerticalCell {
     pub end: usize,
     pub column: usize,
     pub top: f32,
-    /// Advance along the column (vertical/flow axis) — from `vmtx` when
-    /// available, else the shaped horizontal advance.
+    /// Flow-axis advance, from `vmtx` when present, else the horizontal one.
     pub extent: f32,
-    /// Lower bound for oikomi reductions. This is the glyph frame after font
-    /// features such as `vpal`, before any removable pair spacing is added.
+    /// Oikomi lower bound: the glyph frame before removable pair spacing.
     pub minimum_oikomi_extent: f32,
-    /// Shaped horizontal glyph advance, used to centre the glyph on the
-    /// column axis (independent of the vertical flow `extent`).
+    /// Shaped horizontal advance, used to centre the glyph in the column.
     pub h_advance: f32,
     /// Visible glyph-ink edges along the flow axis, relative to `top`.
     pub ink_top: f32,
@@ -92,10 +84,7 @@ pub struct VerticalCell {
     pub font_size: f32,
     /// Span text decoration, painted as vertical bars along the column.
     pub decoration: Option<TextDecoration>,
-    /// Extra flow-axis (vertical) shift applied to the drawn glyph only, used to
-    /// pull half-width opening punctuation up into its compressed cell so its
-    /// ink hugs the preceding character (jlreq leading aki removal). Zero for
-    /// every other cell; never affects extent, caret, or position-data.
+    /// Draw-only flow shift for half-width opening punctuation (jlreq aki).
     pub glyph_flow_shift: f32,
 }
 
@@ -107,9 +96,7 @@ pub struct VerticalColumn {
     pub width: f32,
     /// Reserved annotation gutter before the base band (left / `under`).
     pub base_offset: f32,
-    /// Line-height-controlled column advance. Base glyphs centre on this band.
-    /// Ruby reserves additional column width but attaches to the centred base
-    /// em, so extra leading does not become base-to-ruby spacing.
+    /// Line-height column advance that base glyphs centre on.
     pub base_width: f32,
 }
 
@@ -125,8 +112,7 @@ pub struct VerticalLayout {
     /// Shaped ruby annotation runs, indexed by `RubyCell::run`.
     pub ruby_runs: Vec<ShapedRun>,
     pub ruby_cells: Vec<RubyCell>,
-    /// Shaped emphasis-mark runs (single glyph each), indexed by
-    /// `EmphasisMark::run`.
+    /// Single-glyph emphasis runs, indexed by `EmphasisMark::run`.
     pub emphasis_runs: Vec<ShapedRun>,
     pub emphasis_marks: Vec<EmphasisMark>,
     /// Per paragraph: [start, end) range into `columns`.
@@ -137,19 +123,15 @@ pub struct VerticalLayout {
     pub span_source_utf16_starts: Vec<Vec<usize>>,
     /// Per paragraph and span: transformed scalar ownership in source text.
     pub span_transforms: Vec<Vec<AppliedTextTransform>>,
-    /// Per paragraph: UTF-16 offset of every Unicode scalar boundary. Editor
-    /// positions use indices into this table, while cells and position data
-    /// keep their browser-facing UTF-16 offsets.
+    /// Per paragraph: UTF-16 offset of each scalar boundary, for editor positions.
     pub paragraph_utf16_boundaries: Vec<Vec<usize>>,
     pub width: f32,
     pub height: f32,
 }
 
 impl VerticalLayout {
-    /// Content origin (top-left of the laid-out block) in the same
-    /// coordinate space as `bounds`. In vertical-rl, block-start is the
-    /// right edge, block-center is the horizontal center and block-end is
-    /// the left edge.
+    /// Content origin (top-left of the laid-out block) in the coordinate
+    /// space of `bounds`.
     pub fn origin(&self, bounds: &Rect, align: VerticalAlign) -> (f32, f32) {
         (
             bounds.left + block_axis_offset(bounds.width(), self.width, align),
@@ -158,9 +140,9 @@ impl VerticalLayout {
     }
 }
 
-/// Horizontal offset of vertical content within its shape. The existing
-/// top/center/bottom values describe block-start/center/end; for vertical-rl
-/// those positions map to right/center/left respectively.
+/// Horizontal offset of vertical content within its shape. `VerticalAlign`
+/// top/center/bottom mean block start/center/end: right/center/left in
+/// vertical-rl.
 pub fn block_axis_offset(container_width: f32, content_width: f32, align: VerticalAlign) -> f32 {
     let slack = (container_width - content_width).max(0.0);
     match align {
@@ -170,10 +152,8 @@ pub fn block_axis_offset(container_width: f32, content_width: f32, align: Vertic
     }
 }
 
-/// The column-wrap limit for a vertical text content: auto-width shapes
-/// grow to fit (columns never wrap), everything else wraps at the shape
-/// height. This is the phase's explicit auto-size decision: auto-height
-/// behaves like fixed under vertical writing for now.
+/// Column-wrap limit: auto-width shapes grow to fit (columns never wrap);
+/// all others, auto-height included, wrap at the shape height.
 pub fn wrap_height(text_content: &TextContent, height: f32) -> f32 {
     match text_content.grow_type() {
         GrowType::AutoWidth => f32::MAX,
@@ -211,8 +191,8 @@ impl ColumnGeometry {
                 .fold(0.0, f32::max)
         };
         let ruby_over_gutter = ruby_gutter(RubySide::Over);
-        // Emphasis occupies the over/right side. Auto-clearance spans carrying
-        // both annotation types stack there; opposite-side ruby stays separate.
+        // Emphasis takes the over (right) side. Auto-clearance spans with both
+        // annotations stack there; under-side ruby stays separate.
         let emphasis_gutter = if spans.iter().any(|s| !s.text_emphasis.is_none()) {
             max_font_size * EMPHASIS_FONT_SCALE
         } else {
@@ -279,9 +259,9 @@ fn build_paragraph_flow(
     (flow, span_starts)
 }
 
-/// A CSS transform may expand one source character into several shaped
-/// cells. Keep those cells in one column so a source slice is rendered
-/// exactly once by the SVG fallback (for example `ß` -> `SS`).
+/// A CSS transform may expand one source character into several cells
+/// (`ß` -> `SS`). Keep them in one column so the SVG fallback renders each
+/// source slice once.
 fn keep_transform_expansions_together(
     flow: &mut [FlowCell],
     transforms: &[AppliedTextTransform],
@@ -298,10 +278,9 @@ fn keep_transform_expansions_together(
     }
 }
 
-/// Final flow-axis top of every cell: its planned offset, shifted by the
-/// paragraph's text-align. Justify stretches every column but the last (the
-/// last "line") to fill the wrap budget; a snug auto-width budget has no
-/// slack.
+/// Final flow-axis top of each cell: its planned offset plus the text-align
+/// shift. Justify stretches every column but the last to fill a bounded wrap
+/// height.
 fn aligned_tops(
     flow: &[FlowCell],
     classes: &[Option<JapaneseClass>],

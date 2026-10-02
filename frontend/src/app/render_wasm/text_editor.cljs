@@ -699,8 +699,8 @@
 
 (defn- span-japanese-styles
   "Japanese span attributes with their defaults filled in. Every selection
-   snapshot carries all of them, so moving onto an unstyled span clears the
-   previous span's controls instead of leaving stale values behind."
+   snapshot carries all of them, so moving onto an unstyled span resets the
+   controls."
   [span]
   (reduce-kv
    (fn [styles attr default]
@@ -717,9 +717,8 @@
    styles))
 
 (defn- span-at-offset
-  "Return the span used by the WASM editor for a collapsed caret. At a span
-   boundary the preceding span wins, matching find_text_span_at_offset in
-   render-wasm."
+  "Span the WASM editor uses for a collapsed caret. At a span boundary the
+   preceding span wins, as in find_text_span_at_offset in render-wasm."
   [paragraph offset]
   (let [spans (:children paragraph)]
     (loop [remaining-spans spans
@@ -747,9 +746,9 @@
       selected)))
 
 (defn selection-japanese-styles
-  "Read Japanese span styles for a normalized WASM selection from Penpot's
-   cached content tree. A range spanning different values reports :multiple;
-   a caret reports the style of its current span."
+  "Japanese span styles of a WASM selection, read from the cached content.
+   A range with differing values reports :multiple; a caret reports its
+   span's style."
   [content selection]
   (when (and content selection)
     (let [{:keys [start-para start-offset end-para end-offset]}
@@ -782,7 +781,7 @@
                 selected-spans)))))
 
 (defn text-editor-get-current-japanese-styles
-  "Return Japanese span styles for the active WASM editor selection."
+  "Japanese span styles of the active WASM editor selection."
   []
   (when (wasm/ready?)
     (let [shape-id  (text-editor-get-active-shape-id)
@@ -942,9 +941,9 @@
            :content  new-content})))))
 
 (defn apply-paragraph-attrs-to-range
-  "Apply paragraph level attrs to the paragraphs `selection` touches; a
-   collapsed caret means just the one it sits in. Whole-shape attrs (writing
-   mode, orientation) go to every paragraph instead, a nil value removing them."
+  "Apply paragraph attrs to the paragraphs `selection` touches (a caret
+   touches one). Whole-shape attrs (writing mode, orientation) go to every
+   paragraph; a nil value removes them."
   [content selection attrs]
   (let [{:keys [start-para end-para]} (normalize-selection selection)
         whole-attrs    (select-keys attrs jl/whole-shape-paragraph-attrs)

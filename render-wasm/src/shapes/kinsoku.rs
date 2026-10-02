@@ -1,26 +1,22 @@
 //! Japanese line-breaking rules (kinsoku shori).
 //!
-//! Skia's default break iterator allows closing punctuation, the
-//! prolonged sound mark or small kana at a line start, and opening
-//! brackets at a line end. skia-safe exposes no ICU BreakIterator, so
-//! the forbidden break opportunities are suppressed by inserting U+2060 WORD
-//! JOINER into the text handed to skparagraph. The same lossless layout-text
-//! transform inserts JLREQ quarter-em Japanese/Western boundary space and
-//! normalizes Western word spaces to one third em.
+//! Skia's default break iterator allows closing punctuation, the prolonged
+//! sound mark or small kana at a line start, and opening brackets at a line
+//! end. skia-safe exposes no ICU BreakIterator, so this module suppresses
+//! those breaks by inserting U+2060 WORD JOINER into the text handed to
+//! skparagraph. The same transform inserts the JLREQ quarter-em space at
+//! Japanese/Western boundaries and sets Western word spaces to one third em.
 //!
-//! The inserted joiners shift every UTF-16 offset reported by the laid
-//! out paragraph (position-data, caret mapping, selection rects). The
-//! [`OffsetMap`] returned along with the modified texts translates
-//! between original and joiner-shifted offsets. It is a pure function
-//! of the span texts, so any consumer can recompute it and stay
-//! consistent with the builders by construction.
+//! Inserted characters shift every UTF-16 offset the laid-out paragraph
+//! reports (position-data, carets, selection rects). [`OffsetMap`]
+//! translates between original and shifted offsets. It depends only on the
+//! span texts, so any consumer can recompute it and match the builders.
 
-/// Zero-width character whose UAX #14 class forbids breaking on either
-/// side of it.
+/// Zero-width character; its UAX #14 class forbids a break on either side.
 pub const WORD_JOINER: char = '\u{2060}';
 /// Unicode FOUR-PER-EM SPACE, used for the preferred Japanese/Western gap.
 pub const JAPANESE_WESTERN_SPACE: char = '\u{2005}';
-/// Unicode THREE-PER-EM SPACE, used for Western word spacing in Japanese text.
+/// Unicode THREE-PER-EM SPACE, used for Western word spaces.
 pub const WESTERN_WORD_SPACE: char = '\u{2004}';
 
 use super::japanese::{classify, pair_rule};
@@ -37,9 +33,7 @@ pub fn forbidden_at_line_end(c: char) -> bool {
 /// and layout-text UTF-16 offsets (the text handed to skparagraph).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct OffsetMap {
-    /// UTF-16 indices of inserted joiners or boundary spaces, ascending and
-    /// expressed in shifted coordinates. Same-length substitutions need no
-    /// entry.
+    /// Ascending shifted UTF-16 indices of inserted (not substituted) chars.
     inserted: Vec<usize>,
 }
 
@@ -49,14 +43,14 @@ impl OffsetMap {
         self.inserted.is_empty()
     }
 
-    /// Original offset for a shifted offset. An offset pointing at an inserted
-    /// character resolves to the source boundary where it was inserted.
+    /// Original offset for a shifted offset. An offset on an inserted
+    /// character resolves to the boundary where it was inserted.
     pub fn to_original(&self, shifted: usize) -> usize {
         shifted - self.inserted.iter().take_while(|&&p| p < shifted).count()
     }
 
-    /// Shifted offset for an original offset. A boundary that received a
-    /// layout character resolves after it, so carets avoid synthetic spacing.
+    /// Shifted offset for an original offset. A boundary that received an
+    /// inserted character resolves after it, so carets skip synthetic spacing.
     pub fn to_shifted(&self, original: usize) -> usize {
         let mut shifted = original;
         for &p in &self.inserted {
@@ -70,14 +64,12 @@ impl OffsetMap {
     }
 }
 
-/// Applies the horizontal Japanese layout-text transform. It inserts WORD
-/// JOINER wherever a break would violate kinsoku, inserts a quarter-em space at
-/// Japanese↔Western boundaries, and normalizes breakable ASCII word spaces to
-/// one third em. Span boundaries are transparent. Returns `None` when the
-/// paragraph needs no transformation.
-/// Apply the normal Japanese layout transform while additionally protecting
-/// annotated base units. `ruby_breaks[span] == Some(boundaries)` means that
-/// every internal scalar boundary except those UTF-16 offsets is atomic.
+/// Applies the horizontal Japanese layout-text transform: inserts WORD
+/// JOINER wherever a break would violate kinsoku, inserts a quarter-em space
+/// at Japanese↔Western boundaries, and sets breakable ASCII spaces to one
+/// third em. Span boundaries are transparent. `ruby_breaks[span] ==
+/// Some(boundaries)` forbids breaks at every internal scalar boundary of that
+/// span except those UTF-16 offsets. Returns `None` when nothing changes.
 pub fn apply_to_span_texts_with_ruby_breaks(
     span_texts: &[String],
     ruby_breaks: &[Option<Vec<usize>>],
@@ -218,8 +210,7 @@ mod tests {
 
     #[test]
     fn no_insertion_at_paragraph_start() {
-        // A leading forbidden-at-start char has no break opportunity
-        // before it; nothing to suppress.
+        // A leading start-forbidden char has no break before it to suppress.
         let (texts, _) = apply(&["。あ。"]);
         assert_eq!(texts, vec!["。あ\u{2060}。".to_string()]);
     }
@@ -458,10 +449,9 @@ mod tests {
             // long-paragraph-wrap
             "国境の長いトンネルを抜けると雪国であった。夜の底が白くなった。信号所に汽車が止まった。向側の座席から娘が立って来て、島村の前のガラス窓を落した。雪の冷気が流れこんだ。",
         ];
-        // Several widths to move the break positions around. Widths
-        // must exceed the longest unbreakable (joined) run, otherwise
-        // skparagraph rightfully falls back to an emergency mid-run
-        // break.
+        // Vary the width to move the breaks. Each width must exceed the
+        // longest joined run, or skparagraph falls back to an emergency
+        // mid-run break.
         let char_width = measure_width("国");
         for width in [9.0, 12.0, 16.5, 24.0].map(|n: f32| n * char_width) {
             for original in fixtures {
@@ -488,9 +478,9 @@ mod tests {
     fn joiner_becomes_visible_under_letter_spacing() {
         // skparagraph applies letter-spacing per cluster, INCLUDING the
         // zero-width joiner, which would double the tracking at every
-        // suppressed break. This is why callers disable kinsoku for
-        // paragraphs with a non-zero letter-spacing. If this test ever
-        // fails (Skia stops spacing ignorables), that gate can go.
+        // suppressed break, so callers disable kinsoku when letter-spacing
+        // is non-zero. If this test fails (Skia stops spacing ignorables),
+        // drop that gate.
         let collection = font_collection();
         let measure = |text: &str| {
             let mut builder = ParagraphBuilder::new(&ParagraphStyle::default(), collection.clone());

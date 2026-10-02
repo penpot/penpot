@@ -281,8 +281,7 @@ pub struct TextComposition {
     pub previous: String,
     pub current: String,
     pub is_composing: bool,
-    /// Where the preview text starts; the preview replaced by each update is
-    /// `[start, start + previous]`, independent of where the caret is.
+    /// Preview start: each update replaces `[start, start + previous]`.
     pub start: Option<TextPositionWithAffinity>,
 }
 
@@ -898,9 +897,8 @@ impl TextEditorState {
             TextDirection::LTR
         };
 
-        // In vertical-rl the physical arrow keys map onto logical navigation
-        // differently: Up/Down walk characters along the column, and Left/Right
-        // cross columns (columns advance right-to-left).
+        // In vertical-rl, Up/Down move by character along the column and
+        // Left/Right cross columns (columns advance right-to-left).
         let is_vertical = text_content.is_vertical();
         let direction = if is_vertical {
             match direction {
@@ -987,8 +985,8 @@ mod tests {
         assert_eq!((replaced.start().offset, replaced.end().offset), (2, 2));
         composition.start = Some(replaced.start());
 
-        // The caret now sits after the preview; the next update still
-        // replaces the preview itself.
+        // The caret sits after the preview; the next update still replaces
+        // the preview itself.
         composition.update("にほ");
         let replaced = composition.get_selection(&caret(0, 3));
         assert_eq!((replaced.start().offset, replaced.end().offset), (2, 3));

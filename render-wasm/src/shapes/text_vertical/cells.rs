@@ -16,8 +16,7 @@ use super::orientation::{
 };
 use super::shaping::{shape_segment_with_fallbacks, span_font_families, ShapedRun};
 
-/// Minimum scale for unconstrained `all` tate-chu-yoko. Counted digit modes
-/// derive their limit from the eligible run length instead.
+/// Smallest scale for `all` tate-chu-yoko; digit modes use 1 / run length.
 const MIN_TCY_SCALE: f32 = 0.5;
 
 /// Fonts available to the layout: the provider's registered faces and the
@@ -28,15 +27,13 @@ pub(super) struct Fonts<'a> {
     pub fallback_families: &'a [String],
 }
 
-/// Centered punctuation (jlreq class cl-05 中点類): the middle dot, the
-/// full-width colon and the full-width semicolon are placed at the centre of
-/// the em box in vertical writing rather than on the horizontal baseline.
+/// Centered punctuation (jlreq cl-05 中点類: middle dot, full-width colon and
+/// semicolon), set at the centre of the em box in vertical writing.
 fn is_centered_punctuation(c: char) -> bool {
     classify(c) == JapaneseClass::MiddleDot
 }
 
-/// Flow-axis shift that centres a glyph's ink band within its em body: moves
-/// the ink midpoint (`(ink_top + ink_bottom) / 2`) to the body midpoint.
+/// Flow-axis shift that centres a glyph's ink band in its em body.
 fn centered_flow_shift(ink_top: f32, ink_bottom: f32, em_body: f32) -> f32 {
     em_body / 2.0 - (ink_top + ink_bottom) / 2.0
 }
@@ -53,10 +50,9 @@ fn is_tcy_digit(c: char) -> bool {
     c.is_ascii_digit() || ('０'..='９').contains(&c)
 }
 
-/// Split a TCY `digits` span into pieces: maximal ASCII or full-width digit
-/// runs of 2..=max characters become upright composites, everything else
-/// keeps the normal vertical layout. Returns (piece text, span-relative
-/// UTF-16 start, tcy).
+/// Split a TCY `digits` span into pieces. Maximal ASCII or full-width digit
+/// runs of 2..=max chars are marked tcy; the rest keep normal vertical
+/// layout. Returns (piece text, span-relative UTF-16 start, tcy).
 fn split_digit_runs(text: &str, max: usize) -> Vec<(String, usize, bool)> {
     let mut pieces: Vec<(String, usize, bool)> = Vec::new();
     let mut utf16 = 0usize;
@@ -92,9 +88,7 @@ pub(super) struct SpanCells<'a> {
     paint: usize,
     /// UTF-16 offset of the span in its paragraph's layout text.
     start: usize,
-    /// The span's own font first, then emoji and the registered fallback
-    /// fonts. Shaping resolves glyph coverage explicitly and splits runs at
-    /// typeface boundaries.
+    /// The span's own font, then emoji and the registered fallback fonts.
     families: Vec<String>,
 }
 
@@ -165,10 +159,7 @@ impl<'a> SpanCells<'a> {
         if self.span.is_warichu() && self.push_warichu(text, runs, cells) {
             return;
         }
-        // `digits` combines runs of 2..=max consecutive ASCII or full-width
-        // digits (max 4, or 2/3 for the counted variants) into one upright
-        // composite; the rest of the span flows through the normal
-        // orientation segmentation.
+        // `digits` merges each run of 2..=max digits into one upright cell.
         let pieces = match combine.digits_max() {
             Some(max) => split_digit_runs(text, max),
             None => vec![(text.to_string(), 0, false)],
@@ -193,11 +184,10 @@ impl<'a> SpanCells<'a> {
         }
     }
 
-    /// Compose `piece` (a whole TCY span or a digit run inside one) into one
-    /// upright composite cell, shaping with the first family that covers the
-    /// piece and composing any fallback runs side by side. Returns false when
-    /// the composite would compress below `min_scale`; the caller then falls
-    /// back to the normal vertical segmentation.
+    /// Compose `piece` (a whole TCY span or a digit run in one) into one
+    /// upright composite cell, with fallback runs side by side. Returns false
+    /// when the composite would scale below `min_scale`; the caller then uses
+    /// normal vertical layout.
     fn push_tate_chu_yoko(
         &self,
         piece: &str,
@@ -206,12 +196,8 @@ impl<'a> SpanCells<'a> {
         runs: &mut Vec<ShapedRun>,
         cells: &mut Vec<FlowCell>,
     ) -> bool {
-        // Ruby and other span-level formatting can split an otherwise
-        // continuous vertical run into a one-character span while preserving
-        // an inherited `text-combine-upright: all`. A single CJK character is
-        // already upright; routing it through the horizontal TCY path can
-        // scale it down to fit the font's line metrics and make it smaller
-        // than adjacent base characters.
+        // A lone upright CJK char (e.g. a ruby base span that inherits `all`)
+        // skips TCY, which would shrink it below its neighbours.
         let mut chars = piece.chars();
         if matches!((chars.next(), chars.next()), (Some(ch), None) if is_upright_char(ch)) {
             return false;
@@ -264,9 +250,9 @@ impl<'a> SpanCells<'a> {
     }
 
     /// Warichu (割注): the span becomes one composite cell holding two
-    /// half-size sub-lines laid side by side within the column (the first
-    /// sub-line on the right, jlreq reading order), split by
-    /// `warichu_split_chars`. Returns false when a sub-line shapes empty.
+    /// half-size sub-lines side by side in the column (the first on the
+    /// right, jlreq reading order), split by `warichu_split_chars`. Returns
+    /// false when a sub-line shapes empty.
     fn push_warichu(
         &self,
         text: &str,
@@ -291,8 +277,7 @@ impl<'a> SpanCells<'a> {
         };
         runs.extend(first_runs);
         runs.extend(second_runs);
-        // Two half-em sub-columns side by side fill the em, the default
-        // `h_advance`.
+        // Two half-em sub-columns fill the em, the default `h_advance`.
         let end = self.start + text.encode_utf16().count();
         let cell = self.cell(kind, self.start, end, extent);
         cells.push(FlowCell::new(
@@ -317,9 +302,7 @@ impl<'a> SpanCells<'a> {
         let font_size = self.span.font_size;
         let letter_spacing = self.span.letter_spacing;
         let vmetrics = vertical_metrics(&run.font);
-        // vpal deltas apply here in layout, not in the shaper: SkShaper
-        // shapes on a horizontal line, where vertical GPOS positioning never
-        // fires.
+        // vpal applies here: SkShaper's horizontal shaping skips vertical GPOS.
         let vpal = (self.span.font_features == FontFeatures::Vpal)
             .then(|| vpal_table(&run.font))
             .flatten();
@@ -336,13 +319,7 @@ impl<'a> SpanCells<'a> {
                 advance if advance > 0.0 => advance,
                 _ => font_size,
             };
-            // Flow down the column by the true vertical advance when the font
-            // has `vmtx`. Without it, fall back to the horizontal advance,
-            // which is exact for full-width CJK. A character that is upright
-            // only because `text-orientation: upright` forced it (e.g. a Latin
-            // letter) is far narrower than an em and would collide with the
-            // following character, so floor it to a full em, matching the
-            // browser's upright behavior.
+            // No `vmtx`: h-advance, with forced-upright Latin floored to an em.
             let horizontal_fallback = if ch.is_some_and(|c| !is_upright_char(c)) {
                 h_advance.max(font_size)
             } else {
@@ -358,10 +335,7 @@ impl<'a> SpanCells<'a> {
                 })
                 .filter(|advance| *advance > 0.0)
                 .unwrap_or(horizontal_fallback);
-            // vpal: the font's advance delta tightens the cell and its
-            // placement delta lifts the drawn ink to keep it inside. The
-            // tightened extent flows into caret, position-data and the aki
-            // sheds (which skip already-half-width cells).
+            // vpal tightens the cell and lifts the ink by the font's deltas.
             let vpal_delta = vpal
                 .as_ref()
                 .and_then(|table| table.cluster_delta(glyphs, font_size));
@@ -381,9 +355,7 @@ impl<'a> SpanCells<'a> {
             let (ink_top, ink_bottom) = ink.unwrap_or((0.0, extent - letter_spacing));
             let (mut ink_top, mut ink_bottom) =
                 (ink_top + vpal_flow_shift, ink_bottom + vpal_flow_shift);
-            // Centre middle-dot / colon / semicolon ink in the em body; the
-            // shift moves the drawn glyph only. A vpal-covered glyph keeps the
-            // font's own centring instead.
+            // Centre cl-05 ink in the em body, unless vpal already centres it.
             let glyph_flow_shift = if !synthetic_rotation
                 && vpal_delta.is_none()
                 && ch.is_some_and(is_centered_punctuation)
@@ -423,8 +395,8 @@ impl<'a> SpanCells<'a> {
         }
     }
 
-    /// One cell for a whole sideways Western run. Its glyphs spread down the
-    /// column by letter-spacing (post-rotation +x runs down the column).
+    /// One cell for a whole sideways Western run. Letter-spacing spreads its
+    /// glyphs down the column (post-rotation +x).
     fn rotated_cell(
         &self,
         segment: &Segment,
@@ -449,8 +421,7 @@ impl<'a> SpanCells<'a> {
             .ink_bounds()
             .map_or((0.0, extent - letter_spacing), |ink| (ink.left, ink.right));
         let cell = VerticalCell {
-            // Rotated runs draw from `run.positions`; centring doesn't read
-            // `h_advance`.
+            // Unused for centring: rotated runs draw from `run.positions`.
             h_advance: run.advance,
             ink_top,
             ink_bottom,
@@ -493,11 +464,8 @@ mod tests {
 
     #[test]
     fn upright_narrow_latin_reserves_a_full_em_without_vmtx() {
-        // Under text-orientation: upright, Latin letters are set upright. The
-        // Latin test face carries no `vmtx`, so the flow advance must fall back
-        // to a synthesized em instead of the (much narrower) horizontal advance;
-        // otherwise the letters pack together and collide with the following
-        // character.
+        // Under text-orientation: upright, Latin letters stand upright. The
+        // test face has no `vmtx`, so each letter advances a full em.
         let em = 20.0;
         let mut content = make_content(&["ab"], 1000.0);
         content.paragraphs_mut()[0].children_mut()[0].text_orientation = TextOrientation::Upright;
@@ -537,8 +505,8 @@ mod tests {
             panic!("expected a warichu cell");
         };
         assert!(first_count >= 1 && run_count > first_count);
-        // Two chars per sub-line at half size: the block's flow extent is
-        // roughly one em, far below the four em of normal layout.
+        // Two half-size chars per sub-line: about one em, not the four em of
+        // normal layout.
         assert!(
             cell.extent < 2.0 * 20.0,
             "two half-size sub-lines take about one em, got {}",
@@ -627,8 +595,8 @@ mod tests {
 
     #[test]
     fn tate_chu_yoko_wide_run_falls_back_to_normal_layout() {
-        // A run far wider than the em would compress below MIN_TCY_SCALE; it is
-        // not combined into a squished composite but laid out normally.
+        // A run far wider than the em would scale below MIN_TCY_SCALE, so it
+        // gets normal layout.
         let mut content = make_content_with_spans(&["123456789"], 400.0);
         content.paragraphs_mut()[0].children_mut()[0]
             .set_text_combine_upright(TextCombineUpright::All);
@@ -749,9 +717,8 @@ mod tests {
 
     #[test]
     fn letter_spacing_extends_upright_cells() {
-        // Each upright cluster gains `letter_spacing` of flow advance, so
-        // cells stack further apart down the column; the centring width
-        // (`h_advance`) is unaffected.
+        // Each upright cluster gains `letter_spacing` of flow advance; the
+        // centring width (`h_advance`) stays the same.
         let plain = layout_content(&spaced_content("あい", 0.0), 1000.0);
         let spaced = layout_content(&spaced_content("あい", 5.0), 1000.0);
         assert_eq!(plain.cells.len(), spaced.cells.len());
@@ -807,9 +774,9 @@ mod tests {
         );
     }
 
-    // A tiny Noto Sans JP subset carrying `vmtx`/`vhea`: U+3031 (〱, the
-    // vertical kana repeat mark) has a 2em vertical advance vs a 1em
-    // horizontal advance; U+3042/U+304F are symmetric controls.
+    // A tiny Noto Sans JP subset with `vmtx`/`vhea`: U+3031 (〱, vertical kana
+    // repeat mark) advances 2em vertically and 1em horizontally;
+    // U+3042/U+304F are symmetric controls.
 
     #[test]
     fn vertical_advance_uses_vmtx() {
@@ -900,9 +867,9 @@ mod tests {
 
     #[test]
     fn vpal_opening_bracket_uses_font_placement() {
-        // In the middle of a line a normal opening bracket keeps its leading
-        // aki. Under vpal its placement still comes from the font's own
-        // YPlacement (481 units), not a synthetic sequence shed.
+        // Mid-line, an opening bracket keeps its leading aki. Under vpal its
+        // placement comes from the font's YPlacement (481 units), not a
+        // synthetic sequence shed.
         let provider = provider(VPAL_TEST_FONT);
         let shed = layout_with(&provider, &vpal_content("あ「あ", FontFeatures::None));
         let vpal = layout_with(&provider, &vpal_content("あ「あ", FontFeatures::Vpal));
@@ -930,8 +897,7 @@ mod tests {
         assert!(is_centered_punctuation('：'));
         assert!(is_centered_punctuation('；'));
         assert!(!is_centered_punctuation('あ'));
-        // Ink hugging the bottom of the body (14..18 in a 20 body) shifts up so
-        // its midpoint (16) lands on the body midpoint (10): shift == -6.
+        // Ink at 14..18 in a 20 body: midpoint 16 moves to 10, so shift == -6.
         let shift = centered_flow_shift(14.0, 18.0, 20.0);
         assert!((shift + 6.0).abs() < 1e-4, "expected -6, got {shift}");
         // Already-centred ink needs no shift.

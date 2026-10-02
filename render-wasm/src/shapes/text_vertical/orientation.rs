@@ -1,8 +1,7 @@
 use crate::shapes::TextOrientation;
 
-/// Emoji ranges recognized by the frontend font-loader. Emoji use their
-/// intrinsic upright presentation in vertical flow instead of rotating like
-/// Latin text under `text-orientation: mixed`.
+/// Emoji ranges recognized by the frontend font-loader. Emoji stay upright
+/// in vertical flow; Latin text rotates under `text-orientation: mixed`.
 pub(super) fn is_emoji_char(c: char) -> bool {
     matches!(u32::from(c),
         0x2300..=0x23FF
@@ -35,12 +34,11 @@ pub(super) fn is_upright_char(c: char) -> bool {
         )
 }
 
-/// Characters whose horizontal glyph needs a vertical alternate. `vert` /
-/// `vrt2` normally supplies that alternate; when the selected face has no
-/// such substitution, rotate the horizontal glyph clockwise as a legible
-/// fallback. The set covers UAX #50 `Tr`, plus comma/full-stop punctuation
-/// whose untransformed glyph otherwise occupies the wrong half of the
-/// vertical em box.
+/// Characters whose horizontal glyph needs a vertical alternate, normally
+/// from `vert` / `vrt2`. When the face has no such substitution, the
+/// horizontal glyph rotates clockwise as a fallback. Covers UAX #50 `Tr`,
+/// plus comma/full-stop punctuation whose plain glyph sits in the wrong
+/// half of the vertical em box.
 pub(super) fn uses_rotated_vertical_fallback(c: char) -> bool {
     matches!(u32::from(c),
         0x2018..=0x2019 // single quotation marks
@@ -83,10 +81,10 @@ pub(super) fn segment_by_orientation(text: &str, orientation: TextOrientation) -
     for c in text.chars() {
         let upright = orientation == TextOrientation::Upright || is_upright_char(c);
         let emoji = is_emoji_char(c);
-        // CJK and emoji are both upright, but keep a shaping boundary between
-        // them so the segment probe can explicitly select the emoji family.
-        // The provider's generic fallback iterator does not reliably switch
-        // from a registered CJK face to a registered color-emoji face.
+        // CJK and emoji are both upright, but split them so the segment
+        // probe can select the emoji family: the provider's generic fallback
+        // iterator does not reliably switch from a CJK face to a color-emoji
+        // face.
         match segments.last_mut() {
             Some(last)
                 if last.upright == upright

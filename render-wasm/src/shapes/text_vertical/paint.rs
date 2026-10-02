@@ -12,10 +12,9 @@ use super::font_tables::upright_baseline;
 use super::layout::{column_base_center, layout_for_box, CellKind, VerticalCell, VerticalLayout};
 use super::shaping::{single_glyph_blob, ShapedRun};
 
-/// One text blob placed in document space: drawn at `offset` in the local
-/// space that `transform` maps to the document (identity when `None`).
-/// Canvas painting and outline export consume the same draws, so both stay
-/// in sync for every cell kind.
+/// One text blob drawn at `offset` in the local space that `transform` maps
+/// to the document (identity when `None`). Canvas painting and outline export
+/// share these draws, so they match for every cell kind.
 struct GlyphDraw {
     blob: TextBlob,
     offset: SkPoint,
@@ -155,9 +154,8 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
     }
 }
 
-/// One warichu sub-line: upright half-size glyphs stacked down the
-/// sub-column centred on `x_center`, clusters kept together like the normal
-/// upright path.
+/// One warichu sub-line: half-size upright glyphs stacked down the
+/// sub-column centred on `x_center`, one cluster per cell.
 fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<GlyphDraw> {
     let mut draws = Vec::new();
     let mut cursor = y_top;
@@ -181,10 +179,9 @@ fn warichu_line_draws(runs: &[ShapedRun], x_center: f32, y_top: f32) -> Vec<Glyp
     draws
 }
 
-/// One column's slice of a ruby annotation stacked upright in its column's
-/// ruby gutter. Each glyph's flow-axis position comes from the whole base
-/// span; each glyph is centred across the gutter using its own
-/// fallback-font run.
+/// One column's slice of a ruby annotation, stacked upright in the column's
+/// ruby gutter. Flow positions come from the whole base span; each glyph is
+/// centred across the gutter by its own fallback-font run.
 fn ruby_draws(layout: &VerticalLayout, ruby: &RubyCell, origin: (f32, f32)) -> Vec<GlyphDraw> {
     let column = &layout.columns[ruby.column];
     let gutter_center = origin.0
@@ -361,8 +358,7 @@ fn paths_from_layout(
     paths
 }
 
-/// Convert the custom vertical layout to glyph-outline paths using the same
-/// cells, composite transforms, annotations and alignment as the canvas pass.
+/// Glyph-outline paths of the vertical layout, matching the canvas pass.
 pub fn vertical_text_paths(
     text_content: &TextContent,
     vertical_align: VerticalAlign,
@@ -376,14 +372,11 @@ pub fn vertical_text_paths(
     paths_from_layout(&layout, &bounds, vertical_align, antialias)
 }
 
-/// Developer overlay: draw a jlreq-style character-frame grid over the
-/// laid-out vertical cells. For every column it outlines the column band;
-/// for every cell it draws the advance box (the real layout cell), the
-/// virtual body / em square centred on the column axis, and the glyph-ink
-/// band. This exposes solid-setting, aki, letter-spacing and column
-/// planning visually, mirroring the grids in the jlreq figures. It is never
-/// emitted to exported or persisted output — only the on-screen fills pass
-/// calls it, gated by the `TEXT_GRID_VISIBLE` render flag.
+/// Developer overlay: a jlreq-style character-frame grid. Outlines each
+/// column band and, per cell, the advance box, the virtual body / em square
+/// centred on the column axis, and the glyph-ink band, so aki and
+/// letter-spacing are visible. Only the on-screen fills pass calls it, behind
+/// the `TEXT_GRID_VISIBLE` render flag; it never reaches exported output.
 pub fn paint_grid(canvas: &Canvas, layout: &VerticalLayout, bounds: &Rect, align: VerticalAlign) {
     let (origin_x, origin_y) = layout.origin(bounds, align);
 
@@ -462,9 +455,9 @@ pub fn paint_grid(canvas: &Canvas, layout: &VerticalLayout, bounds: &Rect, align
 }
 
 /// Paint the vertical glyph shadows. The shadow paint carries the
-/// blur/offset image filter; drawing the glyphs directly through it renders
-/// each glyph's shadow without allocating a full-content offscreen layer
-/// (a `save_layer` with the filter can exceed GPU limits on tall columns).
+/// blur/offset image filter, so glyphs draw through it with no offscreen
+/// layer (a `save_layer` with the filter can exceed GPU limits on tall
+/// columns).
 pub fn paint_drop_shadow(
     canvas: &Canvas,
     layout: &VerticalLayout,
@@ -478,10 +471,9 @@ pub fn paint_drop_shadow(
     paint_glyphs(canvas, layout, bounds, vertical_align, &paint);
 }
 
-/// Paint a stroke masked to the vertical glyph silhouettes. Center strokes
-/// draw the stroked outline directly; inner/outer strokes are masked with
-/// `SrcIn` / `SrcOut` against the glyph silhouette (mirrors the horizontal
-/// masked-stroke path).
+/// Paint a stroke on the vertical glyphs. Center strokes draw directly;
+/// inner/outer strokes mask with `SrcIn` / `SrcOut` against the glyph
+/// silhouette, as the horizontal path does.
 pub fn paint_stroke(
     canvas: &Canvas,
     layout: &VerticalLayout,
@@ -562,9 +554,7 @@ fn paint_masked_stroke(
 }
 
 fn text_blob_path(mut blob: TextBlob, offset: impl Into<SkPoint>) -> skia::Path {
-    // SkParagraph normalizes extracted glyph outlines against the blob's ink
-    // bounds. Restore that origin before applying the draw offset so the path
-    // occupies the same document coordinates as Canvas::draw_text_blob.
+    // get_path is relative to the blob's ink bounds; add them back to match.
     let bounds = *blob.bounds();
     let offset = offset.into();
     SkiaParagraph::get_path(&mut blob).with_offset((offset.x + bounds.left, offset.y + bounds.top))
@@ -584,11 +574,10 @@ fn push_text_path(
     paths.push((path, paint));
 }
 
-/// Decoration bar geometry for a cell in absolute coordinates. Underline
-/// runs along the *left* side of the column (the under side in
-/// `vertical-rl`); line-through runs down the column centre. Both span the
-/// cell's vertical extent so consecutive decorated cells tile a continuous
-/// bar.
+/// Decoration bar of a cell in absolute coordinates. Underline runs along
+/// the *left* side of the column (the under side in `vertical-rl`);
+/// line-through runs down the centre. Both span the cell's extent, so
+/// adjacent decorated cells form one bar.
 fn decoration_bar(
     layout: &VerticalLayout,
     cell: &VerticalCell,
@@ -682,12 +671,9 @@ mod tests {
         let underline = decoration_bar(&layout, cell, ox, oy, false);
         let strike = decoration_bar(&layout, cell, ox, oy, true);
 
-        // Underline sits left of the column axis; line-through is centered.
         assert!(underline.center_x() < x_center);
         assert!((strike.center_x() - x_center).abs() < 0.01);
-        // Both bars span the cell's vertical extent.
         assert!((underline.height() - cell.extent).abs() < 0.01);
-        // Bar thickness is at least 1px.
         assert!(underline.width() >= 1.0 - 0.01);
     }
 
@@ -733,9 +719,8 @@ mod tests {
         let mut surface = skia::surfaces::raster_n32_premul((256, 256)).unwrap();
         let canvas = surface.canvas();
 
-        // Shape transforms are applied on the caller's canvas. Exercise a
-        // non-trivial transform with mixed upright/rotated cells so every
-        // vertical paint pass remains transform-safe.
+        // Callers apply shape transforms to the canvas; run every pass under
+        // a non-trivial transform with upright and rotated cells.
         canvas.translate((12.0, 8.0));
         canvas.rotate(7.0, Some((64.0, 64.0).into()));
 
@@ -748,7 +733,7 @@ mod tests {
             &Paint::default(),
         );
 
-        // With a real drop-shadow image filter (as `drop_shadow_paints` builds).
+        // A real drop-shadow image filter, as `drop_shadow_paints` builds.
         let mut shadow_paint = Paint::default();
         shadow_paint.set_image_filter(skia::image_filters::drop_shadow(
             (12.0, 12.0),

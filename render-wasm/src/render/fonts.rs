@@ -121,10 +121,9 @@ impl FontStore {
         Ok(())
     }
 
-    /// Upgrade an already-uploaded family to participate in character
-    /// fallback. Font bytes are cached independently from the role in which a
-    /// face is used, so a family may first arrive as a document font and only
-    /// later be requested as a fallback.
+    /// Upgrade an already-uploaded family to take part in character fallback.
+    /// Font bytes are cached apart from a face's role, so a family may arrive
+    /// as a document font and later be requested as a fallback.
     pub fn mark_as_fallback(&mut self, family: &FontFamily) {
         if self.has_family(family, false) {
             self.fallback_fonts.insert(format!("{}", family));

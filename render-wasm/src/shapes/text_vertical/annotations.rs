@@ -1,7 +1,7 @@
 // Ruby (furigana) and emphasis marks (圏点) in vertical flow. Annotations
-// stay out of `cells`, so base metrics, caret geometry and position data of
-// the base text never see them; they are placed from the base cells' final
-// columns and flow extents.
+// stay out of `cells`, so base metrics, caret geometry and position data
+// ignore them; they are placed from the base cells' final columns and flow
+// extents.
 
 use skia_safe::{self as skia, Font};
 
@@ -24,23 +24,18 @@ pub struct RubyGlyph {
     pub utf16_end: usize,
 }
 
-/// A ruby annotation placed alongside one column of base characters.
-/// Painted from `ruby_runs`; kept out of `cells` so base metrics and caret
-/// geometry are unaffected.
+/// A ruby annotation beside one column of base characters, painted from
+/// `ruby_runs`.
 #[derive(Debug, Clone)]
 pub struct RubyCell {
-    /// Ordered glyphs for this base column. Each retains the shaped run that
-    /// supplied its font so fallback boundaries do not drop ruby content.
+    /// Glyphs in order; each keeps its shaped run so fallback fonts survive.
     pub glyphs: Vec<RubyGlyph>,
     pub paragraph: usize,
     pub span: usize,
     pub column: usize,
-    /// Flow-axis (top, extent) of each base character this ruby annotates,
-    /// in flow order, restricted to the annotated column. Group ruby spreads
-    /// the annotation over the union; mono ruby maps ruby glyphs onto the
-    /// individual segments.
+    /// Flow-axis (top, extent) of each annotated base character in the column.
     pub base_segments: Vec<(f32, f32)>,
-    /// Final flow-axis positions computed from the explicit ruby mapping.
+    /// Flow-axis top of each glyph.
     pub glyph_tops: Vec<f32>,
     pub font_size: f32,
     pub base_font_size: f32,
@@ -48,10 +43,9 @@ pub struct RubyCell {
     pub paint: usize,
 }
 
-/// One emphasis mark (圏点 / bouten) drawn beside a base character. Kept out of
-/// `cells` like ruby, so base metrics and caret geometry never see it. The
-/// mark glyph is the single-glyph `run`; it is centred on its base cell's flow
-/// extent and drawn in the column's right-side gutter with the cell's paint.
+/// One emphasis mark (圏点 / bouten) beside a base character: the
+/// single-glyph `run`, centred on the base cell's flow extent in the column's
+/// right-side gutter.
 pub struct EmphasisMark {
     pub run: usize,
     /// Index of the annotated base cell in `VerticalLayout::cells`.
@@ -61,9 +55,9 @@ pub struct EmphasisMark {
     pub outside_offset: f32,
 }
 
-/// Return the proportional item range belonging to a contiguous slice of the
-/// base text. This keeps a ruby reading monotonic when its base wraps across
-/// columns while ensuring the final column receives any rounding remainder.
+/// Item range proportional to a contiguous slice of the base text. Keeps a
+/// reading monotonic when its base wraps across columns; the final slice gets
+/// the rounding remainder.
 fn proportional_range(
     item_count: usize,
     base_start: usize,
@@ -83,18 +77,14 @@ fn proportional_range(
     start.min(item_count)..end.min(item_count)
 }
 
-/// Distribute `count` ruby glyphs of the given `advance` along a single base
-/// segment `[seg_top, seg_top + seg_extent)`, returning each glyph's flow-axis
-/// top. Two jlreq regimes:
+/// Flow-axis top of each of `count` ruby glyphs of `advance` along the base
+/// segment `[seg_top, seg_top + seg_extent)`. Per jlreq:
 ///
-/// - Ruby no longer than the base (`Lr <= seg_extent`): even distribution
-///   (均等割り付け). Each glyph gets an equal slot `seg_extent / count` and is
-///   centred in its slot, which yields equal inter-glyph gaps and half gaps at
-///   both ends.
-/// - Ruby longer than the base (`Lr > seg_extent`): the glyphs are packed at
-///   their own advance and the block is centred on the base, overhanging both
-///   ends symmetrically (オーバーハング). The per-end overhang is capped at one
-///   ruby em so a long annotation cannot swallow its neighbours' cells.
+/// - Ruby that fits the base is placed by `align`; `SpaceAround` is even
+///   distribution (均等割り付け): equal slots, each glyph centred in its slot.
+/// - Longer ruby packs at its own advance and overhangs the base start
+///   (オーバーハング) by half the overflow, capped at one ruby em so it cannot
+///   cover its neighbours. `RubyOverhang::None` starts it at the base top.
 pub(crate) fn distribute_ruby_tops(
     seg_top: f32,
     seg_extent: f32,
@@ -140,10 +130,9 @@ pub(crate) fn distribute_ruby_tops(
     }
 }
 
-/// Cross-axis start of a vertical ruby strip. Line height controls the column
-/// advance (`base_width`), but must not become spacing between an annotation
-/// and its base glyph. Centre the base em in that advance and attach ruby to
-/// the em edge; any extra leading remains outside the base+ruby group.
+/// Cross-axis start of a vertical ruby strip. Ruby attaches to the edge of the
+/// base em, centred in the column advance (`base_width`), so line height adds
+/// no gap between ruby and base.
 pub(super) fn ruby_strip_x(
     column: &VerticalColumn,
     ruby_font_size: f32,
@@ -219,11 +208,10 @@ pub(super) fn ruby_base_units(
         .collect()
 }
 
-/// Long ruby with no slack: grow the base span's flow extent *before*
-/// column planning so the wrap itself makes room (forced spreading). The
-/// growth becomes inter-character gaps, so only the cells before the last
-/// one grow. Single-character bases keep the capped-overhang behaviour of
-/// `spread_ruby_base_cells`, unless overhang is prohibited.
+/// Grow the flow extent of base cells under long ruby before column planning,
+/// so wrapping makes room (forced spreading). The growth goes into gaps
+/// between characters, so the last cell keeps its extent. A single-character
+/// base grows only when overhang is prohibited; otherwise the ruby overhangs.
 pub(super) fn grow_ruby_bases(flow: &mut [FlowCell], ruby_units: &[RubyBaseUnit]) {
     for unit in ruby_units {
         let indices: Vec<usize> = (0..flow.len())
@@ -250,12 +238,9 @@ pub(super) fn grow_ruby_bases(flow: &mut [FlowCell], ruby_units: &[RubyBaseUnit]
     }
 }
 
-/// Expand gaps between already-placed base cells for long ruby annotations.
-///
-/// This is deliberately post-placement and bounded: it only shifts later base
-/// cells in the same span/column, and only into slack before the next cell (or
-/// the column bottom). It avoids re-wrapping columns while making the base span
-/// long enough for common long compound-word readings when there is room.
+/// Widen gaps between placed base cells under long ruby. Shifts only later
+/// cells of the same span and column, and only into slack before the next
+/// cell or the column bottom, so columns never re-wrap.
 pub(super) fn spread_ruby_base_cells(
     cells: &mut [VerticalCell],
     ruby_units: &[RubyBaseUnit],
@@ -391,10 +376,9 @@ fn ruby_glyphs(
     glyphs
 }
 
-/// Ruby (furigana) placement. Runs after column placement because a ruby
-/// annotation's strip is positioned from its base characters' final column
-/// and flow extent. A reading whose base wraps is partitioned across the
-/// columns in proportion to their base characters.
+/// Ruby (furigana) placement. Runs after column placement, since ruby follows
+/// its base's final column and flow extent. A reading whose base wraps is
+/// split across columns in proportion to their base characters.
 pub(super) fn layout_ruby(
     text_content: &TextContent,
     cells: &[VerticalCell],
@@ -478,10 +462,9 @@ pub(super) fn layout_ruby(
     (ruby_runs, ruby_cells)
 }
 
-/// Emphasis marks (圏点 / bouten): one mark glyph per upright base cell of
-/// every span that carries `text_emphasis`, drawn beside the cell in the
-/// right-side gutter. The mark is shaped once per span. Whitespace and
-/// Japanese punctuation cells get no mark (CSS `text-emphasis` behaviour).
+/// Emphasis marks (圏点 / bouten): one mark per upright base cell of each
+/// span with `text_emphasis`, shaped once per span. Whitespace and Japanese
+/// punctuation get no mark, as in CSS `text-emphasis`.
 pub(super) fn layout_emphasis(
     text_content: &TextContent,
     cells: &[VerticalCell],
@@ -822,9 +805,8 @@ mod tests {
 
     #[test]
     fn ruby_shorter_than_base_distributes_evenly() {
-        // One base char (extent 100) with 2 ruby glyphs at advance 50: the
-        // combined ruby line (100) equals the base, so glyphs sit in equal
-        // slots of 50, each centred (slot/2 - advance/2 = 0 offset).
+        // A ruby line of 2 x 50 equals the base extent (100): one glyph per
+        // slot, with no offset.
         let tops = distribute_ruby_tops(
             0.0,
             100.0,
@@ -843,8 +825,8 @@ mod tests {
             "second ruby glyph one slot down"
         );
 
-        // A wide base (extent 200) with 2 glyphs of advance 50 must spread out
-        // (slot 100) rather than pack tight at advance 50.
+        // A wide base (extent 200) spreads 2 glyphs of advance 50 into slots
+        // of 100.
         let spread = distribute_ruby_tops(
             0.0,
             200.0,
@@ -865,10 +847,8 @@ mod tests {
 
     #[test]
     fn ruby_longer_than_base_overhangs_symmetrically() {
-        // Base extent 40, four ruby glyphs of advance 20 (line 80 > 40): the
-        // block centres on the base and overhangs both ends. Overflow is 40,
-        // per-end overhang 20 (capped at one ruby em = 20), so it starts 20
-        // above the base top.
+        // A ruby line of 80 over a 40 base centres on the base, overhanging
+        // each end by 20 (the one-em cap).
         let tops = distribute_ruby_tops(
             0.0,
             40.0,
@@ -993,10 +973,9 @@ mod tests {
 
     #[test]
     fn ruby_base_spreading_forces_room_when_no_slack() {
-        // Base 日本 (2 em = 40) with a 6-glyph half-em reading (60) followed
-        // by 語 in a 60 budget: there is no post-placement slack, so the base
-        // extents must grow before planning and push the follower to the next
-        // column instead of falling back to overhang.
+        // Base 日本 (40) with a 60-long reading, then 語, in a 60 column: with
+        // no slack after placement, the base grows before planning and pushes
+        // 語 to the next column.
         let mut content = make_content_with_spans(&["日本", "語"], 60.0);
         content.paragraphs_mut()[0].children_mut()[0].ruby = "にほんごです".to_string();
         let layout = layout_content(&content, 60.0);

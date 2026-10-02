@@ -271,7 +271,7 @@ fn propagate_transform(
                     let width_before = text_content.size.width;
                     let height_before = text_content.size.height;
                     let (new_width, new_height) = if text_content.is_vertical() {
-                        // Vertical auto-height fixes the physical height (the
+                        // Vertical auto-height keeps the physical height (the
                         // column wrap axis) and grows width as columns are added.
                         if height_changed {
                             let mut clone = text_content.clone();
@@ -288,8 +288,8 @@ fn propagate_transform(
                         (shape_bounds_after.width(), height_before)
                     };
                     // Reflow only when the grow axis (the WASM-computed
-                    // dimension) changes; the wrap axis is driven by the
-                    // resize itself.
+                    // dimension) changes; the resize itself sets the wrap
+                    // axis.
                     let grow_axis_changed = if text_content.is_vertical() {
                         !is_close_to(width_before, new_width)
                     } else {

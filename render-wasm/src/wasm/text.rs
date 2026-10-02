@@ -108,8 +108,7 @@ pub struct RawParagraphData {
     text_transform: RawTextTransform,
     writing_mode: RawWritingMode,
     text_orientation: RawTextOrientation,
-    // Explicit padding so the CLJS writer and this struct agree on a
-    // 4-byte-aligned layout; always written as zero.
+    // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
     _padding: [u8; 2],
     line_height: f32,
     letter_spacing: f32,
@@ -149,8 +148,7 @@ pub struct RawTextSpan {
     ruby_align: RawRubyAlign,
     ruby_overhang: RawRubyOverhang,
     ruby_side: RawRubySide,
-    // Explicit padding so the CLJS writer and this struct agree on a
-    // 4-byte-aligned layout; always written as zero.
+    // Padding for the CLJS writer's 4-byte-aligned layout; always zero.
     _padding: [u8; 2],
     font_size: f32,
     line_height: f32,
@@ -501,8 +499,8 @@ mod tests {
 
     /// The CLJS writer (texts.cljs) writes PARAGRAPH-ATTR-U8-SIZE (16)
     /// attr bytes after the u32 span count, and SPAN-ATTR-U8-SIZE (80)
-    /// attr bytes before the fills block. These sizes must move in
-    /// lockstep with the struct layouts.
+    /// attr bytes before the fills block. These sizes must match the struct
+    /// layouts.
     #[test]
     fn raw_struct_sizes_match_cljs_writer() {
         const PARAGRAPH_ATTR_U8_SIZE: usize = 16;

@@ -9,16 +9,14 @@
    [app.common.data.macros :as dm]
    [cuerdas.core :as str]))
 
-;; Vertical writing (tategaki). Absent values behave as "horizontal-tb"
-;; and "mixed", so plain horizontal text never stores these attrs.
+;; Vertical writing (tategaki); absent means "horizontal-tb" and "mixed".
 (def text-writing-mode-attrs
   [:writing-mode])
 
 (def text-orientation-attrs
   [:text-orientation])
 
-;; Paragraph attrs that act as whole-shape properties: every paragraph must
-;; carry the first paragraph's value, since that one decides the flow.
+;; Whole-shape paragraph attrs: every paragraph carries the first one's value.
 (def whole-shape-paragraph-attrs
   (into text-writing-mode-attrs text-orientation-attrs))
 
@@ -38,16 +36,14 @@
    :ruby-overhang
    :ruby-side])
 
-;; Warichu (割注): the span renders as two half-size lines stacked inline
-;; within one column position. Values "warichu" / "none"; absent means off.
+;; Warichu (割注): two half-size lines in one line position; "warichu" or "none".
 (def text-warichu-attrs
   [:warichu])
 
 (def text-font-features-attrs
   [:font-features])
 
-;; Annotation collision policy. "none" preserves the explicit line height;
-;; "auto" reserves an additional half-em layer for ruby and emphasis.
+;; "auto" adds a half-em layer per ruby/emphasis; "none" keeps the line height.
 (def text-annotation-clearance-attrs
   [:annotation-clearance])
 
@@ -90,8 +86,7 @@
     0.5))
 
 (defn visible-ruby
-  "Ruby annotation text of a text node, or nil when it has none or the
-   annotation is hidden."
+  "Ruby annotation text of a text node, or nil when absent or hidden."
   [node]
   (let [ruby (:ruby node)]
     (when (and (string? ruby)
@@ -100,8 +95,8 @@
       ruby)))
 
 (defn warichu-text?
-  "True when a text node renders as warichu: it needs two characters to fill
-   its two sub-lines."
+  "True when a text node renders as warichu, which needs at least two
+   characters for its two sub-lines."
   [node]
   (let [text (:text node)]
     (and (= "warichu" (:warichu node))

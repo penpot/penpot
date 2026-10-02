@@ -8,20 +8,13 @@ use crate::shapes::{PositionData, VerticalAlign};
 use super::annotations::{emphasis_mark_center, ruby_strip_x};
 use super::layout::{column_base_center, CellKind, VerticalCell, VerticalLayout};
 
-/// Position-data `direction` value marking a vertical (vertical-rl)
-/// strip; 0/1 are the horizontal rtl/ltr values. The CLJS deserializer
-/// turns it into `:writing-mode "vertical-rl"` on the entry so the
-/// legacy SVG renderer can draw the strip vertically.
+/// Position-data `direction` of a vertical-rl strip; 0/1 are rtl/ltr.
 pub const DIRECTION_VERTICAL_RL: u32 = 2;
 
-/// Position-data `direction` value marking a ruby annotation strip: the
-/// entry's offsets index the span's *ruby* string and the geometry is the
-/// exact gutter placement the canvas paints.
+/// Position-data `direction` of a ruby strip; offsets index the *ruby* string.
 pub const DIRECTION_VERTICAL_RUBY: u32 = 3;
 
-/// Position-data `direction` value marking one emphasis mark (圏点): the
-/// entry's offsets are its base character's and the geometry is the mark's
-/// em box, centred where the canvas paints it. Horizontal text uses it too.
+/// Position-data `direction` of one emphasis mark (圏点) box, in any mode.
 pub const DIRECTION_EMPHASIS_MARK: u32 = 4;
 
 /// Paragraph source UTF-16 range of a `transformed` span-text range.
@@ -134,8 +127,7 @@ pub fn position_data(
             }
         }
         let column = &layout.columns[first.column];
-        // Base text occupies the base sub-band; any ruby gutter is excluded
-        // so the editor overlay and selection track the glyphs.
+        // Base sub-band only, so overlay and selection skip the ruby gutter.
         let rect = (
             origin_x + column.x,
             origin_y + first.top,
@@ -152,11 +144,9 @@ pub fn position_data(
         i = j;
     }
 
-    // Ruby annotation strips, with the exact flow-axis placement the canvas
-    // paints. `start_pos`/`end_pos` are UTF-16 offsets
-    // into the span's ruby string, taken from the shaped clusters so
-    // surrogate-pair readings slice correctly. The consumer renders them as
-    // their own half-size vertical strips in the column's right-side gutter.
+    // Ruby strips at the flow positions the canvas paints. `start_pos` and
+    // `end_pos` are UTF-16 offsets into the span's ruby string, taken from the
+    // shaped clusters so surrogate pairs slice correctly.
     for ruby in &layout.ruby_cells {
         let (Some(first), Some(last)) = (ruby.glyphs.first(), ruby.glyphs.last()) else {
             continue;
@@ -255,8 +245,8 @@ fn warichu_first_line_len(
     Some(first_end.saturating_sub(cell_start).min(chars))
 }
 
-/// Caret position (paragraph index, paragraph-relative Unicode scalar offset) for
-/// a point given relative to the content block's top-left origin.
+/// Caret position (paragraph index, paragraph-relative Unicode scalar
+/// offset) for a point relative to the content block's top-left origin.
 pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usize, usize)> {
     if layout.columns.is_empty() {
         return None;
@@ -307,9 +297,8 @@ pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usiz
                     cell_start + ((frac * chars as f32).round() as usize).min(chars)
                 }
                 CellKind::Warichu { first_chars, .. } => {
-                    // Right sub-column holds the first sub-line's characters,
-                    // left sub-column the second; the vertical position picks
-                    // the offset within the chosen sub-line.
+                    // The right sub-column holds the first sub-line, the left
+                    // the second; y picks the offset within that sub-line.
                     let column = &layout.columns[cell.column];
                     let centre = column_base_center(column);
                     let first =
@@ -341,11 +330,10 @@ pub fn caret_from_point(layout: &VerticalLayout, x: f32, y: f32) -> Option<(usiz
     ))
 }
 
-/// Caret rectangle for a paragraph-relative Unicode scalar offset, in
-/// content-local coordinates. The rect spans the column width; its height
-/// is the extent of the character at the offset (used by overtype-mode
-/// carets to cover the glyph) or zero when the caret sits after the last
-/// character, where a thin bar is drawn instead.
+/// Caret rect for a paragraph-relative Unicode scalar offset, in
+/// content-local coordinates. It spans the column width; its height is the
+/// extent of the character at the offset (overtype carets cover the glyph),
+/// or zero after the last character.
 pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> Option<Rect> {
     let (col_start, _) = *layout.paragraph_columns.get(paragraph)?;
 
@@ -371,10 +359,9 @@ pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> O
                     Rect::from_xywh(x, cell.top, width, cell.extent)
                 }
                 CellKind::Warichu { first_chars, .. } => {
-                    // Right sub-column holds the first sub-line's
-                    // characters, left sub-column the second (jlreq reading
-                    // order); the caret tracks the offset down the chosen
-                    // half-width sub-line.
+                    // The right sub-column holds the first sub-line, the
+                    // left the second (jlreq reading order); the caret moves
+                    // down that half-width sub-line.
                     let first =
                         warichu_first_line_len(layout, cell, first_chars, cell_start, chars)?;
                     let within = offset - cell_start;
@@ -420,7 +407,7 @@ pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> O
     })
 }
 
-/// Selection rectangles for a paragraph-relative Unicode scalar offset range, in
+/// Selection rects for a paragraph-relative Unicode scalar offset range, in
 /// content-local coordinates.
 pub fn range_rects(
     layout: &VerticalLayout,
@@ -649,7 +636,6 @@ mod tests {
             "second sub-line restarts at the composite top, got {}",
             second.top
         );
-        // Offsets advance down the sub-line.
         let deeper = caret_rect(&layout, 0, cell.start + 4).expect("caret rect");
         assert!(
             deeper.top > second.top,

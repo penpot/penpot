@@ -163,13 +163,9 @@
 
 (def ^:private unicode-ranges
   {:japanese    #"[\u3040-\u30FF\u31F0-\u31FF\uFF66-\uFF9F]"
-   ;; Han ideographs are shared by Japanese/Chinese/Korean (Han
-   ;; unification) and cannot identify a language by themselves; they
-   ;; are resolved to a concrete language by `resolve-ambiguous-cjk`.
+   ;; Han ideographs, shared by all CJK languages; see `resolve-ambiguous-cjk`.
    :han         #"[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]"
-   ;; CJK symbols/punctuation (U+3000-303F) and half/full-width forms
-   ;; (U+FF01-FF65, U+FFE0-FFEE) are likewise shared across
-   ;; Japanese/Chinese/Korean; resolved by `resolve-ambiguous-cjk`.
+   ;; CJK punctuation and half/full-width forms, shared; see `resolve-ambiguous-cjk`.
    :cjk-punctuation #"[\u3000-\u303F\uFF01-\uFF65\uFFE0-\uFFEE]"
    :korean      #"[\uAC00-\uD7AF]"
    :arabic      #"[\u0600-\u06FF\u0750-\u077F\u0870-\u089F\u08A0-\u08FF]"

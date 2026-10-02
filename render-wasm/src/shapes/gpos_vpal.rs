@@ -1,11 +1,11 @@
 //! Minimal `GPOS` parser for the `vpal` (proportional vertical alternate
-//! metrics) feature. Vertical layout applies these deltas itself: cells
-//! flow by `vmtx` advances, so HarfBuzz never gets a chance to apply
-//! vertical GPOS positioning (SkShaper shapes on a horizontal line).
+//! metrics) feature. Vertical layout places cells by `vmtx` advances and
+//! applies these deltas itself: SkShaper shapes on a horizontal line, so
+//! HarfBuzz never applies vertical GPOS positioning.
 //!
-//! Only single-adjustment lookups are read (SinglePos, directly or behind
-//! an Extension lookup) — `vpal` is metrics-only by design and real fonts
-//! (Noto CJK, Source Han) encode it exactly this way.
+//! Reads only single-adjustment lookups (SinglePos, direct or behind an
+//! Extension lookup): `vpal` is metrics-only, and real fonts (Noto CJK,
+//! Source Han) encode it this way.
 
 use std::collections::HashMap;
 
@@ -67,7 +67,7 @@ fn parse_coverage(data: &[u8], offset: usize) -> Option<Vec<u16>> {
 
 /// A ValueRecord holds one i16 per set low bit of `value_format`, in bit
 /// order (xPlacement, yPlacement, xAdvance, yAdvance, then four device
-/// offsets). Returns the y deltas and consumes nothing else.
+/// offsets). Returns only the y deltas.
 fn parse_value_record(data: &[u8], offset: usize, value_format: u16) -> Option<VpalDelta> {
     let mut delta = VpalDelta::default();
     let mut o = offset;

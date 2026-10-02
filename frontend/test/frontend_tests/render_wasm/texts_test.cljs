@@ -124,8 +124,8 @@
                content (selection 0 2 0 3)))))))
 
 (t/deftest composition-caret-goes-to-the-end-of-the-changed-part
-  ;; Typing appends, converting replaces everything, and picking a candidate
-  ;; for a middle clause changes only that clause.
+  ;; Typing appends, converting replaces all, and a candidate for a middle
+  ;; clause changes only that clause.
   (t/is (= 1 (v3-editor/changed-span-end "" "に")))
   (t/is (= 2 (v3-editor/changed-span-end "に" "にほ")))
   (t/is (= 3 (v3-editor/changed-span-end "にほんご" "日本語")))
@@ -227,13 +227,11 @@
   (t/is (= #{:japanese} (langs "ﾃﾞｻﾞｲﾝ"))))
 
 (t/deftest classification-han-is-ambiguous
-  ;; Kanji-only text (han-unification fixture) must NOT classify as a
-  ;; concrete language; it is ambiguous Han.
+  ;; Kanji-only text is ambiguous Han, not a concrete language.
   (t/is (= #{:han} (langs "東京都渋谷区神南一丁目"))))
 
 (t/deftest classification-cjk-punctuation
-  ;; CJK punctuation and full-width forms match the shared class
-  ;; (previously they matched no range at all).
+  ;; CJK punctuation and full-width forms match the shared class.
   (t/is (= #{:cjk-punctuation} (langs "、。「」『』（）")))
   (t/is (= #{:cjk-punctuation} (langs "！？：；１２３ＡＢＣ"))))
 
@@ -262,8 +260,7 @@
   (t/is (= #{:chinese}  (cfnt/resolve-ambiguous-cjk #{:han} "zh_cn"))))
 
 (t/deftest resolve-han-only-defaults-to-chinese
-  ;; Without kana/hangul and without a CJK locale, keep the previous
-  ;; behavior (Noto Sans SC).
+  ;; Without kana, hangul or a CJK locale, Han resolves to Chinese (Noto Sans SC).
   (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} "en")))
   (t/is (= #{:chinese} (cfnt/resolve-ambiguous-cjk #{:han} nil))))
 

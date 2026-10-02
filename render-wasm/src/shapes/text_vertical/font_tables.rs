@@ -12,8 +12,7 @@ use crate::shapes::gpos_vpal::{parse_vpal, VpalDelta};
 type TableCache<T> = RefCell<HashMap<u32, Option<Rc<T>>>>;
 
 thread_local! {
-    // Layouts are recomputed on every paint but a face's tables never
-    // change, so each table (whose parse copies it) is read once per face.
+    // Layout runs on every paint; each face's tables are parsed once.
     static VERTICAL_METRICS: TableCache<VerticalMetrics> = RefCell::default();
     static VPAL_TABLES: TableCache<VpalTable> = RefCell::default();
     static TYPO_METRICS: TableCache<TypoMetrics> = RefCell::default();
@@ -44,10 +43,9 @@ fn table_data(font: &Font, tag: &[u8; 4]) -> Option<skia_safe::Data> {
 }
 
 /// Vertical advances from a font's `vhea`/`vmtx` tables. Upright cells
-/// advance down the column by the glyph's true vertical advance rather
-/// than its shaped horizontal advance: identical for full-width CJK, but
-/// correct for vertical alternates and proportional glyphs whose `vmtx`
-/// differs from `hmtx` (e.g. the vertical kana repeat marks).
+/// advance by the glyph's vertical advance, not its shaped horizontal one;
+/// the two differ for vertical alternates and proportional glyphs (e.g. the
+/// vertical kana repeat marks).
 pub(super) struct VerticalMetrics {
     units_per_em: f32,
     /// Advance heights of the first `advances.len()` glyph ids.
@@ -57,9 +55,8 @@ pub(super) struct VerticalMetrics {
 }
 
 impl VerticalMetrics {
-    /// Parse `vhea`/`vmtx` off the font's typeface. Returns `None` when the
-    /// font carries no vertical metrics (the caller then keeps horizontal
-    /// advances).
+    /// Parses `vhea`/`vmtx`. `None` when the font has no vertical metrics
+    /// (callers keep horizontal advances).
     pub(super) fn from_font(font: &Font) -> Option<Self> {
         let units_per_em = units_per_em(font)?;
         let vhea = table_data(font, b"vhea")?;
@@ -88,8 +85,8 @@ impl VerticalMetrics {
         })
     }
 
-    /// Vertical advance of `glyph` at `font_size`, in pixels at the shaped
-    /// size (same units as the horizontal advances).
+    /// Vertical advance of `glyph` at `font_size`, in pixels (same units as
+    /// the horizontal advances).
     pub(super) fn advance(&self, glyph: GlyphId, font_size: f32) -> f32 {
         let raw = self
             .advances
@@ -122,10 +119,9 @@ impl VpalTable {
     }
 
     /// Pixel deltas for a cluster at `font_size`: summed advance delta
-    /// (negative when the cell tightens) and the flow-axis shift of the
-    /// drawn ink (positive down the column). GPOS `yPlacement` is y-up,
-    /// so its sign flips into flow space. `None` when no glyph of the
-    /// cluster is covered.
+    /// (negative when the cell tightens) and flow-axis ink shift (positive
+    /// down the column; GPOS `yPlacement` is y-up, so its sign flips).
+    /// `None` when no glyph of the cluster is covered.
     pub(super) fn cluster_delta(&self, glyphs: &[GlyphId], font_size: f32) -> Option<(f32, f32)> {
         let scale = font_size / self.units_per_em;
         let mut advance = 0.0f32;
@@ -144,11 +140,10 @@ pub(super) fn vpal_table(font: &Font) -> Option<Rc<VpalTable>> {
     cached_table(&VPAL_TABLES, font, VpalTable::from_font)
 }
 
-/// OS/2 typographic ascender/descender, normalised to the em (design units /
-/// unitsPerEm). These bound the ideographic em box and are what the browser
-/// uses for the vertical central baseline; `hhea`/`Font::metrics` are oversized
-/// for CJK faces (their ascent exceeds the em) and would push an upright glyph
-/// off the ideographic centre of its cell.
+/// OS/2 typographic ascender/descender over unitsPerEm. They bound the
+/// ideographic em box, which the browser uses for the vertical central
+/// baseline. `hhea`/`Font::metrics` ascent exceeds the em in CJK faces and
+/// would push an upright glyph off the centre of its cell.
 struct TypoMetrics {
     /// sTypoAscender / unitsPerEm (positive, above the baseline).
     ascender: f32,
@@ -161,8 +156,7 @@ impl TypoMetrics {
         let units_per_em = units_per_em(font)?;
         let os2 = table_data(font, b"OS/2")?;
         let os2 = os2.as_bytes();
-        // sTypoAscender @ 68 (i16), sTypoDescender @ 70 (i16); present in every
-        // OS/2 table version.
+        // sTypoAscender @ 68, sTypoDescender @ 70 (i16), in every OS/2 version.
         let ascender = i16::from_be_bytes([*os2.get(68)?, *os2.get(69)?]) as f32;
         let descender = i16::from_be_bytes([*os2.get(70)?, *os2.get(71)?]) as f32;
         Some(Self {
@@ -173,10 +167,9 @@ impl TypoMetrics {
 }
 
 /// Ascent/descent for centring an upright cell, in Skia's sign convention
-/// (ascent negative, descent positive) at the font's current size. Prefers the
-/// OS/2 typographic metrics (the ideographic em box, matching the browser's
-/// vertical central baseline used by the SVG/foreignObject export); falls back
-/// to `Font::metrics` when the face carries no OS/2 table.
+/// (ascent negative, descent positive) at the font's size. Uses the OS/2
+/// typographic metrics, which match the browser's vertical central baseline
+/// in the SVG/foreignObject export, or `Font::metrics` without an OS/2 table.
 pub(super) fn upright_centre_metrics(font: &Font) -> (f32, f32) {
     if let Some(typo) = cached_table(&TYPO_METRICS, font, TypoMetrics::from_font) {
         let size = font.size();
@@ -186,11 +179,10 @@ pub(super) fn upright_centre_metrics(font: &Font) -> (f32, f32) {
     (metrics.ascent, metrics.descent)
 }
 
-/// Vertical offset from a cell's top edge to the glyph baseline for an upright
-/// cell. Centres the glyph's line box within the em cell (as the Tate-chu-yoko
-/// path does) instead of hanging it from the horizontal ascent: CJK faces have
-/// an ascent larger than the em, so hanging from it pushes every glyph below
-/// its cell and the whole column overflows its bounds.
+/// Offset from an upright cell's top edge to the glyph baseline. Centres the
+/// glyph's line box in the em cell, as Tate-chu-yoko does. CJK faces have an
+/// ascent larger than the em, so hanging glyphs from the ascent would push
+/// them below their cells and overflow the column.
 pub(super) fn upright_baseline_offset(ascent: f32, descent: f32, font_size: f32) -> f32 {
     font_size / 2.0 - (ascent + descent) / 2.0
 }

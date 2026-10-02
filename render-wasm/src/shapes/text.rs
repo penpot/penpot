@@ -558,16 +558,15 @@ impl TextContent {
         self.size.normalized_line_height
     }
 
-    /// Writing mode is a whole-shape property: the first paragraph
-    /// decides the flow for all of them.
+    /// Writing mode applies to the whole shape: the first paragraph sets it.
     pub fn is_vertical(&self) -> bool {
         self.paragraphs
             .first()
             .is_some_and(|p| p.writing_mode() == WritingMode::VerticalRl)
     }
 
-    /// Vertical writing and horizontal ruby, warichu and emphasis marks are
-    /// painted by the full text pass, not from the cached paint layout.
+    /// Vertical writing and horizontal ruby, warichu and emphasis marks need
+    /// the full text pass, not the cached paint layout.
     pub fn can_paint_from_layout_cache(&self) -> bool {
         !self.is_vertical()
             && !self
@@ -659,9 +658,8 @@ impl TextContent {
         // AutoWidth paragraphs are laid out with f32::MAX, so line metrics
         // (line.left) reflect alignment within that huge width and are
         // unusable for tight bounds.  Fall back to content_rect.
-        // Vertical writing bounds come from the vertical pass through
-        // content_rect; the skparagraph line metrics below describe the
-        // unused horizontal layout.
+        // Vertical writing takes its bounds from content_rect; the
+        // skparagraph line metrics below describe an unused horizontal layout.
         if self.grow_type() == GrowType::AutoWidth || self.is_vertical() {
             return self.content_rect(selrect, valign);
         }
@@ -746,7 +744,7 @@ impl TextContent {
 
     pub fn content_rect(&self, selrect: &Rect, valign: VerticalAlign) -> Rect {
         // Vertical content anchors to the shape's right edge and always
-        // aligns to the top (vertical-align along columns is deferred).
+        // aligns to the top; vertical-align does not apply.
         if self.is_vertical() {
             let (width, height) = if self.grow_type() == GrowType::AutoWidth {
                 (self.size.width, self.size.height)
@@ -792,8 +790,8 @@ impl TextContent {
         point: &Point,
         vertical_align: VerticalAlign,
     ) -> Option<TextPositionWithAffinity> {
-        // Vertical writing: resolve through the vertical pass. The point
-        // arrives selrect-local; the content block is right-anchored.
+        // Vertical writing: resolve through the vertical pass. The point is
+        // selrect-local; the content block is right-anchored.
         if self.is_vertical() {
             let bounds = self.bounds();
             let layout = super::text_vertical::layout_for_box(self, bounds.height());
@@ -1274,10 +1272,10 @@ impl TextContent {
             }
         }
 
-        // Vertical writing sizes come from the vertical pass. Auto-width
-        // fits both axes without wrapping. Auto-height keeps the shape height
-        // as its wrap budget and grows width as columns advance right-to-left.
-        // Fixed keeps both shape dimensions.
+        // Vertical writing takes sizes from the vertical pass. Auto-width
+        // fits both axes without wrapping. Auto-height wraps at the shape
+        // height and grows width as columns advance right-to-left. Fixed
+        // keeps both dimensions.
         if self.is_vertical() {
             match self.grow_type() {
                 GrowType::AutoWidth => {
@@ -1407,8 +1405,8 @@ impl TextContent {
 
         let result = matrix.map_point((x_pos, y_pos));
 
-        // Vertical writing: hit-test against the laid-out cells directly
-        // (absolute coordinates, right-anchored to the selrect).
+        // Vertical writing: hit-test against the laid-out cells (absolute
+        // coordinates, right-anchored to the selrect).
         if self.is_vertical() {
             let layout = super::text_vertical::layout_for_box(self, shape.selrect.height());
             return super::text_vertical::intersects(
@@ -1600,12 +1598,12 @@ impl Paragraph {
         self.text_transform
     }
 
-    /// Span texts as fed to the paragraph builders: text-transform applied,
-    /// Japanese spacing normalized, and kinsoku break suppressions inserted,
-    /// plus the map between original and builder-text UTF-16 offsets. Every
-    /// consumer of laid-out offsets must translate through the map. The layout
-    /// transform is skipped under letter-spacing, where skparagraph would add
-    /// letter spacing to synthetic layout characters.
+    /// Span texts as fed to the paragraph builders (text-transform applied,
+    /// Japanese spacing normalized, kinsoku break suppressions inserted),
+    /// plus the map from original to builder-text UTF-16 offsets. Consumers
+    /// of laid-out offsets must translate through the map. Skips the layout
+    /// transform under letter-spacing, where skparagraph would also space
+    /// the synthetic characters.
     pub fn layout_span_texts(&self) -> (Vec<String>, kinsoku::OffsetMap) {
         layout_span_texts(self)
     }
@@ -1648,11 +1646,10 @@ pub fn add_text_with_tabs(builder: &mut ParagraphBuilder, text: &str, font_size:
     }
 }
 
-/// Text after browser filtering and CSS text transformation, plus the source
-/// UTF-16 range that produced each transformed Unicode scalar. A single source
-/// scalar can produce several output scalars (for example `ß` uppercases to
-/// `SS`); keeping that ownership lets vertical layout wrap and export the
-/// transformed glyphs as one source-text unit.
+/// Text after browser filtering and CSS text-transform, plus the source
+/// UTF-16 range behind each output scalar. One source scalar can yield
+/// several (`ß` uppercases to `SS`); the ranges let vertical layout wrap and
+/// export those glyphs as one source unit.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AppliedTextTransform {
     pub text: String,
@@ -1757,8 +1754,7 @@ pub struct TextSpan {
     pub ruby_align: RubyAlign,
     pub ruby_overhang: RubyOverhang,
     pub ruby_side: RubySide,
-    /// Warichu (割注): render the span as two half-size lines stacked inline
-    /// within one column position of the vertical flow.
+    /// Warichu (割注): two half-size lines stacked in one column position.
     pub warichu: bool,
     pub font_features: FontFeatures,
     pub annotation_clearance: AnnotationClearance,
@@ -2165,9 +2161,8 @@ pub fn calculate_text_layout_data(
             let current_y = para_layout.y;
             let text_paragraph = text_paragraphs.get(paragraph_index);
             if let Some(text_para) = text_paragraph {
-                // Ranges are in the builder-text (kinsoku-shifted)
-                // space; exported positions are translated back to
-                // original span-relative offsets through the map.
+                // Ranges are in builder-text (kinsoku-shifted) space; the
+                // map translates exported positions back to span offsets.
                 let offsets = HorizontalOffsets::new(text_para);
                 let offset_map = &offsets.offset_map;
                 let entry =

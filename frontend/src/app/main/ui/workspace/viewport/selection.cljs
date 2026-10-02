@@ -573,9 +573,8 @@
                                         horizontal-resize?)
                    resize-direction   (if horizontal-resize? :horizontal :vertical)]
                (cond
-                 ;; Resizing auto-width on the wrap axis switches to auto-height.
-                 ;; The physical wrap axis is horizontal normally and vertical
-                 ;; under vertical writing.
+                 ;; Resizing auto-width along the wrap axis (vertical under
+                 ;; vertical writing) switches to auto-height.
                  (and (= shape-type :text)
                       (= grow-type :auto-width)
                       wrap-axis-resize?)

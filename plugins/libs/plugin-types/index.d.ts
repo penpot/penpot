@@ -4327,32 +4327,31 @@ export interface Text extends ShapeBase {
   verticalAlign: 'top' | 'center' | 'bottom' | null;
 
   /**
-   * The writing mode of the text shape. `horizontal-tb` lays text out in
-   * horizontal lines; `vertical-rl` in vertical columns advancing right-to-left.
-   * Returns 'mixed' if paragraphs use different modes.
+   * The writing mode of the text shape: `horizontal-tb` (horizontal lines) or
+   * `vertical-rl` (vertical columns, right to left). `null` when unset, which
+   * means `horizontal-tb`. Returns 'mixed' if paragraphs use different modes.
    */
   writingMode: 'horizontal-tb' | 'vertical-rl' | 'mixed' | null;
 
   /**
-   * The orientation of characters in vertical writing. `mixed` rotates
-   * non-CJK runs sideways; `upright` keeps every character upright.
-   * Returns 'mixed' if paragraphs use different orientations.
+   * Character orientation in vertical writing: `mixed` turns non-CJK runs
+   * sideways; `upright` keeps every character upright. `null` when unset,
+   * which means `mixed`. Returns 'mixed' if paragraphs use different values.
    */
   textOrientation: 'mixed' | 'upright' | null;
 
   /**
-   * Combines the text shape upright in vertical writing. `all` draws the text
-   * as one upright composite; `digits` combines runs of 2-4 consecutive
-   * digits (`digits2`/`digits3` cap the run length at 2/3); `none` uses the
-   * normal vertical layout.
-   * Returns 'mixed' if text spans use different values.
+   * Tate-chu-yoko: sets text upright as one block in vertical writing. `all`
+   * combines the whole span; `digits` combines runs of 2-4 digits
+   * (`digits2`/`digits3` cap the run at 2/3); `none` (the default) turns it
+   * off. Returns 'mixed' if text spans use different values.
    */
   textCombineUpright:
     'none' | 'all' | 'digits' | 'digits2' | 'digits3' | 'mixed' | null;
 
   /**
-   * Emphasis marks (圏点 / bouten) drawn beside each base character, mirroring
-   * CSS `text-emphasis-style`. `none` removes them.
+   * Emphasis marks (圏点 / bouten) beside each base character, as in CSS
+   * `text-emphasis-style`. `none` (the default) removes them.
    * Returns 'mixed' if text spans use different values.
    */
   textEmphasis:
@@ -4367,45 +4366,44 @@ export interface Text extends ShapeBase {
     | null;
 
   /**
-   * Warichu (割注): renders the span as two half-size lines stacked inline
-   * within one column position of the vertical flow. `none` disables it.
+   * Warichu (割注): sets the text as two half-size lines in one line position.
+   * `none` (the default) turns it off.
    * Returns 'mixed' if text spans use different values.
    */
   warichu: 'none' | 'warichu' | 'mixed' | null;
 
   /**
-   * OpenType proportional alternate metrics for Japanese text. `palt` applies
-   * proportional alternate widths in horizontal writing; `vpal` applies
-   * proportional alternate widths in vertical writing. `none` disables them.
+   * OpenType proportional metrics for Japanese text: `palt` for horizontal
+   * writing, `vpal` for vertical. `none` (the default) turns them off.
    * Returns 'mixed' if text spans use different values.
    */
   fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
 
   /**
-   * Controls annotation collision handling. `none` preserves the explicit
-   * line gap; `auto` reserves separate half-em layers for ruby and emphasis.
+   * Room for annotations: `auto` adds a half-em to the line height for each
+   * ruby or emphasis layer; `none` (the default) keeps the set line height.
    * Returns 'mixed' if text spans use different values.
    */
   annotationClearance: 'none' | 'auto' | 'mixed' | null;
 
   /**
-   * Ruby (furigana) annotation shown over the base text in vertical writing.
-   * Set a string to annotate the selected span(s), or `null` to remove it.
+   * Ruby (furigana) annotation text for the base text. Set a string to
+   * annotate the whole text, or `null` to remove it.
    * Returns 'mixed' if text spans carry different ruby values.
    */
   ruby: string | null;
 
-  /** Ruby annotation size relative to its base text. */
+  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
   rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
 
-  /** Distribution of ruby glyphs across the corresponding base text. */
+  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
   rubyAlign:
     'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
 
-  /** Whether ruby may extend beyond the corresponding base text. */
+  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
   rubyOverhang: 'auto' | 'none' | 'mixed' | null;
 
-  /** Annotation side: above/right (`over`) or below/left (`under`). */
+  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
   rubySide: 'over' | 'under' | 'mixed' | null;
 
   /**
@@ -4534,8 +4532,8 @@ export interface TextRange {
   warichu: 'none' | 'warichu' | 'mixed' | null;
 
   /**
-   * OpenType proportional alternate metrics for Japanese text. It can be a
-   * specific feature or 'mixed' if multiple text spans are used.
+   * OpenType proportional metrics for the range: `palt` (horizontal), `vpal`
+   * (vertical) or `none`. Returns 'mixed' for different span values.
    */
   fontFeatures: 'none' | 'palt' | 'vpal' | 'mixed' | null;
 
@@ -4551,17 +4549,17 @@ export interface TextRange {
    */
   ruby: string | 'mixed' | null;
 
-  /** Ruby annotation size relative to its base text. */
+  /** Ruby size relative to the base text: `half` (default), `third` or `quarter`. */
   rubySize: 'half' | 'third' | 'quarter' | 'mixed' | null;
 
-  /** Distribution of ruby glyphs across the corresponding base text. */
+  /** How ruby glyphs spread over the base text; defaults to `space-around`. */
   rubyAlign:
     'space-around' | 'center' | 'start' | 'space-between' | 'mixed' | null;
 
-  /** Whether ruby may extend beyond the corresponding base text. */
+  /** Whether ruby may extend past its base text: `auto` (default) or `none`. */
   rubyOverhang: 'auto' | 'none' | 'mixed' | null;
 
-  /** Annotation side: above/right (`over`) or below/left (`under`). */
+  /** Ruby side: `over` (above or right, the default) or `under` (below or left). */
   rubySide: 'over' | 'under' | 'mixed' | null;
 
   /**

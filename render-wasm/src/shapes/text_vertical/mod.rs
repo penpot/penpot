@@ -10,25 +10,23 @@
 //   paint / outline export (`paint`) and position data / hit-testing
 //   (`positions`) from the cells.
 //
-// Offset discipline: cells use UTF-16 offsets in transformed layout text.
-// Position data maps those ranges back to the original span text before it
-// crosses the WASM boundary; the WORD JOINER OffsetMap remains exclusive to
+// Offsets: cells use UTF-16 offsets in transformed layout text. Position
+// data maps those ranges back to the original span text before it crosses
+// the WASM boundary; the WORD JOINER OffsetMap applies only to
 // skparagraph-driven horizontal breaks.
 //
-// Layouts are computed on demand (like the horizontal path, which rebuilds
-// its skparagraph objects per paint); only per-typeface font tables are
-// cached.
+// Layouts are computed on demand, as the horizontal path rebuilds its
+// skparagraph objects per paint; only per-typeface font tables are cached.
 //
 // Text-align aligns each column's glyphs along the vertical (inline) axis:
 // Left/Start->top, Center->middle, Right/End->bottom of the wrap budget.
 // Justify stretches every column but the last to fill the wrap budget.
 //
-// Letter-spacing adds inter-glyph advance along the column — once per
-// upright cluster and once per glyph inside a rotated run — mirroring the
-// horizontal `letter-spacing` that Skia applies to each glyph advance.
+// Letter-spacing adds advance along the column once per upright cluster
+// and once per glyph inside a rotated run, matching the horizontal
+// `letter-spacing` that Skia applies to each glyph advance.
 //
-// Deferred to a later phase: PDF/vector emoji overlays, inner shadows and
-// block-axis vertical-align.
+// Not supported yet: PDF/vector emoji overlays and inner shadows.
 
 mod annotations;
 mod cells;

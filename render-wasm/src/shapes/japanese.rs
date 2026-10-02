@@ -1,10 +1,9 @@
 //! Shared JLREQ character classes and pair-rule tables.
 //!
 //! JLREQ defines thirty layout classes. Classes 20–24 and 28–30 are
-//! contextual/virtual classes produced by higher-level inline composites;
-//! [`classify`] handles scalar characters and callers assign those virtual
-//! classes when constructing reference marks, ruby, grouped numerals,
-//! warichu, or tate-chu-yoko.
+//! virtual classes for inline composites: [`classify`] handles single
+//! characters, and callers assign the virtual classes when building
+//! reference marks, ruby, grouped numerals, warichu, or tate-chu-yoko.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -124,9 +123,9 @@ impl JapaneseClass {
         )
     }
 
-    /// Half-width punctuation whose normal character frame is completed by
-    /// half an em after the glyph. Consecutive punctuation may suppress that
-    /// appended spacing, but the glyph body itself remains half-width.
+    /// Half-width punctuation followed by a half-em of aki that completes
+    /// its character frame. Consecutive punctuation may drop that aki; the
+    /// glyph body stays half-width.
     pub const fn is_trailing_aki_punctuation(self) -> bool {
         matches!(self, Self::ClosingBracket | Self::FullStop | Self::Comma)
     }
@@ -141,9 +140,9 @@ pub struct PairRule {
     /// Largest spacing allowed during oidashi/justification, in em.
     pub maximum_em: f32,
     pub break_allowed: bool,
-    /// Whether horizontal SkParagraph needs an inserted WORD JOINER for this
-    /// pair. Atomic Western/numeral runs are already protected by its Unicode
-    /// breaker, so they remain non-breakable without synthetic characters.
+    /// Whether horizontal SkParagraph needs a WORD JOINER to block a break
+    /// in this pair. Its Unicode breaker already keeps Western/numeral runs
+    /// whole.
     pub suppress_break_with_joiner: bool,
     /// Lower values are adjusted first; zero means not adjustable.
     pub shrink_priority: u8,
@@ -215,15 +214,15 @@ const fn generated_pair_rules() -> [[PairRule; JapaneseClass::COUNT]; JapaneseCl
                 (before, after),
                 (JapaneseClass::TateChuYoko, JapaneseClass::TateChuYoko)
             ) {
-                // Two adjacent cl-30 entries are necessarily separate TCY
-                // composites (characters inside one composite are atomic).
+                // Adjacent cl-30 entries are always separate TCY composites
+                // (characters inside one composite are atomic).
                 rule.maximum_em = 0.25;
                 rule.expand_priority = 3;
             } else if matches!(before, JapaneseClass::DividingPunctuation)
                 && !matches!(after, JapaneseClass::ClosingBracket)
             {
                 // A sentence-ending question/exclamation mark carries one em
-                // after it. Line planning may discard this at the line edge.
+                // after it. Line planning may drop it at the line edge.
                 rule.preferred_em = 1.0;
                 rule.minimum_em = 0.0;
                 rule.maximum_em = 1.0;
@@ -231,8 +230,8 @@ const fn generated_pair_rules() -> [[PairRule; JapaneseClass::COUNT]; JapaneseCl
             } else if before.is_trailing_aki_punctuation()
                 && matches!(after, JapaneseClass::OpeningBracket)
             {
-                // Only one half-em is retained between the two half-width
-                // glyph bodies, not the sum of both characters' normal aki.
+                // Keep one half-em between the two half-width glyph bodies,
+                // not the sum of both characters' aki.
                 rule.preferred_em = 0.5;
                 rule.minimum_em = 0.0;
                 rule.maximum_em = 0.5;
@@ -281,8 +280,8 @@ const fn generated_pair_rules() -> [[PairRule; JapaneseClass::COUNT]; JapaneseCl
                 rule.shrink_priority = 3;
             } else if before.is_japanese_letter() && after.is_japanese_letter() {
                 // Solid Japanese text is the general third-stage expansion
-                // opportunity. The planner may continue past this quarter-em
-                // cap only in JLREQ's final equal-expansion fallback.
+                // point. The planner passes this quarter-em cap only in
+                // JLREQ's final equal-expansion fallback.
                 rule.maximum_em = 0.25;
                 rule.expand_priority = 3;
             }

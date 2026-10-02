@@ -82,9 +82,7 @@
 
         content (if is-code (legacy.txt/index-content content) content)
 
-        ;; Vertical writing anchors columns to the box edges; the oversized
-        ;; auto-grow box (used to avoid horizontal wrapping) would push content
-        ;; off-position, so use the real selrect size instead.
+        ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.
         vertical? (wm/vertical-text-content? content)
 
         style

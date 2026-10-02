@@ -50,8 +50,8 @@
            :dimmed   true})))
 
 (defn japanese-layout-config-enabled?
-  "Japanese layout controls are available under the WASM renderer, when
-  enabled for the current file or globally in the user's profile."
+  "True under the WASM renderer when Japanese layout is enabled for the file
+  or in the user's profile."
   [file-data profile]
   (and ^boolean (wm/vertical-layout-active?)
        (or (ctf/japanese-layout-enabled? file-data)
@@ -63,7 +63,7 @@
   (= "vertical-rl" (:writing-mode values)))
 
 (defn proportional-metrics-feature
-  "Return the proportional metric feature relevant to the writing mode."
+  "Proportional metrics feature for the writing mode: `vpal` or `palt`."
   [writing-mode]
   (if (= writing-mode "vertical-rl") "vpal" "palt"))
 
@@ -127,9 +127,8 @@
     :label (tr "workspace.options.text-options.text-orientation-upright")
     :icon  i/text-orientation-upright}])
 
-;; Warichu (割注): a span-scoped toggle that renders the selection as two
-;; half-size lines within one inline position (top/bottom in horizontal
-;; flow, right/left in vertical flow).
+;; Warichu (割注): renders the selection as two half-size lines in one inline
+;; position (top/bottom horizontally, right/left vertically).
 (defn- warichu-options
   []
   [{:value "none"
@@ -142,9 +141,8 @@
     :icon  i/warichu}])
 
 (mf/defc text-combine-upright-options*
-  ;; Digit TCY can be applied across a shape because it discovers eligible
-  ;; runs automatically. The unrestricted `all` value is only offered for an
-  ;; explicit text range.
+  ;; Digit TCY finds eligible runs itself, so it applies to a whole shape;
+  ;; `all` is offered only for a text selection.
   [{:keys [values on-change on-blur text-selection-active]}]
   (let [text-combine-upright (radio-selected (:text-combine-upright values) "none")
         digits?  (case text-combine-upright
@@ -176,8 +174,7 @@
                   false)
         options
         (mf/with-memo []
-          ;; select* matches and reports options by :id, so the id is the
-          ;; persisted attr value.
+          ;; select* matches options by :id, so the id is the stored value.
           [{:id    "digits2"
             :label (tr "workspace.options.text-options.text-combine-upright-digits-2")}
            {:id    "digits3"
@@ -366,9 +363,8 @@
       [:> ruby-customization-options* common-props]]]))
 
 (mf/defc font-features-options*
-  ;; Japanese proportional metric alternates. `palt` is typically used for
-  ;; horizontal composition and `vpal` for vertical composition; the value is
-  ;; span-scoped and passed through browser, export, and render-wasm paths.
+  ;; Japanese proportional metric alternates, per span: `palt` for
+  ;; horizontal text, `vpal` for vertical.
   [{:keys [values on-change on-blur]}]
   (let [writing-mode (:writing-mode values)
         feature (proportional-metrics-feature writing-mode)
@@ -450,8 +446,8 @@
                                                  :options       (:writing-mode options)})]
        (when ^boolean vertical?
          [:*
-          ;; The v2 editor can read the paragraph orientation back as an empty
-          ;; string when it is unset; that (and nil) selects "mixed".
+          ;; An unset orientation reads as nil, or "" in the v2 editor; both
+          ;; select "mixed".
           [:> attr-radio-options* (mf/spread-props common-props
                                                    {:attr          :text-orientation
                                                     :default-value "mixed"

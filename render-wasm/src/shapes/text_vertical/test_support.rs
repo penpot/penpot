@@ -16,15 +16,10 @@ use super::layout::{layout_vertical, VerticalLayout};
 
 pub(super) const TEST_FONT: &[u8] = include_bytes!("../../fonts/sourcesanspro-regular.ttf");
 
-/// A tiny Noto Sans JP subset carrying `vmtx`/`vhea`: U+3031 (〱, the
-/// vertical kana repeat mark) has a 2em vertical advance vs a 1em
-/// horizontal advance; U+3042/U+304F are symmetric controls.
+/// Noto Sans JP subset with `vmtx`/`vhea`: 〱 advances 2em vertically, あ/く 1em.
 pub(super) const VMTX_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vmtx-test.ttf");
 
-/// Subset of Noto Sans JP carrying GSUB `vert` and GPOS `vpal`: the
-/// vertical alternates of 、。「」 halve their vertical advances (「 also
-/// lifts its ink by 481 units) and the あ/く alternates tighten by
-/// 58/60 units with small placement lifts.
+/// Noto Sans JP subset with GSUB `vert` and GPOS `vpal` for 、。「」あく.
 pub(super) const VPAL_TEST_FONT: &[u8] = include_bytes!("../../fonts/notosansjp-vpal-test.ttf");
 
 /// Font size of every test span.

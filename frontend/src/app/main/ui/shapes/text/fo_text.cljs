@@ -173,9 +173,7 @@
         height    (dm/get-prop shape :height)
         content   (get shape :content)
 
-        ;; Vertical writing anchors columns to the box edges, so the oversized
-        ;; auto-grow box used to avoid horizontal wrapping/clipping would push
-        ;; the content off-position. Use the real selrect size instead.
+        ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.
         vertical? (wm/vertical-text-content? content)
 
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]

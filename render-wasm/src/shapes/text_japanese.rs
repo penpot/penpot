@@ -47,9 +47,9 @@ pub(crate) fn layout_span_texts(paragraph: &Paragraph) -> (Vec<String>, kinsoku:
     (texts, kinsoku::OffsetMap::default())
 }
 
-/// Add a span to a horizontal paragraph builder. Warichu is represented by a
-/// single inline placeholder so the two annotation lines wrap as one unit.
-/// The actual glyphs are painted after SkParagraph has positioned the box.
+/// Add a span to a horizontal paragraph builder. A warichu span becomes one
+/// inline placeholder so its two lines wrap as a unit; its glyphs are painted
+/// after layout.
 pub(crate) fn add_horizontal_span(
     builder: &mut ParagraphBuilder,
     span: &TextSpan,
@@ -83,10 +83,9 @@ pub(crate) fn add_horizontal_span(
             height,
         ));
         // SkParagraph does not expose a placeholder's TextStyle through line
-        // metrics. A near-zero, inkless NBSP preserves the exact
-        // fill/stroke/shadow style for the custom paint pass; the following
-        // zero-width space restores a legal wrapping boundary after the
-        // atomic placeholder.
+        // metrics. A near-zero, inkless NBSP carries the span style for the
+        // paint pass; the zero-width space after it allows a line break after
+        // the atomic placeholder.
         let mut anchor_style = text_style.clone();
         anchor_style.set_font_size(0.01);
         anchor_style.set_height(0.01);
@@ -112,10 +111,9 @@ pub(crate) struct HorizontalSpanRange {
     pub style_anchor_start: usize,
 }
 
-/// Offset mapping of one horizontally laid-out paragraph between source
-/// characters, the kinsoku-adjusted layout text and the paragraph builder
-/// text. Building it runs the kinsoku pass once; reuse it for every lookup
-/// into the same paragraph.
+/// Offset maps of one horizontal paragraph between source characters, the
+/// kinsoku-adjusted layout text and the builder text. Building it runs the
+/// kinsoku pass; reuse it for every lookup in the paragraph.
 pub(crate) struct HorizontalOffsets {
     /// Map between the transformed text and the kinsoku-adjusted text.
     pub(crate) offset_map: kinsoku::OffsetMap,
@@ -232,9 +230,9 @@ pub(crate) fn horizontal_builder_to_source(paragraph: &Paragraph, builder_offset
     HorizontalOffsets::new(paragraph).builder_to_source(builder_offset)
 }
 
-/// Ranges shared by layout, position-data and editor mapping. `shifted_*`
-/// addresses the normal kinsoku-adjusted paragraph text, while `builder_*`
-/// addresses the paragraph where a whole warichu span occupies one U+FFFC.
+/// Ranges shared by layout, position data and editor mapping. `shifted_*`
+/// addresses the kinsoku-adjusted text; `builder_*` addresses the builder
+/// text, where each warichu span collapses to one placeholder.
 fn span_ranges(
     paragraph: &Paragraph,
     span_texts: Vec<String>,
@@ -446,11 +444,9 @@ pub(crate) fn horizontal_warichu_range_rects(
 }
 
 /// Char index where a warichu run splits into its two sub-lines: the
-/// balanced midpoint (first line longer), nudged so the second sub-line
-/// does not start with a line-start-prohibited character and the first
-/// does not end with a line-end-prohibited one. Nudging forward pulls the
-/// offending mark up into the first sub-line (jlreq); backward is the
-/// fallback, and the midpoint stands when no split satisfies kinsoku.
+/// midpoint (first line longer), moved to the nearest split that keeps
+/// kinsoku. At equal distance a forward move wins, pulling the mark up into
+/// the first sub-line (jlreq). Falls back to the midpoint.
 pub(crate) fn warichu_split_chars(text: &str) -> usize {
     let chars: Vec<char> = text.chars().collect();
     let n = chars.len();
@@ -551,9 +547,8 @@ pub(crate) struct HorizontalEmphasisPlacement {
     pub(crate) rect: skia::Rect,
 }
 
-/// Locate one horizontal emphasis mark above each eligible source character.
-/// SkParagraph owns wrapping and bidi placement; querying each transformed
-/// character range keeps the marks attached to the actual laid-out glyphs.
+/// Place one emphasis mark above each eligible character, from the laid-out
+/// rect of each character so marks follow SkParagraph's wrapping and bidi.
 pub(crate) fn horizontal_emphasis_placements(
     paragraph: &Paragraph,
     offsets: &HorizontalOffsets,
@@ -622,13 +617,10 @@ pub(crate) fn horizontal_span_style(
     })
 }
 
-/// Top of the horizontal base em inside SkParagraph's typographic rectangle.
-/// Its tight rect can include substantial ascender-side padding; anchoring an
-/// over annotation to that rect's top therefore leaves a visible gap above CJK
-/// ink. The em is bottom-aligned to the rect, matching the baseline model used
-/// by the horizontal painter. The ruby showcase needs a 12 px clearance at
-/// 56 px: the original 6 px adjustment still left it 6 px too close to the
-/// kanji. Keep the 3/14-em value proportional at other text sizes.
+/// Top of the horizontal base em inside SkParagraph's typographic rect, less
+/// a 3/14-em clearance (12 px at 56 px). The tight rect includes ascender-side
+/// padding, so anchoring an over annotation to its top leaves a gap above CJK
+/// ink; the em is bottom-aligned to the rect.
 pub(crate) fn horizontal_annotation_over_top(rect: skia::Rect, font_size: f32) -> f32 {
     let font_size = font_size.max(0.0);
     rect.top.max(rect.bottom - font_size) - font_size * (3.0 / 14.0)
@@ -652,8 +644,7 @@ pub(crate) fn horizontal_emphasis_mark_box(
 }
 
 /// Paint horizontal emphasis marks (圏点 / bouten) above their base glyphs.
-/// The base paragraph retains its normal metrics; interlinear collision and
-/// automatic line-gap expansion remain a separate layout policy.
+/// Draw-only: the base paragraph keeps its own metrics.
 pub(crate) fn paint_horizontal_emphasis(
     canvas: &skia::Canvas,
     paragraph: &Paragraph,
@@ -747,9 +738,9 @@ fn next_horizontal_ruby_range(
     offset_map.to_shifted(start)..offset_map.to_shifted(*utf16_cursor)
 }
 
-/// Baseline adjustment that attaches a glyph's visible ink edge to its base
-/// strip. Font-wide ascender/descender metrics include leading which makes
-/// horizontal ruby visibly detached for many Japanese faces.
+/// Ink edge of `glyph` (bottom when `over`, else top), used to attach ruby
+/// ink to its base. Font-wide ascent/descent include leading, which leaves
+/// ruby detached in many Japanese faces.
 fn horizontal_ruby_ink_edge(font: &Font, glyph: GlyphId, fallback: f32, over: bool) -> f32 {
     let mut bounds = [skia::Rect::default()];
     font.get_bounds(&[glyph], &mut bounds, None);
@@ -765,13 +756,11 @@ fn horizontal_ruby_ink_edge(font: &Font, glyph: GlyphId, fallback: f32, over: bo
     }
 }
 
-/// Paint ruby annotations for one horizontally laid-out paragraph. Draw-only:
-/// base rects come from the already laid-out skparagraph
-/// (`get_rects_for_range`), the annotation is shaped at half the span size
-/// and distributed over each line's base rect with the same jlreq
-/// distribution the vertical path uses (`distribute_ruby_tops` along the
-/// horizontal flow). Lines are not reflowed to reserve an annotation band;
-/// the ruby draws in the natural leading above the base line.
+/// Paint ruby for one laid-out horizontal paragraph. Draw-only: base rects
+/// come from `get_rects_for_range`, and the ruby is shaped at
+/// `ruby_font_size` and spread over each line's rect with the vertical path's
+/// jlreq distribution (`distribute_ruby_tops`). Lines are not reflowed; ruby
+/// draws in the line's leading.
 pub(crate) fn paint_horizontal_ruby(
     canvas: &Canvas,
     text_content: &TextContent,
@@ -844,9 +833,8 @@ pub(crate) fn paint_horizontal_ruby(
                 .map(|(_, _, advance)| *advance)
                 .fold(0.0f32, f32::max)
                 .max(1.0);
-            // Horizontal SkParagraph has already fixed the base geometry.
-            // When overhang is prohibited, fit the annotation strip to
-            // that geometry instead of allowing either end to escape it.
+            // With overhang prohibited, squeeze the ruby to fit the base
+            // rect that SkParagraph has fixed.
             let glyph_scale = if span.ruby_overhang == RubyOverhang::None {
                 (rect_box.rect.width() / (advance * count as f32)).min(1.0)
             } else {
@@ -901,9 +889,9 @@ pub(crate) fn paint_horizontal_ruby(
     }
 }
 
-/// Block flow direction of a paragraph. Horizontal is the skparagraph
-/// path; vertical-rl lays out columns top->bottom advancing right->left
-/// through the custom vertical pass.
+/// Block flow direction of a paragraph. Horizontal uses skparagraph;
+/// vertical-rl uses the custom vertical pass: columns top to bottom,
+/// advancing right to left.
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum WritingMode {
     #[default]
@@ -926,13 +914,11 @@ pub enum TextCombineUpright {
     #[default]
     None,
     All,
-    /// Combine runs of 2-4 consecutive ASCII or full-width digits into one upright
-    /// composite; other characters keep the normal vertical layout.
+    /// Runs of 2-4 ASCII or full-width digits combine into one upright cell.
     Digits,
-    /// Like `Digits` but only runs of exactly 2 digits combine
-    /// (CSS `text-combine-upright: digits 2`).
+    /// Like `Digits`, for runs of exactly 2 (CSS `digits 2`).
     Digits2,
-    /// Like `Digits` but runs of 2-3 digits combine.
+    /// Like `Digits`, for runs of 2-3.
     Digits3,
 }
 
@@ -991,9 +977,9 @@ pub enum FontFeatures {
     Vpal,
 }
 
-/// Controls whether annotation layers participate in line/column spacing.
-/// The default preserves legacy documents; `Auto` reserves one half-em for
-/// each active ruby or emphasis layer.
+/// Whether ruby and emphasis on the same side stack. `Auto` places emphasis
+/// outside over-side ruby and reserves room for both; `None` lets them share
+/// one layer.
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum AnnotationClearance {
     #[default]

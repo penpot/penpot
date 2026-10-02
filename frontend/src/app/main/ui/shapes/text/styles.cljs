@@ -23,8 +23,7 @@
    (generate-root-styles props node false))
   ([{:keys [width height]} node code?]
    (let [valign (:vertical-align node "top")
-         ;; Mirroring the shape's writing mode on the root makes paragraph
-         ;; blocks stack right-to-left.
+         ;; The root writing mode makes paragraph blocks stack right-to-left.
          writing-mode (wm/content-writing-mode node)
          base   #js {:height (when-not code? (fmt/format-pixels height))
                      :width  (when-not code? (fmt/format-pixels width))
@@ -123,8 +122,8 @@
       (and (string? text-combine-upright) (pos? (alength text-combine-upright)))
       (obj/set! "textCombineUpright" (css-text-combine-upright text-combine-upright))
 
-      ;; Emphasis marks map to CSS text-emphasis-style: our kebab values
-      ;; ("filled-dot") become the CSS "<fill> <shape>" pair ("filled dot").
+      ;; Stored kebab values ("filled-dot") become the CSS "<fill> <shape>"
+      ;; pair ("filled dot").
       (set-value? text-emphasis)
       (obj/set! "textEmphasis" (str/replace text-emphasis "-" " "))
 
@@ -137,10 +136,8 @@
       (some? line-height)
       (obj/set! "lineHeight" line-height)
 
-      ;; Warichu (割注) CSS emulation: an inline-block at half size whose
-      ;; inline-size fits half the characters, so the browser wraps it into
-      ;; two half-size sub-lines within one inline position in either writing
-      ;; mode.
+      ;; Warichu (割注): a half-size inline-block as wide as half the
+      ;; characters, so the browser wraps it into two sub-lines.
       (jl/warichu-text? data)
       (-> (obj/set! "display" "inline-block")
           (obj/set! "fontSize" (if (and (string? font-size) (pos? (alength font-size)))

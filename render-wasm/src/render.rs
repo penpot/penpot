@@ -1728,7 +1728,7 @@ impl RenderState {
 
                 // Plain fill (no strokes / parent shadows): reuse cached layout
                 // paragraphs when valid. Skip builder rebuild + Skia layout.
-                // The developer text grid is painted by the full text pass.
+                // The full text pass paints the developer text grid.
                 let can_use_layout_cache = !self.options.is_text_grid_visible()
                     && !shape.has_visible_strokes()
                     && parent_shadows.is_none()

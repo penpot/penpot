@@ -124,7 +124,7 @@ impl RenderOptions {
     }
 
     /// jlreq-style character-frame grid overlay for Japanese vertical
-    /// text: a developer aid, never part of exported output.
+    /// text: a developer aid, never exported.
     pub fn is_text_grid_visible(&self) -> bool {
         self.flags & TEXT_GRID_VISIBLE == TEXT_GRID_VISIBLE
     }

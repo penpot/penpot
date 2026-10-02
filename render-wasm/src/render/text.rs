@@ -17,9 +17,9 @@ use skia_safe::{
 };
 
 /// Vertical text: shadows, fill, strokes and the debug grid, all painted from
-/// one layout. Like every vertical pass, the content is rebound to the
-/// selrect: stored text bounds describe the measured content and can be
-/// taller than a fixed shape, whose height is the column-wrap budget.
+/// one layout. Rebinds the content to the selrect: stored text bounds
+/// describe the measured content and can be taller than a fixed shape, whose
+/// height is the column-wrap budget.
 pub fn render_vertical_text(
     state: &mut RenderState,
     shape: &Shape,
@@ -82,10 +82,10 @@ pub fn render_vertical_text(
     Ok(())
 }
 
-/// Paint a viewport-only grid over SkParagraph horizontal text. Blue outlines
-/// show line boxes, green boxes show the per-scalar tight rectangles returned
-/// by SkParagraph, and amber rules show baselines. This mirrors the vertical
-/// text grid while making horizontal annotation anchors inspectable.
+/// Paint a viewport-only debug grid over SkParagraph horizontal text: blue
+/// line boxes, green per-scalar tight rects from SkParagraph, amber
+/// baselines. Matches the vertical text grid and shows horizontal annotation
+/// anchors.
 pub fn paint_horizontal_grid(canvas: &Canvas, shape: &Shape, text_content: &TextContent) {
     let mut builders = text_content.paragraph_builder_group_from_text(None);
     let layout = calculate_text_layout_data(shape, text_content, &mut builders, true);
@@ -682,10 +682,9 @@ fn paint_text_with_emoji_overlay(
 ) {
     let text_content = shape.get_text_content();
 
-    // Vertical writing renders through the custom vertical pass.
-    // Stored text bounds describe the measured content and can be taller than
-    // a fixed shape. Rebind to the selrect so the shape height remains the
-    // column-wrap budget used by the vertical painter.
+    // Vertical writing paints through the vertical pass. Stored text bounds
+    // describe the measured content and can be taller than a fixed shape, so
+    // rebind to the selrect to keep the shape height as the column-wrap budget.
     let vertical_text_content = text_content
         .is_vertical()
         .then(|| text_content.new_bounds(shape.selrect()));

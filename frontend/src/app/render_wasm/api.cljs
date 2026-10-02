@@ -1407,14 +1407,13 @@
 
           (if fallback-fonts-only? updated-fonts fallback-fonts))))))
 
-;; Fallback faces a composition is already waiting on, so each preview update
-;; does not queue another relayout for them.
+;; Fallback faces a composition waits on, so preview updates do not queue more relayouts.
 (defonce ^:private composition-pending-faces (atom #{}))
 
 (defn load-composition-fonts!
   "Fetch the fallback faces (emoji, Noto, ...) that `text` needs and relayout
-  `shape-id` once they are stored. For text that only lives in WASM, such as an
-  IME composition preview; committed content loads its faces through
+  `shape-id` once they are stored. For text that lives only in WASM, such as
+  an IME composition preview; committed content loads its faces through
   `set-shape-text-content`."
   [shape-id text]
   (let [emoji?  (cfnt/contains-emoji? text)
@@ -3025,8 +3024,7 @@
                               features))
          ;; Each warichu sub-line has its own entry, drawn at half size.
          :warichu         (when (= "warichu" (get element :warichu)) "warichu")
-         ;; Horizontal position data has no separate ruby strip, so the base
-         ;; entry carries the annotation for static SVG export.
+         ;; Horizontal data has no ruby strip; the base entry carries ruby for SVG export.
          :ruby            (when (and (not vertical?) (seq element-text)) ruby)
          :ruby-size       (get element :ruby-size)
          :ruby-align      (get element :ruby-align)
