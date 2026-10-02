@@ -88,7 +88,8 @@ export function errorReportsPage(root, { onNavigate }) {
     for (let i = 0; i < bodyRows.length; i++) {
       const row = bodyRows[i];
       const item = state.items[i];
-      row.addEventListener("click", () => onNavigate("/error-reports/" + item.id));
+      row.addEventListener("click", () =>
+        onNavigate("?screen=error-report&id=" + encodeURIComponent(item.id)));
     }
     tableWrap.appendChild(table);
     nextButton.disabled = state.loading || state.nextSince === null;

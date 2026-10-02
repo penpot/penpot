@@ -40,25 +40,18 @@
     (t/is (= 302 (::yres/status response)))
     (t/is (= "admin/" (get (::yres/headers response) "location")))))
 
-(t/deftest unknown-subpath-falls-back-to-index
-  ;; Subpath support: a deep reload never 404s.
+(t/deftest unknown-subpath-is-not-found
+  ;; SPA state travels in the query string: no subpath page exists.
   (let [response (run-handler "error-reports/some-id")]
-    (t/is (= 200 (::yres/status response)))
-    (t/is (= "text/html" (content-type response)))
-    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+    (t/is (= 404 (::yres/status response)))))
 
-(t/deftest traversal-attempt-falls-back-to-index
+(t/deftest traversal-attempt-is-not-found
   (let [response (run-handler "../../config")]
-    (t/is (= 200 (::yres/status response)))
-    (t/is (= "text/html" (content-type response)))
-    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+    (t/is (= 404 (::yres/status response)))))
 
-(t/deftest missing-file-falls-back-to-index
-  ;; The type matches the body: an HTML index, not the requested JS.
+(t/deftest missing-file-is-not-found
   (let [response (run-handler "js/does-not-exist.js")]
-    (t/is (= 200 (::yres/status response)))
-    (t/is (= "text/html" (content-type response)))
-    (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+    (t/is (= 404 (::yres/status response)))))
 
 (t/deftest content-type-mapping
   (t/is (= "text/html" (#'admin/content-type-for "index.html")))

@@ -25,7 +25,7 @@ export function errorDetailPage(root, { id, onNavigate }) {
 
   const back = document.createElement("button");
   back.textContent = "Back to list";
-  back.addEventListener("click", () => onNavigate("/error-reports"));
+  back.addEventListener("click", () => onNavigate("?screen=error-reports"));
   root.appendChild(back);
 
   const body = document.createElement("div");

@@ -54,16 +54,20 @@
 (defn- resolve-resource
   "Map the path behind `/admin` to a file under `resource-prefix`.
 
-  Only a safe relative path with a known extension and an existing
-  resource is served as such; anything else (root, SPA routes,
-  traversal attempts, unknown files) falls back to `index.html`."
+  A blank path (the `/admin/` root) serves the index; only a safe
+  relative path with a known extension and an existing resource
+  serves its file. Anything else (SPA state travels in the query
+  string, so there are no subpath pages) is nil, answered 404."
   [rel]
   (let [rel (str/trim (or rel ""))]
-    (if (and (safe-rel? rel)
-             (contains? content-types (extension rel))
-             (io/resource (str resource-prefix rel)))
-      rel
-      fallback-resource)))
+    (cond
+      (= "" rel)
+      fallback-resource
+
+      (and (safe-rel? rel)
+           (contains? content-types (extension rel))
+           (io/resource (str resource-prefix rel)))
+      rel)))
 
 (defn- content-type-for
   [rel]
@@ -71,11 +75,13 @@
 
 (defn admin-handler
   [_cfg request]
-  (let [rel  (resolve-resource (some-> request :path-params :path))
-        body (slurp (io/resource (str resource-prefix rel)) :encoding "UTF-8")]
+  (if-let [rel (resolve-resource (some-> request :path-params :path))]
     {::yres/status  200
      ::yres/headers {"content-type" (content-type-for rel)}
-     ::yres/body    body}))
+     ::yres/body    (slurp (io/resource (str resource-prefix rel)) :encoding "UTF-8")}
+    {::yres/status  404
+     ::yres/headers {"content-type" "text/plain"}
+     ::yres/body    "not found"}))
 
 (defn admin-redirect-handler
   "Redirect the bare `/admin` to `/admin/` with a relative target.

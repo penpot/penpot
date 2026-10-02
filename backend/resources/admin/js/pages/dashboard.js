@@ -5,8 +5,8 @@ import { renderHeader } from "../components/header.js";
 import { renderSidebar } from "../components/sidebar.js";
 
 const NAV_ITEMS = [
-  { path: "/", label: "Dashboard" },
-  { path: "/error-reports", label: "Error reports" },
+  { query: "", label: "Dashboard" },
+  { query: "?screen=error-reports", label: "Error reports" },
 ];
 
 export function dashboardPage(root, { onNavigate }) {

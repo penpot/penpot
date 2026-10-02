@@ -1,10 +1,7 @@
-// Sidebar navigation: renders a <nav> of links. Labels and paths
-// are painted as text; navigation goes through the given callback
-// so this component never touches the router directly. `href`s are
-// deployment-root relatives (for new-tab clicks), built with the
-// router helper.
-
-import { hrefFor } from "../router.js";
+// Sidebar navigation: renders a <nav> of links. Labels and queries
+// are painted as text; navigation goes through the given callback.
+// Hrefs are bare query strings: they resolve against the current
+// page, so subpath deployments keep working with no path math.
 
 export function renderSidebar(items, onNavigate) {
   const nav = document.createElement("nav");
@@ -14,10 +11,10 @@ export function renderSidebar(items, onNavigate) {
     const link = document.createElement("a");
     link.className = "admin-sidebar-link";
     link.textContent = item.label;
-    link.href = hrefFor(item.path);
+    link.href = item.query;
     link.addEventListener("click", (event) => {
       event.preventDefault();
-      onNavigate(item.path);
+      onNavigate(item.query);
     });
     nav.appendChild(link);
   }

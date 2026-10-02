@@ -1,21 +1,24 @@
 // Bootstrap: paint a loading state, resolve the session, and show
-// the matching view. The product login lives at `/login` relative
-// to the deployment root, so the redirect strips the panel mount
-// (`<root>/admin`) instead of hardcoding a path.
+// the matching view. Navigation is a bare query string
+// (`?screen=error-reports`, `?screen=error-report&id=…`): it resolves
+// against the current page, so subpath deployments keep working and
+// there is no router. The product login lives next to the panel
+// mount (`<root>/admin/`), hence the `../login` hop.
 
 import { checkSuperuserSession } from "./auth.js";
 import { renderHeader } from "./components/header.js";
 import { dashboardPage } from "./pages/dashboard.js";
 import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
-import { basePath, navigate, register, start } from "./router.js";
 
-function loadingView(root) {
-  root.textContent = "Loading admin…";
+let sessionStatus = "anonymous";
+
+function screenParams() {
+  return new URLSearchParams(location.search);
 }
 
 function loginUrl() {
-  return basePath().replace(/\/admin$/, "") + "/login";
+  return new URL("../login", location.href).pathname;
 }
 
 function deniedView(root) {
@@ -31,36 +34,45 @@ function deniedView(root) {
   root.appendChild(login);
 }
 
-register("/", loadingView);
-register("/error-reports", (root) => errorReportsPage(root, { onNavigate: navigate }));
-register("/error-reports/:id", (root, params) =>
-  errorDetailPage(root, { id: params.id, onNavigate: navigate }));
-register("*", loadingView);
+function renderAuthed(root) {
+  root.replaceChildren();
+  if (sessionStatus !== "superuser") {
+    deniedView(root);
+    return;
+  }
+  const params = screenParams();
+  const navigate = (query) => {
+    history.pushState({}, "", query);
+    renderAuthed(root);
+  };
+  if (params.get("screen") === "error-reports") {
+    errorReportsPage(root, { onNavigate: navigate });
+  } else if (params.get("screen") === "error-report" && params.get("id")) {
+    errorDetailPage(root, { id: params.get("id"), onNavigate: navigate });
+  } else {
+    dashboardPage(root, { onNavigate: navigate });
+  }
+}
 
 async function boot() {
-  start();
   const root = document.getElementById("app");
+  root.textContent = "Loading admin…";
 
-  let status;
   try {
-    status = await checkSuperuserSession();
+    sessionStatus = await checkSuperuserSession();
   } catch {
     root.replaceChildren();
     root.textContent = "Admin — cannot reach the server.";
     return;
   }
 
-  if (status === "anonymous") {
+  if (sessionStatus === "anonymous") {
     location.assign(loginUrl());
     return;
   }
 
-  root.replaceChildren();
-  if (status === "superuser") {
-    dashboardPage(root, { onNavigate: navigate });
-  } else {
-    deniedView(root);
-  }
+  renderAuthed(root);
+  window.addEventListener("popstate", () => renderAuthed(root));
 }
 
 document.addEventListener("DOMContentLoaded", boot);
