@@ -110,7 +110,7 @@
   ([ids update-fn
     {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index
-            translation? skip-grid-reassignment? skip-component-sync?]
+            translation? skip-grid-reassignment? skip-component-sync? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -153,7 +153,7 @@
                           :ignore-touched ignore-touched
                           :with-objects? with-objects?
                           :skip-grid-reassignment? skip-grid-reassignment?})
-                        (cond-> reg-objects? (pcb/resize-parents ids))
+                        (cond-> reg-objects? (pcb/resize-parents (or resize-ids ids)))
                         (pcb/set-translation? translation?)
                         (pcb/set-skip-component-sync? skip-component-sync?))))]
              ;; Check buffered text candidates when the buffer is committed.
@@ -191,7 +191,7 @@
     {:as props
      :keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id
             ignore-touched undo-group with-objects? changed-sub-attr changed-item-index translation?
-            skip-grid-reassignment? skip-component-sync?]
+            skip-grid-reassignment? skip-component-sync? resize-ids]
      :or {reg-objects? false
           save-undo? true
           stack-undo? false
@@ -250,7 +250,7 @@
               (rx/empty))
 
             (if (seq (:redo-changes changes))
-              (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
+              (let [changes (cond-> changes reg-objects? (pcb/resize-parents (or resize-ids ids)))]
                 (rx/of (dch/commit-changes changes)))
               (rx/empty))
 

@@ -165,8 +165,7 @@ impl DocAtlas {
     pub fn try_new() -> Result<Self> {
         // Keep atlas as a regular surface like the rest. Start with a tiny
         // transparent surface and grow it on demand.
-        let mut surface =
-            get_gpu_state().create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
+        let mut surface = get_gpu_state().create_surface_with_dimensions(1, 1)?;
 
         surface.canvas().clear(skia::Color::TRANSPARENT);
 
@@ -276,8 +275,7 @@ impl DocAtlas {
             return Ok(());
         }
 
-        let mut new_surface =
-            gpu_state.create_surface_with_dimensions("atlas".to_string(), new_w, new_h)?;
+        let mut new_surface = gpu_state.create_surface_with_dimensions(new_w, new_h)?;
         new_surface.canvas().clear(skia::Color::TRANSPARENT);
 
         // Copy old atlas into the new one with offset.
@@ -307,7 +305,6 @@ impl DocAtlas {
         self.origin = skia::Point::new(new_left, new_top);
         self.size = skia::ISize::new(new_w, new_h);
         self.scale = new_scale;
-        gpu_state.delete_surface(&mut self.surface);
         self.surface = new_surface;
         Ok(())
     }
@@ -528,35 +525,25 @@ impl Surfaces {
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
         let target = gpu_state.create_target_surface(width, height)?;
-        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims)?;
-        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height)?;
-        let backbuffer =
-            gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
+        let filter = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let cache = gpu_state.create_surface_with_dimensions(width, height)?;
+        let backbuffer = gpu_state.create_surface_with_dimensions(width, height)?;
 
         let max_texture_size = gpu_state.max_texture_size();
-        let tile_atlas = gpu_state.create_surface_with_dimensions(
-            "tile_atlas".to_string(),
-            max_texture_size,
-            max_texture_size,
-        )?;
+        let tile_atlas =
+            gpu_state.create_surface_with_dimensions(max_texture_size, max_texture_size)?;
 
-        let current =
-            gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
+        let current = gpu_state.create_surface_with_isize(extra_tile_dims)?;
 
-        let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims)?;
-        let inner_shadows =
-            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims)?;
-        let text_drop_shadows = gpu_state
-            .create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims)?;
-        let shape_fills =
-            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims)?;
-        let shape_strokes =
-            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims)?;
-        let export = gpu_state.create_surface_with_isize("export".to_string(), extra_tile_dims)?;
+        let drop_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let inner_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let text_drop_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let shape_fills = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let shape_strokes = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let export = gpu_state.create_surface_with_isize(extra_tile_dims)?;
 
-        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
-        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
+        let ui = gpu_state.create_surface_with_dimensions(width, height)?;
+        let debug = gpu_state.create_surface_with_dimensions(width, height)?;
 
         let tiles = TileTextureCache::new(tile_atlas.width(), tile_atlas.height());
         let atlas = DocAtlas::try_new()?;
@@ -677,12 +664,10 @@ impl Surfaces {
         ));
         canvas.scale((s / scale, s / scale));
 
-        self.atlas.surface.draw(
-            canvas,
-            (0.0, 0.0),
-            self.sampling_options,
-            Some(&skia::Paint::default()),
-        );
+        let sampling = skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None);
+        self.atlas
+            .surface
+            .draw(canvas, (0.0, 0.0), sampling, Some(&skia::Paint::default()));
 
         canvas.restore();
     }
