@@ -1,0 +1,30 @@
+:root {
+  --admin-bg: #1e1e1e;
+  --admin-surface: #2b2b2b;
+  --admin-text: #e8e8e8;
+  --admin-muted: #9a9a9a;
+  --admin-accent: #f7932e;
+  --admin-danger: #e65252;
+  --admin-space-xs: 4px;
+  --admin-space-sm: 8px;
+  --admin-space-md: 16px;
+  --admin-space-lg: 24px;
+  --admin-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --admin-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: var(--admin-font);
+}
+
+#app {
+  min-height: 100vh;
+  padding: var(--admin-space-lg);
+}
