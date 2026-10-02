@@ -9,6 +9,8 @@
    [app.common.types.path :as path]
    [app.common.uuid :as uuid]
    [benches.render-wasm.cases :as cases]
+   [benches.render-wasm.declarations :as decl]
+   ;; These 3 register the scenes, do not remove
    [benches.render-wasm.scenes.masks :as masks]
    [benches.render-wasm.scenes.paths :as paths]
    [benches.render-wasm.scenes.plus :as plus]
@@ -18,8 +20,9 @@
 
 (t/deftest curved-paths-use-canonical-content-and-stable-order
   (let [params   {:count 12 :width 1920 :height 1080 :seed 42}
-        scene    (paths/build params)
-        again    (paths/build params)
+        build    (get-in @decl/registry [:scenes :paths :build])
+        scene    (build params)
+        again    (build params)
         shapes   (helpers/children-of scene uuid/zero)
         first    (first shapes)
         content  (vec (:content first))]
@@ -34,7 +37,8 @@
     (t/is (= scene (common/validate! scene)))))
 
 (t/deftest plus-paths-have-two-crossing-open-lines
-  (let [scene    (plus/build {:count 8 :width 1920 :height 1080 :seed 42})
+  (let [build    (get-in @decl/registry [:scenes :plus :build])
+        scene    (build {:count 8 :width 1920 :height 1080 :seed 42})
         first    (first (helpers/children-of scene uuid/zero))
         segments (vec (:content first))
         [a b c d] segments]
@@ -51,7 +55,8 @@
     (t/is (= scene (common/validate! scene)))))
 
 (t/deftest mask-child-order-and-descendants-are-reachable
-  (let [scene     (masks/build {:width 1920 :height 1080 :seed 42})
+  (let [build    (get-in @decl/registry [:scenes :masks :build])
+        scene     (build {:width 1920 :height 1080 :seed 42})
         groups    (helpers/children-of scene uuid/zero)
         group     (first groups)
         children  (helpers/children-of scene (:id group))

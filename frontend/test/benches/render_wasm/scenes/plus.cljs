@@ -33,22 +33,21 @@
         {:command :move-to :params {:x x :y (- y r)}}
         {:command :line-to :params {:x x :y (+ y r)}}]))))
 
-(defn build
-  [params]
-  (let [params (merge default-params params)]
-    (sb/scene {:seed (:seed params)
-               :root {:x 0 :y 0 :width (:width params) :height (:height params)}
-               :defaults {:path {:content (plus-content params)
-                                 :fills []
-                                 :strokes (sb/gen-vector (sb/gen-stroke 4))}}}
-              (doseq [_ (range (:count params))]
-                (sb/path)))))
 
 (decl/defscene :plus
   {:version 1
    :description "Plus signs made of two open line subpaths"
    :params-schema schema:params}
-  build)
+  (fn build
+    [params]
+    (let [params (merge default-params params)]
+      (sb/scene {:seed (:seed params)
+                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}
+                 :defaults {:path {:content (plus-content params)
+                                   :fills []
+                                   :strokes (sb/gen-vector (sb/gen-stroke 4))}}}
+                (doseq [_ (range (:count params))]
+                  (sb/path))))))
 
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
