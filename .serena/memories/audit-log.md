@@ -198,18 +198,18 @@ On the backend, `prepare-context-from-request` (`backend/src/app/loggers/audit.c
 
 ### Context field guide: `initiator`
 
-`initiator` answers "which application started this request?". Two paths set it, both server-side, never trusting the client:
+`initiator` labels the application that started a request. The server sets it on both channels, but only the shared-key channel authenticates the sending application:
 
 - **Backend channel** (RPC + management API): it comes from the shared-key auth layer (`wrap-shared-key-auth` in `backend/src/app/http/middleware.clj`): when a trusted service calls the management API with `x-shared-key: "<key-id> <secret>"`, the key-id (lowercased) is stored on the request as `::http/auth-key-id`, and `prepare-context-from-request` copies it into `:initiator`. When there is no shared key (a normal user RPC), it falls back to `"app"`, which means Penpot itself.
-- **Frontend channel** (`push-audit-events`): `get-client-initiator` maps the `x-client` header product to an initiator: `penpot-frontend` → `"app"`, `penpot-admin-console` → `"admin-console"`, legacy `penpot-nitrate` (old admin-console releases, remove once redeployed) → `"admin-console"`, missing or unknown → `"app"`. It overwrites any client-sent `initiator`.
+- **Frontend channel** (`push-audit-events`): `get-client-initiator` maps the `x-client` header product to an initiator: `penpot-frontend` → `"app"`, `penpot-admin-console` → `"admin-console"`, legacy `penpot-nitrate` (old admin-console releases, remove once redeployed) → `"admin-console"`, missing or unknown → `"app"`. It overwrites any `initiator` in the event context, but the caller controls the header. Any authenticated caller can claim `"admin-console"` by sending that product in `x-client`. Use this label for usage analytics; it does not prove which application sent the event or grant permissions. The session still determines `profile-id`.
 
 Values you will see:
 
 - `"app"`: normal Penpot traffic (browser → public RPC or event ingest, or backend internal work). This is the vast majority.
-- `"admin-console"`: the private Nitrate admin-console, on both channels: management API calls (section 7a) and browser events (section 7b, via the `x-client` mapping).
+- `"admin-console"`: the authenticated Nitrate admin-console on management API calls (section 7a), or a caller claiming that product on browser events (section 7b, via the `x-client` mapping).
 - `"nexus"`, `"exporter"`, `"media-processor"`: other first-party services using their own shared keys (key ids come from `::setup/shared-keys` in `backend/src/app/setup.clj`, derived from the instance secret unless overridden).
 
-Why it matters: it is the only context field that tells Penpot's own traffic apart from trusted services and from the admin-console browser, and it survives into telemetry on both channels (one of the four backend keys, and on the frontend allowlist too), so per-initiator counts stay available even on anonymized rows.
+Why it matters: it supports per-application usage counts, with the trust level described above. It survives into telemetry on both channels (one of the four backend keys, and on the frontend allowlist too), so per-initiator counts stay available even on anonymized rows.
 
 More metadata the Penpot frontend adds inside each event (not as headers): `collect-context` with `ua-parser` (browser, engine, OS, device, screen, CPU arch), `locale` (updated on language change), `:session` / `:session-id` / `:external-session-id`, and SaaS host extras (`add-external-context-info`).
 

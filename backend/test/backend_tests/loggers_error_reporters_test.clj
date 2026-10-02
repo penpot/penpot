@@ -6,14 +6,17 @@
 
 (ns backend-tests.loggers-error-reporters-test
   (:require
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.audit :as audit]
    [app.loggers.database :as logdb]
    [app.loggers.mattermost :as logmm]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec.csp :as sp]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -42,6 +45,38 @@
 
 (t/deftest database-reporter-halt-without-start-is-safe
   (t/is (nil? (ig/halt-key! :app.loggers.database/reporter nil))))
+
+(t/deftest database-reporter-runtime-switch-controls-persistence
+  (with-redefs [cf/flags #{:error-reporting}
+                logdb/enabled (atom true)]
+    (let [input          (sp/chan)
+          reporter       (with-redefs [sp/chan (constantly input)]
+                           (ig/init-key :app.loggers.database/reporter
+                                        {::db/pool th/*pool*}))
+          ^Thread thread (::logdb/thread reporter)
+          event          (with-meta {:name "unhandled-exception"
+                                     :type "action"
+                                     :context {:version "2.19.0"}
+                                     :props {:hint "runtime switch test"}}
+                           {::audit/event true})]
+      (try
+        (doseq [[label enabled?] [["enabled" true]
+                                  ["disabled" false]
+                                  ["re-enabled without restarting" true]]]
+          (t/testing label
+            (reset! logdb/enabled enabled?)
+            (let [id (uuid/next)]
+              (t/is (true? (sp/put! input (assoc event :id id) 5000 ::timeout)))
+              ;; On an unbuffered channel, the second put completes only
+              ;; after the reporter finishes processing the first report.
+              (t/is (true? (sp/put! input (assoc event :id (uuid/next)) 5000 ::timeout)))
+              (t/is (= (if enabled? [{:id id :source 4}] [])
+                       (th/db-exec! ["select id, source from server_error_report where id = ?" id]))))))
+        (finally
+          (sp/close input)
+          (.join thread 5000)
+          (ig/halt-key! :app.loggers.database/reporter reporter)
+          (t/is (not (.isAlive thread))))))))
 
 (t/deftest mattermost-reporter-does-not-start-without-flag
   (with-redefs [cf/flags #{}
