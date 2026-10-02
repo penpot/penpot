@@ -40,7 +40,8 @@ pub struct ShapedRun {
     pub utf8_range: Range<usize>,
     /// Source text of `utf8_range`, attached to the run's text blobs.
     pub text: String,
-    /// Local-y offset that centres the run's ink after 90° rotation.
+    /// Local-y offset that puts the font's central baseline on the column
+    /// axis after 90° rotation.
     pub rotated_baseline_shift: f32,
 }
 
@@ -262,11 +263,7 @@ impl RunHandler for RunCollector {
             .map(|(i, position)| positions.get(i + 1).map_or(end, |next| next.x) - position.x)
             .collect();
         self.runs.push(ShapedRun {
-            rotated_baseline_shift: rotated_run_baseline_shift(
-                info.font,
-                &self.scratch_glyphs,
-                &positions,
-            ),
+            rotated_baseline_shift: central_baseline_shift(info.font),
             font: info.font.clone(),
             glyphs: self.scratch_glyphs.clone(),
             positions,
@@ -453,8 +450,22 @@ pub(super) fn rotated_baseline_shift(top: f32, bottom: f32) -> f32 {
     -(top + bottom) / 2.0
 }
 
+/// Shift that puts the font's central baseline on the column axis: the
+/// middle of its em box, derived from ascent/descent scaled to 1em (CSS
+/// `central` for fonts without a BASE table). It depends only on the font,
+/// so every sideways run of a face shares one baseline whatever its ink.
+fn central_baseline_shift(font: &Font) -> f32 {
+    let (_, metrics) = font.metrics();
+    let band = metrics.descent - metrics.ascent;
+    if band <= 0.0 {
+        return 0.0;
+    }
+    let em_over = -metrics.ascent * font.size() / band;
+    em_over - font.size() / 2.0
+}
+
 /// Centres the glyphs' actual ink; ascent/descent metrics are only the
-/// fallback for runs without visible ink.
+/// fallback for glyphs without visible ink.
 fn rotated_run_baseline_shift(font: &Font, glyphs: &[GlyphId], positions: &[SkPoint]) -> f32 {
     if let Some(ink) = glyph_run_ink_bounds(font, glyphs, positions) {
         rotated_baseline_shift(ink.top, ink.bottom)
@@ -477,33 +488,39 @@ mod tests {
         assert_eq!(families[2], "fallback");
     }
 
+    fn rotated_shift(text: &str) -> f32 {
+        let layout = layout_content(&make_content(&[text], 1000.0), 1000.0);
+        let CellKind::Rotated { run } = layout.cells[0].kind else {
+            panic!("expected a rotated run");
+        };
+        layout.runs[run].rotated_baseline_shift
+    }
+
     #[test]
-    fn rotated_run_centres_actual_lowercase_ink() {
+    fn rotated_runs_share_a_baseline_whatever_their_ink() {
+        // Ascenders and descenders must not move the baseline across the
+        // column.
+        let plain = rotated_shift("aaa");
+        for text in ["aaaf", "aaag", "aaagf", "AAA"] {
+            assert!(
+                (rotated_shift(text) - plain).abs() < 0.01,
+                "{text} shifted from {plain} to {}",
+                rotated_shift(text)
+            );
+        }
+    }
+
+    #[test]
+    fn rotated_lowercase_sits_on_the_column_axis() {
+        // Source Sans: the em-box middle falls within 2% of an em of the
+        // x-height middle, so lowercase looks centred in the column.
         let layout = layout_content(&make_content(&["a"], 1000.0), 1000.0);
-        let cell = &layout.cells[0];
-        let CellKind::Rotated { run } = cell.kind else {
+        let CellKind::Rotated { run } = layout.cells[0].kind else {
             panic!("expected a rotated run");
         };
         let run = &layout.runs[run];
-        let mut bounds = vec![skia::Rect::default(); run.glyphs.len()];
-        run.font.get_bounds(&run.glyphs, &mut bounds, None);
-        let top = bounds
-            .iter()
-            .zip(&run.positions)
-            .map(|(bound, position)| bound.top + position.y)
-            .fold(f32::MAX, f32::min);
-        let bottom = bounds
-            .iter()
-            .zip(&run.positions)
-            .map(|(bound, position)| bound.bottom + position.y)
-            .fold(f32::MIN, f32::max);
-        let shift = run.rotated_baseline_shift;
-        assert!(((top + bottom) / 2.0 + shift).abs() < 0.01);
-
-        // Lowercase ink does not fill the face's ascent/descent band, so ink
-        // centring differs from font-wide metric centring.
-        let (_, metrics) = run.font.metrics();
-        let metrics_shift = rotated_baseline_shift(metrics.ascent, metrics.descent);
-        assert!((shift - metrics_shift).abs() > 0.1);
+        let ink = run.ink_bounds().expect("visible ink");
+        let ink_middle = (ink.top + ink.bottom) / 2.0 + run.rotated_baseline_shift;
+        assert!(ink_middle.abs() < 0.02 * EM, "ink middle at {ink_middle}");
     }
 }

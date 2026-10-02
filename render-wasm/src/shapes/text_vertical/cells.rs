@@ -355,10 +355,14 @@ impl<'a> SpanCells<'a> {
             let (ink_top, ink_bottom) = ink.unwrap_or((0.0, extent - letter_spacing));
             let (mut ink_top, mut ink_bottom) =
                 (ink_top + vpal_flow_shift, ink_bottom + vpal_flow_shift);
-            // Centre cl-05 ink in the em body, unless vpal already centres it.
+            // Centre cl-05 and forced-upright Western ink in the em body,
+            // unless vpal already centres it. Western glyphs hung from a
+            // shared baseline leave uneven gaps: a descender meets the next
+            // cell's ascender (`gf`) while x-height letters float apart.
             let glyph_flow_shift = if !synthetic_rotation
                 && vpal_delta.is_none()
-                && ch.is_some_and(is_centered_punctuation)
+                && ink.is_some()
+                && ch.is_some_and(|c| is_centered_punctuation(c) || !is_upright_char(c))
             {
                 let shift = centered_flow_shift(ink_top, ink_bottom, extent - letter_spacing);
                 ink_top += shift;
@@ -488,6 +492,26 @@ mod tests {
             "successive upright letters are one em apart, got {}",
             layout.cells[1].top - layout.cells[0].top
         );
+    }
+
+    #[test]
+    fn upright_latin_ink_is_centred_in_its_cell() {
+        // A descender followed by an ascender (`gf`) must not touch: each
+        // letter's ink sits in the middle of its em cell.
+        let mut content = make_content(&["gf"], 1000.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_orientation = TextOrientation::Upright;
+        let layout = layout_with(&provider(TEST_FONT), &content);
+        for cell in &layout.cells {
+            let ink_middle = (cell.ink_top + cell.ink_bottom) / 2.0;
+            assert!(
+                (ink_middle - cell.extent / 2.0).abs() < 0.01,
+                "ink middle {ink_middle} in a {} cell",
+                cell.extent
+            );
+        }
+        let (g, f) = (&layout.cells[0], &layout.cells[1]);
+        let gap = f.top + f.ink_top - (g.top + g.ink_bottom);
+        assert!(gap > 0.2 * EM, "g/f ink gap {gap}");
     }
 
     #[test]

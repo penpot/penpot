@@ -99,7 +99,7 @@ fn cell_draws(layout: &VerticalLayout, cell: &VerticalCell, origin: (f32, f32)) 
         CellKind::Rotated { run } => {
             let run = &layout.runs[run];
             // After rotation +x runs down the column and +y runs across it;
-            // the shift centres the run's actual ink band on the column axis.
+            // the shift puts the font's central baseline on the column axis.
             run.blob()
                 .map(|blob| {
                     GlyphDraw::transformed(

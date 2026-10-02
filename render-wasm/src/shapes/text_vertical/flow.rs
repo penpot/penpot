@@ -200,33 +200,33 @@ pub(super) fn align_offset_along_column(align: TextAlign, budget: f32, used: f32
     }
 }
 
-/// Japanese inter-script spacing at an upright CJK <-> rotated alphanumeric
-/// boundary; punctuation and whitespace get none. Scales by the smaller
-/// adjacent font size so a large neighbour cannot widen the gap.
-fn inter_script_spacing(
-    previous: FlowScript,
-    previous_font_size: f32,
-    next: FlowScript,
-    next_font_size: f32,
-) -> f32 {
-    let boundary = matches!(
-        (previous, next),
+/// Japanese inter-script spacing (JLREQ §3.2.6) between kana or kanji
+/// (cl-15, cl-16, cl-19) and a rotated alphanumeric run. Punctuation keeps
+/// its own aki and Latin sets solid against it; whitespace gets none. Scales
+/// by the smaller adjacent font size so a large neighbour cannot widen the
+/// gap.
+fn inter_script_spacing(previous: &FlowCell, next: &FlowCell) -> f32 {
+    let is_japanese_letter =
+        |flow: &FlowCell| flow.ch.is_some_and(|ch| classify(ch).is_japanese_letter());
+    let boundary = match (previous.script, next.script) {
         (
             FlowScript::Upright,
             FlowScript::Rotated {
                 starts_alphanumeric: true,
                 ..
-            }
-        ) | (
+            },
+        ) => is_japanese_letter(previous),
+        (
             FlowScript::Rotated {
                 ends_alphanumeric: true,
                 ..
             },
-            FlowScript::Upright
-        )
-    );
+            FlowScript::Upright,
+        ) => is_japanese_letter(next),
+        _ => false,
+    };
     if boundary {
-        previous_font_size.min(next_font_size) * INTER_SCRIPT_SPACING_EM
+        previous.cell.font_size.min(next.cell.font_size) * INTER_SCRIPT_SPACING_EM
     } else {
         0.0
     }
@@ -238,12 +238,7 @@ fn inter_script_spacing(
 /// keeps its trailing letter-spacing.
 pub(super) fn apply_inter_script_spacing(cells: &mut [FlowCell]) {
     for i in 1..cells.len() {
-        let target_gap = inter_script_spacing(
-            cells[i - 1].script,
-            cells[i - 1].cell.font_size,
-            cells[i].script,
-            cells[i].cell.font_size,
-        );
+        let target_gap = inter_script_spacing(&cells[i - 1], &cells[i]);
         if target_gap <= 0.0 {
             continue;
         }
@@ -1233,6 +1228,35 @@ mod tests {
             assert!(
                 (layout.cells[0].extent - cjk_extent).abs() < 0.01,
                 "{text:?} must not add spacing immediately after the CJK cell"
+            );
+        }
+    }
+
+    #[test]
+    fn latin_sets_against_japanese_punctuation_without_script_spacing() {
+        // JLREQ §3.2.6 (Figure 103): after 、。」 Latin keeps only the
+        // punctuation's half-em aki, and Latin sets solid after 「 and
+        // before 、」.
+        let provider = provider_with_fallback(VPAL_TEST_FONT, TEST_FONT);
+        let fallback = ["fallback".to_string()];
+        let layout = |text: &str| {
+            layout_with_fallback(&provider, &make_content(&[text], 1000.0), 1000.0, &fallback)
+        };
+        let natural = layout("editor").cells[0].extent;
+        for text in ["あ、editor", "あ。editor", "あ」editor", "あ「editor"] {
+            let cells = layout(text).cells;
+            assert!(
+                (cells[2].top - cells[1].top - EM).abs() < 0.01,
+                "{text}: punctuation frame is {} em",
+                (cells[2].top - cells[1].top) / EM
+            );
+        }
+        for text in ["editor、", "editor」"] {
+            let cells = layout(text).cells;
+            assert!(
+                (cells[1].top - natural).abs() < 0.01,
+                "{text}: Latin must set solid, gap {}",
+                cells[1].top - natural
             );
         }
     }
