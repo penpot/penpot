@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.files.tokens :as cfo]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -666,7 +667,9 @@
   (let [library-ids (get-libraries cfg [file-id])]
     (reduce (fn [data library-id]
               (if-let [library (get-file cfg library-id :include-deleted? true)]
-                (ctf/absorb-assets data (:data library))
+                (cond-> (ctf/absorb-assets data (:data library))
+                  (= library-id (cfo/get-tokens-source data))
+                  (cfo/absorb-tokens-lib (:data library)))
                 data))
             data
             library-ids)))

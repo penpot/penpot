@@ -12,17 +12,18 @@
    [app.binfile.v3 :as v3]
    [app.common.data :as d]
    [app.common.features :as cfeat]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
    [app.common.files.validate :as cfv]
-   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
-   [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [app.storage :as sto]
@@ -36,7 +37,6 @@
    [datoteka.io :as io])
   (:import
    java.io.ByteArrayInputStream
-   java.io.DataInputStream
    java.io.OutputStreamWriter
    java.io.Writer
    java.util.zip.Deflater
@@ -104,6 +104,107 @@
                :type :rect})}])
 
      (dissoc file :data))))
+
+(defn- prepare-file-with-tokens-lib
+  "A shared library with a tokens lib (a set, a theme and two tokens)
+  and a file linked to it that uses it as its tokens source. The file
+  has a rect with both tokens applied. Returns the created files, and
+  the ids and tokens needed to check them."
+  [profile]
+  (let [lib-page-id  (uuid/custom 5 1)
+        file-page-id (uuid/custom 5 2)
+        shape-id     (uuid/custom 5 3)
+        set-id       (uuid/custom 5 4)
+        theme-id     (uuid/custom 5 5)
+
+        token-radius  (ctob/make-token :id (uuid/custom 5 6)
+                                       :name "token-radius"
+                                       :type :border-radius
+                                       :value 10)
+
+        token-opacity (ctob/make-token :id (uuid/custom 5 7)
+                                       :name "token-opacity"
+                                       :type :opacity
+                                       :value 0.7)
+
+        tokens-lib    (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :id set-id
+                                                             :name "test-token-set"))
+                          (ctob/add-theme (ctob/make-token-theme :id theme-id
+                                                                 :name "test-theme"
+                                                                 :sets #{"test-token-set"}))
+                          (ctob/add-token set-id token-radius)
+                          (ctob/add-token set-id token-opacity))
+
+        library       (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared true
+                                          :name "Tokens Library"})
+
+        file          (th/create-file* 2 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared false})]
+
+    (th/link-file-to-library* {:file-id (:id file)
+                               :library-id (:id library)})
+
+    (update-file!
+     :file-id (:id library)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     (-> (pcb/empty-changes nil)
+         (pcb/with-library-data (:data library))
+         (pcb/add-empty-page lib-page-id "library page")
+         (pcb/set-tokens-lib tokens-lib)
+         (pcb/set-tokens-status (ctos/make-tokens-status :active-theme-ids #{theme-id}
+                                                         :active-set-ids #{set-id}))
+         (:redo-changes)))
+
+    (update-file!
+     :file-id (:id file)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     (-> (pcb/empty-changes nil)
+         (pcb/with-library-data (:data file))
+         (pcb/add-empty-page file-page-id "file page")
+         (pcb/set-tokens-source (:id library))
+         (pcb/set-tokens-status (ctos/make-tokens-status :active-theme-ids #{theme-id}
+                                                         :active-set-ids #{set-id}))
+         (:redo-changes)))
+
+    (let [page  (-> (bfc/get-file th/*system* (:id file) {:realize? true})
+                    (get-in [:data :pages-index file-page-id]))
+          shape (as-> (cts/setup-shape
+                       {:id shape-id
+                        :name "rect"
+                        :frame-id uuid/zero
+                        :parent-id uuid/zero
+                        :type :rect}) $
+                  (cto/apply-token-to-shape {:shape $
+                                             :token token-radius
+                                             :attributes [:r1 :r2 :r3 :r4]})
+                  (cto/apply-token-to-shape {:shape $
+                                             :token token-opacity
+                                             :attributes [:opacity]}))]
+      (update-file!
+       :file-id (:id file)
+       :profile-id (:id profile)
+       :revn 0
+       :changes
+       (-> (pcb/empty-changes nil)
+           (pcb/with-page page)
+           (pcb/with-objects (:objects page))
+           (pcb/add-object shape)
+           (:redo-changes))))
+
+    {:library library
+     :file file
+     :page-id file-page-id
+     :shape-id shape-id
+     :token-radius token-radius
+     :token-opacity token-opacity}))
 
 (def ^:private svg-raw-page-id (uuid/custom 1 1))
 (def ^:private svg-raw-root-id (uuid/custom 3 1))
@@ -371,6 +472,130 @@
           (t/is (= "Icons Library" (:name ext-lib)))
           (t/is (= "icons-library" (:slug ext-lib)))
           (t/is (= [(:id file)] (:used-by ext-lib))))))))
+
+(defn- zip-entry-names
+  [path]
+  (with-open [zin (ZipFile. (fs/file path))]
+    (into #{} (map #(.getName ^ZipEntry %)) (iterator-seq (.entries zin)))))
+
+(t/deftest export-detach-libraries-removes-tokens-library-although-keeps-applied-tokens
+  (let [profile (th/create-profile* 1)
+        {:keys [library file page-id shape-id token-radius token-opacity]}
+        (prepare-file-with-tokens-lib profile)]
+
+    ;; Precondition: before the export, the file really depends on the
+    ;; tokens of the library
+    (let [file-data (:data (bfc/get-file th/*system* (:id file)))]
+      (t/is (= (:id library) (cfo/get-tokens-source file-data)))
+      (t/is (some? (cfo/get-tokens-status file-data)))
+      (t/is (nil? (cfo/get-tokens-lib file-data))))
+
+    ;; Do the export, with type :detach-libraries
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/export-type :detach-libraries))
+       (io/output-stream output))
+
+      ;; Only the file is exported, not the library
+      (let [manifest (v3/get-manifest th/*system* output)
+            names    (zip-entry-names output)]
+        (t/is (= [(:id file)] (mapv :id (:files manifest))))
+        (t/is (empty? (:relations manifest)))
+        (t/is (empty? (:external-libraries manifest)))
+        (t/is (contains? names (str "files/" (:id file) ".json")))
+        (t/is (not-any? #(str/includes? % (str (:id library))) names)))
+
+      ;; The exported file has neither tokens library nor tokens status
+      (let [names (zip-entry-names output)]
+        (t/is (not (contains? names (str "files/" (:id file) "/tokens.json"))))
+        (t/is (not (contains? names (str "files/" (:id file) "/tokens-status.json")))))
+
+      ;; Import the file again
+      (let [result    (-> th/*system*
+                          (assoc ::bfc/project-id (:default-project-id profile))
+                          (assoc ::bfc/profile-id (:id profile))
+                          (assoc ::bfc/input output)
+                          (v3/import-files!))
+            imported  (bfc/get-file th/*system* (first (:file-ids result)))
+            file-data (:data imported)
+            shape     (get-in file-data [:pages-index page-id :objects shape-id])]
+
+        (t/is (= 1 (count (:file-ids result))))
+
+        ;; ...so the imported file has no tokens source, status or library
+        (t/is (nil? (cfo/get-tokens-source file-data)))
+        (t/is (nil? (cfo/get-tokens-status file-data)))
+        (t/is (nil? (cfo/get-tokens-lib file-data)))
+
+        ;; The shape keeps the applied tokens
+        (t/is (some? shape))
+        (t/is (cfo/token-applied? token-radius shape [:r1 :r2 :r3 :r4]))
+        (t/is (cfo/token-applied? token-opacity shape [:opacity]))))))
+
+(t/deftest export-merge-libraries-embeds-tokens-library-and-keeps-applied-tokens
+  (let [profile (th/create-profile* 1)
+        {:keys [library file page-id shape-id token-radius token-opacity]}
+        (prepare-file-with-tokens-lib profile)]
+
+    ;; Precondition: before the export, the file depends on the tokens
+    ;; of the library and has no tokens library of its own
+    (let [file-data (:data (bfc/get-file th/*system* (:id file)))]
+      (t/is (= (:id library) (cfo/get-tokens-source file-data)))
+      (t/is (nil? (cfo/get-tokens-lib file-data))))
+
+    (let [library-tokens-lib (-> (bfc/get-file th/*system* (:id library))
+                                 (:data)
+                                 (cfo/get-tokens-lib))
+          output             (tmp/tempfile :suffix ".zip")]
+
+      (t/is (some? library-tokens-lib))
+
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id file)})
+           (assoc ::bfc/export-type :merge-libraries))
+       (io/output-stream output))
+
+      ;; Only the file is exported, not the library
+      (let [manifest (v3/get-manifest th/*system* output)
+            names    (zip-entry-names output)]
+        (t/is (= [(:id file)] (mapv :id (:files manifest))))
+        (t/is (empty? (:relations manifest)))
+        (t/is (empty? (:external-libraries manifest)))
+        (t/is (contains? names (str "files/" (:id file) ".json")))
+        (t/is (not-any? #(str/includes? % (str (:id library))) names)))
+
+      ;; The exported file carries its own tokens library
+      (t/is (contains? (zip-entry-names output)
+                       (str "files/" (:id file) "/tokens.json")))
+
+      (let [result    (-> th/*system*
+                          (assoc ::bfc/project-id (:default-project-id profile))
+                          (assoc ::bfc/profile-id (:id profile))
+                          (assoc ::bfc/input output)
+                          (v3/import-files!))
+            imported  (bfc/get-file th/*system* (first (:file-ids result)))
+            file-data (:data imported)
+            shape     (get-in file-data [:pages-index page-id :objects shape-id])]
+
+        (t/is (= 1 (count (:file-ids result))))
+
+        ;; The tokens library of the library file is now in the file...
+        ;; (the import gives new ids to the sets and tokens, so compare
+        ;; their content)
+        (t/is (some? (cfo/get-tokens-lib file-data)))
+        (t/is (= (ctob/export-dtcg-json library-tokens-lib)
+                 (ctob/export-dtcg-json (cfo/get-tokens-lib file-data))))
+
+        ;; ...so the file is its own tokens source
+        (t/is (nil? (cfo/get-tokens-source file-data)))
+
+        ;; The shape keeps the applied tokens
+        (t/is (some? shape))
+        (t/is (cfo/token-applied? token-radius shape [:r1 :r2 :r3 :r4]))
+        (t/is (cfo/token-applied? token-opacity shape [:opacity]))))))
 
 (t/deftest import-auto-links-single-candidate
   (let [profile (th/create-profile* 1)
