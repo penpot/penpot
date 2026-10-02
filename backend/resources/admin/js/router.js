@@ -8,6 +8,12 @@
 
 const APP_ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 
+// The panel mount point (`<root>/admin`), for building deployment-root
+// relatives such as the product login URL.
+export function basePath() {
+  return APP_ROOT;
+}
+
 const routes = new Map();
 
 export function register(path, handler) {
