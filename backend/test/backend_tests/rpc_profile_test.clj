@@ -140,12 +140,12 @@
         (t/is (= "dark" (get-in out [:result :theme])))))
 
     (t/testing "update photo"
-      (let [data {::th/type :update-profile-photo
-                  ::rpc/profile-id (:id profile)
-                  :file {:filename "sample.jpg"
-                         :size 123123
-                         :path (th/tempfile "backend_tests/test_files/sample.jpg")
-                         :mtype "image/jpeg"}}
+      (let [data (th/with-multipart {::th/type :update-profile-photo
+                                     ::rpc/profile-id (:id profile)
+                                     :file {:filename "sample.jpg"
+                                            :size 123123
+                                            :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                                            :mtype "image/jpeg"}})
             out  (th/command! data)]
 
         ;; (th/print-result! out)
@@ -1802,3 +1802,16 @@
         (t/is (th/success? out))
         (t/is (= (:id member) event-pid))
         (t/is (not= (:id owner) event-pid))))))
+
+(t/deftest update-profile-photo-rejects-forged-file
+  ;; A transit body like {"~:file": {"~:path": ["~#path", "/etc/passwd"]}}
+  ;; decodes to this exact map. Without a multipart request it must fail at
+  ;; params validation, before any file is read.
+  (let [prof (th/create-profile* 1)
+        out  (th/command! {::th/type :update-profile-photo
+                           ::rpc/profile-id (:id prof)
+                           :file {:filename "evil.jpg"
+                                  :size 123
+                                  :path (fs/path "/etc/passwd")
+                                  :mtype "image/jpeg"}})]
+    (t/is (th/ex-of-code? (:error out) :params-validation))))
