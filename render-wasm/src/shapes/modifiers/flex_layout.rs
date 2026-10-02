@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, ConstraintH, ConstraintV, FlexData, JustifyContent,
@@ -9,7 +9,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{self, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -610,83 +610,16 @@ pub fn reflow_flex_layout(
     flex_data: &FlexData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
+    grow_from_right: bool,
 ) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = &bounds.find(shape);
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
     let tracks = calculate_track_data(shape, layout_data, flex_data, layout_bounds, shapes, bounds);
 
-    for track in tracks.iter() {
-        let total_shapes_size = track
-            .shapes
-            .iter()
-            .map(|s| s.main_size + s.margin_main_start + s.margin_main_end)
-            .sum::<f32>();
-        let mut shape_anchor = first_anchor(layout_data, &layout_axis, track, total_shapes_size);
-
-        for child_axis in track.shapes.iter() {
-            let child_id = child_axis.id;
-            let Some(child) = shapes.get(&child_id) else {
-                continue;
-            };
-
-            let position = child_position(
-                child,
-                shape_anchor,
-                layout_data,
-                &layout_axis,
-                child_axis,
-                track,
-            );
-            let child_bounds = &child_axis.bounds;
-            let delta_v = Vector::new_points(&child_bounds.nw, &position);
-
-            let (new_width, new_height) = if flex_data.is_row() {
-                (child_axis.main_size, child_axis.across_size)
-            } else {
-                (child_axis.across_size, child_axis.main_size)
-            };
-
-            let mut transform = Matrix::default();
-
-            let mut force_reflow = false;
-            if (new_width - child_bounds.width()).abs() > MIN_SIZE
-                || (new_height - child_bounds.height()).abs() > MIN_SIZE
-            {
-                // When the child is fill we need to force a reflow
-                force_reflow = true;
-                transform.post_concat(&math::resize_matrix(
-                    layout_bounds,
-                    child_bounds,
-                    new_width,
-                    new_height,
-                ));
-            }
-
-            if delta_v.x.abs() > MIN_SIZE || delta_v.y.abs() > MIN_SIZE {
-                transform.post_concat(&Matrix::translate(delta_v));
-            }
-
-            // Skip identity: propagating it fans out through the whole subtree.
-            if !math::identitish(&transform) {
-                result.push_back(Modifier::transform_propagate(child.id, transform));
-                if child.has_layout() {
-                    result.push_back(Modifier::reflow(child.id, force_reflow));
-                }
-            }
-
-            shape_anchor = next_anchor(
-                layout_data,
-                &layout_axis,
-                child_axis,
-                track,
-                shape_anchor,
-                total_shapes_size,
-            );
-        }
-    }
-
-    if layout_axis.is_auto_across || layout_axis.is_auto_main {
+    // Sized before placing children: a layout growing from the right moves its
+    // left edge, and the children have to follow it.
+    let auto_size = if layout_axis.is_auto_across || layout_axis.is_auto_main {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
@@ -747,21 +680,90 @@ pub fn reflow_flex_layout(
             )
         };
 
-        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
+        let scale =
+            common::auto_size_matrix(layout_bounds, scale_width, scale_height, grow_from_right)?;
+        Some((scale, layout_bounds.transform(&scale)))
+    } else {
+        None
+    };
+    let shift = auto_size
+        .as_ref()
+        .filter(|_| grow_from_right)
+        .map(|(_, after)| Vector::new_points(&layout_bounds.nw, &after.nw))
+        .unwrap_or_else(|| Vector::new(0.0, 0.0));
 
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
-            "Failed to invert parent transform".to_string(),
-        ))?;
-        let origin = parent_transform_inv.map_point(layout_bounds.nw);
+    for track in tracks.iter() {
+        let total_shapes_size = track
+            .shapes
+            .iter()
+            .map(|s| s.main_size + s.margin_main_start + s.margin_main_end)
+            .sum::<f32>();
+        let mut shape_anchor = first_anchor(layout_data, &layout_axis, track, total_shapes_size);
 
-        let mut scale = Matrix::scale((scale_width, scale_height));
-        scale.post_translate(origin);
-        scale.post_concat(&parent_transform);
-        scale.pre_translate(-origin);
-        scale.pre_concat(parent_transform_inv);
+        for child_axis in track.shapes.iter() {
+            let child_id = child_axis.id;
+            let Some(child) = shapes.get(&child_id) else {
+                continue;
+            };
 
-        let layout_bounds_after = layout_bounds.transform(&scale);
+            let position = child_position(
+                child,
+                shape_anchor,
+                layout_data,
+                &layout_axis,
+                child_axis,
+                track,
+            );
+            let child_bounds = &child_axis.bounds;
+            let delta_v = Vector::new_points(&child_bounds.nw, &position);
 
+            let (new_width, new_height) = if flex_data.is_row() {
+                (child_axis.main_size, child_axis.across_size)
+            } else {
+                (child_axis.across_size, child_axis.main_size)
+            };
+
+            let mut transform = Matrix::default();
+
+            let mut force_reflow = false;
+            if (new_width - child_bounds.width()).abs() > MIN_SIZE
+                || (new_height - child_bounds.height()).abs() > MIN_SIZE
+            {
+                // When the child is fill we need to force a reflow
+                force_reflow = true;
+                transform.post_concat(&math::resize_matrix(
+                    layout_bounds,
+                    child_bounds,
+                    new_width,
+                    new_height,
+                ));
+            }
+
+            let delta_v = delta_v + shift;
+            if delta_v.x.abs() > MIN_SIZE || delta_v.y.abs() > MIN_SIZE {
+                transform.post_concat(&Matrix::translate(delta_v));
+            }
+
+            // Skip identity: propagating it fans out through the whole subtree.
+            if !math::identitish(&transform) {
+                result.push_back(Modifier::transform_propagate(child.id, transform));
+                if child.has_layout() {
+                    result.push_back(Modifier::reflow(child.id, force_reflow));
+                }
+            }
+
+            shape_anchor = next_anchor(
+                layout_data,
+                &layout_axis,
+                child_axis,
+                track,
+                shape_anchor,
+                total_shapes_size,
+            );
+        }
+    }
+
+    if let Some((scale, layout_bounds_after)) = auto_size {
         // Propagate the parent auto-resize to absolute children using their constraints.
         for child_id in shape.children_ids_iter(true) {
             let Some(child) = shapes.get(child_id) else {

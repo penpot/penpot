@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::math::{self as math, intersect_rays, Bounds, Matrix, Point, Ray, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, Frame, GridCell, GridData, GridTrack, GridTrackType,
@@ -10,7 +10,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::common::GetBounds;
+use super::common::{self, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -742,6 +742,7 @@ pub fn reflow_grid_layout(
     grid_data: &GridData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
+    grow_from_right: bool,
 ) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = bounds.find(shape);
@@ -768,6 +769,43 @@ pub fn reflow_grid_layout(
         shapes,
         bounds,
     );
+
+    // Sized before placing children: a layout growing from the right moves its
+    // left edge, and the children have to follow it.
+    let auto_size = if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
+        let width = layout_bounds.width();
+        let height = layout_bounds.height();
+
+        let mut scale_width = 1.0;
+        let mut scale_height = 1.0;
+
+        if shape.is_layout_horizontal_auto() {
+            let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
+                + layout_data.padding_left
+                + layout_data.padding_right
+                + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
+            scale_width = auto_width / width;
+        }
+
+        if shape.is_layout_vertical_auto() {
+            let auto_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
+                + layout_data.padding_top
+                + layout_data.padding_bottom
+                + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
+            scale_height = auto_height / height;
+        }
+
+        let scale =
+            common::auto_size_matrix(&layout_bounds, scale_width, scale_height, grow_from_right)?;
+        Some((scale, layout_bounds.transform(&scale)))
+    } else {
+        None
+    };
+    let shift = auto_size
+        .as_ref()
+        .filter(|_| grow_from_right)
+        .map(|(_, after)| Vector::new_points(&layout_bounds.nw, &after.nw))
+        .unwrap_or_else(|| Vector::new(0.0, 0.0));
 
     let cells = create_cell_data(
         &layout_bounds,
@@ -878,7 +916,7 @@ pub fn reflow_grid_layout(
             h_anchor * hv.x + v_anchor * vv.x,
             h_anchor * hv.y + v_anchor * vv.y,
         );
-        let delta_v = Vector::new_points(&child_ref, &position);
+        let delta_v = Vector::new_points(&child_ref, &position) + shift;
 
         if delta_v.x.abs() > MIN_SIZE || delta_v.y.abs() > MIN_SIZE {
             transform.post_concat(&Matrix::translate(delta_v));
@@ -893,43 +931,7 @@ pub fn reflow_grid_layout(
         }
     }
 
-    if shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto() {
-        let width = layout_bounds.width();
-        let height = layout_bounds.height();
-
-        let mut scale_width = 1.0;
-        let mut scale_height = 1.0;
-
-        if shape.is_layout_horizontal_auto() {
-            let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
-                + layout_data.padding_left
-                + layout_data.padding_right
-                + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
-            scale_width = auto_width / width;
-        }
-
-        if shape.is_layout_vertical_auto() {
-            let auto_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
-                + layout_data.padding_top
-                + layout_data.padding_bottom
-                + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
-            scale_height = auto_height / height;
-        }
-
-        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
-
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::CriticalError(
-            "Failed to invert parent transform".to_string(),
-        ))?;
-        let origin = parent_transform_inv.map_point(layout_bounds.nw);
-
-        let mut scale = Matrix::scale((scale_width, scale_height));
-        scale.post_translate(origin);
-        scale.post_concat(&parent_transform);
-        scale.pre_translate(-origin);
-        scale.pre_concat(parent_transform_inv);
-
-        let layout_bounds_after = layout_bounds.transform(&scale);
+    if let Some((scale, layout_bounds_after)) = auto_size {
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }
