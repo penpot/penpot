@@ -99,6 +99,23 @@ body {
   min-width: 240px;
 }
 
+.admin-textarea {
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  font: inherit;
+  min-width: min(560px, 100%);
+  min-height: 140px;
+  margin-bottom: var(--admin-space-sm);
+}
+
+.admin-textarea:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
 .admin-button {
   background: var(--admin-accent);
   color: #1e1e1e;

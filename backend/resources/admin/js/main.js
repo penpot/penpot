@@ -12,6 +12,7 @@ import { dashboardPage } from "./pages/dashboard.js";
 import { errorDetailPage } from "./pages/error-detail.js";
 import { errorReportsPage } from "./pages/error-reports.js";
 import { userDetailPage } from "./pages/user-detail.js";
+import { usersDeletePage } from "./pages/users-delete.js";
 import { usersPage } from "./pages/users.js";
 
 const NAV_ITEMS = [
@@ -70,6 +71,8 @@ function renderAuthed(root) {
     usersPage(content, { onNavigate: navigate });
   } else if (params.get("screen") === "user" && params.get("id")) {
     userDetailPage(content, { id: params.get("id"), onNavigate: navigate });
+  } else if (params.get("screen") === "users-delete") {
+    usersDeletePage(content, { onNavigate: navigate });
   } else {
     dashboardPage(content, { onNavigate: navigate });
   }

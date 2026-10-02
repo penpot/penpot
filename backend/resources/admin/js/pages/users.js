@@ -131,6 +131,12 @@ export function usersPage(root, { onNavigate }) {
     load();
   });
   controls.appendChild(clearButton);
+
+  const bulkButton = document.createElement("button");
+  bulkButton.className = "admin-button admin-button-ghost";
+  bulkButton.textContent = "Delete by email…";
+  bulkButton.addEventListener("click", () => onNavigate("?screen=users-delete"));
+  controls.appendChild(bulkButton);
   root.appendChild(controls);
 
   const countLine = document.createElement("p");
