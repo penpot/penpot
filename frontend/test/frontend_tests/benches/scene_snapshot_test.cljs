@@ -9,7 +9,7 @@
    [app.common.schema :as sm]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.common :as common]
+   [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]))
 
 (defn- sample-snapshot

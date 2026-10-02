@@ -11,8 +11,8 @@
    [app.common.types.path :as path]
    [app.common.types.path.segment :as segm]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.scenes.builder :as b :include-macros true]
-   [benches.render-wasm.scenes.common :as common]
+   [benches.render-wasm.builder :as b :include-macros true]
+   [benches.render-wasm.snapshot :as common]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 

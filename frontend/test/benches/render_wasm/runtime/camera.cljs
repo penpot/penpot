@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.scenes.camera
+(ns benches.render-wasm.runtime.camera
   "Standard load, pan and zoom bodies for renderer benchmark cases.
 
   ## Concepts
@@ -46,14 +46,14 @@
   ## Related code
 
   Scene declarations such as `scenes/rects.cljs` call these functions from
-  their `:run!` bodies. `scenes/core.cljs` registers those bodies.
-  `browser.cljs` supplies `rtx` and prepares reused cases. `protocol.cljs`
+  their `:run!` bodies. `declarations.cljs` registers those bodies.
+  `browser/bridge.cljs` supplies `rtx` and prepares reused cases. `runtime/protocol.cljs`
   owns the render drain and camera session; its `Metrics reported` section
   defines the measurement fields. Node reads case declarations without running
   their bodies. This namespace loads there because renderer effects come
   through the browser-supplied `:hooks`."
   (:require
-   [benches.render-wasm.protocol :as protocol]))
+   [benches.render-wasm.runtime.protocol :as protocol]))
 
 (defn load!
   "Drains the uploaded scene until the renderer reports Full completion.

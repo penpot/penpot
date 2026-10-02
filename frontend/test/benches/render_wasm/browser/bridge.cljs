@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns benches.render-wasm.browser
+(ns benches.render-wasm.browser.bridge
   "Browser bridge for the benchmarks.
 
   Lifecycle here mirrors the editor cold-load path
@@ -27,12 +27,12 @@
    ;; at load
    [app.render-wasm.api.enums]
    [app.render-wasm.api.webgl :as webgl]
+   [benches.render-wasm.browser.upload :as upload]
    [benches.render-wasm.cases]
+   [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.failures :as fail]
-   [benches.render-wasm.protocol :as protocol]
-   [benches.render-wasm.scenes.common :as scenes]
-   [benches.render-wasm.scenes.core :as core]
-   [benches.render-wasm.upload :as upload]))
+   [benches.render-wasm.runtime.protocol :as protocol]
+   [benches.render-wasm.snapshot :as scenes]))
 
 ;; Forward decls
 (declare now guard-current! read-graphics)
@@ -346,9 +346,9 @@
         {:error (fail/fail-data {:phase "invalid-args"
                                  :message "load-scene needs a Transit request with case"})}
         (let [case-desc (:case params)
-              checked   (core/check-collected-case case-desc)
-              scene     (core/registered-scene (:scene checked))
-              local     (core/registered-case (:id checked))]
+              checked   (decl/check-collected-case case-desc)
+              scene     (decl/registered-scene (:scene checked))
+              local     (decl/registered-case (:id checked))]
           (when (nil? scene)
             (throw (ex-info (str "unknown scene: " (:scene checked))
                             {:phase "invalid-args"})))
@@ -373,7 +373,7 @@
   (let [epoch (swap! owner-epoch* inc)]
     (release-owner-resources!)
     (reset! module-promise* nil)
-    (let [viewport (core/resolve-viewport (:view case-desc))]
+    (let [viewport (decl/resolve-viewport (:view case-desc))]
       {:epoch epoch
        :dims viewport
        :hooks (browser-hooks epoch (+ (now) attempt-ms-budget))
