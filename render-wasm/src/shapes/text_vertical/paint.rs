@@ -192,7 +192,7 @@ fn ruby_draws(layout: &VerticalLayout, ruby: &RubyCell, origin: (f32, f32)) -> V
         .zip(&ruby.glyph_tops)
         .filter_map(|(ruby_glyph, top)| {
             let run = &layout.ruby_runs[ruby_glyph.run];
-            let blob = single_glyph_blob(&run.font, *run.glyphs.get(ruby_glyph.glyph)?)?;
+            let blob = run.glyph_blob(ruby_glyph.glyph)?;
             let (_, metrics) = run.font.metrics();
             let advance = run
                 .advances
@@ -760,5 +760,41 @@ mod tests {
                 None,
             );
         }
+    }
+
+    /// Uncompressed PDF of the layout's fill pass, as Latin-1 text.
+    fn layout_pdf(layout: &VerticalLayout, bounds: &Rect) -> String {
+        let mut bytes: Vec<u8> = Vec::new();
+        let metadata = skia::pdf::Metadata {
+            compression_level: skia::pdf::CompressionLevel::None,
+            ..Default::default()
+        };
+        {
+            let document = skia::pdf::new_document(&mut bytes, Some(&metadata));
+            let mut page = document.begin_page((400.0, 400.0), None);
+            paint_layout(page.canvas(), layout, bounds, VerticalAlign::Top);
+            page.end_page().close();
+        }
+        bytes.iter().map(|byte| *byte as char).collect()
+    }
+
+    #[test]
+    fn pdf_text_of_vertical_forms_is_the_source_text() {
+        let content = make_content(&["「あ」"], 400.0);
+        let layout = layout_with(&provider(VPAL_TEST_FONT), &content);
+
+        let pdf = layout_pdf(&layout, &content.bounds()).to_uppercase();
+        let to_unicode = pdf
+            .split_once("BEGINBFCHAR")
+            .and_then(|(_, rest)| rest.split_once("ENDBFCHAR"))
+            .map(|(entries, _)| entries)
+            .expect("a ToUnicode CMap");
+
+        // The vertical alternates have no cmap entry of their own; the PDF
+        // text maps them back to the source characters.
+        for source in ["<300C>", "<3042>", "<300D>"] {
+            assert!(to_unicode.contains(source), "ToUnicode maps {source}");
+        }
+        assert!(!to_unicode.contains("<0000>"), "no glyph maps to U+0000");
     }
 }

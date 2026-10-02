@@ -38,6 +38,8 @@ pub struct ShapedRun {
     pub clusters: Vec<u32>,
     pub advance: f32,
     pub utf8_range: Range<usize>,
+    /// Source text of `utf8_range`, attached to the run's text blobs.
+    pub text: String,
     /// Local-y offset that centres the run's ink after 90° rotation.
     pub rotated_baseline_shift: f32,
 }
@@ -87,22 +89,77 @@ impl ShapedRun {
         glyph_run_ink_bounds(&self.font, &self.glyphs, &self.positions)
     }
 
+    /// Byte range in `text` of the clusters covering `glyph..glyph + count`.
+    fn text_range(&self, glyph: usize, count: usize) -> Range<usize> {
+        let base = self.utf8_range.start as u32;
+        let clusters = &self.clusters[glyph..glyph + count];
+        let first = clusters.iter().copied().min().unwrap_or(base);
+        let last = clusters.iter().copied().max().unwrap_or(base);
+        let end = self
+            .clusters
+            .iter()
+            .copied()
+            .filter(|cluster| *cluster > last)
+            .min()
+            .map_or(self.text.len(), |cluster| {
+                cluster.saturating_sub(base) as usize
+            });
+        (first.saturating_sub(base) as usize).min(end)..end
+    }
+
+    /// Text blob of `glyph..glyph + count` at `positions`, carrying the
+    /// clusters' source text so PDF output maps vertical alternates back to
+    /// the original characters.
+    fn text_blob(&self, glyph: usize, count: usize, positions: &[SkPoint]) -> Option<TextBlob> {
+        let range = self.text_range(glyph, count);
+        let Some(text) = self
+            .text
+            .as_bytes()
+            .get(range.clone())
+            .filter(|t| !t.is_empty())
+        else {
+            let mut builder = TextBlobBuilder::new();
+            let (glyphs, points) = builder.alloc_run_pos(&self.font, count, None);
+            glyphs.copy_from_slice(&self.glyphs[glyph..glyph + count]);
+            points.copy_from_slice(positions);
+            return builder.make();
+        };
+        let text_start = self.utf8_range.start as u32 + range.start as u32;
+        let mut builder = TextBlobBuilder::new();
+        let (glyphs, points, utf8_text, clusters) =
+            builder.alloc_run_text_pos(&self.font, count, text.len(), None);
+        glyphs.copy_from_slice(&self.glyphs[glyph..glyph + count]);
+        points.copy_from_slice(positions);
+        utf8_text.copy_from_slice(text);
+        for (cluster, source) in clusters
+            .iter_mut()
+            .zip(&self.clusters[glyph..glyph + count])
+        {
+            *cluster = source.saturating_sub(text_start);
+        }
+        builder.make()
+    }
+
     /// Text blob of one cluster, positioned from its first glyph's pen x.
     pub(super) fn cluster_blob(&self, glyph: usize, count: usize) -> Option<TextBlob> {
-        let mut builder = TextBlobBuilder::new();
-        let (glyphs, points) = builder.alloc_run_pos(&self.font, count, None);
-        glyphs.copy_from_slice(&self.glyphs[glyph..glyph + count]);
-        points.copy_from_slice(&self.cluster_positions(glyph, count));
-        builder.make()
+        self.text_blob(glyph, count, &self.cluster_positions(glyph, count))
     }
 
     /// Text blob of the whole run at its shaped positions.
     pub(super) fn blob(&self) -> Option<TextBlob> {
-        let mut builder = TextBlobBuilder::new();
-        let (glyphs, points) = builder.alloc_run_pos(&self.font, self.glyphs.len(), None);
-        glyphs.copy_from_slice(&self.glyphs);
-        points.copy_from_slice(&self.positions);
-        builder.make()
+        self.text_blob(0, self.glyphs.len(), &self.positions)
+    }
+
+    /// Text blob of one glyph at its pen origin. The first glyph of a
+    /// cluster carries the cluster's source text; the rest are glyph-only.
+    pub(super) fn glyph_blob(&self, glyph: usize) -> Option<TextBlob> {
+        self.glyphs.get(glyph)?;
+        let starts_cluster = glyph == 0 || self.clusters.get(glyph) != self.clusters.get(glyph - 1);
+        if starts_cluster {
+            self.text_blob(glyph, 1, &[SkPoint::default()])
+        } else {
+            single_glyph_blob(&self.font, self.glyphs[glyph])
+        }
     }
 
     /// Local-y shift that centres a cluster's ink after a 90° rotation.
@@ -217,6 +274,7 @@ impl RunHandler for RunCollector {
             clusters: self.scratch_clusters.clone(),
             advance: info.advance.x,
             utf8_range: info.utf8_range.clone(),
+            text: String::new(),
         });
     }
 
@@ -279,6 +337,12 @@ pub(super) fn shape_segment(
         f32::MAX,
         &mut collector,
     );
+    for run in &mut collector.runs {
+        run.text = text
+            .get(run.utf8_range.clone())
+            .unwrap_or_default()
+            .to_string();
+    }
     collector.runs
 }
 
