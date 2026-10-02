@@ -25,10 +25,20 @@
   (get (::yres/headers response) "content-type"))
 
 (t/deftest root-serves-index
+  ;; NOTE: the `""` route answers with a redirect to `/admin/` (see
+  ;; below); this is the handler behind `"/"` and `/*path`.
   (let [response (run-handler nil)]
     (t/is (= 200 (::yres/status response)))
     (t/is (= "text/html" (content-type response)))
     (t/is (str/includes? (::yres/body response) "id=\"app\""))))
+
+(t/deftest bare-path-redirects-to-trailing-slash
+  ;; Without the slash, relative assets in index.html resolve against
+  ;; `/` and the panel loads unstyled. The relative target keeps
+  ;; subpath deployments working.
+  (let [response (admin/admin-redirect-handler {} {})]
+    (t/is (= 302 (::yres/status response)))
+    (t/is (= "admin/" (get (::yres/headers response) "location")))))
 
 (t/deftest unknown-subpath-falls-back-to-index
   ;; Subpath support: a deep reload never 404s.

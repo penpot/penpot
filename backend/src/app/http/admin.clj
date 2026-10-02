@@ -77,11 +77,22 @@
      ::yres/headers {"content-type" (content-type-for rel)}
      ::yres/body    body}))
 
+(defn admin-redirect-handler
+  "Redirect the bare `/admin` to `/admin/` with a relative target.
+
+  Without the trailing slash, relative asset URLs in index.html
+  (`css/admin.css`, `js/main.js`) resolve against `/` instead of
+  `/admin/` and the panel loads unstyled and inert. The relative
+  target keeps subpath deployments working."
+  [_cfg _request]
+  {::yres/status  302
+   ::yres/headers {"location" "admin/"}})
+
 (defmethod ig/init-key ::routes
   [_ cfg]
   (assert (io/resource (str resource-prefix fallback-resource))
           "missing admin/index.html on the classpath")
   [["/admin"
-    ["" {:handler (partial admin-handler cfg)}]
+    ["" {:handler (partial admin-redirect-handler cfg)}]
     ["/" {:handler (partial admin-handler cfg)}]
     ["/*path" {:handler (partial admin-handler cfg)}]]])
