@@ -239,3 +239,66 @@
         run   (as-superuser admin)]
     (t/is (= :profile-not-found
              (caught-code #(run "get-admin-profile" {:id (:id gone)}))))))
+
+;; ----------------------------------------------------------------
+;; Block / unblock
+;; ----------------------------------------------------------------
+
+(defn- open-session!
+  [profile-id]
+  (th/db-exec-one! ["INSERT INTO http_session_v2 (id, profile_id) VALUES (?, ?)"
+                    (uuid/next) profile-id]))
+
+(defn- session-count
+  [profile-id]
+  (:count (th/db-exec-one! ["SELECT count(*) AS count FROM http_session_v2 WHERE profile_id = ?"
+                            profile-id])))
+
+(t/deftest block-guard
+  (let [profile (th/create-profile* 1)]
+    (t/is (= :superuser-required
+             (caught-code #((as-session #{} profile)
+                            "block-admin-profile" {:id (:id profile)}))))
+    (t/is (= :superuser-required
+             (caught-code #((as-session #{} profile)
+                            "unblock-admin-profile" {:id (:id profile)}))))))
+
+(t/deftest block-sets-flag-and-closes-sessions
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2)
+        _     (open-session! (:id user))
+        _     (open-session! (:id user))
+        run   (as-superuser admin)
+        out   (run "block-admin-profile" {:id (:id user)})]
+    (t/is (= {:id (:id user) :is-blocked true} out))
+    (t/is (zero? (session-count (:id user))))))
+
+(t/deftest block-is-idempotent
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2)
+        run   (as-superuser admin)]
+    (run "block-admin-profile" {:id (:id user)})
+    (t/is (= {:id (:id user) :is-blocked true}
+             (run "block-admin-profile" {:id (:id user)})))))
+
+(t/deftest block-self-refused
+  (let [admin (th/create-profile* 1)
+        run   (as-superuser admin)]
+    (t/is (= :cannot-block-self
+             (caught-code #(run "block-admin-profile" {:id (:id admin)}))))))
+
+(t/deftest block-unknown-id-gives-not-found
+  (let [admin (th/create-profile* 1)
+        run   (as-superuser admin)]
+    (t/is (= :profile-not-found
+             (caught-code #(run "block-admin-profile" {:id (uuid/next)}))))
+    (t/is (= :profile-not-found
+             (caught-code #(run "unblock-admin-profile" {:id (uuid/next)}))))))
+
+(t/deftest unblock-clears-flag
+  (let [admin (th/create-profile* 1)
+        user  (th/create-profile* 2)
+        run   (as-superuser admin)]
+    (run "block-admin-profile" {:id (:id user)})
+    (t/is (= {:id (:id user) :is-blocked false}
+             (run "unblock-admin-profile" {:id (:id user)})))))

@@ -22,6 +22,7 @@
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.http.session :as session]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.error-reports :as error-reports]
    [app.rpc.doc :as doc]
@@ -221,3 +222,42 @@
     (ex/raise :type :not-found
               :code :profile-not-found
               :hint (str "profile " id " not found"))))
+
+(def schema:admin-block-result
+  [:map
+   [:id ::sm/uuid]
+   [:is-blocked ::sm/boolean]])
+
+(defn- set-blocked-flag!
+  [cfg id blocked?]
+  (if (db/get-by-id cfg :profile id {::db/check-deleted false})
+    (do
+      (db/update! cfg :profile {:is-blocked blocked?} {:id id})
+      (when blocked?
+        (session/invalidate-all cfg id))
+      {:id id :is-blocked blocked?})
+    (ex/raise :type :not-found
+              :code :profile-not-found
+              :hint (str "profile " id " not found"))))
+
+(sv/defmethod ::block-admin-profile
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:get-admin-profile-params
+   ::sm/result schema:admin-block-result}
+  [cfg {:keys [id ::rpc/profile-id]}]
+  (when (= id profile-id)
+    (ex/raise :type :validation
+              :code :cannot-block-self
+              :hint "a superuser cannot block its own profile"))
+  (set-blocked-flag! cfg id true))
+
+(sv/defmethod ::unblock-admin-profile
+  {::doc/added "2.20"
+   ::rpc/perms #{"superuser"}
+   ::db/transaction true
+   ::sm/params schema:get-admin-profile-params
+   ::sm/result schema:admin-block-result}
+  [cfg {:keys [id]}]
+  (set-blocked-flag! cfg id false))
