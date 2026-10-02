@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
+   [app.main.data.imports :as imp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
@@ -29,7 +30,7 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.worker :as mw]
+   [app.main.ui.jobs.progress :as jp]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -118,35 +119,6 @@
             entry))
         entries))
 
-(defn- parse-progress-message
-  [message]
-  (case (:type message)
-    :upload-data
-    (tr "dashboard.import.progress.upload-data" (:current message) (:total message))
-
-    :upload-media
-    (tr "dashboard.import.progress.upload-media" (:file message))
-
-    :process-page
-    (tr "dashboard.import.progress.process-page" (:file message))
-
-    :process-colors
-    (tr "dashboard.import.progress.process-colors")
-
-    :process-typographies
-    (tr "dashboard.import.progress.process-typographies")
-
-    :process-media
-    (tr "dashboard.import.progress.process-media")
-
-    :process-components
-    (tr "dashboard.import.progress.process-components")
-
-    :process-deleted-components
-    (tr "dashboard.import.progress.process-components")
-
-    ""))
-
 (defn- has-status-analyze?
   [item]
   (= (:status item) :analyze))
@@ -180,40 +152,31 @@
 
 (defn- analyze-entries
   [state entries]
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :analyze-import
-           :files entries
-           :features features})
-         (rx/mapcat #(rx/delay emit-delay (rx/of %)))
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            (when (some? (:error message))
-              (st/emit! (ev/event {::ev/name "import-files-error"
-                                   :error (:error message)})))
-            (swap! state update-with-analyze-result message))))))
+  (->> (imp/analyze entries)
+       (rx/mapcat #(rx/delay emit-delay (rx/of %)))
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          (when (some? (:error message))
+            (st/emit! (ev/event {::ev/name "import-files-error"
+                                 :error (:error message)})))
+          (swap! state update-with-analyze-result message)))))
 
 (defn- import-files
   [state library-resolution-data* project-id entries]
   (st/emit! (ev/event {::ev/name "import-files"
                        :num-files (count entries)}))
 
-  (let [features (get @st/state :features)]
-    (->> (mw/ask-many!
-          {:cmd :import-files
-           :project-id project-id
-           :files entries
-           :features features})
-         (rx/filter some?)
-         (rx/subs!
-          (fn [message]
-            ;; Capture library-resolution data if present (same for all
-            ;; entries from the same zip, so first one wins)
-            (if-let [resolution  (-> (:libraries-resolution message)
-                                     (not-empty))]
-              (reset! library-resolution-data* resolution)
-              (swap! state update-entry-status message)))))))
+  (->> (imp/import-files {:project-id project-id
+                          :entries    entries})
+       (rx/filter some?)
+       (rx/subs!
+        (fn [message]
+          ;; the resolution of the libraries of every package arrives once,
+          ;; when all of them are over
+          (if-let [resolution (-> (:libraries-resolution message) (not-empty))]
+            (reset! library-resolution-data* resolution)
+            (swap! state update-entry-status message))))))
 
 (mf/defc import-entry*
   {::mf/memo true
@@ -353,7 +316,8 @@
           (tr "labels.error"))]
 
        (and (not import-success?) (some? progress))
-       [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
+       [:div {:class (stl/css :progress-message)}
+        (jp/milestone-text progress :file? true)])
 
      ;; This is legacy code, will be removed when legacy-zip format is removed
      [:div {:class (stl/css :linked-libraries)}
