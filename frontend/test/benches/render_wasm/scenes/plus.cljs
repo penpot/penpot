@@ -38,29 +38,31 @@
   {:version 1
    :description "Plus signs made of two open line subpaths"
    :params-schema schema:params}
-  (fn build
-    [params]
-    (let [params (merge default-params params)]
-      (sb/scene {:seed (:seed params)
-                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}
-                 :defaults {:path {:content (plus-content params)
-                                   :fills []
-                                   :strokes (sb/gen-vector (sb/gen-stroke 4))}}}
-                (doseq [_ (range (:count params))]
-                  (sb/path))))))
+  [params]
+  (let [params (merge default-params params)]
+    (sb/scene {:seed (:seed params)
+               :root {:x 0 :y 0 :width (:width params) :height (:height params)}
+               :defaults {:path {:content (plus-content params)
+                                 :fills []
+                                 :strokes (sb/gen-vector (sb/gen-stroke 4))}}}
+              (doseq [_ (range (:count params))]
+                (sb/path)))))
 
 (def ^:private base-view {:scale 1 :x 0 :y 0})
 
-(decl/defcase :plus/load :plus
+(decl/defcase :plus/load
   {:params default-params :view base-view :context :fresh}
-  (fn [rtx] (camera/load! rtx)))
+  [rtx]
+  (camera/load! rtx))
 
-(decl/defcase :plus/pan :plus
+(decl/defcase :plus/pan
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :dx 140 :dy 60 :settle-ms 100}}
-  (fn [rtx] (camera/pan! rtx)))
+  [rtx]
+  (camera/pan! rtx))
 
-(decl/defcase :plus/zoom :plus
+(decl/defcase :plus/zoom
   {:params default-params :view base-view :context :reuse
    :operation {:steps 20 :factor 1.4 :settle-ms 100}}
-  (fn [rtx] (camera/zoom! rtx)))
+  [rtx]
+  (camera/zoom! rtx))
