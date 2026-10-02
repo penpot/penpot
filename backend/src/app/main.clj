@@ -590,6 +590,8 @@
     :file-gc               (ig/ref :app.tasks.file-gc/job-def)
     :offload-file-data     (ig/ref :app.tasks.offload-file-data/job-def)
     :objects-gc            (ig/ref :app.tasks.objects-gc/job-def)
+    :export-binfile        (ig/ref :app.tasks.export-binfile/job-def)
+    :import-binfile        (ig/ref :app.tasks.import-binfile/job-def)
     :storage-gc-deleted    (ig/ref ::sto.gc-deleted/job-def)
     :storage-gc-touched    (ig/ref ::sto.gc-touched/job-def)
     :storage-pending-gc    (ig/ref ::sto.pending-gc/job-def)
@@ -641,6 +643,19 @@
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
+
+   :app.tasks.export-binfile/job-def
+   {::db/pool      (ig/ref ::db/pool)
+    ::sto/storage  (ig/ref ::sto/storage)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
+    ;; the job belongs to a profile, so its events are published
+    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
+
+   :app.tasks.import-binfile/job-def
+   {::db/pool      (ig/ref ::db/pool)
+    ::sto/storage  (ig/ref ::sto/storage)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
 
    :app.storage.gc-deleted/job-def
    {::db/pool     (ig/ref ::db/pool)
@@ -833,6 +848,17 @@
    [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get :worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
+    ::wrk/tenant      (cf/get :tenant)
+    ::rds/client      (ig/ref ::rds/client)
+    ::jobs/defs       (ig/ref ::jobs/defs)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)}
+
+   ;; the heavy work of a user job does not share the default runner
+   [::binfile ::wrk/runner]
+   {::wrk/parallelism (cf/get :worker-binfile-parallelism 1)
+    ::wrk/queue       :binfile
     ::wrk/tenant      (cf/get :tenant)
     ::rds/client      (ig/ref ::rds/client)
     ::jobs/defs       (ig/ref ::jobs/defs)

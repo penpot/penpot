@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.exports.files :as fexp]
+   [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -20,6 +21,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
+   [app.main.ui.jobs.progress :as jp]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
@@ -40,6 +42,23 @@
            (= file-id (:id %))
            (assoc :export-success? true
                   :loading false))
+        files))
+
+(defn- mark-file-progress
+  "The milestone the job of a file is in, to show it while it runs."
+  [files file-id progress]
+  (mapv #(cond-> %
+           (= file-id (:id %))
+           (assoc :progress progress
+                  :queued false))
+        files))
+
+(defn- mark-file-queued
+  "The job of a file exists but no worker picked it up yet."
+  [files file-id queued?]
+  (mapv #(cond-> %
+           (= file-id (:id %))
+           (assoc :queued queued?))
         files))
 
 (defn- initialize-state
@@ -64,13 +83,24 @@
                    :error    (:export-error? file))}
 
      (if (:loading file)
-       [:div {:class (stl/css :file-name)}
-        [:> loader*  {:width 26
-                      :title (tr "labels.loading")}]
-        [:> text* {:class (stl/css :file-name-label)
-                   :as "span"
-                   :typography t/body-large}
-         (:name file)]]
+       [:*
+        [:div {:class (stl/css :file-name)}
+         [:> loader*  {:width 26
+                       :title (tr "labels.loading")}]
+         [:> text* {:class (stl/css :file-name-label)
+                    :as "span"
+                    :typography t/body-large}
+          (:name file)]]
+
+        (when (or (some? (:progress file)) (:queued file))
+          [:> text* {:class (stl/css :status-message)
+                     :as "span"
+                     :typography t/body-large
+                     :role "status"
+                     :aria-live "polite"}
+           (if (some? (:progress file))
+             (jp/milestone-text (:progress file))
+             (tr "labels.queued"))])]
 
        [:> context-notification {:level level
                                  :content (:name file)}])]))
@@ -90,25 +120,67 @@
         selected     (:selected state)
         status       (:status state)
 
+        ;; Jobs created while exporting, to cancel them on demand, and
+        ;; the subscription to their messages, to stop listening.
+        jobs*        (mf/use-state #{})
+        jobs         (deref jobs*)
+        sub*         (mf/use-state nil)
+        sub          (deref sub*)
+
         start-export
         (mf/use-fn
          (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (->> (fexp/export-files :files files :type selected)
-                (rx/subs!
-                 (fn [{:keys [file-id error filename uri] :as result}]
-                   (if error
-                     (swap! state* update :files mark-file-error file-id)
-                     (do
-                       (swap! state* update :files mark-file-success file-id)
-                       (dom/trigger-download-uri filename "application/penpot" uri))))))))
+           (reset! jobs* #{})
+           (reset! sub* (->> (fexp/export-files :files files :type selected
+                                                :on-job #(swap! jobs* conj %))
+                             (rx/subs!
+                              (fn [{:keys [file-id error filename uri progress queued started]}]
+                                (cond
+                                  (some? progress)
+                                  (swap! state* update :files mark-file-progress file-id progress)
+
+                                  (true? queued)
+                                  (swap! state* update :files mark-file-queued file-id true)
+
+                                  (true? started)
+                                  (swap! state* update :files mark-file-queued file-id false)
+
+                                  (some? error)
+                                  (swap! state* update :files mark-file-error file-id)
+
+                                  :else
+                                  (do
+                                    (swap! state* update :files mark-file-success file-id)
+                                    (dom/trigger-download-uri filename "application/penpot" uri)))))))))
+
+        on-cancel-export
+        (mf/use-fn
+         (mf/deps jobs sub)
+         (fn [event]
+           (dom/prevent-default event)
+           ;; stop listening first, so no late message repaints the
+           ;; entries of a dialog that is going away
+           (when (some? sub)
+             (rx/dispose! sub))
+           ;; a job may have just finished on its own: failures are
+           ;; ignored and an empty run cancels nothing
+           (run! dj/cancel-job! jobs)
+           (reset! jobs* #{})
+           (reset! sub* nil)
+           (st/emit! (modal/hide))))
 
         on-cancel
         (mf/use-fn
+         (mf/deps status on-cancel-export)
          (fn [event]
-           (dom/prevent-default event)
-           (st/emit! (modal/hide))))
+           (if (= :exporting status)
+             ;; closing mid-export stops the jobs, like Cancel
+             (on-cancel-export event)
+             (do
+               (dom/prevent-default event)
+               (st/emit! (modal/hide))))))
 
         on-accept
         (mf/use-fn
@@ -208,16 +280,15 @@
           [:*
            [:div {:class (stl/css :modal-content)}
             (for [file (:files state)]
-              [:> export-entry* {:file file :key (dm/str (:id file))}])
-
-            (when in-progress?
-              [:> text* {:as "span" :typography t/body-large :class (stl/css :status-message)
-                         :role "status"
-                         :aria-live "polite"}
-               (tr "labels.downloading-file")])]
+              [:> export-entry* {:file file :key (dm/str (:id file))}])]
 
            [:div {:class (stl/css :modal-footer)}
             [:div {:class (stl/css :action-buttons)}
+             (when in-progress?
+               [:> button* {:variant "secondary"
+                            :type "button"
+                            :on-click on-cancel-export}
+                (tr "labels.cancel")])
              [:> button* {:variant "primary"
                           :type "button"
                           :disabled in-progress?

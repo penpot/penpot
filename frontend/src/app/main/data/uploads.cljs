@@ -43,8 +43,11 @@
   The caller is responsible for the final step (assemble / import).
 
   The optional `opts` map accepts:
-    `:chunk-size` – size in bytes of each chunk (default: `cf/upload-chunk-size`, 25 MiB)."
-  [blob & {:keys [chunk-size] :or {chunk-size cf/upload-chunk-size}}]
+    `:chunk-size` – size in bytes of each chunk (default: `cf/upload-chunk-size`, 25 MiB).
+    `:on-progress` – a fn called after every uploaded chunk with
+      `{:current <uploaded-chunks> :total <total-chunks>}`, so the
+      caller can show the upload while it runs."
+  [blob & {:keys [chunk-size on-progress] :or {chunk-size cf/upload-chunk-size}}]
   (let [total-size   (.-size blob)
         total-chunks (js/Math.ceil (/ total-size chunk-size))]
     (->> (rp/cmd! :create-upload-session
@@ -53,16 +56,21 @@
           (fn [{raw-session-id :session-id}]
             (let [session-id    (cond-> raw-session-id
                                   (string? raw-session-id) uuid/uuid)
+                  uploaded      (atom 0)
                   chunk-uploads
                   (->> (range total-chunks)
                        (map (fn [idx]
                               (let [start (* idx chunk-size)
                                     end   (min (+ start chunk-size) total-size)
                                     chunk (.slice blob start end)]
-                                (rp/cmd! :upload-chunk
-                                         {:session-id session-id
-                                          :index      idx
-                                          :content    (list chunk (dm/str "chunk-" idx))})))))]
+                                (->> (rp/cmd! :upload-chunk
+                                              {:session-id session-id
+                                               :index      idx
+                                               :content    (list chunk (dm/str "chunk-" idx))})
+                                     (rx/tap (fn [_]
+                                               (when (fn? on-progress)
+                                                 (on-progress {:current (swap! uploaded inc)
+                                                               :total total-chunks})))))))))]
               (->> (rx/from chunk-uploads)
                    (rx/merge-all max-parallel-chunk-uploads)
                    (rx/last)

@@ -715,34 +715,6 @@ msgstr "Next file"
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
 
-#: src/app/main/ui/dashboard/import.cljs:134
-msgid "dashboard.import.progress.process-colors"
-msgstr "Processing colors"
-
-#: src/app/main/ui/dashboard/import.cljs:143, src/app/main/ui/dashboard/import.cljs:146
-msgid "dashboard.import.progress.process-components"
-msgstr "Processing components"
-
-#: src/app/main/ui/dashboard/import.cljs:140
-msgid "dashboard.import.progress.process-media"
-msgstr "Processing media"
-
-#: src/app/main/ui/dashboard/import.cljs:131
-msgid "dashboard.import.progress.process-page"
-msgstr "Processing page: %s"
-
-#: src/app/main/ui/dashboard/import.cljs:137
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Processing typographies"
-
-#: src/app/main/ui/dashboard/import.cljs:125
-msgid "dashboard.import.progress.upload-data"
-msgstr "Uploading data to server (%s/%s)"
-
-#: src/app/main/ui/dashboard/import.cljs:128
-msgid "dashboard.import.progress.upload-media"
-msgstr "Uploading file: %s"
-
 #: src/app/main/ui/dashboard/import.cljs:443
 msgid "dashboard.import.resolve-libraries"
 msgstr ""
@@ -2614,6 +2586,62 @@ msgstr "The token will expire on %s"
 msgid "integrations.token.will-not-expire"
 msgstr "The token has no expiration date"
 
+#: src/app/main/ui/jobs/progress.cljs:26
+msgid "jobs.progress.stage.colors"
+msgstr "Processing the colors"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+msgid "jobs.progress.stage.components"
+msgstr "Processing the components"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+msgid "jobs.progress.stage.files"
+msgstr "Processing the files"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+msgid "jobs.progress.stage.manifest"
+msgstr "Reading the package"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+msgid "jobs.progress.stage.media"
+msgstr "Processing the media"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+msgid "jobs.progress.stage.metadata"
+msgstr "Reading the metadata"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+msgid "jobs.progress.stage.pages"
+msgstr "Processing the pages"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+msgid "jobs.progress.stage.relations"
+msgstr "Processing the library relations"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+msgid "jobs.progress.stage.storage-objects"
+msgstr "Processing the storage objects"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+msgid "jobs.progress.stage.thumbnails"
+msgstr "Processing the thumbnails"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+msgid "jobs.progress.stage.tokens"
+msgstr "Processing the tokens"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+msgid "jobs.progress.stage.typographies"
+msgstr "Processing the typographies"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.upload"
+msgstr "Uploading the package"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.unknown"
+msgstr "Working"
+
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
 msgstr "Mark all as read"
@@ -3183,6 +3211,10 @@ msgstr "Profile"
 #: src/app/main/ui/dashboard/sidebar.cljs:355
 msgid "labels.projects"
 msgstr "Projects"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+msgid "labels.queued"
+msgstr "Queued"
 
 #: src/app/main/ui/dashboard/deleted.cljs:212
 msgid "labels.recent"

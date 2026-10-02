@@ -7,6 +7,7 @@
 (ns app.rpc.quotes
   "Penpot resource usage quotes."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -616,6 +617,61 @@
       (assoc ::count-sql [sql:get-media-storage-bytes-per-team
                           team-id team-id team-id team-id team-id team-id])
       (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: BINFILES JOBS PER PROFILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:jobs-per-profile
+  [:map [::profile-id ::sm/uuid]])
+
+(def ^:private valid-jobs-per-profile-quote?
+  (sm/lazy-validator schema:jobs-per-profile))
+
+;; Only the jobs that are still on their way count: a terminal job is not
+;; pending work anymore, and the jobs GC removes it. The tenant filters
+;; like every other query of the substrate: instances share one database
+;; and one profile can have work in more than one of them.
+(def ^:private
+  sql:get-jobs-per-profile
+  "SELECT count(*) AS total
+     FROM job
+    WHERE tenant = ?
+      AND profile_id = ?
+      AND status IN ('new', 'scheduled', 'running', 'retry')
+      AND name = ANY(?)")
+
+(defn- names-of-family
+  "The registered names of a family of jobs. The quote counts what the
+  registry knows, so a new job of the family is covered without touching
+  this file."
+  [cfg family]
+  (->> (jobs/get-defs cfg)
+       (vals)
+       (filter #(= family (::jobs/family %)))
+       (map #(d/name (::jobs/name %)))
+       (vec)))
+
+(defn- check-jobs-quote
+  [cfg family config-key]
+  (let [{:keys [::db/conn ::profile-id ::target]} cfg]
+    (assert (valid-jobs-per-profile-quote? cfg) "invalid quote parameters")
+    (-> cfg
+        (assoc ::default (cf/get config-key Integer/MAX_VALUE))
+        (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
+        (assoc ::count-sql [sql:get-jobs-per-profile
+                            (cf/get :tenant)
+                            profile-id
+                            (db/create-array conn "text" (names-of-family cfg family))])
+        (generic-check!))))
+
+(defmethod check-quote ::export-jobs-per-profile
+  [cfg]
+  (check-jobs-quote cfg :export :quotes-export-jobs-per-profile))
+
+(defmethod check-quote ::import-jobs-per-profile
+  [cfg]
+  (check-jobs-quote cfg :import :quotes-import-jobs-per-profile))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: DEFAULT

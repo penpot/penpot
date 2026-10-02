@@ -16,6 +16,7 @@
   which mandates a valid shared-key before dispatching to these methods.
   If the route resolver changes, these methods must be updated accordingly."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.jobs :as jobs]
@@ -78,13 +79,25 @@
   ;; A lost race (row already terminal) reports :skip so the worker
   ;; stops retrying a report that can never land, mirroring claim-job.
   ;; The forced route propagates database errors: the external worker
-  ;; must be able to retry a report it was not sure about.
-  (if (pos? (jobs/heartbeat cfg
-                            :job-id job-id
-                            :progress progress
-                            ::jobs/force? true))
-    {:action :run}
-    {:action :skip}))
+  ;; must be able to retry a report it was not sure about. The interrupt
+  ;; the beat raises when the job is no longer active is caught here for
+  ;; the same reason, and it never reaches the HTTP error mapping: it is
+  ;; an internal signal, not a failure of the request.
+  (let [result (ex/try! (jobs/heartbeat cfg
+                                        :job-id job-id
+                                        :progress progress
+                                        ::jobs/force? true))]
+    (cond
+      (ex/exception? result)
+      (if (= :interrupt (:type (ex-data result)))
+        {:action :skip}
+        (throw result))
+
+      (pos? result)
+      {:action :run}
+
+      :else
+      {:action :skip})))
 
 ;; ---- RPC METHOD: COMPLETE-JOB
 

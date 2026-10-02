@@ -298,10 +298,29 @@
                   (fn [{:keys [::db/conn]}]
                     (jobs/heartbeat (assoc cfg ::db/conn conn)
                                     :job-id job-id
-                                    :progress {:current 1}
+                                    :progress {:stage :work}
                                     ::jobs/force? true)))
       (t/testing "the report is stored and counted, the caller rollback drops neither"
         (t/is (= 1 (:cnt (th/db-exec-one! ["SELECT count(*) AS cnt FROM job_event
                                             WHERE job_id = ? AND kind = 'progress'"
                                            job-id]))))
         (t/is (= (inc before) (counter-value metrics :jobs-events-total [])))))))
+
+(t/deftest the-binfile-queue-is-labelled-like-any-other
+  (let [metrics (make-metrics)
+        defs    {:export-binfile {::jobs/name      :export-binfile
+                                  ::jobs/schema    [:map]
+                                  ::jobs/handler   (fn [_context params] params)
+                                  ::jobs/decoder   identity
+                                  ::jobs/validator (constantly true)}}
+        cfg     {::jobs/defs  defs
+                 ::db/pool    th/*pool*
+                 ::mtx/metrics metrics}]
+
+    (jobs/submit cfg {::jobs/name   :export-binfile
+                      ::jobs/params {}
+                      ::jobs/queue  :binfile})
+
+    (t/testing "the queue of the job is its label, never other"
+      (t/is (= 1.0 (counter-value metrics :jobs-submitted ["export-binfile" "binfile"])))
+      (t/is (= 0.0 (counter-value metrics :jobs-submitted ["export-binfile" "other"]))))))

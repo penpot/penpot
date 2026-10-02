@@ -10,9 +10,10 @@
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.main.data.event :as ev]
+   [app.main.data.jobs :as dj]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
-   [app.util.sse :as sse]
+   [app.main.store :as st]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -59,28 +60,71 @@
                                        :team-id team-id
                                        :files files}))))))))))
 
+(defn- export-file
+  "One file, one job: the file is exported on its own, so a failure does
+  not touch the others, and the artifact is read from the result of the
+  job once it is over.
+
+  Every step of the job becomes a message for the caller: the milestone
+  under `:progress`, the artifact as `:uri` when the job completed, and
+  the public error of the job when it failed.
+
+  `on-job` is an optional callback invoked with the id of the created
+  job, so the caller can cancel it while it runs."
+  [ws-conn type file on-job]
+  (->> (rp/cmd! :create-binfile-export-job
+                {:name   :export-binfile
+                 :params {:file-ids    #{(:id file)}
+                          :export-type type}})
+       (rx/mapcat (fn [{job-id :id}]
+                    (when (fn? on-job)
+                      (on-job job-id))
+                    ;; the job exists but may wait for a worker: tell the
+                    ;; file it is queued before following it
+                    (rx/concat
+                     (rx/of {:file-id (:id file)
+                             :queued  true})
+                     (->> (dj/watch-job ws-conn job-id)
+                          (rx/mapcat (fn [{:keys [kind status result error] :as emission}]
+                                       (cond
+                                         (= "completed" status)
+                                         (rx/of {:file-id  (:id file)
+                                                 :uri      (:resource-uri result)
+                                                 :filename (:name file)})
+
+                                         (= "failed" status)
+                                         (rx/of {:file-id (:id file)
+                                                 :error   error})
+
+                                         (= :progress kind)
+                                         (rx/of {:file-id  (:id file)
+                                                 :progress (:payload emission)})
+
+                                         ;; a worker picked it up (or will
+                                         ;; retry it): no milestone yet
+                                         (contains? #{:start :retry} kind)
+                                         (rx/of {:file-id (:id file)
+                                                 :started true})
+
+                                         :else
+                                         (rx/empty))))))))
+       (rx/catch (fn [cause]
+                   (rx/of {:file-id (:id file)
+                           :error   (ex-data cause)})))))
+
 (defn export-files
-  "Start files exportation process"
-  [& {:keys [type files]}]
+  "Start files exportation process.
+
+  The optional `:on-job` callback is invoked with the id of every file
+  job created, so the caller can cancel them while they run."
+  [& {:keys [type files on-job]}]
   (assert (check-export-files files) "expected a sequence of files")
   (assert (valid-types type) "expected valid export type")
 
-  (->> (rx/from files)
-       (rx/mapcat
-        (fn [file]
-          (->> (rp/cmd! ::sse/export-binfile {:file-id (:id file)
-                                              :version 3
-                                              :type type})
-               (rx/filter sse/end-of-stream?)
-               (rx/map sse/get-payload)
-               (rx/map (fn [uri]
-                         {:file-id (:id file)
-                          :uri uri
-                          :filename (:name file)}))
-               (rx/catch (fn [cause]
-                           (let [error (ex-data cause)]
-                             (rx/of {:file-id (:id file)
-                                     :error error})))))))))
+  (let [ws-conn (:ws-conn @st/state)]
+    (->> (rx/from files)
+         (rx/mapcat (fn [file]
+                      (export-file ws-conn type file on-job))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request

@@ -5,6 +5,7 @@
 - Dashboard initialization fetches projects and fonts for the team, then listens to websocket messages only for global topic `uuid/zero` or the current profile id.
 - Project fetch replaces each project map completely instead of merging, so fields such as `deleted-at` can disappear cleanly.
 - Dashboard file/project mutations are often optimistic local updates with fire-and-forget RPC watchers. Bulk permanent delete/restore paths use SSE progress and progress notifications.
+- The import wizard runs the package as a job of the backend: it reads the manifest of the file in the main thread (`app.main.data.imports`, no web worker) and follows the job, so its rows paint the milestone of the job (the stage and its counter, with the file in course) instead of the messages the old SSE stream sent. Before the job exists, the rows paint a client-side `:upload` milestone built from the chunked upload (`uploads/upload-blob-chunked` `:on-progress`, chunks done/total), which never comes from the backend. Once created and still waiting for a worker, each entry reports `:queued` ("Queued"); the `:start`/`:retry` events move it to bare progress, and only `:progress` carries a milestone. The legacy SSE import stays in the backend for other clients, and the export modal follows the same job per file.
 - File creation/duplication strips file `:data` before putting file summaries into dashboard state.
 
 ## Viewer

@@ -34,7 +34,7 @@
   background-color: var(--color-background-primary);
   border: $b-2 solid var(--color-background-quaternary);
   min-block-size: $sz-192;
-  inline-size: $sz-512;
+  inline-size: px2rem(640);
   max-block-size: px2rem(800);
 }
 
