@@ -11,8 +11,7 @@
   fills and centered strokes, all drawn from the scope's seeded generator.
   `build` produces the scene snapshot; `defscene` and `defcase` declare
   the scene and its standard cases. The three cases share parameters, so
-  they render the same scene. Each case body runs through the compiled
-  browser executor; collection keeps only plain descriptors."
+  they render the same scene."
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.builder :as sb :include-macros true]
@@ -24,7 +23,7 @@
 ;; through rtx, not in this require list or its transitive dependencies.
 ;; See declarations' dependency contract before adding a capability.
 
-(def ^:private default-params
+(def ^:const ^:private default-params
   {:count 1000
    :width 1920
    :height 1080
@@ -32,9 +31,7 @@
    :max-size 100})
 
 (def ^:private schema:params
-  "Workload parameters. Sizes are finite (`pos?` accepts Infinity, which the
-  generator cannot honor); `:min-size` above `:max-size`
-  is rejected so parameter sweeps cannot silently measure a reversed range."
+  "Workload parameters. Sizes are finite. `:min-size` > `:max-size` is rejected"
   [:and
    [:map {:closed true}
     [:count [:int {:min 1 :max 100000}]]

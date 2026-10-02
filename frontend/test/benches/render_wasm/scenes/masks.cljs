@@ -11,39 +11,36 @@
    [benches.render-wasm.declarations :as decl :include-macros true]
    [benches.render-wasm.runtime.camera :as camera]))
 
-(def ^:private default-params
+(def ^:const ^:private default-params
   {:width 1920 :height 1080})
 
-(def ^:private schema:params
+(def ^:const ^:private schema:params
   [:map {:closed true}
    [:width [:int {:min 1920}]]
    [:height [:int {:min 1080}]]])
-
-(defn build
-  [params]
-  (let [params (merge default-params params)]
-    (sb/scene {:seed (:seed params)
-               :root {:x 0 :y 0 :width (:width params) :height (:height params)}}
-              (doseq [i (range 24)]
-                (let [x (+ 25 (* 310 (mod i 6)))
-                      y (+ 25 (* 255 (quot i 6)))]
-                  (sb/group [:mask i] {:masked-group true}
-                            (sb/circle {:x x :y y :width 180 :height 180
-                                        :fills [{:fill-color "#ffffff"}]})
-                            (doseq [j (range 8)]
-                              (sb/rect {:x (+ x (* 28 j) -22)
-                                        :y (- y 12)
-                                        :width 25
-                                        :height 205
-                                        :fills [{:fill-color (if (even? j) "#1254b8" "#ff8b38")}]}))))))))
 
 (decl/defscene :masks
   {:version 1
    :description "Twenty-four circle masks with ordered striped descendants"
    :params-schema schema:params}
-  build)
+  (fn [params]
+    (let [params (merge default-params params)]
+      (sb/scene {:seed (:seed params)
+                 :root {:x 0 :y 0 :width (:width params) :height (:height params)}}
+                (doseq [i (range 24)]
+                  (let [x (+ 25 (* 310 (mod i 6)))
+                        y (+ 25 (* 255 (quot i 6)))]
+                    (sb/group [:mask i] {:masked-group true}
+                              (sb/circle {:x x :y y :width 180 :height 180
+                                          :fills [{:fill-color "#ffffff"}]})
+                              (doseq [j (range 8)]
+                                (sb/rect {:x (+ x (* 28 j) -22)
+                                          :y (- y 12)
+                                          :width 25
+                                          :height 205
+                                          :fills [{:fill-color (if (even? j) "#1254b8" "#ff8b38")}]})))))))))
 
-(def ^:private base-view {:scale 1 :x 0 :y 0})
+(def ^:const ^:private base-view {:scale 1 :x 0 :y 0})
 
 (decl/defcase :masks/load :masks
   {:params default-params :view base-view :context :fresh}
