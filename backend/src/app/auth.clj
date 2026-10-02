@@ -55,3 +55,16 @@
         (keep (fn [email]
                 (:id (db/get* pool :profile {:email email}))))
         (or (cf/get :superusers) #{})))
+
+(defn superuser-allowed?
+  "True when the caller satisfies the superuser rule shared by the
+  admin RPC wrapper and the admin HTTP transfer routes: registry
+  membership (any auth type), a token carrying the operator-granted
+  `\"superuser\"` scope, or any authenticated profile on a `devenv`
+  host."
+  [cfg profile-id token-perms]
+  (boolean
+   (or (and (= "devenv" (cf/get :host))
+            (uuid? profile-id))
+       (contains? (::superusers cfg) profile-id)
+       (contains? (set token-perms) "superuser"))))

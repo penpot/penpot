@@ -491,6 +491,7 @@
    {::rpc/methods            (ig/ref :app.rpc/methods)
     ::rpc/management-methods (ig/ref :app.rpc/management-methods)
     ::rpc/admin-methods      (ig/ref :app.rpc/admin-methods)
+    :app.auth/superusers    (ig/ref :app.auth/superusers)
 
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)

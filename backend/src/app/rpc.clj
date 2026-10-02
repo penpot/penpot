@@ -6,7 +6,7 @@
 
 (ns app.rpc
   (:require
-   [app.auth :as-alias auth]
+   [app.auth :as auth]
    [app.auth.ldap :as-alias ldap]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -20,6 +20,7 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token :as actoken]
+   [app.http.admin :as admin]
    [app.http.client :as-alias http.client]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
@@ -204,10 +205,7 @@
                     :required scope-perms)
 
           (and superuser-required
-               (not (or (and (= "devenv" (cf/get :host))
-                             (uuid? profile-id))
-                        (contains? (::auth/superusers cfg) profile-id)
-                        (contains? token-perms "superuser"))))
+               (not (auth/superuser-allowed? cfg profile-id token-perms)))
           (ex/raise :type :authorization
                     :code :superuser-required
                     :hint "superuser required for this endpoint")
@@ -481,6 +479,7 @@
   (let [cfg (assoc cfg ::module "admin" ::type "command" ::metrics-id :rpc-admin-timing)]
     (->> (sv/scan-ns
           'app.rpc.admin.errors
+          'app.rpc.admin.file
           'app.rpc.admin.profile
           'app.rpc.admin.team)
          (map (partial process-method cfg wrap))
@@ -571,7 +570,19 @@
                      [sec/client-header-check]
                      [session/authz cfg]
                      [actoken/authz cfg]]
-        :handler (make-rpc-handler admin-methods)}]]
+        :handler (make-rpc-handler admin-methods)}]
+      ["/file-export"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (partial admin/file-export-handler cfg)}]
+      ["/file-import"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (partial admin/file-import-handler cfg)}]]
 
      ;; BACKWARD COMPATIBILITY
      ["/_doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]

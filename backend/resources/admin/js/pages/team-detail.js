@@ -110,6 +110,13 @@ export function teamDetailPage(root, { id, onNavigate }) {
     body.replaceChildren();
     body.appendChild(list);
 
+    const filesLink = document.createElement("button");
+    filesLink.className = "admin-button admin-button-ghost";
+    filesLink.textContent = "View files";
+    filesLink.addEventListener("click", () =>
+      onNavigate("?screen=files&teamId=" + encodeURIComponent(data.id)));
+    body.appendChild(filesLink);
+
     body.appendChild(featuresBlock(data));
     body.appendChild(membersBlock(members ?? []));
   }

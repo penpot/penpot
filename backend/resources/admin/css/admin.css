@@ -137,6 +137,13 @@ body {
   cursor: default;
 }
 
+/* Labels styled as buttons (the import picker) cannot use
+:disabled, so loading dims them through this class instead. */
+.admin-button-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .admin-button-ghost {
   background: transparent;
   color: var(--admin-text);

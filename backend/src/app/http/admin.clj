@@ -15,6 +15,20 @@
   `get-profile` once loaded. The real protection lives in the RPC
   guard, which rejects non-superusers with 403."
   (:require
+   [app.auth :as auth]
+   [app.binfile.common :as bfc]
+   [app.binfile.v1 :as bf.v1]
+   [app.binfile.v3 :as bf.v3]
+   [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
+   [app.common.uuid :as uuid]
+   [app.config :as cf]
+   [app.db :as db]
+   [app.http.access-token :as-alias actoken]
+   [app.http.session :as-alias session]
+   [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.teams :as teams]
+   [app.storage.tmp :as tmp]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [integrant.core :as ig]
@@ -97,6 +111,137 @@
   [_cfg _request]
   {::yres/status  302
    ::yres/headers {"location" "admin/"}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FILE TRANSFER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- require-superuser!
+  "Enforce the shared superuser rule on an HTTP request.
+
+  Mirrors the RPC wrapper: 401 when anonymous, 403 with
+  `:superuser-required` otherwise. Returns the caller profile id."
+  [cfg request]
+  (let [profile-id (or (::session/profile-id request)
+                       (::actoken/profile-id request))]
+    (when-not (uuid? profile-id)
+      (ex/raise :type :authentication
+                :code :authentication-required
+                :hint "authentication required for this endpoint"))
+    (when-not (auth/superuser-allowed? cfg profile-id (::actoken/perms request))
+      (ex/raise :type :authorization
+                :code :superuser-required
+                :hint "superuser required for this endpoint"))
+    profile-id))
+
+(defn- parse-file-ids
+  "Normalize the `file-ids` query param into a set of uuids.
+
+  Accepts both repeated params (`?file-ids=a&file-ids=b`) and a
+  single comma-separated one (`?file-ids=a,b`)."
+  [v]
+  (let [items (if (coll? v) v [v])]
+    (into #{}
+          (comp (mapcat #(str/split (str %) #","))
+                (map str/trim)
+                (remove str/empty?)
+                (map uuid/parse*)
+                (remove nil?))
+          items)))
+
+(defn file-export-handler
+  "Export files as a `.penpot` download, or clone them into the
+  caller's default project. Same behavior as the old `/dbg`
+  `/file-export`, behind the superuser gate."
+  [{:keys [::db/pool] :as cfg} {:keys [params] :as request}]
+  (let [profile-id (require-superuser! cfg request)
+        file-ids   (parse-file-ids (:file-ids params))
+        libs?      (contains? params :includelibs)
+        clone?     (contains? params :clone)
+        embed?     (contains? params :embedassets)]
+
+    (when-not (seq file-ids)
+      (ex/raise :type :validation
+                :code :missing-arguments))
+
+    (let [path (tmp/tempfile :prefix "penpot.export." :min-age "30m")]
+      (with-open [output (io/output-stream path)]
+        (-> cfg
+            (assoc ::bfc/ids file-ids)
+            (assoc ::bfc/embed-assets embed?)
+            (assoc ::bfc/include-libraries libs?)
+            (bf.v3/export-files! output)))
+
+      (if clone?
+        (let [profile    (profile/get-profile pool profile-id)
+              project-id (:default-project-id profile)
+              team       (teams/get-team pool
+                                         :profile-id profile-id
+                                         :project-id project-id)
+              cfg        (assoc cfg
+                                ::bfc/overwrite false
+                                ::bfc/profile-id profile-id
+                                ::bfc/project-id project-id
+                                ::bfc/team-id (:id team)
+                                ::bfc/input path
+                                ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
+                                ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
+                                ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
+                                ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
+          (bf.v3/import-files! cfg)
+          {::yres/status  200
+           ::yres/headers {"content-type" "text/plain"}
+           ::yres/body    "OK CLONED"})
+
+        {::yres/status  200
+         ::yres/body    (io/input-stream path)
+         ::yres/headers {"content-type" "application/octet-stream"
+                         "content-disposition" (str "attachment; filename=" (first file-ids) ".penpot")}}))))
+
+(defn file-import-handler
+  "Import a `.penpot` upload into the caller's default project.
+  Same behavior as the old `/dbg` `/file-import`, behind the
+  superuser gate. The multipart file arrives parsed by the HTTP
+  server itself, no extra middleware involved."
+  [{:keys [::db/pool] :as cfg} {:keys [params] :as request}]
+  (let [profile-id (require-superuser! cfg request)]
+
+    (when-not (contains? params :file)
+      (ex/raise :type :validation
+                :code :missing-upload-file
+                :hint "missing upload file"))
+
+    (let [profile    (profile/get-profile pool profile-id)
+          project-id (:default-project-id profile)
+          team       (teams/get-team pool
+                                     :profile-id profile-id
+                                     :project-id project-id)]
+
+      (when-not project-id
+        (ex/raise :type :validation
+                  :code :missing-project
+                  :hint "project not found"))
+
+      (let [path   (-> params :file :path)
+            format (bfc/parse-file-format path)
+            cfg    (assoc cfg
+                          ::bfc/profile-id profile-id
+                          ::bfc/project-id project-id
+                          ::bfc/input path
+                          ::bfc/team-id (:id team)
+                          ::bfc/features (cfeat/get-team-enabled-features cf/flags team)
+                          ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size)
+                          ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size)
+                          ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size)
+                          ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries))]
+
+        (if (= format :binfile-v3)
+          (bf.v3/import-files! cfg)
+          (bf.v1/import-files! cfg))
+
+        {::yres/status  200
+         ::yres/headers {"content-type" "text/plain"}
+         ::yres/body    "OK"}))))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

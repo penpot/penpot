@@ -50,3 +50,9 @@ export async function rpc(command, params = {}) {
 export async function rpcMain(command, params = {}) {
   return call(MAIN_API_ROOT, command, params);
 }
+
+// Binary transfer routes live next to the RPC methods but outside
+// them (a download and a multipart upload do not fit RPC JSON).
+export function transferUrl(name) {
+  return new URL("../../api/admin/" + name, import.meta.url);
+}
