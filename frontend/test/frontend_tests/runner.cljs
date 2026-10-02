@@ -13,6 +13,7 @@
    [frontend-tests.data.event-test]
    [frontend-tests.data.exports-assets-test]
    [frontend-tests.data.exports-files-test]
+   [frontend-tests.data.imports-test]
    [frontend-tests.data.jobs-test]
    [frontend-tests.data.nitrate-test]
    [frontend-tests.data.persistence-retry-test]
@@ -156,6 +157,7 @@
    'frontend-tests.data.store-test
    'frontend-tests.data.exports-assets-test
    'frontend-tests.data.exports-files-test
+   'frontend-tests.data.imports-test
    'frontend-tests.data.jobs-test
    'frontend-tests.data.svg-upload-test
    'frontend-tests.data.uploads-test
