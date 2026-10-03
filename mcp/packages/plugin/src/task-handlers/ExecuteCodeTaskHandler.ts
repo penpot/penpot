@@ -8,7 +8,7 @@ import { PenpotUtils } from "../PenpotUtils.ts";
  * Provides the same interface as the native console object but appends
  * all output to an internal log string that can be retrieved.
  */
-class ExecuteCodeTaskConsole {
+export class ExecuteCodeTaskConsole {
     /**
      * Accumulated log output from all console method calls.
      */
@@ -31,14 +31,31 @@ class ExecuteCodeTaskConsole {
     }
 
     /**
+     * Formats one argument of a captured console call.
+     * Errors have no enumerable fields, and values such as circular objects
+     * cannot be serialized to JSON, so fall back to their string form.
+     */
+    private formatLogArgument(arg: unknown): string {
+        if (arg instanceof Error) {
+            return String(arg);
+        }
+        if (typeof arg === "object") {
+            try {
+                return JSON.stringify(arg, null, 2);
+            } catch {
+                return String(arg);
+            }
+        }
+        return String(arg);
+    }
+
+    /**
      * Appends a formatted message to the log output.
      * @param level - Log level prefix (e.g., "LOG", "WARN", "ERROR")
      * @param args - Arguments to log, will be stringified and joined
      */
     private appendToLog(level: string, ...args: any[]): void {
-        const message = args
-            .map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)))
-            .join(" ");
+        const message = args.map((arg) => this.formatLogArgument(arg)).join(" ");
         this.logOutput += `[${level}] ${message}\n`;
     }
 
