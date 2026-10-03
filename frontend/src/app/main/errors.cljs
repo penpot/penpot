@@ -100,6 +100,40 @@
         (assoc ::instance cause)
         (assoc ::trace (.-stack cause)))))
 
+;; Events in flight when each exception was caught, as report lines
+(defonce ^:private in-flight-by-cause (js/WeakMap.))
+
+;; Events kept from each end of a long in-flight list
+(def ^:private in-flight-edge-size 10)
+
+(defn- in-flight-lines
+  "Report lines for the in-flight `events`, outermost first; a long list
+  keeps only both ends."
+  [events]
+  (let [total (count events)
+        size  in-flight-edge-size]
+    (if (<= total (* 2 size))
+      (mapv ptk/repr-event events)
+      (-> []
+          (into (map ptk/repr-event) (take size events))
+          (conj (str "... " (- total (* 2 size)) " more ..."))
+          (into (map ptk/repr-event) (take-last size events))))))
+
+(defn- record-in-flight!
+  "Keeps the events the store is processing for the report of `cause`.
+  Runs synchronously on the error path: when an event's `update`, `effect`
+  or synchronous `watch` throws, the last line is that event. When a
+  `watch` pipeline fails on a value from the store stream, the store has
+  already finished that value, so the lines show the events that emitted
+  it, not the event that owns the pipeline."
+  [cause]
+  (try
+    (when (ex/exception? cause)
+      (when-let [events (not-empty (ptk/in-flight-events st/state))]
+        (.set in-flight-by-cause cause (in-flight-lines events))))
+    (catch :default _
+      nil)))
+
 (defn on-error
   "A general purpose error handler.
 
@@ -114,6 +148,7 @@
       (ex/print-throwable error))
     (do
       (vreset! handling-error? true)
+      (record-in-flight! (if (map? error) (::instance error) error))
       (try
         (if (map? error)
           (ptk/handle-error error)
@@ -166,8 +201,9 @@
       (println "HREF:     " (rt/get-current-href)))))
 
 (defn- generate-full-report
-  "Complete report: context, formatted throwable (including `ex-data`) and the
-  last events."
+  "Complete report: context, formatted throwable (including `ex-data`), the
+  events in flight when the error was caught (when recorded) and the last
+  events."
   [cause]
   (with-out-str
     (print (report-context cause))
@@ -176,6 +212,12 @@
     (println
      (ex/format-throwable cause))
     (println)
+
+    (when-let [lines (.get in-flight-by-cause cause)]
+      (println "Events in flight when the error was caught (outermost first):")
+      (println "--------------------")
+      (run! println lines)
+      (println))
 
     (println "Last events:")
     (println "--------------------")
@@ -202,9 +244,9 @@
   "Build the report string for `cause`.
 
   `:format` selects the payload: `:full` (default) includes the formatted
-  throwable and the last events; `:compact` keeps only the context and the
-  error type/code/uri, for environment failures. The option is accepted both
-  as keyword arguments and as a trailing map."
+  throwable, the in-flight and the last events; `:compact` keeps only the
+  context and the error type/code/uri, for environment failures. The option
+  is accepted both as keyword arguments and as a trailing map."
   [cause & {:keys [format] :or {format :full}}]
   (try
     (case format
@@ -391,6 +433,24 @@
                     (if (fn? report) (report) report)
                     hint
                     occurrences))))
+
+(defonce ^:private update-loop-warned-at
+  (volatile! 0))
+
+(defn on-update-loop
+  "Handler for the rumext update scheduler trips: logs the throttled
+  update loop with the events being processed, at most once per
+  `report-window-ms`. Runs inside store watchers and effect bodies, so it
+  never throws."
+  [_]
+  (try
+    (let [now (inst-ms (ct/now))]
+      (when (>= (- now @update-loop-warned-at) report-window-ms)
+        (vreset! update-loop-warned-at now)
+        (.warn js/console "[update-scheduler] update loop throttled; in-flight events:"
+               (into-array (map ptk/repr-event (ptk/in-flight-events st/state))))))
+    (catch :default _
+      nil)))
 
 (defn- download-report!
   [report event]
