@@ -435,6 +435,71 @@
     (t/is (array? result))
     (t/is (= ["Inter" "Arial"] (vec result)))))
 
+(t/deftest font-family-token-resolved-value-keeps-multi-word-families
+  ;; An unquoted family whose name has several words resolves to a list of word
+  ;; symbols, so the family name is the string form of each entry.
+  (let [token (ctob/make-token
+               {:name "font.body"
+                :type :font-family
+                :value ["Hanken Grotesk" "IBM Plex Mono"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (array? result))
+    (t/is (= ["Hanken Grotesk" "IBM Plex Mono"] (vec result)))))
+
+(t/deftest typography-token-resolved-value-keeps-multi-word-families
+  (let [token (ctob/make-token
+               {:name "type.body"
+                :type :typography
+                :value {:font-family ["Hanken Grotesk" "Arial"]
+                        :font-size "16px"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (= ["Hanken Grotesk" "Arial"] (vec (aget entry "fontFamilies"))))))
+
+(t/deftest font-family-token-resolved-value-keeps-names-with-expression-words
+  ;; Words like `Red` or `Black` read as colors and `2P` as a number and a word
+  ;; when tokenscript parses the family name.
+  (let [families ["Red Hat Display" "Crimson Pro" "Archivo Black"
+                  "Press Start 2P" "M PLUS 1p" "Crimson"]
+        token    (ctob/make-token
+                  {:name "font.display"
+                   :type :font-family
+                   :value families})
+        result   (get-resolved-value token {(:name token) token})]
+    (t/is (= families (vec result)))))
+
+(t/deftest font-family-token-resolved-value-mixes-references-and-names
+  (let [base   (ctob/make-token
+                {:name "font.base"
+                 :type :font-family
+                 :value ["Red Hat Text"]})
+        token  (ctob/make-token
+                {:name "font.stack"
+                 :type :font-family
+                 :value ["{font.base}" "Rock 3D"]})
+        result (get-resolved-value token {(:name base)  base
+                                          (:name token) token})]
+    (t/is (= ["Red Hat Text" "Rock 3D"] (vec result)))))
+
+(t/deftest font-family-token-resolved-value-keeps-quoted-names
+  (let [token  (ctob/make-token
+                {:name "font.quoted"
+                 :type :font-family
+                 :value ["\"Red Hat Mono\"" "'Black Ops One'"]})
+        result (get-resolved-value token {(:name token) token})]
+    (t/is (= ["Red Hat Mono" "Black Ops One"] (vec result)))))
+
+(t/deftest typography-token-resolved-value-keeps-names-with-expression-words
+  (let [token  (ctob/make-token
+                {:name "type.display"
+                 :type :typography
+                 :value {:font-family ["Red Hat Display" "Press Start 2P"]
+                         :font-size "16px"}})
+        result (get-resolved-value token {(:name token) token})
+        entry  (aget result 0)]
+    (t/is (= ["Red Hat Display" "Press Start 2P"]
+             (vec (aget entry "fontFamilies"))))))
+
 (t/deftest token-theme-add-set-accepts-token-set-id
   (let [plugin-id "plugin-id"
         file-id   (uuid/next)
