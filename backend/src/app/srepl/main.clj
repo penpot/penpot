@@ -25,11 +25,11 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.features.object-cascade :as cascade]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
@@ -143,6 +143,33 @@
                (-> (db/exec-one! conn ["update profile set password=? where email=?" password email])
                    (db/get-update-count)
                    (pos?)))))))
+
+(defn ensure-test-user!
+  "Ensure an active profile with a known password exists (dev only).
+
+  Returns {:id :email}, creating the profile with its default team
+  and project when the email is not taken. Intended for manual
+  browser passes and agent-driven checks against devenv."
+  [& {:keys [email password fullname]
+      :or {password "Test123!" fullname "Test User"}}]
+  (assert (= "devenv" (cf/get :host)) "dev only")
+  (assert (string? email) "expected email")
+  (assert (string? password) "expected password")
+
+  (some-> sys/system
+          (db/tx-run!
+           (fn [{:keys [::db/conn] :as system}]
+             (let [email (str/lower email)]
+               (if-let [profile (db/get* conn :profile {:email email}
+                                         {:columns [:id :email]})]
+                 (select-keys profile [:id :email])
+                 (let [profile (auth/create-profile
+                                system {:email email
+                                        :fullname fullname
+                                        :is-active true
+                                        :password (derive-password password)})]
+                   (auth/create-profile-rels system profile)
+                   (select-keys profile [:id :email]))))))))
 
 (defn parse-emails
   "Parse the emails into a seq of cleaned emails. Accepts a single
@@ -679,7 +706,7 @@
   [file-id]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! sys/system
-                (fn [{:keys [::db/conn] :as system}]
+                (fn [system]
                   (when-let [file (db/get* system :file
                                            {:id file-id}
                                            {::db/remove-deleted false
@@ -691,7 +718,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-file!"}})
 
-                    (#'files/restore-files conn [file-id]))
+                    (cascade/run-cascade system :file file-id {:deleted-at nil}))
                   :restored))))
 
 (defn delete-project!
@@ -715,19 +742,6 @@
                                           :id project-id})))
     :deleted))
 
-(defn- restore-project*
-  [{:keys [::db/conn] :as cfg} project-id]
-  (db/update! conn :project
-              {:deleted-at nil}
-              {:id project-id})
-
-  (doseq [{:keys [id]} (db/query conn :file
-                                 {:project-id project-id}
-                                 {::sql/columns [:id]})]
-    (#'files/restore-files conn [id]))
-
-  :restored)
-
 (defn restore-project!
   "Mark a project and all related objects as not deleted"
   [project-id]
@@ -744,7 +758,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
-                    (restore-project* system project-id))))))
+                    (cascade/run-cascade system :project project-id {:deleted-at nil}))))))
 
 (defn delete-team!
   "Mark a team for deletion"
@@ -767,23 +781,6 @@
                                           :id team-id})))
     :deleted))
 
-(defn- restore-team*
-  [{:keys [::db/conn] :as cfg} team-id]
-  (db/update! conn :team
-              {:deleted-at nil}
-              {:id team-id})
-
-  (db/update! conn :team-font-variant
-              {:deleted-at nil}
-              {:team-id team-id})
-
-  (doseq [{:keys [id]} (db/query conn :project
-                                 {:team-id team-id}
-                                 {::sql/columns [:id]})]
-    (restore-project* cfg id))
-
-  :restored)
-
 (defn restore-team!
   "Mark a team and all related objects as not deleted"
   [team-id]
@@ -801,7 +798,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-team!"}})
 
-                    (restore-team* system team-id))))))
+                    (cascade/run-cascade system :team team-id {:deleted-at nil}))))))
 
 (defn delete-profile!
   "Mark a profile for deletion."
@@ -840,13 +837,7 @@
                                    :context {:triggered-by "srepl"
                                              :cause "explicit call to restore-profile!"}})
 
-                    (db/update! system :profile
-                                {:deleted-at nil}
-                                {:id profile-id}
-                                {::db/return-keys false})
-
-                    (doseq [{:keys [id]} (profile/get-owned-teams system profile-id)]
-                      (restore-team* system id))
+                    (cascade/run-cascade system :profile profile-id {:deleted-at nil})
 
                     :restored)))))
 

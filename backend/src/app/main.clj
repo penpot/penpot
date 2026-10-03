@@ -16,6 +16,7 @@
    [app.db :as-alias db]
    [app.email :as-alias email]
    [app.http :as-alias http]
+   [app.http.admin :as-alias http.admin]
    [app.http.assets :as-alias http.assets]
    [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
@@ -362,6 +363,7 @@
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::mgmt/routes        (ig/ref ::mgmt/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
+    ::http.admin/routes  (ig/ref ::http.admin/routes)
     ::http.assets/routes (ig/ref ::http.assets/routes)
     ::http.link-preview/routes (ig/ref ::http.link-preview/routes)
     ::http.ws/routes     (ig/ref ::http.ws/routes)
@@ -369,6 +371,9 @@
 
    ::http.link-preview/routes
    {::db/pool         (ig/ref ::db/pool)}
+
+   ::http.admin/routes
+   {}
 
    ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
@@ -412,7 +417,8 @@
     (ig/ref :app.loggers.database/reporter)}
 
    :app.rpc/methods
-   {::http.client/client (ig/ref ::http.client/client)
+   {:app.auth/superusers  (ig/ref :app.auth/superusers)
+    ::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::rds/pool           (ig/ref ::rds/pool)
     :app.nitrate/client  (ig/ref :app.nitrate/client)
@@ -443,6 +449,13 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
+   :app.auth/superusers
+   {::db/pool    (ig/ref ::db/pool)
+
+    ;; NOTE: this dependency is only necessary for proper initialization
+    ;; ordering, the registry queries the profile table on startup.
+    ::migrations (ig/ref :app.migrations/migrations)}
+
    :app.rpc/management-methods
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
@@ -456,9 +469,29 @@
     ::rds/client         (ig/ref ::rds/client)
     ::setup/props        (ig/ref ::setup/props)}
 
+   :app.rpc/admin-methods
+   {:app.auth/superusers  (ig/ref :app.auth/superusers)
+    ::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)
+    ::rds/pool           (ig/ref ::rds/pool)
+    :app.nitrate/client  (ig/ref :app.nitrate/client)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::session/manager    (ig/ref ::session/manager)
+    ::ldap/provider      (ig/ref ::ldap/provider)
+    ::sto/storage        (ig/ref ::sto/storage)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
+    ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    ::rds/client         (ig/ref ::rds/client)
+    ::rpc/climit         (ig/ref ::rpc/climit)
+    ::rpc/rlimit         (ig/ref ::rpc/rlimit)
+    ::setup/templates    (ig/ref ::setup/templates)
+    ::setup/props        (ig/ref ::setup/props)}
+
    ::rpc/routes
    {::rpc/methods            (ig/ref :app.rpc/methods)
     ::rpc/management-methods (ig/ref :app.rpc/management-methods)
+    ::rpc/admin-methods      (ig/ref :app.rpc/admin-methods)
+    :app.auth/superusers    (ig/ref :app.auth/superusers)
 
     ;; FIXME: revisit if db/pool is necessary here
     ::db/pool                (ig/ref ::db/pool)

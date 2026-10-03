@@ -1,0 +1,523 @@
+:root {
+  --admin-bg: #1e1e1e;
+  --admin-surface: #2b2b2b;
+  --admin-text: #e8e8e8;
+  --admin-muted: #9a9a9a;
+  --admin-accent: #f7932e;
+  --admin-danger: #e65252;
+  --admin-space-xs: 4px;
+  --admin-space-sm: 8px;
+  --admin-space-md: 16px;
+  --admin-space-lg: 24px;
+  --admin-font: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+  --admin-mono: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: var(--admin-font);
+}
+
+#app {
+  min-height: 100vh;
+  padding: var(--admin-space-lg);
+}
+
+/* Links keep readable tones on the dark background in both
+states: unvisited light blue (7.6:1 on the background), visited
+light lavender (8.1:1), so the two are told apart without going
+dark. Both clear WCAG AAA for normal text. */
+a {
+  color: #7fb3e8;
+}
+a:visited {
+  color: #c4a8ee;
+}
+a:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-layout {
+  display: flex;
+  gap: var(--admin-space-lg);
+  align-items: flex-start;
+}
+
+.admin-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-space-xs);
+  min-width: 180px;
+  padding-top: 52px;
+}
+
+.admin-sidebar-link {
+  color: var(--admin-muted);
+  text-decoration: none;
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  border-radius: 6px;
+}
+
+.admin-sidebar-link:hover {
+  color: var(--admin-text);
+  background: var(--admin-surface);
+}
+
+.admin-sidebar-link-active {
+  color: var(--admin-text);
+  background: var(--admin-surface);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-header h1 {
+  font-size: 1.5rem;
+  margin: 0 0 var(--admin-space-md);
+}
+
+/* Title crumb: clickable back to the team or project page, but
+wearing plain title text instead of link styling. */
+.admin-crumb {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.admin-crumb:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-controls {
+  display: flex;
+  gap: var(--admin-space-sm);
+  margin-bottom: var(--admin-space-sm);
+  flex-wrap: wrap;
+}
+
+/* `hidden` must win over the flex above: an empty filter bar
+or confirm row takes no space at all. */
+.admin-controls[hidden],
+.admin-confirm[hidden] {
+  display: none;
+}
+
+.admin-input,
+.admin-select {
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  font: inherit;
+}
+
+.admin-input:focus-visible,
+.admin-select:focus-visible,
+.admin-button:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-input {
+  min-width: 240px;
+}
+
+.admin-textarea {
+  display: block;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  font: inherit;
+  min-width: min(560px, 100%);
+  min-height: 140px;
+  margin-bottom: var(--admin-space-sm);
+}
+
+.admin-textarea:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-button {
+  background: var(--admin-accent);
+  color: #1e1e1e;
+  border: none;
+  border-radius: 6px;
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.admin-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Labels styled as buttons (the import picker) cannot use
+:disabled, so loading dims them through this class instead. */
+.admin-button-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Stacked checkbox labels (export options, repair snapshot). */
+.admin-check {
+  display: flex;
+  gap: var(--admin-space-xs);
+  margin-top: var(--admin-space-sm);
+  align-items: center;
+}
+
+/* Result area below an action button. */
+.admin-result {
+  margin-top: var(--admin-space-md);
+}
+
+.admin-button-ghost {
+  background: transparent;
+  color: var(--admin-text);
+  border: 1px solid #3d3d3d;
+  font-weight: 400;
+}
+
+.admin-button-danger {
+  background: #5c2b2b;
+  color: #ee9a9a;
+}
+
+.admin-actions {
+  display: flex;
+  gap: var(--admin-space-sm);
+  margin-top: var(--admin-space-lg);
+  flex-wrap: wrap;
+}
+
+.admin-confirm {
+  display: flex;
+  gap: var(--admin-space-sm);
+  margin-top: var(--admin-space-lg);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-confirm p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.admin-list {
+  margin: 0;
+  padding-left: var(--admin-space-lg);
+}
+
+.admin-count {
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+  margin: var(--admin-space-sm) 0 var(--admin-space-md);
+}
+
+/* Count line under a filter bar: extra air above it so it does
+not stick to the controls. */
+.admin-count-spaced {
+  margin-top: var(--admin-space-lg);
+}
+
+.admin-table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  background: var(--admin-surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  background: #333;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--admin-muted);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: var(--admin-space-sm) var(--admin-space-md);
+  text-align: left;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.admin-table tbody tr {
+  cursor: pointer;
+}
+
+.admin-table tbody tr:hover {
+  background: #353535;
+}
+
+.admin-cell-date {
+  width: 215px;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  color: var(--admin-muted);
+}
+
+.admin-cell-source {
+  width: 115px;
+  white-space: nowrap;
+}
+
+.admin-cell-kind {
+  width: 195px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--admin-muted);
+}
+
+.admin-cell-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-cell-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-cell-name {
+  width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--admin-muted);
+}
+
+.admin-cell-status {
+  width: 110px;
+  white-space: nowrap;
+}
+
+.admin-table .admin-cell-count {
+  width: 64px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.admin-table .admin-cell-right {
+  text-align: right;
+}
+
+.admin-table .admin-cell-left {
+  text-align: left;
+}
+
+.admin-table .admin-cell-project,
+.admin-table .admin-cell-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* Auto-layout tables: columns shrink to their content (capped
+with ellipsis) instead of spreading across the table. The column
+carrying `.admin-cell-fill` eats the leftover space. */
+.admin-table-auto {
+  table-layout: auto;
+}
+.admin-table-auto .admin-cell-name {
+  min-width: 220px;
+  max-width: 280px;
+}
+.admin-table-auto .admin-cell-project,
+.admin-table-auto .admin-cell-team {
+  max-width: 260px;
+}
+.admin-table-auto .admin-cell-date {
+  width: auto;
+}
+.admin-table-auto .admin-cell-fill {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-table .admin-cell-center {
+  text-align: center;
+}
+
+.admin-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.admin-badge-source-logging {
+  background: #1d3a5f;
+  color: #7fb3e8;
+}
+
+.admin-badge-source-audit {
+  background: #3d2b5c;
+  color: #c4a8ee;
+}
+
+.admin-badge-source-rlimit {
+  background: #5c2b2b;
+  color: #ee9a9a;
+}
+
+.admin-badge-source-legacy {
+  background: #3a3a3a;
+  color: var(--admin-muted);
+}
+
+.admin-badge-status-blocked {
+  background: #5c2b2b;
+  color: #ee9a9a;
+}
+
+.admin-badge-status-inactive {
+  background: #3a3a3a;
+  color: var(--admin-muted);
+}
+
+.admin-badge-status-demo {
+  background: #1d3a5f;
+  color: #7fb3e8;
+}
+
+.admin-badge-status-active {
+  background: #274d2d;
+  color: #9bda9f;
+}
+
+.admin-badge-status-deleted {
+  background: #402b3d;
+  color: #d896d8;
+}
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--admin-space-md);
+  margin-top: var(--admin-space-md);
+}
+
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-space-xs);
+  background: var(--admin-surface);
+  border: 1px solid #3d3d3d;
+  border-left: 3px solid var(--admin-accent);
+  border-radius: 0 8px 8px 0;
+  padding: var(--admin-space-md) var(--admin-space-lg);
+  color: var(--admin-text);
+  text-decoration: none;
+}
+
+.admin-card:hover {
+  border-color: var(--admin-accent);
+}
+
+.admin-card strong {
+  font-size: 1rem;
+}
+
+.admin-card span {
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+}
+
+.admin-pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--admin-space-md);
+}
+
+.admin-detail {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--admin-space-xs) var(--admin-space-md);
+  background: var(--admin-surface);
+  border-radius: 8px;
+  padding: var(--admin-space-md) var(--admin-space-lg);
+  margin: var(--admin-space-md) 0 0;
+}
+
+.admin-detail dt {
+  color: var(--admin-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.admin-block {
+  margin-top: var(--admin-space-lg);
+}
+
+.admin-block h2 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--admin-accent);
+  margin: 0 0 var(--admin-space-sm);
+}
+
+.admin-block-body {
+  background: #141414;
+  border: 1px solid #3d3d3d;
+  border-left: 3px solid var(--admin-accent);
+  border-radius: 0 8px 8px 0;
+  padding: var(--admin-space-md) var(--admin-space-lg);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 0.8125rem;
+}
+
+.admin-toast {
+  position: fixed;
+  bottom: var(--admin-space-lg);
+  right: var(--admin-space-lg);
+  background: var(--admin-surface);
+  padding: var(--admin-space-md);
+  border-left: 3px solid var(--admin-accent);
+}
+
+.admin-toast-error {
+  border-left-color: var(--admin-danger);
+}

@@ -6,6 +6,7 @@
 
 (ns app.rpc
   (:require
+   [app.auth :as auth]
    [app.auth.ldap :as-alias ldap]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -19,6 +20,7 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.access-token :as actoken]
+   [app.http.admin :as admin]
    [app.http.client :as-alias http.client]
    [app.http.middleware :as mw]
    [app.http.security :as sec]
@@ -164,7 +166,15 @@
   [_ f mdata]
   (let [required-auth?      (::auth mdata true)
         required-auth-type  (::auth-type mdata)
-        required-perms      (into #{} (::perms mdata))]
+        required-perms      (set (::perms mdata))
+        ;; Token scopes keep their meaning: they force token authentication
+        ;; and are checked against the token. "superuser" is satisfied either
+        ;; by registry membership (any auth type) or by a token carrying it
+        ;; as a granted scope. Token scopes are operator-granted only —
+        ;; tokens are created with empty perms — so this grants nothing
+        ;; by itself.
+        scope-perms         (disj required-perms "superuser")
+        superuser-required (contains? required-perms "superuser")]
     (fn [cfg params]
       (let [profile-id  (::profile-id params)
             auth-type   (::auth-type params)
@@ -181,18 +191,24 @@
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
 
-          (and (seq required-perms)
+          (and (seq scope-perms)
                (not= auth-type :token))
           (ex/raise :type :authorization
                     :code :token-auth-required
                     :hint "access token authentication required for this endpoint")
 
-          (and (seq required-perms)
-               (not (set/subset? required-perms token-perms)))
+          (and (seq scope-perms)
+               (not (set/subset? scope-perms token-perms)))
           (ex/raise :type :authorization
                     :code :missing-perms
                     :hint "missing required permissions"
-                    :required required-perms)
+                    :required scope-perms)
+
+          (and superuser-required
+               (not (auth/superuser-allowed? cfg profile-id token-perms)))
+          (ex/raise :type :authorization
+                    :code :superuser-required
+                    :hint "superuser required for this endpoint")
 
           :else
           (f cfg params))))))
@@ -455,6 +471,46 @@
     (resolve-management-methods cfg)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ADMIN METHODS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- resolve-admin-methods
+  [cfg]
+  (let [cfg (assoc cfg ::module "admin" ::type "command" ::metrics-id :rpc-admin-timing)]
+    (->> (sv/scan-ns
+          'app.rpc.admin.errors
+          'app.rpc.admin.file
+          'app.rpc.admin.misc
+          'app.rpc.admin.profile
+          'app.rpc.admin.project
+          'app.rpc.admin.team)
+         (map (partial process-method cfg wrap))
+         (into {}))))
+
+(def ^:private schema:admin-methods-params
+  [:map {:title "admin-methods-params"}
+   ::session/manager
+   ::http.client/client
+   ::db/pool
+   ::rds/pool
+   ::mbus/msgbus
+   ::sto/storage
+   ::mtx/metrics
+   [::ldap/provider [:maybe ::ldap/provider]]
+   [::climit [:maybe ::climit]]
+   [::rlimit [:maybe ::rlimit]]
+   ::setup/props])
+
+(defmethod ig/assert-key ::admin-methods
+  [_ params]
+  (assert (sm/check schema:admin-methods-params params)))
+
+(defmethod ig/init-key ::admin-methods
+  [_ cfg]
+  (let [cfg (d/without-nils cfg)]
+    (resolve-admin-methods cfg)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ROUTES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -478,10 +534,11 @@
   (assert (db/pool? (::db/pool params)) "expect valid database pool")
   (assert (session/manager? (::session/manager params)) "expect valid session manager")
   (assert (valid-methods? (::methods params)) "expect valid methods map")
-  (assert (valid-methods? (::management-methods params)) "expect valid methods map"))
+  (assert (valid-methods? (::management-methods params)) "expect valid methods map")
+  (assert (valid-methods? (::admin-methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods ::management-methods ::setup/shared-keys] :as cfg}]
+  [_ {:keys [::methods ::management-methods ::admin-methods ::setup/shared-keys] :as cfg}]
 
   (let [public-uri (cf/get :public-uri)]
     ["/api"
@@ -508,6 +565,26 @@
                   :label "main"
                   :base-uri (u/join public-uri "/api/main")
                   :description "MAIN API")]
+
+     ["/admin"
+      ["/methods/:method-name"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (make-rpc-handler admin-methods)}]
+      ["/file-export"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (partial admin/file-export-handler cfg)}]
+      ["/file-import"
+       {:middleware [[mw/cors]
+                     [sec/client-header-check]
+                     [session/authz cfg]
+                     [actoken/authz cfg]]
+        :handler (partial admin/file-import-handler cfg)}]]
 
      ;; BACKWARD COMPATIBILITY
      ["/_doc" {:handler (redirect (u/join public-uri "/api/main/doc"))}]
