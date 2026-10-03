@@ -25,6 +25,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.string :as str]))
@@ -845,8 +846,10 @@
 ;; existing set) carry kind :token -> :set-token. Structural changes
 ;; carry their own kinds, each translated by `compute-changes`: set
 ;; add/delete :token-set, rename/description :token-set-rename, set order
-;; :token-set-order, themes :token-theme, active themes
-;; :token-active-themes and active-set toggles :token-active-sets.
+;; :token-set-order, themes :token-theme, and activation, which the
+;; document keeps in `:tokens-status` rather than in the lib: active themes
+;; :token-active-themes and active sets :token-active-sets, both written
+;; back as one :set-tokens-status.
 
 (defn- lib-set-ids
   [lib]
@@ -947,20 +950,19 @@
           (ctob/get-themes lib))
     {}))
 
-(defn- lib-active-paths
-  "Active theme paths (mergeable via :set-active-token-themes)."
-  [lib]
-  (if lib (set (ctob/get-active-theme-paths lib)) #{}))
+(defn- active-theme-ids
+  "The active theme ids of `data`'s `:tokens-status`."
+  [data]
+  (if-let [status (:tokens-status data)]
+    (ctos/get-active-theme-ids status)
+    #{}))
 
-(defn- lib-hidden-sets
-  "The hidden theme's active sets (active-set toggles)."
-  [lib]
-  (some-> lib (ctob/get-theme ctob/hidden-theme-id) :sets set))
-
-(defn- hidden-theme-map
-  "The hidden theme as a plain map (for :set-token-theme)."
-  [lib]
-  (some->> (when lib (ctob/get-theme lib ctob/hidden-theme-id)) (into {})))
+(defn- active-set-ids
+  "The active set ids of `data`'s `:tokens-status`."
+  [data]
+  (if-let [status (:tokens-status data)]
+    (ctos/get-active-set-ids status)
+    #{}))
 
 (defn- set-order-by-id
   "Set ids in their stored order, filtered to `ids`."
@@ -999,15 +1001,15 @@
         ;; themes, excluding hidden (mergeable: :token-theme)
         themes   (three-way-entities (lib-themes bl) (lib-themes tl) (lib-themes ol)
                                      {:kind :token-theme})
-        ;; active theme paths (mergeable: :token-active-themes)
-        active-paths (three-way-entities {:active-themes (lib-active-paths bl)}
-                                         {:active-themes (lib-active-paths tl)}
-                                         {:active-themes (lib-active-paths ol)}
-                                         {:kind :token-active-themes})
-        ;; active-set toggles (hidden theme) (mergeable: :token-active-sets)
-        active-sets (three-way-entities {:active-sets (lib-hidden-sets bl)}
-                                        {:active-sets (lib-hidden-sets tl)}
-                                        {:active-sets (lib-hidden-sets ol)}
+        ;; activation, read off each document's tokens status (mergeable:
+        ;; :token-active-themes and :token-active-sets)
+        active-themes (three-way-entities {:active-themes (active-theme-ids base)}
+                                          {:active-themes (active-theme-ids theirs)}
+                                          {:active-themes (active-theme-ids ours)}
+                                          {:kind :token-active-themes})
+        active-sets (three-way-entities {:active-sets (active-set-ids base)}
+                                        {:active-sets (active-set-ids theirs)}
+                                        {:active-sets (active-set-ids ours)}
                                         {:kind :token-active-sets})
         ;; per-token values (mergeable: :token). Sets deleted on either side
         ;; relative to the base are decided wholesale at set level (delete or
@@ -1024,7 +1026,7 @@
                                             (lib-tokens-by-id ol sid)
                                             {:kind :token :set-id sid}))
                       (remove deleted-on-a-side? set-ids))]
-    (merge-results (concat [presence rename order themes active-paths active-sets] tokens))))
+    (merge-results (concat [presence rename order themes active-themes active-sets] tokens))))
 
 (defn remap-refs
   "Rewrite cross-file references in `data` through `id-map`
@@ -1951,28 +1953,24 @@
                      (map (fn [sid] {:type :set-token-set :id sid :attrs (set-rename-attrs ml ol sid)})))
                common-sets)
 
-         ;; active theme paths
+         ;; activation: each half settles the way `diff-tokens` classified
+         ;; it, and one :set-tokens-status carries both, because the change
+         ;; replaces the whole status
+         settle (fn [b m o k]
+                  (cond
+                    (= o b) m
+                    (= m b) o
+                    (= o m) m
+                    (= (get resolutions k) :branch) o
+                    :else m))
+         main-theme-ids (active-theme-ids main)
+         main-set-ids   (active-set-ids main)
+         theme-ids      (settle (active-theme-ids base) main-theme-ids (active-theme-ids branch) :active-themes)
+         active-ids     (settle (active-set-ids base) main-set-ids (active-set-ids branch) :active-sets)
          active-changes
-         (let [bp (lib-active-paths bl) mp (lib-active-paths ml) op (lib-active-paths ol)]
-           (cond
-             (= op bp) []
-             (= mp bp) [{:type :set-active-token-themes :theme-paths op}]
-             (= op mp) []
-             (= (get resolutions :active-themes) :branch) [{:type :set-active-token-themes :theme-paths op}]
-             :else []))
-
-         ;; active sets (hidden theme): bring branch's hidden theme
-         active-sets-changes
-         (let [bs (lib-hidden-sets bl) ms (lib-hidden-sets ml) os (lib-hidden-sets ol)
-               take! (fn [] (if-let [h (hidden-theme-map ol)]
-                              [{:type :set-token-theme :id ctob/hidden-theme-id :attrs h}]
-                              []))]
-           (cond
-             (= os bs) []
-             (= ms bs) (take!)
-             (= os ms) []
-             (= (get resolutions :active-sets) :branch) (take!)
-             :else []))
+         (if (and (= theme-ids main-theme-ids) (= active-ids main-set-ids))
+           []
+           [{:type :set-tokens-status :theme-ids theme-ids :set-ids active-ids}])
 
          ;; set order: reorder main's common sets to branch's order using
          ;; "move nᵢ before nᵢ₊₁" right-to-left. Emitted after renames so set
@@ -2031,4 +2029,4 @@
                                 colors typos media
                                 set-presence set-rename-changes set-order-changes
                                 token-vals themes
-                                active-changes active-sets-changes))})))
+                                active-changes))})))

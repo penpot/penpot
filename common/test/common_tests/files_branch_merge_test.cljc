@@ -8,10 +8,12 @@
   (:require
    [app.common.files.branch-merge :as bm]
    [app.common.files.changes :as cfc]
+   [app.common.files.tokens :as cfo]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -472,6 +474,11 @@
   [lib]
   (assoc (mkdata {}) :tokens-lib lib))
 
+(defn- with-status
+  "`with-tokens`, carrying the tokens status `f` builds from an empty one."
+  [lib f]
+  (assoc (with-tokens lib) :tokens-status (f (ctos/make-tokens-status))))
+
 (t/deftest compute-changes-token-value-roundtrip
   (let [sid (uuid/next)
         tid (uuid/next)
@@ -751,37 +758,62 @@
       (t/is (= ["c" "a" "b"] order)))))
 
 (t/deftest compute-changes-token-active-sets
-  (let [sid (uuid/next)
-        tid (uuid/next)
-        base-lib   (token-lib sid tid "#ff0000")
-        ;; branch toggles the "core" set active in the hidden theme
-        branch-lib (ctob/toggle-set-in-theme base-lib ctob/hidden-theme-id "core")
-        {:keys [changes unsupported]} (bm/compute-changes (with-tokens base-lib)
-                                                          (with-tokens base-lib)
-                                                          (with-tokens branch-lib))
-        ch (first (filter #(= :set-token-theme (:type %)) changes))
-        hidden-sets (fn [lib] (set (:sets (ctob/get-theme lib ctob/hidden-theme-id))))]
+  (let [sid    (uuid/next)
+        tid    (uuid/next)
+        lib    (token-lib sid tid "#ff0000")
+        base   (with-status lib identity)
+        ;; branch activates the "core" set directly
+        branch (with-status lib #(cfo/activate-set % lib sid))
+        {:keys [changes unsupported]} (bm/compute-changes base base branch)
+        ch (first (filter #(= :set-tokens-status (:type %)) changes))]
     (t/is (empty? unsupported))
-    (t/is (= ctob/hidden-theme-id (:id ch)))
-    ;; round-trip: main's hidden theme active sets match the branch
-    (let [data' (cfc/process-changes {:tokens-lib base-lib} changes)]
-      (t/is (= (hidden-sets branch-lib) (hidden-sets (:tokens-lib data')))))))
+    (t/is (= #{sid} (:set-ids ch)))
+    ;; round-trip: main's active sets match the branch
+    (let [data' (cfc/process-changes base changes)]
+      (t/is (= #{sid} (ctos/get-active-set-ids (:tokens-status data')))))))
 
 (t/deftest compute-changes-token-active-themes
-  (let [thid (uuid/next)
-        base-lib   (-> (ctob/make-tokens-lib)
-                       (ctob/add-theme (ctob/make-token-theme {:id thid :name "Dark" :group ""})))
-        branch-lib (ctob/activate-theme base-lib thid)
-        {:keys [changes unsupported]} (bm/compute-changes (with-tokens base-lib)
-                                                          (with-tokens base-lib)
-                                                          (with-tokens branch-lib))
-        ch (first (filter #(= :set-active-token-themes (:type %)) changes))]
+  (let [sid    (uuid/next)
+        tid    (uuid/next)
+        thid   (uuid/next)
+        lib    (-> (token-lib sid tid "#ff0000")
+                   (ctob/add-theme (ctob/make-token-theme {:id thid :name "Dark" :group "" :sets #{"core"}})))
+        base   (with-status lib identity)
+        branch (with-status lib #(cfo/activate-theme % lib thid))
+        {:keys [changes unsupported]} (bm/compute-changes base base branch)
+        ch (first (filter #(= :set-tokens-status (:type %)) changes))]
     (t/is (empty? unsupported))
-    (t/is (some? ch))
-    ;; round-trip: active theme paths match the branch
-    (let [data' (cfc/process-changes {:tokens-lib base-lib} changes)]
-      (t/is (= (set (ctob/get-active-theme-paths branch-lib))
-               (set (ctob/get-active-theme-paths (:tokens-lib data'))))))))
+    (t/is (= #{thid} (:theme-ids ch)))
+    (t/is (= #{sid} (:set-ids ch)) "activating a theme activates its sets")
+    ;; round-trip: main's tokens status matches the branch
+    (let [status (:tokens-status (cfc/process-changes base changes))]
+      (t/is (= #{thid} (ctos/get-active-theme-ids status)))
+      (t/is (= #{sid} (ctos/get-active-set-ids status))))))
+
+(t/deftest token-activation-conflict-settles-by-resolution
+  ;; Both sides activate a different theme of one group, so both halves of
+  ;; the status diverge. Main's status stands until a resolution takes the
+  ;; branch's.
+  (let [sid-a  (uuid/next)
+        sid-b  (uuid/next)
+        th-a   (uuid/next)
+        th-b   (uuid/next)
+        lib    (-> (ctob/make-tokens-lib)
+                   (ctob/add-set (ctob/make-token-set {:id sid-a :name "a"}))
+                   (ctob/add-set (ctob/make-token-set {:id sid-b :name "b"}))
+                   (ctob/add-theme (ctob/make-token-theme {:id th-a :name "A" :group "" :sets #{"a"}}))
+                   (ctob/add-theme (ctob/make-token-theme {:id th-b :name "B" :group "" :sets #{"b"}})))
+        base   (with-status lib identity)
+        main   (with-status lib #(cfo/activate-theme % lib th-a))
+        branch (with-status lib #(cfo/activate-theme % lib th-b))
+        status-changes (fn [resolutions]
+                         (filterv #(= :set-tokens-status (:type %))
+                                  (:changes (bm/compute-changes base main branch resolutions))))]
+    (t/is (= #{:token-active-themes :token-active-sets}
+             (set (map :kind (:conflicts (bm/compute-merge base main branch :branch->main))))))
+    (t/is (= [] (status-changes {})) "an unresolved conflict keeps main's status")
+    (t/is (= [{:type :set-tokens-status :theme-ids #{th-b} :set-ids #{sid-b}}]
+             (status-changes {:active-themes :branch :active-sets :branch})))))
 
 ;;; --- Regression tests: classification on stripped shapes ---
 
