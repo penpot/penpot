@@ -159,7 +159,7 @@ export function usersPage(root, { onNavigate }) {
   root.appendChild(controls);
 
   const countLine = document.createElement("p");
-  countLine.className = "admin-count";
+  countLine.className = "admin-count admin-count-spaced";
   root.appendChild(countLine);
 
   const tableWrap = document.createElement("div");
