@@ -749,7 +749,8 @@
      FROM file_library_rel AS flr
      JOIN file AS f ON (f.id = flr.file_id)
     WHERE flr.library_file_id = ?
-      AND (f.deleted_at IS NULL OR f.deleted_at > now())")
+      AND (f.deleted_at IS NULL OR f.deleted_at > now())
+      AND f.is_branch IS FALSE")
 
 (defn get-library-file-references
   [conn file-id]
@@ -932,13 +933,33 @@
 
 ;; --- MUTATION COMMAND: set-file-shared
 
+;; Absorption skips branch files. A branch stores no data payload, so an
+;; absorption written to one would land in a `file_data` row that no read
+;; consults. An open branch reaches main's absorbed copies on its next
+;; update from main. Until then an unpublished library still resolves in
+;; the branch through the branch's own link, which `set-file-shared`
+;; keeps, and a soft-deleted library resolves nothing in the branch. A
+;; branch file keeps `is_branch` while its deletion is pending, so the
+;; filter also skips a deleted branch, whose derive would fail on its
+;; deleted `file_branch` row. A materialised file is no longer a branch
+;; and absorbs like any other file.
 (def ^:private sql:get-referenced-files
   "SELECT f.id
      FROM file_library_rel AS flr
     INNER JOIN file AS f ON (f.id = flr.file_id)
     WHERE flr.library_file_id = ?
       AND (f.deleted_at IS NULL OR f.deleted_at > now())
+      AND f.is_branch IS FALSE
     ORDER BY f.created_at ASC;")
+
+;; The unpublish unlinks the files that absorbed the library. A branch
+;; keeps its link (see `sql:get-referenced-files`).
+(def ^:private sql:unlink-absorbed-files
+  "DELETE FROM file_library_rel AS flr
+    USING file AS f
+    WHERE f.id = flr.file_id
+      AND flr.library_file_id = ?
+      AND f.is_branch IS FALSE")
 
 (defn- absorb-library-by-file
   [cfg ldata file-id]
@@ -957,12 +978,14 @@
              :library-id (str (:id ldata))
              :file-id (str file-id))
 
-      (bfc/update-file! cfg {:id file-id
-                             :migrations (:migrations file)
-                             :revn (inc (:revn file))
-                             :data (:data file)
-                             :modified-at (ct/now)
-                             :has-media-trimmed false}))))
+      ;; the file as read, features included: the absorbed data carries
+      ;; pointer maps whose ids `absorb-assets` regenerated, and without
+      ;; `:features` the encode below would skip the pointer persistence
+      ;; and leave those fragments unwritten
+      (bfc/update-file! cfg (assoc file
+                                   :revn (inc (:revn file))
+                                   :modified-at (ct/now)
+                                   :has-media-trimmed false)))))
 
 (defn- absorb-library*
   "Find all files using a shared library, and absorb all library assets
@@ -1014,7 +1037,7 @@
                ;; perform all required validations.
                (let [file (-> (absorb-library cfg id)
                               (assoc :is-shared false))]
-                 (db/delete! conn :file-library-rel {:library-file-id id})
+                 (db/exec-one! conn [sql:unlink-absorbed-files id])
                  (db/update! conn :file
                              {:is-shared false
                               :modified-at (ct/now)}

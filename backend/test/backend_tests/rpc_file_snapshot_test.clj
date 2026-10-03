@@ -331,4 +331,7 @@
       (t/is (uuid? (:id snap)))
       (t/is (some? (:error out)))
       (t/is (= :branch-file-cant-be-restored (th/ex-code (:error out))))
-      (t/is (empty? (th/db-query :file-data {:file-id branch-id :type "main"}))))))
+      (t/is (empty? (th/db-query :file-data {:file-id branch-id :type "main"})))
+      ;; the command refuses before it takes its backup snapshot, which
+      ;; would be committed whatever the restore's outcome
+      (t/is (empty? (th/db-query :file-change {:file-id branch-id :created-by "system"}))))))

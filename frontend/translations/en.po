@@ -6856,8 +6856,8 @@ msgstr "A file with more than %s pages can't be branched."
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.limits.size.changes"
 msgstr ""
-"A branch that has collected more than %s changes can't be compared or "
-"merged. Merge it, or turn it into an ordinary file."
+"A branch that has collected more than %s changes can't be compared, merged "
+"or updated from main. Turn it into an ordinary file to keep its content."
 
 #: src/app/main/ui/workspace/sidebar/branches.cljs
 msgid "workspace.branches.limits.size.loading"
@@ -6932,8 +6932,9 @@ msgstr "This file has more pages than branching supports (%s)."
 #: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.limits.refuse-changes"
 msgstr ""
-"This branch has collected more changes than a comparison supports (%s). "
-"Merge it, or turn it into an ordinary file."
+"This branch has collected more changes than branching supports (%s). It "
+"can't be compared, merged or updated from main. Turn it into an ordinary "
+"file to keep its content, or delete it."
 
 #: src/app/main/data/workspace/branches.cljs
 msgid "workspace.branches.limits.refuse-nested"

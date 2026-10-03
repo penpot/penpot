@@ -127,7 +127,7 @@
       (ex/raise :type :restriction
                 :code :branching-oplog-limit-exceeded
                 :hint (str "this branch has " depth " changes in its op log and the limit is "
-                           limit "; merge it, or materialise it into an ordinary file")
+                           limit "; materialise it into an ordinary file, or delete it")
                 :operation operation
                 :branch-file-id branch-file-id
                 :limit limit
@@ -872,10 +872,10 @@
             dir         (or direction :branch->main)
             main-file   (-> (bfc/get-file cfg (:source-file-id branch) :realize? true)
                             (check-file-size-limits! :compare))
-            branch-file (bfc/get-file cfg (:branch-file-id branch)
-                                      :realize? true :include-base-data? true)
             log         (-> (branch-log cfg (:branch-file-id branch))
                             (check-oplog-depth-limit! (:branch-file-id branch) :compare))
+            branch-file (bfc/get-file cfg (:branch-file-id branch)
+                                      :realize? true :include-base-data? true)
             main-data   (:data main-file)
             branch-data (bm/remap-refs
                          (:data branch-file)
@@ -946,9 +946,10 @@
   "Merge a branch into its source file (main).
 
   Conflicts that `resolutions` leaves unresolved make the command return
-  `{:status :conflicts}`; a resolved conflict merges the side its
-  resolution picks, per entity or per attr. Change kinds the engine
-  cannot translate (`bm/unsupported-kinds`) make it return
+  `{:status :conflicts}`, with the `:main-revn` they were computed against
+  so the retry can pass it as `expected-main-revn`; a resolved conflict
+  merges the side its resolution picks, per entity or per attr. Change
+  kinds the engine cannot translate (`bm/unsupported-kinds`) make it return
   `{:status :unsupported}` so no change is silently dropped. Otherwise it
   takes a safety snapshot of main, applies the merge to main through the
   production change pipeline, marks the branch merged and notifies open
@@ -1068,7 +1069,8 @@
                                                              :session-id session-id})))))]
                (cond
                  (seq unresolved)
-                 (audited {:status :conflicts :conflicts conflicts} tpoint :merge)
+                 (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
+                          tpoint :merge)
 
                  :else
                  (let [{:keys [changes unsupported]}
@@ -1219,12 +1221,13 @@
 
 (sv/defmethod ::update-branch-from-main
   "Bring the changes main received since the merge base into the branch
-  (the reverse direction of a merge). Returns `{:status :conflicts}` when
-  main and the branch diverged on the same entity and it is not resolved
-  in `resolutions`, or `{:status :unsupported}` for change kinds not yet
-  translatable. On success it applies main's changes (and any conflicts
-  resolved to main) to the branch, takes a safety snapshot, and
-  repositions the merge base to the current state of main."
+  (the reverse direction of a merge). Returns `{:status :conflicts}` (with
+  the `:main-revn` they were computed against) when main and the branch
+  diverged on the same entity and it is not resolved in `resolutions`, or
+  `{:status :unsupported}` for change kinds not yet translatable. On
+  success it applies main's changes (and any conflicts resolved to main)
+  to the branch, takes a safety snapshot, and repositions the merge base
+  to the current state of main."
   {::doc/added "2.16"
    ::webhooks/event? true
    ::sm/params schema:update-branch-from-main
@@ -1378,7 +1381,8 @@
 
              (cond
                (seq unresolved)
-               (audited {:status :conflicts :conflicts conflicts} tpoint :update-from-main)
+               (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
+                        tpoint :update-from-main)
 
                :else
                ;; target = branch, source = main -> changes that bring main's

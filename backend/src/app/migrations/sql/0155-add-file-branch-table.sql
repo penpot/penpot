@@ -45,8 +45,21 @@ ALTER TABLE file_branch
   ADD COLUMN IF NOT EXISTS base_branch_revn bigint NOT NULL DEFAULT 0;
 
 -- backfill: at creation both counters coincide, so base_revn is the best
--- available approximation for rows created before the column existed
-UPDATE file_branch SET base_branch_revn = base_revn WHERE base_branch_revn = 0;
+-- available approximation for rows created before the column existed.
+-- The rows this is for kept the copy model, where the branch file
+-- persisted its own data payload; an op-log branch stores no payload and
+-- legitimately starts its own counter at 0, so the payload's existence
+-- is what tells the two apart, and the statement changes nothing on a
+-- re-run (a renamed re-registration re-applies the whole file).
+UPDATE file_branch fb
+   SET base_branch_revn = fb.base_revn
+  FROM file f
+ WHERE fb.branch_file_id = f.id
+   AND fb.base_branch_revn = 0
+   AND EXISTS (SELECT 1
+                 FROM file_data fd
+                WHERE fd.file_id = f.id
+                  AND fd.deleted_at IS NULL);
 
 CREATE INDEX IF NOT EXISTS file_branch__source_file_id__idx
     ON file_branch(source_file_id) WHERE deleted_at IS NULL;

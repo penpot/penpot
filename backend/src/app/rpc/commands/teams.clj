@@ -457,7 +457,7 @@
 
 (def sql:team-stats
   "select (select count(*) from project where team_id = ?) as projects,
-          (select count(*) from file as f join project as p on (p.id = f.project_id) where p.team_id = ?) as files")
+          (select count(*) from file as f join project as p on (p.id = f.project_id) where p.team_id = ? and f.is_branch is false) as files")
 
 (defn get-team-stats
   [conn team-id]

@@ -852,7 +852,8 @@
 (def ^:private sql:get-team-files-ids
   "SELECT f.id FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
-    WHERE p.team_id = ?")
+    WHERE p.team_id = ?
+      AND f.is_branch IS FALSE")
 
 (defn get-team-files-ids
   "Get a set of file ids for the specified team-id"

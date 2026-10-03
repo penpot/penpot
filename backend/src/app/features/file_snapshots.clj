@@ -60,6 +60,7 @@
           f.revn,
           f.modified_at,
           f.deleted_at,
+          f.is_branch,
           fd.backend AS backend,
           fd.metadata AS metadata
      FROM file AS f
@@ -313,6 +314,17 @@
         (db/get-update-count)
         (pos?))))
 
+(defn check-restorable!
+  "Refuse to restore a snapshot onto a branch file. A branch file's data
+  is derived from the branch base and the operation log, so a restore
+  would persist a `file_data` row that no read path consults."
+  [{:keys [id is-branch]}]
+  (when is-branch
+    (ex/raise :type :validation
+              :code :branch-file-cant-be-restored
+              :hint "branch file data is derived from the branch base and the operation log; restore the snapshot on the source file or update the branch from main instead"
+              :file-id id)))
+
 (defn restore!
   [{:keys [::db/conn] :as cfg} file-id snapshot-id]
   (let [lock-sql (str sql:get-minimal-file " FOR UPDATE OF f SKIP LOCKED")
@@ -322,6 +334,8 @@
       (ex/raise :type :conflict
                 :code :file-locked
                 :hint "the file is currently locked by another operation, retry later"))
+
+    (check-restorable! row)
 
     (let [file (d/update-when row :metadata fdata/decode-metadata)
           vern (rand-int Integer/MAX_VALUE)

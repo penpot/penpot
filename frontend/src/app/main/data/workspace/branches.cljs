@@ -441,20 +441,40 @@
   ones the command's own `resolved?` matches against, while the diff the modal
   can fetch on its own is computed in another id space and may list a
   different set, or none at all. Keeping them in the store also lets the
-  bulk actions resolve the same set the modal shows."
-  [{:keys [branch mode conflicts]}]
+  bulk actions resolve the same set the modal shows.
+
+  `main-revn` is main's revn when the command computed those conflicts. It
+  is stored with them because the modal's own diff fetch can still be in
+  flight when the user applies; see `conflict-main-revn`."
+  [{:keys [branch mode conflicts main-revn]}]
   (ptk/reify ::open-conflict-resolutions
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-branch-conflicts
              {:branch-id (:id branch)
               :mode mode
-              :conflicts (vec conflicts)}))
+              :conflicts (vec conflicts)
+              :main-revn main-revn}))
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (modal/show :branch-conflicts {:branch branch
                                             :mode mode
                                             :conflicts conflicts})))))
+
+(defn- conflict-main-revn
+  "Main's revn when the server computed the conflict set stored for
+  `branch-id`, or nil when the stored set belongs to another branch.
+
+  The resolution modal fetches its own diff when it opens, and that fetch
+  replaces the loaded diff with a loading state until it answers. The user
+  can resolve every conflict and apply inside that window, so merge and
+  update fall back to this revn: resolutions never leave without the token
+  that lets the server refuse them when main has moved (`:file-modified`).
+  Main's revn is the same in both directions, so the mode does not matter."
+  [state branch-id]
+  (let [conflicts-st (:workspace-branch-conflicts state)]
+    (when (= branch-id (:branch-id conflicts-st))
+      (:main-revn conflicts-st))))
 
 (defn update-branch-from-main
   "Bring main's changes into the branch (reverse of merge). `branch` is the
@@ -465,7 +485,9 @@
   its main revn is sent as `expected-main-revn` so the server refuses to
   apply resolutions computed against a stale diff (`:file-modified`); in
   that case the diff is re-fetched and the user is asked to review it
-  again (same as `merge-branch`)."
+  again (same as `merge-branch`). Resolutions sent before that diff has
+  loaded carry the revn of the conflict answer instead
+  (`conflict-main-revn`)."
   ([branch] (update-branch-from-main branch nil))
   ([branch resolutions]
    (ptk/reify ::update-branch-from-main
@@ -473,16 +495,18 @@
      (watch [_ state _]
        (let [branch-id (:id branch)
              diff-st   (:workspace-branch-diff state)
-             main-revn (when (and (= branch-id (:branch-id diff-st))
-                                  (= :main->branch (:direction diff-st)))
-                         (get-in diff-st [:diff :meta :main-revn]))]
+             main-revn (or (when (and (= branch-id (:branch-id diff-st))
+                                      (= :main->branch (:direction diff-st)))
+                             (get-in diff-st [:diff :meta :main-revn]))
+                           (when (seq resolutions)
+                             (conflict-main-revn state branch-id)))]
          (rx/concat
           (rx/of (ev/event {::ev/name "update-branch-from-main"}))
           (->> (rp/cmd! :update-branch-from-main (cond-> {:branch-id branch-id}
                                                    (seq resolutions)  (assoc :resolutions resolutions)
                                                    (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
-                (fn [{:keys [status conflicts]}]
+                (fn [{:keys [status conflicts] :as answer}]
                   (case status
                     ;; the open branch file just changed server-side: hard-reload
                     ;; it so the pulled changes are shown
@@ -494,7 +518,8 @@
                     ;; space, which can disagree with them
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :update
-                                                                    :conflicts conflicts}))
+                                                                    :conflicts conflicts
+                                                                    :main-revn (:main-revn answer)}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
                (rx/catch
@@ -563,8 +588,9 @@
   When the current diff in state belongs to this branch, its main revn is
   sent as `expected-main-revn` so the server refuses to apply resolutions
   computed against a stale diff (`:file-modified`); in that case the diff
-  is re-fetched and the user is asked to review it again. Unresolved
-  conflicts open the resolution modal."
+  is re-fetched and the user is asked to review it again. Resolutions sent
+  before that diff has loaded carry the revn of the conflict answer instead
+  (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
   ([branch] (merge-branch branch nil))
   ([branch {:keys [resolutions keep-branch]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
@@ -573,8 +599,10 @@
      (watch [_ state _]
        (let [branch-id (:id branch)
              diff-st   (:workspace-branch-diff state)
-             main-revn (when (= branch-id (:branch-id diff-st))
-                         (get-in diff-st [:diff :meta :main-revn]))]
+             main-revn (or (when (= branch-id (:branch-id diff-st))
+                             (get-in diff-st [:diff :meta :main-revn]))
+                           (when (seq resolutions)
+                             (conflict-main-revn state branch-id)))]
          (rx/concat
           (rx/of (ev/event {::ev/name "merge-branch"}))
           (->> (rp/cmd! :merge-file-branch
@@ -583,7 +611,7 @@
                           keep-branch        (assoc :keep-branch true)
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
-                (fn [{:keys [status source-file-id conflicts]}]
+                (fn [{:keys [status source-file-id conflicts] :as answer}]
                   (case status
                     ;; the merged result lives in main: take the user there
                     ;; to see it (navigate if elsewhere, hard-reload if
@@ -594,7 +622,8 @@
                                         (show-merge-result source-file-id))
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :merge
-                                                                    :conflicts conflicts}))
+                                                                    :conflicts conflicts
+                                                                    :main-revn (:main-revn answer)}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.merge.error"))))))
                (rx/catch

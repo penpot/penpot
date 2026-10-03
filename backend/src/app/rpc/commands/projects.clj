@@ -82,9 +82,11 @@
           coalesce(tpp.is_pinned, false) as is_pinned,
           (SELECT count(*) FROM file AS f
             WHERE f.project_id = p.id
-              AND f.deleted_at is null) AS count,
+              AND f.deleted_at is null
+              AND f.is_branch IS FALSE) AS count,
           (SELECT count(*) FROM file AS f
-            WHERE f.project_id = p.id) AS total_count
+            WHERE f.project_id = p.id
+              AND f.is_branch IS FALSE) AS total_count
      FROM project AS p
     INNER JOIN team AS t ON (t.id = p.team_id)
      LEFT JOIN team_project_profile_rel AS tpp

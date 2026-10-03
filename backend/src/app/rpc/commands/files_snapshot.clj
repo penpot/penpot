@@ -119,14 +119,10 @@
   (files/check-edition-permissions! pool profile-id file-id)
   (let [file  (bfc/get-file cfg file-id)
 
-        ;; A branch file's data payload is derived from the branch base
-        ;; and the operation log; restoring would persist a `file_data`
-        ;; row no read path consults.
-        _     (when (:is-branch file)
-                (ex/raise :type :validation
-                          :code :branch-file-cant-be-restored
-                          :hint "branch file data is derived from the branch base and the operation log; restore the snapshot on the source file or update the branch from main instead"
-                          :file-id file-id))
+        ;; `fsnap/restore!` refuses a branch file too. The command
+        ;; refuses before it takes the backup snapshot below, which is
+        ;; committed whatever the restore's outcome.
+        _     (fsnap/check-restorable! file)
 
         team  (teams/get-team pool
                               :profile-id profile-id

@@ -23,6 +23,7 @@
    [app.rpc.commands.files-branch-policies :as fbp]
    [app.storage :as sto]
    [app.util.blob :as blob]
+   [app.util.migrations :as mg]
    [backend-tests.helpers :as th]
    [clojure.string :as str]
    [clojure.test :as t]
@@ -874,6 +875,65 @@
                                 :id branch-file-id})]
           (t/is (contains? (-> out :result :data :colors) cid)))))))
 
+(t/deftest conflict-responses-carry-the-main-revn
+  ;; A `:conflicts` response is what a resolving client works from, so it
+  ;; names the revision of main its conflicts were computed against. The
+  ;; client sends that revision back as `expected-main-revn` with its
+  ;; resolutions, and a main that moved meanwhile is refused.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile   (th/create-profile* 1 {:is-active true})
+          proj-id   (:default-project-id profile)
+          file      (th/create-file* 1 {:profile-id (:id profile)
+                                        :project-id proj-id})
+          cid       (uuid/random)
+          main-revn (fn [] (:revn (th/db-get :file {:id (:id file)})))]
+
+      ;; color exists on main before branching (base = red)
+      (apply-change* profile (:id file)
+                     {:type :add-color :color {:id cid :name "Brand" :color "#ff0000" :opacity 1}})
+
+      (let [create (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "conflicting"}))
+            branch-id      (:id create)
+            branch-file-id (:branch-file-id create)]
+
+        ;; main edits the color -> green; branch edits it -> blue (conflict).
+        ;; Main moves past the revision the branch was cut at, so the
+        ;; revision a response names is the current one, not the base's.
+        (apply-change* profile (:id file)
+                       {:type :mod-color :color {:id cid :name "Brand" :color "#00ff00" :opacity 1}})
+        (apply-change* profile branch-file-id
+                       {:type :mod-color :color {:id cid :name "Brand" :color "#0000ff" :opacity 1}})
+
+        (t/testing "an update that stops on conflicts names main's revision"
+          (let [revn (main-revn)
+                out  (th/command! {::th/type :update-branch-from-main
+                                   ::rpc/profile-id (:id profile)
+                                   :branch-id branch-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :conflicts (-> out :result :status)))
+            (t/is (= revn (-> out :result :main-revn)))))
+
+        (t/testing "a merge that stops on conflicts names main's revision"
+          (let [revn (main-revn)
+                out  (th/command! {::th/type :merge-file-branch
+                                   ::rpc/profile-id (:id profile)
+                                   :branch-id branch-id})]
+            (t/is (nil? (:error out)))
+            (t/is (= :conflicts (-> out :result :status)))
+            (t/is (= revn (-> out :result :main-revn)))
+
+            (t/testing "and the merge accepts that revision back with resolutions"
+              (let [retry (th/command! {::th/type :merge-file-branch
+                                        ::rpc/profile-id (:id profile)
+                                        :branch-id branch-id
+                                        :resolutions {cid :branch}
+                                        :expected-main-revn (-> out :result :main-revn)})]
+                (t/is (nil? (:error retry)))
+                (t/is (= :merged (-> retry :result :status)))))))))))
+
 (t/deftest revn-gate-survives-update-from-main
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile (th/create-profile* 1 {:is-active true})
@@ -1432,6 +1492,54 @@
               (t/is (= 0 (:limit data)))
               (t/is (= 1 (:actual data)))
               (t/is (str/includes? (:hint data) "materialise")))))))))
+
+(t/deftest oplog-depth-gate-refuses-a-compare-before-the-derive
+  ;; The derive replays the whole op log, so it is the cost the depth gate
+  ;; bounds. A compare over a log beyond the limit must refuse before it
+  ;; pays for one, and its hint must not offer a merge, which the same
+  ;; gate refuses.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile  (th/create-profile* 1 {:is-active true})
+          proj-id  (:default-project-id profile)
+          file     (th/create-file* 1 {:profile-id (:id profile)
+                                       :project-id proj-id
+                                       :is-shared false})
+          create   (:result (th/command! {::th/type :create-file-branch
+                                          ::rpc/profile-id (:id profile)
+                                          :file-id (:id file)
+                                          :name "deep-log"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          derive   @#'bfc/branch-file-data
+          derives  (atom 0)
+          compare! (fn []
+                     (with-redefs [bfc/branch-file-data (fn [& args]
+                                                          (swap! derives inc)
+                                                          (apply derive args))]
+                       (th/command! {::th/type :get-branch-diff
+                                     ::rpc/profile-id (:id profile)
+                                     :branch-id branch-id})))]
+
+      (apply-change* profile branch-file-id
+                     {:type :add-page :id (uuid/random) :name "one"})
+
+      (t/testing "under the limit the compare derives the branch"
+        (let [out (compare!)]
+          (t/is (nil? (:error out)))
+          (t/is (pos? @derives) "the probe saw no derive, so its zero below proves nothing")))
+
+      (t/testing "over the limit the compare refuses before the derive"
+        (reset! derives 0)
+        (with-redefs [cf/get (th/config-get-mock {:branching-max-oplog-changes 0})]
+          (let [out  (compare!)
+                data (ex-data (:error out))]
+            (t/is (= :restriction (:type data)))
+            (t/is (= :branching-oplog-limit-exceeded (:code data)))
+            (t/is (= :compare (:operation data)))
+            (t/is (= 1 (:actual data)))
+            (t/is (zero? @derives) "the refused compare derived the branch first")
+            (t/is (str/includes? (:hint data) "materialise"))
+            (t/is (not (str/includes? (:hint data) "merge")))))))))
 
 (t/deftest published-limits-are-the-ones-the-gates-enforce
   (let [profile (th/create-profile* 1 {:is-active true})
@@ -2649,6 +2757,67 @@
         (write! "{:same-parent-reorder :ignore}" 1700000001000)
         (compare!)
         (t/is (= :ignore (get @seen :same-parent-reorder)))))))
+
+(t/deftest re-running-the-branch-migration-leaves-oplog-branches-alone
+  ;; The branch table migration carries a backfill for the copy model it
+  ;; predates: rows whose branch file persisted its own data payload.
+  ;; An op-log branch stores no payload and legitimately starts its own
+  ;; counter at 0, so a re-run of the file (a renamed re-registration
+  ;; re-applies every statement) must not touch it, while it still
+  ;; repositions a copy-model row.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile     (th/create-profile* 1 {:is-active true})
+          file        (th/create-file* 1 {:profile-id (:id profile)
+                                          :project-id (:default-project-id profile)
+                                          :is-shared false})
+          ;; main must have work for the backfill to have anything to
+          ;; reposition to: a fresh file's revn is 0, and the backfill
+          ;; copies base_revn, main's revision at branch creation
+          _           (th/command! {::th/type :update-file
+                                    ::rpc/profile-id (:id profile)
+                                    :id (:id file)
+                                    :session-id (uuid/random)
+                                    :revn (:revn (th/db-get :file {:id (:id file)}))
+                                    :vern (:vern (th/db-get :file {:id (:id file)}))
+                                    :features cfeat/supported-features
+                                    :changes [{:type :add-color
+                                               :color {:id (uuid/random)
+                                                       :name "counter"
+                                                       :color "#ff0000"
+                                                       :opacity 1}}]})
+          oplog-branch (-> (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "oplog-branch"})
+                           :result)
+          copy-branch  (-> (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "copy-branch"})
+                           :result)
+          migrate-again (fn []
+                          ((mg/resource "app/migrations/sql/0155-add-file-branch-table.sql")
+                           th/*pool*))
+          counter       (fn [branch-id]
+                          (:base-branch-revn (th/db-get :file-branch {:id branch-id})))]
+
+      ;; both branches start with their own counter at 0
+      (t/is (zero? (counter (:id oplog-branch))))
+      (t/is (zero? (counter (:id copy-branch))))
+
+      ;; the copy-model row: its branch file carries a data payload, the
+      ;; shape the backfill was written for
+      (th/db-insert! :file-data
+                     {:file-id (:branch-file-id copy-branch)
+                      :id (:branch-file-id copy-branch)
+                      :type "main"
+                      :data (blob/encode {:pages []})})
+      (migrate-again)
+
+      ;; the op-log branch keeps its own counter; the copy-model row is
+      ;; repositioned onto main's revision
+      (t/is (zero? (counter (:id oplog-branch))))
+      (t/is (pos? (counter (:id copy-branch)))))))
 
 (t/deftest summary-cache-key-changes-with-policies
   ;; Two different policies must never share a cached summary: the key
