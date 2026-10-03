@@ -42,3 +42,26 @@
                     {}
                     ctt/per-side-stroke-width-keys)]
     (merge current side-attrs {:stroke-width (get side-attrs :stroke-width-top)})))
+
+(defn set-width-to-all-sides
+  "Set `value` as the width of every side of `stroke` (uniform width), keeping
+  `:stroke-width` mirroring the top side. Mirrors
+  `app.common.types.shape.radius/set-radius-to-all-corners`."
+  [stroke value]
+  (materialize-stroke-side-widths stroke ctt/per-side-stroke-width-keys value))
+
+(defn set-width-to-single-side
+  "Set `value` as the width of the `attr` side of `stroke`, leaving the other
+  sides untouched. `:stroke-width` (the top-side alias) is updated too when
+  `attr` is the top side. Mirrors
+  `app.common.types.shape.radius/set-radius-to-single-corner`."
+  [stroke attr value]
+  (let [stroke (or stroke default-stroke)]
+    (cond-> (assoc stroke attr value)
+      (= attr :stroke-width-top) (assoc :stroke-width value))))
+
+(defn side-width
+  "Effective width of the `attr` side of `stroke`, falling back to the uniform
+  `:stroke-width` alias when the side has no value of its own."
+  [stroke attr]
+  (d/nilv (get stroke attr) (:stroke-width stroke)))

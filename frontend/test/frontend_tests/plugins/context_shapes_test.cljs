@@ -259,6 +259,24 @@
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
             (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5)))
 
+          (t/testing " - strokes per-side widths"
+            (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeWidth 5}])
+            (t/is (= 5 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthTop")))
+                  "a uniform stroke reads the global width on every side")
+            (obj/set! (aget (.-strokes shape) 0) "strokeWidthRight" 9)
+            (t/is (= 9 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthRight"))))
+            (t/is (= 5 (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidthTop"))))
+            (t/is (= 9 (get-in @store (conj (get-shape-path :strokes) 0 :stroke-width-right)))
+                  "the edited side is stored")
+            (t/is (nil? (get-in @store (conj (get-shape-path :strokes) 0 :stroke-width-top)))
+                  "the untouched sides are not materialized"))
+
+          (t/testing " - per-side widths rejected on unsupported shapes"
+            (let [^js ellipse (.createEllipse context)]
+              (set! (.-strokes ellipse) #js [#js {:strokeColor "#fabada" :strokeWidth 1}])
+              (t/is (thrown? js/Error
+                             (obj/set! (aget (.-strokes ellipse) 0) "strokeWidthTop" 4)))))
+
           (t/testing " - fills per-element property mutation (bug #8357)"
             (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
             (obj/set! (aget (.-fills shape) 0) "fillColor" "#ff0000")

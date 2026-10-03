@@ -32,6 +32,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.text :as txt]
+   [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.wasm :as wasm.exports]
@@ -64,7 +65,7 @@
    [app.plugins.strokes :as strokes]
    [app.plugins.system-events :as se]
    [app.plugins.text :as text]
-   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
+   [app.plugins.tokens :refer [applied-tokens-plugin->applied-tokens expand-token-attrs token-attr-plugin->token-attr token-attr? valid-token-resolution?]]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
@@ -992,8 +993,12 @@
            :strokes
            {:this true
             :get (fn [^js self]
-                   (strokes/format-strokes (-> self u/proxy->shape :strokes)
-                                           #(commit-strokes! plugin-id self %)))
+                   (let [shape (u/proxy->shape self)]
+                     (strokes/format-strokes
+                      (:strokes shape)
+                      #(commit-strokes! plugin-id self %)
+                      {:per-side-allowed? (ctt/per-side-stroke-shape? (:type shape))
+                       :not-valid (fn [code value] (u/not-valid plugin-id code value))})))
             :set (fn [self value] (commit-strokes! plugin-id self value))}
 
            :layoutChild
@@ -1782,7 +1787,7 @@
                   (let [set-id   (obj/get token "$set-id")
                         token-id (obj/get token "$id")
                         token    (u/locate-token file-id set-id token-id)
-                        kw-attrs (into #{} (map token-attr-plugin->token-attr attrs))]
+                        kw-attrs (expand-token-attrs attrs)]
                     (cond
                       (not (r/check-permission plugin-id "content:write"))
                       (u/not-valid plugin-id :applyToken "Plugin doesn't have 'content:write' permission")

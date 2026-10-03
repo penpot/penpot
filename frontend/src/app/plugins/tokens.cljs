@@ -79,15 +79,42 @@
   (let [k (cond-> k (string? k) keyword)]
     (get map:token-attr-plugin->token-attr k k)))
 
+(def ^:private stroke-width-alias
+  "Plugin-facing uniform stroke width property. Expands to the four per-side
+  attributes when a token is applied."
+  :stroke-width)
+
+(defn expand-token-attrs
+  "Normalize plugin-side token attribute references to canonical keywords and
+  expand the uniform `:stroke-width` alias to the four per-side attributes, so
+  a token applied to the uniform width is stored per side (matching the design
+  tab). Attributes already in canonical form pass through."
+  [attrs]
+  (let [attrs (into #{} (map token-attr-plugin->token-attr) attrs)]
+    (if (contains? attrs stroke-width-alias)
+      (into (disj attrs stroke-width-alias) cto/per-side-stroke-width-keys)
+      attrs)))
+
 (defn applied-tokens-plugin->applied-tokens
   [value]
-  (into {}
-        (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
-        value))
+  (let [value    (into {}
+                       (map (fn [[k v]] [(token-attr->token-attr-plugin k) v]))
+                       value)
+        per-side (map #(get value %)
+                      [:stroke-width-top :stroke-width-right
+                       :stroke-width-bottom :stroke-width-left])]
+    (cond-> value
+      ;; Keep the uniform property readable: synthesize `strokeWidth` only when
+      ;; every side carries the same token.
+      (and (every? some? per-side)
+           (apply = per-side))
+      (assoc :stroke-width (first per-side)))))
 
 (defn token-attr?
   [attr]
-  (cto/token-attr? (token-attr-plugin->token-attr attr)))
+  (let [attr (token-attr-plugin->token-attr attr)]
+    (or (= attr stroke-width-alias)
+        (cto/token-attr? attr))))
 
 (defn- token-name-schema
   [file-id set-id token]
@@ -180,7 +207,7 @@
         :else
         (st/emit!
          (-> (dwta/toggle-token {:token token
-                                 :attrs (into #{} (map token-attr-plugin->token-attr) attrs)
+                                 :attrs (expand-token-attrs attrs)
                                  :shape-ids shape-ids
                                  :expand-with-children false})
              (se/add-event plugin-id)))))))
