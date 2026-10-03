@@ -20,6 +20,7 @@ import { fileDetailPage } from "./pages/file-detail.js";
 import { projectsPage } from "./pages/projects.js";
 import { projectDetailPage } from "./pages/project-detail.js";
 import { usersPage } from "./pages/users.js";
+import { virtualClockPage } from "./pages/virtual-clock.js";
 
 const NAV_ITEMS = [
   // Home targets the path itself, not an empty query: pushing ""
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { query: "?screen=teams", label: "Teams", screens: ["teams", "team"] },
   { query: "?screen=projects", label: "Projects", screens: ["projects", "project"] },
   { query: "?screen=files", label: "Files", screens: ["files", "file"] },
+  { query: "?screen=virtual-clock", label: "Virtual clock", screens: ["virtual-clock"] },
 ];
 
 let sessionStatus = "anonymous";
@@ -96,6 +98,8 @@ function renderAuthed(root) {
     projectDetailPage(content, { id: params.get("id"), onNavigate: navigate });
   } else if (params.get("screen") === "file" && params.get("id")) {
     fileDetailPage(content, { id: params.get("id"), onNavigate: navigate });
+  } else if (params.get("screen") === "virtual-clock") {
+    virtualClockPage(content, { onNavigate: navigate });
   } else {
     dashboardPage(content, { onNavigate: navigate });
   }

@@ -4,7 +4,7 @@
 // An unknown id shows "not found" instead of failing.
 
 import { rpc } from "../api.js";
-import { renderHeader } from "../components/header.js";
+import { renderHeader, paintDetailTitle } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 import { backUrl } from "../url.js";
@@ -109,7 +109,12 @@ export function teamDetailPage(root, { id, onNavigate }) {
       return;
     }
 
-    header.querySelector("h1").textContent = data.name;
+    paintDetailTitle(header, {
+      section: "Team",
+      query: backUrl("?screen=teams"),
+      name: data.name,
+      onNavigate,
+    });
 
     const list = document.createElement("dl");
     list.className = "admin-detail";

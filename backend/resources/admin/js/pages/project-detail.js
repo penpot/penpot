@@ -6,7 +6,7 @@
 // shows "not found" instead of failing.
 
 import { rpc } from "../api.js";
-import { renderHeader } from "../components/header.js";
+import { renderHeader, paintDetailTitle } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 import { backUrl } from "../url.js";
@@ -59,7 +59,12 @@ export function projectDetailPage(root, { id, onNavigate }) {
       body.textContent = "Project not found.";
       return;
     }
-    header.querySelector("h1").textContent = project.name;
+    paintDetailTitle(header, {
+      section: "Project",
+      query: backUrl("?screen=projects"),
+      name: project.name,
+      onNavigate,
+    });
     body.replaceChildren();
     body.appendChild(infoBlock(project));
     if (project.deletedAt) {

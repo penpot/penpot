@@ -4,7 +4,7 @@
 // "not found" instead of failing.
 
 import { rpc } from "../api.js";
-import { renderHeader } from "../components/header.js";
+import { renderHeader, paintDetailTitle } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { showToast } from "../components/toast.js";
 import { statusCell, statusOf } from "./users.js";
@@ -64,7 +64,12 @@ export function userDetailPage(root, { id, onNavigate }) {
       return;
     }
 
-    header.querySelector("h1").textContent = data.email;
+    paintDetailTitle(header, {
+      section: "User",
+      query: backUrl("?screen=users"),
+      name: data.email,
+      onNavigate,
+    });
 
     const list = document.createElement("dl");
     list.className = "admin-detail";

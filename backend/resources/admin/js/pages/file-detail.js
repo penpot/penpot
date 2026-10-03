@@ -7,7 +7,7 @@
 // as text. An unknown id shows "not found" instead of failing.
 
 import { rpc, transferUrl } from "../api.js";
-import { renderHeader } from "../components/header.js";
+import { renderHeader, paintDetailTitle } from "../components/header.js";
 import { deletedNotice, restoreBlock } from "../components/restore.js";
 import { renderTable } from "../components/table.js";
 import { showToast } from "../components/toast.js";
@@ -56,7 +56,12 @@ export function fileDetailPage(root, { id, onNavigate }) {
       return;
     }
     state.file = file;
-    header.querySelector("h1").textContent = file.name;
+    paintDetailTitle(header, {
+      section: "File",
+      query: backUrl("?screen=files"),
+      name: file.name,
+      onNavigate,
+    });
     body.replaceChildren();
     body.appendChild(infoBlock(file));
     body.appendChild(validateBlock());
