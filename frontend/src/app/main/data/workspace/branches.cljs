@@ -491,7 +491,7 @@
                     ;; the returned conflicts are authoritative: they are the very
                     ;; ones the command computes `resolved?` against, and the diff
                     ;; the modal could fetch on its own is computed in another id
-                    ;; space, which can disagree with them (vcs:tp-update-conflict-frame)
+                    ;; space, which can disagree with them
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :update
                                                                     :conflicts conflicts}))
