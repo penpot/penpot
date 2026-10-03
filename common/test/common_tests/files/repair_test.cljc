@@ -15,6 +15,7 @@
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -23,6 +24,48 @@
    [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
+
+(t/deftest repair-invalid-main-instance-name
+  (t/testing "detect and repair a main instance whose name doesn't match the component's name"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component-with-copy :component1 :root1 :child1 :copy1)
+                      (tho/add-simple-component-with-copy :component2 :root2 :child2 :copy2)
+
+                      ;; Update component paths and names
+                      (thc/update-component :component1 {:path "Group / Subgroup" :name "Component1"})
+                      (thc/update-component :component2 {:path "Group / Subgroup" :name "Component2"})
+
+                      ;; Update component1 shapes name to have path structure
+                      (ths/update-shape :root1 :name "Group / Subgroup / Component1")
+                      (ths/update-shape :copy1 :name "Group / Subgroup / Component1")
+
+                      ;; Update component2's name to have unnormalized path
+                      ;; Note that the copy name is allowed to be different
+                      (ths/update-shape :root2 :name "Group/Subgroup  /  Component2")
+                      (ths/update-shape :copy2 :name "Group/Subgroup  /  Component2"))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})
+          root1'  (ths/get-shape file' :root1)
+          child1' (ths/get-shape file' :child1)
+          copy1'  (ths/get-shape file' :copy1)
+          root2'  (ths/get-shape file' :root2)
+          child2' (ths/get-shape file' :child2)
+          copy2'  (ths/get-shape file' :copy2)]
+
+      (t/is (= 1 (count errors)))
+      (t/is (= :invalid-main-instance-name (:code (first errors))))
+      (t/is (nil? errors'))
+
+      (t/is (= "Group / Subgroup / Component1" (:name root1')))
+      (t/is (= "Rect1" (:name child1')))
+      (t/is (= "Group / Subgroup / Component1" (:name copy1')))
+
+      (t/is (= "Group / Subgroup / Component2" (:name root2')))
+      (t/is (= "Rect1" (:name child2')))
+      (t/is (= "Group/Subgroup  /  Component2" (:name copy2'))))))
 
 (t/deftest repair-main-instance-not-a-variant
   (t/testing "detect and repair a variant component whose root shape is not a variant"
@@ -161,23 +204,60 @@
 
       (t/is (true? (:is-variant-container container'))))))
 
+(t/deftest repair-variant-container-bad-name
+  (t/testing "detect and repair a variant container who has an unnormalized name"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
+                      ;; Variant container has a name that is not normalized and thus it cannot
+                      ;; match the component names, that are separated in path and group.
+                      (ths/update-shape :variant1 :name "Group  /  Subgroup/Component")
+                      (ths/update-shape :root1 :name "Group  /  Subgroup/Component")
+                      (ths/update-shape :root2 :name "Group  /  Subgroup/Component")
+                      (thc/update-component :component1 {:path "Group / Subgroup" :name "Component"})
+                      (thc/update-component :component2 {:path "Group/Subgroup" :name "Component"}))
+
+          errors  (cfv/validate-file file {})
+          changes (cfr/repair-file file {} errors)
+          file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
+          errors' (cfv/validate-file file' {})
+          var1'   (ths/get-shape file' :variant1)
+          root1'  (ths/get-shape file' :root1)
+          comp1'  (thc/get-component file' :component1)
+          root2'  (ths/get-shape file' :root2)
+          comp2'  (thc/get-component file' :component2)]
+
+      (t/is (= 1 (count errors)))
+      (t/is (= :variant-container-bad-name (:code (first errors))))
+      (t/is (nil? errors'))
+      (t/is (= "Group / Subgroup / Component" (:name var1')))
+      (t/is (= "Group / Subgroup / Component" (:name root1')))
+      (t/is (= "Group / Subgroup" (:path comp1')))
+      (t/is (= "Component" (:name comp1')))
+      (t/is (= "Group / Subgroup / Component" (:name root2')))
+      (t/is (= "Group / Subgroup" (:path comp2')))
+      (t/is (= "Component" (:name comp2'))))))
+
 (t/deftest repair-variant-main-bad-name
   (t/testing "detect and repair a main instance whose name doesn't match the variant container's name"
     (let [file    (-> (thf/sample-file :file1 :page-label :page1)
                       (thv/add-variant :variant1 :component1 :root1 :component2 :root2)
-                      ;; Change root1's name so it doesn't match the container
+                      ;; Change component's name so it doesn't match the container
+                      (thc/update-component :component1 :name "WrongName")
                       (ths/update-shape :root1 :name "WrongName"))
 
           errors  (cfv/validate-file file {})
           changes (cfr/repair-file file {} errors)
           file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
           errors' (cfv/validate-file file' {})
-          root1'  (ths/get-shape file' :root1)]
+          root1'  (ths/get-shape file' :root1)
+          comp1'  (thc/get-component file' :component1)]
 
-      (t/is (= 1 (count errors)))
+      (t/is (= 2 (count errors)))
       (t/is (= :variant-main-bad-name (:code (first errors))))
+      (t/is (= :variant-component-bad-name (:code (second errors))))
       (t/is (nil? errors'))
-      (t/is (= "Board" (:name root1'))))))
+      (t/is (= "Board" (:name root1')))
+      (t/is (= "Board" (:name comp1'))))))
 
 (t/deftest repair-variant-main-bad-variant-name
   (t/testing "detect and repair a variant shape whose :variant-name doesn't match the component's properties"
@@ -211,20 +291,25 @@
                       (ths/update-shape :variant1 :name "Group / Subgroup / Component")
                       (ths/update-shape :root1 :name "Group / Subgroup / Component")
                       (ths/update-shape :root2 :name "Group / Subgroup / Component")
-                      ;; Update component paths and names
                       (thc/update-component :component1 {:path "Group / Subgroup" :name "Component"})
-                      (thc/update-component :component2 {:path "Group / Subgroup" :name "Component"})
-                      ;; Break component1's name
-                      (thc/update-component :component1 {:name "WrongName"}))
+                      ;; Break component2's name
+                      (thc/update-component :component2 {:name "WrongName"}))
 
           errors  (cfv/validate-file file {})
           changes (cfr/repair-file file {} errors)
           file'   (thf/apply-changes file {:redo-changes changes} :validate? false)
           errors' (cfv/validate-file file' {})
-          comp1'  (thc/get-component file' :component1)]
+          root1'  (ths/get-shape file' :root1)
+          comp1'  (thc/get-component file' :component1)
+          root2'  (ths/get-shape file' :root2)
+          comp2'  (thc/get-component file' :component2)]
 
       (t/is (= 1 (count errors)))
       (t/is (= :variant-component-bad-name (:code (first errors))))
       (t/is (nil? errors'))
+      (t/is (= "Group / Subgroup / Component" (:name root1')))
       (t/is (= "Group / Subgroup" (:path comp1')))
-      (t/is (= "Component" (:name comp1'))))))
+      (t/is (= "Component" (:name comp1')))
+      (t/is (= "Group / Subgroup / Component" (:name root2')))
+      (t/is (= "Group / Subgroup" (:path comp2')))
+      (t/is (= "Component" (:name comp2'))))))

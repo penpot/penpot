@@ -41,6 +41,7 @@
     :duplicate-slot
     :invalid-main-instance-id
     :invalid-main-instance-page
+    :invalid-main-instance-name
     :invalid-main-instance
     :invalid-parent
     :component-main
@@ -70,6 +71,7 @@
     :invalid-variant-properties
     :variant-not-main
     :parent-not-variant
+    :variant-container-bad-name
     :variant-main-bad-name
     :variant-main-bad-variant-name
     :variant-component-bad-name
@@ -295,7 +297,14 @@
                             shape file page)
               (report-error :invalid-main-instance-page
                             (str/ffmt "Main instance page of component % is not valid" (:component-id shape))
-                            shape file page))))))))
+                            shape file page))))
+        (when-not (ctk/is-variant? component)  ;; Variants are checked elsewhere
+          (let [component-name (cpn/merge-path-item (:path component) (:name component))]
+            (when-not (= (:name shape) component-name)
+              (report-error :invalid-main-instance-name
+                            (str/ffmt "Main instance % has an invalid name" (:id shape))
+                            shape file page
+                            :component-name component-name))))))))
 
 (defn- check-component-not-main-head
   "Validate shape is a not-main instance head, component
@@ -563,14 +572,21 @@
 (defn- check-variant-container
   "Shape is a variant container, so:
      -all its children should be variants with variant-id equals to the shape-id
-     -all the components should have the same properties"
+     -all the components should have the same properties
+     -the name of the container should be normalized for paths (separator / with one space at each side)."
   [shape file page]
-  (let [shape-id    (:id shape)
-        shapes      (:shapes shape)
-        objects     (:objects page)
-        file-data   (:data file)
-        first-child (get objects (first shapes))
-        prop-names  (cfv/extract-properties-names first-child file-data)]
+  (let [shape-id       (:id shape)
+        container-name (:name shape)
+        shapes         (:shapes shape)
+        objects        (:objects page)
+        file-data      (:data file)
+        first-child    (get objects (first shapes))
+        prop-names     (cfv/extract-properties-names first-child file-data)]
+    (when-not (= container-name (cpn/clean-path container-name))
+      (report-error :variant-container-bad-name
+                    (str/ffmt "Variant container % has a bad name %" shape-id container-name)
+                    shape file page
+                    :clean-name (cpn/clean-path container-name)))
     (run! (fn [child-id]
             (when-let [child (get objects child-id)]
               (if (not (ctk/is-variant? child))
@@ -590,6 +606,10 @@
                                   child file page
                                   :prop-names prop-names))))))
           shapes)))
+
+(defn- renamed-container?
+  [container]
+  (not= (:name container) (cpn/clean-path (:name container))))
 
 (defn- check-variant
   "Shape is a variant, so
@@ -615,21 +635,23 @@
                     (str/ffmt "Variant % has an invalid variant-name" (:id shape))
                     shape file page
                     :variant-name variant-name))
-    (when-not (= (:name parent) (:name shape))
-      (report-error :variant-main-bad-name
-                    (str/ffmt "Main instance inside variant % has an invalid name" (:id shape))
-                    shape file page
-                    :variant-name (:name parent)))
-    (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
-      (report-error :variant-component-bad-name
-                    (str/ffmt "Component % has an invalid name" (:id shape))
-                    shape file page
-                    :variant-container-name (:name parent)))
+    ;; If the container is going to be renamed all main and components will be renamed, too
+    (when-not (renamed-container? parent)
+      (when-not (= (:name parent) (:name shape))
+        (report-error :variant-main-bad-name
+                      (str/ffmt "Main instance inside variant % has an invalid name" (:id shape))
+                      shape file page
+                      :variant-name (:name parent)))
+      (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
+        (report-error :variant-component-bad-name
+                      (str/ffmt "Component % has an invalid name" (:id shape))
+                      shape file page
+                      :variant-container-name (:name parent))))
     (when-not (= (:variant-id component) (:variant-id shape))
       (report-error :variant-component-bad-id
-                    (str/ffmt "Variant % has adifferent variant-id than its component" (:id shape))
+                    (str/ffmt "Variant % has a :variant-id that does not point to the container" (:id shape))
                     shape file page
-                    :variant-id (:variant-id component)))))
+                    :variant-id (:parent-id shape)))))
 
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
