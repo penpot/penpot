@@ -52,6 +52,7 @@
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
+   [common-tests.logic.comp-flex-interactions-test]
    [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
@@ -136,6 +137,7 @@
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
+   'common-tests.logic.comp-flex-interactions-test
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
