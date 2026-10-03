@@ -644,8 +644,9 @@
    :mod-media                   {:coverage :no-op :why "the same reason as an add's"}
    :del-media                   {:coverage :no-op :why "the same reason as an add's"}
    :set-token-theme             {:coverage :no-op :why "themes are not indexed"}
-   :set-active-token-themes     {:coverage :no-op :why "the active theme set is not indexed"}
-   :set-base-font-size          {:coverage :no-op :why "file options are not indexed"}})
+   :set-tokens-status           {:coverage :no-op :why "the active theme and set status is not indexed"}
+   :set-base-font-size          {:coverage :no-op :why "file options are not indexed"}
+   :set-tokens-source           {:coverage :no-op :why "the builder reads the file's own `:tokens-lib` whatever the source, so pointing the file at a library writes no datom"}})
 
 (def ^:private operation-coverage
   "One row per member of `app.common.files.changes/schema:operation`, the
