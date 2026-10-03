@@ -29,7 +29,6 @@
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :as stt]
-   [clojure.java.io :as jio]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -204,12 +203,12 @@
 
 (defn- import-svg-attrs-asset
   "Imports the `svg-attrs-camel-case.penpot` asset, a real penpot export
-  whose shapes carry `:svg-attrs` keys in camelCase (the format the
-  binary export writes), and returns the imported file."
+  whose shapes carry `:svg-attrs` keys in camelCase (the spelling the
+  binary export wrote at the time), and returns the imported file. The
+  v3 reader kebab-izes every key, so the shapes come back with
+  kebab-case keys."
   [profile]
-  (let [input  (-> "backend_tests/test_files/svg-attrs-camel-case.penpot"
-                   io/resource
-                   jio/file)
+  (let [input  (th/tempfile "backend_tests/test_files/svg-attrs-camel-case.penpot")
         result (-> th/*system*
                    (assoc ::bfc/project-id (:default-project-id profile))
                    (assoc ::bfc/profile-id (:id profile))
@@ -217,13 +216,11 @@
                    (v3/import-files!))]
     (bfc/get-file th/*system* (first (:file-ids result)))))
 
-(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs
+(t/deftest import-binfile-v3-normalizes-svg-attrs-to-kebab
   ;; The json reader used by the v3 import rewrites every key of every
-  ;; zip entry to kebab-case, and `:svg-attrs` is the one shape map
-  ;; whose keys are camelCase react prop names. A shape exported with
-  ;; `fillRule: "evenodd"` must not come back as `:fill-rule`, or the
-  ;; renderer falls back to the default fill rule and the shape is
-  ;; painted without its hole.
+  ;; zip entry to kebab-case, and birth stores `:svg-attrs` in kebab-case
+  ;; too, so a shape exported with `fillRule: "evenodd"` stays kebab and
+  ;; the renderer finds the fill rule it expects.
   (let [profile (th/create-profile* 1)
         file    (import-svg-attrs-asset profile)
         shape   (get-in file [:data :pages-index
@@ -231,10 +228,11 @@
                               :objects
                               (uuid/uuid "ce3641bd-48c8-804c-8008-b54d35cc6f80")])]
 
-    (t/is (= {:fillRule "evenodd"}
+    (t/is (some? shape) "the fixture shape was found")
+    (t/is (= {:fill-rule "evenodd"}
              (:svg-attrs shape)))))
 
-(t/deftest import-binfile-v3-preserves-camel-case-svg-attrs-on-components
+(t/deftest import-binfile-v3-normalizes-svg-attrs-to-kebab-on-components
   ;; Same guarantee for shapes stored inside a component: the v3 import
   ;; cleans those in a different code path than page shapes.
   (let [profile (th/create-profile* 1)
@@ -245,13 +243,126 @@
                       (get (uuid/uuid shape-id))
                       :svg-attrs))]
 
-    (t/is (= {:fillRule "evenodd"}
+    (t/is (= {:fill-rule "evenodd"}
              (shape "fae4bc76-0cc2-8057-8008-b540912cdf78"
                     "fae4bc76-0cc2-8057-8008-b540912774cb")))
 
-    (t/is (= {:fillRule "nonzero"}
+    (t/is (= {:fill-rule "nonzero"}
              (shape "fae4bc76-0cc2-8057-8008-b540912c917b"
                     "fae4bc76-0cc2-8057-8008-b540912774c8")))))
+
+(def ^:private svg-defs-page-id (uuid/custom 4 1))
+(def ^:private svg-defs-shape-id (uuid/custom 4 2))
+
+(defn- prepare-svg-defs-file
+  "A file with an svg-raw shape carrying a filter def, the stored
+  kebab form birth produces (what an SVG import leaves behind)."
+  ([profile] (prepare-svg-defs-file profile 1))
+  ([profile idx]
+   (let [page-id  svg-defs-page-id
+         shape-id svg-defs-shape-id
+
+         file     (th/create-file* idx {:profile-id (:id profile)
+                                        :project-id (:default-project-id profile)
+                                        :is-shared false})]
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-page
+        :name "page 1"
+        :id page-id}])
+
+     (update-file!
+      :file-id (:id file)
+      :profile-id (:id profile)
+      :revn 0
+      :vern 0
+      :changes
+      [{:type :add-obj
+        :page-id page-id
+        :id shape-id
+        :parent-id uuid/zero
+        :frame-id uuid/zero
+        :components-v2 true
+        :obj (cts/setup-shape
+              {:id shape-id
+               :name "svg-filter"
+               :frame-id uuid/zero
+               :parent-id uuid/zero
+               :type :svg-raw
+               :content {:tag :rect
+                         :attrs {:x "10" :fill "red"}
+                         :content []}
+               :svg-attrs {:fill-rule "evenodd"}
+               :svg-defs {"f1" {:tag :filter
+                                :attrs {:id "f1"}
+                                :content [{:tag :feGaussianBlur
+                                           :attrs {:std-deviation "2"}
+                                           :content []}]}}})}])
+
+     (dissoc file :data))))
+
+(defn- export-import-file
+  "Exports `file` to a zip and imports it back, returning a map with
+  the export output and the imported file."
+  [profile file]
+  (let [output (tmp/tempfile :suffix ".zip")]
+    (v3/export-files!
+     (-> th/*system*
+         (assoc ::bfc/ids #{(:id file)})
+         (assoc ::bfc/export-type :detach-libraries))
+     (io/output-stream output))
+    (let [result (-> th/*system*
+                     (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/profile-id (:id profile))
+                     (assoc ::bfc/input output)
+                     (v3/import-files!))]
+      {:output output
+       :imported (bfc/get-file th/*system* (first (:file-ids result)))})))
+
+(defn- svg-defs-shape
+  [file]
+  (get-in file [:data :pages-index svg-defs-page-id :objects svg-defs-shape-id]))
+
+(t/deftest import-binfile-v3-normalizes-svg-defs-to-kebab
+  ;; Def node attrs converge to the stored kebab convention through an
+  ;; export/import cycle: tags come back as keywords (the schema decoder
+  ;; restores them from the stored strings), attr keys stay kebab, outer
+  ;; def keys come back as strings (the decoder prefers the string
+  ;; branch), and the string ids inside survive byte-identical.
+  (let [profile  (th/create-profile* 1)
+        file     (prepare-svg-defs-file profile)
+        {:keys [imported]} (export-import-file profile file)
+        shape    (svg-defs-shape imported)
+        node     (get (:svg-defs shape) "f1")]
+    (t/is (some? shape) "the svg shape was found")
+    (t/is (= {:fill-rule "evenodd"} (:svg-attrs shape)))
+    (t/is (some? node) "the filter def was found")
+    (t/is (= :filter (:tag node)) "tags decode back to keywords")
+    (t/is (= "f1" (get-in node [:attrs :id])) "def ids survive byte-identical")
+    (t/is (= "2" (get-in node [:content 0 :attrs :std-deviation])))))
+
+(t/deftest export-import-svg-roundtrip-converges
+  ;; The determinism proof: export, import, export, import. The first
+  ;; import lands on the kebab end state and the second trip leaves it
+  ;; exactly there.
+  (let [profile   (th/create-profile* 1)
+        file      (prepare-svg-defs-file profile)
+        trip-1    (:imported (export-import-file profile file))
+        shape-1   (svg-defs-shape trip-1)
+        trip-2    (:imported (export-import-file profile trip-1))
+        shape-2   (svg-defs-shape trip-2)]
+    (t/is (some? shape-1) "the svg shape survived the first trip")
+    (t/is (some? shape-2) "the svg shape survived the second trip")
+    (t/is (= {:fill-rule "evenodd"} (:svg-attrs shape-1))
+          "first trip lands on the kebab end state")
+    (t/is (= (:svg-attrs shape-1) (:svg-attrs shape-2))
+          "svg-attrs are a fixed point")
+    (t/is (= (:svg-defs shape-1) (:svg-defs shape-2))
+          "svg-defs are a fixed point")))
 
 (t/deftest export-binfile-v3
   (let [profile (th/create-profile* 1)

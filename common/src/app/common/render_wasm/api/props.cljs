@@ -157,9 +157,9 @@
 (defn set-shape-svg-attrs
   [attrs]
   (let [style (:style attrs)
-        fill-rule       (-> (or (:fillRule style) (:fillRule attrs)) sr/translate-fill-rule)
-        stroke-linecap  (-> (or (:strokeLinecap style) (:strokeLinecap attrs)) sr/translate-stroke-linecap)
-        stroke-linejoin (-> (or (:strokeLinejoin style) (:strokeLinejoin attrs)) sr/translate-stroke-linejoin)
+        fill-rule       (-> (or (:fill-rule style) (:fill-rule attrs)) sr/translate-fill-rule)
+        stroke-linecap  (-> (or (:stroke-linecap style) (:stroke-linecap attrs)) sr/translate-stroke-linecap)
+        stroke-linejoin (-> (or (:stroke-linejoin style) (:stroke-linejoin attrs)) sr/translate-stroke-linejoin)
         fill-none       (= "none" (or (:fill style) (:fill attrs)))]
     (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
 

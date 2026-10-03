@@ -122,7 +122,11 @@
    - The referencing gradient's attributes override the base ones
    - If the referencing gradient has stops, they replace the base stops
    
-   Returns the defs map with all gradient href references resolved."
+   Returns the defs map with all gradient href references resolved.
+
+   NOTE: reads raw parser keys (`:xlink:href` with colon,
+   `:gradientTransform` camelCase). Runs before birth normalization;
+   do not switch to kebab."
   [defs]
   (letfn [(resolve-gradient [gradient-id gradient-node defs visited]
             (if (contains? visited gradient-id)
@@ -220,7 +224,9 @@
              (csvg/extract-defs))
 
          ;; Resolve gradient href references in all defs before processing shapes
-         def-nodes (resolve-gradient-href def-nodes)
+         ;; then normalize them to the stored kebab convention
+         def-nodes (d/mapm (fn [_ node] (csvg/normalize-def-node node))
+                           (resolve-gradient-href def-nodes))
 
          ;; In penpot groups have the size of their children. To
          ;; respect the imported svg size and empty space let's create
@@ -269,8 +275,9 @@
 
 (defn create-raw-svg
   [name frame-id {:keys [x y width height offset-x offset-y defs] :as svg-data} {:keys [attrs] :as data}]
-  (let [props (csvg/attrs->props attrs)
-        vbox  (grc/make-rect offset-x offset-y width height)]
+  (let [props   (csvg/attrs->kebab-props attrs)
+        content (csvg/kebabize-content-node data)
+        vbox    (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
      {:type :svg-raw
       :name name
@@ -279,7 +286,7 @@
       :height height
       :x x
       :y y
-      :content data
+      :content content
       :svg-attrs props
       :svg-viewbox vbox
       :svg-defs defs})))
@@ -288,7 +295,7 @@
   [id frame-id parent-id {:keys [name x y width height offset-x offset-y attrs defs] :as svg-data}]
   (let [props (-> (dissoc attrs :viewBox :view-box :xmlns)
                   (d/without-keys csvg/inheritable-props)
-                  (csvg/attrs->props))]
+                  (csvg/attrs->kebab-props))]
     (cts/setup-shape
      {:id id
       :type :group
@@ -325,7 +332,7 @@
   (let [transform (csvg/parse-transform (:transform attrs))
         attrs     (-> attrs
                       (d/without-keys csvg/inheritable-props)
-                      (csvg/attrs->props))
+                      (csvg/attrs->kebab-props))
         vbox      (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
      {:type :group
@@ -365,7 +372,7 @@
           points     (grc/rect->points selrect)
           origin     (gpt/negate (gpt/point svg-data))
           attrs      (-> (dissoc attrs :d :transform)
-                         (csvg/attrs->props))]
+                         (csvg/attrs->kebab-props))]
       (-> (cts/setup-shape
            {:type :path
             :name name
@@ -434,7 +441,7 @@
                       (update :y - (:y origin)))
 
         props     (-> (dissoc attrs :x :y :width :height :rx :ry :transform)
-                      (csvg/attrs->props))
+                      (csvg/attrs->kebab-props))
 
         radius-attrs (parse-radius-attrs attrs)]
     (cts/setup-shape
@@ -480,7 +487,7 @@
                    (* 2 rx)
                    (* 2 ry))
         props     (-> (dissoc attrs :cx :cy :r :rx :ry :transform)
-                      (csvg/attrs->props))]
+                      (csvg/attrs->kebab-props))]
 
     (cts/setup-shape
      (-> (calculate-rect-metadata rect transform)
@@ -510,7 +517,7 @@
                        (update :x - (:x origin))
                        (update :y - (:y origin)))
         props      (-> (dissoc attrs :x :y :width :height :href :xlink:href)
-                       (csvg/attrs->props))]
+                       (csvg/attrs->kebab-props))]
 
     (when (some? image-data)
       (cts/setup-shape
@@ -545,17 +552,17 @@
 
       ;; Only create an opacity if the color is set. Otherwise can create problems down the line
       (and (or (clr/color-string? color-attr) (clr/color-string? color-style))
-           (dm/get-in shape [:svg-attrs :fillOpacity]))
-      (-> (update :svg-attrs dissoc :fillOpacity)
-          (update-in [:svg-attrs :style] dissoc :fillOpacity)
-          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :fillOpacity])
+           (dm/get-in shape [:svg-attrs :fill-opacity]))
+      (-> (update :svg-attrs dissoc :fill-opacity)
+          (update-in [:svg-attrs :style] dissoc :fill-opacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :fill-opacity])
                                                  (d/parse-double 1))))
 
       (and (or (clr/color-string? color-attr) (clr/color-string? color-style))
-           (dm/get-in shape [:svg-attrs :style :fillOpacity]))
-      (-> (update-in [:svg-attrs :style] dissoc :fillOpacity)
-          (update :svg-attrs dissoc :fillOpacity)
-          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fillOpacity])
+           (dm/get-in shape [:svg-attrs :style :fill-opacity]))
+      (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
+          (update :svg-attrs dissoc :fill-opacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fill-opacity])
                                                  (d/parse-double 1)))))))
 
 (defn- setup-stroke
@@ -573,30 +580,30 @@
 
         opacity (when (some? color)
                   (d/parse-double
-                   (or (:strokeOpacity attrs)
-                       (:strokeOpacity style))
+                   (or (:stroke-opacity attrs)
+                       (:stroke-opacity style))
                    1))
 
         width   (when (some? color)
                   (d/parse-double
-                   (or (:strokeWidth attrs)
-                       (:strokeWidth style))
+                   (or (:stroke-width attrs)
+                       (:stroke-width style))
                    1))
 
-        linecap (or (get attrs :strokeLinecap)
-                    (get style :strokeLinecap))
+        linecap (or (get attrs :stroke-linecap)
+                    (get style :stroke-linecap))
         linecap (some-> linecap str/trim keyword)
 
         attrs
         (-> attrs
             (cond-> (some? color)
-              (dissoc :stroke :strokeWidth :strokeOpacity))
+              (dissoc :stroke :stroke-width :stroke-opacity))
             (update
              :style
              (fn [style]
                (-> style
                    (cond-> (some? color)
-                     (dissoc :stroke :strokeWidth :strokeOpacity)))))
+                     (dissoc :stroke :stroke-width :stroke-opacity)))))
             (d/without-nils))]
 
     (cond-> (assoc shape :svg-attrs attrs)
@@ -629,13 +636,13 @@
         (assoc :opacity (-> (dm/get-in shape [:svg-attrs :style :opacity])
                             (d/parse-double 1))))
 
-    (dm/get-in shape [:svg-attrs :mixBlendMode])
-    (-> (update :svg-attrs dissoc :mixBlendMode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mixBlendMode]) assert-valid-blend-mode)))
+    (dm/get-in shape [:svg-attrs :mix-blend-mode])
+    (-> (update :svg-attrs dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :mix-blend-mode]) assert-valid-blend-mode)))
 
-    (dm/get-in shape [:svg-attrs :style :mixBlendMode])
-    (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
-        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
+    (dm/get-in shape [:svg-attrs :style :mix-blend-mode])
+    (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mix-blend-mode]) assert-valid-blend-mode)))))
 
 (defn setup-other [shape]
   (cond-> shape

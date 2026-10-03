@@ -33,20 +33,20 @@
     (let [{:keys [tag attrs content]} node
 
           transform-gradient? (and (contains? csvg/gradient-tags tag)
-                                   (= "userSpaceOnUse" (get attrs :gradientUnits "objectBoundingBox")))
+                                   (= "userSpaceOnUse" (get attrs :gradient-units "objectBoundingBox")))
 
           transform-pattern?  (and (= :pattern tag)
-                                   (= "userSpaceOnUse" (get attrs :patternContentUnits "userSpaceOnUse"))
-                                   (= "userSpaceOnUse" (get attrs :patternUnits "userSpaceOnUse")))
+                                   (= "userSpaceOnUse" (get attrs :pattern-content-units "userSpaceOnUse"))
+                                   (= "userSpaceOnUse" (get attrs :pattern-units "userSpaceOnUse")))
 
           transform-clippath? (and (= :clipPath tag)
-                                   (= "userSpaceOnUse" (get attrs :clipPathUnits "userSpaceOnUse")))
+                                   (= "userSpaceOnUse" (get attrs :clip-path-units "userSpaceOnUse")))
 
           transform-filter?   (and (contains? csvg/filter-tags tag)
-                                   (= "userSpaceOnUse" (get attrs :filterUnits "objectBoundingBox")))
+                                   (= "userSpaceOnUse" (get attrs :filter-units "objectBoundingBox")))
 
           transform-mask?     (and (= :mask tag)
-                                   (= "userSpaceOnUse" (get attrs :maskUnits "objectBoundingBox")))
+                                   (= "userSpaceOnUse" (get attrs :mask-units "objectBoundingBox")))
 
           attrs
           (-> attrs

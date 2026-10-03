@@ -7,16 +7,18 @@
 (ns frontend-tests.svg-fills-test
   (:require
    [app.common.render-wasm.svg-derived :as svg-derived]
+   [app.main.ui.shapes.attrs :as attrs]
+   [app.util.object :as obj]
    [cljs.test :refer [deftest is testing]]))
 
 (def sample-shape
   {:selrect {:x 100 :y 200 :width 200 :height 100}
-   :svg-attrs {:fillOpacity "0.5"
+   :svg-attrs {:fill-opacity "0.5"
                :style {:fill "url(#grad)"}}
    :svg-defs {"grad"
               {:tag :radialGradient
                :attrs {:id "grad"
-                       :gradientUnits "userSpaceOnUse"
+                       :gradient-units "userSpaceOnUse"
                        :cx "150"
                        :cy "250"
                        :r "50"}
@@ -42,17 +44,45 @@
 (deftest skips-when-no-svg-fill
   (is (nil? (svg-derived/svg-fill->fills {:svg-attrs {:fill "none"}}))))
 
+;; Stored (post-0031) spelling: migration `0031` turned stop `:style`
+;; strings into kebab maps via `attrs->kebab-props`. The WASM fill
+;; derivation must read both spellings, or gradients lose their stops.
+(def stored-shape
+  {:selrect {:x 100 :y 200 :width 200 :height 100}
+   :svg-attrs {:fill-opacity "0.5"
+               :style {:fill "url(#grad)"}}
+   :svg-defs {"grad"
+              {:tag :radialGradient
+               :attrs {:id "grad"
+                       :gradient-units "userSpaceOnUse"
+                       :cx "150"
+                       :cy "250"
+                       :r "50"}
+               :content [{:tag :stop
+                          :attrs {:offset "0"
+                                  :style {:stop-color "#ff0000" :stop-opacity "1"}}}
+                         {:tag :stop
+                          :attrs {:offset "1"
+                                  :style {:stop-color "#00ff00" :stop-opacity "0"}}}]}}})
+
+(deftest builds-gradient-fill-from-stored-map-styles
+  (let [fills (svg-derived/svg-fill->fills stored-shape)
+        gradient (get-in (first fills) [:fill-color-gradient])]
+    (is (= 1 (count fills)))
+    (is (= "#ff0000" (get-in gradient [:stops 0 :color])))
+    (is (= "#00ff00" (get-in gradient [:stops 1 :color])))))
+
 (def elliptical-shape
   {:selrect {:x 0 :y 0 :width 200 :height 100}
    :svg-attrs {:style {:fill "url(#grad-ellipse)"}}
    :svg-defs {"grad-ellipse"
               {:tag :radialGradient
                :attrs {:id "grad-ellipse"
-                       :gradientUnits "userSpaceOnUse"
+                       :gradient-units "userSpaceOnUse"
                        :cx "50"
                        :cy "50"
                        :r "50"
-                       :gradientTransform "matrix(2 0 0 1 0 0)"}
+                       :gradient-transform "matrix(2 0 0 1 0 0)"}
                :content [{:tag :stop
                           :attrs {:offset "0"
                                   :style "stop-color:#000000;stop-opacity:1"}}
@@ -93,5 +123,21 @@
                                                 :svg-attrs {:fill "#fabada"}})]
     (is (= 1 (count fills)))
     (is (= "#fabada" (:fill-color (first fills))))))
+
+;; The classic renderer funnel: stored kebab keys reach React as
+;; camelCase props, so a shape renders identical props before and after
+;; the kebab migration. Extra attrs keep their source spelling so React
+;; passes them to the DOM silently (no unknown-prop warning).
+(deftest svg-attrs-render-as-camel-props
+  (let [props (attrs/get-svg-props {:svg-attrs {:fill-rule "evenodd"
+                                                :stroke-width "2"
+                                                :stroke-style "dotted"
+                                                :style {:fill-opacity "0.5"}}}
+                                   "r1")]
+    (is (= "evenodd" (obj/get props "fillRule")))
+    (is (= "2" (obj/get props "strokeWidth")))
+    (is (= "dotted" (obj/get props "stroke-style")))
+    (is (nil? (obj/get props "strokeStyle")) "no camel duplicate for extras")
+    (is (= "0.5" (obj/get (obj/get props "style") "fillOpacity")))))
 
 
