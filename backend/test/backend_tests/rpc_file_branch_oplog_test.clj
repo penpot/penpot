@@ -210,13 +210,13 @@
                               (ct/is-after? deleted-at (ct/in-future {:days 400}))))
                         rows)))))))
 
-(t/deftest update-from-main-compares-in-main-frame
+(t/deftest update-from-main-compares-in-main-id-space
   ;; A branch stores no data: its document is the base snapshot plus the op
   ;; log, so every reference it inherited names MAIN. A local reference is a
   ;; self reference in both files, because a branch keeps main's colours and
   ;; typographies under the same entity ids, so the comparison must run in
-  ;; main's frame and the change that lands in the branch must still name the
-  ;; branch.
+  ;; main's id space and the change that lands in the branch must still name
+  ;; the branch.
   (with-redefs [cf/flags (conj cf/flags :branching)]
     (let [profile  (th/create-profile* 1 {:is-active true})
           proj-id  (:default-project-id profile)
@@ -252,7 +252,7 @@
                                  :parent-id uuid/zero :frame-id uuid/zero})
                                (assoc :fills (fills main-id "#ff0000")))})
 
-      (let [create         (create-branch* profile main-id "main-frame")
+      (let [create         (create-branch* profile main-id "main-id-space")
             branch-id      (:id create)
             branch-file-id (:branch-file-id create)]
 
@@ -273,7 +273,7 @@
             (t/is (= "#00ff00" (get-in out [:result :data :pages-index page-id
                                             :objects shape-id :fills 0 :fill-color]))))
           ;; main's own change arrives through the repositioned base, so the
-          ;; net the update writes is empty. A ref left in main's frame would
+          ;; net the update writes is empty. A ref left in main's id space would
           ;; make this shape differ from the new base and put it in the log.
           (t/is (empty? (oplog-rows branch-file-id))))
 

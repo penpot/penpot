@@ -1600,9 +1600,9 @@
                       (if ago (str ago " · " you) you))
 
         ;; the command that opened this modal returned its own conflict set,
-        ;; computed in the frame it resolves against; the diff this dialog can
-        ;; fetch may have been computed in another frame and disagree, which
-        ;; left the dialog showing 0 of 0 with an Apply that could never
+        ;; computed in the id space it resolves against; the diff this dialog
+        ;; can fetch may have been computed in another id space and disagree,
+        ;; which left the dialog showing 0 of 0 with an Apply that could never
         ;; enable (vcs:tp-update-conflict-frame). Prefer what the command said.
         conflicts   (if (seq conflicts) conflicts (:conflicts diff))
 

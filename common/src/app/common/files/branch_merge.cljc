@@ -1099,7 +1099,7 @@
 (defn remap-changes
   "Rewrite the cross-file references of a change vector through `id-map`,
   the counterpart of `remap-refs` for the changes `compute-changes` emits.
-  A change computed in the source file's frame has to be applied in the
+  A change computed in the source file's id space has to be applied in the
   target's, because a reference is only a reference in the file it names: a
   fill whose `:fill-color-ref-file` names another file loses its link, and so
   does an instance whose `:component-file` does.

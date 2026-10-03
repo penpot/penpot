@@ -439,7 +439,7 @@
 
   Those conflicts are authoritative for the whole modal: they are the very
   ones the command's own `resolved?` matches against, while the diff the modal
-  can fetch on its own is computed in another id frame and may list a
+  can fetch on its own is computed in another id space and may list a
   different set, or none at all. Keeping them in the store also lets the
   bulk actions resolve the same set the modal shows."
   [{:keys [branch mode conflicts]}]
@@ -491,7 +491,7 @@
                     ;; the returned conflicts are authoritative: they are the very
                     ;; ones the command computes `resolved?` against, and the diff
                     ;; the modal could fetch on its own is computed in another id
-                    ;; frame, which can disagree with them (vcs:tp-update-conflict-frame)
+                    ;; space, which can disagree with them (vcs:tp-update-conflict-frame)
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :update
                                                                     :conflicts conflicts}))

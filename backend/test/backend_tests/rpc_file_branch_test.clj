@@ -1141,7 +1141,7 @@
         (t/is (some? img-id))
         ;; the colour's image keeps resolving to the right content (the
         ;; document names the branch's own paired copy: the base is pinned
-        ;; in the branch's frame and the op log replays over it)
+        ;; in the branch's id space and the op log replays over it)
         (let [row (th/db-get :file-media-object {:id img-id})]
           (t/is (= (:id sobj) (:media-id row)))))
 
@@ -1154,7 +1154,7 @@
 
       (t/testing "the update logs no phantom branch change"
         ;; the colour image id must be re-pointed at the copy like every
-        ;; other ref (`bm/remap-changes`); left in main's frame it makes
+        ;; other ref (`bm/remap-changes`); left in main's id space it makes
         ;; the colour differ from the new base and lands in the op log
         (t/is (empty? (th/db-query :file-branch-change {:branch-id branch-id})))))))
 

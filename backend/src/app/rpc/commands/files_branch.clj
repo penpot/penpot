@@ -270,11 +270,11 @@
   the op log over it, so this function would decode the same snapshot a
   second time.
 
-  The snapshot stores the branch's frame — its media references name the
-  branch's own paired rows, what the replay reproduces — while a
-  comparison runs in main's frame, so the media ids are normalized back
-  here through the pairs, the way `branch-id-map` normalizes the branch's
-  own data."
+  The snapshot stores the branch's id space — its media references name
+  the branch's own paired rows, what the replay reproduces — while a
+  comparison runs in main's id space, so the media ids are normalized
+  back here through the pairs, the way `branch-id-map` normalizes the
+  branch's own data."
   [cfg {:keys [source-file-id branch-file-id base-snapshot-id] :as branch}]
   (when-not base-snapshot-id
     (ex/raise :type :not-found
@@ -297,7 +297,7 @@
   nil.
 
   Like `get-base-data`, it comes back with the media ids normalized into
-  main's frame: the snapshot names the branch's own paired rows, the
+  main's id space: the snapshot names the branch's own paired rows, the
   comparison runs against main's."
   [cfg source-file-id {:keys [id] :as branch-file}]
   (-> (or (::bfc/base-data branch-file)
@@ -1283,14 +1283,14 @@
 
                  ;; Two id maps, one per direction of the crossing.
                  ;;
-                 ;; The COMPARISON runs in main's frame, the frame the merge
-                 ;; base was captured in, the frame the compare view uses
-                 ;; (`files_branch.clj::branch-id-map` in
-                 ;; `files_branch.clj::get-branch-diff`), and the only frame
+                 ;; The COMPARISON runs in main's id space, the id space the
+                 ;; merge base was captured in, the id space the compare view
+                 ;; uses (`files_branch.clj::branch-id-map` in
+                 ;; `files_branch.clj::get-branch-diff`), and the only id space
                  ;; the branch's inherited content agrees with. A branch stores
                  ;; no data, so `binfile.clj::branch-file-data` replays its op
                  ;; log over that base and everything it inherited carries the
-                 ;; base's ids. Comparing in the branch's frame instead
+                 ;; base's ids. Comparing in the branch's id space instead
                  ;; rewrites main's and the base's local references to the
                  ;; branch file id, and a self reference in main is then
                  ;; unequal to the branch's own copy of it, so every shape
@@ -1301,8 +1301,8 @@
                  branch-cmp  (bm/remap-refs (:data branch-file)
                                             (branch-id-map cfg branch-file-id main-id))
 
-                 ;; The WRITE runs in the branch's frame: a reference is only a
-                 ;; reference in the file it names, so main's file id and
+                 ;; The WRITE runs in the branch's id space: a reference is only
+                 ;; a reference in the file it names, so main's file id and
                  ;; main's media rows are re-pointed at the branch's ids before
                  ;; the change reaches the branch. Media ADDED on main has no
                  ;; branch row yet, so it gets a fresh id here and its row is
@@ -1310,7 +1310,7 @@
                  pairs       (media-pairs cfg main-id branch-file-id)
                  new-media   (unpaired-media-rows cfg main-id main-raw pairs)
                  fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
-                 ;; the branch's OWN frame: every media row the branch
+                 ;; the branch's OWN id space: every media row the branch
                  ;; references is one of its own — a paired copy or one of
                  ;; the fresh copies made below. The write and the pinned
                  ;; base name those; `apply-map` adds the file id on top for
@@ -1327,13 +1327,13 @@
 
                  reposition-base!
                  (fn [ts branch-revn base-data]
-                   ;; the base is pinned in the branch's frame — its media
-                   ;; references name the branch's own rows — because it is
-                   ;; what the op log replays over: the derived document
-                   ;; carries that frame, so a base naming main's rows would
-                   ;; make every paired media read as deleted+added on the
-                   ;; next squash. The comparisons normalize it back to
-                   ;; main's frame on read (`get-base-data`/`branch-base-data`).
+                   ;; the base is pinned in the branch's id space — its media
+                   ;; references name the branch's own rows — because it is what
+                   ;; the op log replays over: the derived document carries that
+                   ;; id space, so a base naming main's rows would make every
+                   ;; paired media read as deleted+added on the next squash. The
+                   ;; comparisons normalize it back to main's id space on read
+                   ;; (`get-base-data`/`branch-base-data`).
                    (let [new-base (fsnap/create! cfg (assoc main-file :data base-data)
                                                  {:label (str "branch-base/" (:name branch))
                                                   :created-by "system"
@@ -1415,8 +1415,8 @@
                      ;; which re-derives the net against the new base.
                      (db/delete! conn :file-branch-change {:branch-id branch-id})
                      ;; in sync, so no row is copied and the pairs are all
-                     ;; the frame the base needs: unpaired rows stay named
-                     ;; by the id main owns, which is what the branch
+                     ;; the id space the base needs: unpaired rows stay
+                     ;; named by the id main owns, which is what the branch
                      ;; references while it holds no copy
                      (reposition-base! ts (:revn branch-file) (bm/remap-refs main-raw pairs))
                      (audited {:status :updated :revn (:revn branch-file)} tpoint :update-from-main))
@@ -1439,8 +1439,8 @@
                        (copy-media-rows! conn branch-file-id fresh-map new-media)
 
                        (let [applied (bm/remap-changes changes apply-map)
-                             ;; the write lands in the branch's frame, so the
-                             ;; document is moved there first — its paired
+                             ;; the write lands in the branch's id space, so
+                             ;; the document is moved there first — its paired
                              ;; media refs re-pointed at the branch's own
                              ;; rows — or the remapped changes would name ids
                              ;; it does not hold and apply to nothing (a
