@@ -276,6 +276,10 @@ msgstr "Add file"
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
 
+#: src/app/main/ui/dashboard/branches_popover.cljs:65
+msgid "dashboard.branches-badge"
+msgstr "%s branches"
+
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
 msgstr "Change email"
@@ -363,6 +367,10 @@ msgstr "Clear trash"
 #: src/app/main/data/dashboard.cljs:300, src/app/main/data/dashboard.cljs:535, src/app/main/data/workspace/pages.cljs:201
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:314
+msgid "dashboard.create-branch"
+msgstr "Create branch…"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:223, src/app/main/ui/dashboard/organization_team_switch.cljs:304
 msgid "dashboard.create-new-organization"
@@ -972,6 +980,10 @@ msgstr "Other teams"
 #: src/app/main/ui/settings/password.cljs:112, src/app/main/ui/settings/password.cljs:126
 msgid "dashboard.password-change"
 msgstr "Change password"
+
+#: src/app/main/ui/dashboard/comments.cljs:131
+msgid "dashboard.pending-reviews.title"
+msgstr "Review requests"
 
 #: src/app/main/data/common.cljs:194
 msgid "dashboard.permissions-change.admin"
@@ -4522,6 +4534,11 @@ msgstr "Enter the name of the team"
 msgid "onboarding.choice.team-up.create-team-name"
 msgstr "Team name"
 
+#: src/app/main/ui/onboarding/team_choice.cljs:188
+#, unused
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Enter the name of the team"
+
 #: src/app/main/ui/onboarding/team_choice.cljs:237
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "Create team"
@@ -6286,6 +6303,679 @@ msgstr "Text Transform"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:69
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:836
+msgid "workspace.branches.archived"
+msgstr "Archived"
+
+#, unused
+msgid "workspace.branches.banner.collapse"
+msgstr "Collapse"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:518, src/app/main/ui/workspace/sidebar/branches.cljs:1614
+msgid "workspace.branches.banner.conflicts"
+msgstr "%s conflicts"
+
+#, unused
+msgid "workspace.branches.banner.expand"
+msgstr "Expand"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1596
+msgid "workspace.branches.banner.from-main"
+msgstr "from main"
+
+#, unused
+msgid "workspace.branches.banner.merged"
+msgstr "Merged branch"
+
+#, unused
+msgid "workspace.branches.banner.on-branch"
+msgstr "On branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1602
+msgid "workspace.branches.banner.view-main"
+msgstr "View in main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:529, src/app/main/ui/workspace/sidebar/branches.cljs:685, src/app/main/ui/workspace/sidebar/branches.cljs:1619
+msgid "workspace.branches.compare"
+msgstr "Compare"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:463
+#, unused
+msgid "workspace.branches.compare.attr"
+msgstr "Property"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:465
+#, unused
+msgid "workspace.branches.compare.branch"
+msgstr "branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1064
+msgid "workspace.branches.compare.empty"
+msgstr "No changes between this branch and main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1059
+msgid "workspace.branches.compare.error"
+msgstr "Could not load the changes of this branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1126
+msgid "workspace.branches.compare.export"
+msgstr "Export diff"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1118
+msgid "workspace.branches.compare.footer-changes"
+msgstr "%s changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1121
+msgid "workspace.branches.compare.footer-conflicts"
+msgstr "%s to resolve before merging"
+
+#, unused
+msgid "workspace.branches.compare.group.colors"
+msgstr "Colors"
+
+#, unused
+msgid "workspace.branches.compare.group.components"
+msgstr "Components"
+
+#, unused
+msgid "workspace.branches.compare.group.media"
+msgstr "Media"
+
+#, unused
+msgid "workspace.branches.compare.group.pages"
+msgstr "Pages"
+
+#, unused
+msgid "workspace.branches.compare.group.tokens"
+msgstr "Tokens"
+
+#, unused
+msgid "workspace.branches.compare.group.typographies"
+msgstr "Typographies"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1054, src/app/main/ui/workspace/sidebar/branches.cljs:1439
+msgid "workspace.branches.compare.loading"
+msgstr "Computing changes…"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:464
+#, unused
+msgid "workspace.branches.compare.main"
+msgstr "main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:220
+msgid "workspace.branches.compare.n-items"
+msgstr "%s items"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:221
+msgid "workspace.branches.compare.n-props"
+msgstr "%s properties"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:934
+msgid "workspace.branches.compare.no-props"
+msgstr "No property-level changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:924
+msgid "workspace.branches.compare.prop-changes"
+msgstr "Property changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:912
+msgid "workspace.branches.compare.select-hint"
+msgstr "Select a change to see its details"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:140
+#, unused
+msgid "workspace.branches.compare.shape.board"
+msgstr "Board"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:147
+#, unused
+msgid "workspace.branches.compare.shape.bool"
+msgstr "Boolean"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:148
+#, unused
+msgid "workspace.branches.compare.shape.component"
+msgstr "Component"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:149
+#, unused
+msgid "workspace.branches.compare.shape.component-copy"
+msgstr "Component copy"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:142
+#, unused
+msgid "workspace.branches.compare.shape.ellipse"
+msgstr "Ellipse"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:146
+#, unused
+msgid "workspace.branches.compare.shape.group"
+msgstr "Group"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:145
+#, unused
+msgid "workspace.branches.compare.shape.image"
+msgstr "Image"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:143
+#, unused
+msgid "workspace.branches.compare.shape.path"
+msgstr "Path"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:141
+#, unused
+msgid "workspace.branches.compare.shape.rect"
+msgstr "Rectangle"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:144
+#, unused
+msgid "workspace.branches.compare.shape.text"
+msgstr "Text"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:150
+#, unused
+msgid "workspace.branches.compare.shape.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1036
+msgid "workspace.branches.compare.stats.added"
+msgstr "added"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1043
+msgid "workspace.branches.compare.stats.conflicts"
+msgstr "conflicts"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1040
+msgid "workspace.branches.compare.stats.deleted"
+msgstr "deleted"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1038
+msgid "workspace.branches.compare.stats.modified"
+msgstr "modified"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:879
+msgid "workspace.branches.compare.subtitle-mods"
+msgstr "%s property changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:876
+msgid "workspace.branches.compare.subtitle-new"
+msgstr "New %s"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1013, src/app/main/ui/workspace/sidebar/branches.cljs:1014, src/app/main/ui/workspace/sidebar/branches.cljs:1025, src/app/main/ui/workspace/sidebar/branches.cljs:1026
+msgid "workspace.branches.compare.swap"
+msgstr "Swap direction (branch ↔ main)"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1005
+msgid "workspace.branches.compare.title"
+msgstr "Compare changes"
+
+#, unused
+msgid "workspace.branches.compare.type.color"
+msgstr "Color"
+
+#, unused
+msgid "workspace.branches.compare.type.component"
+msgstr "Component"
+
+#, unused
+msgid "workspace.branches.compare.type.media"
+msgstr "Media"
+
+#, unused
+msgid "workspace.branches.compare.type.shape"
+msgstr "Shape"
+
+#, unused
+msgid "workspace.branches.compare.type.token"
+msgstr "Token"
+
+#, unused
+msgid "workspace.branches.compare.type.typography"
+msgstr "Typography"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1430
+msgid "workspace.branches.conflicts.all-branch"
+msgstr "Use branch for all"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1428
+msgid "workspace.branches.conflicts.all-main"
+msgstr "Use main for all"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1534
+msgid "workspace.branches.conflicts.apply"
+msgstr "Apply and merge"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1426
+msgid "workspace.branches.conflicts.bulk-label"
+msgstr "Bulk actions:"
+
+#, unused
+msgid "workspace.branches.conflicts.card.base"
+msgstr "Base (ancestor)"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1369
+msgid "workspace.branches.conflicts.card.base-meta"
+msgstr "at branch creation"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1497
+msgid "workspace.branches.conflicts.card.branch"
+msgstr "Your branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1495
+msgid "workspace.branches.conflicts.card.main"
+msgstr "Main"
+
+#, unused
+msgid "workspace.branches.conflicts.card.result"
+msgstr "Result"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1372
+msgid "workspace.branches.conflicts.card.you"
+msgstr "You"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:992
+#, unused
+msgid "workspace.branches.conflicts.chosen"
+msgstr "Chosen"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:777
+#, unused
+msgid "workspace.branches.conflicts.chosen-branch"
+msgstr "branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:775
+#, unused
+msgid "workspace.branches.conflicts.chosen-main"
+msgstr "main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1444
+msgid "workspace.branches.conflicts.empty"
+msgstr "No conflicts to resolve"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1520
+msgid "workspace.branches.conflicts.footer-pending"
+msgstr "%s conflict(s) pending · resolve all to merge"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1515
+msgid "workspace.branches.conflicts.footer-ready"
+msgstr "All conflicts resolved"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1450
+msgid "workspace.branches.conflicts.list-head"
+msgstr "%s conflicts"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1433
+msgid "workspace.branches.conflicts.pending"
+msgstr "%s pending"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1419
+msgid "workspace.branches.conflicts.progress"
+msgstr "%s of %s resolved"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1493
+msgid "workspace.branches.conflicts.prop-header"
+msgstr "Property"
+
+#, unused
+msgid "workspace.branches.conflicts.reason.add-add"
+msgstr "added in both with different values"
+
+#, unused
+msgid "workspace.branches.conflicts.reason.delete-modify"
+msgstr "deleted in the branch, edited in main"
+
+#, unused
+msgid "workspace.branches.conflicts.reason.modify-delete"
+msgstr "edited in the branch, deleted in main"
+
+#, unused
+msgid "workspace.branches.conflicts.reason.modify-modify"
+msgstr "edited in main and in the branch since the base"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1134, src/app/main/ui/workspace/sidebar/branches.cljs:1626
+msgid "workspace.branches.conflicts.resolve"
+msgstr "Resolve conflicts"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1198
+msgid "workspace.branches.conflicts.side-branch"
+msgstr "branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1194
+msgid "workspace.branches.conflicts.side-main"
+msgstr "main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1190
+msgid "workspace.branches.conflicts.side-mixed"
+msgstr "mixed"
+
+#, unused
+msgid "workspace.branches.conflicts.state-pending"
+msgstr "unresolved"
+
+#, unused
+msgid "workspace.branches.conflicts.state-resolved"
+msgstr "resolved"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1417
+msgid "workspace.branches.conflicts.subtitle"
+msgstr "Merge %s into main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1415
+msgid "workspace.branches.conflicts.title"
+msgstr "Resolve conflicts"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1477
+msgid "workspace.branches.conflicts.use-branch"
+msgstr "Use branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1474
+msgid "workspace.branches.conflicts.use-main"
+msgstr "Use main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:994
+#, unused
+msgid "workspace.branches.conflicts.use-this"
+msgstr "Use this"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1508
+msgid "workspace.branches.conflicts.whole-hint"
+msgstr "This element was added or removed on one side. Choose which version to keep."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:299
+msgid "workspace.branches.create.derive-from"
+msgstr "Derive from"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:305
+msgid "workspace.branches.create.derive-from-latest"
+msgstr "latest version"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:303
+msgid "workspace.branches.create.derive-from-main"
+msgstr "main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:291
+msgid "workspace.branches.create.description-label"
+msgstr "Description (optional)"
+
+#: src/app/main/data/workspace/branches.cljs:208
+msgid "workspace.branches.create.error"
+msgstr "Could not create the branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:308
+msgid "workspace.branches.create.info"
+msgstr ""
+"Your branch is a complete, isolated copy. Nothing you do affects main until "
+"you merge it."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:283
+msgid "workspace.branches.create.name-label"
+msgstr "Branch name"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:285
+msgid "workspace.branches.create.name-placeholder"
+msgstr "e.g. redesign-checkout"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:317
+msgid "workspace.branches.create.submit"
+msgstr "Create branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:276
+msgid "workspace.branches.create.subtitle"
+msgstr "Derived from main · %s"
+
+#: src/app/main/data/workspace/branches.cljs:201
+msgid "workspace.branches.create.success"
+msgstr "Branch \"%s\" created"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:274
+msgid "workspace.branches.create.title"
+msgstr "Create branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:629
+msgid "workspace.branches.delete.message"
+msgstr "Delete branch \"%s\"? This cannot be undone."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:628
+msgid "workspace.branches.delete.title"
+msgstr "Delete branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:356
+#, unused
+msgid "workspace.branches.empty"
+msgstr "No branches yet"
+
+#: src/app/main/ui/workspace/left_header.cljs:169
+msgid "workspace.branches.header-badge-tooltip"
+msgstr "On branch %s from main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:485
+msgid "workspace.branches.info.author"
+msgstr "Created by"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:510
+msgid "workspace.branches.info.changes"
+msgstr "Changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:498
+msgid "workspace.branches.info.created"
+msgstr "Created"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:491
+msgid "workspace.branches.info.derived-from"
+msgstr "Derived from"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:464
+msgid "workspace.branches.info.description"
+msgstr "Description"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:479
+msgid "workspace.branches.info.description-empty"
+msgstr "No description"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:474
+msgid "workspace.branches.info.description-placeholder"
+msgstr "Describe the purpose of this branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:522
+msgid "workspace.branches.info.merged"
+msgstr "Merged"
+
+#, unused
+msgid "workspace.branches.info.status.archived"
+msgstr "Archived"
+
+#, unused
+msgid "workspace.branches.info.status.merged"
+msgstr "Merged"
+
+#, unused
+msgid "workspace.branches.info.status.open"
+msgstr "Open"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:445
+msgid "workspace.branches.info.title"
+msgstr "Branch info"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:504
+msgid "workspace.branches.info.updated"
+msgstr "Last updated"
+
+#: src/app/main/data/workspace/branches.cljs:158
+msgid "workspace.branches.lifecycle.deleted"
+msgstr "Branch deleted"
+
+#: src/app/main/data/workspace/branches.cljs:126, src/app/main/data/workspace/branches.cljs:138, src/app/main/data/workspace/branches.cljs:149, src/app/main/data/workspace/branches.cljs:160
+msgid "workspace.branches.lifecycle.error"
+msgstr "The branch operation could not be completed"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:799
+msgid "workspace.branches.loading"
+msgstr "Loading branches…"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:337, src/app/main/ui/workspace/sidebar/branches.cljs:494, src/app/main/ui/workspace/sidebar/branches.cljs:723, src/app/main/ui/workspace/sidebar/branches.cljs:760, src/app/main/ui/workspace/sidebar/branches.cljs:1011, src/app/main/ui/workspace/sidebar/branches.cljs:1031
+msgid "workspace.branches.main"
+msgstr "Main"
+
+#: src/app/main/data/workspace/branches.cljs:336
+msgid "workspace.branches.main-advanced"
+msgstr "main has new changes — you can update this branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:659
+msgid "workspace.branches.main-subtitle"
+msgstr "Default branch"
+
+#: src/app/main/ui/workspace/main_menu.cljs:736
+msgid "workspace.branches.menu"
+msgstr "Branches"
+
+#, unused
+msgid "workspace.branches.menu.archive"
+msgstr "Archive"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:682
+msgid "workspace.branches.menu.info"
+msgstr "Branch info"
+
+#, unused
+msgid "workspace.branches.menu.restore"
+msgstr "Restore"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1148, src/app/main/ui/workspace/sidebar/branches.cljs:1638
+msgid "workspace.branches.merge.action"
+msgstr "Merge into main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:370, src/app/main/ui/workspace/sidebar/branches.cljs:1526
+msgid "workspace.branches.merge.archive-label"
+msgstr "Archive this branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:376
+msgid "workspace.branches.merge.archive-warning"
+msgstr ""
+"Archived branches keep a full copy of the file so they can be restored "
+"later. Keeping many archived branches can take up a lot of storage."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:386
+msgid "workspace.branches.merge.confirm-accept"
+msgstr "Merge"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:335
+msgid "workspace.branches.merge.confirm-message"
+msgstr ""
+"Merge %s into %s? This applies the branch's changes to main and can't be "
+"undone."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:356
+msgid "workspace.branches.merge.confirm-title"
+msgstr "Merge into main"
+
+#: src/app/main/data/workspace/branches.cljs:415
+#, unused
+msgid "workspace.branches.merge.conflicts"
+msgstr "This branch has conflicts that must be resolved before merging"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:378
+msgid "workspace.branches.merge.delete-info"
+msgstr ""
+"After merging, this branch and its file will be deleted to free up storage. "
+"Archive it if you might need to restore it later."
+
+#: src/app/main/data/workspace/branches.cljs:451, src/app/main/data/workspace/branches.cljs:459
+msgid "workspace.branches.merge.error"
+msgstr "Could not merge the branch"
+
+#: src/app/main/data/workspace/branches.cljs:457
+msgid "workspace.branches.merge.main-moved"
+msgstr ""
+"Main changed while you were reviewing; the comparison has been reloaded, "
+"please review and retry"
+
+#: src/app/main/data/workspace/branches.cljs:447
+msgid "workspace.branches.merge.success"
+msgstr "Branch merged into main"
+
+#: src/app/main/data/workspace/branches.cljs:450
+msgid "workspace.branches.merge.unsupported"
+msgstr ""
+"This branch changes elements that can't be merged automatically yet "
+"(components, pages or tokens)"
+
+#: src/app/main/ui/dashboard/branches_popover.cljs:84, src/app/main/ui/workspace/sidebar/branches.cljs:793
+msgid "workspace.branches.new"
+msgstr "New"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:787
+msgid "workspace.branches.search.placeholder"
+msgstr "Search branch…"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:805
+msgid "workspace.branches.section.current"
+msgstr "Current branch"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:816
+msgid "workspace.branches.section.others"
+msgstr "Other branches"
+
+#, unused
+msgid "workspace.branches.status.added"
+msgstr "Added"
+
+#, unused
+msgid "workspace.branches.status.conflict"
+msgstr "Conflict"
+
+#, unused
+msgid "workspace.branches.status.deleted"
+msgstr "Deleted"
+
+#, unused
+msgid "workspace.branches.status.modified"
+msgstr "Modified"
+
+#: src/app/main/ui/workspace/sidebar.cljs:261
+msgid "workspace.branches.tab"
+msgstr "Branches"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:688, src/app/main/ui/workspace/sidebar/branches.cljs:1141, src/app/main/ui/workspace/sidebar/branches.cljs:1632
+msgid "workspace.branches.update"
+msgstr "Update from main"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:403
+msgid "workspace.branches.update.confirm-accept"
+msgstr "Update"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:402
+msgid "workspace.branches.update.confirm-message"
+msgstr ""
+"Update \"%s\" with the latest changes from main? This may overwrite "
+"conflicting changes on the branch."
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:401
+msgid "workspace.branches.update.confirm-title"
+msgstr "Update from main"
+
+#, unused
+msgid "workspace.branches.update.conflicts"
+msgstr "main has conflicting changes; resolve them when merging"
+
+#: src/app/main/data/workspace/branches.cljs:362, src/app/main/data/workspace/branches.cljs:364
+msgid "workspace.branches.update.error"
+msgstr "Could not update the branch"
+
+#: src/app/main/data/workspace/branches.cljs:358
+msgid "workspace.branches.update.success"
+msgstr "Branch updated from main"
+
+#: src/app/main/data/workspace/branches.cljs:361
+msgid "workspace.branches.update.unsupported"
+msgstr ""
+"main changed elements that can't be brought in automatically yet "
+"(components, pages or token structure)"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:439
+#, unused
+msgid "workspace.branches.you-editing"
+msgstr "%s · editing now"
 
 #: src/app/main/data/workspace/clipboard.cljs:1170
 msgid "workspace.clipboard.copying"
@@ -8254,6 +8944,293 @@ msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
 #: src/app/main/ui/workspace/plugins.cljs:528
 msgid "workspace.plugins.try-out.try"
 msgstr "TRY PLUGIN"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:426, src/app/main/ui/workspace/sidebar/pull_requests.cljs:505, src/app/main/ui/workspace/sidebar/pull_requests.cljs:564
+msgid "workspace.pull-requests.actions.close"
+msgstr "Cancel pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:440, src/app/main/ui/workspace/sidebar/pull_requests.cljs:561, src/app/main/ui/workspace/sidebar/pull_requests.cljs:754
+msgid "workspace.pull-requests.actions.merge"
+msgstr "Merge to main"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:435
+msgid "workspace.pull-requests.actions.open-review"
+msgstr "Open review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:430, src/app/main/ui/workspace/sidebar/pull_requests.cljs:567
+msgid "workspace.pull-requests.actions.reopen"
+msgstr "Reopen pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:359, src/app/main/ui/workspace/sidebar/pull_requests.cljs:537, src/app/main/ui/workspace/sidebar/pull_requests.cljs:722
+msgid "workspace.pull-requests.badge.conflicts"
+msgstr "%s conflicts"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:356, src/app/main/ui/workspace/sidebar/pull_requests.cljs:534, src/app/main/ui/workspace/sidebar/pull_requests.cljs:719
+msgid "workspace.pull-requests.badge.outdated"
+msgstr "New changes on branch"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:759
+msgid "workspace.pull-requests.banner.exit"
+msgstr "Exit review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:736
+msgid "workspace.pull-requests.banner.play"
+msgstr "Try interactions"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:742
+msgid "workspace.pull-requests.banner.publish"
+msgstr "Publish latest changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:748
+msgid "workspace.pull-requests.banner.review"
+msgstr "Review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:710
+msgid "workspace.pull-requests.banner.reviewing"
+msgstr "Reviewing pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:504
+msgid "workspace.pull-requests.close.message"
+msgstr ""
+"The review of \"%s\" will be cancelled. The branch is not deleted: it "
+"goes back to being a normal branch."
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:503
+msgid "workspace.pull-requests.close.title"
+msgstr "Cancel pull request"
+
+#: src/app/main/data/workspace/pull_requests.cljs:142, src/app/main/data/workspace/pull_requests.cljs:255
+msgid "workspace.pull-requests.create.already-exists"
+msgstr "This branch already has an open pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:167
+msgid "workspace.pull-requests.create.description-label"
+msgstr "Description"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:170
+msgid "workspace.pull-requests.create.description-placeholder"
+msgstr "What changed, and what needs review or validation?"
+
+#: src/app/main/data/workspace/pull_requests.cljs:143
+msgid "workspace.pull-requests.create.error"
+msgstr "An error occurred while creating the pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:193
+msgid "workspace.pull-requests.create.info"
+msgstr ""
+"Reviewers will get a read-only sandbox with the branch state at this "
+"moment. You can keep working on the branch and publish newer changes at any "
+"time."
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:159
+msgid "workspace.pull-requests.create.name-label"
+msgstr "Title"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:161
+msgid "workspace.pull-requests.create.name-placeholder"
+msgstr "What is this review about?"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:179
+msgid "workspace.pull-requests.create.no-members"
+msgstr "There are no other team members to request a review from"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:176
+msgid "workspace.pull-requests.create.reviewers-label"
+msgstr "Reviewers"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:202
+msgid "workspace.pull-requests.create.submit"
+msgstr "Create pull request"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:152
+msgid "workspace.pull-requests.create.subtitle"
+msgstr "Request a review of the changes on \"%s\""
+
+#: src/app/main/data/workspace/pull_requests.cljs:137
+msgid "workspace.pull-requests.create.success"
+msgstr "Pull request \"%s\" created"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:150
+msgid "workspace.pull-requests.create.title"
+msgstr "Create pull request"
+
+#: src/app/main/ui/workspace/left_header.cljs:163
+msgid "workspace.pull-requests.header-badge-tooltip"
+msgstr "Reviewing pull request: %s"
+
+#: src/app/main/ui/workspace/left_header.cljs:54
+msgid "workspace.pull-requests.header-title"
+msgstr "Review: %s"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:385, src/app/main/ui/workspace/sidebar/pull_requests.cljs:542
+msgid "workspace.pull-requests.info.approvals"
+msgstr "Approvals"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:369
+msgid "workspace.pull-requests.info.author"
+msgstr "Author"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:375
+msgid "workspace.pull-requests.info.created-at"
+msgstr "Created"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:364
+msgid "workspace.pull-requests.info.description"
+msgstr "Description"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:392
+msgid "workspace.pull-requests.info.reviewers"
+msgstr "Reviewers"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:380
+msgid "workspace.pull-requests.info.updated-at"
+msgstr "Review updated"
+
+#: src/app/main/data/workspace/pull_requests.cljs:252
+msgid "workspace.pull-requests.lifecycle.branch-gone"
+msgstr "The pull request's branch is no longer open"
+
+#: src/app/main/data/workspace/pull_requests.cljs:230
+msgid "workspace.pull-requests.lifecycle.closed"
+msgstr "Pull request closed"
+
+#: src/app/main/data/workspace/pull_requests.cljs:160, src/app/main/data/workspace/pull_requests.cljs:187, src/app/main/data/workspace/pull_requests.cljs:213, src/app/main/data/workspace/pull_requests.cljs:237, src/app/main/data/workspace/pull_requests.cljs:257
+msgid "workspace.pull-requests.lifecycle.error"
+msgstr "An error occurred while updating the pull request"
+
+#: src/app/main/data/workspace/pull_requests.cljs:246
+msgid "workspace.pull-requests.lifecycle.reopened"
+msgstr "Pull request reopened"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:555, src/app/main/ui/workspace/sidebar/pull_requests.cljs:731
+msgid "workspace.pull-requests.menu.info"
+msgstr "Details"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:558
+msgid "workspace.pull-requests.menu.publish"
+msgstr "Publish latest changes"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:691
+msgid "workspace.pull-requests.menu.request-review"
+msgstr "Request review"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:700
+msgid "workspace.pull-requests.menu.review-details"
+msgstr "Review details"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:618
+msgid "workspace.pull-requests.new"
+msgstr "New"
+
+#: src/app/main/data/workspace/pull_requests.cljs:396
+msgid "workspace.pull-requests.preview.unavailable"
+msgstr "The review sandbox is not available (the pull request may be closed)"
+
+#: src/app/main/data/workspace/pull_requests.cljs:182
+msgid "workspace.pull-requests.publish.success"
+msgstr "The reviewers now see the latest branch changes"
+
+#: src/app/main/data/workspace/pull_requests.cljs:183
+msgid "workspace.pull-requests.publish.up-to-date"
+msgstr "The review is already up to date with the branch"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:412
+msgid "workspace.pull-requests.review-state.approved"
+msgstr "Approved"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:415
+msgid "workspace.pull-requests.review-state.changes-requested"
+msgstr "Requested changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:418
+msgid "workspace.pull-requests.review-state.pending"
+msgstr "Pending"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:409
+msgid "workspace.pull-requests.review-state.stale"
+msgstr "Reviewed an earlier version"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:258
+msgid "workspace.pull-requests.review.approve"
+msgstr "Approve"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:260
+msgid "workspace.pull-requests.review.approve-hint"
+msgstr "The changes look good to you"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:275
+msgid "workspace.pull-requests.review.comment-label"
+msgstr "Comment (optional)"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:278
+msgid "workspace.pull-requests.review.comment-placeholder"
+msgstr "Share your feedback with the author"
+
+#: src/app/main/data/workspace/pull_requests.cljs:212
+msgid "workspace.pull-requests.review.not-a-reviewer"
+msgstr "Only assigned reviewers can submit a review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:269
+msgid "workspace.pull-requests.review.request-changes"
+msgstr "Request changes"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:271
+msgid "workspace.pull-requests.review.request-changes-hint"
+msgstr "Something needs to be fixed before merging"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:287
+msgid "workspace.pull-requests.review.submit"
+msgstr "Submit review"
+
+#: src/app/main/data/workspace/pull_requests.cljs:206
+msgid "workspace.pull-requests.review.submitted"
+msgstr "Review submitted"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:242
+msgid "workspace.pull-requests.review.title"
+msgstr "Submit review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:632
+msgid "workspace.pull-requests.section.empty"
+msgstr "No pull requests yet. Create one from a branch to request a review."
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:639
+msgid "workspace.pull-requests.section.history"
+msgstr "Finished"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:611
+msgid "workspace.pull-requests.section.title"
+msgstr "Pull requests"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.approved"
+msgstr "Approved"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.changes-requested"
+msgstr "Changes requested"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.closed"
+msgstr "Closed"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.in-review"
+msgstr "In review"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.merged"
+msgstr "Merged"
+
+#: src/app/main/ui/workspace/sidebar/pull_requests.cljs:100
+#, unused
+msgid "workspace.pull-requests.state.open"
+msgstr "Open"
 
 #: src/app/main/ui/workspace/context_menu.cljs:659
 msgid "workspace.shape.menu.add-flex"

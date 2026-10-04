@@ -15,6 +15,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
@@ -656,6 +657,12 @@
                           :section [:workspace]
                           :fn #(emit-when-no-readonly
                                 (dw/toggle-layout-flag :document-history))}
+
+   :open-branches        {:tooltip (ds/meta-alt "B")
+                          :command (ds/ca-mod "b")
+                          :subsections [:panels]
+                          :fn #(emit-when-no-readonly
+                                (dwb/show-branches-panel))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :label (fn [] (tr "shortcuts.toggle-colorpalette"))

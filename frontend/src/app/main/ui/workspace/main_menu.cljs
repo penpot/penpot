@@ -22,6 +22,7 @@
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.branches :as dwb]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.mcp :as mcp]
@@ -628,6 +629,18 @@
            (when (kbd/enter? event)
              (on-show-version-history event))))
 
+        on-show-branches
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dwb/show-branches-panel))))
+
+        on-show-branches-key-down
+        (mf/use-fn
+         (mf/deps on-show-branches)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-show-branches event))))
+
         on-pin-version
         (mf/use-fn
          (fn [_]
@@ -717,6 +730,15 @@
          [:span {:class (stl/css :item-name)}
           (tr "dashboard.show-version-history")]
          [:> shortcuts* {:id :toggle-history}]]
+
+        (when (contains? cf/flags :branching)
+          [:> dropdown-menu-item* {:class (stl/css :base-menu-item :submenu-item)
+                                   :on-click    on-show-branches
+                                   :on-key-down on-show-branches-key-down
+                                   :id          "file-menu-show-branches"}
+           [:span {:class (stl/css :item-name)}
+            (tr "workspace.branches.menu")]
+           [:> shortcuts* {:id :open-branches}]])
 
         [:div {:class (stl/css :separator)}]])
 

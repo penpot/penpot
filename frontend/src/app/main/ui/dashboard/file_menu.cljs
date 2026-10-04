@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.file-menu
   (:require
    [app.common.data :as d]
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as-alias ev]
@@ -300,6 +301,17 @@
        (when (and (not is-search-page?) can-edit)
          [:> menu-item* {:id "file-duplicate" :on-action on-duplicate}
           (tr "dashboard.duplicate")])
+
+       (when (and (not is-lib-page?)
+                  (not is-search-page?)
+                  can-edit
+                  (contains? cf/flags :branching))
+         [:> menu-item* {:id "file-create-branch"
+                         :on-action (fn []
+                                      (modal/show! :create-branch
+                                                   {:file-name (:name file)
+                                                    :file-id (:id file)}))}
+          (tr "dashboard.create-branch")])
 
        (when (and (not is-lib-page?)
                   (not is-search-page?)

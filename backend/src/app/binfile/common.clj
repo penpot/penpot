@@ -617,7 +617,8 @@
 (def ^:private sql:get-project-files
   "SELECT f.id FROM file AS f
     WHERE f.project_id = ?
-      AND f.deleted_at IS NULL")
+      AND f.deleted_at IS NULL
+      AND f.is_branch IS FALSE")
 
 (defn get-project-files
   "Get a set of file ids for the project"

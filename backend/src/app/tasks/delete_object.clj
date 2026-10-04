@@ -38,6 +38,12 @@
               {:id id :file-id file-id :type "snapshot"}
               {::db/return-keys false}))
 
+(def ^:private sql:get-file-branches
+  "SELECT id, branch_file_id
+     FROM file_branch
+    WHERE source_file_id = ?
+      AND deleted_at IS NULL")
+
 (defmethod delete-object :file
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (when-let [file (db/get* conn :file {:id id}
@@ -46,6 +52,46 @@
 
     (l/trc :obj "file" :id (str id)
            :deleted-at (ct/format-inst deleted-at))
+
+    ;; Branching: keep the branch metadata in sync when the deleted file
+    ;; IS a branch copy (deleted through paths other than
+    ;; delete-file-branch, e.g. a project deletion) ...
+    (db/update! conn :file-branch
+                {:deleted-at deleted-at}
+                {:branch-file-id id}
+                {::db/return-keys false})
+
+    ;; Pull requests: when the deleted file is a branch copy, any open
+    ;; pull request over it can no longer be reviewed — close it (the
+    ;; row is kept: pull request history outlives its branch, and the
+    ;; review snapshot rows live in this file's file_change/file_data,
+    ;; which this same cascade marks deleted below). When the deleted
+    ;; file is a pull request TARGET, cascade the logical deletion: with
+    ;; main gone the pull request is unreachable forever.
+    (db/update! conn :file-pull-request
+                {:status "closed"
+                 :closed-at (ct/now)
+                 :updated-at (ct/now)}
+                {:source-file-id id :status "open"}
+                {::db/return-keys false})
+    (db/update! conn :file-pull-request
+                {:deleted-at deleted-at}
+                {:target-file-id id}
+                {::db/return-keys false})
+
+    ;; ... and when it is the SOURCE of branches, cascade the logical
+    ;; deletion to them: branch files are hidden from every listing, so
+    ;; once the source is gone nothing else could ever reach (or GC)
+    ;; them. A branch cannot be a source itself, so this recurses at
+    ;; most one level.
+    (doseq [branch (db/exec! conn [sql:get-file-branches id])]
+      (db/update! conn :file-branch
+                  {:deleted-at deleted-at}
+                  {:id (:id branch)}
+                  {::db/return-keys false})
+      (delete-object cfg {:object :file
+                          :id (:branch-file-id branch)
+                          :deleted-at deleted-at}))
 
     (db/update! conn :file
                 {:deleted-at deleted-at

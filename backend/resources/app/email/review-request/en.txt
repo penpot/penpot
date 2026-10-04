@@ -1,0 +1,13 @@
+Hello {{name|abbreviate:25}}!
+
+{{ source-user }} has requested your review on the pull request "{{ pull-request-title }}" ({{ pull-request-route }}).
+
+--
+
+{{ pull-request-description }}
+
+--
+
+{{ pull-request-url }}
+
+The Penpot team.

@@ -554,6 +554,22 @@
    :id ::request-team-access
    :schema schema:request-team-access))
 
+(def ^:private schema:review-request
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:pull-request-title ::sm/text]
+   [:pull-request-route ::sm/text]
+   ;; plain :string on purpose: the description is optional and may be empty
+   [:pull-request-description [:string {:max 4000}]]
+   [:pull-request-url ::sm/text]])
+
+(def review-request
+  "Email sent to the requested reviewers of a pull request."
+  (template-factory
+   :id ::review-request
+   :schema schema:review-request))
+
 (def ^:private schema:comment-mention
   [:map
    [:name ::sm/text]

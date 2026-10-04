@@ -7,9 +7,12 @@
 (ns app.main.ui.dashboard.comments
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
@@ -17,6 +20,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -27,6 +31,7 @@
   [{:keys [profile on-show-comments]}]
 
   (let [threads-map (mf/deref refs/comment-threads)
+        pending     (mf/deref refs/pending-reviews)
 
         tgroups
         (->> (vals threads-map)
@@ -43,12 +48,13 @@
                        :aria-label (tr "dashboard.notifications.view")
                        :on-click on-show-comments
                        :icon i/comments}
-      (when (seq tgroups)
+      (when (or (seq tgroups) (seq pending))
         [:div {:class (stl/css :unread)}])]]))
 
 (mf/defc comments-section
   [{:keys [profile team show? on-hide-comments]}]
   (let [threads-map    (mf/deref refs/comment-threads)
+        pending        (mf/deref refs/pending-reviews)
 
         ;; FIXME: with-memo
         team-id        (:id team)
@@ -64,6 +70,21 @@
            (st/emit! (-> (dwcm/navigate-to-comment-from-dashboard thread)
                          (with-meta {::ev/origin "dashboard"})))))
 
+        on-open-review
+        (mf/use-callback
+         (mf/deps on-hide-comments)
+         (fn [event]
+           (let [id  (-> (dom/get-current-target event)
+                         (dom/get-data "pr-id")
+                         (uuid/parse*))
+                 row (->> (deref refs/pending-reviews)
+                          (filter #(= id (:id %)))
+                          (first))]
+             (when row
+               (on-hide-comments)
+               (st/emit! (-> (dwpr/open-pull-request row)
+                             (with-meta {::ev/origin "dashboard"})))))))
+
         on-read-all
         (mf/use-callback
          (mf/deps team-id)
@@ -73,7 +94,8 @@
     (mf/use-effect
      (mf/deps team-id)
      (fn []
-       (st/emit! (dcm/retrieve-unread-comment-threads team-id))))
+       (st/emit! (dcm/retrieve-unread-comment-threads team-id)
+                 (dwpr/fetch-pending-reviews team-id))))
 
     (mf/use-effect
      (mf/deps show?)
@@ -102,19 +124,35 @@
                           :on-click on-hide-comments
                           :icon i/close}]]
 
-       (if (seq tgroups)
-         [:div {:class (stl/css :thread-groups)}
-          [:> cmt/comment-dashboard-thread-group*
-           {:group (first tgroups)
-            :on-thread-click on-navigate
-            :show-file-name true}]
-          (for [tgroup (rest tgroups)]
-            [:> cmt/comment-dashboard-thread-group*
-             {:group tgroup
-              :on-thread-click on-navigate
-              :show-file-name true
-              :key (:page-id tgroup)}])]
+       [:*
+        (when (seq pending)
+          [:div {:class (stl/css :review-requests)}
+           [:span {:class (stl/css :review-requests-title)}
+            (tr "dashboard.pending-reviews.title")]
+           (for [row pending]
+             [:button {:key (dm/str (:id row))
+                       :class (stl/css :review-request-item)
+                       :data-pr-id (dm/str (:id row))
+                       :on-click on-open-review}
+              [:span {:class (stl/css :review-request-name)} (:title row)]
+              [:span {:class (stl/css :review-request-route)}
+               (dm/str (:branch-name row) " → " (:target-name row))]])])
 
-         [:div {:class (stl/css :thread-groups-placeholder)}
-          comments-icon-svg
-          (tr "labels.no-comments-available")])]]]))
+        (cond
+          (seq tgroups)
+          [:div {:class (stl/css :thread-groups)}
+           [:> cmt/comment-dashboard-thread-group*
+            {:group (first tgroups)
+             :on-thread-click on-navigate
+             :show-file-name true}]
+           (for [tgroup (rest tgroups)]
+             [:> cmt/comment-dashboard-thread-group*
+              {:group tgroup
+               :on-thread-click on-navigate
+               :show-file-name true
+               :key (:page-id tgroup)}])]
+
+          (empty? pending)
+          [:div {:class (stl/css :thread-groups-placeholder)}
+           comments-icon-svg
+           (tr "labels.no-comments-available")])]]]]))

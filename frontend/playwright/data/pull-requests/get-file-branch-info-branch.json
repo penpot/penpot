@@ -1,0 +1,15 @@
+{
+  "~:id": "~uc7ce0794-0992-8105-8004-38f280443998",
+  "~:branch-file-id": "~uc7ce0794-0992-8105-8004-38f280443849",
+  "~:source-file-id": "~uc7ce0794-0992-8105-8004-38f280443997",
+  "~:name": "checkout",
+  "~:description": null,
+  "~:status": "open",
+  "~:created-by": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+  "~:created-at": "~m1713536343369",
+  "~:updated-at": "~m1713873823633",
+  "~:source-name": "New File 1",
+  "~:ahead": 1,
+  "~:behind": 0,
+  "~:conflicts": 0
+}

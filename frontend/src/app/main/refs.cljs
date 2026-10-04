@@ -41,6 +41,24 @@
 (def current-page-id
   (l/derived (l/key :current-page-id) st/state))
 
+(def branch-context
+  ;; the state entry is {:file-id .. :loaded? .. :info <row-or-nil>};
+  ;; consumers only care about the branch row itself
+  (l/derived #(get-in % [:workspace-branch-context :info]) st/state))
+
+(def pull-requests
+  (l/derived :workspace-pull-requests st/state))
+
+(def pull-request-preview
+  ;; active review context: {:pr-id .. :status .. :info <pr-row>}; the
+  ;; open file is the live branch, opened normally — this only drives
+  ;; the review banner/actions. nil when no review is active.
+  (l/derived #(get % :workspace-pr-preview) st/state))
+
+(def pending-reviews
+  ;; dashboard: open pull requests awaiting the current profile's review
+  (l/derived #(get % :dashboard-pending-reviews) st/state))
+
 (def team
   (l/derived dsh/lookup-team st/state))
 

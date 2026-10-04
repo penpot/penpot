@@ -15,7 +15,9 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files-pull-request :as fpr]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
@@ -131,6 +133,16 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id share-id ::perms] :as params}]
   (let [file    (bfc/get-file cfg file-id)
 
+        ;; pull request review sandbox: the viewer shows the pinned
+        ;; review snapshot of the branch, not its live state
+        file    (if-let [snapshot (::snapshot params)]
+                  (-> file
+                      (assoc :data (:data snapshot))
+                      (assoc :version (:version snapshot))
+                      (assoc :features (:features snapshot))
+                      (assoc :revn (:revn snapshot)))
+                  file)
+
         project (db/get conn :project
                         {:id (:project-id file)}
                         {:columns [:id :name :team-id]})
@@ -210,23 +222,62 @@
      :team (assoc team :permissions perms)
      :permissions perms}))
 
+(defn- get-pull-request-view-context
+  "Resolve the review-sandbox context of `pr-id`: permissions taken from
+  the pull request's TARGET file (share-links do not apply here) with
+  edition stripped, plus the pinned review snapshot whose data replaces
+  the branch file's live state. Refuses when the pull request is not
+  open or does not belong to `file-id` — the sandbox must never silently
+  degrade to the live branch."
+  [system profile-id file-id pr-id]
+  (fpr/check-pull-requests-enabled!)
+  (let [pr (db/get* system :file-pull-request {:id pr-id})]
+    (when (or (nil? pr)
+              (some? (:deleted-at pr))
+              (not= file-id (:source-file-id pr)))
+      (ex/raise :type :not-found
+                :code :pull-request-not-found
+                :hint "unable to find pull request with the provided id"
+                :pull-request-id pr-id))
+    (when (not= "open" (:status pr))
+      (ex/raise :type :validation
+                :code :pull-request-not-open
+                :hint "the review sandbox only exists while the pull request is open"
+                :pull-request-id pr-id))
+    (let [perms    (perms/get-file-read-permissions system profile-id (:target-file-id pr))
+          snapshot (when (:review-snapshot-id pr)
+                     (fsnap/get-snapshot system (:source-file-id pr) (:review-snapshot-id pr)))]
+      (when (and perms (nil? snapshot))
+        (ex/raise :type :not-found
+                  :code :review-snapshot-missing
+                  :hint "the pull request review snapshot cannot be resolved"
+                  :pull-request-id pr-id))
+      {:perms (some-> perms (assoc :can-edit false :is-admin false :is-owner false))
+       :snapshot snapshot})))
+
 (def schema:get-view-only-bundle
   [:map {:title "get-view-only-bundle"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
+   [:pr-id {:optional true} ::sm/uuid]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-view-only-bundle
   {::rpc/auth false
    ::doc/added "1.17"
    ::sm/params schema:get-view-only-bundle}
-  [system {:keys [::rpc/profile-id file-id share-id] :as params}]
+  [system {:keys [::rpc/profile-id file-id share-id pr-id] :as params}]
   (db/run! system
            (fn [system]
-             (let [perms  (perms/get-file-read-permissions system profile-id file-id share-id)
+             (let [{:keys [perms snapshot]}
+                   (if (some? pr-id)
+                     (get-pull-request-view-context system profile-id file-id pr-id)
+                     {:perms (perms/get-file-read-permissions system profile-id file-id share-id)})
+
                    params (-> params
                               (assoc ::perms perms)
-                              (assoc :profile-id profile-id))]
+                              (assoc :profile-id profile-id)
+                              (cond-> (some? snapshot) (assoc ::snapshot snapshot)))]
 
                ;; When we have neither profile nor share, we just return a not
                ;; found response to the user.

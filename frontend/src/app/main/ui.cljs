@@ -189,11 +189,13 @@
              team-id    (some-> params :team-id uuid/parse*)
              file-id    (some-> params :file-id uuid/parse*)
              page-id    (some-> params :page-id uuid/parse*)
+             pr-id      (some-> params :pr-id uuid/parse*)
              layout     (some-> params :layout keyword)]
          [:> team-container* {:team-id team-id}
           [:> workspace-page* {:team-id team-id
                                :file-id file-id
                                :page-id page-id
+                               :pr-id pr-id
                                :layout-name layout
                                :key file-id}]])
 
@@ -201,6 +203,7 @@
        (let [params   (get params :query)
              index    (some-> (rt/get-query-param params :index) parse-long)
              share-id (some-> (:share-id params) uuid/parse*)
+             pr-id    (some-> (:pr-id params) uuid/parse*)
              section  (or (some-> (:section params) keyword)
                           :interactions)
 
@@ -219,6 +222,7 @@
             :section section
             :index index
             :share-id share-id
+            :pr-id pr-id
             :interactions-mode imode
             :share share}]])
 

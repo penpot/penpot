@@ -23,6 +23,7 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.data.workspace.texts :as dwt]
    [app.main.router :as rt]
    [app.util.globals :refer [global]]
@@ -41,6 +42,8 @@
 (declare handle-file-change)
 (declare handle-file-deleted)
 (declare handle-file-restored)
+(declare handle-file-merged)
+(declare handle-pull-request-change)
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
@@ -136,7 +139,12 @@
     :file-change             (handle-file-change msg)
     :file-deleted            (handle-file-deleted msg)
     :file-restored           (handle-file-restored msg)
+    :file-merged             (handle-file-merged msg)
     :library-change          (handle-library-change msg)
+    :pull-request-created          (handle-pull-request-change msg)
+    :pull-request-updated          (handle-pull-request-change msg)
+    :pull-request-review-submitted (handle-pull-request-change msg)
+    :pull-request-closed           (handle-pull-request-change msg)
     :notification            (dc/handle-notification msg)
     :team-role-change        (handle-change-team-role msg)
     :team-membership-change  (dc/team-membership-change msg)
@@ -276,14 +284,20 @@
                           :undo-changes []})))))
 
 (defn handle-file-deleted
-  [{:keys [file-id] :as msg}]
+  [{:keys [file-id session-id] :as msg}]
   (ptk/reify ::handle-file-deleted
     ptk/WatchEvent
     (watch [_ state _]
       (let [curr-file-id (:current-file-id state)
             team-id      (:current-team-id state)]
-        ;; If the deleted file is the currently open one
-        (when (= file-id curr-file-id)
+        ;; If the deleted file is the currently open one, evict to the
+        ;; dashboard — EXCEPT when this session originated the deletion
+        ;; (merging a branch deletes the open branch file and the merge
+        ;; flow itself navigates to main; racing it here would land the
+        ;; user on the dashboard instead).
+        (when (and (= file-id curr-file-id)
+                   (or (nil? session-id)
+                       (not= session-id (:session-id state))))
           (rx/of
            (rt/nav :dashboard-recent {:team-id team-id})))))))
 
@@ -313,6 +327,27 @@
         (when (and (= file-id curr-file-id)
                    (not= vern curr-vern))
           (rx/of (ptk/event ::dw/reload-current-file)))))))
+
+(defn handle-file-merged
+  "A branch was merged into this file (main). Reload the current file so
+  the merged changes appear for everyone with main open."
+  [{:keys [file-id] :as _msg}]
+  (ptk/reify ::handle-file-merged
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (= file-id (:current-file-id state))
+        (rx/of (ptk/event ::dw/reload-current-file))))))
+
+(defn handle-pull-request-change
+  "A pull request of this file changed (created / edited / reviewed /
+  closed): refresh the sidebar list, and the sandbox banner when it is
+  showing that pull request."
+  [{:keys [pull-request-id] :as _msg}]
+  (ptk/reify ::handle-pull-request-change
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dwpr/fetch-pull-requests)
+             (dwpr/refresh-pull-request-preview-info pull-request-id)))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

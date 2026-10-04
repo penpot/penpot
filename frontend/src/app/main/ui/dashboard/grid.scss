@@ -409,3 +409,13 @@ $thumbnail-default-height: px2rem(168);
 .grid-loader {
   --icon-width: calc(var(--thumbnail-width, #{$thumbnail-default-width}) * 0.25);
 }
+
+.branches-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: var(--sp-xs);
+  padding: var(--sp-xxs) var(--sp-xs);
+  border-radius: 8px;
+  color: var(--color-accent-primary);
+  background-color: var(--color-background-tertiary);
+}

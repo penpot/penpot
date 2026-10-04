@@ -1,0 +1,86 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC Sucursal en España SL
+
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
+
+// floats over the bottom-right corner of the file thumbnail
+.branches-popover-wrap {
+  position: absolute;
+  inset-inline-start: deprecated.$s-12;
+  inset-block-start: deprecated.$s-12;
+  z-index: 1;
+}
+
+.branches-badge {
+  @include t.use-typography("body-small");
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-xxs);
+  padding: var(--sp-xs) var(--sp-s);
+  border: 2px solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
+  height: 32px;
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-tertiary);
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.branches-popover {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+  min-inline-size: 240px;
+  padding: var(--sp-s);
+  border-radius: 8px;
+  border: 1px solid var(--color-background-quaternary);
+  background-color: var(--color-background-secondary);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+.branches-popover-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xxs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 280px;
+  overflow-y: auto;
+}
+
+.branches-popover-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: var(--sp-xs) var(--sp-s);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-foreground-primary);
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.branches-popover-name {
+  @include t.use-typography("body-medium");
+
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.branches-popover-counts {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}

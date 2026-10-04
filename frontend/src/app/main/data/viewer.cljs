@@ -57,6 +57,7 @@
   [:map {:title "initialize"}
    [:file-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
+   [:pr-id {:optional true} [:maybe ::sm/uuid]]
    [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
@@ -118,10 +119,11 @@
   [:map {:title "fetch-bundle"}
    [:page-id ::sm/uuid]
    [:file-id ::sm/uuid]
-   [:share-id {:optional true} ::sm/uuid]])
+   [:share-id {:optional true} ::sm/uuid]
+   [:pr-id {:optional true} ::sm/uuid]])
 
 (defn- fetch-bundle
-  [{:keys [file-id share-id] :as params}]
+  [{:keys [file-id share-id pr-id] :as params}]
 
   (dm/assert!
    "expected valid params"
@@ -138,7 +140,13 @@
             features cfeat/supported-features
             params'  (cond-> {:file-id file-id :features features}
                        (uuid? share-id)
-                       (assoc :share-id share-id))
+                       (assoc :share-id share-id)
+
+                       ;; pull request review sandbox: the bundle serves
+                       ;; the pinned review snapshot instead of the live
+                       ;; branch state
+                       (uuid? pr-id)
+                       (assoc :pr-id pr-id))
 
             resolve  (fn [[key pointer]]
                        (let [params {:file-id file-id :fragment-id @pointer}

@@ -82,6 +82,32 @@
   }
 }
 
+.branch-badge {
+  @include deprecated.flex-center;
+
+  flex-shrink: 0;
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  margin-right: deprecated.$s-6;
+  border-radius: deprecated.$br-4;
+  background-color: var(--button-secondary-background-color-rest);
+  color: var(--button-secondary-foreground-color-rest);
+}
+
+// pull request review sandbox: accent-colored so the read-only snapshot
+// is never mistaken for the editable branch
+.review-badge {
+  @include deprecated.flex-center;
+
+  flex-shrink: 0;
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  margin-right: deprecated.$s-6;
+  border-radius: deprecated.$br-4;
+  background-color: var(--button-primary-background-color-rest);
+  color: var(--button-primary-foreground-color-rest);
+}
+
 .shared-badge {
   @include deprecated.flex-center;
 

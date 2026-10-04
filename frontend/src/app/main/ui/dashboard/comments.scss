@@ -112,3 +112,51 @@
     border: deprecated.$s-1 solid;
   }
 }
+
+// --- Pending review requests (pull requests awaiting my review)
+
+.review-requests {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-8 deprecated.$s-12;
+  border-bottom: deprecated.$s-1 solid var(--color-background-quaternary);
+}
+
+.review-requests-title {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-11;
+  text-transform: uppercase;
+}
+
+.review-request-item {
+  display: flex;
+  flex-direction: column;
+  gap: deprecated.$s-2;
+  padding: deprecated.$s-8;
+  border: none;
+  border-radius: deprecated.$s-8;
+  background: none;
+  cursor: pointer;
+  text-align: start;
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+  }
+}
+
+.review-request-name {
+  color: var(--color-foreground-primary);
+  font-size: deprecated.$fs-14;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-request-route {
+  color: var(--color-foreground-secondary);
+  font-size: deprecated.$fs-11;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

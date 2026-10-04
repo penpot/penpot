@@ -623,11 +623,12 @@
 ;; --- Component: Viewer
 
 (mf/defc viewer*
-  [{:keys [file-id share-id page-id] :as props}]
-  (mf/with-effect [file-id page-id share-id]
+  [{:keys [file-id share-id pr-id page-id] :as props}]
+  (mf/with-effect [file-id page-id share-id pr-id]
     (let [params {:file-id file-id
                   :page-id page-id
-                  :share-id share-id}]
+                  :share-id share-id
+                  :pr-id pr-id}]
       (st/emit! (dv/initialize params))
       (fn []
         (st/emit! (dv/finalize params)))))

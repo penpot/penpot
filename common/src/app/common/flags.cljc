@@ -197,7 +197,13 @@
     :link-preview
 
     ;; Shows the "link later" option on the files export modal.
-    :export-link-later})
+    :export-link-later
+
+    ;; Enables file branching: isolated file copies ("branches") that
+    ;; can be merged back to their source file, including pull requests
+    ;; (review requests over a pinned snapshot of a branch). Disabled by
+    ;; default.
+    :branching})
 
 (def all-flags
   (set/union email login varia))

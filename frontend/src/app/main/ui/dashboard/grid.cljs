@@ -25,6 +25,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.dashboard.branches-popover :refer [branches-popover*]]
    [app.main.ui.dashboard.file-menu :refer [file-menu* file-menu-items*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -503,6 +504,11 @@
                             (when (and (:is-shared file) (not library-view?))
                               [:div {:class (stl/css :grid-item-badge)}
                                [:> icon* {:icon-id i/library}]])
+
+                            (when (and (contains? cf/flags :branching)
+                                       (not library-view?)
+                                       (pos? (or (:branches-count file) 0)))
+                              [:> branches-popover* {:file file :n (:branches-count file)}])
 
                             [:div {:class (stl/css :grid-item-info)}
                              [:div {:class (stl/css :grid-item-meta)}

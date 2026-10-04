@@ -604,6 +604,7 @@
            :workspace-editor-state
            :workspace-wasm-editor-styles
            :workspace-media-objects
+           :workspace-pr-preview
            :workspace-presence
            :workspace-tokens
            :workspace-undo

@@ -13,6 +13,7 @@
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.pull-requests :as dwpr]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -32,7 +33,9 @@
    [app.main.ui.workspace.palette :refer [palette*]]
    [app.main.ui.workspace.plugins]
    [app.main.ui.workspace.sidebar :refer [sidebar*]]
+   [app.main.ui.workspace.sidebar.branches :refer [branch-context-banner*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
+   [app.main.ui.workspace.sidebar.pull-requests :refer [pr-review-banner*]]
    [app.main.ui.workspace.tokens.export]
    [app.main.ui.workspace.tokens.export.modal]
    [app.main.ui.workspace.tokens.import]
@@ -86,8 +89,18 @@
          (fn [size]
            (reset! palete-size size)))
 
-        node-ref (use-resize-observer on-resize)]
+        node-ref (use-resize-observer on-resize)
+
+        pr-preview (mf/deref refs/pull-request-preview)]
     [:*
+     (when (not ^boolean hide-ui?)
+       ;; inside a review sandbox the pull request banner replaces the
+       ;; branch banner: the user is reviewing a pinned snapshot, not
+       ;; editing the branch
+       (if (some? pr-preview)
+         [:> pr-review-banner* {}]
+         [:> branch-context-banner* {:file-id (get file :id)}]))
+
      (when (not ^boolean hide-ui?)
        [:> palette* {:layout layout
                      :on-change-size on-resize-palette}])
@@ -195,7 +208,7 @@
 
 (mf/defc workspace*
   {::mf/wrap [mf/memo]}
-  [{:keys [team-id project-id file-id page-id layout-name]}]
+  [{:keys [team-id project-id file-id page-id pr-id layout-name]}]
 
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
@@ -248,6 +261,15 @@
     (mf/with-effect [file-id page-id file-loaded?]
       (when (and file-loaded? (not page-id))
         (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/replace true))))
+
+    ;; Review context: once the (branch) file is initialized, attach the
+    ;; pull request info so the review banner and actions show up; the
+    ;; file itself stays a normal, editable workspace file. The event is
+    ;; idempotent per pr-id, so page navigation re-running this effect
+    ;; is harmless.
+    (mf/with-effect [file-id page-id pr-id file-loaded?]
+      (when (and file-loaded? page-id pr-id)
+        (st/emit! (dwpr/initialize-pull-request-preview pr-id))))
 
     (mf/with-effect [file-id page-id]
       (reset! first-frame-rendered? false))

@@ -109,8 +109,12 @@ export class WorkspacePage extends BaseWebSocketPage {
 
     async waitForIdle(options) {
       await this.page.evaluate(
-        (options) => new Promise(
-          (resolve) => globalThis.requestIdleCallback(resolve, options)), options);
+        (options) =>
+          new Promise((resolve) =>
+            globalThis.requestIdleCallback(resolve, options),
+          ),
+        options,
+      );
     }
   };
 
@@ -218,19 +222,26 @@ export class WorkspacePage extends BaseWebSocketPage {
     fileId = this.fileId ?? WorkspacePage.anyFileId,
     pageId = this.pageId ?? WorkspacePage.anyPageId,
     pageName = "Page 1",
+    // extra query params appended verbatim, e.g. "&pr-id=<uuid>" for the
+    // pull request review sandbox
+    extraParams = "",
   } = {}) {
     // Helpers often call setup (and this) several times per test with the
     // same file. Re-navigating would reload the document and wipe the
     // in-memory file state (e.g. tokens created by previous steps), so
-    // only navigate when the target file actually changes. Extra query
-    // params the app adds itself (e.g. layout=tokens) are ignored, and
-    // navigating away and back still reloads as before.
+    // only navigate when the target file (or the extra params) actually
+    // changes. Extra query params the app adds itself (e.g. layout=tokens)
+    // are ignored, and navigating away and back still reloads as before.
     const currentParams = new URL(this.page.url()).searchParams;
+    const extraSearchParams = new URLSearchParams(
+      extraParams.replace(/^&/, ""),
+    );
     const sameFile =
       currentParams.get("screen") === "workspace" &&
       currentParams.get("team-id") === WorkspacePage.anyTeamId &&
       currentParams.get("file-id") === fileId &&
-      currentParams.get("page-id") === pageId;
+      currentParams.get("page-id") === pageId &&
+      [...extraSearchParams].every(([k, v]) => currentParams.get(k) === v);
     if (!sameFile) {
       // Drop mocks from any previous document: page.goto reloads the app,
       // so entries registered by the old document would otherwise resolve
@@ -238,7 +249,7 @@ export class WorkspacePage extends BaseWebSocketPage {
       // no longer exists in the new document.
       MockWebSocketHelper.clear();
       await this.page.goto(
-        `/?screen=workspace&team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
+        `/?screen=workspace&team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}${extraParams}`,
       );
     }
 
@@ -256,7 +267,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async #waitForWebSocketReadiness(pageName) {
     // TODO: find a better event to settle whether the app is ready to receive notifications via ws
-    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 })
+    await expect(this.pageName).toHaveText(pageName, { timeout: 30000 });
   }
 
   async sendPresenceMessage(fixture) {

@@ -282,7 +282,11 @@
           f.vern,
           f.is_shared,
           ft.media_id AS thumbnail_id,
-          p.team_id
+          p.team_id,
+          (select count(*) from file_branch as fb
+            where fb.source_file_id = f.id
+              and fb.deleted_at is null
+              and fb.status = 'open') as branches_count
      from file as f
      inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id
@@ -290,6 +294,7 @@
                                         and ft.deleted_at is null)
     where f.project_id = ?
       and f.deleted_at is null
+      and f.is_branch is false
     order by f.modified_at desc")
 
 (defn get-project-files
@@ -776,6 +781,10 @@
             f.name,
             f.is_shared,
             ft.media_id AS thumbnail_id,
+            (select count(*) from file_branch as fb
+              where fb.source_file_id = f.id
+                and fb.deleted_at is null
+                and fb.status = 'open') as branches_count,
             row_number() over w as row_num,
             p.team_id
        from file as f
@@ -786,6 +795,7 @@
       where p.team_id = ?
         and p.deleted_at is null
         and f.deleted_at is null
+        and f.is_branch is false
      window w as (partition by f.project_id order by f.modified_at desc)
       order by f.modified_at desc
    )
@@ -830,6 +840,7 @@
       WHERE p.team_id = ?
         AND (p.deleted_at > ?::timestamptz OR
              f.deleted_at > ?::timestamptz)
+        AND f.is_branch IS FALSE
      WINDOW w AS (PARTITION BY f.project_id
                       ORDER BY f.modified_at DESC)
       ORDER BY f.modified_at DESC
@@ -1307,6 +1318,7 @@
      JOIN team AS t ON (t.id = p.team_id)
     WHERE t.deleted_at IS NULL
       AND t.id = ?
+      AND f.is_branch IS FALSE
       AND f.id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-files

@@ -1,0 +1,33 @@
+{
+  "~:id": "~uc7ce0794-0992-8105-8004-38f280443999",
+  "~:file-branch-id": "~uc7ce0794-0992-8105-8004-38f280443998",
+  "~:source-file-id": "~uc7ce0794-0992-8105-8004-38f280443849",
+  "~:target-file-id": "~uc7ce0794-0992-8105-8004-38f280443997",
+  "~:title": "Checkout redesign",
+  "~:description": "Please review the new checkout flow",
+  "~:created-by": "~uc7ce0794-0992-8105-8004-38e630f29a9c",
+  "~:created-at": "~m1713536343369",
+  "~:updated-at": "~m1713873823633",
+  "~:status": "open",
+  "~:review-revn": 11,
+  "~:review-updated-at": "~m1713873823633",
+  "~:closed-at": null,
+  "~:closed-by": null,
+  "~:branch-name": "checkout",
+  "~:target-name": "New File 1",
+  "~:reviews": [
+    {
+      "~:profile-id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+      "~:state": "pending",
+      "~:reviewed-revn": null,
+      "~:comment": null,
+      "~:updated-at": "~m1713873823633",
+      "~:stale": false
+    }
+  ],
+  "~:review-state": "pending",
+  "~:outdated": false,
+  "~:ahead": 1,
+  "~:behind": 0,
+  "~:conflicts": 0
+}
