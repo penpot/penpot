@@ -59,15 +59,15 @@
                                          [?d :shape/id ?id]]
                                        db rules "root")))
         rev-rows     (count (e/q '[:find [?id ...] :in $ ?cid ?fid
-                                    :where [?e :shape/component-id ?cid]
-                                           [?e :shape/component-file ?fid]
-                                           [?e :shape/id ?id]]
-                                  db component-id file-id))
+                                   :where [?e :shape/component-id ?cid]
+                                   [?e :shape/component-file ?fid]
+                                   [?e :shape/id ?id]]
+                                 db component-id file-id))
         desc-rows    (count (e/q '[:find [?id ...] :in $ % ?rn
-                                    :where [?root :shape/name ?rn]
-                                           (descendant-of-walk ?d ?root)
-                                           [?d :shape/id ?id]]
-                                  db rules "root"))
+                                   :where [?root :shape/name ?rn]
+                                   (descendant-of-walk ?d ?root)
+                                   [?d :shape/id ?id]]
+                                 db rules "root"))
         fmt          #(.toFixed % 2)]
     (println (pr-str {:engine e/engine
                       :build-ms (fmt build-ms)
