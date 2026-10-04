@@ -94,9 +94,13 @@
    never grants pages of a library), and keep only the components
    referenced by the allowed pages of the primary file. Envelope metadata
    outside `:data` (name, project, sync state) is intentionally preserved:
-   the viewer client needs it and it carries no design content."
+   the viewer client needs it and it carries no design content. The
+   branching column `:is-branch` is dropped: whether the source file of a
+   library is a branch says nothing a share-link viewer may read, and a
+   library a branch links is materialised so the column is false there."
   [used-refs {:keys [id] :as lib}]
   (-> lib
+      (dissoc :is-branch)
       (update :data select-keys view-only-data-keys)
       (assoc-in [:data :pages] [])
       (assoc-in [:data :pages-index] {})
