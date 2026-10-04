@@ -1,6 +1,6 @@
 use macros::ToJs;
 
-use crate::shapes::{Blur, BlurType};
+use crate::shapes::{Blur, BlurType, Glass};
 use crate::with_current_shape_mut;
 
 #[derive(Debug, Clone, Copy, PartialEq, ToJs)]
@@ -45,5 +45,38 @@ pub extern "C" fn clear_shape_blur(blur_type: u8) {
             BlurType::LayerBlur => shape.set_blur(None),
             BlurType::BackgroundBlur => shape.set_background_blur(None),
         }
+    });
+}
+
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "C" fn set_shape_glass(
+    hidden: bool,
+    refraction: f32,
+    depth: f32,
+    dispersion: f32,
+    frost: f32,
+    splay: f32,
+    light_intensity: f32,
+    light_angle: f32,
+) {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_glass(Some(Glass {
+            hidden,
+            refraction,
+            depth,
+            dispersion,
+            frost,
+            splay,
+            light_intensity,
+            light_angle,
+        }));
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn clear_shape_glass() {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_glass(None);
     });
 }

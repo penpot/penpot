@@ -75,6 +75,7 @@
     :shadow
     :blur
     :background-blur
+    :glass
     :strokes
     :width
     :height

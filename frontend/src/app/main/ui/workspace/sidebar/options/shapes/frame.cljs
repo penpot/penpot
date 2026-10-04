@@ -17,6 +17,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid*]]
+   [app.main.ui.workspace.sidebar.options.menus.glass :refer [glass-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu*]]
@@ -161,6 +162,8 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:> blur-menu* {:ids ids
                      :values (select-keys shape [:blur :background-blur])}]
+
+     [:> glass-menu* {:ids ids :value (get shape :glass)}]
      [:> frame-grid* {:grids (:grids shape)
                       :id (:id shape)
                       :frame-width (:width shape)

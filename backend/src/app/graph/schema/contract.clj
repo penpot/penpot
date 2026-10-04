@@ -68,7 +68,9 @@
   owes, not a decision to discard data. Keeping the two apart means a new
   upstream attribute cannot be quietly buried in the drop list."
   {:background-blur
-   "Landed upstream behind a default-on flag. No column for it yet."})
+   "Landed upstream behind a default-on flag. No column for it yet."
+   :glass
+   "Behind the opt-in liquid-glass flag. No column for it yet."})
 
 (def ^:private per-table-dropped
   "Keys dropped only on certain tables.

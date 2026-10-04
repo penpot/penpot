@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Canvas, Paint, RRect};
+use skia_safe::{self as skia, Canvas, Matrix, Paint, RRect};
 
 use crate::error::Result;
 use crate::shapes::{
@@ -530,15 +530,15 @@ fn render_tree_inner(
     // run before the shape (and its subtree) paints. SVGRaw is excluded,
     // matching the GPU path; text keeps only the glyph-alpha coverage (see the
     // text branches below), also matching the GPU path.
-    if !matches!(element.shape_type, Type::SVGRaw(_)) {
-        if let Some(blur) = element.visible_background_blur() {
-            if blur.value > 0.0 {
-                if opts.embed_bg_blur {
-                    render_background_blur_image(shared, canvas, element, tree, scale, opts)?;
-                } else {
-                    render_background_blur_backdrop(canvas, element, blur.value * scale);
-                }
-            }
+    // Glass reads the backdrop the same way and replaces background blur.
+    let blur = element.visible_background_blur().filter(|b| b.value > 0.0);
+    if !matches!(element.shape_type, Type::SVGRaw(_))
+        && (blur.is_some() || element.visible_glass().is_some())
+    {
+        if opts.embed_bg_blur {
+            render_background_blur_image(shared, canvas, element, tree, scale, opts)?;
+        } else {
+            render_background_blur_backdrop(canvas, element, blur.map_or(0.0, |b| b.value * scale));
         }
     }
 
@@ -576,18 +576,26 @@ fn render_tree_inner(
 /// Blurs the current device contents within the shape silhouette and stamps the
 /// result back with `Src` — or, for text, keeps it only under the glyph/stroke
 /// alpha via a `DstIn` mask (mirrors the GPU path). `sigma_radius` is the blur
-/// radius already multiplied by the export scale.
+/// radius already multiplied by the export scale. Glass, when present,
+/// replaces the blur.
 fn render_background_blur_backdrop(canvas: &Canvas, shape: &Shape, sigma_radius: f32) {
-    let sigma = radius_to_sigma(sigma_radius);
-    let Some(blur_filter) =
-        skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
-    else {
-        return;
-    };
-
     let matrix = shape.centered_transform();
     canvas.save();
     canvas.concat(&matrix);
+
+    let filter = match shape.visible_glass() {
+        Some(glass) => {
+            glass.backdrop_filter(shape, &canvas.local_to_device_as_3x3(), f32::MAX, f32::MAX)
+        }
+        None => {
+            let sigma = radius_to_sigma(sigma_radius);
+            skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
+        }
+    };
+    let Some(blur_filter) = filter else {
+        canvas.restore();
+        return;
+    };
 
     if matches!(shape.shape_type, Type::Text(_)) {
         // Text has no closed geometry to clip with: blur the backdrop inside
@@ -705,7 +713,20 @@ fn render_background_blur_image(
     // at draw time (same limitation as backdrop filters), so we must blur on a
     // raster surface — where filters work — and embed the pre-blurred result.
     let is_text = matches!(shape.shape_type, Type::Text(_));
-    let sigma = radius_to_sigma(shape.visible_background_blur().map_or(0.0, |b| b.value) * scale);
+    let filter = match shape.visible_glass() {
+        Some(glass) => {
+            // Same page-space transform used to render the backdrop above.
+            let mut to_device = Matrix::scale((scale, scale));
+            to_device.pre_translate((-bounds.left(), -bounds.top()));
+            to_device.pre_concat(&shape.centered_transform());
+            glass.backdrop_filter(shape, &to_device, f32::MAX, f32::MAX)
+        }
+        None => {
+            let value = shape.visible_background_blur().map_or(0.0, |b| b.value);
+            let sigma = radius_to_sigma(value * scale);
+            skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
+        }
+    };
     let blurred = {
         let Some(mut blur_surface) = skia::surfaces::raster_n32_premul((width, height)) else {
             return Ok(());
@@ -713,11 +734,7 @@ fn render_background_blur_image(
         let bc = blur_surface.canvas();
         bc.clear(skia::Color::TRANSPARENT);
         let mut paint = Paint::default();
-        if let Some(filter) =
-            skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
-        {
-            paint.set_image_filter(filter);
-        }
+        paint.set_image_filter(filter);
         bc.draw_image(&image, (0.0, 0.0), Some(&paint));
 
         if is_text {

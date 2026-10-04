@@ -19,6 +19,8 @@
 //!     LAYOUT_ITEM: 40 bytes  (must follow FLEX so clear_layout does not wipe it)
 //!     FILLS:       [u8 n][u8;3][n × RawFillData]  (same as set_shape_fills)
 //!     STROKES:     [u32 n][n × (36-byte header + RawFillData)]
+//!     GLASS:       [u8 hidden][u8;3 pad][7 × f32]  (refraction, depth,
+//!                  dispersion, frost, splay, light intensity, light angle)
 //! ```
 //!
 //! Text, path geometry, and grid tracks/cells stay on the legacy
@@ -27,7 +29,7 @@
 use skia_safe as skia;
 
 use crate::mem;
-use crate::shapes::{Blur, BlurType, Shadow, ShadowStyle, Stroke, Type};
+use crate::shapes::{Blur, BlurType, Glass, Shadow, ShadowStyle, Stroke, Type};
 use crate::utils::{decode_optional_f32, uuid_from_u32_quartet};
 use crate::uuid::Uuid;
 use crate::wasm::fills::{read_fills_from_bytes, RawFillData, RAW_FILL_DATA_SIZE};
@@ -58,6 +60,7 @@ const SECTION_LAYOUT_ITEM: u32 = 1 << 7;
 const SECTION_FLEX: u32 = 1 << 8;
 const SECTION_FILLS: u32 = 1 << 9;
 const SECTION_STROKES: u32 = 1 << 10;
+const SECTION_GLASS: u32 = 1 << 11;
 
 const STROKE_ALIGN_INNER: u8 = 1;
 const STROKE_ALIGN_OUTER: u8 = 2;
@@ -376,7 +379,31 @@ fn apply_shape_payload(payload: &[u8]) -> Result<()> {
         }
     }
 
+    let glass = if mask & SECTION_GLASS != 0 {
+        Some(parse_glass(&mut cur)?)
+    } else {
+        None
+    };
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_glass(glass);
+    });
+
     Ok(())
+}
+
+fn parse_glass(cur: &mut Cursor<'_>) -> Result<Glass> {
+    let hidden = cur.u8()? != 0;
+    let _ = cur.take(3)?;
+    Ok(Glass {
+        hidden,
+        refraction: cur.f32()?,
+        depth: cur.f32()?,
+        dispersion: cur.f32()?,
+        frost: cur.f32()?,
+        splay: cur.f32()?,
+        light_intensity: cur.f32()?,
+        light_angle: cur.f32()?,
+    })
 }
 
 fn parse_fills(cur: &mut Cursor<'_>) -> Result<Vec<crate::shapes::Fill>> {

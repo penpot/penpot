@@ -127,6 +127,20 @@
       (h/call wasm/internal-module "_set_shape_blur" type (boolean (:hidden background-blur)) (:value background-blur))
       (h/call wasm/internal-module "_clear_shape_blur" type))))
 
+(defn set-shape-glass
+  [glass]
+  (if (some? glass)
+    (h/call wasm/internal-module "_set_shape_glass"
+            (boolean (:hidden glass))
+            (:refraction glass)
+            (:depth glass)
+            (:dispersion glass)
+            (:frost glass)
+            (:splay glass)
+            (:light-intensity glass)
+            (:light-angle glass))
+    (h/call wasm/internal-module "_clear_shape_glass")))
+
 (defn set-shape-shadows
   [shadows]
   (h/call wasm/internal-module "_clear_shape_shadows")

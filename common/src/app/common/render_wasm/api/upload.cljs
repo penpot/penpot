@@ -39,6 +39,7 @@
 (def ^:const SECTION-FLEX 0x100)
 (def ^:const SECTION-FILLS 0x200)
 (def ^:const SECTION-STROKES 0x400)
+(def ^:const SECTION-GLASS 0x800)
 
 ;; Stroke header before RawFillData (must match upload_batch.rs).
 (def ^:const STROKE-HEADER-U8-SIZE 36)
@@ -122,6 +123,15 @@
   (buf/write-u8 dview offset (if (get blur :hidden) 1 0))
   (buf/write-f32 dview (+ offset 4) (get blur :value 0))
   (+ offset 8))
+
+(defn- write-glass!
+  [dview offset glass]
+  (buf/write-u8 dview offset (if (get glass :hidden) 1 0))
+  (reduce (fn [o k]
+            (buf/write-f32 dview o (get glass k 0))
+            (+ o 4))
+          (+ offset 4)
+          [:refraction :depth :dispersion :frost :splay :light-intensity :light-angle]))
 
 (defn- write-shadow!
   [dview offset shadow]
@@ -299,6 +309,7 @@
         children   (into [] (filter uuid?) (get shape :shapes))
         blur       (get shape :blur)
         bg-blur    (get shape :background-blur)
+        glass      (get shape :glass)
         shadows    (or (get shape :shadow) [])
         masked?    (and (= shape-type :group) (boolean (get shape :masked-group)))
         bool-type  (when (= shape-type :bool) (get shape :bool-type))
@@ -318,7 +329,8 @@
                flex? (bit-or SECTION-FLEX)
                layout-item? (bit-or SECTION-LAYOUT-ITEM)
                include-fills-strokes? (bit-or SECTION-FILLS)
-               include-fills-strokes? (bit-or SECTION-STROKES))
+               include-fills-strokes? (bit-or SECTION-STROKES)
+               (some? glass) (bit-or SECTION-GLASS))
 
         offset (write-base-props! dview offset shape)
         _      (buf/write-u32 dview offset mask)
@@ -380,7 +392,11 @@
 
         offset (cond-> offset
                  include-fills-strokes?
-                 (as-> o (write-strokes-section! dview o strokes)))]
+                 (as-> o (write-strokes-section! dview o strokes)))
+
+        offset (cond-> offset
+                 (some? glass)
+                 (as-> o (write-glass! dview o glass)))]
     offset))
 
 (defn- payload-byte-size
@@ -391,6 +407,7 @@
         shape-type (dm/get-prop shape :type)
         blur       (get shape :blur)
         bg-blur    (get shape :background-blur)
+        glass      (get shape :glass)
         flex?      (and include-layout? (ctl/flex-layout? shape))
         fills-size (if include-fills-strokes?
                      (types.fills/get-byte-size (types.fills/coerce (or (get shape :fills) [])))
@@ -412,7 +429,8 @@
        (if flex? 32 0)
        (if include-layout? 40 0)
        fills-size
-       strokes-size)))
+       strokes-size
+       (if (some? glass) 32 0))))
 
 (defn- encode-shape-record
   "Returns a Uint8Array: [u32 payload_len][payload]."

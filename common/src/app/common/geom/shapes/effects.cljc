@@ -28,3 +28,9 @@
   [shape scale]
   (update-in shape [:background-blur :value] * scale))
 
+(defn update-glass-scale
+  [shape scale]
+  (-> shape
+      (update-in [:glass :depth] * scale)
+      (update-in [:glass :frost] * scale)))
+

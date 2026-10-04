@@ -180,6 +180,9 @@
 
     :mcp
     :background-blur
+
+    ;; Liquid glass backdrop effect (WASM renderer only)
+    :liquid-glass
     :available-viewer-wasm
     :stroke-path
     :stroke-per-side

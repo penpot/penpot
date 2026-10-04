@@ -776,9 +776,10 @@ impl RenderState {
         base
     }
 
-    /// Renders background blur effect directly to the given target surface.
+    /// Renders background blur or glass directly to the given target surface.
     /// Must be called BEFORE any save_layer for the shape's own opacity/blend,
-    /// so that the backdrop blur is independent of the shape's visual properties.
+    /// so that the backdrop effect is independent of the shape's visual properties.
+    /// Glass already frosts its backdrop, so it replaces background blur.
     fn render_background_blur(
         &mut self,
         shape: &Shape,
@@ -791,29 +792,23 @@ impl RenderState {
         if matches!(shape.shape_type, Type::SVGRaw(_)) {
             return;
         }
-        let blur = match shape.visible_background_blur() {
-            Some(blur) => blur,
-            None => return,
-        };
+        let glass = shape.visible_glass();
+        let blur = shape.visible_background_blur();
+        if glass.is_none() && blur.is_none() {
+            return;
+        }
 
         let scale = self.get_scale();
-        let scaled_sigma = radius_to_sigma(blur.value * scale);
-        // Cap sigma so the blur kernel (≈3σ) stays within the tile margin.
-        // This prevents visible seams at tile boundaries when zoomed in.
-        // During export there's no tiling, so skip the cap.
-        let sigma = if self.export_context.is_some() {
-            scaled_sigma
+        // Cap sigma (and glass sample offsets) so reads stay within the tile
+        // margin; the blur kernel reaches ≈3σ. This prevents visible seams at
+        // tile boundaries when zoomed in. During export there's no tiling, so
+        // skip the cap.
+        let max_offset = if self.export_context.is_some() {
+            f32::MAX
         } else {
-            let margin = self.surfaces.margins().width as f32;
-            let max_sigma = margin / 3.0;
-            scaled_sigma.min(max_sigma)
+            self.surfaces.margins().width as f32
         };
-
-        let blur_filter =
-            match skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None) {
-                Some(filter) => filter,
-                None => return,
-            };
+        let max_sigma = max_offset / 3.0;
 
         let translation = self
             .surfaces
@@ -840,6 +835,24 @@ impl RenderState {
         canvas.translate(translation);
         canvas.concat(&matrix);
 
+        let filter = match (glass, blur) {
+            (Some(glass), _) => glass.backdrop_filter(
+                shape,
+                &canvas.local_to_device_as_3x3(),
+                max_sigma,
+                max_offset,
+            ),
+            (None, Some(blur)) => {
+                let sigma = radius_to_sigma(blur.value * scale).min(max_sigma);
+                skia::image_filters::blur((sigma, sigma), skia::TileMode::Clamp, None, None)
+            }
+            (None, None) => None,
+        };
+        let Some(filter) = filter else {
+            canvas.restore();
+            return;
+        };
+
         if matches!(shape.shape_type, Type::Text(_)) {
             // Outset the clip by the max outward stroke reach so the mask
             // (which includes stroke coverage) isn't cut off at the shape rect.
@@ -855,7 +868,7 @@ impl RenderState {
             // Save the layer rect to the shape's selection rect
             // so the blur is only applied inside the glyphs.
             let layer_rec = skia::canvas::SaveLayerRec::default()
-                .backdrop(&blur_filter)
+                .backdrop(&filter)
                 .backdrop_tile_mode(skia::TileMode::Clamp);
 
             canvas.save_layer(&layer_rec);
@@ -934,7 +947,7 @@ impl RenderState {
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(skia::BlendMode::Src);
         let layer_rec = skia::canvas::SaveLayerRec::default()
-            .backdrop(&blur_filter)
+            .backdrop(&filter)
             .backdrop_tile_mode(skia::TileMode::Clamp)
             .paint(&paint);
         canvas.save_layer(&layer_rec);
@@ -1486,7 +1499,7 @@ impl RenderState {
             && !shape.has_visible_strokes()
             && shape.shadows.is_empty()
             && shape.blur.is_none()
-            && shape.background_blur.is_none()
+            && !shape.has_backdrop_effect()
             && !has_inherited_blur
             && parent_shadows.is_none()
         {
@@ -1530,7 +1543,7 @@ impl RenderState {
             && !shape.has_frame_clip_layer_blur()
             && !matches!(shape.shape_type, Type::Group(g) if g.masked)
             && shape.blur.is_none()
-            && shape.background_blur.is_none()
+            && !shape.has_backdrop_effect()
             && !has_inherited_blur
             && !shadows_need_layered
             && (is_direct_geometry || is_direct_text)
@@ -3534,6 +3547,7 @@ impl RenderState {
         plain_shape_mut.clear_shadows();
         plain_shape_mut.blur = None;
         plain_shape_mut.background_blur = None;
+        plain_shape_mut.glass = None;
 
         // Shadow rendering uses a single render_shape call with no render_shape_exit,
         // so strokes must be drawn here. Disable clip_content to avoid skip_strokes
@@ -4397,8 +4411,9 @@ impl RenderState {
                 // assigned to this tile) because the blur snapshots Current
                 // which must contain the shapes behind it.
                 let tile_has_bg_blur = ids.iter().any(|id| {
-                    tree.get(id)
-                        .is_some_and(|s| s.visible_background_blur().is_some())
+                    tree.get(id).is_some_and(|s| {
+                        s.visible_background_blur().is_some() || s.visible_glass().is_some()
+                    })
                 });
 
                 // We only need first level shapes, in the same order as the parent node.

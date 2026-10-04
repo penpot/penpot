@@ -7267,6 +7267,50 @@ msgstr ""
 "The font used by this text (%s) is no longer available. Reupload the font "
 "to create a typography style"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:92
+msgid "workspace.options.glass-options.add"
+msgstr "Add glass"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:119
+msgid "workspace.options.glass-options.depth"
+msgstr "Depth"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:122
+msgid "workspace.options.glass-options.dispersion"
+msgstr "Dispersion"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:125
+msgid "workspace.options.glass-options.frost"
+msgstr "Frost"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:128
+msgid "workspace.options.glass-options.light"
+msgstr "Light"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:131
+msgid "workspace.options.glass-options.light-angle"
+msgstr "Light angle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:116
+msgid "workspace.options.glass-options.refraction"
+msgstr "Refraction"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:108
+msgid "workspace.options.glass-options.remove"
+msgstr "Remove glass"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:134
+msgid "workspace.options.glass-options.splay"
+msgstr "Splay"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:85, src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:88, src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:100
+msgid "workspace.options.glass-options.title"
+msgstr "Glass"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/glass.cljs:103
+msgid "workspace.options.glass-options.toggle"
+msgstr "Toggle glass"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
 msgstr "Auto"

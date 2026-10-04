@@ -1150,6 +1150,10 @@
   [background-blur]
   (props/set-shape-background-blur background-blur))
 
+(defn set-shape-glass
+  [glass]
+  (props/set-shape-glass glass))
+
 (defn set-shape-corners
   [corners]
   (let [[r1 r2 r3 r4] (map #(d/nilv % 0) corners)]

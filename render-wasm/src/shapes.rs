@@ -15,6 +15,7 @@ mod corners;
 mod fills;
 mod fonts;
 mod frames;
+mod glass;
 mod groups;
 mod layouts;
 pub mod modifiers;
@@ -37,6 +38,7 @@ pub use corners::*;
 pub use fills::*;
 pub use fonts::*;
 pub use frames::*;
+pub use glass::Glass;
 pub use groups::*;
 pub use layouts::*;
 pub use modifiers::*;
@@ -189,6 +191,7 @@ pub struct Shape {
     pub vertical_align: VerticalAlign,
     pub blur: Option<Blur>,
     pub background_blur: Option<Blur>,
+    pub glass: Option<Glass>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -297,6 +300,7 @@ impl Shape {
             hidden: false,
             blur: None,
             background_blur: None,
+            glass: None,
             svg: None,
             svg_attrs: None,
             shadows: Vec::with_capacity(1),
@@ -324,6 +328,10 @@ impl Shape {
 
         if let Some(background_blur) = self.background_blur.as_mut() {
             background_blur.scale_content(value);
+        }
+
+        if let Some(glass) = self.glass.as_mut() {
+            glass.scale_content(value);
         }
 
         self.layout_item
@@ -650,6 +658,20 @@ impl Shape {
 
     pub fn visible_background_blur(&self) -> Option<Blur> {
         self.background_blur.filter(|blur| !blur.hidden)
+    }
+
+    pub fn set_glass(&mut self, glass: Option<Glass>) {
+        self.invalidate_extrect();
+        self.glass = glass;
+    }
+
+    pub fn visible_glass(&self) -> Option<Glass> {
+        self.glass.filter(|glass| !glass.hidden)
+    }
+
+    /// Whether the shape reads the pixels behind it (background blur or glass).
+    pub fn has_backdrop_effect(&self) -> bool {
+        self.background_blur.is_some() || self.glass.is_some()
     }
 
     /// Visible layer blur (`!hidden`, `LayerBlur`, `value > 0`).
@@ -1604,7 +1626,7 @@ impl Shape {
 
         !self.has_cap_bounds()
             && self.blur.is_none()
-            && self.background_blur.is_none()
+            && !self.has_backdrop_effect()
             && self.shadows.is_empty()
             && (self.opacity - 1.0).abs() <= 1e-4
             && self.blend_mode().0 == skia::BlendMode::SrcOver
@@ -1870,7 +1892,7 @@ impl Shape {
             return false;
         }
 
-        if self.blur.is_some() || self.background_blur.is_some() {
+        if self.blur.is_some() || self.has_backdrop_effect() {
             return false;
         }
 
@@ -2090,7 +2112,7 @@ impl Shape {
         if self.blend_mode() != BlendMode::default() {
             return false;
         }
-        if self.blur.is_some() || self.background_blur.is_some() {
+        if self.blur.is_some() || self.has_backdrop_effect() {
             return false;
         }
         if self.has_frame_clip_layer_blur() {

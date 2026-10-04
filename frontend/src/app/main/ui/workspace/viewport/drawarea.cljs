@@ -27,7 +27,7 @@
 
 (def ^:private synced-edit-attrs
   "Visual attributes copied into the live editing shape."
-  [:strokes :shadow :blur :background-blur :opacity :blend-mode])
+  [:strokes :shadow :blur :background-blur :glass :opacity :blend-mode])
 
 (defn- dim-fills
   [fills]

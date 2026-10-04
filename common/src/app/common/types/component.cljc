@@ -92,6 +92,7 @@
    :shadow                  :shadow-group
    :blur                    :blur-group
    :background-blur         :blur-group
+   :glass                   :blur-group
    :masked-group            :mask-group
    :constraints-h           :constraints-group
    :constraints-v           :constraints-group

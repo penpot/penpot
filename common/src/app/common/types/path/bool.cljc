@@ -25,7 +25,7 @@
       fills)))
 
 (def group-style-properties
-  #{:shadow :blur :background-blur})
+  #{:shadow :blur :background-blur :glass})
 
 ;; FIXME: revisit
 (def style-properties

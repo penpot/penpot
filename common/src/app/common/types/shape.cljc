@@ -27,6 +27,7 @@
    [app.common.types.shape.background-blur :as ctsbb]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
+   [app.common.types.shape.glass :as ctsgl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
@@ -228,6 +229,7 @@
     [:vector {:gen/max 1} ctss/schema:shadow]]
    [:blur {:optional true} ctsb/schema:blur]
    [:background-blur {:optional true} ctsbb/schema:background-blur]
+   [:glass {:optional true} ctsgl/schema:glass]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} cto/schema:applied-tokens]
@@ -513,7 +515,8 @@
     :remote-synced :shape-ref :touched :blocked :collapsed :locked
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
-    :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
+    :strokes :blend-mode :interactions :shadow :blur :background-blur :glass :grow-type
+    :applied-tokens
     :plugin-data})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
@@ -787,6 +790,7 @@
     :shadow
     :blur
     :background-blur
+    :glass
 
     ;; Radius
     :r1

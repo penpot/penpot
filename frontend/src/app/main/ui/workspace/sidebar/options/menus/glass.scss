@@ -1,0 +1,63 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "../../../sidebar/common/sidebar.scss" as sidebar;
+
+.element-set {
+  max-width: var(--options-width);
+}
+
+.title-spacing {
+  padding-left: var(--sp-xxs);
+  margin: 0;
+}
+
+.element-set-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-s);
+}
+
+.first-row {
+  @include sidebar.option-grid-structure;
+}
+
+.label {
+  @include t.use-typography("body-small");
+
+  grid-column: span 6;
+  display: flex;
+  align-items: center;
+  height: $sz-32;
+  padding: 0 var(--sp-s);
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
+  box-sizing: border-box;
+}
+
+.hidden .label {
+  color: var(--color-foreground-secondary);
+  background-color: transparent;
+  border: $b-1 solid var(--color-background-quaternary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-xs);
+  width: var(--three-columns-width);
+}
