@@ -109,14 +109,12 @@
       (d/ordered-set))))
 
 (defn need-migration-to?
-  "True when `file` has not reached data version `version`. A nil
-  `version` names no version and needs nothing. A file that already
-  holds the version's last migration has reached it, which costs one
-  set lookup."
+  "True when `file` has not reached data version `version`. A file that
+  already holds the version's last migration has reached it, which
+  costs one set lookup."
   [file version]
   (let [migrations (:migrations file)]
-    (and (some? version)
-         (not (contains? migrations version))
+    (and (not (contains? migrations version))
          (boolean
           (->> migrations
                (set/difference (data-version-migrations version))

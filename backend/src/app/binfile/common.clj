@@ -430,11 +430,7 @@
         ;; A row's `data_version` is the version its changes were
         ;; written at; the document migrates to it before the row
         ;; applies, and in the steady state that check is one set
-        ;; lookup. A NULL stamp marks a row written before the column
-        ;; existed: it replays at the version the document holds, which
-        ;; is the base's version, because such rows precede every
-        ;; stamped row of their log. That is how the derive replayed
-        ;; every row before the column existed.
+        ;; lookup.
         [doc depth]
         (reduce (fn [[doc depth] {:keys [changes data-version]}]
                   (let [changes (blob/decode changes)

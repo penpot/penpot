@@ -967,44 +967,6 @@
               (t/is (= {:name "Two" :path "Brand / Two"}
                        (select-keys (get colors c2) [:name :path]))))))))))
 
-(t/deftest branch-replays-an-unstamped-row-at-the-base-version
-  ;; A row written before `file_branch_change.data_version` existed has
-  ;; no stamp. Such rows precede every stamped row and were written over
-  ;; the base, so the derive replays them at the base's version, as it did
-  ;; before the column existed.
-  (with-redefs [cf/flags (conj cf/flags :branching)]
-    (let [profile  (th/create-profile* 1 {:is-active true})
-          proj-id  (:default-project-id profile)
-          main     (th/create-file* 1 {:profile-id (:id profile)
-                                       :project-id proj-id
-                                       :is-shared false})
-          ordinary (th/create-file* 2 {:profile-id (:id profile)
-                                       :project-id proj-id
-                                       :is-shared false})
-          upgraded (conj fmg/available-migrations test-migration)
-          c1       (uuid/random)
-          c2       (uuid/random)
-          old-op   {:type :add-color
-                    :color {:id c1 :name "One" :path "Brand/One" :color "#111111" :opacity 1}}
-          new-op   {:type :add-color
-                    :color {:id c2 :name "Two" :path "Brand / Two" :color "#222222" :opacity 1}}
-          branch-file-id (:branch-file-id (create-branch* profile (:id main) "unstamped"))]
-
-      (apply-change* profile branch-file-id old-op)
-      (apply-change* profile (:id ordinary) old-op)
-      (th/db-update! :file-branch-change {:data-version nil} {:file-id branch-file-id})
-
-      (with-redefs [fmg/available-migrations upgraded]
-        (apply-change* profile branch-file-id new-op)
-        (apply-change* profile (:id ordinary) new-op)
-
-        (t/is (= [nil test-migration]
-                 (->> (oplog-rows branch-file-id)
-                      (sort-by :revn)
-                      (mapv :data-version))))
-        (t/is (= (colors-of (read-file profile (:id ordinary)))
-                 (colors-of (read-file profile branch-file-id))))))))
-
 (t/deftest update-from-main-conflict-sides-name-the-documents
   ;; `update-branch-from-main` reports its conflicts in document terms:
   ;; `:main` carries main's value and `:branch` the branch's, whatever the

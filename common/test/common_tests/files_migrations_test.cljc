@@ -62,7 +62,6 @@
                   ctf/check-file-data (fn [_] (throw (ex-info "checked" {})))]
       (t/is (cfm/need-migration-to? file "test/2"))
       (t/is (not (cfm/need-migration-to? file "test/1")))
-      (t/is (not (cfm/need-migration-to? file nil)))
 
       (let [file' (cfm/migrate-file-to file nil "test/2")]
         (t/is (= 2 (-> file' :data :sum)))

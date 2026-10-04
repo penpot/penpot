@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS file_pull_request (
+CREATE TABLE file_pull_request (
   id                 uuid PRIMARY KEY,
 
   created_at         timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -33,17 +33,17 @@ CREATE TABLE IF NOT EXISTS file_pull_request (
 );
 
 -- at most one live pull request per branch
-CREATE UNIQUE INDEX IF NOT EXISTS file_pull_request__file_branch_id__open__idx
+CREATE UNIQUE INDEX file_pull_request__file_branch_id__open__idx
     ON file_pull_request(file_branch_id)
  WHERE status = 'open' AND deleted_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS file_pull_request__target_file_id__idx
+CREATE INDEX file_pull_request__target_file_id__idx
     ON file_pull_request(target_file_id) WHERE deleted_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS file_pull_request__review_snapshot_id__idx
+CREATE INDEX file_pull_request__review_snapshot_id__idx
     ON file_pull_request(review_snapshot_id) WHERE review_snapshot_id IS NOT NULL;
 
-CREATE TABLE IF NOT EXISTS file_pull_request_review (
+CREATE TABLE file_pull_request_review (
   pull_request_id    uuid NOT NULL REFERENCES file_pull_request(id) ON DELETE CASCADE DEFERRABLE,
   profile_id         uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE DEFERRABLE,
 
@@ -61,5 +61,5 @@ CREATE TABLE IF NOT EXISTS file_pull_request_review (
   PRIMARY KEY (pull_request_id, profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS file_pull_request_review__profile_id__idx
+CREATE INDEX file_pull_request_review__profile_id__idx
     ON file_pull_request_review(profile_id);
