@@ -547,7 +547,7 @@
                    [(:shape/id ent)
                     {:parent-id    (:shape/id (:shape/parent ent))
                      :shapes       (into [] (map #(:shape/id (d/entity db %)))
-                                        (get children eid))
+                                         (get children eid))
                      :component-id (:shape/component-id ent)
                      :shape-ref    (:shape/shape-ref ent)}])))
           eids)))
@@ -701,7 +701,7 @@
   (if (d/entid db [:component/id id])
     (ok db)
     (let [tx (into [{:db/id -1 :component/id id :component/document (doc-eid db)}]
-              (component-attrs-tx -1 change))]
+                   (component-attrs-tx -1 change))]
       (ok (with-component-reresolved (d/db-with db tx) id)))))
 
 (defn- clear-component-container-tx
@@ -1130,23 +1130,23 @@
       (skip db :missing-token-set-id)
 
       :else
-      (let [name*  (ctob/normalize-set-name (:name attrs))
-            holder (name-holder (set-names db) name* existing)]
-        (let [set-ref (or existing (overlay/token-set-tempid id))
-              old     (into (if holder (retract-token-set-tx db holder) [])
-                            (map (fn [eid] [:db.fn/retractEntity eid]))
-                            (when existing (set-token-eids db existing)))
-              new     (into [{:db/id              set-ref
-                              :token-set/id       id
-                              :token-set/name     name*
-                              :token-set/document (doc-eid db)}]
-                            (token-entities set-ref (:tokens attrs)))]
-          ;; two transactions: the retraction frees the identities the
-          ;; second one asserts, so no upsert has to resolve against a
-          ;; retracted row
-          (ok (-> db
-                  (cond-> (seq old) (d/db-with old))
-                  (d/db-with new))))))))
+      (let [name*   (ctob/normalize-set-name (:name attrs))
+            holder  (name-holder (set-names db) name* existing)
+            set-ref (or existing (overlay/token-set-tempid id))
+            old     (into (if holder (retract-token-set-tx db holder) [])
+                          (map (fn [eid] [:db.fn/retractEntity eid]))
+                          (when existing (set-token-eids db existing)))
+            new     (into [{:db/id              set-ref
+                            :token-set/id       id
+                            :token-set/name     name*
+                            :token-set/document (doc-eid db)}]
+                          (token-entities set-ref (:tokens attrs)))]
+        ;; two transactions: the retraction frees the identities the
+        ;; second one asserts, so no upsert has to resolve against a
+        ;; retracted row
+        (ok (-> db
+                (cond-> (seq old) (d/db-with old))
+                (d/db-with new)))))))
 
 (defn- apply-set-token
   "Mirror of `process-change :set-token`: `ctob/delete-token` when

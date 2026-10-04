@@ -948,7 +948,7 @@
         data1    (cp/process-changes data0 changes false)
         crippled (remove #(= :reorder-children (:type %)) changes)
         synced   (into {} (normal-form (:db (sync/apply-changes (overlay/build data0)
-                                                               crippled))))
+                                                                crippled))))
         rebuilt  (into {} (normal-form (overlay/build data1)))
         moved    (into {}
                        (keep (fn [[key attrs]]

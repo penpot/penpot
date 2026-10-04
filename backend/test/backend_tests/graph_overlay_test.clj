@@ -362,7 +362,7 @@
                                [?s :shape/id ?sid]]
                              db queries/rules))
         expected   (set (for [component live-comps
-                              [pid page] (:pages-index data)
+                              [_pid page] (:pages-index data)
                               [sid shape] (:objects page)
                               :when (ctk/instance-of? shape (:id data) (:id component))]
                           [(:id component) sid]))
