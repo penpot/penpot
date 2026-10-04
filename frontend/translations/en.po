@@ -5146,6 +5146,10 @@ msgstr "Color picker"
 msgid "shortcuts.open-comments"
 msgstr "Go to viewer comment section"
 
+#: src/app/main/data/workspace/shortcuts.cljs:661
+msgid "shortcuts.open-branches"
+msgstr "Branches"
+
 #: src/app/main/data/workspace/shortcuts.cljs:763
 msgid "shortcuts.open-dashboard"
 msgstr "Go to dashboard"

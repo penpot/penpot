@@ -659,6 +659,7 @@
                                 (dw/toggle-layout-flag :document-history))}
 
    :open-branches        {:tooltip (ds/meta-alt "B")
+                          :label (fn [] (tr "shortcuts.open-branches"))
                           :command (ds/ca-mod "b")
                           :subsections [:panels]
                           :fn #(emit-when-no-readonly
