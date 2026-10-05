@@ -118,11 +118,12 @@
 (t/deftest storage-object-schema-constrains-content-type
   (t/testing "known stored types validate, unknown types do not"
     (let [base {:id (uuid/random) :size 10 :bucket "file-media-object"}]
-      (doseq [ctype ["image/svg+xml" "image/jpeg" "image/png" "image/apng" "image/avif"
+      (doseq [ctype ["image/svg+xml" "image/jpeg" "image/png"
                      "font/woff2" "font/ttf" "application/octet-stream" "application/pdf"]]
         (t/is (some? (v3/validate-storage-object (assoc base :content-type ctype)))
               (str "expected valid for " (pr-str ctype))))
-      (doseq [ctype ["" "   " "image /svg" "application/x-font-woff" (apply str (repeat 200 "x"))]]
+      (doseq [ctype ["" "   " "image /svg" "image/apng" "image/avif"
+                     "application/x-font-woff" (apply str (repeat 200 "x"))]]
         (t/is (thrown? clojure.lang.ExceptionInfo
                        (v3/validate-storage-object (assoc base :content-type ctype)))
               (str "expected rejection for " (pr-str ctype)))))))
