@@ -47,7 +47,7 @@ jobs:
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout code
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -55,7 +55,7 @@ jobs:
 
       # --- Publicly release the docker images ---
       - name: Configure ECR credentials
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           aws-access-key-id: ${{ secrets.DOCKER_USERNAME }}
           aws-secret-access-key: ${{ secrets.DOCKER_PASSWORD }}
