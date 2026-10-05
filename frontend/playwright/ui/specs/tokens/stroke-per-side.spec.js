@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 import { BaseWebSocketPage } from "../../pages/BaseWebSocketPage";
 import { WasmWorkspacePage } from "../../pages/WasmWorkspacePage";
@@ -52,6 +53,76 @@ async function openTokensTab(page) {
 async function unfoldStrokeWidth(page, workspace) {
   await openTokensTab(page);
   await unfoldTokenType(workspace.tokensSidebar, "stroke width");
+}
+
+const STROKE_TOKEN_FILE = "workspace/get-file-layout-stroke-token-json";
+const PER_SIDE_RECT = "Per side rect";
+const PER_SIDE_TOKEN_BOARD = "Per side token board";
+
+// Transit fields appended at the end of a shape, so the earlier "^N" cache
+// references stay valid; when a key repeats, the last value wins.
+function perSideStrokeFields(name, top, appliedTokens = []) {
+  const stroke = [
+    "^ ",
+    ...["~:stroke-style", "~:solid", "~:stroke-alignment", "~:inner"],
+    ...["~:stroke-color", "#000000", "~:stroke-opacity", 1],
+    ...["~:stroke-width", top, "~:stroke-width-top", top],
+    ...["~:stroke-width-right", 4, "~:stroke-width-bottom", 8],
+    ...["~:stroke-width-left", 16],
+  ];
+  return [
+    "~:name",
+    name,
+    "~:strokes",
+    [stroke],
+    "~:applied-tokens",
+    ["^ ", ...appliedTokens],
+  ];
+}
+
+// Serves the stroke token file with a rectangle and a board whose sides
+// have different widths (top 2 or 20, right 4, bottom 8, left 16). Only the
+// board has a token, `width-big`, on its top side. Both are top-level
+// layers, so the layers panel shows them without unfolding anything.
+async function mockPerSideStrokeFile(workspace) {
+  await workspace.mockGetFile(STROKE_TOKEN_FILE);
+
+  const payload = JSON.parse(
+    await readFile(`playwright/data/${STROKE_TOKEN_FILE}`, "utf-8"),
+  );
+  const [pageData] = Object.values(payload["~:data"]["~:pages-index"]);
+  const objects = pageData["~:objects"]["~#penpot/objects-map/v2"];
+
+  const patch = (id, fields) => {
+    const shape = objects[id];
+    const extra = JSON.stringify(fields).slice(1, -1);
+    objects[id] = `${shape.slice(0, -2)},${extra}]]`;
+  };
+
+  patch(
+    "~u8506e3f3-e05b-807c-8007-6ceac380abc1",
+    perSideStrokeFields(PER_SIDE_RECT, 2),
+  );
+  patch(
+    "~u6c65a5dc-fb40-8072-8007-6ce644905054",
+    perSideStrokeFields(PER_SIDE_TOKEN_BOARD, 20, [
+      "~:stroke-width-top",
+      "width-big",
+    ]),
+  );
+
+  // The last matching route wins over the one set by mockGetFile.
+  await workspace.page.route(/get\-file\?/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/transit+json",
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+function globalWidthInput(page) {
+  return strokeRow(page).getByRole("textbox", { name: GLOBAL });
 }
 
 test.describe("Tokens: stroke per side", () => {
@@ -583,7 +654,58 @@ test.describe("Tokens: stroke per side (inspect)", () => {
   });
 });
 
+test.describe("Tokens: stroke per side, global width input", () => {
+  test("shows Mixed for different sides with the new renderer", async ({
+    page,
+  }) => {
+    const workspace = new WasmWorkspacePage(page);
+    await workspace.mockConfigFlags([
+      "enable-stroke-per-side",
+      "enable-feature-token-input",
+    ]);
+    await workspace.setupEmptyFile();
+    await mockPerSideStrokeFile(workspace);
+    await workspace.goToWorkspace();
+    await workspace.waitForFirstRender();
+
+    await workspace.clickLeafLayer(PER_SIDE_RECT);
+    await expect(globalWidthInput(page)).toHaveAttribute("placeholder", MIXED);
+
+    await workspace.clickLeafLayer(PER_SIDE_TOKEN_BOARD);
+    await expect(globalWidthInput(page)).toHaveAttribute("placeholder", MIXED);
+  });
+});
+
 test.describe("Tokens: stroke per side (non wasm)", () => {
+  test("the global width input shows the top side without the new renderer", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.mockConfigFlags([
+      "enable-stroke-per-side",
+      "enable-feature-token-input",
+    ]);
+    await workspace.setupEmptyFile();
+    await mockPerSideStrokeFile(workspace);
+    await workspace.goToWorkspace();
+
+    // Top 2, other sides 4, 8 and 16: the old render draws the top side,
+    // so the input shows it instead of Mixed.
+    await workspace.clickLeafLayer(PER_SIDE_RECT);
+    await expect(globalWidthInput(page)).toHaveValue("2");
+    await expect(globalWidthInput(page)).not.toHaveAttribute(
+      "placeholder",
+      MIXED,
+    );
+
+    // Only the top side has a token: the input shows that token.
+    await workspace.clickLeafLayer(PER_SIDE_TOKEN_BOARD);
+    await expect(
+      strokeRow(page).getByRole("button", { name: "width-big" }),
+    ).toHaveCount(1);
+    await expect(globalWidthInput(page)).toHaveCount(0);
+  });
+
   test("per-side toggle is disabled without the new renderer", async ({
     page,
   }) => {
