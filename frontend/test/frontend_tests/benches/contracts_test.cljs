@@ -402,7 +402,7 @@
       (decl/unregister-scene! :contracts-replacecase))))
 
 (t/deftest invalid-master-seed-is-rejected
-  (doseq [seed [-1 4294967296 "42"]]
+  (doseq [seed [-1 4294967296 "42" nil 0.5 js/NaN js/Infinity js/-Infinity]]
     (t/is (= ::cases/invalid-master-seed
              (:type (failure-data #(cases/collect-cases {:master-seed seed}))))
           (str seed))))
