@@ -299,9 +299,7 @@
   ([params] (create-project-role* *system* params))
   ([system {:keys [project-id profile-id role] :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
-     (#'teams/create-project-role conn {:project-id project-id
-                                        :profile-id profile-id
-                                        :role role}))))
+     (#'teams/create-project-role conn profile-id project-id role))))
 
 (defn create-file-role*
   ([params] (create-file-role* *system* params))
