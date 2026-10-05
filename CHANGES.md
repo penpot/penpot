@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.18.2
+
+### :bug: Bugs fixed
+
+- Fix workspace showing an internal error when syncing components or dragging in the color picker [#11933](https://github.com/penpot/penpot/issues/11933) (PR: [#11941](https://github.com/penpot/penpot/pull/11941))
+- Fix SVG sanitizer keeping namespace-prefixed script elements when uploading SVG files [#12071](https://github.com/penpot/penpot/issues/12071) (PR: [#12073](https://github.com/penpot/penpot/pull/12073))
+
 ## 2.18.1
 
 ### :bug: Bugs fixed
