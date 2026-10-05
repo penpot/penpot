@@ -87,4 +87,5 @@
        :type type
        :page-id page-id
        :file-id file-id
+       :from from
        :share-id share-id}]]))

@@ -460,7 +460,7 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id embed skip-children]
+  [{:keys [objects object-id embed skip-children class]
     :or {embed false}
     :as props}]
   (let [object  (get objects object-id)
@@ -482,6 +482,7 @@
     [:& (mf/provider export/include-metadata-ctx) {:value false}
      [:& (mf/provider embed/context) {:value embed}
       [:svg {:id (dm/str "screenshot-" object-id)
+             :class class
              :view-box vbox
              :width (ust/format-precision width viewbox-decimal-precision)
              :height (ust/format-precision height viewbox-decimal-precision)
