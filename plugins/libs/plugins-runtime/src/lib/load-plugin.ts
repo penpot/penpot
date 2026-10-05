@@ -17,14 +17,20 @@ export function setContextBuilder(builder: ContextBuilder) {
 export const getPlugins = () => plugins;
 
 const closeAllPlugins = () => {
+  // Background plugins keep running, so they must stay registered: the
+  // registry routes their UI messages and lets them be unloaded later.
+  const backgroundPlugins: typeof plugins = [];
+
   plugins.forEach((pluginApi) => {
     /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (!(pluginApi.manifest as any)?.allowBackground) {
+    if ((pluginApi.manifest as any)?.allowBackground) {
+      backgroundPlugins.push(pluginApi);
+    } else {
       pluginApi.plugin.close();
     }
   });
 
-  plugins = [];
+  plugins = backgroundPlugins;
 };
 
 window.addEventListener('message', (event) => {

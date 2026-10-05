@@ -3,6 +3,7 @@ import {
   loadPlugin,
   ɵloadPlugin,
   ɵloadPluginByUrl,
+  ɵunloadPlugin,
   setContextBuilder,
   getPlugins,
 } from './load-plugin';
@@ -198,6 +199,47 @@ describe('plugin-loader', () => {
 
     expect(mockPluginApi2.plugin.sendMessage).toHaveBeenCalledWith('test');
     expect(mockPluginApi1.plugin.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should keep background plugins registered when loading another plugin', async () => {
+    const backgroundIframeWindow = { nodeType: 1 } as unknown as Window;
+    const backgroundClose = vi.fn();
+    const backgroundPluginApi = {
+      plugin: {
+        close: backgroundClose,
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: backgroundIframeWindow,
+      manifest: {
+        ...manifest,
+        pluginId: 'background-plugin',
+        allowBackground: true,
+      },
+    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(backgroundPluginApi);
+    await loadPlugin(manifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi);
+    await loadPlugin(manifest);
+
+    expect(backgroundClose).not.toHaveBeenCalled();
+    expect(getPlugins()).toContain(backgroundPluginApi);
+
+    const event = new MessageEvent('message', { data: 'from-background' });
+    Object.defineProperty(event, 'source', { value: backgroundIframeWindow });
+    window.dispatchEvent(event);
+
+    expect(backgroundPluginApi.plugin.sendMessage).toHaveBeenCalledWith(
+      'from-background',
+    );
+
+    ɵunloadPlugin('background-plugin');
+    expect(backgroundClose).toHaveBeenCalledTimes(1);
+
+    // the runtime's close callback deregisters the plugin
+    vi.mocked(createPlugin).mock.calls[0][2]();
+    expect(getPlugins()).not.toContain(backgroundPluginApi);
   });
 
   it('should load plugin using ɵloadPlugin', async () => {
