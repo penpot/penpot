@@ -617,6 +617,14 @@
         (l/dbg :hint "readed storage object" :id (str id) ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
+              clean           (when (= (:content-type mdata) bfc/svg-content-type)
+                                (let [raw (if (bytes? resource)
+                                            resource
+                                            (with-open [istream (jio/input-stream resource)]
+                                              (io/read istream)))]
+                                  (bfc/sanitize-imported-svg mdata raw)))
+              resource        (:bytes clean resource)
+              size            (:size clean size)
               hash            (sto/calculate-hash resource)
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))

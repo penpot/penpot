@@ -906,7 +906,15 @@
                       :expected-hash (:hash object)
                       :found-hash (sto/get-hash content))))
 
-        (let [params  (-> object
+        (let [clean   (when (= (:content-type object) bfc/svg-content-type)
+                        (let [raw (with-open [istream (zip-entry-stream input (get-zip-entry input path))]
+                                    (io/read istream))]
+                          (bfc/sanitize-imported-svg object raw)))
+              content (if-let [{:keys [bytes hash]} clean]
+                        (-> (sto/content bytes)
+                            (sto/wrap-with-hash hash))
+                        content)
+              params  (-> object
                           (dissoc :id :size)
                           (assoc ::sto/content content)
                           (assoc ::sto/deduplicate? true)

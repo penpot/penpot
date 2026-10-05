@@ -27,6 +27,7 @@
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.svg :as svg]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
@@ -898,3 +899,30 @@
                          (cons (:id file)))
         load-fn     #(get-file cfg % :migrate? false)]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG IMPORT SANITIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def svg-content-type
+  "Content type of SVG media objects. Any storage object with this
+  content type is sanitized on import, regardless of bucket: the
+  content type decides how the browser treats the bytes."
+  "image/svg+xml")
+
+(defn sanitize-imported-svg
+  "Sanitize the raw `bytes` of an imported storage `object` when it
+  holds an SVG document. Returns nil when the object is not an SVG.
+
+  Otherwise returns a map with the sanitized `:bytes`, their `:size`
+  and their blake2b `:hash`, ready to persist with `sto/put-object!`.
+
+  Raises a `:validation` exception when the SVG cannot be parsed, the
+  same error the upload path reports."
+  [object ^bytes raw]
+  (when (= (:content-type object) svg-content-type)
+    (let [sanitized (svg/sanitize-svg (String. ^bytes raw "UTF-8"))
+          bytes     (.getBytes ^String sanitized "UTF-8")]
+      {:bytes bytes
+       :size  (alength ^bytes bytes)
+       :hash  (sto/calculate-hash (java.io.ByteArrayInputStream. bytes))})))

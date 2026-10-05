@@ -199,7 +199,10 @@
   [{:keys [::sto/storage ::bfc/timestamp] :as cfg} id]
   (let [mdata   (read-obj cfg :storage-object id)
         data    (read-blob cfg :storage-object id)
-        hash    (sto/calculate-hash data)
+        clean   (when (= (:content-type mdata) bfc/svg-content-type)
+                  (bfc/sanitize-imported-svg mdata data))
+        data    (or (:bytes clean) data)
+        hash    (or (:hash clean) (sto/calculate-hash data))
 
         content (-> (sto/content data)
                     (sto/wrap-with-hash hash))
