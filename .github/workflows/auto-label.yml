@@ -26,6 +26,7 @@ jobs:
           # No owner/repositories: the token is scoped to this repository.
           # Organization permissions (the project board) still apply.
           permission-issues: write
+          permission-pull-requests: write
           permission-organization-projects: write
 
       - name: Process Issue or PR
