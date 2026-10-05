@@ -35,6 +35,17 @@
           (update fill :fill-opacity #(* (or % 1) edit-fill-opacity)))
         fills))
 
+(defn draw-area-kind
+  "Returns the overlay to render for the drawing object `shape`:
+  `:path`, `:curve`, `:generic` or nil. Non-path objects always get the
+  generic overlay, because the active tool can change while a box
+  drawing is still in progress."
+  [tool shape]
+  (cond
+    (not= :path (dm/get-prop shape :type)) :generic
+    (= tool :path)                         :path
+    (= tool :curve)                        :curve))
+
 (defn path-edit-shape
   "Builds the path shape rendered during editing."
   [drawing-obj stored]
@@ -98,15 +109,8 @@
      [:g {:style {:pointer-events "none"}}
       [:& shapes/shape-wrapper {:shape render-shape}]]
 
-     (cond
-       (= tool :path)
-       [:> path-draw-area* props]
-
-       (= tool :curve)
-       [:& path-shape {:shape shape :zoom zoom}]
-
-       (= (:type shape) :path)
-       nil
-
-       :else
-       [:> generic-draw-area* props])]))
+     (case (draw-area-kind tool shape)
+       :path    [:> path-draw-area* props]
+       :curve   [:& path-shape {:shape shape :zoom zoom}]
+       :generic [:> generic-draw-area* props]
+       nil)]))
