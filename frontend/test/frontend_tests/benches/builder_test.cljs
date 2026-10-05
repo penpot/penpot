@@ -5,12 +5,15 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns frontend-tests.benches.builder-test
+  "Tests canonical scene construction and the shared seeded number generator.
+  Fixed random sequences preserve scene draws during generator extraction."
   (:require
    [app.common.uuid :as uuid]
    [benches.render-wasm.builder :as b :include-macros true]
    [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.random :as random]
    [benches.render-wasm.scenes.rects]
-   [benches.render-wasm.snapshot :as common]
+   [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 
@@ -26,6 +29,24 @@
 (t/deftest repeatable-builds-are-identical
   (t/is (= (build) (build)))
   (t/is (not= (build) (build {:seed 43}))))
+
+(t/deftest shared-generator-retains-scene-draws-and-independent-state
+  (doseq [[seed expected] [[0 [1144304738 1416247 958946056 627933444 2007157716]]
+                           [42 [2581720956 1925393290 3661312704 2876485805 750819978]]
+                           [4294967295 [3850105811 813802916 3073704848 4054706436 3630262831]]]]
+    (let [first-source (random/create seed)
+          second-source (random/create seed)]
+      (t/is (= expected (mapv #(* 4294967296 %) (repeatedly 5 first-source))))
+      (t/is (= expected (mapv #(* 4294967296 %) (repeatedly 5 second-source))))
+      (t/is (every? #(and (<= 0 %) (< % 1)) (repeatedly 1000 first-source)))))
+  (let [rng (:rng @(b/start {:seed 42}))]
+    (t/is (= [2581720956 1925393290 3661312704 2876485805 750819978]
+             (mapv #(* 4294967296 %) (repeatedly 5 rng))))))
+
+(t/deftest shared-generator-rejects-invalid-seeds
+  (doseq [seed [-1 4294967296 1.5 nil false "42" js/NaN js/Infinity]]
+    (t/is (= ::random/invalid-seed
+             (:type (helpers/failure-data #(random/create seed)))))))
 
 (t/deftest rectangle-workload-keeps-default-count
   (let [instance (build {:seed 42 :count 1000})
@@ -146,8 +167,8 @@
 (t/deftest built-snapshot-feeds-the-scene-api
   (let [instance (b/scene {:seed 1}
                           (b/rect :hero {}))
-        order    (common/upload-order instance)
-        hero-id  (common/ref-id instance :hero)]
+        order    (snapshot/upload-order instance)
+        hero-id  (snapshot/ref-id instance :hero)]
     (t/is (= [uuid/zero hero-id] (mapv :id order)))))
 
 (t/deftest invalid-labels-are-rejected

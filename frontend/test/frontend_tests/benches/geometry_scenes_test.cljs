@@ -14,7 +14,7 @@
    [benches.render-wasm.scenes.masks]
    [benches.render-wasm.scenes.paths]
    [benches.render-wasm.scenes.plus]
-   [benches.render-wasm.snapshot :as common]
+   [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 
@@ -33,8 +33,8 @@
              (mapv :command content)))
     (t/is (pos? (:width (:selrect first))))
     (t/is (pos? (:height (:selrect first))))
-    (t/is (= (mapv :id shapes) (mapv :id (rest (common/upload-order scene)))))
-    (t/is (= scene (common/validate! scene)))))
+    (t/is (= (mapv :id shapes) (mapv :id (rest (snapshot/upload-order scene)))))
+    (t/is (= scene (snapshot/validate! scene)))))
 
 (t/deftest plus-paths-have-two-crossing-open-lines
   (let [build    (get-in @decl/registry [:scenes :plus :build])
@@ -52,7 +52,7 @@
           "the second line is vertical")
     (t/is (< (get-in c [:params :y]) (get-in d [:params :y])))
     (t/is (seq (:strokes first)))
-    (t/is (= scene (common/validate! scene)))))
+    (t/is (= scene (snapshot/validate! scene)))))
 
 (t/deftest mask-child-order-and-descendants-are-reachable
   (let [build    (get-in @decl/registry [:scenes :masks :build])
@@ -61,7 +61,7 @@
         group     (first groups)
         children  (helpers/children-of scene (:id group))
         mask      (first children)
-        uploaded  (common/upload-order scene)]
+        uploaded  (snapshot/upload-order scene)]
     (t/is (= 24 (count groups)))
     (t/is (= 241 (count (:objects scene))) "root, groups and their nine children")
     (t/is (= (:id group) (get-in scene [:refs [:mask 0]])))
@@ -74,7 +74,7 @@
     (t/is (= (:id group) (:id (second uploaded))))
     (t/is (= (:id mask) (:id (nth uploaded 2))))
     (t/is (= (count (:objects scene)) (count uploaded)))
-    (t/is (= scene (common/validate! scene)))))
+    (t/is (= scene (snapshot/validate! scene)))))
 
 (t/deftest camera-cases-share-each-scene-seed
   (doseq [scene-id [:paths :plus :masks]]

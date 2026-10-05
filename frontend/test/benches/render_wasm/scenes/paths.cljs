@@ -11,6 +11,7 @@
    [app.common.types.path :as path]
    [benches.render-wasm.builder :as sb :include-macros true]
    [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.random :refer [rng-int]]
    [benches.render-wasm.runtime.camera :as camera]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,10 +32,10 @@
 (defn- curved-content
   [{:keys [width height]}]
   (fn [rng]
-    (let [x (sb/rng-int rng 0 width)
-          y (sb/rng-int rng 0 height)
-          w (sb/rng-int rng 20 100)
-          h (sb/rng-int rng 20 100)]
+    (let [x (rng-int rng 0 width)
+          y (rng-int rng 0 height)
+          w (rng-int rng 20 100)
+          h (rng-int rng 20 100)]
       (path/from-plain
        [{:command :move-to :params {:x x :y y}}
         {:command :curve-to

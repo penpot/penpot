@@ -21,64 +21,14 @@
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [benches.render-wasm.snapshot :as common]))
+   [benches.render-wasm.random :as rnd :refer
+    [rng-float rng-hex-color rng-int rng-opacity rng-uuid]]
+   [benches.render-wasm.snapshot :as snapshot]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Poor-man's seeded PRNG
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; WTF? clj has no seedable PRNG!? `rand`/`rand-int` call Math.random which is
-;; unseeded. I can't find any RNG wich takes a seed among the deps.
-;; We implement mulberry32 here instead.
-(defn- make-random
-  "Returns a zero-arg function that draws a float in `[0, 1)` from the seeded.
-
-  This is Mulberry32 which reportedly misses about 1/3 of the range. Do NOT USE
-  for anything requiring actual random numbers!
-  "
-  [seed]
-  (let [state (atom (bit-or seed 0))]
-    (fn []
-      (let [s    (swap! state (fn [s] (bit-or (+ s 0x6d2b79f5) 0)))
-            v    (js/Math.imul (bit-xor s (unsigned-bit-shift-right s 15))
-                               (bit-or s 1))
-            v    (bit-xor v (+ v (js/Math.imul (bit-xor v (unsigned-bit-shift-right v 7))
-                                               (bit-or v 61))))
-            v    (bit-xor v (unsigned-bit-shift-right v 14))]
-        (/ (unsigned-bit-shift-right v 0) 4294967296)))))
-
-(defn rng-float
-  "Draws a float in `[min, max)` from the scope random source."
-  [rng min max]
-  (+ min (* (rng) (- max min))))
-
-(defn rng-int
-  "Draws an integer in `[min, max)` from the scope random source."
-  [rng min max]
-  (js/Math.floor (rng-float rng min max)))
-
-(defn- round3
-  [value]
-  (/ (js/Math.round (* 1000 value)) 1000))
-
-(defn rng-uuid
-  "Draws a deterministic uuid from two 32-bit values of the random source."
-  [rng]
-  (uuid/custom (rng-int rng 0 4294967296)
-               (rng-int rng 0 4294967296)))
-
-(defn- rng-hex-color
-  [rng]
-  (clr/rgb->hex [(rng-int rng 0 256) (rng-int rng 0 256) (rng-int rng 0 256)]))
-
-(defn- rng-opacity
-  [rng]
-  (min 0.999 (round3 (rng-float rng 0.1 1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Attribute generators
@@ -92,7 +42,7 @@
 (defn gen-float
   "Float generator rounded to three decimals so snapshots stay readable."
   [min max]
-  (fn [rng] (round3 (rng-float rng min max))))
+  (fn [rng] (rnd/round3 (rng-float rng min max))))
 
 (defn gen-hex-color
   "Generator of a random `#rrggbb` string."
@@ -149,14 +99,17 @@
   {:id uuid/zero :frame-id uuid/zero})
 
 (defn- check-seed!
+  "Requires a scene seed from 0 through 4294967295, retaining the builder error type."
   [seed]
-  (when-not (and (integer? seed) (<= 0 seed) (< seed 4294967296))
+  (when-not (rnd/seed? seed)
     (throw (ex-info "scene scope requires an integer :seed in [0, 2^32)"
                     {:type ::invalid-seed
                      :seed seed}))))
 
 (defn start
-  "Starts a scene scope. Returns the scope state atom."
+  "Starts a scene scope and returns its state atom with objects, refs and :rng.
+  The seeded generator belongs to this scope; other scopes and report draws
+  cannot advance its state."
   [params]
   (when (some? *state*)
     (throw (ex-info "scene scopes cannot nest"
@@ -171,7 +124,7 @@
                                       :frame-id uuid/zero
                                       :shapes []}))]
     (atom {:seed seed
-           :rng (make-random seed)
+           :rng (rnd/create seed)
            :objects {uuid/zero root}
            :refs {}
            :unfinished {}})))
@@ -462,5 +415,5 @@
                        :ids (vec (keys unfinished))})))
     (let [instance {:objects objects
                     :refs refs}]
-      (common/validate! instance)
+      (snapshot/validate! instance)
       instance)))
