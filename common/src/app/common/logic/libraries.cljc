@@ -56,9 +56,7 @@
        ;; We don't do automatic update of the `layout-grid-cells` property.
        (remove #(= :layout-grid-cells %))))
 
-;; The flex-child attrs propagated between main and copy children. The
-;; interactions are kept on swap, but they are not a layout property
-;; and must not be overwritten when the layout is synced.
+;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
 

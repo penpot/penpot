@@ -7,8 +7,12 @@
 (ns common-tests.logic.comp-flex-interactions-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.math :as mth]
+   [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
@@ -19,8 +23,7 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (defn- setup-file
-  "A flex component with a copy, where the main child and the copy child
-  have interactions pointing to different boards."
+  "Flex component and copy whose children navigate to different boards."
   []
   (-> (thf/sample-file :file1)
       (tho/add-simple-component-with-copy :component1
@@ -99,25 +102,54 @@
     (t/is (true? (:hidden main-child')))
     (t/is (= [(thi/id :main-popup)] (destinations main-child')))))
 
-(t/deftest test-reset-flex-copy-keeps-copy-interactions
+(defn- setup-library-and-file
+  "Library flex component with a nested copy, and a file instance whose
+  nested copy has an interaction."
+  []
+  (let [library (-> (thf/sample-file :library)
+                    (tho/add-nested-component :component1
+                                              :main1-root
+                                              :main1-child
+                                              :component2
+                                              :main2-root
+                                              :nested-head
+                                              :main2-root-params {:layout :flex
+                                                                  :layout-flex-dir :row}))
+        file    (-> (thf/sample-file :file)
+                    (ths/add-sample-shape :copy-popup :type :frame)
+                    (thc/instantiate-component :component2
+                                               :copy2-root
+                                               :library library
+                                               :children-labels [:copy-nested-head])
+                    (ths/add-interaction :copy-nested-head :copy-popup))]
+    [library file]))
+
+(defn- sync-file-from-library
+  [file library]
+  (cll/generate-sync-file-changes (pcb/empty-changes)
+                                  nil
+                                  nil
+                                  (:id file)
+                                  nil
+                                  (:id library)
+                                  {(:id library) library
+                                   (:id file) file}
+                                  (:id file)))
+
+(t/deftest test-sync-library-flex-keeps-nested-copy-interactions
   (let [;; ==== Setup
-        file         (setup-file)
+        [library file]    (setup-library-and-file)
+        copy-x            (:x (tho/bottom-shape file :copy2-root))
 
         ;; ==== Action
-        updated-file (update-shape file :copy-child
-                                   #(assoc % :fills (ths/sample-fills-color :fill-color "#fabada")))
-        page         (thf/current-page updated-file)
-        container    (ctn/make-container page :page)
-        changes      (cll/generate-reset-component (pcb/empty-changes)
-                                                   updated-file
-                                                   {(:id updated-file) updated-file}
-                                                   container
-                                                   (thi/id :copy-root))
-        file'        (thf/apply-changes updated-file changes)
+        library'          (-> library
+                              (update-shape :main1-child #(gsh/move % (gpt/point 1 0)))
+                              (tho/propagate-component-changes :component1))
+        file'             (thf/apply-changes file (sync-file-from-library file library'))
 
         ;; ==== Get
-        copy-child'  (ths/get-shape file' :copy-child)]
+        copy-nested-head' (ths/get-shape file' :copy-nested-head)]
 
     ;; ==== Check
-    (t/is (= (:fills (ths/get-shape file :main-child)) (:fills copy-child')))
-    (t/is (= [(thi/id :copy-popup)] (destinations copy-child')))))
+    (t/is (mth/close? (inc copy-x) (:x (tho/bottom-shape file' :copy2-root))))
+    (t/is (= [(thi/id :copy-popup)] (destinations copy-nested-head')))))
