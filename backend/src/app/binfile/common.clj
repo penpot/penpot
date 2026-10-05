@@ -68,11 +68,15 @@
   (* 1024 1024 20))
 
 ;; Maximum total decompressed size allowed for all JSON/text zip entries
-;; combined within a single import job: 200MiB. Bounds the case where many
+;; combined within a single import job: 500MiB. Bounds the case where many
 ;; entries, each individually under default-max-text-entry-size, still sum
-;; to an unreasonable total.
+;; to an unreasonable total. Set well above the 200MiB it replaces because
+;; legitimate giant exports exist: hundreds of thousands of KB-sized
+;; entries (pages, shapes) that never trip the per-entry cap but sum past
+;; 400MiB. The per-entry cap still bounds single-entry DEFLATE
+;; amplification, so this only moves the cumulative ceiling.
 (def ^:const default-max-text-total-size
-  (* 1024 1024 200))
+  (* 1024 1024 500))
 
 ;; Maximum number of entries allowed in the import zip: 500,000.
 (def ^:const default-max-zip-entries
