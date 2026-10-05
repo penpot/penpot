@@ -356,7 +356,10 @@
 
 (defn- execute-proc
   "A generic function that executes the specified proc iterativelly
-  until 0 results is returned"
+  until 0 results is returned. Heartbeats after each committed chunk so
+  a long backlog in a single proc cannot outrun the orphan lease
+  (mirrors storage/gc-deleted clean-deleted, which heartbeats per
+  chunk)."
   [cfg proc-fn]
   (loop [total 0]
     (let [result (db/tx-run! cfg
@@ -364,7 +367,9 @@
                                (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                                (proc-fn cfg)))]
       (if (pos? result)
-        (recur (long (+ total result)))
+        (do
+          (jobs/heartbeat cfg)
+          (recur (long (+ total result))))
         total))))
 
 

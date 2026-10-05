@@ -648,7 +648,8 @@
     "running"   "running"
     "completed" "completed"
     "failed"    "failed"
-    "cancelled" "failed"))
+    "cancelled" "failed"
+    "aborted"   "failed"))
 
 (t/deftest job-defs-registry-validates-definitions
   (t/testing "valid job-def map passes the assert"
@@ -747,11 +748,11 @@
 
 (t/deftest progress-noop-on-terminal-states
   "A progress report never stores an event when the job is already in a
-  terminal state (completed, failed, cancelled): the row is locked and
+  terminal state (completed, failed, cancelled, aborted): the row is locked and
   checked before the insert, so a report can never race a terminal
   transition."
   (let [cfg (make-cfg (get-job-defs))]
-    (doseq [status ["completed" "failed" "cancelled"]]
+    (doseq [status ["completed" "failed" "cancelled" "aborted"]]
       (t/testing (str "progress is a no-op on " status " status")
         (let [job-id (jobs/submit cfg {::jobs/name   :echo
                                        ::jobs/params (make-params)})]
@@ -1165,6 +1166,25 @@
     (t/testing "a terminal job gets no second end event"
       (t/is (= 0 (jobs/cancel cfg job-id)))
       (t/is (= ["cancelled"] (get-outcomes job-id))))))
+
+(t/deftest aborted-job-is-terminal-for-all-writers
+  "An aborted job (system-side terminal set by the orphan sweep) cannot be
+  moved by any lifecycle writer: first-terminal-wins, with no event and no
+  second transition."
+  (let [cfg    (make-cfg (get-job-defs))
+        job-id (mk-running cfg)
+        at     (:scheduled-at (jobs/get-job cfg job-id))]
+    (th/db-update! :job {:status "aborted"
+                         :error  (db/json jobs/orphan-error)}
+                   {:id job-id})
+    (t/is (zero? (jobs/claim cfg job-id at)))
+    (t/is (zero? (jobs/retry-job cfg job-id 1 (ct/now) test-error :backoff)))
+    (t/is (zero? (jobs/complete cfg :job-id job-id :result {:v 1})))
+    (t/is (zero? (jobs/fail cfg job-id test-error)))
+    (t/is (zero? (jobs/cancel cfg job-id)))
+    (t/is (= "aborted" (:status (jobs/get-job cfg job-id))))
+    (t/is (= ["start"] (get-kinds job-id))
+          "only the claim start event, no end event from any writer")))
 
 (defn- with-failing-event
   "Run `f` with the event insert forced to fail, the way a database that

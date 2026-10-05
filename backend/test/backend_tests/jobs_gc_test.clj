@@ -250,6 +250,29 @@
           (t/is (some? (th/db-get :job {:id running-id} :id :status)))
           (t/is (some? (th/db-get :job {:id user-id} :id :status))))))))
 
+(t/deftest gc-retention-deletes-old-aborted-rows
+  "Aborted jobs are terminal like failed/cancelled: old internal aborted
+  rows are swept by retention, recent ones survive."
+  (let [old-id    (uuid/next)
+        recent-id (uuid/next)]
+    (doseq [[id modified-at] [[old-id (ct/in-past {:days 10})]
+                              [recent-id (ct/now)]]]
+      (th/db-insert! :job {:id           id
+                           :name         "test-job"
+                           :tenant       (cf/get :tenant)
+                           :queue        "default"
+                           :params       (db/json {})
+                           :priority     100
+                           :max-retries  3
+                           :retry-num    0
+                           :status       "aborted"
+                           :scheduled-at (ct/now)
+                           :created-at   (ct/now)
+                           :modified-at  modified-at}))
+    (th/run-task! :jobs-gc {})
+    (t/is (nil? (th/db-get :job {:id old-id} :id :status)))
+    (t/is (some? (th/db-get :job {:id recent-id} :id :status)))))
+
 (t/deftest gc-retention-touches-resources-of-retained-rows
   (let [object  (mk-storage-object)
         job-id  (uuid/next)]

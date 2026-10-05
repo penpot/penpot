@@ -450,7 +450,8 @@
 
 (defn get-jobs-lease
   "Max time a job can run without touching modified_at (heartbeat or
-  progress) before the dispatcher marks it as orphan."
+  progress) before the dispatcher marks it as `aborted` (system-side
+  terminal, never retried, reported with an error log)."
   []
   (or (c/get config :jobs-lease)
       (ct/duration {:minutes 30})))
@@ -465,9 +466,10 @@
       (ct/duration {:minutes 2})))
 
 (defn get-jobs-retention
-  "How long terminal (completed/failed/cancelled) internal job rows are
-  kept before the jobs GC deletes them. The legacy task table is cleaned
-  by the parallel legacy version."
+  "How long terminal (completed/failed/cancelled/aborted) internal job rows are
+  kept before the jobs GC deletes them. The legacy `task` table is not
+  touched by the jobs GC: while both versions run in parallel it is
+  cleaned by the legacy `tasks-gc` of that version."
   []
   (or (c/get config :jobs-retention)
       (ct/duration {:days 7})))

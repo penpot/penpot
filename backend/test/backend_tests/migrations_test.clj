@@ -184,7 +184,7 @@
 
 (t/deftest job-status-check-constraint-accepts-known-statuses
   (doseq [status ["new" "scheduled" "running" "retry"
-                  "completed" "failed" "cancelled"]]
+                  "completed" "failed" "cancelled" "aborted"]]
     (th/db-insert! :job {:id (th/mk-uuid "job-status" status)
                          :name "test"
                          :tenant "acme"

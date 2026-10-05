@@ -24,8 +24,11 @@
 -- The prefix still exists, but only in the Redis key the queue's payloads
 -- travel through, composed in one place by `app.worker/queue-key`.
 --
--- The legacy `task` table stays in place (dormant). Its cleanup remains
--- the responsibility of the parallel legacy version during migration.
+-- The legacy `task` table stays in place (dormant) on purpose until the
+-- next version, so PRE (legacy) and HOURLY (jobs) can run in parallel on
+-- the same database and the deploy can roll back. During that window
+-- each table is cleaned by its own version: `task` rows by the parallel
+-- legacy `tasks-gc`, `job` rows by the new `:jobs-gc`.
 
 CREATE TABLE job (
     id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,7 +42,8 @@ CREATE TABLE job (
     max_retries  int NOT NULL DEFAULT 3,
     status       text NOT NULL DEFAULT 'new'
                  CHECK (status IN ('new', 'scheduled', 'running', 'retry',
-                                   'completed', 'failed', 'cancelled')),
+                                   'completed', 'failed', 'cancelled',
+                                   'aborted')),
     created_at   timestamptz NOT NULL DEFAULT now(),
     modified_at  timestamptz NOT NULL DEFAULT now(),
     started_at   timestamptz,
@@ -68,7 +72,7 @@ CREATE INDEX job__dispatcher__idx
 
 -- Dispatcher orphan sweep: the worker finds the `running` rows of its
 -- own tenant whose modified_at is older than the lease and marks them
--- failed.
+-- `aborted` (system-side terminal, never retried).
 CREATE INDEX job__orphan__idx
     ON job (tenant, modified_at)
     WHERE status = 'running';
@@ -109,7 +113,7 @@ CREATE INDEX job__expires__idx
 -- profile, which are eligible for removal after the retention delay.
 CREATE INDEX job__retention__idx
     ON job (modified_at)
-    WHERE status IN ('completed', 'failed', 'cancelled')
+    WHERE status IN ('completed', 'failed', 'cancelled', 'aborted')
       AND profile_id IS NULL;
 
 -- Append-only job event log: `start`, `progress`, `retry` and `end` rows in

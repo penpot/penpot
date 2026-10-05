@@ -11,9 +11,11 @@
     user or internal). Expiration is the mechanism for user-facing jobs
     and for jobs carrying volatile resources.
   - retention: deletes internal terminal rows (no profile, status in
-    completed/failed/cancelled) older than the `:jobs-retention` delay.
+    completed/failed/cancelled/aborted) older than the `:jobs-retention` delay.
     The dormant legacy `task` table is cleaned by the parallel legacy
-    version. User-facing terminal rows (profile_id NOT NULL) are
+    version until the next release, which is what allows PRE and HOURLY to
+    run side by side on the same database and the deploy to roll back.
+    User-facing terminal rows (profile_id NOT NULL) are
     NOT swept by retention: they are governed by `expires_at` (or stay
     as ledger history).
 
@@ -63,7 +65,7 @@
   "DELETE FROM job
      WHERE id IN (SELECT id
                     FROM job
-                   WHERE status IN ('completed', 'failed', 'cancelled')
+                   WHERE status IN ('completed', 'failed', 'cancelled', 'aborted')
                      AND profile_id IS NULL
                      AND modified_at < now() - ?::interval
                    LIMIT ?)

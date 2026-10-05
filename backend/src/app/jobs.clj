@@ -24,10 +24,13 @@
   column and decoded back to typed Clojure values using the job-def decoder.
 
   Any job that can run longer than `:jobs-lease` must call `heartbeat`
-  on its loop, otherwise the dispatcher marks it orphaned while its side
-  effects continue. `heartbeat` also accepts an optional `progress` report,
-  which is stored as a `progress` row of `job_event`: progress is durable
-  history, not a mutable column, and needs no Redis.
+  on its loop, otherwise the dispatcher marks it `aborted` (a system-side
+  terminal state, like `cancelled` but set by the dispatcher instead of
+  a user: never retried, kept for triage and reported with an error
+  log) while its side effects continue. `heartbeat` also accepts an
+  optional `progress` report, which is stored as a `progress` row of
+  `job_event`: progress is durable history, not a mutable column, and
+  needs no Redis.
 
   Events of a job with a `profile_id` publish a `:job-event` message on the
   topic of that profile after the transaction commits, so a client can
@@ -361,7 +364,7 @@
       ("new" "scheduled" "retry") "pending"
       "running"                   "running"
       "completed"                 "completed"
-      ("failed" "cancelled")      "failed")))
+      ("failed" "cancelled" "aborted") "failed")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JOB EVENTS
@@ -375,7 +378,11 @@
   #{"start" "progress" "retry" "end"})
 
 (def ^:private known-outcomes
-  #{"completed" "failed" "cancelled"})
+  ;; mirrors the `job_event` end outcomes. `aborted` is only ever written
+  ;; by the dispatcher orphan sweep (bulk insert in the same transaction,
+  ;; see `app.worker.dispatcher/mark-orphan-jobs`): no `app.jobs` writer
+  ;; emits it.
+  #{"completed" "failed" "cancelled" "aborted"})
 
 (def ^:private known-retry-reasons
   #{"backoff" "noop"})
@@ -748,9 +755,11 @@
   (sm/check-fn schema:job-error))
 
 (def orphan-error
-  "Error of a job whose execution process died. Nothing is alive to report
-  it, so the dispatcher stores this and writes no event: the durable state
-  of the job is the whole story."
+  "Error of a job whose execution process died or stopped reporting.
+  Nothing is alive to report it, so the dispatcher stores this and marks
+  the job `aborted` (system-side terminal, never retried) with its `end`
+  event in the same transaction: the durable state of the job is the
+  whole story."
   (check-job-error {:type :internal
                     :code :orphan
                     :hint "job execution lease expired"}))
@@ -884,8 +893,8 @@
   not stored or an event that is missing.
 
   Conditional on the non-terminal running/retry states (first-terminal
-  wins: a row already marked failed/cancelled — e.g. an orphan detected
-  by the dispatcher — is never overwritten) and writes no event. Returns
+  wins: a row already marked failed/cancelled/aborted — e.g. an orphan
+  aborted by the dispatcher — is never overwritten) and writes no event. Returns
   the number of affected rows.
 
   The row is read locked inside that same transaction, so the two rules

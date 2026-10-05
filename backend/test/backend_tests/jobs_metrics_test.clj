@@ -230,6 +230,7 @@
     (jobs-metrics/sample-backlog cfg)
     (t/is (= 1.0 (gauge-value metrics :jobs-backlog ["new"])))
     (t/is (= 0.0 (gauge-value metrics :jobs-backlog ["completed"])))
+    (t/is (= 0.0 (gauge-value metrics :jobs-backlog ["aborted"])))
     (t/is (>= (gauge-value metrics :jobs-oldest-pending-age []) 120.0))))
 
 (t/deftest event-counter-has-no-labels-and-follows-the-events

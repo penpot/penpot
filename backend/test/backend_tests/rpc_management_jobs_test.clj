@@ -110,15 +110,20 @@
 
 (t/deftest claim-job-skips-terminal-and-cancelled-rows
   (let [completed-id (mk-job {:status "completed"})
-        cancelled-id (mk-job {:status "cancelled"})]
+        cancelled-id (mk-job {:status "cancelled"})
+        aborted-id   (mk-job {:status "aborted"})]
     (t/is (= {:action :skip}
              (:result (mgmt :claim-job {:job-id completed-id
                                         :scheduled-at (ct/now)}))))
     (t/is (= {:action :skip}
              (:result (mgmt :claim-job {:job-id cancelled-id
                                         :scheduled-at (ct/now)}))))
+    (t/is (= {:action :skip}
+             (:result (mgmt :claim-job {:job-id aborted-id
+                                        :scheduled-at (ct/now)}))))
     (t/is (= "completed" (:status (get-row completed-id))))
-    (t/is (= "cancelled" (:status (get-row cancelled-id))))))
+    (t/is (= "cancelled" (:status (get-row cancelled-id))))
+    (t/is (= "aborted" (:status (get-row aborted-id))))))
 
 (t/deftest claim-job-skips-missing-row
   (t/is (= {:action :skip}
@@ -247,7 +252,7 @@
 (t/deftest complete-and-fail-respect-first-terminal-wins
   (let [cfg        (make-cfg)
         running-id (mk-job {})
-        orphan-id  (mk-job {:status "failed"})
+        orphan-id  (mk-job {:status "aborted"})
         _          (jobs/claim cfg running-id
                                (:scheduled-at (th/db-get :job {:id running-id} :id :scheduled-at)))]
     ;; a running job completes; a later complete/fail on the same row is a no-op
@@ -256,7 +261,7 @@
     (t/is (= 0 (jobs/fail cfg running-id test-error)))
     (t/is (= {:value 1} (:result (get-row running-id))))
 
-    ;; an orphan (failed by the dispatcher) is never overwritten
+    ;; an orphan (aborted by the dispatcher) is never overwritten
     (t/is (= 0 (jobs/complete cfg :job-id orphan-id :result {:value 3})))
     (t/is (= 0 (jobs/fail cfg orphan-id test-error)))))
 

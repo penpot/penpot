@@ -24,7 +24,9 @@
    [integrant.core :as ig])
   (:import
    io.prometheus.client.Collector$MetricFamilySamples
-   io.prometheus.client.Collector$MetricFamilySamples$Sample))
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   io.prometheus.client.Counter
+   io.prometheus.client.Counter$Child))
 
 (t/use-fixtures :once th/state-init)
 
@@ -46,6 +48,18 @@
   (ig/init-key :app.metrics/metrics
                {:default (select-keys main/default-metrics
                                       [:jobs-dispatcher-timing])}))
+
+(defn- make-orphan-metrics []
+  (ig/init-key :app.metrics/metrics
+               {:default (select-keys main/default-metrics
+                                      [:jobs-orphaned :jobs-completed
+                                       :jobs-total-timing])}))
+
+(defn- counter-value [metrics id labels]
+  (let [collector (mtx/get-collector metrics id)
+        instance  (::mdef/instance collector)
+        child     (.labels ^Counter instance (into-array String labels))]
+    (.get ^Counter$Child child)))
 
 (defn- histogram-sample-count [metrics labels]
   (->> (enumeration-seq
@@ -182,7 +196,7 @@
         (t/is (= 1 (count (drain-queue "test"))))
         (t/is (= "scheduled" (:status fresh)))))))
 
-(t/deftest dispatcher-marks-stale-running-jobs-as-orphan-by-lease
+(t/deftest dispatcher-marks-stale-running-jobs-as-aborted-by-lease
   (let [cfg    (mk-cfg)
         stale  (mk-job {:status     "running"
                         :modified-at (ct/minus (ct/now)
@@ -191,14 +205,31 @@
         fresh  (mk-job {:status "running"})]
     (wdisp/run-batch cfg)
     (let [stale-row (get-row stale)]
-      (t/is (= "failed" (:status stale-row)))
+      (t/is (= "aborted" (:status stale-row)))
       (t/testing "the error is the structured one, decoded back to keywords"
         (t/is (= jobs/orphan-error (:error stale-row))))
-      (t/testing "an orphan writes no event: nobody is alive to report it"
-        (t/is (= [] (:events stale-row)))))
+      (t/testing "the sweep stores the end event with the aborted outcome"
+        (t/is (= [{:kind "end" :payload {:outcome "aborted"}}]
+                 (:events stale-row))))
+      (t/testing "an aborted job is terminal: it is never retried nor reclaimed"
+        (t/is (zero? (jobs/retry-job cfg
+                                     (:id stale-row)
+                                     1 (ct/now) jobs/orphan-error :backoff)))))
 
     (t/testing "recent running job is not touched"
       (t/is (= "running" (:status (get-row fresh)))))))
+
+(t/deftest dispatcher-orphan-sweep-records-orphan-and-terminal-metrics
+  (let [metrics (make-orphan-metrics)
+        cfg     (assoc (mk-cfg) ::mtx/metrics metrics)
+        _       (mk-job {:status     "running"
+                         :modified-at (ct/minus (ct/now)
+                                                (ct/plus (cf/get-jobs-lease)
+                                                         (ct/duration {:minutes 1})))})]
+    (wdisp/run-batch cfg)
+    (t/is (= 1.0 (counter-value metrics :jobs-orphaned ["test"])))
+    (t/is (= 1.0 (counter-value metrics :jobs-completed
+                                ["test-job" "test" "aborted"])))))
 
 (t/deftest dispatcher-batch-without-pending-jobs-signals-wait
   (let [cfg (mk-cfg)]

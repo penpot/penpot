@@ -177,7 +177,7 @@
                   (max 0 (long millis)))))
 
 (def ^:private backlog-statuses
-  ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled"])
+  ["new" "scheduled" "running" "retry" "completed" "failed" "cancelled" "aborted"])
 
 (def ^:private sql:backlog
   "SELECT status, count(*) AS n

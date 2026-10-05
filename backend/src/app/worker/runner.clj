@@ -33,7 +33,8 @@
 (defn- claim-job
   "Conditional claim: only transition pending jobs (new/scheduled/retry)
   to running. Delegates to the shared jobs/claim so internal and
-  external workers can never drift. A cancelled or terminal job produces
+  external workers can never drift. A cancelled, aborted or otherwise
+  terminal job produces
   0 affected rows and is skipped without touching its state
   (first-terminal-wins companion). Also predicates the payload
   scheduled_at: a row rescheduled after the payload was pushed

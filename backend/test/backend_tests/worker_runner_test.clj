@@ -380,10 +380,10 @@
                              ::jobs/handler
                              (fn [_context _params]
                                ;; simulate the dispatcher marking the
-                               ;; running job as orphan while the handler
+                               ;; running job as aborted while the handler
                                ;; is executing
                                (th/db-update! :job
-                                              {:status "failed"
+                                              {:status "aborted"
                                                :error  (db/json jobs/orphan-error)}
                                               {:id jobs/*job-id*})
                                :ok))}]
@@ -391,8 +391,8 @@
     (run-one (mk-cfg {:defs defs}))
 
     (let [row (get-row job-id)]
-      (t/testing "the orphan failure is preserved (first-terminal-wins)"
-        (t/is (= "failed" (:status row)))
+      (t/testing "the orphan abort is preserved (first-terminal-wins)"
+        (t/is (= "aborted" (:status row)))
         (t/is (= jobs/orphan-error (:error row)))
         (t/is (nil? (:completed-at row)))))))
 

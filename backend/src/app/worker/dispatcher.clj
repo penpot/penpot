@@ -62,8 +62,8 @@
 ;; Both sweeps are bulk UPDATEs that run before every dispatch batch, so
 ;; they are the two queries where a missing tenant filter does the most
 ;; damage: without it any instance with a worker requeues another
-;; instance's scheduled rows and, worse, marks its running jobs as failed
-;; orphans once their lease expires.
+;; instance's scheduled rows and, worse, aborts its running jobs once
+;; their lease expires.
 (def ^:private sql:reschedule-lost
   "UPDATE job
       SET status='new', scheduled_at=?::timestamptz
@@ -77,19 +77,27 @@ RETURNING job.id, job.queue")
 
 (def ^:private sql:mark-orphan
   "UPDATE job
-      SET status='failed', modified_at=?::timestamptz, error=?::jsonb
+      SET status='aborted', modified_at=?::timestamptz, error=?::jsonb
      FROM (SELECT t.id
              FROM job AS t
             WHERE status = 'running'
               AND t.tenant = ?
               AND t.modified_at < ?::timestamptz) AS subquery
     WHERE job.id=subquery.id
-RETURNING job.id, job.queue")
+RETURNING job.id, job.queue, job.name, job.created_at")
 
 ;; the error travels as text and PostgreSQL casts it: a PGobject parameter
-;; on a `::jsonb` placeholder is not what the driver expects here.
+;; on a `::jsonb` placeholder is not what the driver expects here. Same
+;; for the orphan `end` event payload below.
 (def ^:private orphan-error-json
   (json/encode jobs/orphan-error))
+
+(def ^:private aborted-outcome-json
+  (json/encode {:outcome "aborted"}))
+
+(def ^:private sql:insert-orphan-events
+  "INSERT INTO job_event (job_id, kind, payload)
+   SELECT unnest(?::uuid[]), 'end', ?::jsonb")
 
 (defn- encode-payload
   [{:keys [id scheduled-at]}]
@@ -114,11 +122,24 @@ RETURNING job.id, job.queue")
         rows    (db/exec! conn [sql:mark-orphan timestamp orphan-error-json
                                 tenant cutoff]
                           {:return-keys true})]
+    ;; The sweep is the only status change outside `app.jobs`, so it owns
+    ;; its `end` events too: one bulk insert in the same transaction (never
+    ;; one insert per orphan) keeps the history consistent with the rows.
+    ;; No msgbus notification: orphans alert through the error log and the
+    ;; orphaned counter, like before.
+    (when (seq rows)
+      (db/exec-one! conn [sql:insert-orphan-events
+                          (db/create-array conn "uuid" (map :id rows))
+                          aborted-outcome-json]))
     (db/after-commit
      (fn []
-       (doseq [{:keys [id queue]} rows]
+       (doseq [{:keys [id queue name created-at]} rows]
          (metrics/record-orphan cfg queue)
-         (l/wrn :hint "marked job as orphan"
+         (metrics/record-outcome cfg name queue :aborted)
+         (when (ct/inst? created-at)
+           (metrics/record-total cfg name queue :aborted
+                                 (- (inst-ms timestamp) (inst-ms created-at))))
+         (l/err :hint "marked job as aborted (orphan lease expired)"
                 :id (str id)
                 :tenant tenant
                 :queue queue))))))
@@ -162,7 +183,7 @@ RETURNING job.id, job.queue")
     ;; redis server is restarted just after job is pushed)
     (reschedule-lost-jobs cfg)
 
-    ;; Mark as failed all jobs that are still marked as running but
+    ;; Mark as aborted all jobs that are still marked as running but
     ;; their last modification (heartbeat or progress) is older than
     ;; the configured lease
     (mark-orphan-jobs cfg)

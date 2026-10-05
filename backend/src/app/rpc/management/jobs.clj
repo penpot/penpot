@@ -38,7 +38,7 @@
    [:params {:optional true} :any]])
 
 (sv/defmethod ::claim-job
-  {::doc/added "2.19"
+  {::doc/added "2.20"
    ::sm/params schema:claim-job-params
    ::sm/result schema:claim-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
@@ -46,7 +46,9 @@
   (let [row (jobs/get-job cfg job-id)]
     ;; Race condition: if the job is claimed between get-job and claim! by
     ;; another worker, claim! returns 0 and we return :skip. The conditional
-    ;; claim (UPDATE ... WHERE status='new') handles this correctly.
+    ;; claim (UPDATE ... WHERE status IN ('new','scheduled','retry') AND
+    ;; scheduled_at=?) handles this correctly: only a pending row with an
+    ;; exact scheduled-at match is claimed, a stale payload is skipped.
     (if (and row (pos? (jobs/claim cfg job-id scheduled-at)))
       {:action :run
        :name   (:name row)
@@ -68,7 +70,7 @@
    [:action [:enum :run :skip]]])
 
 (sv/defmethod ::report-job-progress
-  {::doc/added "2.19"
+  {::doc/added "2.20"
    ::sm/params schema:report-job-progress-params
    ::sm/result schema:report-job-progress-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
@@ -102,7 +104,7 @@
    [:action [:enum :run :skip]]])
 
 (sv/defmethod ::complete-job
-  {::doc/added "2.19"
+  {::doc/added "2.20"
    ::sm/params schema:complete-job-params
    ::sm/result schema:complete-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
@@ -128,7 +130,7 @@
    [:action [:enum :run :skip]]])
 
 (sv/defmethod ::fail-job
-  {::doc/added "2.19"
+  {::doc/added "2.20"
    ::sm/params schema:fail-job-params
    ::sm/result schema:fail-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
