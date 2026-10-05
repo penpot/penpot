@@ -99,7 +99,7 @@
 
 (t/deftest horizontal-line-badge-runs-below-the-line
   (let [layout (msr/size-badge-layout [(polyline [0 50] [200 50])] 1 big-vbox)]
-    (t/is (close-layout? {:text "200 x 0.01" :cx 100 :cy 66 :rot 0} layout))))
+    (t/is (close-layout? {:text "200" :cx 100 :cy 66 :rot 0} layout))))
 
 (t/deftest line-drawn-right-to-left-keeps-the-text-upright
   (let [layout (msr/size-badge-layout [(polyline [200 50] [0 50])] 1 big-vbox)]
@@ -108,23 +108,27 @@
 (t/deftest vertical-line-badge-runs-along-the-line
   (let [down (msr/size-badge-layout [(polyline [0 0] [0 200])] 1 big-vbox)
         up   (msr/size-badge-layout [(polyline [0 200] [0 0])] 1 big-vbox)]
-    (t/is (close-layout? {:text "0.01 x 200" :cx -16 :cy 100 :rot 90} down))
+    (t/is (close-layout? {:text "200" :cx -16 :cy 100 :rot 90} down))
     (t/is (close-layout? {:cx -16 :cy 100 :rot 90} up))))
 
 (t/deftest diagonal-line-badge-follows-the-line-angle
   (let [layout (msr/size-badge-layout [(polyline [0 0] [100 100])] 1 big-vbox)
         offset (/ 16 (mth/sqrt 2))]
-    (t/is (close-layout? {:cx (- 50 offset) :cy (+ 50 offset) :rot 45}
+    (t/is (close-layout? {:text "141.42" :cx (- 50 offset) :cy (+ 50 offset) :rot 45}
                          layout))))
 
 (t/deftest line-shorter-than-the-badge-hides-it
-  ;; "30 x 0.01" needs a 70.5 wide badge.
-  (t/is (nil? (msr/size-badge-layout [(polyline [0 0] [30 0])] 1 big-vbox))))
+  ;; "20" needs a 25 wide badge.
+  (t/is (nil? (msr/size-badge-layout [(polyline [0 0] [20 0])] 1 big-vbox))))
+
+(t/deftest line-badge-shows-the-length-with-two-decimals-at-most
+  (t/is (= "70.71" (:text (msr/size-badge-layout [(polyline [0 0] [50 50])] 1 big-vbox))))
+  (t/is (= "50" (:text (msr/size-badge-layout [(polyline [0 0] [30 40])] 1 big-vbox)))))
 
 (t/deftest diagonal-line-uses-its-length-to-fit-the-badge
-  ;; Both sides (50) are narrower than the badge (57.5), but the line is
-  ;; about 70 long, so the badge fits along it.
-  (t/is (some? (msr/size-badge-layout [(polyline [0 0] [50 50])] 1 big-vbox))))
+  ;; Both sides (33) are narrower than the badge for "46.67" (44.5), but
+  ;; the line is about 46.67 long, so the badge fits along it.
+  (t/is (some? (msr/size-badge-layout [(polyline [0 0] [33 33])] 1 big-vbox))))
 
 (t/deftest line-badge-moves-to-the-other-side-at-the-vbox-bottom
   (let [vbox   {:x 0 :y 0 :width 1000 :height 60}

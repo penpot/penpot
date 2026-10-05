@@ -217,8 +217,9 @@ test("Selection size badge runs along straight line paths", async ({
 
   await expect(page.locator(".line-controls")).toBeVisible();
 
+  // A straight line shows its length, with two decimals at most
   const badge = page.locator(".selection-size-badge");
-  await expect(badge.locator("text")).toHaveText(/\d+\.?\d* x \d+\.?\d*/);
+  await expect(badge.locator("text")).toHaveText(/^\d+(\.\d{1,2})?$/);
 
   // The badge follows the line angle, about 29 degrees
   const transform = await badge.getAttribute("transform");

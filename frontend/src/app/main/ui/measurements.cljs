@@ -292,17 +292,24 @@
         shape-width  (:width shape-rect)
         shape-height (:height shape-rect)
 
-        text (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height))
-
-        text-width   (* (count text) badge-char-width)
-        badge-width  (+ text-width (* 2 badge-padding-x))
-        offset       (+ badge-gap (/ badge-height 2))
-
         [line-p1 line-p2]
         (when single-line?
           (let [content (dm/get-prop single-shape :content)]
             [(path.helpers/segment->point (nth content 0))
              (path.helpers/segment->point (nth content 1))]))
+
+        line-length  (when single-line?
+                       (gpt/distance line-p1 line-p2))
+
+        ;; A straight line shows its length (two decimals at most);
+        ;; other shapes show their width and height.
+        text         (if single-line?
+                       (fmt/format-number line-length)
+                       (dm/str (fmt/format-number shape-width) " x " (fmt/format-number shape-height)))
+
+        text-width   (* (count text) badge-char-width)
+        badge-width  (+ text-width (* 2 badge-padding-x))
+        offset       (+ badge-gap (/ badge-height 2))
 
         ;; Paths can be flat (zero width or height), so only their
         ;; longest side counts when checking that the badge fits.
@@ -310,7 +317,7 @@
 
         hidden?      (cond
                        single-line?
-                       (< (gpt/distance line-p1 line-p2) badge-width)
+                       (< line-length badge-width)
 
                        path?
                        (< (max shape-width shape-height) badge-width)
