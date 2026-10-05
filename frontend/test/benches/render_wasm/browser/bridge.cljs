@@ -5,16 +5,19 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns benches.render-wasm.browser.bridge
-  "Browser bridge for the benchmarks.
+  "The browser bridge prepares scenes and executes renderer benchmark attempts.
 
-  Lifecycle here mirrors the editor cold-load path
-  (`app.render-wasm.api/initialize-viewport` + `set-objects` sync).
+  A preparation owns one module, graphics context, scene snapshot and upload.
+  'Warm' attempts are those that reuse that preparation. 'Fresh' preparations
+  execute once.
 
-  The browser exports `bridge`; Node passes data through `page.evaluate`.
+  Setup follows the editor initialization and synchronous object upload paths.
+  Node calls the exported bridge through `page.evaluate`.
 
-  `loadScene` resolves to Transit. `ping` and `dispose` return plain data.
+  Scene, measurement and reports return Transit. Ping and disposal return status
+  objects.
 
-  Failures are returned as `{\"status\" \"failed\" ...}` maps."
+  Failures retain their phase, cause and available partial evidence."
   (:require
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.serialize-shape :as serialize-shape]
@@ -27,12 +30,18 @@
    ;; at load
    [app.render-wasm.api.enums]
    [app.render-wasm.api.webgl :as webgl]
-   [benches.render-wasm.browser.upload :as upload]
    [benches.render-wasm.cases]
+   [benches.render-wasm.codec :as codec]
    [benches.render-wasm.declarations :as decl]
    [benches.render-wasm.failures :as fail]
+   [benches.render-wasm.fingerprint :as fingerprint]
+   [benches.render-wasm.measurement :as measurement]
+   [benches.render-wasm.report.compare :as compare]
+   [benches.render-wasm.report.format :as format]
+   [benches.render-wasm.report.summarize :as summary]
+   [benches.render-wasm.result :as result]
    [benches.render-wasm.runtime.protocol :as protocol]
-   [benches.render-wasm.snapshot :as scenes]))
+   [benches.render-wasm.snapshot :as snapshot]))
 
 ;; Forward decls
 (declare now guard-current! read-graphics)
@@ -40,19 +49,23 @@
 (def schema:load-scene-args
   "Decoded Transit request for `load-scene`."
   [:map {:closed true}
-   [:case map?]
+   [:case decl/schema:collected-case]
+   [:preparation-id {:optional true} some?]
+   [:timeout-ms {:optional true} [:int {:min 1}]]
    [:module-url {:optional true} string?]
    [:wasm-url {:optional true} string?]])
 
 (def ^:const ^:private attempt-ms-budget
-  "Own wall deadline for one bridge attempt, checked by `browser-hooks`.
-  Ticket 11 accepts a per-attempt timeout; until then this fixed value
-  bounds runaway drains. The Node outer timeout stays the backstop for
-  synchronously blocked pages."
+  "Default wall deadline for setup or one attempt, checked by browser-hooks.
+  Requests can supply a timeout. Node's outer timeout covers blocked pages."
   30000)
 
 (defn- browser-hooks
-  "Browser hooks for one owner epoch and deadline."
+  "Browser hooks for one owner epoch and deadline.
+
+  This somewhat awkward decoupling keeps scene declarations safe to load in
+  Node, where we don't have a canvas nor a graphics context. It also lets tests
+  control time and renderer responses."
   [epoch deadline-ms]
   {:now               now
    ;; rAF scheduling
@@ -94,13 +107,18 @@
 (defonce ^:private canvas*
   (atom nil))
 
+(defonce ^:private prepared*
+  (atom nil))
+
 
 (defn- mark-live!
+  "Marks the current renderer context as initialized and available."
   []
   (reset! wasm/context-lost? false)
   (set! wasm/context-initialized? true))
 
 (defn- now
+  "Reads the browser's monotonic clock in milliseconds."
   []
   (.now js/performance))
 
@@ -135,6 +153,7 @@
     (catch :default _ "unknown")))
 
 (defn- software-renderer?
+  "Recognizes common software graphics implementations from their renderer text."
   [s]
   (boolean (re-find #"(?i)swiftshader|llvmpipe|software|basic render" (or s ""))))
 
@@ -160,7 +179,8 @@
   ;; reload path; bench disposal owns it explicitly.
   (reset! wasm/context-lost? false)
   (set! wasm/internal-module nil)
-  (reset! canvas* nil))
+  (reset! canvas* nil)
+  (reset! prepared* nil))
 
 (defn dispose!
   "Closes the current owner: bumps the epoch (running continuations go
@@ -195,7 +215,12 @@
                 (catch :default _ nil))
         attr  (fn [k]
                 (when (some? attrs)
-                  (unchecked-get attrs k)))]
+                  (unchecked-get attrs k)))
+        vendor (try
+                 (if-let [ext (.getExtension ^js ctx "WEBGL_debug_renderer_info")]
+                   (str (.getParameter ^js ctx (unchecked-get ext "UNMASKED_VENDOR_WEBGL")))
+                   "unknown")
+                 (catch :default _ "unknown"))]
     {:css-width width
      :css-height height
      :drawing-buffer-width (.-drawingBufferWidth ^js ctx)
@@ -208,6 +233,7 @@
      :alpha (attr "alpha")
      :preserve-drawing-buffer (attr "preserveDrawingBuffer")
      :renderer renderer
+     :vendor vendor
      :software (software-renderer? renderer)}))
 
 (defn- install-listeners!
@@ -258,11 +284,15 @@
                          "unknown failure"))
           detail  (try (fail/describe-cause cause)
                        (catch :default _
-                         [{:message fail/unrenderable-cause-text}]))]
+                         [{:message fail/unrenderable-cause-text}]))
+          partial (try (:partial (ex-data cause)) (catch :default _ nil))
+          preparation (get-in @prepared* [:graphics :preparation])]
       (dispose-if-current! epoch)
-      (fail/fail-data {:phase   phase
-                       :message message
-                       :cause   detail}))))
+      (cond-> (fail/fail-data {:phase   phase
+                               :message message
+                               :cause   detail})
+        partial (assoc :partial partial)
+        preparation (assoc :preparation preparation)))))
 
 (defn- guard-current!
   "Throws the stale marker when `epoch` no longer owns the realm. Every
@@ -286,40 +316,39 @@
 
 (defn- case-ok
   "Adds lifecycle and graphics data to one compiled body's measurement."
-  [epoch live? case-desc seed dims graphics measurement]
+  [epoch case-desc seed graphics measurement]
   (guard-current! epoch "render")
-  (if-not (live?)
+  (if-not (wasm/live?)
     (do
       (dispose-if-current! epoch)
       (fail/fail-data {:phase (if (= :reuse (:context case-desc))
                                 "interact"
                                 "first-render")
                        :message "disposed or context lost during case"}))
-    (let [{:keys [module-ms graphics-ms renderer ctx snapshot upload-ms]} graphics
-          {:keys [width height dpr]} dims]
-      (cond-> (merge measurement
-                     {:status "ok"
-                      :module-init-ms module-ms
-                      :graphics-init-ms graphics-ms
-                      :upload-ms upload-ms
-                      :scene {:shapes (count (:objects snapshot))
-                              :seed seed}
-                      :effective-graphics (read-graphics (:context ctx) width height dpr renderer)})
-        (= :fresh (:context case-desc))
-        (assoc :first-render-ms (:full-ms measurement)
-               :render-frames (count (:slices measurement)))))))
+    (let [{:keys [module-ms graphics-ms snapshot upload-ms preparation]} graphics
+          setup {:module-init-ms module-ms :graphics-init-ms graphics-ms :upload-ms upload-ms}]
+      (merge measurement
+             {:status "ok"
+              :preparation preparation
+              :metrics (measurement/metrics measurement (= :fresh (:context case-desc)) setup)
+              :trace (dissoc measurement :metrics)
+              :scene {:shapes (count (:objects snapshot))
+                      :seed seed}
+              :effective-graphics (:effective-graphics preparation)}))))
 
 (defn- run-case
   "Awaits untimed restore for reuse cases, then calls the compiled body once.
   Its synchronous return is assimilated into the same Promise result path."
-  [{:keys [epoch dims hooks live?]} case-desc local-case graphics]
+  [{:keys [epoch hooks]} case-desc local-case graphics]
   (let [reuse? (= :reuse (:context case-desc))
         prep   (if reuse?
                  (-> (protocol/restore hooks (:view graphics))
                      (.catch (fn [cause]
                                (if (fail/stale? cause)
                                  (throw cause)
-                                 (throw (ex-info "restore failed" {:phase "restore"} cause))))))
+                                 (throw (ex-info "restore failed"
+                                                 (assoc (ex-data cause) :phase "restore")
+                                                 (if (some? (ex-data cause)) (ex-cause cause) cause)))))))
                  (js/Promise.resolve nil))
         rtx    {:case case-desc
                 :scene (:snapshot graphics)
@@ -331,10 +360,11 @@
                  (guard-current! epoch "render")
                  (js/Promise.resolve ((:run! local-case) rtx))))
         (.then (fn [measurement]
-                 (case-ok epoch live? case-desc (:scene-seed case-desc)
-                          dims graphics measurement)))
+                 (case-ok epoch case-desc (:scene-seed case-desc)
+                          graphics measurement)))
         (.catch (fn [cause]
-                  (terminal-failure epoch cause (if reuse? "interact" "first-render")))))))
+                  (assoc (terminal-failure epoch cause (if reuse? "interact" "first-render"))
+                         :preparation (:preparation graphics)))))))
 
 (defn- parse-load-request
   "Decodes and validates the request before claiming the page. Failure
@@ -346,19 +376,18 @@
         {:error (fail/fail-data {:phase "invalid-args"
                                  :message "load-scene needs a Transit request with case"})}
         (let [case-desc (:case params)
-              checked   (decl/check-collected-case case-desc)
-              scene     (decl/registered-scene (:scene checked))
-              local     (decl/registered-case (:id checked))]
+              scene     (decl/registered-scene (:scene case-desc))
+              local     (decl/registered-case (:id case-desc))]
           (when (nil? scene)
-            (throw (ex-info (str "unknown scene: " (:scene checked))
+            (throw (ex-info (str "unknown scene: " (:scene case-desc))
                             {:phase "invalid-args"})))
           (when-not (and local
                          (fn? (:run! local))
-                         (= (:scene local) (:scene checked)))
-            (throw (ex-info (str "missing case body for " (:id checked))
+                         (= (:scene local) (:scene case-desc)))
+            (throw (ex-info (str "missing case body for " (:id case-desc))
                             {:phase "invalid-args"})))
           {:params params
-           :case-desc checked
+           :case-desc case-desc
            :local-case local
            :scene scene})))
     (catch :default cause
@@ -367,17 +396,15 @@
                                             "invalid Transit request")})})))
 
 (defn- begin-load!
-  "Claims the page, releases the prior owner, then fixes this attempt's
-  viewport, hooks and deadline. Module instantiation gets a fresh cache."
+  "Claims the page, releases the prior owner and fixes the viewport.
+  Module instantiation gets a fresh cache. Preparation supplies the deadline."
   [case-desc]
   (let [epoch (swap! owner-epoch* inc)]
     (release-owner-resources!)
     (reset! module-promise* nil)
     (let [viewport (decl/resolve-viewport (:view case-desc))]
       {:epoch epoch
-       :dims viewport
-       :hooks (browser-hooks epoch (+ (now) attempt-ms-budget))
-       :live? (fn [] (and (= epoch @owner-epoch*) (wasm/live?)))})))
+       :dims viewport})))
 
 (defn- load-module
   "Imports and instantiates the renderer. A failed import or factory call
@@ -439,16 +466,16 @@
        :ctx ctx})))
 
 (defn- prepare-scene
-  "Builds and validates the registered scene, then orders its shapes before
-  the upload timer begins."
+  "Builds the registered scene, then fingerprints and orders its shapes before
+  the upload timer begins. Scene builders return validated snapshots."
   [epoch scene case-desc seed graphics]
   (guard-current! epoch "scene-build")
   (try
-    (let [snapshot (-> ((:build scene) (assoc (:params case-desc) :seed seed))
-                       (scenes/validate!))]
+    (let [snapshot ((:build scene) (assoc (:params case-desc) :seed seed))]
       (assoc graphics
              :snapshot snapshot
-             :ordered (upload/prepare-scene snapshot)))
+             :fingerprint (fingerprint/fingerprint snapshot)
+             :ordered (snapshot/upload-order snapshot)))
     (catch :default cause
       (if (fail/stale? cause)
         (throw cause)
@@ -486,58 +513,172 @@
                         {:phase "upload"}
                         cause))))))
 
-(defn- render-scene
-  "Runs the compiled case body after upload and any untimed preparation."
-  [{:keys [epoch] :as attempt} case-desc local-case graphics]
-  (guard-current! epoch "render")
-  (run-case attempt case-desc local-case graphics))
+(defn- preparation-data
+  "Projects setup facts without renderer handles or snapshot contents."
+  [id case-desc dims graphics]
+  (let [{:keys [module-ms graphics-ms upload-ms renderer ctx snapshot fingerprint setup-render]} graphics
+        {:keys [width height dpr]} dims]
+    {:preparation-id id
+     :case-id (:id case-desc)
+     :fingerprint fingerprint
+     :effective-graphics (read-graphics (:context ctx) width height dpr renderer)
+     :diagnostics (cond-> {:module-init-ms module-ms :graphics-init-ms graphics-ms
+                           :upload-ms upload-ms
+                           :scene {:shapes (count (:objects snapshot)) :seed (:scene-seed case-desc)}}
+                    setup-render (assoc :setup-render setup-render))}))
+
+(defn- prepare-request
+  "Builds, fingerprints and uploads one owned scene.
+  Warm initial rendering stays in diagnostics. No attempt slot runs here."
+  [request]
+  (try
+    (let [{:keys [error params case-desc local-case scene]} (parse-load-request request)]
+      (if error
+        (js/Promise.resolve error)
+        (let [{:keys [epoch dims] :as owner} (begin-load! case-desc)
+              timeout-ms (or (:timeout-ms params) attempt-ms-budget)
+              owner (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))
+              id (or (:preparation-id params) epoch)
+              available* (volatile! {})]
+          (-> (load-module epoch params)
+              (.then (fn [module] (initialize-graphics! epoch dims module)))
+              (.then (fn [graphics]
+                       (vreset! available* (select-keys graphics [:module-ms :graphics-ms]))
+                       (let [graphics (prepare-scene epoch scene case-desc (:scene-seed case-desc) graphics)]
+                         (vswap! available* assoc :fingerprint (:fingerprint graphics))
+                         graphics)))
+              (.then (fn [graphics] (upload-scene! epoch case-desc graphics)))
+              (.then (fn [graphics]
+                       (vswap! available* assoc :upload-ms (:upload-ms graphics))
+                       (if (= :reuse (:context case-desc))
+                         (-> (protocol/restore (:hooks owner) (:view graphics))
+                             (.then (fn [trace] (assoc graphics :setup-render trace))))
+                         graphics)))
+              (.then (fn [graphics]
+                       (guard-current! epoch "prepare")
+                       (let [preparation (preparation-data id case-desc dims graphics)]
+                         (reset! prepared* {:owner owner :case-desc case-desc :local-case local-case
+                                            :timeout-ms timeout-ms :busy? false :used? false
+                                            :graphics (assoc graphics :preparation preparation)})
+                         {:status "ok" :preparation preparation})))
+              (.catch (fn [cause]
+                        (if (fail/stale? cause)
+                          (terminal-failure epoch cause "aborted")
+                          (terminal-failure epoch
+                                            (ex-info (or (ex-message cause) "setup failed")
+                                                     (assoc (ex-data cause) :partial
+                                                            (merge {:setup @available*}
+                                                                   (:partial (ex-data cause))))
+                                                     (if (some? (ex-data cause)) (ex-cause cause) cause))
+                                            "aborted"))))))))
+    (catch :default cause
+      (js/Promise.resolve (fail/fail-data {:phase "setup" :message (ex-message cause)})))))
+
+(defn- execute-prepared
+  "Runs one body against the owned preparation with a fresh attempt deadline.
+  Fresh preparations run once; warm preparations restore and drain before each
+  body without rebuilding, uploading or copying setup metrics into samples."
+  [{:keys [preparation-id timeout-ms]}]
+  (let [{:keys [owner case-desc local-case graphics busy? used?] :as prepared} @prepared*
+        id (get-in graphics [:preparation :preparation-id])]
+    (if (or (nil? prepared) (not= id preparation-id) busy?
+            (and used? (= :fresh (:context case-desc))))
+      (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
+                                           :message "preparation unavailable, busy or already used"}))
+      (let [epoch (:epoch owner)
+            timeout-ms (or timeout-ms (:timeout-ms prepared))
+            owner (assoc owner :hooks (browser-hooks epoch (+ (now) timeout-ms)))]
+        (swap! prepared* assoc :busy? true :used? true)
+        (-> (run-case owner case-desc local-case graphics)
+            (.then (fn [evidence]
+                     (when (= epoch @owner-epoch*)
+                       (swap! prepared* assoc :busy? false))
+                     evidence))
+            (.catch (fn [cause] (terminal-failure epoch cause "attempt"))))))))
+
+(defn- encode-evidence
+  "Encodes bridge evidence after all timing; reports codec errors as failures."
+  [promise]
+  (let [epoch @owner-epoch*]
+    (-> promise
+        (.then codec/encode-str)
+        (.catch (fn [cause]
+                  (dispose-if-current! epoch)
+                  (t/encode-str (fail/fail-data {:phase "bridge"
+                                                 :message (or (ex-message cause) "result encoding failed")})))))))
+
+(defn prepare-scene-request
+  "Accepts a Transit load request and returns a Transit preparation.
+  Repeated warm attempts use runPrepared with this preparation's exact ID."
+  [request]
+  (encode-evidence (prepare-request request)))
+
+(defn run-prepared
+  "Accepts Transit {:preparation-id id :timeout-ms optional-positive-ms}.
+  Invalid requests leave the owner untouched. Evidence resolves as Transit."
+  [request]
+  (encode-evidence
+   (try
+     (let [params (t/decode-str request)]
+       (if (sm/validate [:map {:closed true}
+                         [:preparation-id some?]
+                         [:timeout-ms {:optional true} [:int {:min 1}]]] params)
+         (execute-prepared params)
+         (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
+                                              :message "runPrepared needs a preparation ID"}))))
+     (catch :default cause
+       (js/Promise.resolve (fail/fail-data {:phase "invalid-args"
+                                            :message (or (ex-message cause) "invalid Transit request")}))))))
 
 (defn load-scene
-  "Loads one collected case to Full. Takes a Transit request with `:case`
-  and optional module/WASM URLs; resolves to a Transit result.
-  Validation precedes ownership and all timers. Fresh cases time upload
-  and one drain; reuse cases restore and drain outside interaction timing."
+  "Prepares a collected case and runs one attempt, returning Transit evidence.
+  Fresh render timing starts after upload. Warm setup stays diagnostic;
+  prepareScene/runPrepared let a serial runner reuse the owned warm scene."
   [request]
-  (let [epoch* (volatile! nil)
-        result (try
-                 (let [{:keys [error params case-desc local-case scene]}
-                       (parse-load-request request)
-                       seed (:scene-seed case-desc)]
-                   (if error
-                     (js/Promise.resolve error)
-                     (let [{:keys [epoch dims] :as attempt} (begin-load! case-desc)]
-                       (vreset! epoch* epoch)
-                       (-> (load-module epoch params)
-                           (.then (fn [module]
-                                    (initialize-graphics! epoch dims module)))
-                           (.then (fn [graphics]
-                                    (prepare-scene epoch scene case-desc seed graphics)))
-                           (.then (fn [graphics]
-                                    (upload-scene! epoch case-desc graphics)))
-                           (.then (fn [graphics]
-                                    (render-scene attempt case-desc local-case graphics)))
-                           (.catch (fn [cause]
-                                     (terminal-failure epoch cause "aborted")))))))
-                 (catch :default cause
-                   (js/Promise.resolve
-                    (fail/fail-data {:phase "setup" :message (ex-message cause)}))))]
-    (-> result
-        (.then t/encode-str)
-        (.catch (fn [cause]
-                  (when-some [epoch @epoch*]
-                    (dispose-if-current! epoch))
-                  (t/encode-str
-                   (fail/fail-data {:phase "bridge"
-                                    :message (or (ex-message cause)
-                                                 "result encoding failed")})))))))
+  (encode-evidence
+   (-> (prepare-request request)
+       (.then (fn [{:keys [status preparation] :as evidence}]
+                (if (= status "ok")
+                  (execute-prepared {:preparation-id (:preparation-id preparation)})
+                  evidence))))))
 
 (defn ping
   "Bridge placeholder that checks the Node/browser boundary."
   []
   #js {"status" "ok"})
 
+(defn summarize-record
+  "Returns a Transit summary of a raw Transit record."
+  ([record-text] (summarize-record record-text nil))
+  ([record-text analysis-text]
+   (codec/encode-str (summary/summarize (result/decode record-text)
+                                        (when analysis-text (t/decode-str analysis-text))))))
+
+(defn compare-records
+  "Returns Comparison schema2 Transit for two saved runs and Transit options."
+  [baseline-text candidate-text options-text]
+  (result/encode (compare/compare-runs (result/decode baseline-text)
+                                       (result/decode candidate-text)
+                                       (t/decode-str options-text))))
+
+(defn format-run
+  "Returns text for a summary computed from a raw Transit run."
+  [record-text]
+  (format/format-run (summary/summarize (result/decode record-text))))
+
+(defn format-comparison
+  "Returns text for a Comparison schema2 Transit record."
+  [record-text]
+  (format/format-comparison (result/decode record-text)))
+
 (def bridge
   "Browser-side bridge exported from the compiled module."
   #js {"ping" ping
        "loadScene" load-scene
+       "prepareScene" prepare-scene-request
+       "runPrepared" run-prepared
+       "summarize" summarize-record
+       "compare" compare-records
+       "formatRun" format-run
+       "formatComparison" format-comparison
        "dispose" dispose!})

@@ -10,6 +10,7 @@
    [app.common.types.path :as path]
    [benches.render-wasm.builder :as sb :include-macros true]
    [benches.render-wasm.declarations :as decl :include-macros true]
+   [benches.render-wasm.random :refer [rng-int]]
    [benches.render-wasm.runtime.camera :as camera]))
 
 (def ^:private default-params
@@ -24,9 +25,9 @@
 (defn- plus-content
   [{:keys [width height]}]
   (fn [rng]
-    (let [x (sb/rng-int rng 20 width)
-          y (sb/rng-int rng 20 height)
-          r (sb/rng-int rng 10 40)]
+    (let [x (rng-int rng 20 width)
+          y (rng-int rng 20 height)
+          r (rng-int rng 10 40)]
       (path/from-plain
        [{:command :move-to :params {:x (- x r) :y y}}
         {:command :line-to :params {:x (+ x r) :y y}}

@@ -12,7 +12,7 @@
    [app.common.types.path.segment :as segm]
    [app.common.uuid :as uuid]
    [benches.render-wasm.builder :as b :include-macros true]
-   [benches.render-wasm.snapshot :as common]
+   [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
    [frontend-tests.benches.test-helpers :as helpers]))
 
@@ -27,7 +27,7 @@
         children (helpers/children-of instance (:id bool))]
     (t/is (= :bool (:type bool)))
     (t/is (= :difference (:bool-type bool)))
-    (t/is (= (:id bool) (common/ref-id instance :l-shape)))
+    (t/is (= (:id bool) (snapshot/ref-id instance :l-shape)))
     (t/is (= 2 (count children)))
     (t/is (= [(:id (first children)) (:id (second children))] (:shapes bool)))
     (t/is (= [(:id bool) (:id bool)]
