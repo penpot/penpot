@@ -54,6 +54,7 @@
 
 (def ^:private safe-frontend-context-keys
   #{:version
+    :initiator
     :locale
     :browser
     :browser-version
@@ -157,6 +158,24 @@
     (when-not (or (= origin "null")
                   (str/blank? origin))
       (str/prune origin 100))))
+
+(def ^:private client-initiators
+  {"penpot-frontend" "app"
+   "penpot-admin-console" "admin-console"
+   ;; TODO: legacy value sent by older admin-console releases, remove
+   ;; it once they are all redeployed.
+   "penpot-nitrate" "admin-console"})
+
+(defn get-client-initiator
+  "Resolve the event initiator from the `x-client` request header.
+  Never trusts client-sent context: missing or unknown values fall
+  back to \"app\"."
+  [request]
+  (let [product (some-> (yreq/get-header request "x-client")
+                        (str/split #"/" 2)
+                        (first)
+                        (str/lower))]
+    (get client-initiators product "app")))
 
 ;; --- SPECS
 

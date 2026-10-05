@@ -8,6 +8,10 @@ updates:
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "team infra"
+      - "no issue required"
     commit-message:
       prefix: ":arrow_up:"
     groups:

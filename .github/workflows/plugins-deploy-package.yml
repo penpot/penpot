@@ -75,7 +75,7 @@ jobs:
         working-directory: ./plugins
         shell: bash
         run: |
-          pnpm install --no-frozen-lockfile;
+          pnpm install --frozen-lockfile;
           pnpm add -D -w wrangler@latest;
 
       - name: "Build package for ${{ inputs.plugin_name }}-plugin"

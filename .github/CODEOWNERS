@@ -1,0 +1,9 @@
+# Changes to workflows, CI configuration and repository automation need
+# review from the ci-maintainers team. Issue and PR templates do not.
+/.github/workflows/      @penpot/ci-maintainers
+/.github/actions/        @penpot/ci-maintainers
+/.github/scripts/        @penpot/ci-maintainers
+/.github/dependabot.yml  @penpot/ci-maintainers
+/.github/zizmor.yml      @penpot/ci-maintainers
+/.github/actionlint.yaml @penpot/ci-maintainers
+/.github/CODEOWNERS      @penpot/ci-maintainers

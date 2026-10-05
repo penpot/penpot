@@ -135,8 +135,10 @@
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
-  (when-let [uri (cf/get :error-report-webhook)]
-    (let [input  (sp/chan :buf (sp/sliding-buffer 256))
+  (when (and (contains? cf/flags :error-reporting)
+             (cf/get :error-report-webhook))
+    (let [uri    (cf/get :error-report-webhook)
+          input  (sp/chan :buf (sp/sliding-buffer 256))
           thread (px/thread
                    {:name "penpot/reporter/mattermost"}
                    (l/info :hint "initializing error reporter" :uri uri)

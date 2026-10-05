@@ -623,6 +623,8 @@
 
 (t/deftest test-filter-telemetry-context-strips-pii-keys
   ;; Session-linking and access-token fields must be removed.
+  ;; The initiator survives: it only says which app sent the event
+  ;; ("app", "admin-console") and carries no personal data.
   (let [filter-telemetry-context (ns-resolve 'app.loggers.audit 'filter-telemetry-context)
         ctx {:browser              "Firefox"
              :session              "abc-session-id"
@@ -633,10 +635,10 @@
              :access-token-type    "api-key"}
         result (:context (filter-telemetry-context {:source "frontend" :context ctx}))]
     (t/is (= "Firefox" (:browser result)))
+    (t/is (= "app" (:initiator result)))
     (t/is (not (contains? result :session)))
     (t/is (not (contains? result :external-session-id)))
     (t/is (not (contains? result :file-stats)))
-    (t/is (not (contains? result :initiator)))
     (t/is (not (contains? result :access-token-id)))
     (t/is (not (contains? result :access-token-type)))))
 
