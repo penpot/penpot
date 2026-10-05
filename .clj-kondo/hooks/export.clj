@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS SUBSIDIARY SL
+
 (ns hooks.export
   (:require [clj-kondo.hooks-api :as api]))
 
@@ -9,20 +15,6 @@
                   (api/token-node (symbol (name (:value sname))))
                   sname])]
     {:node result}))
-
-(defn benches-defscene
-  [{:keys [node]}]
-  (let [[_ _ opts argv & body] (:children node)]
-    (if (and argv (api/vector-node? argv))
-      {:node (api/list-node (into [(api/token-node (quote fn)) argv] body))}
-      {:node node})))
-
-(defn benches-defcase
-  [{:keys [node]}]
-  (let [[_ _ opts argv & body] (:children node)]
-    (if (and (seq body) argv (api/vector-node? argv))
-      {:node (api/list-node (into [(api/token-node (quote fn)) argv] body))}
-      {:node node})))
 
 (def registry (atom {}))
 

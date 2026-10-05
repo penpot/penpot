@@ -24,9 +24,10 @@
    shadow.lazy/loadable hooks.export/rumext-lazycomponent
    app.util.i18n/tr hooks.i18n/tr-dynamic
    app.common.i18n/tr hooks.i18n/tr-dynamic
-   benches.render-wasm.declarations/defscene hooks.export/benches-defscene
-   benches.render-wasm.declarations/defcase hooks.export/benches-defcase
-   }}
+   clojure.core/let hooks.core/check-let
+   cljs.core/let hooks.core/check-let
+   benches.render-wasm.declarations/defscene hooks.benches/defscene
+   benches.render-wasm.declarations/defcase hooks.benches/defcase}}
 
  :output
  {:exclude-files
@@ -103,6 +104,10 @@
 
   :unused-binding
   {:exclude-destructured-as true
-   :exclude-destructured-keys-in-fn-args false
-   }
-  }}
+   :exclude-destructured-keys-in-fn-args false}
+
+  :core/use-if-let
+  {:level :warning}
+
+  :core/use-when-let
+  {:level :warning}}}
