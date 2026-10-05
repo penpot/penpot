@@ -93,6 +93,25 @@
     (sp/offer! queue [path (some-> min-age ct/duration)])
     path))
 
+(defn temp-path
+  "Reserve a unique temp path WITHOUT creating the file.
+
+  Use it when an external writer needs to create the file itself and
+  fails if it already exists (like the S3 SDK file download, which
+  opens with CREATE_NEW). The path is still registered for cleanup,
+  so a crash between reserve and write does not leak."
+  [& {:keys [suffix prefix dir min-age]
+      :or {prefix "penpot."
+           suffix ".tmp"
+           dir    default-tmp-dir}}]
+  (fs/create-dir dir)
+  (loop [path (fs/join dir (str prefix (uuid/next) suffix))]
+    (if (fs/exists? path)
+      (recur (fs/join dir (str prefix (uuid/next) suffix)))
+      (do
+        (sp/offer! queue [path (some-> min-age ct/duration)])
+        path))))
+
 (defn tempfile-from
   "Create a new tempfile from from consuming the stream"
   [input & {:as options}]
