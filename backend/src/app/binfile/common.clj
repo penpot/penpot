@@ -15,6 +15,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
@@ -915,38 +916,35 @@
   through untouched."
   [ctype]
   (when (string? ctype)
-    (let [lower (.toLowerCase ^String ctype)
-          cut   (.indexOf ^String lower ";")
-          base  (if (neg? cut) lower (.substring lower 0 cut))
-          clean (.trim ^String base)]
-      (when (pos? (.length clean))
+    (let [clean (-> ctype
+                    (str/split #";" 2)
+                    (first)
+                    (str/trim)
+                    (str/lower))]
+      (when-not (str/empty? clean)
         clean))))
 
 (defn svg-object?
-  "True when the storage `object` claims an SVG content type.
-  Compares on the canonical form (case-insensitive, parameters
-  ignored) because the stored string comes from a possibly crafted
-  bundle while browsers parse it leniently."
+  "True when the storage `object` claims the canonical SVG content
+  type. Expects an already normalized object (see
+  `normalize-content-type`): every import path normalizes the
+  metadata right after reading it, so the comparison stays an exact
+  match in a single place."
   [object]
-  (= svg-content-type (normalize-content-type (:content-type object))))
-
-(defn- content-type-wellformed?
-  [s]
-  (and (string? s)
-       (not (re-find #"\s" s))))
+  (= svg-content-type (:content-type object)))
 
 (def schema:content-type
-  "Typed content-type for binfile storage objects: a short,
-  blank-free string. Values are canonicalized with
+  "Typed content-type for binfile storage objects: a member of
+  `cm/storage-object-types`. Values are canonicalized with
   `normalize-content-type` before validation, so legacy spellings
-  keep importing while garbage is rejected."
-  [:and
-   [:string {:min 1 :max 128}]
-   [:fn content-type-wellformed?]])
+  keep importing while unknown types are rejected."
+  [::sm/one-of {:format :string} cm/storage-object-types])
 
 (defn sanitize-imported-svg
   "Sanitize the raw `bytes` of an imported storage `object` when it
-  holds an SVG document. Returns nil when the object is not an SVG.
+  holds an SVG document. Expects an already normalized object (see
+  `normalize-content-type`); returns nil when the object is not an
+  SVG.
 
   Otherwise returns a map with the sanitized `:bytes`, their `:size`
   and their blake2b `:hash`, ready to persist with `sto/put-object!`.

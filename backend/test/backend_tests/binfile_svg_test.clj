@@ -63,17 +63,25 @@
     (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_SCRIPT")))))
 
 (t/deftest sanitize-imported-svg-removes-aliased-xhref
-  (let [result (bfc/sanitize-imported-svg {:content-type "image/svg+xml; charset=utf-8" :bucket "file-media-object"}
-                                          (utf8bytes evil-xhref-svg))]
+  (let [object {:content-type "image/svg+xml; charset=utf-8" :bucket "file-media-object"}
+        object (update object :content-type bfc/normalize-content-type)
+        result (bfc/sanitize-imported-svg object (utf8bytes evil-xhref-svg))]
     (t/is (some? result))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "javascript:")))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_XHREF")))))
 
+(t/deftest svg-object-predicate-expects-canonical
+  (t/is (true? (bfc/svg-object? {:content-type "image/svg+xml"})))
+  (t/is (false? (bfc/svg-object? {:content-type "IMAGE/SVG+XML"})))
+  (t/is (false? (bfc/svg-object? {:content-type nil})))
+  (t/is (false? (bfc/svg-object? {}))))
+
 (t/deftest sanitize-imported-svg-matches-obfuscated-spelling
-  (t/testing "attacker-controlled spellings still sanitize"
+  (t/testing "spellings normalized at the import boundary still sanitize"
     (doseq [ctype ["IMAGE/SVG+XML" "Image/Svg+Xml" "  image/svg+xml  " "image/svg+xml; charset=utf-8"]]
-      (let [result (bfc/sanitize-imported-svg {:content-type ctype :bucket "file-media-object"}
-                                              (utf8bytes evil-svg))]
+      (let [object {:content-type ctype :bucket "file-media-object"}
+            object (update object :content-type bfc/normalize-content-type)
+            result (bfc/sanitize-imported-svg object (utf8bytes evil-svg))]
         (t/is (some? result) (str "expected sanitize for " (pr-str ctype)))
         (when (some? result)
           (t/is (not (str/includes? (bytes-str (:bytes result)) "<script"))
@@ -108,12 +116,13 @@
                                                        (utf8bytes "<svg><not-closed>"))))))
 
 (t/deftest storage-object-schema-constrains-content-type
-  (t/testing "canonical and legacy types validate, garbage does not"
+  (t/testing "known stored types validate, unknown types do not"
     (let [base {:id (uuid/random) :size 10 :bucket "file-media-object"}]
-      (doseq [ctype ["image/svg+xml" "image/jpeg" "image/png" "font/woff2"]]
+      (doseq [ctype ["image/svg+xml" "image/jpeg" "image/png" "image/apng" "image/avif"
+                     "font/woff2" "font/ttf" "application/octet-stream" "application/pdf"]]
         (t/is (some? (v3/validate-storage-object (assoc base :content-type ctype)))
               (str "expected valid for " (pr-str ctype))))
-      (doseq [ctype ["" "   " "image /svg" (apply str (repeat 200 "x"))]]
+      (doseq [ctype ["" "   " "image /svg" "application/x-font-woff" (apply str (repeat 200 "x"))]]
         (t/is (thrown? clojure.lang.ExceptionInfo
                        (v3/validate-storage-object (assoc base :content-type ctype)))
               (str "expected rejection for " (pr-str ctype)))))))
