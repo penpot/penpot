@@ -163,3 +163,14 @@
 
   (t/testing "empty text gives no fragment"
     (t/is (nil? (clipboard/text->fragment "")))))
+
+(t/deftest without-overrides
+  (t/testing "external HTML keeps its text and paragraphs but no emphasis"
+    (t/is (= [(paragraph (plain-run "Hello bold and italic"))
+              (paragraph)
+              (paragraph (plain-run "Second"))]
+             (clipboard/without-overrides (html->fragment google-docs-html)))))
+
+  (t/testing "empty paragraphs stay empty"
+    (t/is (= [(paragraph)]
+             (clipboard/without-overrides [(paragraph)])))))

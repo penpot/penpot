@@ -244,6 +244,17 @@
       (.parseFromString html "text/html")
       (document->fragment)))
 
+(defn without-overrides
+  "`fragment` as one plain run per paragraph, so it takes the style it is pasted
+  into. External sources keep only their text and paragraphs."
+  [fragment]
+  (mapv (fn [{:keys [children] :as paragraph}]
+          (assoc paragraph :children
+                 (if (seq children)
+                   [{:text (str/join (map :text children)) :attrs {}}]
+                   [])))
+        fragment))
+
 (defn text->fragment
   "The paste fragment for plain text, one paragraph per line, or nil when empty."
   [text]

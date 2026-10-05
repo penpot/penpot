@@ -107,11 +107,13 @@
 (def ^:private max-paste-html-length 1000000)
 
 (defn- clipboard->fragment
-  "The paste fragment for `data`: its HTML when allowed and it has text, else its plain text."
+  "The paste fragment for `data`: its HTML when allowed and it has text, else its
+  plain text. Either way it is unstyled, so it adopts the caret style."
   [^js data html-paste?]
   (let [html (when html-paste? (.getData data "text/html"))]
     (or (when (< 0 (count html) max-paste-html-length)
-          (text-clipboard/html->fragment html))
+          (some-> (text-clipboard/html->fragment html)
+                  (text-clipboard/without-overrides)))
         (text-clipboard/text->fragment (.getData data "text/plain")))))
 
 (defn- selection-start
@@ -125,18 +127,32 @@
       {:para focus-para :offset focus-offset})))
 
 (defn- paste-fragment
-  "Insert the text of `fragment`, then restyle it with the fragment overrides."
+  "Insert the text of `fragment`, then restyle it with the fragment overrides or,
+  when it has none, with the pending caret style."
   [fragment]
   (let [shape-id (text-editor/text-editor-get-active-shape-id)
-        start    (selection-start)]
+        start    (selection-start)
+        styled?  (text-paste/styled? fragment)
+        pending? (some? (text-editor/get-pending-caret-styles shape-id))]
+    (when styled?
+      (text-editor/clear-pending-caret-styles!))
     (text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
-    (if (and (some? start) (text-paste/styled? fragment))
+    (cond
+      (nil? start)
+      (sync-wasm-text-editor-content!)
+
+      styled?
       (do
         ;; Sync first so the cached content stays index-aligned with WASM.
         (text-editor/text-editor-sync-content)
         (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start)]
           (commit-restyled-content shape-id content)
           (sync-wasm-text-editor-content!)))
+
+      pending?
+      (sync-with-pending-caret-styles! shape-id start)
+
+      :else
       (sync-wasm-text-editor-content!))))
 
 (defn- reset-input-node
@@ -315,8 +331,6 @@
         (mf/use-fn
          (fn [^js event]
            (dom/prevent-default event)
-           ;; Pasted text keeps the surrounding style; drop any pending caret style.
-           (text-editor/clear-pending-caret-styles!)
            (when-let [fragment (some-> (.-clipboardData event)
                                        (clipboard->fragment
                                         (features/active-feature? @st/state "text-editor-wasm/v1-html-paste")))]
