@@ -607,7 +607,7 @@
 
     (doseq [expected-storage-id ids]
       (let [id    (read-uuid! input)
-            mdata (read-obj! input)]
+            mdata (d/update-when (read-obj! input) :content-type bfc/normalize-content-type)]
 
         (when (not= id expected-storage-id)
           (ex/raise :type :validation
@@ -617,7 +617,7 @@
         (l/dbg :hint "readed storage object" :id (str id) ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
-              clean           (when (= (:content-type mdata) bfc/svg-content-type)
+              clean           (when (bfc/svg-object? mdata)
                                 (let [raw (if (bytes? resource)
                                             resource
                                             (with-open [istream (jio/input-stream resource)]

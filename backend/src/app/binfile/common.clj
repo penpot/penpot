@@ -905,10 +905,44 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def svg-content-type
-  "Content type of SVG media objects. Any storage object with this
-  content type is sanitized on import, regardless of bucket: the
-  content type decides how the browser treats the bytes."
+  "Canonical content type of SVG media objects."
   "image/svg+xml")
+
+(defn normalize-content-type
+  "Canonicalize a stored content-type: lowercase, trimmed,
+  parameters after `;` dropped. Returns nil for missing or unusable
+  values so ancient bundle entries without content-type keep passing
+  through untouched."
+  [ctype]
+  (when (string? ctype)
+    (let [lower (.toLowerCase ^String ctype)
+          cut   (.indexOf ^String lower ";")
+          base  (if (neg? cut) lower (.substring lower 0 cut))
+          clean (.trim ^String base)]
+      (when (pos? (.length clean))
+        clean))))
+
+(defn svg-object?
+  "True when the storage `object` claims an SVG content type.
+  Compares on the canonical form (case-insensitive, parameters
+  ignored) because the stored string comes from a possibly crafted
+  bundle while browsers parse it leniently."
+  [object]
+  (= svg-content-type (normalize-content-type (:content-type object))))
+
+(defn- content-type-wellformed?
+  [s]
+  (and (string? s)
+       (not (re-find #"\s" s))))
+
+(def schema:content-type
+  "Typed content-type for binfile storage objects: a short,
+  blank-free string. Values are canonicalized with
+  `normalize-content-type` before validation, so legacy spellings
+  keep importing while garbage is rejected."
+  [:and
+   [:string {:min 1 :max 128}]
+   [:fn content-type-wellformed?]])
 
 (defn sanitize-imported-svg
   "Sanitize the raw `bytes` of an imported storage `object` when it
@@ -920,7 +954,7 @@
   Raises a `:validation` exception when the SVG cannot be parsed, the
   same error the upload path reports."
   [object ^bytes raw]
-  (when (= (:content-type object) svg-content-type)
+  (when (svg-object? object)
     (let [sanitized (svg/sanitize-svg (String. ^bytes raw "UTF-8"))
           bytes     (.getBytes ^String sanitized "UTF-8")]
       {:bytes bytes
