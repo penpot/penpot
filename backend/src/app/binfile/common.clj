@@ -344,8 +344,13 @@
           fpr.can_edit
      from file_profile_rel as fpr
     inner join file as f on (f.id = fpr.file_id)
+    inner join project as p on (p.id = f.project_id)
     where fpr.file_id = ?
       and fpr.profile_id = ?
+      and exists (select 1
+                    from team_profile_rel as tpr
+                   where tpr.team_id = p.team_id
+                     and tpr.profile_id = fpr.profile_id)
    union all
    select tpr.is_owner,
           tpr.is_admin,
@@ -361,8 +366,13 @@
           ppr.can_edit
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
+    inner join project as p on (p.id = ppr.project_id)
     where f.id = ?
-      and ppr.profile_id = ?")
+      and ppr.profile_id = ?
+      and exists (select 1
+                    from team_profile_rel as tpr
+                   where tpr.team_id = p.team_id
+                     and tpr.profile_id = ppr.profile_id)")
 
 (defn- get-file-permissions*
   [conn profile-id file-id]

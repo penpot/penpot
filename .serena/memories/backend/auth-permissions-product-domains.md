@@ -15,6 +15,7 @@
 
 - `app.rpc.permissions` provides predicate/check factories. Failed permission checks intentionally raise `:not-found` / `:object-not-found`, not an authorization-specific error, to avoid leaking object existence.
 - Team role flags are normalized as owner > admin > editor > viewer. Owner/admin imply edit; any membership row implies read.
+- File/project role rows only count with a live team membership: the file/project permission queries require a matching `team_profile_rel` row, and leaving or removing a member deletes their team-scoped `file`/`project`/`team-project-profile-rel` rows (GHSA-v9r9-h77c-55m2).
 - File/project/comment checks are implemented in the owning command namespaces, often via helpers imported from `files`, `teams`, or `projects`; do not bypass those helpers with direct DB lookups unless preserving their not-found semantics.
 - Comment permission includes both logged-in state and the file/team comment policy. Shared viewer paths may pass `share-id`; preserve that path when changing comment queries.
 
