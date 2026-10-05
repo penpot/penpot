@@ -8,6 +8,7 @@
 
 ### 🩹 Fixes
 
+- **plugins-runtime**: Opening a plugin no longer cuts off background plugins (such as the MCP plugin) from their UI. They stayed open but were dropped from the runtime registry, so messages from their iframe were ignored and they could no longer be closed.
 - **plugins-runtime**: An interaction obtained from `Shape.interactions` now keeps addressing that interaction instead of the position it held when the array was read. Removing every interaction of a shape from a single read removes all of them rather than leaving some behind, and writing through a held interaction after an earlier one is removed no longer lands on a different interaction.
 - **plugins-runtime**: `Shape.removeInteraction()` now rejects an interaction belonging to a different shape with a validation error, instead of removing whichever interaction sat at the same position on the target shape.
 - **plugins-runtime**: Writing `trigger`, `delay` or `action` on an interaction the shape no longer has now raises a validation error. The write used to be sent to the workspace with no position to apply it at, where it failed out of the plugin's reach: nothing was written and nothing was reported.

@@ -72,6 +72,7 @@ describe('plugin-loader', () => {
   });
 
   afterEach(() => {
+    vi.mocked(createPlugin).mock.calls.forEach(([, , onClose]) => onClose());
     vi.clearAllMocks();
   });
 
@@ -198,6 +199,66 @@ describe('plugin-loader', () => {
 
     expect(mockPluginApi2.plugin.sendMessage).toHaveBeenCalledWith('test');
     expect(mockPluginApi1.plugin.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('should keep routing messages to a background plugin after loading another', async () => {
+    const backgroundIframeWindow = { nodeType: 1 } as unknown as Window;
+    const backgroundManifest = {
+      ...manifest,
+      pluginId: 'background-plugin',
+      allowBackground: true,
+    };
+    const backgroundPluginApi = {
+      plugin: {
+        close: vi.fn(),
+        sendMessage: vi.fn(),
+      },
+      iframeWindow: backgroundIframeWindow,
+      manifest: backgroundManifest,
+    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+
+    vi.mocked(createPlugin).mockResolvedValue(backgroundPluginApi);
+    await loadPlugin(backgroundManifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(mockPluginApi);
+    await loadPlugin(manifest);
+
+    const event = new MessageEvent('message', { data: 'task-response' });
+    Object.defineProperty(event, 'source', { value: backgroundIframeWindow });
+    window.dispatchEvent(event);
+
+    expect(backgroundPluginApi.plugin.close).not.toHaveBeenCalled();
+    expect(backgroundPluginApi.plugin.sendMessage).toHaveBeenCalledWith(
+      'task-response',
+    );
+    expect(getPlugins()).toEqual([backgroundPluginApi, mockPluginApi]);
+  });
+
+  it('should replace a background plugin when loading it again', async () => {
+    const backgroundManifest = {
+      ...manifest,
+      pluginId: 'background-plugin',
+      allowBackground: true,
+    };
+    const makeBackgroundPluginApi = () =>
+      ({
+        plugin: {
+          close: vi.fn(),
+          sendMessage: vi.fn(),
+        },
+        manifest: backgroundManifest,
+      }) as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    const firstPluginApi = makeBackgroundPluginApi();
+    const secondPluginApi = makeBackgroundPluginApi();
+
+    vi.mocked(createPlugin).mockResolvedValue(firstPluginApi);
+    await loadPlugin(backgroundManifest);
+
+    vi.mocked(createPlugin).mockResolvedValue(secondPluginApi);
+    await loadPlugin(backgroundManifest);
+
+    expect(firstPluginApi.plugin.close).toHaveBeenCalled();
+    expect(getPlugins()).toEqual([secondPluginApi]);
   });
 
   it('should load plugin using ɵloadPlugin', async () => {

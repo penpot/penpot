@@ -16,15 +16,22 @@ export function setContextBuilder(builder: ContextBuilder) {
 
 export const getPlugins = () => plugins;
 
-const closeAllPlugins = () => {
-  plugins.forEach((pluginApi) => {
-    /* eslint-disable  @typescript-eslint/no-explicit-any */
-    if (!(pluginApi.manifest as any)?.allowBackground) {
-      pluginApi.plugin.close();
-    }
-  });
+const isBackgroundPlugin = (pluginApi: (typeof plugins)[number]) =>
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
+  !!(pluginApi.manifest as any)?.allowBackground;
 
-  plugins = [];
+// Background plugins stay registered so their iframe messages keep routing,
+// unless the same plugin is being loaded again.
+const closeAllPlugins = (pluginId?: Manifest['pluginId']) => {
+  const closing = plugins.filter(
+    (pluginApi) =>
+      !isBackgroundPlugin(pluginApi) ||
+      pluginApi.manifest.pluginId === pluginId,
+  );
+
+  closing.forEach((pluginApi) => pluginApi.plugin.close());
+
+  plugins = plugins.filter((pluginApi) => !closing.includes(pluginApi));
 };
 
 window.addEventListener('message', (event) => {
@@ -51,7 +58,7 @@ export const loadPlugin = async function (
       return;
     }
 
-    closeAllPlugins();
+    closeAllPlugins(manifest.pluginId);
 
     // The host context is not deeply frozen at this load stage.
     //
