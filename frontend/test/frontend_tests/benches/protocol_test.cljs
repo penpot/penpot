@@ -142,6 +142,63 @@
                     (t/is (= 3 @fired) "guard fires once before and once after the render")
                     (done)))))))
 
+(t/deftest progressive-failure-retains-completed-call-evidence
+  (t/async done
+    (let [clock (fake-clock 0)
+          calls (atom [])
+          hooks (drain-hooks {:clock clock :script [1 7] :calls calls})]
+      (-> (protocol/drain hooks {:flags 0 :origin 0 :immediate true})
+          (.then (fn [_] (t/is false "unknown frame must fail") (done)))
+          (.catch (fn [cause]
+                    (t/is (= [1 7] (mapv :frame-type (get-in (ex-data cause) [:partial :slices]))))
+                    (t/is (= [0 0] (mapv :duration-ms (get-in (ex-data cause) [:partial :slices]))))
+                    (done)))))))
+
+(t/deftest camera-failure-retains-completed-previews-and-authored-pauses
+  (t/async done
+    (let [clock (fake-clock 0)
+          calls (atom [])
+          previews (atom 0)
+          hooks (assoc (drain-hooks {:clock clock :script [2] :calls calls})
+                       :render-from-cache (fn []
+                                            (if (= 1 (swap! previews inc))
+                                              ((:advance! clock) 3)
+                                              (throw (ex-info "preview failed" {})))))
+          view {:scale 1 :x 0 :y 0}]
+      (-> (protocol/start-camera! {:hooks hooks :view view} {:settle-ms 0})
+          (protocol/preview-view! view)
+          (protocol/sleep! 7)
+          (protocol/preview-view! (assoc view :x 1))
+          (.then (fn [_] (t/is false "second preview must fail") (done)))
+          (.catch (fn [cause]
+                    (t/is (= [3] (mapv :duration-ms (get-in (ex-data cause) [:partial :cached-slices]))))
+                    (t/is (= [{:requested-ms 7 :actual-ms 7}]
+                             (get-in (ex-data cause) [:partial :authored-sleeps])))
+                    (done)))))))
+
+(t/deftest rejected-pause-retains-earlier-camera-evidence
+  (t/async done
+    (let [clock (fake-clock 0)
+          sleeps (atom 0)
+          hooks (assoc (drain-hooks {:clock clock :script [2] :calls (atom [])})
+                       :render-from-cache (fn [] ((:advance! clock) 3))
+                       :sleep (fn [ms]
+                                (if (= 1 (swap! sleeps inc))
+                                  (do ((:advance! clock) ms) (js/Promise.resolve nil))
+                                  (js/Promise.reject (ex-info "pause failed" {})))))
+          view {:scale 1 :x 0 :y 0}]
+      (-> (protocol/start-camera! {:hooks hooks :view view} {:settle-ms 0})
+          (protocol/preview-view! view)
+          (protocol/sleep! 7)
+          (protocol/sleep! 13)
+          (.then (fn [_] (t/is false "second pause must fail") (done)))
+          (.catch (fn [cause]
+                    (t/is (= "pause failed" (ex-message cause)))
+                    (t/is (= [3] (mapv :duration-ms (get-in (ex-data cause) [:partial :cached-slices]))))
+                    (t/is (= [{:requested-ms 7 :actual-ms 7}]
+                             (get-in (ex-data cause) [:partial :authored-sleeps])))
+                    (done)))))))
+
 (t/deftest restore-drains-with-sync-tiles-immediately
   (t/async done
     (let [clock (fake-clock 500)
@@ -166,7 +223,7 @@
                     (t/is false (str "must resolve, threw: " cause))
                     (done)))))))
 
-(t/deftest interact-times-gesture-settle-and-final-drain
+(t/deftest camera-session-times-gesture-settle-and-final-drain
   (t/async done
     (let [clock    (fake-clock 0)
           renders  (atom [])
@@ -195,7 +252,10 @@
                                          ((:advance! clock) 5)
                                          nil)}
           frames   [{:scale 1 :x 0 :y 0} {:scale 1 :x 100 :y 0}]]
-      (-> (protocol/interact hooks {:frames frames :settle-ms 100})
+      (-> (protocol/start-camera! {:hooks hooks :view (first frames)} {:settle-ms 100})
+          (protocol/preview-view! (first frames))
+          (protocol/preview-view! (second frames))
+          (protocol/finish-camera!)
           (.then (fn [m]
                    (t/is (= frames @views) "every gesture frame sets the view")
                    (t/is (= 2 (count @cached)) "one cached preview per frame")

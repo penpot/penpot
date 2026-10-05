@@ -15,10 +15,11 @@
 (ns benches.render-wasm.cases
   "Case collection for the renderer benchmarks.
 
-  Loading this namespace registers the scene namespaces listed here. That
-  require list is the discovery manifest. Nothing here should import browser
-  or renderer code, so the Node runner and offline reports load scenes without
-  renderer side effects.
+  Loading this namespace registers the scene namespaces listed here. The require
+  list is the discovery manifest for case collection.
+
+  NOTE: Nothing here should import browser or renderer code, so the Node runner
+  and offline reports load scenes without requiring a browser.
 
   Usage:
 
@@ -40,6 +41,7 @@
   (:require
    [app.common.schema :as sm]
    [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.random :as random]
    benches.render-wasm.scenes.masks
    benches.render-wasm.scenes.paths
    benches.render-wasm.scenes.plus
@@ -49,7 +51,7 @@
 (defn- check-master-seed!
   "Collection requires an integer master seed in [0, 2^32)."
   [seed]
-  (when-not (and (integer? seed) (<= 0 seed) (< seed 4294967296))
+  (when-not (random/seed? seed)
     (throw (ex-info "case collection requires an integer master seed in [0, 2^32)"
                     {:type ::invalid-master-seed
                      :seed seed}))))

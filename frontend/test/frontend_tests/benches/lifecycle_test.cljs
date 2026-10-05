@@ -8,14 +8,19 @@
   "Tests the browser bridge with fake DOM and renderer boundaries.
 
   It covers bridge input, ownership, disposal and `load-scene` with fake
-  canvases and a fake Emscripten factory. Protocol timing tests use an
-  injected clock in `frontend-tests.benches.protocol-test`."
+  canvases and a fake Emscripten factory. Progressive frames use an optional
+  clock at the browser boundary."
   (:require
    [app.common.render-wasm.wasm :as wasm]
    [app.common.transit :as transit]
    [benches.render-wasm.browser.bridge :as browser]
    [benches.render-wasm.cases :as cases]
    [benches.render-wasm.declarations :as decl]
+   [benches.render-wasm.measurement :as measurement]
+   [benches.render-wasm.report.compare :as compare]
+   [benches.render-wasm.report.format :as format]
+   [benches.render-wasm.report.summarize :as summary]
+   [benches.render-wasm.result :as result]
    [cljs.test :as t :include-macros true]))
 
 ;; Forward declaration: entry-test helpers below build args against the
@@ -193,10 +198,10 @@
         (t/is (< current @@#'browser/owner-epoch*) "current owner disposed")))))
 
 (t/deftest bridge-exposes-pilot-entries
-  (let [keys (js/Object.keys browser/bridge)]
-    (t/is (some #{"ping"} keys))
-    (t/is (some #{"loadScene"} keys))
-    (t/is (some #{"dispose"} keys))))
+  (doseq [key ["ping" "loadScene" "prepareScene" "runPrepared" "dispose"]]
+    (t/is (fn? (unchecked-get browser/bridge key))
+          (str key " is callable through the browser ABI")))
+  (t/is (= "ok" (unchecked-get (.ping browser/bridge) "status"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Through-entry fake harness.
@@ -237,48 +242,76 @@
          :remove (fn [] (record! ["remove" id]) nil)}))
 
 (defn- install-fake-dom!
-  "Installs fake `document`/`window`/`dynamicImport` globals and returns a
-  `:restore!` thunk that puts the previous values back. Created canvases are
-  numbered from 1 per installation. The import polyfill mirrors
+  "Installs fake DOM, import, clock and scenario globals and returns a
+  `restore!` thunk that restores their previous values. Created canvases are
+  numbered from 1 per installation.
+  The import polyfill mirrors
   `resources/polyfills/dynamicImport.js`, which ships with the app HTML but
   not with the unit-test bundle."
   []
-  (let [prev-document (unchecked-get js/globalThis "document")
-        prev-window   (unchecked-get js/globalThis "window")
-        prev-import   (unchecked-get js/globalThis "dynamicImport")
-        next-id       (atom 0)
-        document      #js {:createElement (fn [_]
-                                            (let [id (swap! next-id inc)]
-                                              (record! ["create" id])
-                                              (fake-canvas id)))
-                           :body #js {:appendChild (fn [canvas]
-                                                     (record! ["append" (unchecked-get canvas "id")])
-                                                     canvas)}
-                           :querySelectorAll (fn [_] #js [])}
-        window        #js {:requestAnimationFrame
-                           (fn [cb]
-                             ;; Park the first frame while `__benchGateRaf`
-                             ;; is set so a second load can supersede a live,
-                             ;; active owner; later frames run synchronously.
-                             (if (and (unchecked-get js/globalThis "__benchGateRaf")
-                                      (nil? (unchecked-get js/globalThis "__benchRafCb")))
-                               (unchecked-set js/globalThis "__benchRafCb" cb)
-                               (cb 0))
-                             nil)}
-        dynamic-import (fn [url] (js/eval (str "import(" (pr-str url) ")")))]
+  (let [prev-document    (unchecked-get js/globalThis "document")
+        prev-window      (unchecked-get js/globalThis "window")
+        prev-import      (unchecked-get js/globalThis "dynamicImport")
+        prev-performance (unchecked-get js/globalThis "performance")
+        prev-now         (unchecked-get js/globalThis "__benchNow")
+        prev-script      (unchecked-get js/globalThis "__benchRenderScript")
+        prev-calls       (unchecked-get js/globalThis "__benchCalls")
+        prev-factory     (unchecked-get js/globalThis "__benchFactoryCalls")
+        prev-throw       (unchecked-get js/globalThis "__benchThrowIn")
+        prev-gate        (unchecked-get js/globalThis "__benchGateRaf")
+        prev-raf         (unchecked-get js/globalThis "__benchRafCb")
+        next-id          (atom 0)
+        document         #js {:createElement (fn [_]
+                                               (let [id (swap! next-id inc)]
+                                                 (record! ["create" id])
+                                                 (fake-canvas id)))
+                              :body #js {:appendChild (fn [canvas]
+                                                        (record! ["append" (unchecked-get canvas "id")])
+                                                        canvas)}
+                              :querySelectorAll (fn [_] #js [])}
+        window           #js {:requestAnimationFrame
+                              (fn [cb]
+                                ;; Park the first frame while `__benchGateRaf`
+                                ;; is set so a second load can supersede a live,
+                                ;; active owner; later frames run synchronously.
+                                (if (and (unchecked-get js/globalThis "__benchGateRaf")
+                                         (nil? (unchecked-get js/globalThis "__benchRafCb")))
+                                  (unchecked-set js/globalThis "__benchRafCb" cb)
+                                  (if-some [clock (unchecked-get js/globalThis "__benchNow")]
+                                    (let [timestamp (+ clock 16)]
+                                      (unchecked-set js/globalThis "__benchNow" timestamp)
+                                      (cb timestamp))
+                                    (cb 0)))
+                                nil)}
+        performance      #js {:now (fn []
+                                     (if-some [clock (unchecked-get js/globalThis "__benchNow")]
+                                       clock
+                                       (.now prev-performance)))}
+        dynamic-import   (fn [url] (js/eval (str "import(" (pr-str url) ")")))]
     (unchecked-set js/globalThis "document" document)
     (unchecked-set js/globalThis "window" window)
+    (unchecked-set js/globalThis "performance" performance)
     (unchecked-set js/globalThis "dynamicImport" dynamic-import)
     (fn restore! []
       (unchecked-set js/globalThis "document" prev-document)
       (unchecked-set js/globalThis "window" prev-window)
+      (unchecked-set js/globalThis "performance" prev-performance)
+      (unchecked-set js/globalThis "__benchNow" prev-now)
+      (unchecked-set js/globalThis "__benchRenderScript" prev-script)
+      (unchecked-set js/globalThis "__benchCalls" prev-calls)
+      (unchecked-set js/globalThis "__benchFactoryCalls" prev-factory)
+      (unchecked-set js/globalThis "__benchThrowIn" prev-throw)
+      (unchecked-set js/globalThis "__benchGateRaf" prev-gate)
+      (unchecked-set js/globalThis "__benchRafCb" prev-raf)
       (unchecked-set js/globalThis "dynamicImport" prev-import))))
 
 (def ^:private factory-source
   "ES module stubbing the Emscripten factory for entry tests. Records every
   renderer call in `globalThis.__benchCalls`; `globalThis.__benchThrowIn`
-  names one module fn that throws. The instance trap answers `undefined` for
-  `then` and non-strings: promise assimilation would otherwise treat the
+  names one module fn that throws. `globalThis.__benchRenderScript` holds
+  optional [frame-type, duration-ms] pairs that advance `__benchNow`; absent
+  a script, `_render` immediately returns Full. The instance trap answers
+  `undefined` for `then` and non-strings: promise assimilation would treat the
   instance as a never-settling thenable and hang the load. A real 16 MiB
   heap with bump allocation backs `_alloc_bytes`/`HEAPU8`, so the real batch
   upload assembles bytes instead of throwing on stub returns."
@@ -302,7 +335,14 @@
        "_alloc_bytes: function (size) { var p = heapNext; heapNext += ((size + 3) & ~3); return p; },"
        "_free_bytes: function () {},"
        "_read_error_code: function () { return 0; },"
-       "_render: function () { push(['render']); return 2; },"
+       "_render: function (timestamp, flags) {"
+       "push(['render', timestamp, flags]);"
+       "var script = globalThis.__benchRenderScript;"
+       "if (script && script.length) {"
+       "var next = script.shift(); globalThis.__benchNow += next[1]; return next[0];"
+       "}"
+       "return 2;"
+       "},"
        "_clean_up: function () { push(['clean']); return 0; }"
        "};"
        "var inst = new Proxy(base, {"
@@ -333,7 +373,9 @@
   (unchecked-set js/globalThis "__benchFactoryCalls" #js [])
   (unchecked-set js/globalThis "__benchThrowIn" nil)
   (unchecked-set js/globalThis "__benchGateRaf" false)
-  (unchecked-set js/globalThis "__benchRafCb" nil))
+  (unchecked-set js/globalThis "__benchRafCb" nil)
+  (unchecked-set js/globalThis "__benchNow" nil)
+  (unchecked-set js/globalThis "__benchRenderScript" nil))
 
 (defn- read-calls
   "Call log as Clojure data."
@@ -341,6 +383,7 @@
   (js->clj (unchecked-get js/globalThis "__benchCalls")))
 
 (defn- effect-count
+  "Counts recorded effects without filtering any returned evidence."
   [calls effect]
   (count (filter #(= effect (first %)) calls)))
 
@@ -356,15 +399,21 @@
 
 (defn- with-entry-env
   "Installs the fake DOM, resets bench globals, then calls `f` with a
-  `cleanup` thunk that disposes the owner, clears the recording and restores
-  the globals. Call `cleanup` after asserting, before `done`."
+  `cleanup` thunk that disposes the owner and restores the previous globals.
+  Call `cleanup` after asserting, before `done`."
   [f]
-  (let [restore-dom! (install-fake-dom!)]
+  (let [restore-dom! (install-fake-dom!)
+        cleanup      (fn []
+                       (try
+                         (browser/dispose!)
+                         (finally
+                           (restore-dom!))))]
     (reset-bench-globals!)
-    (f (fn []
-         (browser/dispose!)
-         (reset-bench-globals!)
-         (restore-dom!)))))
+    (try
+      (f cleanup)
+      (catch :default cause
+        (cleanup)
+        (throw cause)))))
 
 (t/deftest successful-load-reaches-full
   (t/async done
@@ -373,7 +422,7 @@
         (load-result (scene-args 7 {})
                      (fn [m]
                        (t/is (= "ok" (:status m)))
-                       (t/is (= 1 (:render-frames m)))
+                       (t/is (= 1 (count (get-in m [:trace :slices]))))
                        (t/is (= 1001 (:shapes (:scene m))) "the canonical scene uploads whole")
                        (let [graphics (:effective-graphics m)]
                          (t/is (= 1234 (:drawing-buffer-width graphics))
@@ -389,6 +438,92 @@
                          (t/is (zero? (effect-count calls "remove")) "success keeps the owner live"))
                        (cleanup)
                        (done)))))))
+
+(t/deftest successful-load-produces-portable-reports
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (load-result
+         (scene-args 7 {})
+         (fn [evidence]
+           (let [case (load-case)
+                 preparation (:preparation evidence)
+                 run (-> (result/create-run {:run-id "load-report" :started-at "start"
+                                             :plan {:cases [case] :warmups 0 :repetitions 1}
+                                             :metadata {:git {:sha nil :dirty nil}
+                                                        :build {:functional {:mode :test}}
+                                                        :environment {} :scored? false}})
+                         (result/record-preparation preparation)
+                         (result/record-attempt (measurement/attempt (:id case) (:preparation-id preparation) false evidence))
+                         (result/finish-run "end" {:reason :completed}))
+                 text (result/encode run)
+                 report (summary/summarize (result/decode text))
+                 comparison (compare/compare-runs run run)
+                 comparison-text (.compare browser/bridge text text (transit/encode-str {}))]
+             (t/is (= report (transit/decode-str (.summarize browser/bridge text))))
+             (t/is (= (format/format-run report) (.formatRun browser/bridge text)))
+             (t/is (= comparison (result/decode comparison-text)))
+             (t/is (= (format/format-comparison comparison) (.formatComparison browser/bridge comparison-text))))
+           (cleanup)
+           (done)))))))
+
+(t/deftest exported-load-scene-retains-progressive-frame-evidence
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (unchecked-set js/globalThis "__benchNow" 0)
+        (unchecked-set js/globalThis "__benchRenderScript"
+                       #js [#js [wasm/FRAME_TYPE_PARTIAL 2]
+                            #js [wasm/FRAME_TYPE_VIEWPORT_READY 3]
+                            #js [wasm/FRAME_TYPE_FULL 5]])
+        (-> (.loadScene browser/bridge (scene-args 7 {}))
+            (.then (fn [text]
+                     (t/is (string? text) "the exported loadScene returns Transit")
+                     (let [{:keys [status slices viewport-ready-ms full-ms metrics trace scene]}
+                           (transit/decode-str text)
+                           retained     (:slices trace)
+                           render-calls (filterv #(= "render" (first %)) (read-calls))]
+                       (t/is (= "ok" status))
+                       (t/is (= {:shapes 1001 :seed 7} scene)
+                             "the real canonical case prepares and uploads the whole scene")
+                       (t/is (= 3 (count retained)) "all three slices cross Transit")
+                       (t/is (= [wasm/FRAME_TYPE_PARTIAL
+                                 wasm/FRAME_TYPE_VIEWPORT_READY
+                                 wasm/FRAME_TYPE_FULL]
+                                (mapv :frame-type retained)))
+                       (t/is (= [0 wasm/FRAME_TYPE_PARTIAL wasm/FRAME_TYPE_VIEWPORT_READY]
+                                (mapv :flags retained))
+                             "ViewportReady becomes the next flags and the drain continues to Full")
+                       (t/is (= [16 34 53] (mapv :timestamp retained))
+                             "each continuation waits for the next frame")
+                       (t/is (= [2 3 5] (mapv :duration-ms retained)))
+                       (t/is (= render-calls
+                                (mapv (fn [{:keys [timestamp flags]}]
+                                        ["render" timestamp flags])
+                                      retained))
+                             "decoded slices retain every WASM call's timestamp and flags in order")
+                       (t/is (= slices retained) "raw and trace slices survive Transit together")
+                       (t/is (= 37 viewport-ready-ms
+                                (+ (:timestamp (nth retained 1))
+                                   (:duration-ms (nth retained 1))))
+                             "viewport completion ends with the ViewportReady slice")
+                       (t/is (= 58 full-ms
+                                (+ (:timestamp (nth retained 2))
+                                   (:duration-ms (nth retained 2))))
+                             "Full completion ends with the final slice")
+                       (t/is (< viewport-ready-ms full-ms))
+                       (t/is (= full-ms (get-in metrics [:first-render-ms :value])))
+                       (t/is (= viewport-ready-ms (get-in metrics [:viewport-ready-ms :value])))
+                       (t/is (= 10
+                                (reduce + 0 (map :duration-ms retained))
+                                (get-in metrics [:renderer-call-total-ms :value]))
+                             "renderer-call total sums the retained calls without frame waits"))
+                     (cleanup)
+                     (done)))
+            (.catch (fn [cause]
+                      (t/is false (str "exported progressive load failed: " cause))
+                      (cleanup)
+                      (done))))))))
 
 (t/deftest invalid-args-keep-the-current-owner
   (t/async done
@@ -419,8 +554,8 @@
                        (t/is (= 100 (:settling-requested-ms m)))
                        (t/is (= [4] (mapv :flags (:slices m))))
                        (t/is (= [2] (mapv :frame-type (:slices m))))
-                       (t/is (= 2 (effect-count (read-calls) "render"))
-                             "restore and finalization each drain once")
+                       (t/is (= 3 (effect-count (read-calls) "render"))
+                             "setup, restore and finalization each drain once")
                        (cleanup)
                        (done)))))))
 
@@ -435,6 +570,72 @@
                        (t/is (= [2] (mapv :frame-type (:slices m))))
                        (cleanup)
                        (done)))))))
+
+(t/deftest prepared-warm-scene-runs-twice-with-one-context-and-upload
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (-> (browser/prepare-scene-request
+             (scene-args 7 {:id :rects/pan :context :reuse
+                            :operation {:steps 2 :dx 10 :dy 5 :settle-ms 0}}))
+            (.then (fn [text]
+                     (let [prepared (transit/decode-str text)
+                           prep (:preparation prepared)
+                           request (transit/encode-str {:preparation-id (:preparation-id prep)})]
+                       (t/is (= "ok" (:status prepared)))
+                       (t/is (= 1 (get-in prep [:fingerprint :encoding-version])))
+                       (t/is (seq (get-in prep [:diagnostics :setup-render :slices])))
+                       (-> (browser/run-prepared request)
+                           (.then (fn [first-text]
+                                    (let [first-result (transit/decode-str first-text)]
+                                      (t/is (= "ok" (:status first-result)))
+                                      (t/is (not (contains? (:metrics first-result) :upload-ms)))
+                                      (t/is (= prep (:preparation first-result)))
+                                      (browser/run-prepared request))))
+                           (.then (fn [second-text]
+                                    (let [second-result (transit/decode-str second-text)
+                                          calls (read-calls)]
+                                      (t/is (= "ok" (:status second-result)))
+                                      (t/is (= prep (:preparation second-result)))
+                                      (t/is (= 1 (effect-count calls "create")))
+                                      (t/is (= 5 (effect-count calls "render")))
+                                      (t/is (= 1 (count (filter #(= ["call" "_init_shapes_pool"] %) calls))))
+                                      (t/is (= 2 (count (:cached-slices second-result))))
+                                      (cleanup)
+                                      (done))))))))
+            (.catch (fn [cause]
+                      (t/is false (str "prepared reuse failed: " cause))
+                      (cleanup)
+                      (done))))))))
+
+(t/deftest fresh-preparation-runs-once-and-saves-structured-metrics
+  (t/async done
+    (with-entry-env
+      (fn [cleanup]
+        (-> (browser/prepare-scene-request (scene-args 7 {}))
+            (.then (fn [text]
+                     (let [request (transit/encode-str
+                                    {:preparation-id (get-in (transit/decode-str text)
+                                                             [:preparation :preparation-id])})]
+                       (t/is (zero? (effect-count (read-calls) "render")))
+                       (-> (browser/run-prepared request)
+                           (.then (fn [text]
+                                    (let [evidence (transit/decode-str text)]
+                                      (t/is (= "ok" (:status evidence)))
+                                      (t/is (= (:full-ms evidence) (get-in evidence [:metrics :first-render-ms :value])))
+                                      (t/is (contains? (:metrics evidence) :upload-ms))
+                                      (t/is (not (contains? (:metrics evidence) :full-ms)))
+                                      (t/is (not (contains? evidence :first-render-ms)))
+                                      (t/is (not (contains? evidence :render-frames)))
+                                      (browser/run-prepared request))))
+                           (.then (fn [text]
+                                    (t/is (= "invalid-args" (:phase (transit/decode-str text))))
+                                    (cleanup)
+                                    (done)))))))
+            (.catch (fn [cause]
+                      (t/is false (str "fresh preparation failed: " cause))
+                      (cleanup)
+                      (done))))))))
 
 (t/deftest rejected-camera-body-releases-owner
   (t/async done

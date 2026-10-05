@@ -18,8 +18,7 @@
   - `restore` puts the camera back to the case's initial view, then drains.
     Callers run it outside timing.
   - `start-camera!`, `preview-view!`, `animate-view!`, `sleep!` and
-    `finish-camera!` form one Promise-aware camera session. `interact` is a
-    thin adapter for callers with a predeclared frame vector.
+    `finish-camera!` form one Promise-aware camera session.
 
   `hooks` supplies clock, scheduling and renderer operations. The browser
   supplies real capabilities; tests supply fakes.
@@ -45,7 +44,7 @@
   Frame types come from `app.common.render-wasm.wasm`: FRAME_TYPE_PARTIAL and
   FRAME_TYPE_VIEWPORT_READY continue, FRAME_TYPE_FULL completes, FRAME_TYPE_NONE
   or anything else fails the attempt. The previous returned frame type becomes the
-  next call's flags. `restore` and the final drain of `interact` start with
+  next call's flags. `restore` and the final camera-session drain start with
   the SyncTiles flag immediately (no rAF); a fresh drain can start with
   different flags and wait for a frame.
 
@@ -85,7 +84,16 @@
    [app.common.render-wasm.wasm :as wasm]))
 
 
+(defn- partial-error
+  "Attaches available trace evidence to a rejection without adding clock reads.
+  Deeper failure evidence takes precedence over a caller's earlier state."
+  [cause evidence]
+  (ex-info (or (ex-message cause) "renderer protocol failed")
+           (assoc (ex-data cause) :partial (merge evidence (:partial (ex-data cause))))
+           (if (some? (ex-data cause)) (ex-cause cause) cause)))
+
 (defn- next-render-timestamp
+  "Gets an immediate clock timestamp or awaits the next frame timestamp."
   [{:keys [now frame]} immediate?]
   (if immediate?
     (js/Promise.resolve (now))
@@ -105,13 +113,17 @@
                      :flags       flags
                      :frame-type  frame-type
                      :duration-ms (- ended-ms started-ms)}]
-    (check)
+    (try
+      (check)
+      (catch :default cause
+        (throw (partial-error cause {:slices (conj (:slices state) slice)}))))
     {:state      (update state :slices conj slice)
      :frame-type frame-type
      :ended-ms   ended-ms}))
 
 
 (defn- valid-frame-type?
+  "Recognizes the progressive and final renderer frame types."
   [frame-type]
   (or (= frame-type wasm/FRAME_TYPE_PARTIAL)
       (= frame-type wasm/FRAME_TYPE_VIEWPORT_READY)
@@ -119,6 +131,7 @@
 
 
 (defn- viewport-ready-time
+  "Keeps the first submission boundary that exposes the requested viewport."
   [current-ready-ms frame-type ended-ms origin-ms]
   (or current-ready-ms
       (when (or (= frame-type wasm/FRAME_TYPE_VIEWPORT_READY)
@@ -127,6 +140,7 @@
 
 
 (defn- advance-drain-state
+  "Updates progressive completion or rejects with the available raw slices."
   [{:keys [viewport-ready-ms] :as state}
    frame-type
    ended-ms
@@ -134,7 +148,8 @@
   (when-not (valid-frame-type? frame-type)
     (throw (ex-info (str "unexpected frame type: " (pr-str frame-type))
                     {:type ::unexpected-frame-type
-                     :frame-type frame-type})))
+                     :frame-type frame-type
+                     :partial (select-keys state [:slices :viewport-ready-ms])})))
   (assoc state
          :flags frame-type
          :viewport-ready-ms
@@ -144,10 +159,12 @@
                               origin-ms)))
 
 (defn- drain-complete?
+  "Tests for the renderer's Full submission boundary."
   [frame-type]
   (= frame-type wasm/FRAME_TYPE_FULL))
 
 (defn- drain-result
+  "Returns raw slices and completion times from the drain origin."
   [{:keys [slices viewport-ready-ms]}
    ended-ms
    origin-ms]
@@ -199,7 +216,9 @@
 
                        (if (drain-complete? frame-type)
                          (drain-result next-state ended-ms origin)
-                         (step next-state false)))))))]
+                         (step next-state false)))))
+                  (.catch (fn [cause]
+                            (throw (partial-error cause (select-keys state [:slices :viewport-ready-ms])))))))]
 
       (step {:flags             flags
              :slices            []
@@ -252,41 +271,49 @@
       (js/Promise.reject cause))))
 
 (defn preview-view!
-  "Awaits a session or session promise, then submits one cached preview after
-  exactly one rAF. The call span includes `_set_view` and cache rendering."
+  "Awaits a session and submits one cached preview after exactly one rAF.
+  The call span includes view update and cache rendering. Failures retain
+  completed previews and authored pauses without adding clock reads."
   [session-p view]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks] :as session}]
-               (let [{:keys [now frame check render-from-cache set-view]} hooks]
-                 (check)
-                 (-> (frame)
-                     (.then (fn [timestamp]
-                              (check)
-                              (let [input-ms (now)
-                                    call-start (now)]
-                                (set-view view)
-                                (let [cache-start (now)]
-                                  (render-from-cache)
-                                  (let [cache-end (now)]
-                                    (check)
-                                    (assoc session
-                                           :view view
-                                           :last-input-ms input-ms
-                                           :active-end-ms (now)
-                                           :cached-slices
-                                           (conj (:cached-slices session)
-                                                 {:timestamp timestamp
-                                                  :duration-ms (- cache-end cache-start)
-                                                  :view-and-preview-ms (- cache-end call-start)})))))))))))))
+               (let [{:keys [now frame check render-from-cache set-view]} hooks
+                     evidence (select-keys session [:cached-slices :authored-sleeps])]
+                 (try
+                   (check)
+                   (-> (frame)
+                       (.then (fn [timestamp]
+                                (check)
+                                (let [input-ms (now)
+                                      call-start (now)]
+                                  (set-view view)
+                                  (let [cache-start (now)]
+                                    (render-from-cache)
+                                    (let [cache-end (now)
+                                          slices (conj (:cached-slices session)
+                                                       {:timestamp timestamp
+                                                        :duration-ms (- cache-end cache-start)
+                                                        :view-and-preview-ms (- cache-end call-start)})]
+                                      (try
+                                        (check)
+                                        (catch :default cause
+                                          (throw (partial-error cause (assoc evidence :cached-slices slices)))))
+                                      (assoc session :view view :last-input-ms input-ms
+                                             :active-end-ms (now) :cached-slices slices))))))
+                       (.catch (fn [cause] (throw (partial-error cause evidence)))))
+                   (catch :default cause
+                     (js/Promise.reject (partial-error cause evidence)))))))))
 
 (defn animate-view!
-  "Submits exactly `steps` serial, linearly interpolated full views."
+  "Submits exactly `steps` serial, linearly interpolated full views.
+  Invalid steps retain the session's completed previews and pauses."
   [session-p {:keys [to steps]}]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{from :view :as session}]
                (when-not (and (integer? steps) (pos? steps))
                  (throw (ex-info "camera steps must be a positive integer"
-                                 {:type ::invalid-steps :steps steps})))
+                                 {:type ::invalid-steps :steps steps
+                                  :partial (select-keys session [:cached-slices :authored-sleeps])})))
                (reduce (fn [session-p i]
                          (let [t (/ i steps)]
                            (preview-view! session-p
@@ -297,29 +324,36 @@
                        (range 1 (inc steps)))))))
 
 (defn sleep!
-  "Awaits an authored pause inside the active span and records its actual time."
+  "Awaits an authored pause inside the active span and records its actual time.
+  Rejections retain earlier completed previews and pauses without new timers."
   [session-p requested-ms]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks] :as session}]
-               (let [{:keys [now sleep check]} hooks]
-                 (when-not (and (number? requested-ms)
-                                (js/Number.isFinite requested-ms)
-                                (<= 0 requested-ms))
-                   (throw (ex-info "sleep duration must be a nonnegative finite number"
-                                   {:type ::invalid-sleep :requested-ms requested-ms})))
-                 (check)
-                 (let [started-ms (now)]
-                   (-> (sleep requested-ms)
-                       (.then (fn [_]
-                                (check)
-                                (let [ended-ms (now)]
-                                  (-> session
-                                      (assoc :active-end-ms ended-ms)
-                                      (update :authored-sleeps conj
-                                              {:requested-ms requested-ms
-                                               :actual-ms (- ended-ms started-ms)}))))))))))))
+               (let [{:keys [now sleep check]} hooks
+                     evidence (select-keys session [:cached-slices :authored-sleeps])]
+                 (try
+                   (when-not (and (number? requested-ms)
+                                  (js/Number.isFinite requested-ms)
+                                  (<= 0 requested-ms))
+                     (throw (ex-info "sleep duration must be a nonnegative finite number"
+                                     {:type ::invalid-sleep :requested-ms requested-ms})))
+                   (check)
+                   (let [started-ms (now)]
+                     (-> (sleep requested-ms)
+                         (.then (fn [_]
+                                  (check)
+                                  (let [ended-ms (now)]
+                                    (-> session
+                                        (assoc :active-end-ms ended-ms)
+                                        (update :authored-sleeps conj
+                                                {:requested-ms requested-ms
+                                                 :actual-ms (- ended-ms started-ms)})))))
+                         (.catch (fn [cause] (throw (partial-error cause evidence))))))
+                   (catch :default cause
+                     (js/Promise.reject (partial-error cause evidence)))))))))
 
 (defn- finish-interaction
+  "Ends the camera and returns final metrics, retaining trace evidence on failure."
   [{:keys [now check set-view-end] :as hooks}
    {:keys [settle-ms started-ms cached-slices last-input-ms active-end-ms authored-sleeps]}]
   (check)
@@ -345,43 +379,23 @@
               :set-view-end-ms           set-view-end-ms
               :time-to-viewport-ready-ms viewport-ready-ms
               :time-to-full-ms           full-ms
-              :last-input-to-full-ms     (- (now) last-input-ms)}))))))
+              :last-input-to-full-ms     (- (now) last-input-ms)}))
+          (.catch (fn [cause]
+                    (throw (partial-error cause {:cached-slices cached-slices
+                                                 :authored-sleeps authored-sleeps}))))))))
 
 
 (defn finish-camera!
-  "Awaits a session, settles, ends the camera and drains through Full."
+  "Awaits a session, settles, ends the camera and drains through Full.
+  Failures keep completed cached previews and authored pauses."
   [session-p]
   (-> (js/Promise.resolve session-p)
       (.then (fn [{:keys [hooks settle-ms] :as session}]
-               ((:check hooks))
-               (-> ((:sleep hooks) settle-ms)
-                   (.then (fn [_]
-                            (finish-interaction hooks session))))))))
-
-
-(defn interact
-  "Replays `frames` (a vector of `{:scale :x :y}` views) as one gesture
-   and resolves the interaction metrics (see the namespace docstring).
-
-  The flow is:
-
-  interact
-    ├─ start-camera!
-    ├─ preview-view! × N
-    └─ finish-camera!
-         ├─ settle
-         ├─ set-view-end
-         └─ drain
-
-   Each frame waits for rAF, records the input time, sets the view and
-   times one cached preview into `:cached-slices`. Afterwards the declared
-   `settle-ms` elapses, `_set_view_end` is timed on its own, and a SyncTiles
-   immediate drain runs with its origin at finalization start, so the final
-   times include `_set_view_end` while reporting it separately."
-  [hooks
-   {:keys [frames settle-ms]}]
-  (-> (reduce preview-view!
-              (start-camera! {:hooks hooks :view (first frames)}
-                             {:settle-ms settle-ms})
-              frames)
-      (finish-camera!)))
+               (let [evidence (select-keys session [:cached-slices :authored-sleeps])]
+                 (try
+                   ((:check hooks))
+                   (-> ((:sleep hooks) settle-ms)
+                       (.then (fn [_] (finish-interaction hooks session)))
+                       (.catch (fn [cause] (throw (partial-error cause evidence)))))
+                   (catch :default cause
+                     (js/Promise.reject (partial-error cause evidence)))))))))

@@ -9,11 +9,12 @@
    [frontend-tests.benches.builder-test]
    [frontend-tests.benches.containers-test]
    [frontend-tests.benches.contracts-test]
+   [frontend-tests.benches.fingerprint-test]
    [frontend-tests.benches.geometry-scenes-test]
    [frontend-tests.benches.lifecycle-test]
    [frontend-tests.benches.protocol-test]
+   [frontend-tests.benches.report-test]
    [frontend-tests.benches.scene-snapshot-test]
-   [frontend-tests.benches.upload-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -160,11 +161,12 @@
    'frontend-tests.benches.builder-test
    'frontend-tests.benches.containers-test
    'frontend-tests.benches.contracts-test
+   'frontend-tests.benches.fingerprint-test
    'frontend-tests.benches.geometry-scenes-test
    'frontend-tests.benches.lifecycle-test
    'frontend-tests.benches.protocol-test
+   'frontend-tests.benches.report-test
    'frontend-tests.benches.scene-snapshot-test
-   'frontend-tests.benches.upload-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
