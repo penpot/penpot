@@ -134,6 +134,8 @@ pub struct ImageFill {
     height: i32,
     keep_aspect_ratio: bool,
     transform: Option<ImageFillTransform>,
+    // Opaque media type code, kept so the frontend can read it back.
+    mtype: u16,
 }
 
 impl ImageFill {
@@ -145,6 +147,7 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform: None,
+            mtype: 0,
         }
     }
 
@@ -163,7 +166,12 @@ impl ImageFill {
             height,
             keep_aspect_ratio,
             transform,
+            mtype: 0,
         }
+    }
+
+    pub fn with_mtype(self, mtype: u16) -> Self {
+        Self { mtype, ..self }
     }
 
     pub fn id(&self) -> Uuid {
@@ -184,6 +192,10 @@ impl ImageFill {
 
     pub fn height(&self) -> i32 {
         self.height
+    }
+
+    pub fn mtype(&self) -> u16 {
+        self.mtype
     }
 
     pub fn transform(&self) -> Option<&ImageFillTransform> {

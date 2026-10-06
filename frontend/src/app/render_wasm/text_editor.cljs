@@ -118,12 +118,15 @@
             d (aget heap-u32 (+ fill-u32-offset 4))
             alpha (aget heap-u8 (+ fill-byte-offset 20))
             flags (aget heap-u8 (+ fill-byte-offset 21))
+            mtype (bit-or (aget heap-u8 (+ fill-byte-offset 22))
+                          (bit-shift-left (aget heap-u8 (+ fill-byte-offset 23)) 8))
             width (aget heap-i32 (+ fill-u32-offset 6))
             height (aget heap-i32 (+ fill-u32-offset 7))]
         {:fill-opacity (u8->opacity alpha)
          :fill-image {:id (uuid/from-unsigned-parts a b c d)
                       :width width
                       :height height
+                      :mtype (types.fills.impl/decode-mtype mtype)
                       :keep-aspect-ratio (not (zero? (bit-and flags 0x01)))
                       :name "sample"}})
 
