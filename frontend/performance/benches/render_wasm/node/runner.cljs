@@ -30,7 +30,7 @@
 
 (defn- usage
   [summary]
-  (str "Usage: node target/renderer-benchmarks/runner.cjs [options]\n\n"
+  (str "Usage: node target/performance/render-wasm/runner.cjs [options]\n\n"
        "Options:\n"
        summary "\n\n"
        "No command is implemented yet. Upcoming tickets add:\n"
@@ -57,9 +57,9 @@
       (seq errors)
       (fail! (str/join "\n" errors))
 
-      ;; TODO(mem:render-wasm/performance/cljs-rewrite/10-process-build-and-server,
-      ;;      mem:render-wasm/performance/cljs-rewrite/11-runner-and-failure-accounting,
-      ;;      mem:render-wasm/performance/cljs-rewrite/14-custom-measured-operations):
+      ;; TODO(mem:render-wasm/performance_tests/cljs-rewrite/10-process-build-and-server,
+      ;;      mem:render-wasm/performance_tests/cljs-rewrite/11-runner-and-failure-accounting,
+      ;;      mem:render-wasm/performance_tests/cljs-rewrite/14-custom-measured-operations):
       ;; dispatch `run`, `ab` and `compare` instead of failing.
       (seq arguments)
       (fail! (str "Unknown command: " (str/join " " arguments) "\nTry --help"))

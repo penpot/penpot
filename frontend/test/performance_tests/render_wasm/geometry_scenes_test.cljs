@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.geometry-scenes-test
+(ns performance-tests.render-wasm.geometry-scenes-test
   (:require
    [app.common.types.path :as path]
    [app.common.uuid :as uuid]
@@ -16,7 +16,7 @@
    [benches.render-wasm.scenes.plus]
    [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.benches.test-helpers :as helpers]))
+   [performance-tests.render-wasm.test-helpers :as helpers]))
 
 (t/deftest curved-paths-use-canonical-content-and-stable-order
   (let [params   {:count 12 :width 1920 :height 1080 :seed 42}

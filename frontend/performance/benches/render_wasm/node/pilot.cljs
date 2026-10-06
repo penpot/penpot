@@ -32,7 +32,7 @@
     Follow README.md's prepared renderer release commands first.
     clojure -M:dev:renderer-bench release bench-render-wasm-browser
     pnpm run build:renderer-benchmarks:pilot
-    node target/renderer-benchmarks/pilot.cjs --seed 42 --screenshot /tmp/pilot-rects.png
+    node target/performance/render-wasm/pilot.cjs --seed 42 --screenshot /tmp/pilot-rects.png
 
   The pilot serves the release browser bundle, so compile
   `bench-render-wasm-browser` first (after the prepared renderer build
@@ -62,10 +62,10 @@
 
 (defn- frontend-root
   "Resolves the frontend checkout root from the compiled pilot location
-  (`target/renderer-benchmarks/pilot.cjs`, next to `runner.cjs`). Ticket 10
+  (`target/performance/render-wasm/pilot.cjs`, next to `runner.cjs`). Ticket 10
   owns command cwd resolution; the pilot pins its own roots instead."
   []
-  (path/resolve js/__dirname ".." ".."))
+  (path/resolve js/__dirname ".." ".." ".."))
 
 (def ^:private mime
   {".html" "text/html"
@@ -209,9 +209,9 @@
   (trace "pilot: parsing args")
   (let [opts     (parse-args (or argv []))
         root     (frontend-root)
-        bundle   (path/join root "target" "renderer-benchmarks" "browser")
+        bundle   (path/join root "target" "performance" "render-wasm" "browser")
         js-dir   (path/join root "resources" "public" "js")
-        html     (path/join root "test" "benches" "render_wasm" "browser" "pilot.html")
+        html     (path/join root "performance" "bench" "render_wasm" "browser" "pilot.html")
         seed     (:seed opts)
         selected (some #(when (= (:id %) (:case-id opts)) %)
                        (cases/collect-cases {:master-seed seed}))

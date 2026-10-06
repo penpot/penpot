@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.lifecycle-test
+(ns performance-tests.render-wasm.lifecycle-test
   "Tests the browser bridge with fake DOM and renderer boundaries.
 
   It covers bridge input, ownership, disposal and `load-scene` with fake
@@ -253,6 +253,8 @@
         prev-window      (unchecked-get js/globalThis "window")
         prev-import      (unchecked-get js/globalThis "dynamicImport")
         prev-performance (unchecked-get js/globalThis "performance")
+        prev-now-fn      (unchecked-get prev-performance "now")
+        prev-now-desc    (js/Object.getOwnPropertyDescriptor prev-performance "now")
         prev-now         (unchecked-get js/globalThis "__benchNow")
         prev-script      (unchecked-get js/globalThis "__benchRenderScript")
         prev-calls       (unchecked-get js/globalThis "__benchCalls")
@@ -283,19 +285,25 @@
                                       (cb timestamp))
                                     (cb 0)))
                                 nil)}
-        performance      #js {:now (fn []
-                                     (if-some [clock (unchecked-get js/globalThis "__benchNow")]
-                                       clock
-                                       (.now prev-performance)))}
+        fake-now         (fn []
+                           (if-some [clock (unchecked-get js/globalThis "__benchNow")]
+                             clock
+                             (.call prev-now-fn prev-performance)))
         dynamic-import   (fn [url] (js/eval (str "import(" (pr-str url) ")")))]
     (unchecked-set js/globalThis "document" document)
     (unchecked-set js/globalThis "window" window)
-    (unchecked-set js/globalThis "performance" performance)
+    ;; Patch `now` on the real object: shadow hangs the compiled
+    ;; `performance.*` namespaces off the global `performance` object, so
+    ;; replacing that global hides every `benches.render-wasm.*` var.
+    (js/Object.defineProperty prev-performance "now"
+                              #js {:value fake-now :configurable true :writable true})
     (unchecked-set js/globalThis "dynamicImport" dynamic-import)
     (fn restore! []
       (unchecked-set js/globalThis "document" prev-document)
       (unchecked-set js/globalThis "window" prev-window)
-      (unchecked-set js/globalThis "performance" prev-performance)
+      (if (undefined? prev-now-desc)
+        (js-delete prev-performance "now")
+        (js/Object.defineProperty prev-performance "now" prev-now-desc))
       (unchecked-set js/globalThis "__benchNow" prev-now)
       (unchecked-set js/globalThis "__benchRenderScript" prev-script)
       (unchecked-set js/globalThis "__benchCalls" prev-calls)

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.report-test
+(ns performance-tests.render-wasm.report-test
   "Pure tests for raw records, exploratory statistics and saved-run comparisons.
   Fixtures use saved case definitions without importing a registry or renderer."
   (:require

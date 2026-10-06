@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.boolean-test
+(ns performance-tests.render-wasm.boolean-test
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.intersect :as gint]
@@ -14,7 +14,7 @@
    [benches.render-wasm.builder :as b :include-macros true]
    [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.benches.test-helpers :as helpers]))
+   [performance-tests.render-wasm.test-helpers :as helpers]))
 
 (t/deftest difference-of-overlapping-rects-keeps-hierarchy-and-bounds
   (let [red      {:fill-color "#ff0000" :fill-opacity 1}

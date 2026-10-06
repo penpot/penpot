@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.protocol-test
+(ns performance-tests.render-wasm.protocol-test
   "Tests drain, restore and interact with an injected clock and renderer.
   Browser entry tests cover load and warm pan with a fake module."
   (:require
