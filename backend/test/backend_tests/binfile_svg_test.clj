@@ -115,6 +115,21 @@
                             (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
                                                        (utf8bytes "<svg><not-closed>"))))))
 
+(t/deftest check-storage-content-type-allows-known-types
+  (doseq [ctype ["image/svg+xml" "image/jpeg" "font/woff2" "application/octet-stream"]]
+    (t/is (nil? (bfc/check-storage-content-type {:content-type ctype}))
+          (str "expected pass for " (pr-str ctype)))))
+
+(t/deftest check-storage-content-type-rejects-unknown-types
+  (doseq [ctype ["text/html" "application/x-font-woff" nil "" "   "]]
+    (let [object (if (nil? ctype) {} {:content-type ctype})
+          out    (try (bfc/check-storage-content-type object)
+                      nil
+                      (catch clojure.lang.ExceptionInfo e
+                        (ex-data e)))]
+      (t/is (= :validation (:type out)) (str "expected validation for " (pr-str ctype)))
+      (t/is (= :media-type-not-allowed (:code out)) (str "expected media-type-not-allowed for " (pr-str ctype))))))
+
 (t/deftest storage-object-schema-constrains-content-type
   (t/testing "known stored types validate, unknown types do not"
     (let [base {:id (uuid/random) :size 10 :bucket "file-media-object"}]
@@ -310,7 +325,7 @@
                                    :media-id (:id sobj)
                                    :width 64
                                    :height 64
-                                   :mtype "image/svg+xml"})
+                                   :mtype content-type})
         page-id    (first (get-in file [:data :pages]))
         shape-id   (uuid/random)
         upd        (th/command! {::th/type :update-file
@@ -341,9 +356,8 @@
     (t/is (nil? (:error upd)) (str "update-file failed: " (pr-str (:error upd))))
     [file (:id sobj)]))
 
-(defn- export-import-v1
-  "Export `file` to v1, import it back and return the served bytes
-  of its single media object."
+(defn- export-v1
+  "Export `file` to v1 and return the bundle path."
   [profile file]
   (let [bundle (tmp/tempfile :prefix "penpot-export-v1-" :suffix ".bin")]
     (v1/export-files!
@@ -352,6 +366,13 @@
          (assoc ::bfc/embed-assets false)
          (assoc ::bfc/include-libraries false))
      (io/output-stream bundle))
+    bundle))
+
+(defn- export-import-v1
+  "Export `file` to v1, import it back and return the served bytes
+  of its single media object."
+  [profile file]
+  (let [bundle (export-v1 profile file)]
     (let [result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
                      (assoc ::bfc/profile-id (:id profile))
@@ -372,6 +393,24 @@
     (t/is (not (str/includes? served "<script")))
     (t/is (not (str/includes? served "PWNMARK_SCRIPT")))
     (t/is (= "image/svg+xml" stored))))
+
+(t/deftest import-binfile-v1-rejects-unknown-content-type
+  (let [profile      (th/create-profile* 6)
+        [file _seed] (seed-file-with-svg-media profile 6 evil-svg "text/html")
+        bundle       (export-v1 profile file)
+        out          (try
+                       (-> th/*system*
+                           (assoc ::bfc/project-id (:default-project-id profile))
+                           (assoc ::bfc/profile-id (:id profile))
+                           (assoc ::bfc/input (io/input-stream bundle))
+                           (v1/import-files!))
+                       nil
+                       (catch clojure.lang.ExceptionInfo e
+                         (ex-data e)))]
+    (t/is (= :validation (:type out)))
+    (t/is (= :media-type-not-allowed (:code out)))
+    (t/is (= [(:id file)]
+             (mapv :id (th/db-query :file {:project-id (:default-project-id profile)}))))))
 
 (def ^:private large-clean-svg
   (let [pad (apply str (repeat 110000 "<!--0123456789ABCDEF-->"))]

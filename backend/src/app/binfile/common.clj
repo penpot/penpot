@@ -940,6 +940,19 @@
   keep importing while unknown types are rejected."
   [::sm/one-of {:format :string} cm/storage-object-types])
 
+(defn check-storage-content-type
+  "Check an imported storage `object` (already normalized, see
+  `normalize-content-type`) against `cm/storage-object-types`.
+  Returns nil when the type is allowed; raises `:type :validation`
+  with `:code :media-type-not-allowed` (same as the upload path)
+  when it is missing or unknown, so crafted bundles fail closed."
+  [object]
+  (when-not (contains? cm/storage-object-types (:content-type object))
+    (ex/raise :type :validation
+              :code :media-type-not-allowed
+              :hint "storage object declares an unknown content-type"
+              :content-type (:content-type object))))
+
 (defn sanitize-imported-svg
   "Sanitize the raw `bytes` of an imported storage `object` when it
   holds an SVG document. Expects an already normalized object (see

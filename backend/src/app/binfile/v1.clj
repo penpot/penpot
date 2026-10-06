@@ -614,17 +614,19 @@
                     :code :inconsistent-penpot-file
                     :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
 
+        (bfc/check-storage-content-type mdata)
+
         (l/dbg :hint "readed storage object" :id (str id) ::l/sync? true)
 
         (let [[size resource] (read-stream! input)
-              clean           (when (bfc/svg-object? mdata)
+              [resource size] (if (bfc/svg-object? mdata)
                                 (let [raw (if (bytes? resource)
                                             resource
                                             (with-open [istream (jio/input-stream resource)]
-                                              (io/read istream)))]
-                                  (bfc/sanitize-imported-svg mdata raw)))
-              resource        (:bytes clean resource)
-              size            (:size clean size)
+                                              (io/read istream)))
+                                      {:keys [bytes size]} (bfc/sanitize-imported-svg mdata raw)]
+                                  [bytes size])
+                                [resource size])
               hash            (sto/calculate-hash resource)
               content         (-> (sto/content resource size)
                                   (sto/wrap-with-hash hash))
