@@ -602,7 +602,7 @@
         :class (stl/css :context-notification-error)}
        (tr "dashboard.import.import-error.disclaimer")])
 
-    (when (or (= :import-error status) (and (= :analyze status) errors?))
+    (if (or (= :import-error status) (and (= :analyze status) errors?))
       [:div {:class (stl/css :import-error-disclaimer)}
        [:div (tr "dashboard.import.import-error.message1")]
        [:ul {:class (stl/css :import-error-list)}
@@ -624,18 +624,18 @@
 
                   :else
                   (tr "dashboard.import.import-error.unknown-error"))])]))]
-       [:div (tr "dashboard.import.import-error.message2")]])
+       [:div (tr "dashboard.import.import-error.message2")]]
 
-    (for [entry entries]
-      [:> import-entry* {:edition edition
-                         :key (dm/str (:uri entry) "/" (:file-id entry))
-                         :entry entry
-                         :entries entries
-                         :is-progress (= :import-progress status)
-                         :on-edit on-edit
-                         :on-change on-change
-                         :on-delete on-delete
-                         :can-be-deleted (> (count entries) 1)}])
+      (for [entry entries]
+        [:> import-entry* {:edition edition
+                           :key (dm/str (:uri entry) "/" (:file-id entry))
+                           :entry entry
+                           :entries entries
+                           :is-progress (= :import-progress status)
+                           :on-edit on-edit
+                           :on-change on-change
+                           :on-delete on-delete
+                           :can-be-deleted (> (count entries) 1)}]))
 
     (when (some? template)
       [:> import-entry* {:entry (assoc template :status status)
