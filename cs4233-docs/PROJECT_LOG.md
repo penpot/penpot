@@ -223,3 +223,8 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - Kyle pushed `kylebranch`. AI gave the steps to run the pipeline on it
   from GitHub's Actions tab.
+
+(Kyle sent a screenshot of the GitHub Actions page.)
+
+- AI pointed to the "CI/CD: Group Pipeline" workflow and noted that
+  Penpot's `_DEVELOP` / `_STAGING` runs wait on Penpot's own servers.
