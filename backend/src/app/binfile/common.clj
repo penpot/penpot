@@ -295,7 +295,7 @@
            END")
 
 (def ^:private sql:get-branch-changes
-  "SELECT changes, data_version
+  "SELECT changes, data_version, media_id_map
      FROM file_branch_change
     WHERE file_id = ?
       AND deleted_at IS NULL
@@ -308,6 +308,16 @@
   [{:keys [::db/conn] :as cfg} branch-file-id]
   (->> (db/exec! conn [sql:get-branch-changes branch-file-id])
        (mapv (fn [{:keys [changes]}] (blob/decode changes)))))
+
+(defn get-branch-change-media-maps
+  "The media id maps the branch's op log rows carry, in the stored (as
+  applied) direction {old-id -> new-id}: the remap a save's media fix-up
+  or an update from main applied, one map per row, oldest first. A nil
+  element means the row carries no stamp: either it was written before
+  the column existed, or it recorded the empty map explicitly."
+  [{:keys [::db/conn] :as cfg} branch-file-id]
+  (->> (db/exec! conn [sql:get-branch-changes branch-file-id])
+       (mapv #(some-> (:media-id-map %) db/decode-transit-pgobject))))
 
 (defn- migrate-detached
   "Migrate `file` in memory with `migrate-fn`, called as

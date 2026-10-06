@@ -21,6 +21,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files-branch :as fbranch]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [backend-tests.helpers :as th]
@@ -1112,6 +1113,234 @@
   [profile file-id page-id shape-id]
   (-> (read-file profile file-id)
       :data :pages-index (get page-id) :objects (get shape-id)))
+
+;; --- recorded media id maps -----------------------------------------
+;;
+;; Every op log row stamps the media id map the save or the update that
+;; wrote it applied (`media_id_map`, {old-id -> new-id}, the branch's id
+;; is the new one), so the comparison reads the branch's own record of
+;; which media rows are copies of main's and leaves the content identity
+;; heuristic (`media-pairs`) for logs written before the column existed.
+
+(defn- main-media-setup
+  "The branch-side pairing scenario: an image whose `file_media_object`
+  row MAIN owns is placed on the branch. The save's media fix-up copies
+  the row into the branch under a fresh id, which is the copy the pairs
+  describe. Returns the pieces the assertions need."
+  []
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        proj-id  (:default-project-id profile)
+        file     (th/create-file* 1 {:profile-id (:id profile)
+                                     :project-id proj-id
+                                     :is-shared false})
+        storage  (-> (:app.storage/storage th/*system*)
+                     (assoc :app.storage/backend :fs))
+        sobj     (sto/put-object! storage {::sto/content (sto/content "main-image")
+                                           :bucket :file-media-object
+                                           :content-type "image/png"})
+        fmo      (th/create-file-media-object* {:file-id (:id file)
+                                                :name "main.png"
+                                                :mtype "image/png"
+                                                :media-id (:id sobj)})
+        create   (create-branch* profile (:id file) "media-remap")
+        branch-file-id (:branch-file-id create)
+        page-id  (-> (read-file profile branch-file-id) :data :pages first)
+        shape-id (uuid/random)]
+
+    (let [out (apply-change* profile branch-file-id
+                             {:type :add-obj
+                              :page-id page-id
+                              :id shape-id
+                              :parent-id uuid/zero
+                              :frame-id uuid/zero
+                              :obj (cts/setup-shape
+                                    {:id shape-id :name "Image" :type :image
+                                     :parent-id uuid/zero :frame-id uuid/zero
+                                     :metadata {:id (:id fmo)
+                                                :width 100 :height 100
+                                                :mtype "image/png"}})})]
+      (t/is (nil? (:error out)) "the setup save lands"))
+
+    {:profile profile
+     :main-id (:id file)
+     :branch-id (:id create)
+     :branch-file-id branch-file-id
+     :page-id page-id
+     :shape-id shape-id
+     :fmo-id (:id fmo)}))
+
+(defn- media-id-maps
+  "The stamps the branch's op log rows carry, in stored (as applied)
+  direction."
+  [branch-file-id]
+  (->> (oplog-rows branch-file-id)
+       (mapv #(-> % :media-id-map (db/decode-transit-pgobject)))))
+
+(defn- clear-media-id-maps!
+  "Erase every stamp from the branch's log, the state the pre-column
+  rows were written in."
+  [branch-file-id]
+  (db/exec-one! th/*pool*
+                ["UPDATE file_branch_change SET media_id_map = NULL WHERE file_id = ?"
+                 branch-file-id]))
+
+(t/deftest branch-save-records-the-applied-media-id-map
+  ;; A branch save that copies main's media stamps its op log row with
+  ;; the id remap the fix-up applied, as applied: the source's id maps to
+  ;; the branch's copy.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [branch-file-id fmo-id]}
+          (main-media-setup)
+
+          [stamp]
+          (->> (media-id-maps branch-file-id)
+               (remove nil?))]
+
+      (t/testing "the op log row carries the remap it applied"
+        (t/is (some? stamp))
+        (t/is (contains? stamp fmo-id))
+        (let [copy-id (get stamp fmo-id)]
+          (t/is (not= fmo-id copy-id))
+          (t/is (= branch-file-id
+                   (:file-id (th/db-get :file-media-object {:id copy-id})))))))))
+
+(t/deftest compare-reads-the-recorded-pairs
+  ;; With the log fully stamped the comparison pairs from the record and
+  ;; the content identity heuristic stays out of it; erasing the stamps
+  ;; (the pre-column state) must give the same summary, through the
+  ;; fallback.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile branch-id branch-file-id]}
+          (main-media-setup)
+
+          diff!
+          (fn []
+            (-> (th/command! {::th/type :get-branch-diff
+                              ::rpc/profile-id (:id profile)
+                              :branch-id branch-id})
+                :result
+                (select-keys [:stats :changes :conflicts])))
+          with-stamps
+          (atom nil)
+          heuristic-runs
+          (atom 0)]
+
+      ;; the diff with the record in place, and the heuristic never
+      ;; consulted while the log is fully stamped
+      (with-redefs [fbranch/media-pairs (fn [& _] (swap! heuristic-runs inc) {})]
+        (reset! with-stamps (diff!)))
+      (t/is (some? @with-stamps))
+      (t/is (zero? @heuristic-runs)
+            "a fully stamped log compares without the heuristic")
+
+      ;; the same data, the stamps gone: the fallback describes the same
+      ;; pairings, so the summary agrees
+      (clear-media-id-maps! branch-file-id)
+      (let [without-stamps (diff!)]
+        (t/is (= @with-stamps without-stamps))))))
+
+(t/deftest update-from-main-records-the-map-it-applied
+  ;; The update applies main's media to the branch in the branch's id
+  ;; space ({main-media-id -> branch-media-id}) and the squash row
+  ;; records that map as applied, so a later comparison rebuilds the
+  ;; branch->main pairs from the record instead of the heuristic.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id})
+          storage (-> (:app.storage/storage th/*system*)
+                      (assoc :app.storage/backend :fs))
+          sobj    (sto/put-object! storage {::sto/content (sto/content "update-image")
+                                            :bucket :file-media-object
+                                            :content-type "image/png"})
+          fmo     (th/create-file-media-object* {:file-id (:id file)
+                                                 :name "update.png"
+                                                 :media-id (:id sobj)})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "update-map"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)]
+
+      ;; main's new media row is referenced by a main-side shape the
+      ;; update applies, so the update copies it into the branch and its
+      ;; map lands in the stamp
+      (t/is (nil? (:error (apply-change* profile (:id file)
+                                         {:type :add-obj
+                                          :page-id (-> (read-file profile (:id file)) :data :pages first)
+                                          :id (uuid/random)
+                                          :parent-id uuid/zero
+                                          :frame-id uuid/zero
+                                          :obj (cts/setup-shape
+                                                {:id (uuid/random) :name "Main image" :type :image
+                                                 :parent-id uuid/zero :frame-id uuid/zero
+                                                 :metadata {:id (:id fmo)
+                                                            :width 100 :height 100
+                                                            :mtype "image/png"}})}))))
+      ;; the branch carries its own change (so the squash writes a net
+      ;; row) and main adds a change of its own (so the update reaches
+      ;; the write path)
+      (t/is (nil? (:error (apply-change* profile branch-file-id
+                                         {:type :add-color
+                                          :color {:id (uuid/random) :name "Branch"
+                                                  :color "#223344" :opacity 1}}))))
+      (t/is (nil? (:error (apply-change* profile (:id file)
+                                         {:type :add-color
+                                          :color {:id (uuid/random) :name "C1"
+                                                  :color "#112233" :opacity 1}}))))
+      (t/is (= :updated (-> (th/command! {::th/type :update-branch-from-main
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id branch-id})
+                            :result :status)))
+
+      (let [[stamp :as stamps] (media-id-maps branch-file-id)]
+        (t/is (= 1 (count stamps)))
+        (t/is (some? stamp))
+        (t/is (contains? stamp (:id fmo)))
+        (let [copy-id (get stamp (:id fmo))]
+          (t/is (not= (:id fmo) copy-id))
+          (t/is (= branch-file-id
+                   (:file-id (th/db-get :file-media-object {:id copy-id})))))))))
+
+(t/deftest merge-with-recorded-pairs-equals-the-heuristic-merge
+  ;; A merge of a branch whose log carries the recorded pairs produces
+  ;; the same summary and the same merge result the heuristic produced
+  ;; on the same data: the record describes the same pairings.
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [{:keys [profile branch-id branch-file-id main-id page-id shape-id]}
+          (main-media-setup)
+
+          diff!
+          (fn []
+            (-> (th/command! {::th/type :get-branch-diff
+                              ::rpc/profile-id (:id profile)
+                              :branch-id branch-id})
+                :result
+                (select-keys [:stats :changes :conflicts])))]
+
+      ;; the stamps the saves left, then the same data with them erased:
+      ;; the summaries must agree
+      (let [with-stamps    (diff!)
+            _              (clear-media-id-maps! branch-file-id)
+            without-stamps (diff!)]
+        (t/is (= with-stamps without-stamps)
+              "same summary the heuristic produced"))
+
+      ;; merge the stamped branch and check the merged shape references
+      ;; a media row MAIN owns
+      (let [merge (-> (th/command! {::th/type :merge-file-branch
+                                    ::rpc/profile-id (:id profile)
+                                    :branch-id branch-id
+                                    :keep-branch true})
+                      :result)]
+        (t/is (= :merged (:status merge)))
+        (let [ref (-> (derived-obj profile main-id page-id shape-id)
+                      media-ref)
+              row (th/db-get :file-media-object {:id ref})]
+          (t/is (some? row))
+          (t/is (= main-id (:file-id row))))))))
 
 (t/deftest branch-save-fixes-foreign-media-refs-in-the-op-log
   ;; An ordinary save carries the media fix-up with its payload: the
