@@ -11,6 +11,7 @@
    [cljs.test :as t :include-macros true]))
 
 (def ^:private restore-loop! @#'sc/restore-loop!)
+(def ^:private restore-position! @#'sc/restore-position!)
 
 (defn- scroll-event
   [scroll-top]
@@ -64,3 +65,21 @@
       ((first @scheduled))
       (t/is (= 250 (.-scrollTop node)))
       (t/is (= 1 (count @scheduled)) "no further frames once settled"))))
+
+(t/deftest restore-position-without-saved-value-goes-to-top
+  (let [node      #js {:scrollTop 400 :scrollHeight 900}
+        scheduled (atom [])
+        raf*      (volatile! nil)]
+    (with-redefs [tm/raf (fn [f] (swap! scheduled conj f) 1)]
+      (restore-position! node nil raf*)
+      (t/is (= 0 (.-scrollTop node)) "a node kept mounted drops the old position")
+      (t/is (empty? @scheduled) "no retry loop for the top"))))
+
+(t/deftest restore-position-with-saved-value-runs-loop
+  (let [node      #js {:scrollTop 0 :scrollHeight 900}
+        scheduled (atom [])
+        raf*      (volatile! nil)]
+    (with-redefs [tm/raf (fn [f] (swap! scheduled conj f) 1)]
+      (restore-position! node 250 raf*)
+      (t/is (= 250 (.-scrollTop node)))
+      (t/is (= 1 (count @scheduled)) "first pass schedules a settle check"))))
