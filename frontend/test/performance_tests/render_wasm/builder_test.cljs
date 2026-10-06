@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.builder-test
+(ns performance-tests.render-wasm.builder-test
   "Tests canonical scene construction and the shared seeded number generator.
   Fixed random sequences preserve scene draws during generator extraction."
   (:require
@@ -15,7 +15,7 @@
    [benches.render-wasm.scenes.rects]
    [benches.render-wasm.snapshot :as snapshot]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.benches.test-helpers :as helpers]))
+   [performance-tests.render-wasm.test-helpers :as helpers]))
 
 (defn- build
   ([] (build {}))

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.scene-snapshot-test
+(ns performance-tests.render-wasm.scene-snapshot-test
   (:require
    [app.common.schema :as sm]
    [app.common.types.shape :as cts]
