@@ -196,3 +196,7 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 - AI listed options: run the pipeline locally with `act` (needs Docker),
   check the file with `actionlint`, or push `kylebranch` (not `develop`)
   and start the pipeline by hand from GitHub's Actions tab.
+
+> Shorten these response
+
+- AI shortened its answer and will keep replies short.
