@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.18.3
+
+### :bug: Bugs fixed
+
+- Fix binfile import storing unsanitized SVG and missing obfuscated SVG content-types [#12104](https://github.com/penpot/penpot/issues/12104) (PR: [#12105](https://github.com/penpot/penpot/pull/12105))
+- Fix removed team members keeping file access after leaving the team [#12106](https://github.com/penpot/penpot/issues/12106) (PR: [#12097](https://github.com/penpot/penpot/pull/12097))
+
 ## 2.18.2
 
 ### :bug: Bugs fixed
