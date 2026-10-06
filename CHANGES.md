@@ -47,6 +47,20 @@
 - Export multiple fills to SVG [#11466](https://github.com/penpot/penpot/issues/11466) (PR: [#11467](https://github.com/penpot/penpot/pull/11467))
 - Add Penpot-specific board size presets (file thumbnail, template cover, plugin icon/cover) [#11561](https://github.com/penpot/penpot/issues/11561) (PR: [#11565](https://github.com/penpot/penpot/pull/11565))
 
+## 2.18.3
+
+### :bug: Bugs fixed
+
+- Fix binfile import storing unsanitized SVG and missing obfuscated SVG content-types [#12104](https://github.com/penpot/penpot/issues/12104) (PR: [#12105](https://github.com/penpot/penpot/pull/12105))
+- Fix removed team members keeping file access after leaving the team [#12106](https://github.com/penpot/penpot/issues/12106) (PR: [#12097](https://github.com/penpot/penpot/pull/12097))
+
+## 2.18.2
+
+### :bug: Bugs fixed
+
+- Fix workspace showing an internal error when syncing components or dragging in the color picker [#11933](https://github.com/penpot/penpot/issues/11933) (PR: [#11941](https://github.com/penpot/penpot/pull/11941))
+- Fix SVG sanitizer keeping namespace-prefixed script elements when uploading SVG files [#12071](https://github.com/penpot/penpot/issues/12071) (PR: [#12073](https://github.com/penpot/penpot/pull/12073))
+
 ## 2.18.1
 
 ### :bug: Bugs fixed

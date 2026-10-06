@@ -989,7 +989,12 @@ impl RenderState {
     }
 
     pub fn set_background_color(&mut self, color: skia::Color) {
+        if self.background_color == color {
+            return;
+        }
         self.background_color = color;
+        // Tiles bake the background in; old atlas pixels would show on pan/zoom.
+        self.surfaces.atlas.clear();
     }
 
     pub fn set_preview_mode(&mut self, enabled: bool) {

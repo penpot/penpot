@@ -15,6 +15,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
@@ -27,6 +28,8 @@
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.svg :as svg]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as-alias wrk]
@@ -68,11 +71,15 @@
   (* 1024 1024 20))
 
 ;; Maximum total decompressed size allowed for all JSON/text zip entries
-;; combined within a single import job: 200MiB. Bounds the case where many
+;; combined within a single import job: 500MiB. Bounds the case where many
 ;; entries, each individually under default-max-text-entry-size, still sum
-;; to an unreasonable total.
+;; to an unreasonable total. Set well above the 200MiB it replaces because
+;; legitimate giant exports exist: hundreds of thousands of KB-sized
+;; entries (pages, shapes) that never trip the per-entry cap but sum past
+;; 400MiB. The per-entry cap still bounds single-entry DEFLATE
+;; amplification, so this only moves the cumulative ceiling.
 (def ^:const default-max-text-total-size
-  (* 1024 1024 200))
+  (* 1024 1024 500))
 
 ;; Maximum number of entries allowed in the import zip: 500,000.
 (def ^:const default-max-zip-entries
@@ -367,8 +374,13 @@
           fpr.can_edit
      from file_profile_rel as fpr
     inner join file as f on (f.id = fpr.file_id)
+    inner join project as p on (p.id = f.project_id)
     where fpr.file_id = ?
       and fpr.profile_id = ?
+      and exists (select 1
+                    from team_profile_rel as tpr
+                   where tpr.team_id = p.team_id
+                     and tpr.profile_id = fpr.profile_id)
    union all
    select tpr.is_owner,
           tpr.is_admin,
@@ -384,8 +396,13 @@
           ppr.can_edit
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
+    inner join project as p on (p.id = ppr.project_id)
     where f.id = ?
-      and ppr.profile_id = ?")
+      and ppr.profile_id = ?
+      and exists (select 1
+                    from team_profile_rel as tpr
+                   where tpr.team_id = p.team_id
+                     and tpr.profile_id = ppr.profile_id)")
 
 (defn- get-file-permissions*
   [conn profile-id file-id]
@@ -898,6 +915,7 @@
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXTERNAL LIBRARY RESOLUTION HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -940,3 +958,74 @@
   [cfg team-id slug]
   (->> (get-shared-files-for-team cfg team-id)
        (filter #(= slug (slugify-name (:name %))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG IMPORT SANITIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def svg-content-type
+  "Canonical content type of SVG media objects."
+  "image/svg+xml")
+
+(defn normalize-content-type
+  "Canonicalize a stored content-type: lowercase, trimmed,
+  parameters after `;` dropped. Returns nil for missing or unusable
+  values so ancient bundle entries without content-type keep passing
+  through untouched."
+  [ctype]
+  (when (string? ctype)
+    (let [clean (-> ctype
+                    (str/split #";" 2)
+                    (first)
+                    (str/trim)
+                    (str/lower))]
+      (when-not (str/empty? clean)
+        clean))))
+
+(defn svg-object?
+  "True when the storage `object` claims the canonical SVG content
+  type. Expects an already normalized object (see
+  `normalize-content-type`): every import path normalizes the
+  metadata right after reading it, so the comparison stays an exact
+  match in a single place."
+  [object]
+  (= svg-content-type (:content-type object)))
+
+(def schema:content-type
+  "Typed content-type for binfile storage objects: a member of
+  `cm/storage-object-types`. Values are canonicalized with
+  `normalize-content-type` before validation, so legacy spellings
+  keep importing while unknown types are rejected."
+  [::sm/one-of {:format :string} cm/storage-object-types])
+
+(defn check-storage-content-type
+  "Check an imported storage `object` (already normalized, see
+  `normalize-content-type`) against `cm/storage-object-types`.
+  Returns nil when the type is allowed; raises `:type :validation`
+  with `:code :media-type-not-allowed` (same as the upload path)
+  when it is missing or unknown, so crafted bundles fail closed."
+  [object]
+  (when-not (contains? cm/storage-object-types (:content-type object))
+    (ex/raise :type :validation
+              :code :media-type-not-allowed
+              :hint "storage object declares an unknown content-type"
+              :content-type (:content-type object))))
+
+(defn sanitize-imported-svg
+  "Sanitize the raw `bytes` of an imported storage `object` when it
+  holds an SVG document. Expects an already normalized object (see
+  `normalize-content-type`); returns nil when the object is not an
+  SVG.
+
+  Otherwise returns a map with the sanitized `:bytes`, their `:size`
+  and their blake2b `:hash`, ready to persist with `sto/put-object!`.
+
+  Raises a `:validation` exception when the SVG cannot be parsed, the
+  same error the upload path reports."
+  [object ^bytes raw]
+  (when (svg-object? object)
+    (let [sanitized (svg/sanitize-svg (String. ^bytes raw "UTF-8"))
+          bytes     (.getBytes ^String sanitized "UTF-8")]
+      {:bytes bytes
+       :size  (alength ^bytes bytes)
+       :hash  (sto/calculate-hash (java.io.ByteArrayInputStream. bytes))})))

@@ -184,6 +184,12 @@ impl DocAtlas {
         self.size.width <= 0 || self.size.height <= 0
     }
 
+    /// Drops all atlas content while keeping its allocation and placement.
+    pub fn clear(&mut self) {
+        self.surface.canvas().clear(skia::Color::TRANSPARENT);
+        self.tile_doc_rects.clear();
+    }
+
     /// Sets the document-space bounds used to clamp atlas updates.
     /// Pass `None` to disable clamping.
     pub fn set_doc_bounds(&mut self, bounds: Option<skia::Rect>) {

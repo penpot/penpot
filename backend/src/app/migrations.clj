@@ -517,7 +517,10 @@
     :fn (mg/resource "app/migrations/sql/0155-drop-http-session-table.sql")}
 
    {:name "0156-add-storage-object-json-dedup-index"
-    :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}])
+    :fn (mg/resource "app/migrations/sql/0156-add-storage-object-json-dedup-index.sql")}
+
+   {:name "0153-del-orphan-profile-rels-after-team-leave"
+    :fn (mg/resource "app/migrations/sql/0153-del-orphan-profile-rels-after-team-leave.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

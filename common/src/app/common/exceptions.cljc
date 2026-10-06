@@ -245,7 +245,6 @@
    (defn format-throwable
      [cause & {:as opts}]
      (with-out-str
-       (println "====================")
        (when-let [exdata (ex-data cause)]
          (when-let [hint (or (get exdata :hint)
                              (ex-message cause))]
@@ -275,9 +274,7 @@
        (when-let [trace (.-stack cause)]
          (println "Trace:")
          (println "--------------------")
-         (println (.-stack cause)))
-
-       (println "===================="))))
+         (println (.-stack cause))))))
 
 (defn first-line
   [s]
