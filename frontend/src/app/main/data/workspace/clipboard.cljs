@@ -213,6 +213,7 @@
                             :features features
                             :version version
                             :file-id file-id
+                            :team-id (:current-team-id state)
                             :selected selected
                             :objects {}
                             :images #{}}
@@ -578,6 +579,7 @@
    [:features ::sm/set-of-strings]
    [:version :int]
    [:file-id ::sm/uuid]
+   [:team-id {:optional true} ::sm/uuid]
    [:selected ::sm/set-of-uuid]
    [:objects
     [:map-of ::sm/uuid :map]]

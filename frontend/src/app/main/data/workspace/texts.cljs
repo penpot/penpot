@@ -10,12 +10,14 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.transit :as t]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
@@ -1520,24 +1522,59 @@
 (def ^:private max-paste-html-length 1000000)
 
 (defn payload-content
-  "The content of a Penpot text `payload`, without what the current file cannot
-   reach: see `text-clipboard/clean-content`."
+  "The content of a Penpot text `payload` without what the current file cannot reach.
+   A payload without team counts as coming from the current team."
   [state {:keys [content file-id team-id]}]
   (let [current-file-id (:current-file-id state)]
     (text-clipboard/clean-content
      content
      {:valid-file-ids (conj (set (keys (dsh/lookup-libraries state))) current-file-id)
       :same-file?     (= file-id current-file-id)
-      :same-team?     (= team-id (:current-team-id state))})))
+      :same-team?     (or (nil? team-id) (= team-id (:current-team-id state)))})))
+
+(defn- decode-copied-shapes
+  "The copied shapes data in clipboard `text`, or nil when it holds something else."
+  [text]
+  (when (str/starts-with? (str/trim (or text "")) "{")
+    (let [data (ex/ignoring (t/decode-str text))]
+      (when (and (map? data) (= :copied-shapes (:type data)))
+        data))))
+
+(defn- copied-shapes->payload
+  "A text payload joining the content of the copied text shapes, top to bottom and
+   left to right; nil when none of the copied shapes is a text."
+  [{:keys [objects selected file-id team-id]}]
+  (let [texts (->> selected
+                   (keep #(get objects %))
+                   (filter cfh/text-shape?)
+                   (sort-by (juxt :y :x)))]
+    (when (seq texts)
+      {:file-id file-id
+       :team-id team-id
+       :content (assoc-in (:content (first texts))
+                          [:children 0 :children]
+                          (into [] (mapcat #(-> % :content :children first :children)) texts))})))
+
+(defn- penpot-paste
+  [state payload]
+  {:penpot?  true
+   :fragment (text-paste/content->fragment (payload-content state payload))})
 
 (defn- clipboard->paste
-  "What to paste for clipboard `html` and `text`, or nil: text copied in Penpot keeps
-   its styles; any other text is unstyled, so it takes the caret style."
+  "What to paste for clipboard `html` and `text`, or nil: text and text shapes copied
+   in Penpot keep their styles; any other text takes the caret style."
   [state html text]
-  (let [html-paste? (features/active-feature? state "text-editor-wasm/v1-html-paste")]
-    (if-let [payload (when html-paste? (text-clipboard/html->payload html))]
-      {:penpot?  true
-       :fragment (text-paste/content->fragment (payload-content state payload))}
+  (let [html-paste? (features/active-feature? state "text-editor-wasm/v1-html-paste")
+        payload     (when html-paste? (text-clipboard/html->payload html))
+        shapes      (when (and html-paste? (nil? payload)) (decode-copied-shapes text))]
+    (cond
+      (some? payload)
+      (penpot-paste state payload)
+
+      (some? shapes)
+      (some->> (copied-shapes->payload shapes) (penpot-paste state))
+
+      :else
       (when-let [fragment (or (when (and html-paste? (< 0 (count html) max-paste-html-length))
                                 (some-> (text-clipboard/html->fragment html)
                                         (text-clipboard/without-overrides)))
