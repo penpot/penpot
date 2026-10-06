@@ -6,7 +6,7 @@
 
 (ns backend-tests.graph-overlay-console-test
   "Pure tests over the console's parse-gate-run pipeline
-  (`app.graph.overlay.console/run-query`) and the default query it ships
+  (`app.graph.relation-overlay.console/run-query`) and the default query it ships
   (`app.graph.debug/default-query`).
 
   The gate exists so the console cannot run arbitrary Clojure; these
@@ -21,8 +21,8 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.graph.debug :as debug]
-   [app.graph.overlay :as overlay]
-   [app.graph.overlay.console :as console]
+   [app.graph.relation-overlay :as overlay]
+   [app.graph.relation-overlay.console :as console]
    [clojure.string :as str]
    [clojure.test :as t]
    [datascript.core :as d]))
@@ -80,7 +80,7 @@
 
 (t/deftest shared-rule-invocations-pass-the-gate
   ;; The gate's allowlist derives from `queries/rules`
-  ;; (`app.graph.overlay.console/check-query!`), so rule renames pass
+  ;; (`app.graph.relation-overlay.console/check-query!`), so rule renames pass
   ;; automatically: the default query proves `instance-of`, and these
   ;; hold the door open for `descendant-of` (with rows) and `uses-token`
   ;; (the fixture defines no tokens, so the gate acceptance is the

@@ -13,7 +13,7 @@
   that is the correctness oracle. A backported assertion that disagrees
   with a helper is a beadpot bug: the helper's answer is asserted and the
   divergence is noted in the docstring. Beadpot's idempotency tests have
-  no port here: `app.graph.overlay/build` is a pure function of the
+  no port here: `app.graph.relation-overlay/build` is a pure function of the
   document, so linking twice cannot duplicate an edge by construction.
 
   The fixture is built exclusively with the common test helpers
@@ -35,8 +35,8 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
-   [app.graph.overlay :as overlay]
-   [app.graph.overlay.queries :as queries]
+   [app.graph.relation-overlay :as overlay]
+   [app.graph.relation-overlay.queries :as queries]
    [clojure.test :as t]
    [datascript.built-ins :as bi]
    [datascript.core :as d]))
@@ -89,7 +89,7 @@
 (defn- oracle-containers
   "The builder's resolution containers, one per page plus one per
   component that carries its own `:objects` snapshot, as [ctn-container
-  container-id] pairs (`app.graph.overlay/ref-resolver`)."
+  container-id] pairs (`app.graph.relation-overlay/ref-resolver`)."
   [data]
   (concat (map (fn [[id page]] [(ctn/make-container page :page) id])
                (:pages-index data))
@@ -520,7 +520,7 @@
   ;; (1) the interval form answers the recursive form, and both equal
   ;; `cfh/get-children-ids` (the oracle) for every frame of every
   ;; container; (2) one global counter numbers every container
-  ;; (`app.graph.overlay/euler-numbering` threads it file-wide), so
+  ;; (`app.graph.relation-overlay/euler-numbering` threads it file-wide), so
   ;; [enter exit] intervals across the whole file are pairwise
   ;; disjoint-or-nested — a partial overlap is the signature of the
   ;; per-container-counter bug the 20260820 report guards against.
@@ -742,7 +742,7 @@
 
 (def ^:private control-symbols
   "Clause heads that structure a query rather than call a function, the
-  console gate's own list (`app.graph.overlay.console`)."
+  console gate's own list (`app.graph.relation-overlay.console`)."
   '#{not not-join or or-join and pull})
 
 (def ^:private rule-names

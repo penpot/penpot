@@ -71,7 +71,7 @@
   ;; Required by Arrow RootAllocator (lbug only pulls arrow-memory-core).
   org.apache.arrow/arrow-memory-netty {:mvn/version "19.0.0"}
 
-  ;; graph-overlay: datascript index over the document, replacing the Cypher
+  ;; relation-overlay: datascript index over the document, replacing the Cypher
   ;; projection for per-file queries. See docs.local/graph roadmap.
   datascript/datascript {:mvn/version "1.8.1"}}
 

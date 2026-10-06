@@ -767,7 +767,7 @@
   destination's chain up `:parent-id`, reading `:component-id` and
   `:shape-ref` off every shape it meets: a caller holding those four facts
   per shape can ask this without a document. It is public because
-  `app.graph.overlay.sync` is that caller, and the incremental overlay
+  `app.graph.relation-overlay.sync` is that caller, and the incremental overlay
   refuses a move the document refuses by asking this predicate rather than
   by answering the same question a second time."
   [objects shape-id parent-id {:keys [allow-altering-copies syncing]}]

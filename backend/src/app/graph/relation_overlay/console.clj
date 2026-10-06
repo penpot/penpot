@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.overlay.console
+(ns app.graph.relation-overlay.console
   "Free-form Datalog for the debug graph console: parse, gate, run,
   format.
 
@@ -21,7 +21,7 @@
   binder's own courtesy: the error names the symbol."
   (:require
    [app.common.exceptions :as ex]
-   [app.graph.overlay.queries :as queries]
+   [app.graph.relation-overlay.queries :as queries]
    [clojure.edn :as edn]
    [datascript.built-ins :as bi]
    [datascript.core :as d]))
@@ -137,7 +137,7 @@
   "Parse, gate, and run `text` against overlay `db`.
 
   `$` is always supplied; `%` (the shared rule set of
-  `app.graph.overlay.queries`) is supplied when the query's :in asks for
+  `app.graph.relation-overlay.queries`) is supplied when the query's :in asks for
   it. Returns {:columns [...] :rows [...] :truncated? bool :row-count n}
   in the shape the console template renders."
   [db text]

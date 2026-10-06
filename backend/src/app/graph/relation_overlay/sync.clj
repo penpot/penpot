@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.overlay.sync
+(ns app.graph.relation-overlay.sync
   "Incremental overlay updates from Penpot change vectors.
 
   The invariant this namespace defends: an overlay maintained from change
@@ -50,8 +50,8 @@
    [app.common.types.page :as ctp]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
-   [app.graph.overlay :as overlay]
-   [app.graph.overlay.queries :as queries]
+   [app.graph.relation-overlay :as overlay]
+   [app.graph.relation-overlay.queries :as queries]
    [datascript.core :as d]))
 
 (def supported-change-types
@@ -77,7 +77,7 @@
   (some-> (first (d/datoms db :avet :document/id)) :e))
 
 (defn- sync-asset-ctx
-  "The asset half of `app.graph.overlay`'s build-ctx, resolved against the
+  "The asset half of `app.graph.relation-overlay`'s build-ctx, resolved against the
   live db: values are eids rather than tempids."
   [db]
   {:colors         (into {} (map (fn [dtm] [(:v dtm) (:e dtm)]))
@@ -860,7 +860,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; library assets: colours and typographies
 ;;
-;; The entity is the one `app.graph.overlay/build-tx` writes for a member
+;; The entity is the one `app.graph.relation-overlay/build-tx` writes for a member
 ;; of `:colors` or `:typographies`: identity, the document ref, and the
 ;; name a standing query asks for. The value lives in the document,
 ;; which the holder of the overlay already has.
@@ -952,7 +952,7 @@
   of `ctyl/delete-typography`: both dissoc the asset from the library map
   and leave every referring shape alone. A rebuild therefore loses the
   asset entity *and* every resolved reference to it, because
-  `app.graph.overlay/build-asset-maps` only maps the ids the library
+  `app.graph.relation-overlay/build-asset-maps` only maps the ids the library
   still holds.
 
   One retraction produces exactly that. Datascript's
@@ -971,7 +971,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; design tokens
 ;;
-;; The entity shape is `app.graph.overlay/tokens-tx`'s: one entity per
+;; The entity shape is `app.graph.relation-overlay/tokens-tx`'s: one entity per
 ;; token set (identity, name, document ref) and one per token (identity,
 ;; name, type, set ref). Values, themes and resolution stay in the lib,
 ;; which `app.common.types.tokens-lib` already answers.
@@ -1016,7 +1016,7 @@
 
 (defn- token-entities
   "Token entities of one set from a lib-shaped token map, in
-  `app.graph.overlay/tokens-tx`'s shape."
+  `app.graph.relation-overlay/tokens-tx`'s shape."
   [set-ref tokens]
   (into []
         (map (fn [token]
@@ -1082,7 +1082,7 @@
   and token entity goes, and the incoming library's sets and tokens are
   written fresh. Nothing outside the pair points at them, because an
   applied token is folded onto the shape as a plain name
-  (`app.graph.overlay/token-attrs`), so no shape datom needs repair."
+  (`app.graph.relation-overlay/token-attrs`), so no shape datom needs repair."
   [db {:keys [tokens-lib]}]
   (let [old (-> (mapv (fn [dtm] [:db.fn/retractEntity (:e dtm)])
                       (d/datoms db :avet :token-set/id))

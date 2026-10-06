@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.overlay.queries
+(ns app.graph.relation-overlay.queries
   "The relation vocabulary and the standing question set over the overlay.
 
   **The relation vocabulary is a rule set, not raw clauses**
@@ -36,7 +36,7 @@
   stays the oracle and is never reimplemented here."
   (:require
    [app.common.uuid :as uuid]
-   [app.graph.overlay :as overlay]
+   [app.graph.relation-overlay :as overlay]
    [datascript.core :as d]))
 
 (def rules

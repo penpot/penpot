@@ -8,8 +8,8 @@
   "Cold build and incremental sync are two implementations of one mapping,
   and this namespace holds them to it.
 
-  `app.graph.overlay/build` projects a whole file into a fresh overlay.
-  `app.graph.overlay.sync/apply-changes` replays the change vocabulary the
+  `app.graph.relation-overlay/build` projects a whole file into a fresh overlay.
+  `app.graph.relation-overlay.sync/apply-changes` replays the change vocabulary the
   editor emits onto an overlay that is already open. The overlay the second
   one maintains must equal the overlay the first one would build from the
   changed document, or the console shows a graph no rebuild reproduces.
@@ -31,9 +31,9 @@
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.graph.debug :as graph.debug]
-   [app.graph.overlay :as overlay]
-   [app.graph.overlay.queries :as queries]
-   [app.graph.overlay.sync :as sync]
+   [app.graph.relation-overlay :as overlay]
+   [app.graph.relation-overlay.queries :as queries]
+   [app.graph.relation-overlay.sync :as sync]
    [clojure.set :as set]
    [clojure.string :as str]
    [clojure.test :as t]
@@ -135,7 +135,7 @@
   an editing session would emit them, and every indexed attribute at least
   once: topology (add, reparent, reorder, delete a subtree), the
   `:mod-obj` set ops
-  with their asset refs (`app.graph.overlay.sync/set-attr-tx`), a touched
+  with their asset refs (`app.graph.relation-overlay.sync/set-attr-tx`), a touched
   swap slot on a shape inside a copy (`ctk/get-swap-slot`), a copy
   child's `:shape-ref` repointed at another main shape (the resolved
   `:shape/refers-to` must follow), the whole component lifecycle from add
@@ -207,7 +207,7 @@
    ;; the frame's children are sorted by the index each named id holds
    ;; here, and rect-id, which the change does not name, keeps the -1 key
    ;; and stays first. The sibling ordinals must follow that sort
-   ;; (`app.graph.overlay.sync/apply-reorder-children`).
+   ;; (`app.graph.relation-overlay.sync/apply-reorder-children`).
    {:type :reorder-children :page-id page-id :parent-id frame-id
     :shapes [circ-id rect2-id]}
 
@@ -686,11 +686,11 @@
 ;; The third filter, after the change types and the operations: the
 ;; attributes a shape entity carries. They do not have one writer each. An
 ;; operation writes `:shape/name` and its neighbours through
-;; `app.graph.overlay.sync/set-attr-tx`, a structural pass writes
+;; `app.graph.relation-overlay.sync/set-attr-tx`, a structural pass writes
 ;; `:shape/refers-to` (`reresolve-refs-tx`) and the sibling ordinal
 ;; (`order-tx`, which is also how the builder draws it), and the builder
 ;; writes the identity and topology edges and `:shape/type`. The comparison
-;; asks whether every attribute `app.graph.overlay/schema` declares over
+;; asks whether every attribute `app.graph.relation-overlay/schema` declares over
 ;; shape entities, plus the folded token vocabulary, has a writer, and
 ;; names its kind. An attribute nothing can write fails by name rather than passing
 ;; as derived, which is the failure mode the operation filter had before
@@ -748,7 +748,7 @@
    :shape/exit  "the fold and the rebuild number the intervals differently; containment is the invariant"})
 
 (defn- declared-shape-attrs
-  "The attributes `app.graph.overlay/schema` declares over shape entities,
+  "The attributes `app.graph.relation-overlay/schema` declares over shape entities,
   plus the folded token vocabulary that needs no declaration."
   []
   (into (into #{} (filter (fn [attr] (= "shape" (namespace attr)))) (keys overlay/schema))
@@ -966,7 +966,7 @@
   ;; The Euler-tour invariants hold on the synced db, not only on the
   ;; built one. The sync path renumbers a container from beyond the
   ;; global maximum with a different DFS order than the builder
-  ;; (`app.graph.overlay.sync/renumber-container-tx`), so interval
+  ;; (`app.graph.relation-overlay.sync/renumber-container-tx`), so interval
   ;; values are not comparable between the two paths — containment is.
   ;; Here: every shape of every container carries an interval, the
   ;; interval form answers the recursive walk exactly, and intervals are

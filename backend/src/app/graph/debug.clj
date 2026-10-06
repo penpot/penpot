@@ -8,9 +8,9 @@
   "In-memory overlay sessions for the debug graph console.
 
   A session is a datascript overlay of one file
-  (`app.graph.overlay`), maintained from the msgbus file-change feed by
-  `app.graph.overlay.sync` and queried in Datalog through
-  `app.graph.overlay.console`. The Ladybug engine no longer appears on
+  (`app.graph.relation-overlay`), maintained from the msgbus file-change feed by
+  `app.graph.relation-overlay.sync` and queried in Datalog through
+  `app.graph.relation-overlay.console`. The Ladybug engine no longer appears on
   this path: it keeps the batch-export tier (`app.graph.ingest`), where
   columnar output is the point. The overlay is immutable data in an atom,
   so readers never lock and the sync loop is the only writer."
@@ -20,10 +20,10 @@
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.db :as db]
-   [app.graph.overlay :as overlay]
-   [app.graph.overlay.console :as console]
-   [app.graph.overlay.queries :as queries]
-   [app.graph.overlay.sync :as overlay.sync]
+   [app.graph.relation-overlay :as overlay]
+   [app.graph.relation-overlay.console :as console]
+   [app.graph.relation-overlay.queries :as queries]
+   [app.graph.relation-overlay.sync :as overlay.sync]
    [app.msgbus :as mbus]
    [app.srepl.helpers :as h]
    [clojure.string :as str]
@@ -37,7 +37,7 @@
   The `filter_*` columns carry node ids for the graph-view result filter;
   the results table hides them (see `hide-filter-columns` and the
   template's `renderQueryOutput`). `$` is bound to the overlay and `%` to
-  the shared rule set of `app.graph.overlay.queries`."
+  the shared rule set of `app.graph.relation-overlay.queries`."
   (str "[:find ?component ?instance ?page\n"
        "       ?filter_src_id ?filter_tgt_id\n"
        " :in $ %\n"
@@ -84,7 +84,7 @@
 (defn- mark-stale
   "Record a staleness verdict in a session's sync state, once.
 
-  Every verdict `app.graph.overlay.sync/staleness` returns is a permanent
+  Every verdict `app.graph.relation-overlay.sync/staleness` returns is a permanent
   divergence: the index has folded a state no rebuild produces, and the
   batches after it fold onto that state. So a later clean batch must not
   erase the mark, and only `load-session!` clears it, by building fresh
@@ -162,7 +162,7 @@
   (if-let [msgbus (:msgbus session)]
     ;; A dropping buffer is the silence this subsystem cannot see: a full
     ;; buffer discards a message with no log line and no revision change.
-    ;; `app.graph.overlay.sync/staleness` catches it one message later,
+    ;; `app.graph.relation-overlay.sync/staleness` catches it one message later,
     ;; because the next message's revision is then two beyond the
     ;; index's, and the read gates refuse until a reload rebuilds.
     (let [sync-ch (sp/chan :buf (sp/dropping-buffer 64))]
@@ -193,7 +193,7 @@
 (defn sync-status
   "Return incremental sync status for the active session.
 
-  `:stale` is the verdict `app.graph.overlay.sync/staleness` returned for
+  `:stale` is the verdict `app.graph.relation-overlay.sync/staleness` returned for
   the batch that broke the index, nil while the index still equals a
   rebuild, and `:reason` names which of the three cases it was. The two
   revisions are reported beside it and neither is the gate: `:revn` is
@@ -268,7 +268,7 @@
 (defn- check-fresh!
   "Refuse a read from an index that has fallen behind.
 
-  The mark is `app.graph.overlay.sync/staleness`'s verdict, recorded by
+  The mark is `app.graph.relation-overlay.sync/staleness`'s verdict, recorded by
   `apply-file-change!`, and a reload clears it by rebuilding
   (`load-session!`). This refusal is what makes partial change-type
   coverage a performance property rather than a correctness one: a
@@ -286,7 +286,7 @@
   "Run a Datalog `statement` against the overlay for `profile-id`.
 
   Read-only by construction (`d/q` cannot transact), gated against
-  function smuggling by `app.graph.overlay.console/check-query!`, and
+  function smuggling by `app.graph.relation-overlay.console/check-query!`, and
   gated against a stale index by `check-fresh!`."
   [profile-id statement]
   (when (or (nil? statement) (= "" statement))
