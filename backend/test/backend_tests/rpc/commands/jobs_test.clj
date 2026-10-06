@@ -19,6 +19,7 @@
    [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
+   [app.rpc.commands.jobs :as cmd-jobs]
    [app.rpc.quotes :as-alias quotes]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -527,6 +528,30 @@
 
     (t/testing "and the upload is not consumed by the rejection"
       (t/is (nil? (:deleted-at (session-row session-id)))))
+
+    (t/testing "so nothing had to be assembled either"
+      (t/is (empty? (assembled-tempfiles))))))
+
+(t/deftest create-import-job-rejects-malformed-params-before-assembling
+  ;; the shape of the caller params is checked before the chunks are
+  ;; assembled: a name over the limit never copies the package to disk
+  (let [profile    (th/create-profile* 1)
+        session-id (upload-chunked! profile)
+        before     (live-storage-objects)
+        out        (with-redefs [cmd-jobs/assemble-upload
+                                 (fn [& _]
+                                   (throw (ex-info "assembled" {})))]
+                     (create-import-job! (:id profile) (:default-project-id profile)
+                                         :params {:project-id (:default-project-id profile)
+                                                  :name       (apply str (repeat 251 "x"))}
+                                         :upload-id session-id))]
+
+    (t/is (not (th/success? out)))
+    (t/is (= :data-validation (th/ex-code (:error out))))
+    (t/is (zero? (count-jobs)))
+
+    (t/testing "no package was staged for it"
+      (t/is (= before (live-storage-objects))))
 
     (t/testing "so nothing had to be assembled either"
       (t/is (empty? (assembled-tempfiles))))))

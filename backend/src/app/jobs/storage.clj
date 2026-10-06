@@ -102,37 +102,51 @@
                 :job-id (:id context)
                 :resource-id resource-id))))
 
+(defn release-resource
+  "Release a job resource.
+
+  The object is marked as deleted and, when it belongs to a job, the
+  row stops pointing at it in the same transaction: a row never
+  references an object that is already gone, and the foreign key is not
+  what ends up clearing the reference. A resource no job owns (the
+  package of a creation that never submitted) is released with a nil
+  job id, and then no row is touched at all.
+
+  Best effort: a failure is logged and never changes the terminal state
+  of the job, and releasing without a resource is a no-op. Returns true
+  when the object was marked as deleted or a stale reference was
+  cleared."
+  ([cfg resource-id]
+   (release-resource cfg resource-id nil))
+  ([cfg resource-id job-id]
+   (when (uuid? resource-id)
+     (try
+       (db/tx-run!
+        cfg
+        (fn [tx-cfg]
+          (let [storage  (sto/resolve tx-cfg ::db/reuse-conn true)
+                deleted? (sto/del-object! storage resource-id)
+                ;; the job no longer owns the package: the pointer goes with
+                ;; it, so clearing it does not depend on the object being
+                ;; physically deleted later
+                cleared? (when (some? job-id)
+                           (db/update! tx-cfg :job
+                                       {:resource-id nil :modified-at (ct/now)}
+                                       ["id = ? AND resource_id = ?"
+                                        job-id resource-id]
+                                       {::db/return-keys [:id]}))]
+            (or deleted? (some? cleared?)))))
+       (catch Throwable cause
+         (l/wrn :hint "unable to release the input of a job"
+                :job-id (str job-id)
+                :resource-id (str resource-id)
+                :cause cause)
+         false)))))
+
 (defn release-input
   "Release the package a job consumed.
 
-  The object is marked as deleted and the job stops pointing at it in the
-  same transaction: a row never references an object that is already
-  gone, and the foreign key is not what ends up clearing the reference.
-
-  Best effort: a failure is logged and never changes the terminal state
-  of the job, and releasing a job without a resource is a no-op. Returns
-  true when the object was marked as deleted or a stale reference was
-  cleared."
+  Delegates to `release-resource` with the id of the job: the object
+  and the pointer are dropped together. Best effort, like there."
   [cfg context]
-  (when-let [resource-id (:resource-id context)]
-    (try
-      (db/tx-run!
-       cfg
-       (fn [tx-cfg]
-         (let [storage  (sto/resolve tx-cfg ::db/reuse-conn true)
-               deleted? (sto/del-object! storage resource-id)
-               ;; the job no longer owns the package: the pointer goes with
-               ;; it, so clearing it does not depend on the object being
-               ;; physically deleted later
-               cleared? (db/update! tx-cfg :job
-                                    {:resource-id nil :modified-at (ct/now)}
-                                    ["id = ? AND resource_id = ?"
-                                     (:id context) resource-id]
-                                    {::db/return-keys [:id]})]
-           (or deleted? (some? cleared?)))))
-      (catch Throwable cause
-        (l/wrn :hint "unable to release the input of a job"
-               :job-id (str (:id context))
-               :resource-id (str resource-id)
-               :cause cause)
-        false))))
+  (release-resource cfg (:resource-id context) (:id context)))

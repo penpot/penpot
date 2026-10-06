@@ -61,8 +61,8 @@
 (def ^:private schema:report-job-progress-params
   [:map {:title "report-job-progress-params"}
    ;; The progress schema is the same one the jobs substrate validates:
-   ;; `current` is mandatory, `total` and `stage` are optional, and no
-   ;; other key is accepted.
+   ;; `:stage` is mandatory (a keyword of the worker vocabulary) and
+   ;; `:counters` is an optional map of `scope -> {:current :total?}`.
    [:job-id ::sm/uuid]
    [:progress jobs/schema:progress]])
 

@@ -19,7 +19,6 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.jobs :as jobs]
@@ -220,6 +219,12 @@
                   :hint "unsupported binfile version"
                   :version asked)))
 
+    ;; the shape of what the caller sent is checked before the upload
+    ;; is assembled: the version is known good here (sent or defaulted
+    ;; for the check), so the merged map below only adds what the
+    ;; package says
+    (jobs/validate-params job-def (assoc given :version (or (:version given) 1)))
+
     (let [file (assemble-upload cfg profile-id (:upload-id envelope))
           path (:path file)]
 
@@ -262,8 +267,7 @@
               (catch Throwable cause
                 ;; the job never came to own the package, so it must not be
                 ;; left for the storage GC to find late
-                (js/release-input cfg {:id          (uuid/next)
-                                       :resource-id (:resource-id staged)})
+                (js/release-resource cfg (:resource-id staged))
                 (throw cause)))))
 
         (finally

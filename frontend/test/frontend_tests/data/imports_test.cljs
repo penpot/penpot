@@ -407,7 +407,7 @@
            (t/is (= {:libraries-resolution {}} (last @seen)))
            (t/is (= :finish (:status (nth @seen 3))))))))))
 
-(t/deftest ^:async a-cancelled-job-completes-the-stream-without-outcome
+(t/deftest ^:async a-cancelled-job-closes-its-entries-as-cancelled
   (let [ws-stream (rx/subject)
         calls     (atom [])
         rows      (atom {})
@@ -432,11 +432,55 @@
            (rx/push! ws-stream (message (event job-id :end {:outcome "cancelled"})))
            (await done)
 
-           (t/testing "no finish or error, only queued and the libraries resolution"
+           (t/testing "the cancelled ending closes the entries and terminates the stream"
              (t/is (= [{:status  :queued
                         :file-id (:file-id target)}
+                       {:status  :error
+                        :file-id (:file-id target)
+                        :error   "dashboard.import.cancelled"}
                        {:libraries-resolution {}}]
                       @seen)))))))))
+
+(t/deftest ^:async a-cancelled-job-closes-in-progress-entries-as-cancelled
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        seen      (atom [])
+        target    (entry :name "Only")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (fake-server calls rows (fn [job-id] (job job-id "running")))
+        ws/get-rcv-stream (ws-stub ws-stream)}
+
+       (let [done   (hva/observe (imp/import-files {:project-id project-id
+                                                    :entries    [target]})
+                                 {:on-next #(swap! seen conj %)})
+             job-id (:job-id (first @calls))]
+
+         ;; drive the entries to progress first, so the cancel
+         ;; interrupts a run in course instead of a queued job
+         (rx/push! ws-stream (message (event job-id :progress {:stage :manifest})))
+         (await (hva/wait-for #(some (fn [message] (= :progress (:status message))) @seen)
+                              "the progress"))
+
+         (t/testing "an external cancel closes every entry as cancelled"
+           (swap! rows assoc job-id (job job-id "cancelled"))
+           (rx/push! ws-stream (message (event job-id :end {:outcome "cancelled"})))
+           (await done)
+           (t/is (= [{:status  :queued
+                      :file-id (:file-id target)}
+                     {:status   :progress
+                      :file-id  (:file-id target)
+                      :progress {:stage :manifest}}
+                     {:status  :error
+                      :file-id (:file-id target)
+                      :error   "dashboard.import.cancelled"}
+                     {:libraries-resolution {}}]
+                    @seen))))))))
 
 (t/deftest ^:async the-created-job-id-reaches-the-caller
   (let [ws-stream (rx/subject)

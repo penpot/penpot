@@ -616,7 +616,13 @@
 ;; HEARTBEAT / PROGRESS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private heartbeat-interval (ct/duration {:seconds 1}))
+(def ^:private heartbeat-interval
+  ;; one second, down from a minute: a heavy job that was cancelled must
+  ;; be seen as gone at its next beat. The price is one `modified_at`
+  ;; touch per beating job per second (60x the old rate): cheap while the
+  ;; only heavy beater runs alone on its queue, revisit if concurrent
+  ;; beating jobs ever grow.
+  (ct/duration {:seconds 1}))
 (def ^:private progress-interval (ct/duration {:millis 200}))
 
 (def ^:private prune-threshold 10000)

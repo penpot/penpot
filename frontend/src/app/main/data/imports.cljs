@@ -254,6 +254,14 @@
                                             (rx/from (entry-messages entries {:status :error
                                                                               :error  (job-message error)}))
 
+                                            ;; Execution time translation string: the key
+                                            ;; travels as data and the wizard
+                                            ;; translates it on render.
+                                            ;; (tr "dashboard.import.cancelled")
+                                            (= "cancelled" status)
+                                            (rx/from (entry-messages entries {:status :error
+                                                                              :error  "dashboard.import.cancelled"}))
+
                                             (= :progress kind)
                                             (rx/from (entry-messages entries {:status   :progress
                                                                               :progress (:payload emission)}))

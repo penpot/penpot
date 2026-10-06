@@ -36,6 +36,16 @@
                   :loading false))
         files))
 
+(defn- mark-file-cancelled
+  "The job of a file was cancelled elsewhere: a neutral terminal state,
+  neither success nor error."
+  [files file-id]
+  (mapv #(cond-> %
+           (= file-id (:id %))
+           (assoc :export-cancelled? true
+                  :loading false))
+        files))
+
 (defn- mark-file-success
   [files file-id]
   (mapv #(cond-> %
@@ -92,15 +102,15 @@
                     :typography t/body-large}
           (:name file)]]
 
-        (when (or (some? (:progress file)) (:queued file))
+        (when (or (some? (:progress file)) (:queued file) (:export-cancelled? file))
           [:> text* {:class (stl/css :status-message)
                      :as "span"
                      :typography t/body-large
                      :role "status"
                      :aria-live "polite"}
-           (if (some? (:progress file))
-             (jp/milestone-text (:progress file))
-             (tr "labels.queued"))])]
+           (cond (:export-cancelled? file) (tr "workspace.options.exporting-cancelled")
+                 (some? (:progress file))  (jp/milestone-text (:progress file))
+                 :else                      (tr "labels.queued"))])]
 
        [:> context-notification {:level level
                                  :content (:name file)}])]))
@@ -136,7 +146,8 @@
            (reset! sub* (->> (fexp/export-files :files files :type selected
                                                 :on-job #(swap! jobs* conj %))
                              (rx/subs!
-                              (fn [{:keys [file-id error filename uri progress queued started]}]
+                              (fn [{:keys [file-id error filename uri progress queued started
+                                           cancelled]}]
                                 (cond
                                   (some? progress)
                                   (swap! state* update :files mark-file-progress file-id progress)
@@ -150,7 +161,12 @@
                                   (some? error)
                                   (swap! state* update :files mark-file-error file-id)
 
-                                  :else
+                                  (true? cancelled)
+                                  (swap! state* update :files mark-file-cancelled file-id)
+
+                                  ;; only a message carrying the artifact
+                                  ;; downloads: anything else is ignored
+                                  (some? uri)
                                   (do
                                     (swap! state* update :files mark-file-success file-id)
                                     (dom/trigger-download-uri filename "application/penpot" uri)))))))))

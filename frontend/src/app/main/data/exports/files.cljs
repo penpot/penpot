@@ -96,6 +96,10 @@
                                          (rx/of {:file-id (:id file)
                                                  :error   error})
 
+                                         (= "cancelled" status)
+                                         (rx/of {:file-id   (:id file)
+                                                 :cancelled true})
+
                                          (= :progress kind)
                                          (rx/of {:file-id  (:id file)
                                                  :progress (:payload emission)})

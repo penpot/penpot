@@ -247,3 +247,27 @@
                        :result {:resource-uri "http://assets/export"}))
            (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
            (await done)))))))
+
+(t/deftest ^:async a-cancelled-job-marks-the-file-cancelled-without-artifact
+  (let [ws-stream (rx/subject)
+        calls     (atom [])
+        rows      (atom {})
+        seen      (atom [])
+        target    (file "My file")]
+
+    (await
+     (mock/with-mocks*
+       {st/state (atom {:ws-conn ws-stream})
+        rp/cmd! (fake-server calls rows)
+        ws/get-rcv-stream (mock/stub (fn [_] ws-stream))}
+
+       (let [done   (hva/observe (fexp/export-files :files [target] :type :detach-libraries)
+                                 {:on-next #(swap! seen conj %)})
+             job-id (:job-id (first @calls))]
+
+         (t/testing "the cancelled outcome is an explicit message, never an artifact"
+           (swap! rows assoc job-id (job job-id "cancelled"))
+           (rx/push! ws-stream (message (event job-id :end {:outcome "cancelled"})))
+           (await done)
+           (t/is (= {:file-id (:id target) :cancelled true} (last @seen)))
+           (t/is (not-any? :uri @seen))))))))

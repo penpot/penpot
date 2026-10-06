@@ -171,3 +171,35 @@
     (t/testing "releasing twice leaves the row alone"
       (t/is (false? (js/release-input cfg context)))
       (t/is (nil? (:resource-id (th/db-get :job {:id job-id})))))))
+
+(t/deftest release-resource-releases-a-package-no-job-owns
+  ;; the creation path stages the package before the job exists: when the
+  ;; submit fails the package is released with no job id, so the object
+  ;; goes and no row may be touched by it
+  (let [cfg        (make-cfg)
+        profile-id (:id (th/create-profile* 1))
+        staged     (put-artifact cfg profile-id "package-bytes")
+        job-id     (uuid/next)]
+    (th/db-insert! :job {:id           job-id
+                         :name         "import-binfile"
+                         :tenant       (cf/get :tenant)
+                         :queue        "binfile"
+                         :params       (db/json {})
+                         :priority     100
+                         :max-retries  0
+                         :retry-num    0
+                         :status       "running"
+                         :profile-id   profile-id
+                         :resource-id  nil
+                         :scheduled-at (ct/now)
+                         :created-at   (ct/now)
+                         :modified-at  (ct/now)})
+
+    (let [before (th/db-get :job {:id job-id})]
+      (t/is (true? (js/release-resource cfg (:resource-id staged))))
+
+      (t/testing "the object is marked as deleted"
+        (t/is (some? (:deleted-at (get-object-row (:resource-id staged))))))
+
+      (t/testing "and the unrelated job row is exactly as it was"
+        (t/is (= before (th/db-get :job {:id job-id})))))))
