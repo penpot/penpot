@@ -666,7 +666,7 @@
   the Penpot schema: the nine this tier still skips, plus
   `:reorder-children`, which this tier covers and that mirror still drops
   (the `IsChildOf` edge position and the container's `shapes` column keep
-  the old order). They are the `graph-worker` branch's work, not this
+  the old order). They are the `overlays-worker` branch's work, not this
   one's, and this set exists so the two lists cannot drift apart in
   silence."
   #{:reorder-children :fix-obj :reg-objects :mov-page :set-plugin-data
