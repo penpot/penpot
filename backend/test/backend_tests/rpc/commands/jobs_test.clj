@@ -180,6 +180,113 @@
       (t/is (= #{:job-id :files :export-type} (set (keys props)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ASSETS EXPORT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- export-item
+  [file-id & {:keys [page-id object-id type name scale suffix share-id]}]
+  (cond-> {:file-id   file-id
+           :page-id   (or page-id (uuid/next))
+           :object-id (or object-id (uuid/next))
+           :type      (or type :png)
+           :name      (or name "shape")
+           :scale     (or scale 1)}
+    suffix   (assoc :suffix suffix)
+    share-id (assoc :share-id share-id)))
+
+(defn- create-export-assets-job
+  [profile-id exports & {:as extra}]
+  (th/command! (merge {::th/type       :create-export-assets-job
+                       ::rpc/profile-id profile-id
+                       :params         {:exports exports}}
+                      extra)))
+
+(t/deftest create-export-assets-job-answers-with-a-pending-job
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        item    (export-item file-id)
+        before  (count-storage-objects)
+        out     (create-export-assets-job (:id profile) [item])]
+
+    (t/is (th/success? out))
+
+    (let [result (:result out)
+          job    (jobs/get-job th/*system* (:id result))]
+
+      (t/testing "the answer is enough to follow the job"
+        (t/is (uuid? (:id result)))
+        (t/is (= "pending" (:status result)))
+        (t/is (= "export-assets" (:name result)))
+        (t/is (ct/inst? (:created-at result))))
+
+      (t/testing "and the row routes to the external worker queue"
+        (let [job-def (jobs/get-job-def (::jobs/defs th/*system*) :export-assets)
+              params  (jobs/decode-params job-def (:params job))]
+          (t/is (= "exporter" (:queue job)))
+          (t/is (= 0 (:max-retries job)))
+          (t/is (= (:id profile) (:profile-id job)))
+          (t/is (= 1 (count (:exports params))))
+          (t/is (= :png (:type (first (:exports params)))))))
+
+      (t/testing "creating the job stores no artifact"
+        (t/is (= before (count-storage-objects)))))))
+
+(t/deftest create-export-assets-job-checks-the-read-permission
+  (let [owner   (th/create-profile* 1)
+        other   (th/create-profile* 2)
+        file-id (first (:file-ids (import-fixture! owner)))
+        out     (create-export-assets-job (:id other) [(export-item file-id)])]
+
+    (t/testing "a file the caller cannot read is not exported"
+      (t/is (not (th/success? out)))
+      (t/is (= :not-found (th/ex-type (:error out)))))
+
+    (t/testing "and no job was created for it"
+      (t/is (zero? (count-jobs))))))
+
+(t/deftest create-export-assets-job-rejects-an-unknown-type
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        out     (create-export-assets-job (:id profile)
+                                          [(export-item file-id :type :psd)])]
+
+    (t/is (not (th/success? out)))
+    (t/is (= :data-validation (th/ex-code (:error out))))
+    (t/testing "and nothing was created"
+      (t/is (zero? (count-jobs))))))
+
+(t/deftest create-export-assets-job-adds-the-job-id-to-the-audit-props
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        out     (create-export-assets-job (:id profile)
+                                          [(export-item file-id)])
+        props   (::audit/props (meta (:result out)))]
+    (t/is (th/success? out))
+    (t/testing "the audit of the call points at the job and its items"
+      (t/is (= (:id (:result out)) (:job-id props)))
+      (t/is (= 1 (:files props)))
+      (t/is (= #{:job-id :files} (set (keys props)))))))
+
+(t/deftest create-export-assets-job-counts-in-the-export-quote
+  ;; the quote of the family counts every job of it, so a mixed backlog
+  ;; of binfile and assets jobs fills the same quote
+  (with-mocks [mock {:target 'app.config/get
+                     :return (th/config-get-mock
+                              {:quotes-export-jobs-per-profile 1})}]
+    (let [profile (th/create-profile* 1)
+          file-id (first (:file-ids (import-fixture! profile)))]
+
+      (t/is (th/success? (create-export-assets-job (:id profile)
+                                                   [(export-item file-id)])))
+
+      (t/testing "the next export job of the family is refused, whatever its type"
+        (let [out (create-export-binfile-job (:id profile) #{file-id})]
+          (t/is (not (th/success? out)))
+          (t/is (= :max-quote-reached (th/ex-code (:error out))))))
+
+      (t/is (= 1 (count-jobs))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -591,6 +591,7 @@
     :offload-file-data     (ig/ref :app.tasks.offload-file-data/job-def)
     :objects-gc            (ig/ref :app.tasks.objects-gc/job-def)
     :export-binfile        (ig/ref :app.tasks.export-binfile/job-def)
+    :export-assets         (ig/ref :app.tasks.export-assets/job-def)
     :import-binfile        (ig/ref :app.tasks.import-binfile/job-def)
     :storage-gc-deleted    (ig/ref ::sto.gc-deleted/job-def)
     :storage-gc-touched    (ig/ref ::sto.gc-touched/job-def)
@@ -656,6 +657,11 @@
     ::sto/storage  (ig/ref ::sto/storage)
     ::mtx/metrics  (ig/ref ::mtx/metrics)
     ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
+
+   ;; the export of shapes/frames: the work runs on the external exporter
+   ;; worker, so this def carries no handler work and no components
+   :app.tasks.export-assets/job-def
+   {}
 
    :app.storage.gc-deleted/job-def
    {::db/pool     (ig/ref ::db/pool)
