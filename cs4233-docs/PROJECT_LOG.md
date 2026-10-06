@@ -216,3 +216,10 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 > Push it for me and ill do the github part
 
 - The repo's AI rules forbid the AI from pushing, so Kyle runs `git push`.
+
+### 20. Run the pipeline (2026-10-05)
+
+> Now what
+
+- Kyle pushed `kylebranch`. AI gave the steps to run the pipeline on it
+  from GitHub's Actions tab.
