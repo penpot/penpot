@@ -85,6 +85,28 @@
 
 ;; --- HELPERS
 
+(def ^:private sql:media-rows-by-id
+  "SELECT id, file_id FROM file_media_object WHERE id = ANY(?)")
+
+(defn- media-id-map-from-index
+  "The media id map a branch's op log row stamps, from the remap a
+  save's media fix-up applied: `{old-id -> new-id}` restricted to the
+  copies whose source row the branch's source file owns, transit-encoded
+  for the jsonb column. A copy of media from another file is branch-own
+  media with no pairing to record, and only the source's pairing is
+  what a comparison rebuilds from the stamps
+  (`files_branch.clj::branch-media-pairs`)."
+  [conn source-file-id media-index]
+  (when-not (empty? media-index)
+    (let [owners (->> (db/exec! conn [sql:media-rows-by-id
+                                      (db/create-array conn "uuid"
+                                                       (keys media-index))])
+                      (into #{} (comp (filter #(= source-file-id (:file-id %)))
+                                      (map :id))))
+          owned   (fn [id] (contains? owners id))]
+      (some-> (not-empty (into {} (filter (comp owned key)) media-index))
+              db/tjson))))
+
 ;; File changes that affect to the library, and must be notified
 ;; to all clients using it.
 
@@ -258,7 +280,10 @@
           ;; as fixed: that is the vector a branch appends to its op
           ;; log, the state its derive reproduces. The xlog row below
           ;; keeps the client's changes, exactly as on an ordinary save.
-          [file op-changes]
+          ;; `media-index` is the id remapping the fix-up applied
+          ;; ({foreign-id -> copy-id}); a branch stamps it on the op log
+          ;; row so the comparison pairs from the branch's own record.
+          [file op-changes media-index]
           (binding [cfeat/*current*  features
                     cfeat/*previous* (:features file)]
             (update-file-data! cfg file
@@ -296,7 +321,7 @@
                   {::db/return-keys false})
 
       (if (:is-branch file)
-        (persist-branch-file! cfg file op-changes)
+        (persist-branch-file! cfg file op-changes media-index)
         (persist-file! cfg file))
 
       (when (contains? cf/flags :redis-cache)
@@ -378,8 +403,15 @@
   `update-file-data!` migrates the document to the current version
   before it applies them, and the derive
   (`app.binfile.common/branch-file-data`) migrates its replay to that
-  version before it applies the row."
-  [{:keys [::db/conn ::timestamp] :as cfg} file changes]
+  version before it applies the row.
+
+  It also records the media id map the fix-up applied, as applied
+  ({old-id -> new-id}, the branch's copy is the new one), filtered to
+  the copies whose source row the branch's source file owns: a copy of
+  media from another file is branch-own media with no main counterpart,
+  and only the source's pairing is what a comparison rebuilds from the
+  stamps (`files_branch.clj::branch-media-pairs`)."
+  [{:keys [::db/conn ::timestamp] :as cfg} file changes media-index]
   (let [modified-at (or timestamp (ct/now))
 
         file
@@ -408,6 +440,8 @@
                  :file-id (:id file)
                  :revn (:revn file)
                  :changes (blob/encode changes)
+                 :media-id-map (media-id-map-from-index
+                                conn (:source-file-id branch) media-index)
                  :data-version (fmg/data-version)
                  :created-at modified-at
                  :updated-at modified-at}
@@ -514,12 +548,15 @@
         ;; and rewrites the references on the file data. A branch
         ;; persists no data: its state is the change vector, so the same
         ;; rewrite is recorded in it and the derive reproduces the fix
-        ;; (`bm/remap-changes` is a no-op with an empty remap).
-        [file op-changes]
+        ;; (`bm/remap-changes` is a no-op with an empty remap). The
+        ;; remap itself travels out: a branch stamps it on the op log
+        ;; row (`persist-branch-file!`), so the comparison reads the
+        ;; pairing from the branch's own record.
+        [file op-changes media-index]
         (if-let [media-refs (-> @state :media-refs not-empty)]
           (let [[file media-index] (bfc/update-media-references! cfg file media-refs)]
-            [file (bm/remap-changes changes media-index)])
-          [file changes])]
+            [file (bm/remap-changes changes media-index) media-index])
+          [file changes nil])]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
@@ -536,7 +573,7 @@
                  (not skip-validate))
         (val/validate-file-schema! file)))
 
-    [file op-changes]))
+    [file op-changes media-index]))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."

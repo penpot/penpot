@@ -221,6 +221,23 @@
                {}
                from-gs)))
 
+(defn- branch-media-pairs
+  "The branch->main media pairs the comparison and the merge run on,
+  from the branch's own record: every op log row stamps the media id map
+  the write that produced it applied (`bfc/get-branch-change-media-maps`),
+  in the as-applied direction {old-id -> new-id}, so the union of the
+  inverted stamps IS the pairing the branch established with its source.
+  A row written before the stamps existed comes back without one, and a
+  log with any such row cannot certify the full pairing: the
+  content-identity heuristic (`media-pairs`) replaces it for the whole
+  log. It describes the same pairings from the rows present on both
+  files."
+  [cfg branch-file-id source-file-id]
+  (let [maps (bfc/get-branch-change-media-maps cfg branch-file-id)]
+    (if (or (nil? (seq maps)) (some nil? maps))
+      (media-pairs cfg branch-file-id source-file-id)
+      (reduce (fn [acc m] (merge acc (set/map-invert m))) {} maps))))
+
 (def ^:private sql:media-rows-by-id
   "SELECT * FROM file_media_object WHERE id = ANY(?) AND deleted_at IS NULL")
 
@@ -283,7 +300,7 @@
               :branch-id (:id branch)))
   (when-some [data (some->> (fsnap/get-snapshot cfg source-file-id base-snapshot-id)
                             (bfc/migrate-branch-base cfg))]
-    (bm/remap-refs data (media-pairs cfg branch-file-id source-file-id))))
+    (bm/remap-refs data (branch-media-pairs cfg branch-file-id source-file-id))))
 
 (defn- branch-base-data
   "The comparison's `base`: the merge-base document that a branch file
@@ -304,7 +321,7 @@
           (ex/raise :type :assertion
                     :code :branch-base-data-missing
                     :hint "the branch file was read without `:include-base-data? true`"))
-      (bm/remap-refs (media-pairs cfg id source-file-id))))
+      (bm/remap-refs (branch-media-pairs cfg id source-file-id))))
 
 (defn- release-base-snapshot!
   "Reschedule a branch's base snapshot for normal deletion: it is pinned
@@ -593,9 +610,9 @@
 (defn- branch-id-map
   "Reference-normalization map for diffing/merging a branch against its
   source: the branch file id plus the branch->source media pairs (see
-  `media-pairs`)."
+  `branch-media-pairs`)."
   [cfg branch-file-id source-file-id]
-  (-> (media-pairs cfg branch-file-id source-file-id)
+  (-> (branch-media-pairs cfg branch-file-id source-file-id)
       (assoc branch-file-id source-file-id)))
 
 (def ^:private scoped-change-types
@@ -1021,7 +1038,7 @@
                  ;; refs) and the paired media ids; media ADDED on the
                  ;; branch gets fresh ids pre-allocated here — the rows are
                  ;; copied into main only if the merge actually applies.
-                 pairs       (media-pairs cfg branch-file-id main-id)
+                 pairs       (branch-media-pairs cfg branch-file-id main-id)
                  new-media   (unpaired-media-rows cfg branch-file-id (:data branch-file) pairs)
                  fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
                  id-map      (-> pairs
@@ -1213,8 +1230,14 @@
   main-side ops (which would otherwise be double-applied on read).
 
   The squash is computed between documents `bfc/get-file` read at the
-  current data version, so its row records that version."
-  [{:keys [::db/conn] :as cfg} file ts branch-id changes]
+  current data version, so its row records that version.
+
+  The row also stamps the media id map the update applied, as applied
+  ({main-media-id -> branch-media-id}): the squashed changes were
+  computed against main's document moved into the branch's id space, so
+  the pairing the log describes after the squash is the one the stamps
+  rebuild (`branch-media-pairs`), not the content identity heuristic."
+  [{:keys [::db/conn] :as cfg} file ts branch-id changes media-map]
   (let [file (-> file
                  (dissoc ::snapshot)
                  (assoc :modified-at ts)
@@ -1231,6 +1254,7 @@
                    :file-id (:id file)
                    :revn (:revn file)
                    :changes (blob/encode (vec changes))
+                   :media-id-map (some-> (not-empty media-map) db/tjson)
                    :data-version (fmg/data-version)
                    :created-at ts
                    :updated-at ts}
@@ -1330,7 +1354,10 @@
                  ;; the change reaches the branch. Media ADDED on main has no
                  ;; branch row yet, so it gets a fresh id here and its row is
                  ;; copied below only if the update applies.
-                 pairs       (media-pairs cfg main-id branch-file-id)
+                 ;; the WRITE direction ({main-media-id -> branch-media-id})
+                 ;; is the inverse of the comparison's pairs
+                 pairs       (set/map-invert
+                              (branch-media-pairs cfg branch-file-id main-id))
                  new-media   (unpaired-media-rows cfg main-id main-raw pairs)
                  fresh-map   (into {} (map (fn [row] [(:id row) (uuid/next)])) new-media)
                  ;; the branch's OWN id space: every media row the branch
@@ -1539,7 +1566,13 @@
                                        :code :unsupported-update-squash
                                        :hint "the update produces branch-only changes that cannot be replayed"
                                        :kinds (vec unsupported)))
-                           (persist-branch-update! cfg updated ts branch-id net-changes))
+                           ;; the net row carries the media id map the
+                           ;; update applied: the log it replaces was
+                           ;; written against the OLD merge base, and
+                           ;; the squash is what names the branch's
+                           ;; pairing with main from now on
+                           (persist-branch-update! cfg updated ts branch-id
+                                                   net-changes media-map))
 
                          (when (contains? cf/flags :redis-cache)
                            (fupd/invalidate-caches! cfg updated))
