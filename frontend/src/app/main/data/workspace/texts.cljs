@@ -1519,13 +1519,16 @@
 ;; Bigger HTML is pasted as plain text rather than walked.
 (def ^:private max-paste-html-length 1000000)
 
-(defn- paste-context
-  "What a payload copied from `file-id` in `team-id` can keep in the current file."
-  [state {:keys [file-id team-id]}]
+(defn payload-content
+  "The content of a Penpot text `payload`, without what the current file cannot
+   reach: see `text-clipboard/clean-content`."
+  [state {:keys [content file-id team-id]}]
   (let [current-file-id (:current-file-id state)]
-    {:valid-file-ids (conj (set (keys (dsh/lookup-libraries state))) current-file-id)
-     :same-file?     (= file-id current-file-id)
-     :same-team?     (= team-id (:current-team-id state))}))
+    (text-clipboard/clean-content
+     content
+     {:valid-file-ids (conj (set (keys (dsh/lookup-libraries state))) current-file-id)
+      :same-file?     (= file-id current-file-id)
+      :same-team?     (= team-id (:current-team-id state))})))
 
 (defn- clipboard->paste
   "What to paste for clipboard `html` and `text`, or nil: text copied in Penpot keeps
@@ -1534,9 +1537,7 @@
   (let [html-paste? (features/active-feature? state "text-editor-wasm/v1-html-paste")]
     (if-let [payload (when html-paste? (text-clipboard/html->payload html))]
       {:penpot?  true
-       :fragment (-> (:content payload)
-                     (text-clipboard/clean-content (paste-context state payload))
-                     (text-paste/content->fragment))}
+       :fragment (text-paste/content->fragment (payload-content state payload))}
       (when-let [fragment (or (when (and html-paste? (< 0 (count html) max-paste-html-length))
                                 (some-> (text-clipboard/html->fragment html)
                                         (text-clipboard/without-overrides)))

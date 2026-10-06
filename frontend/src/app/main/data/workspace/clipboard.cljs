@@ -1067,10 +1067,13 @@
     (watch [_ state  _]
       (let [[text content]
             (if (v3-html-paste? state)
-              (when-let [fragment (some-> (text-clipboard/html->fragment html)
-                                          (text-clipboard/without-overrides))]
-                [(text-paste/fragment->text fragment)
-                 (text-paste/fragment->content fragment (txt/get-default-text-attrs))])
+              (if-let [payload (text-clipboard/html->payload html)]
+                (let [content (dwtxt/payload-content state payload)]
+                  [(txt/content->text content) content])
+                (when-let [fragment (some-> (text-clipboard/html->fragment html)
+                                            (text-clipboard/without-overrides))]
+                  [(text-paste/fragment->text fragment)
+                   (text-paste/fragment->content fragment (txt/get-default-text-attrs))]))
               (let [style (deref refs/workspace-clipboard-style)
                     root  (dwtxt/create-root-from-html html style (features/active-feature? @st/state "text-editor/v2-html-paste"))]
                 [(.-textContent root) (tc/dom->cljs root)]))]
