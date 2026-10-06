@@ -236,3 +236,8 @@ Success in 6m 24s.)
 
 - All test jobs passed on the exporter work. Build and Deploy were
   skipped by design: they only run on a push or on `main`.
+
+> So can I make a pull request
+
+- AI said yes: push the latest log commits first, then open the pull
+  request `kylebranch` → `develop`.
