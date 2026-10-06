@@ -21,10 +21,10 @@
         "@penpot/plugin-types": "1.4.2"
     },
     "devDependencies": {
-        "playwright": "^1.62.1",
-        "prettier": "^3.9.6",
-        "typescript": "^5.9.3",
-        "vite": "^8.2.2",
+        "playwright": "^1.63.0",
+        "prettier": "^3.9.9",
+        "typescript": "^7.0.2",
+        "vite": "^8.3.2",
         "vite-live-preview": "^0.4.0"
     },
     "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec"
