@@ -15,6 +15,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
+   [app.util.i18n :refer [tr]]
    [app.util.websocket :as ws]
    [app.util.zip :as uz]
    [beicon.v2.core :as rx]
@@ -437,7 +438,7 @@
                         :file-id (:file-id target)}
                        {:status  :error
                         :file-id (:file-id target)
-                        :error   "dashboard.import.cancelled"}
+                        :error   (tr "dashboard.import.cancelled")}
                        {:libraries-resolution {}}]
                       @seen)))))))))
 
@@ -478,7 +479,7 @@
                       :progress {:stage :manifest}}
                      {:status  :error
                       :file-id (:file-id target)
-                      :error   "dashboard.import.cancelled"}
+                      :error   (tr "dashboard.import.cancelled")}
                      {:libraries-resolution {}}]
                     @seen))))))))
 
