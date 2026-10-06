@@ -842,7 +842,7 @@
              (rx/dispose! sub))
            ;; a job may have just finished on its own: failures are
            ;; ignored and an empty run cancels nothing
-           (run! dj/cancel-job! jobs)
+           (run! dj/cancel-job jobs)
            (reset! jobs* #{})
            (reset! sub* nil)
            (st/emit! (modal/hide))))

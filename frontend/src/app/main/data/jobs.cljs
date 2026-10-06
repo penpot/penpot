@@ -84,7 +84,7 @@
     (rx/merge (rx/take-until outcomes progress)
               outcomes)))
 
-(defn cancel-job!
+(defn cancel-job
   "Ask the server to cancel a job the caller created. Fire and forget:
   failures are ignored because the job may have just finished on its
   own."

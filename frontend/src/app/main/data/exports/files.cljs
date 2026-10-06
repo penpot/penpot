@@ -69,8 +69,9 @@
   under `:progress`, the artifact as `:uri` when the job completed, and
   the public error of the job when it failed.
 
-  `on-job` is an optional callback invoked with the id of the created
-  job, so the caller can cancel it while it runs."
+  `on-job` is an optional callback invoked with `{:job-id ... :file-id
+  ...}` for the created job, so the caller can track it per file and
+  cancel it while it runs."
   [ws-conn type file on-job]
   (->> (rp/cmd! :create-binfile-export-job
                 {:name   :export-binfile
@@ -78,7 +79,7 @@
                           :export-type type}})
        (rx/mapcat (fn [{job-id :id}]
                     (when (fn? on-job)
-                      (on-job job-id))
+                      (on-job {:job-id job-id :file-id (:id file)}))
                     ;; the job exists but may wait for a worker: tell the
                     ;; file it is queued before following it
                     (rx/concat
@@ -119,8 +120,9 @@
 (defn export-files
   "Start files exportation process.
 
-  The optional `:on-job` callback is invoked with the id of every file
-  job created, so the caller can cancel them while they run."
+  The optional `:on-job` callback is invoked with `{:job-id ...
+  :file-id ...}` for every file job created, so the caller can track
+  them per file and cancel them while they run."
   [& {:keys [type files on-job]}]
   (assert (check-export-files files) "expected a sequence of files")
   (assert (valid-types type) "expected valid export type")

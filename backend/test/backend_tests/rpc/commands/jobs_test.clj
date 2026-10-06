@@ -688,7 +688,7 @@
 ;; CANCEL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- cancel-job!
+(defn- cancel-job
   [profile-id job-id]
   (th/command! {::th/type       :cancel-job
                 ::rpc/profile-id profile-id
@@ -701,7 +701,7 @@
 
     (t/is (pos? (claim-job! job-id)))
 
-    (let [out (cancel-job! (:id profile) job-id)]
+    (let [out (cancel-job (:id profile) job-id)]
       (t/is (th/success? out))
       (t/testing "the answer names the cancelled job"
         (t/is (= job-id (:id (:result out))))
@@ -716,7 +716,7 @@
         job-id  (:id (:result (create-export-job! (:id owner) #{file-id})))]
 
     (t/testing "another profile gets the answer of a job that does not exist"
-      (let [out (cancel-job! (:id other) job-id)]
+      (let [out (cancel-job (:id other) job-id)]
         (t/is (not (th/success? out)))
         (t/is (= :not-found (th/ex-type (:error out))))))
 
@@ -734,12 +734,12 @@
                                :result {:value 42})))
 
     (t/testing "cancelling what is already over answers its state"
-      (let [out (cancel-job! (:id profile) job-id)]
+      (let [out (cancel-job (:id profile) job-id)]
         (t/is (th/success? out))
         (t/is (= "completed" (:status (:result out))))))))
 
 (t/deftest cancel-job-rejects-a-malformed-id
   (let [profile (th/create-profile* 1)
-        out     (cancel-job! (:id profile) "nope")]
+        out     (cancel-job (:id profile) "nope")]
     (t/is (not (th/success? out)))
     (t/is (= :validation (th/ex-type (:error out))))))

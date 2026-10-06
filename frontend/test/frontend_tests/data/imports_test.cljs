@@ -521,7 +521,7 @@
          {rp/cmd! (mock/stub (fn [id params]
                                (swap! calls conj {:cmd id :params params})
                                (rx/of {:id job-id :status "cancelled"})))}
-         (dj/cancel-job! job-id)
+         (dj/cancel-job job-id)
          (await (hva/settle))
          (t/is (= [{:cmd :cancel-job :params {:id job-id}}] @calls)))))
 
@@ -530,5 +530,5 @@
        (mock/with-mocks*
          {rp/cmd! (mock/stub (fn [_ _]
                                (rx/throw (ex-info "gone" {}))))}
-         (dj/cancel-job! job-id)
+         (dj/cancel-job job-id)
          (await (hva/settle)))))))

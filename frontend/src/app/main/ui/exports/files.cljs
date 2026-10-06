@@ -130,9 +130,11 @@
         selected     (:selected state)
         status       (:status state)
 
-        ;; Jobs created while exporting, to cancel them on demand, and
-        ;; the subscription to their messages, to stop listening.
-        jobs*        (mf/use-state #{})
+        ;; Jobs still running, as file-id -> job-id, to cancel them on
+        ;; demand; a file that reaches its outcome leaves the map, so
+        ;; closing a finished export cancels nothing. And the
+        ;; subscription to their messages, to stop listening.
+        jobs*        (mf/use-state {})
         jobs         (deref jobs*)
         sub*         (mf/use-state nil)
         sub          (deref sub*)
@@ -142,9 +144,9 @@
          (mf/deps team-id selected files)
          (fn []
            (swap! state* assoc :status :exporting)
-           (reset! jobs* #{})
+           (reset! jobs* {})
            (reset! sub* (->> (fexp/export-files :files files :type selected
-                                                :on-job #(swap! jobs* conj %))
+                                                :on-job #(swap! jobs* assoc (:file-id %) (:job-id %)))
                              (rx/subs!
                               (fn [{:keys [file-id error filename uri progress queued started
                                            cancelled]}]
@@ -159,15 +161,18 @@
                                   (swap! state* update :files mark-file-queued file-id false)
 
                                   (some? error)
+                                  (swap! jobs* dissoc file-id)
                                   (swap! state* update :files mark-file-error file-id)
 
                                   (true? cancelled)
+                                  (swap! jobs* dissoc file-id)
                                   (swap! state* update :files mark-file-cancelled file-id)
 
                                   ;; only a message carrying the artifact
                                   ;; downloads: anything else is ignored
                                   (some? uri)
                                   (do
+                                    (swap! jobs* dissoc file-id)
                                     (swap! state* update :files mark-file-success file-id)
                                     (dom/trigger-download-uri filename "application/penpot" uri)))))))))
 
@@ -180,10 +185,10 @@
            ;; entries of a dialog that is going away
            (when (some? sub)
              (rx/dispose! sub))
-           ;; a job may have just finished on its own: failures are
-           ;; ignored and an empty run cancels nothing
-           (run! dj/cancel-job! jobs)
-           (reset! jobs* #{})
+           ;; only the jobs still in flight are cancelled: finished ones
+           ;; already left the map, and failures are ignored because a job may have just finished on its own
+           (run! dj/cancel-job (vals jobs))
+           (reset! jobs* {})
            (reset! sub* nil)
            (st/emit! (modal/hide))))
 
@@ -211,7 +216,7 @@
            (let [type (-> (dom/get-target event)
                           (dom/get-data "type")
                           (keyword))]
-             (prn "AAA" selected type)
+
              (swap! state* assoc :selected type))))]
 
     (mf/with-effect [has-libs?]

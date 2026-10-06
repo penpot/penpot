@@ -170,7 +170,7 @@
                    :error   {:type :internal :code :boom :hint "boom"}}
                   (last @seen))))))))
 
-(t/deftest ^:async the-created-job-ids-reach-the-caller
+(t/deftest ^:async the-created-jobs-reach-the-caller-tagged-with-their-file
   (let [ws-stream (rx/subject)
         calls     (atom [])
         rows      (atom {})
@@ -197,22 +197,25 @@
              (t/is (= :create-binfile-export-job (:cmd (first creates))))
              (t/is (uuid? (:job-id (first creates))))))
 
-         (t/testing "the caller learns that same id"
-           (t/is (= [(:job-id (first (filterv created? @calls)))] @seen-jobs)))
+         (t/testing "the caller learns that same job tagged with its file"
+           (t/is (= [{:job-id (:job-id (first (filterv created? @calls)))
+                     :file-id (:id one)}]
+                    @seen-jobs)))
 
          ;; files export one after the other: the second job is only
          ;; created once the first one is over
-         (let [job-1 (first @seen-jobs)]
+         (let [{job-1 :job-id} (first @seen-jobs)]
            (swap! rows assoc job-1 (job job-1 "completed" :result {:resource-uri "http://assets/first"}))
            (rx/push! ws-stream (message (event job-1 :end {:outcome "completed"}))))
 
          (await (hva/wait-for #(= 2 (count (filter created? @calls))) "the second job"))
 
-         (t/testing "the caller learns the second id too, in order"
+         (t/testing "the caller learns the second job too, tagged and in order"
            (t/is (= 2 (count @seen-jobs)))
-           (t/is (= (:job-id (second (filterv created? @calls))) (second @seen-jobs))))
+           (t/is (= (:job-id (second (filterv created? @calls))) (:job-id (second @seen-jobs))))
+            (t/is (= (:id other) (:file-id (second @seen-jobs)))))
 
-         (let [job-2 (second @seen-jobs)]
+         (let [{job-2 :job-id} (second @seen-jobs)]
            (swap! rows assoc job-2 (job job-2 "completed" :result {:resource-uri "http://assets/second"}))
            (rx/push! ws-stream (message (event job-2 :end {:outcome "completed"})))
            (await done)))))))
