@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns backend-tests.graph-overlay-test
+(ns backend-tests.relation-overlay-test
   "The semantic suite of the datascript graph overlay: the beadpot graph
   test suite (beadpot:tests/graph/transform) ported from Cypher to
   Datalog, one fixture file.

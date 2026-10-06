@@ -626,7 +626,7 @@
   The two paths produce the same graph. Entity ids differ and carry no
   meaning, and the datom set is identical once every id is read back
   through the tempid that minted it, which
-  `backend-tests.graph-overlay-test` asserts."
+  `backend-tests.relation-overlay-test` asserts."
   ([data] (build data nil))
   ([data file]
    (d/init-db (build-datoms data file) schema)))

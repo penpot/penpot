@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns backend-tests.graph-overlay-sync-test
+(ns backend-tests.relation-overlay-sync-test
   "Cold build and incremental sync are two implementations of one mapping,
   and this namespace holds them to it.
 
