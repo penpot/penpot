@@ -56,7 +56,7 @@
    [datascript.core :as d]))
 
 (def schema-version
-  "penpot-graph-overlay-2")
+  "penpot-relation-overlay-2")
 
 (def token-attr
   "The overlay attribute carrying one applied-token property:
