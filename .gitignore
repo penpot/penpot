@@ -108,5 +108,6 @@ opencode.json
 /.opencode/reports
 /.opencode/prompts
 /.ci-logs
+/tmp/
 /.codex/
 /tools/__pycache__

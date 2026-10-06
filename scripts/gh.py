@@ -319,6 +319,7 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
               state
               issueType { name }
               labels(first: 20) { nodes { name } }
+              assignees(first: 10) { nodes { login } }
               closedByPullRequestsReferences(first: 5) { nodes { number } }
               projectItems(first: 10) {
                 nodes {
@@ -357,6 +358,7 @@ query($query: String!, $cursor: String) {
         milestone { title }
         issueType { name }
         labels(first: 20) { nodes { name } }
+        assignees(first: 10) { nodes { login } }
         closedByPullRequestsReferences(first: 5) { nodes { number } }
         projectItems(first: 10) {
           nodes {
@@ -375,6 +377,32 @@ query($query: String!, $cursor: String) {
 """
 
 
+def node_assignees(node: dict) -> list[str]:
+    """Extract assignee logins from a GraphQL issue/PR node."""
+    return [
+        a["login"] for a in (node.get("assignees") or {}).get("nodes") or []
+    ]
+
+
+def node_projects(node: dict) -> list[str]:
+    """Extract project board titles from a GraphQL issue node."""
+    return [
+        (pi.get("project") or {}).get("title")
+        for pi in (node.get("projectItems") or {}).get("nodes") or []
+        if (pi.get("project") or {}).get("title")
+    ]
+
+
+def node_main_status(node: dict) -> str | None:
+    """Extract the "Main" project board status from a GraphQL issue node."""
+    for pi in (node.get("projectItems") or {}).get("nodes") or []:
+        project = pi.get("project") or {}
+        if project.get("title") == "Main":
+            status_field = pi.get("fieldValueByName") or {}
+            return status_field.get("name")
+    return None
+
+
 def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[dict]:
     """
     Fetch all issues that belong to NO milestone via paginated GraphQL search.
@@ -384,7 +412,7 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
         labels: optional comma-separated labels to include (built into the search query)
 
     Returns:
-        List of {number, title, state, milestone, issue_type, labels, closing_prs, project_status}
+        List of {number, title, state, milestone, issue_type, labels, assignees, closing_prs, project_status, projects}
     """
     all_nodes: list[dict] = []
     cursor: str | None = None
@@ -415,13 +443,6 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
                 continue
             issue_type = node.get("issueType")
             ms = node.get("milestone")
-            project_status = None
-            for pi in (node.get("projectItems") or {}).get("nodes") or []:
-                project = pi.get("project") or {}
-                if project.get("title") == "Main":
-                    status_field = pi.get("fieldValueByName") or {}
-                    project_status = status_field.get("name")
-                    break
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
@@ -429,8 +450,10 @@ def fetch_no_milestone_issues(states: str, labels: str | None = None) -> list[di
                 "milestone": ms["title"] if ms else None,
                 "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "assignees": node_assignees(node),
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
-                "project_status": project_status,
+                "project_status": node_main_status(node),
+                "projects": node_projects(node),
             })
 
         total = len(all_nodes)
@@ -452,7 +475,7 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
         states: GraphQL states enum array literal, e.g. ``"[CLOSED]"`` or ``"[OPEN CLOSED]"``
 
     Returns:
-        List of {number, title, state, issue_type: str|None, labels: [str], closing_prs: [int]}
+        List of {number, title, state, issue_type: str|None, labels: [str], assignees: [str], closing_prs: [int], project_status, projects}
     """
     query = GQL_ISSUES_QUERY.replace("__STATES__", states)
     all_nodes: list[dict] = []
@@ -473,22 +496,16 @@ def fetch_milestone_issues(milestone_num: int, states: str) -> list[dict]:
             if node is None:
                 continue
             issue_type = node.get("issueType")
-            # Extract project status from the "Main" project board (if present)
-            project_status = None
-            for pi in (node.get("projectItems") or {}).get("nodes") or []:
-                project = pi.get("project") or {}
-                if project.get("title") == "Main":
-                    status_field = pi.get("fieldValueByName") or {}
-                    project_status = status_field.get("name")
-                    break
             all_nodes.append({
                 "number": node["number"],
                 "title": node["title"],
                 "state": node["state"],
                 "issue_type": issue_type["name"] if issue_type else None,
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+                "assignees": node_assignees(node),
                 "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
-                "project_status": project_status,
+                "project_status": node_main_status(node),
+                "projects": node_projects(node),
             })
 
         total = len(all_nodes)
@@ -592,6 +609,7 @@ GQL_PRS_QUERY_ITEM = """\
       createdAt
       milestone {{ title }}
       author {{ login }}
+      assignees(first: 10) {{ nodes {{ login }} }}
       labels(first: 20) {{ nodes {{ name }} }}
       closingIssuesReferences(first: 5) {{ nodes {{ number }} }}
     }}
@@ -640,6 +658,7 @@ def fetch_prs_batch(pr_numbers: list[int]) -> list[dict]:
             "created_at": pr.get("createdAt"),
             "milestone": (pr.get("milestone") or {}).get("title"),
             "author": pr["author"]["login"] if pr["author"] else None,
+            "assignees": node_assignees(pr),
             "labels": [lbl["name"] for lbl in pr["labels"]["nodes"]],
             "closing_issues": [iss["number"] for iss in pr["closingIssuesReferences"]["nodes"]],
         })
@@ -663,6 +682,7 @@ query($owner: String!, $repo: String!, $milestone: Int!, $cursor: String) {
             createdAt
             headRefName
             author { login }
+            assignees(first: 10) { nodes { login } }
             labels(first: 20) { nodes { name } }
             files(first: 100) { nodes { path } }
             closingIssuesReferences(first: 5) { nodes { number } }
@@ -685,7 +705,7 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
 
     Returns:
         List of {number, title, body, state, merged_at, created_at,
-                head_ref_name, author, labels: [str], files: [str],
+                head_ref_name, author, assignees, labels: [str], files: [str],
                 closing_issues: [int]}
     """
     query = GQL_MILESTONE_PRS_QUERY.replace("__STATES__", states)
@@ -715,6 +735,7 @@ def fetch_milestone_prs(milestone_num: int, states: str) -> list[dict]:
                 "created_at": node.get("createdAt"),
                 "head_ref_name": node.get("headRefName"),
                 "author": node["author"]["login"] if node["author"] else None,
+                "assignees": node_assignees(node),
                 "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
                 "files": [file["path"] for file in node["files"]["nodes"]],
                 "closing_issues": [iss["number"] for iss in node["closingIssuesReferences"]["nodes"]],
@@ -781,6 +802,7 @@ GQL_ISSUE_BY_NUMBER_QUERY_ITEM = """\
       milestone {{ title }}
       issueType {{ name }}
       labels(first: 20) {{ nodes {{ name }} }}
+      assignees(first: 10) {{ nodes {{ login }} }}
       closedByPullRequestsReferences(first: 5) {{ nodes {{ number }} }}
       projectItems(first: 10) {{
         nodes {{
@@ -800,13 +822,6 @@ def issue_node_to_dict(node: dict) -> dict:
     """Convert a GraphQL issue node to the shared issue dict shape."""
     issue_type = node.get("issueType")
     ms = node.get("milestone")
-    project_status = None
-    for pi in (node.get("projectItems") or {}).get("nodes") or []:
-        project = pi.get("project") or {}
-        if project.get("title") == "Main":
-            status_field = pi.get("fieldValueByName") or {}
-            project_status = status_field.get("name")
-            break
     return {
         "number": node["number"],
         "title": node["title"],
@@ -814,8 +829,10 @@ def issue_node_to_dict(node: dict) -> dict:
         "milestone": ms["title"] if ms else None,
         "issue_type": issue_type["name"] if issue_type else None,
         "labels": [lbl["name"] for lbl in node["labels"]["nodes"]],
+        "assignees": node_assignees(node),
         "closing_prs": [pr["number"] for pr in node["closedByPullRequestsReferences"]["nodes"]],
-        "project_status": project_status,
+        "project_status": node_main_status(node),
+        "projects": node_projects(node),
     }
 
 

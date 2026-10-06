@@ -49,6 +49,8 @@ python3 scripts/gh.py issues "2.16.0" --compare CHANGES.md
 - Issues with type "Task" are excluded (`--include-tasks` to keep them).
 - Issues with "Rejected" project status are excluded (`--include-rejected` to keep them).
 
+Every issue entry carries `assignees` (logins) and `projects` (board titles); every PR entry carries `assignees`.
+
 **Output**: JSON array to stdout; progress to stderr.
 
 ### `prs`
