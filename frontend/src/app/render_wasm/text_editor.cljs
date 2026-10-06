@@ -670,6 +670,26 @@
     {:start-para focus-para :start-offset focus-offset
      :end-para anchor-para :end-offset anchor-offset}))
 
+(defn caret-position
+  "Collapsed caret as {:para :offset} from the WASM selection, or nil."
+  []
+  (when-let [{:keys [focus-para focus-offset]} (text-editor-get-selection)]
+    {:para focus-para :offset focus-offset}))
+
+(defn selection-start
+  "Start of the WASM selection as {:para :offset}: where inserted text goes."
+  []
+  (when-let [selection (text-editor-get-selection)]
+    (let [{:keys [start-para start-offset]} (normalize-selection selection)]
+      {:para start-para :offset start-offset})))
+
+(defn typed-range
+  "Normalized range covering the text inserted between `before` and `after`, or nil."
+  [before after]
+  (when (and before after)
+    (normalize-selection {:anchor-para (:para before) :anchor-offset (:offset before)
+                          :focus-para (:para after) :focus-offset (:offset after)})))
+
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end), splitting spans."
   [para sel-start sel-end styles]

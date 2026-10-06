@@ -42,6 +42,7 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.api.fonts :as wasm.fonts]
    [app.render-wasm.text-editor :as wasm.text-editor]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.clipboard :as clipboard]
    [app.util.text-editor :as ted]
    [app.util.text.clipboard :as text-clipboard]
@@ -1420,18 +1421,34 @@
                                            (gsh/transform-shape (ctm/change-size shape width height))))))
                                  {:undo-group (when new-shape? id)}))))))))
 
+(defn- editor-content-update
+  "Event saving `content` from the WASM editor, renaming the shape after its text."
+  [shape-id content & {:keys [finalize?]}]
+  (let [text (txt/content->text content)
+        name (when (not= text "")
+               (txt/generate-shape-name text))]
+    (v2-update-text-shape-content shape-id content
+                                  :update-name? true
+                                  :name name
+                                  :finalize? finalize?)))
+
 (defn v3-sync-editor-content
   "Event pushing the WASM editor content back into the shape, or nil when there is
    nothing to sync. Every text edit commits through it, menu or keystroke alike."
   [& {:keys [finalize?]}]
   (when-let [{:keys [shape-id content]} (wasm.text-editor/text-editor-sync-content)]
-    (let [text (txt/content->text content)
-          name (when (not= text "")
-                 (txt/generate-shape-name text))]
-      (v2-update-text-shape-content shape-id content
-                                    :update-name? true
-                                    :name name
-                                    :finalize? finalize?))))
+    (editor-content-update shape-id content :finalize? finalize?)))
+
+(defn v3-apply-pending-caret-styles
+  "Event saving an insertion made at `before` that consumed the pending caret style:
+   the inserted text gets that style as its own span. Nil when nothing changed."
+  [shape-id before]
+  (let [range (wasm.text-editor/typed-range before (wasm.text-editor/caret-position))]
+    ;; Sync first so the cached content stays index-aligned with WASM.
+    (wasm.text-editor/text-editor-sync-content)
+    (if-let [{:keys [content]} (wasm.api/apply-pending-caret-styles! shape-id range)]
+      (editor-content-update shape-id content)
+      (v3-sync-editor-content))))
 
 (defn- sync-editor-content-stream
   "Stream of the sync event for `reason`, after asking WASM to repaint."
@@ -1499,23 +1516,86 @@
              (rx/catch on-clipboard-error))
         (rx/empty)))))
 
+;; Bigger HTML is pasted as plain text rather than walked.
+(def ^:private max-paste-html-length 1000000)
+
+(defn- paste-context
+  "What a payload copied from `file-id` in `team-id` can keep in the current file."
+  [state {:keys [file-id team-id]}]
+  (let [current-file-id (:current-file-id state)]
+    {:valid-file-ids (conj (set (keys (dsh/lookup-libraries state))) current-file-id)
+     :same-file?     (= file-id current-file-id)
+     :same-team?     (= team-id (:current-team-id state))}))
+
+(defn- clipboard->paste
+  "What to paste for clipboard `html` and `text`, or nil: text copied in Penpot keeps
+   its styles; any other text is unstyled, so it takes the caret style."
+  [state html text]
+  (let [html-paste? (features/active-feature? state "text-editor-wasm/v1-html-paste")]
+    (if-let [payload (when html-paste? (text-clipboard/html->payload html))]
+      {:penpot?  true
+       :fragment (-> (:content payload)
+                     (text-clipboard/clean-content (paste-context state payload))
+                     (text-paste/content->fragment))}
+      (when-let [fragment (or (when (and html-paste? (< 0 (count html) max-paste-html-length))
+                                (some-> (text-clipboard/html->fragment html)
+                                        (text-clipboard/without-overrides)))
+                              (text-clipboard/text->fragment text))]
+        {:penpot? false
+         :fragment fragment}))))
+
+(defn- insert-fragment
+  "Insert the text of `fragment` at the caret and restyle it: with its own styles
+   or overrides, else with the pending caret style. Returns the event saving it."
+  [{:keys [fragment penpot?]}]
+  (let [shape-id (wasm.text-editor/text-editor-get-active-shape-id)
+        start    (wasm.text-editor/selection-start)
+        styled?  (or penpot? (text-paste/styled? fragment))
+        pending? (some? (wasm.text-editor/get-pending-caret-styles shape-id))]
+    (when styled?
+      (wasm.text-editor/clear-pending-caret-styles!))
+    (wasm.text-editor/text-editor-insert-text (text-paste/fragment->text fragment))
+    (cond
+      (nil? start)
+      (v3-sync-editor-content)
+
+      styled?
+      (do
+        ;; Sync first so the cached content stays index-aligned with WASM.
+        (wasm.text-editor/text-editor-sync-content)
+        (if-let [{:keys [content]} (wasm.api/apply-paste-styles shape-id fragment start penpot?)]
+          (editor-content-update shape-id content)
+          (v3-sync-editor-content)))
+
+      pending?
+      (v3-apply-pending-caret-styles shape-id start)
+
+      :else
+      (v3-sync-editor-content))))
+
+(defn v3-paste
+  "Paste clipboard `html` and `text` at the caret, replacing the selection."
+  [html text]
+  (ptk/reify ::v3-paste
+    ptk/WatchEvent
+    (watch [_ state _]
+      (if-let [paste (when (wasm.text-editor/text-editor-has-focus?)
+                       (clipboard->paste state html text))]
+        (let [event (insert-fragment paste)]
+          (wasm.api/request-render-preserving-target "text-paste")
+          (if (some? event) (rx/of event) (rx/empty)))
+        (rx/empty)))))
+
 (defn v3-paste-text
-  "Insert the system clipboard text at the caret, replacing the selection."
+  "Paste the system clipboard at the caret, replacing the selection."
   []
   (ptk/reify ::v3-paste-text
     ptk/WatchEvent
     (watch [_ _ _]
       (if-not (wasm.text-editor/text-editor-has-focus?)
         (rx/empty)
-        (->> (rx/from (clipboard/read-text))
-             (rx/mapcat (fn [text]
-                          (if (seq text)
-                            (do
-                              ;; Pasted text keeps the surrounding style.
-                              (wasm.text-editor/clear-pending-caret-styles!)
-                              (wasm.text-editor/text-editor-insert-text text)
-                              (sync-editor-content-stream "text-paste"))
-                            (rx/empty))))
+        (->> (rx/from (clipboard/read-html-and-text))
+             (rx/map (fn [{:keys [html text]}] (v3-paste html text)))
              (rx/catch on-clipboard-error))))))
 
 (defn v3-select-all

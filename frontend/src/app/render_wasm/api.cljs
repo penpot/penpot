@@ -807,11 +807,13 @@
       result)))
 
 (defn apply-paste-styles
-  "Restyle the text just pasted at `start` with the overrides of `fragment`;
-   returns {:shape-id :content}, or nil when the shape has no cached content."
-  [shape-id fragment start]
+  "Restyle the text just pasted at `start` with `fragment`: its overrides, or its full
+   styles when copied in Penpot. Nil when the shape has no cached content."
+  [shape-id fragment start penpot?]
   (when-let [content (text-editor/get-cached-content shape-id)]
-    (let [content (text-paste/apply-fragment-styles content fragment start)]
+    (let [content (if penpot?
+                    (text-paste/apply-content-styles content fragment start)
+                    (text-paste/apply-fragment-styles content fragment start))]
       (wselect/use-shape shape-id)
       (set-shape-text-content shape-id content)
       (request-render "apply-paste-styles")
