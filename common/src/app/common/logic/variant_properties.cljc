@@ -368,7 +368,7 @@
       (fn [[changes used-values] shape]
         (let [component     (ctcl/get-component data (:component-id shape) true)
               already-here? (= variant-id (:variant-id shape))
-              prop-names    (cfv/extract-properties-names shape data)
+              prop-names    (cfv/extract-properties-names data shape)
               base-names    (map :name base-props)
               props-ok?     (= prop-names base-names)
               names-ok?     (= (cpn/merge-path-item (:path component) (:name component))
