@@ -41,8 +41,13 @@
           ppr.is_admin,
           ppr.can_edit
      from project_profile_rel as ppr
+    inner join project as p on (p.id = ppr.project_id)
     where ppr.project_id = ?
-      and ppr.profile_id = ?")
+      and ppr.profile_id = ?
+      and exists (select 1
+                    from team_profile_rel as tpr
+                   where tpr.team_id = p.team_id
+                     and tpr.profile_id = ppr.profile_id)")
 
 (defn- get-permissions
   [conn profile-id project-id]
@@ -143,7 +148,12 @@
     inner join team as t on (t.id = p2.team_id)
     where p2.id in (select project_id
                      from project_profile_rel as ppr
+                    inner join project as p on (p.id = ppr.project_id)
                     where ppr.profile_id = ?
+                      and exists (select 1
+                                    from team_profile_rel as tpr
+                                   where tpr.team_id = p.team_id
+                                     and tpr.profile_id = ppr.profile_id)
                       and (ppr.can_edit = true or
                            ppr.is_owner = true or
                            ppr.is_admin = true))

@@ -1980,7 +1980,7 @@
   (let [storage (-> (:app.storage/storage th/*system*)
                     (stt/configure-storage-backend))
 
-        sobject (sto/put-object! storage {::sto/content (sto/content "media-bytes")
+        sobject (sto/put-object! storage {::sto/content (sto/content "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")
                                           :content-type "image/svg+xml"
                                           :bucket "file-media-object"})
 
