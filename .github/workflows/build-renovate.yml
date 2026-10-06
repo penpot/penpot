@@ -28,6 +28,7 @@ jobs:
       contents: read
     outputs:
       short_sha: ${{ steps.bundle.outputs.short_sha }}
+      images: ${{ steps.changes.outputs.images }}
       devenv: ${{ steps.changes.outputs.devenv }}
       imagemagick: ${{ steps.changes.outputs.imagemagick }}
 
@@ -49,9 +50,11 @@ jobs:
           BASE_SHA: ${{ steps.base.outputs.sha }}
         run: |
           changed() {
-            git diff --quiet "$BASE_SHA" HEAD -- "$1" && echo false || echo true
+            git diff --quiet "$BASE_SHA" HEAD -- "$@" && echo false || echo true
           }
           {
+            # Anything outside .github can affect the production images.
+            echo "images=$(changed . ':!.github')"
             echo "devenv=$(changed docker/devenv)"
             echo "imagemagick=$(changed docker/imagemagick)"
           } >> "$GITHUB_OUTPUT"
@@ -85,6 +88,7 @@ jobs:
     runs-on: penpot-standar-runner
     timeout-minutes: 60
     needs: prepare
+    if: needs.prepare.outputs.images == 'true'
     permissions:
       contents: read
     strategy:
