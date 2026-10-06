@@ -76,24 +76,31 @@
 
 ;; --- Paths
 
-(t/deftest flat-path-shows-the-badge
+(t/deftest path-badge-sits-centered-below-the-path
   ;; Three points, so not a straight line: it uses the box badge.
-  (let [layout (msr/size-badge-layout [(polyline [0 100] [100 100] [200 100])]
+  (let [layout (msr/size-badge-layout [(polyline [0 0] [100 100] [200 0])]
                                       1 big-vbox)]
-    (t/is (close-layout? {:text "200 x 0.01" :cx 100 :cy 116.01 :rot 0}
+    (t/is (close-layout? {:text "200 x 100" :cx 100 :cy 116 :rot 0}
                          layout))))
 
-(t/deftest flat-path-shorter-than-the-badge-hides-it
-  (t/is (nil? (msr/size-badge-layout [(polyline [0 100] [15 100] [30 100])]
+(t/deftest path-lower-than-the-badge-hides-it
+  (t/is (nil? (msr/size-badge-layout [(polyline [0 0] [100 10] [200 0])]
+                                     1 big-vbox)))
+  ;; A flat path, too: its height is the 0.01 minimum.
+  (t/is (nil? (msr/size-badge-layout [(polyline [0 100] [100 100] [200 100])]
+                                     1 big-vbox))))
+
+(t/deftest path-narrower-than-the-badge-hides-it
+  (t/is (nil? (msr/size-badge-layout [(polyline [0 0] [10 100] [20 0])]
                                      1 big-vbox))))
 
 (t/deftest path-badge-reads-the-selrect-like-the-inputs
   ;; The points enclose a larger box than the selrect, as they do on a
   ;; rotated path. The text must match the measures inputs.
-  (let [path   (-> (polyline [0 0] [100 10] [200 0])
+  (let [path   (-> (polyline [0 0] [100 50] [200 0])
                    (assoc :points (grc/rect->points (grc/make-rect 0 0 300 300))))
         layout (msr/size-badge-layout [path] 1 big-vbox)]
-    (t/is (= "200 x 10" (:text layout)))))
+    (t/is (= "200 x 50" (:text layout)))))
 
 ;; --- Straight two-point lines
 

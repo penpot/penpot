@@ -311,18 +311,10 @@
         badge-width  (+ text-width (* 2 badge-padding-x))
         offset       (+ badge-gap (/ badge-height 2))
 
-        ;; Paths can be flat (zero width or height), so only their
-        ;; longest side counts when checking that the badge fits.
-        path?        (and single-shape (cfh/path-shape? single-shape))
-
-        hidden?      (cond
-                       single-line?
+        ;; A straight line only has a length; any other shape, paths
+        ;; included, must fit the badge in both dimensions.
+        hidden?      (if single-line?
                        (< line-length badge-width)
-
-                       path?
-                       (< (max shape-width shape-height) badge-width)
-
-                       :else
                        (or (< shape-width badge-width)
                            (< shape-height badge-height)))]
 
