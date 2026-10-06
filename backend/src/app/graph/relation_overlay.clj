@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns app.graph.overlay
+(ns app.graph.relation-overlay
   "Datascript index over a Penpot document: identity, type, and topology.
 
   The overlay is an index over what Penpot's helpers read, never a
@@ -40,7 +40,7 @@
   - **Token applications fold the property into the attribute name**:
     `{:token/fill \"layerTwo.background\"}` on the shape itself, over the
     closed vocabulary of `app.common.types.token/all-keys`. The
-    `uses-token` rule in `app.graph.overlay.queries` hides the encoding,
+    `uses-token` rule in `app.graph.relation-overlay.queries` hides the encoding,
     so the choice stays reversible.
 
   The namespace is deliberately JVM-free (no imports, no interop): the
@@ -81,12 +81,12 @@
   Color references are stored per source (`fill`, `stroke`, text content)
   rather than as one union, because the sync path receives `:set` ops one
   attribute at a time and must be able to rebuild each contribution
-  independently. The `uses-color` rule in `app.graph.overlay.queries`
+  independently. The `uses-color` rule in `app.graph.relation-overlay.queries`
   reunites them. Each source also keeps the raw id it resolved from, as a
   value rather than a ref: the id joins nothing until
   `build-asset-maps` finds the asset, and an asset the library does not
   hold yet leaves the id stored and the reference absent, which is the
-  state `app.graph.overlay.sync/apply-add-asset` repairs. Folded token
+  state `app.graph.relation-overlay.sync/apply-add-asset` repairs. Folded token
   attributes (`:token/fill`, ...) are plain string values and need no
   declaration."
   {;; document
@@ -128,7 +128,7 @@
    :shape/uses-typography {:db/valueType :db.type/ref
                            :db/cardinality :db.cardinality/many}
    ;; the raw ids those four resolved from, one attribute per source,
-   ;; indexed because `app.graph.overlay.sync/apply-add-asset` reads the
+   ;; indexed because `app.graph.relation-overlay.sync/apply-add-asset` reads the
    ;; shapes waiting on an id
    :shape/fill-color-ref-id   {:db/index true
                                :db/cardinality :db.cardinality/many}
@@ -311,7 +311,7 @@
 
   The raw id is written whether or not the ctx resolves it. A shape that
   names an asset the library does not hold keeps the id and carries no
-  reference, which is what `app.graph.overlay.sync/apply-add-asset` reads
+  reference, which is what `app.graph.relation-overlay.sync/apply-add-asset` reads
   when the asset finally arrives; a reference is written only for an id
   the ctx resolves."
   [shape {:keys [colors typographies]}]
