@@ -508,6 +508,7 @@ JSON, REPL access, and so on.
 | [`ste`](skills/ste/SKILL.md) | Rewrites prose in Simplified Technical English. Loads only when you name it. |
 | [`refine-prompt`](skills/refine-prompt/SKILL.md) | Rewrites a rough prompt into a clearer one. Never runs the prompt. |
 | [`update-changelog`](skills/update-changelog/SKILL.md) | Regenerates `CHANGES.md` from a GitHub milestone. |
+| [`find-project-anomalies`](skills/find-project-anomalies/SKILL.md) | Checks a milestone against the Main project board and reports anomalies to `tmp/<MILESTONE>-ANOMALIES.md`. |
 
 ### A typical round
 
