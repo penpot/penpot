@@ -2917,6 +2917,10 @@ msgstr "Expirada"
 msgid "labels.export"
 msgstr "Exportar"
 
+#: src/app/main/ui/exports/files.cljs:111
+msgid "labels.export-cancelled"
+msgstr "Exportación cancelada"
+
 #: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "El modulo de recepción de opiniones esta deshabilitado"
@@ -2988,6 +2992,10 @@ msgstr "Ocultar comentarios resueltos"
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Importar"
+
+#: src/app/main/data/imports.cljs:259
+msgid "labels.import-cancelled"
+msgstr "Importación cancelada"
 
 #: src/app/main/ui/dashboard/team.cljs:1512
 msgid "labels.inactive"

@@ -108,7 +108,7 @@
                      :typography t/body-large
                      :role "status"
                      :aria-live "polite"}
-           (cond (:export-cancelled? file) (tr "workspace.options.exporting-cancelled")
+           (cond (:export-cancelled? file) (tr "labels.export-cancelled")
                  (some? (:progress file))  (jp/milestone-text (:progress file))
                  :else                      (tr "labels.queued"))])]
 

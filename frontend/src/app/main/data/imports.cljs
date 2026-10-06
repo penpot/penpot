@@ -256,7 +256,7 @@
 
                                             (= "cancelled" status)
                                             (rx/from (entry-messages entries {:status :error
-                                                                              :error  (tr "dashboard.import.cancelled")}))
+                                                                              :error  (tr "labels.import-cancelled")}))
 
                                             (= :progress kind)
                                             (rx/from (entry-messages entries {:status   :progress

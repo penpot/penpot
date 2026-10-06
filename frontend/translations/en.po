@@ -661,10 +661,6 @@ msgstr[1] "%s libraries were automatically linked by name."
 msgid "dashboard.import.bad-url"
 msgstr "Import failed. The template URL is incorrect"
 
-#: src/app/main/data/imports.cljs:263
-msgid "dashboard.import.cancelled"
-msgstr "Import cancelled"
-
 #: src/app/main/ui/dashboard/import.cljs:733
 msgid "dashboard.import.confirm-library-links"
 msgstr "Confirm library links"
@@ -2916,6 +2912,10 @@ msgstr "Expired"
 msgid "labels.export"
 msgstr "Export"
 
+#: src/app/main/ui/exports/files.cljs:111
+msgid "labels.export-cancelled"
+msgstr "Export cancelled"
+
 #: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "Feedback disabled"
@@ -2987,6 +2987,10 @@ msgstr "Hide resolved comments"
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Import"
+
+#: src/app/main/data/imports.cljs:259
+msgid "labels.import-cancelled"
+msgstr "Import cancelled"
 
 #: src/app/main/ui/dashboard/team.cljs:1512
 msgid "labels.inactive"

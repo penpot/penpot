@@ -438,7 +438,7 @@
                         :file-id (:file-id target)}
                        {:status  :error
                         :file-id (:file-id target)
-                        :error   (tr "dashboard.import.cancelled")}
+                        :error   (tr "labels.import-cancelled")}
                        {:libraries-resolution {}}]
                       @seen)))))))))
 
@@ -479,7 +479,7 @@
                       :progress {:stage :manifest}}
                      {:status  :error
                       :file-id (:file-id target)
-                      :error   (tr "dashboard.import.cancelled")}
+                      :error   (tr "labels.import-cancelled")}
                      {:libraries-resolution {}}]
                     @seen))))))))
 
