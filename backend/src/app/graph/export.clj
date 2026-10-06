@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns app.graph.ingest
+(ns app.graph.export
   "Penpot file -> Ladybug graph projection."
   (:require
    [app.binfile.common :as bfc]
@@ -39,7 +39,7 @@
                 :file-id (str file-id)))
     [file-id file]))
 
-(defn- ingest-on-connection*!
+(defn- export-on-connection*!
   [system ^Connection conn file-id ^BufferAllocator allocator
    {:keys [db-path skip-stats? skip-validation?] :or {skip-stats? true}}]
   (let [[file-id file] (fetch-file! system file-id)
@@ -47,7 +47,7 @@
         data           (:data file)]
     (when-not skip-validation?
       (ctf/check-file-data data))
-    (l/inf :hint "graph ingest"
+    (l/inf :hint "graph export"
            :file-id (str file-id)
            :revn (:revn file)
            :db-path db-path
@@ -74,7 +74,7 @@
          :stats          (when-not skip-stats?
                            (stats/summarize-connection conn))}))))
 
-(defn ingest-on-connection!
+(defn export-on-connection!
   "Project `file-id` into an already open Ladybug `conn`.
 
   Takes `:arrow-alloc`, owned by the caller. The allocator must stay open
@@ -86,10 +86,10 @@
   (when-not arrow-alloc
     (ex/raise :type :validation
               :code :missing-arrow-allocator
-              :hint "ingest-on-connection! requires :arrow-alloc; nest with-allocator! outside the connection"))
-  (ingest-on-connection*! system conn file-id arrow-alloc opts))
+              :hint "export-on-connection! requires :arrow-alloc; nest with-allocator! outside the connection"))
+  (export-on-connection*! system conn file-id arrow-alloc opts))
 
-(defn ingest-file!
+(defn export-file!
   [system file-id & {:keys [db-path reset-db? skip-stats? skip-validation?]
                      :or   {reset-db? true}}]
   (let [db-path (or db-path (ladybug/db-path-for-file (h/parse-uuid file-id)))]
@@ -102,7 +102,7 @@
       (fn [allocator]
         (ladybug/with-connection! db-path
           (fn [conn]
-            (ingest-on-connection*! system conn file-id allocator
+            (export-on-connection*! system conn file-id allocator
                                     {:db-path db-path
                                      :skip-stats? skip-stats?
                                      :skip-validation? skip-validation?})))))))
