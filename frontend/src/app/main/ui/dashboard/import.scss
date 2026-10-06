@@ -64,13 +64,6 @@
   inset-inline-end: px2rem(6);
 }
 
-.status-message {
-  @include use-typography("body-small");
-
-  color: var(--color-foreground-primary);
-  font-style: italic;
-}
-
 .action-buttons {
   display: flex;
   justify-content: flex-end;

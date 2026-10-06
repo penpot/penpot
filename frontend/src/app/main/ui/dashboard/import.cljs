@@ -615,13 +615,7 @@
 
     (when (some? template)
       [:> import-entry* {:entry (assoc template :status status)
-                         :can-be-deleted false}])
-
-    (when (= :import-progress status)
-      [:div {:class (stl/css :status-message)
-             :role "status"
-             :aria-live "polite"}
-       (tr "labels.uploading-file")])]
+                         :can-be-deleted false}])]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}

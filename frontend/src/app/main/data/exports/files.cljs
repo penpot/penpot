@@ -67,7 +67,9 @@
 
   Every step of the job becomes a message for the caller: the milestone
   under `:progress`, the artifact as `:uri` when the job completed, and
-  the public error of the job when it failed.
+  the public error of the job when it failed. The queue of a file is
+  announced by `export-files` before any job exists and only ends with a
+  milestone: a worker picking the job up is not one.
 
   `on-job` is an optional callback invoked with `{:job-id ... :file-id
   ...}` for the created job, so the caller can track it per file and
@@ -79,45 +81,38 @@
        (rx/mapcat (fn [{job-id :id}]
                     (when (fn? on-job)
                       (on-job {:job-id job-id :file-id (:id file)}))
-                    ;; the job exists but may wait for a worker: tell the
-                    ;; file it is queued before following it
-                    (rx/concat
-                     (rx/of {:file-id (:id file)
-                             :queued  true})
-                     (->> (dj/watch-job ws-conn job-id)
-                          (rx/mapcat (fn [{:keys [kind status result error] :as emission}]
-                                       (cond
-                                         (= "completed" status)
-                                         (rx/of {:file-id  (:id file)
-                                                 :uri      (:resource-uri result)
-                                                 :filename (:name file)})
+                    (->> (dj/watch-job ws-conn job-id)
+                         (rx/mapcat (fn [{:keys [kind status result error] :as emission}]
+                                      (cond
+                                        (= "completed" status)
+                                        (rx/of {:file-id  (:id file)
+                                                :uri      (:resource-uri result)
+                                                :filename (:name file)})
 
-                                         (= "failed" status)
-                                         (rx/of {:file-id (:id file)
-                                                 :error   error})
+                                        (= "failed" status)
+                                        (rx/of {:file-id (:id file)
+                                                :error   error})
 
-                                         (= "cancelled" status)
-                                         (rx/of {:file-id   (:id file)
-                                                 :cancelled true})
+                                        (= "cancelled" status)
+                                        (rx/of {:file-id   (:id file)
+                                                :cancelled true})
 
-                                         (= :progress kind)
-                                         (rx/of {:file-id  (:id file)
-                                                 :progress (:payload emission)})
+                                        (= :progress kind)
+                                        (rx/of {:file-id  (:id file)
+                                                :progress (:payload emission)})
 
-                                         ;; a worker picked it up (or will
-                                         ;; retry it): no milestone yet
-                                         (contains? #{:start :retry} kind)
-                                         (rx/of {:file-id (:id file)
-                                                 :started true})
-
-                                         :else
-                                         (rx/empty))))))))
+                                        :else
+                                        (rx/empty)))))))
        (rx/catch (fn [cause]
                    (rx/of {:file-id (:id file)
                            :error   (ex-data cause)})))))
 
 (defn export-files
   "Start files exportation process.
+
+  Every file is queued up front, even the ones whose job is only created
+  once the previous one is over, so a multiple export shows all of them
+  waiting from its first moment.
 
   The optional `:on-job` callback is invoked with `{:job-id ...
   :file-id ...}` for every file job created, so the caller can track
@@ -127,9 +122,11 @@
   (assert (valid-types type) "expected valid export type")
 
   (let [ws-conn (:ws-conn @st/state)]
-    (->> (rx/from files)
-         (rx/mapcat (fn [file]
-                      (export-file ws-conn type file on-job))))))
+    (rx/concat
+     (rx/from (map (fn [file] {:file-id (:id file) :queued true}) files))
+     (->> (rx/from files)
+          (rx/mapcat (fn [file]
+                       (export-file ws-conn type file on-job)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request

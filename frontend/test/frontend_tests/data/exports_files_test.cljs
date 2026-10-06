@@ -219,12 +219,13 @@
            (rx/push! ws-stream (message (event job-2 :end {:outcome "completed"})))
            (await done)))))))
 
-(t/deftest ^:async the-file-is-queued-until-a-worker-starts-it
+(t/deftest ^:async every-file-is-queued-until-its-first-milestone
   (let [ws-stream (rx/subject)
         calls     (atom [])
         rows      (atom {})
         seen      (atom [])
-        target    (file "My file")]
+        one       (file "First")
+        other     (file "Second")]
 
     (await
      (mock/with-mocks*
@@ -232,22 +233,32 @@
         rp/cmd! (fake-server calls rows)
         ws/get-rcv-stream (mock/stub (fn [_] ws-stream))}
 
-       (let [done   (hva/observe (fexp/export-files :files [target] :type :detach-libraries)
-                                 {:on-next #(swap! seen conj %)})
-             job-id (:job-id (first @calls))]
+       (let [done (hva/observe (fexp/export-files :files [one other] :type :detach-libraries)
+                               {:on-next #(swap! seen conj %)})]
 
-         (t/testing "the file is queued while the job waits for a worker"
-           (await (hva/wait-for #(some :queued @seen) "the queued message"))
-           (t/is (= {:file-id (:id target) :queued true} (last @seen))))
+         (t/testing "every file queues up front, before any of its jobs exists"
+           (await (hva/wait-for #(= 2 (count (filter :queued @seen))) "the queued messages"))
+           (t/is (= [{:file-id (:id one) :queued true}
+                     {:file-id (:id other) :queued true}]
+                    (vec (filter :queued @seen)))))
 
-         (t/testing "a started job clears the queue without a milestone yet"
-           (rx/push! ws-stream (message (event job-id :start {:attempt 1})))
-           (await (hva/wait-for #(some :started @seen) "the started message"))
-           (t/is (= {:file-id (:id target) :started true} (last @seen)))
-           (swap! rows assoc job-id
-                  (job job-id "completed"
-                       :result {:resource-uri "http://assets/export"}))
-           (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
+         (t/testing "a worker picking a job up is not a milestone and ends nothing"
+           (let [job-id (:job-id (first (filter created? @calls)))]
+             (rx/push! ws-stream (message (event job-id :start {:attempt 1})))
+             (t/is (not-any? :started @seen))))
+
+         ;; finish the first job so the second one is created and the run ends
+         (let [job-1 (:job-id (first (filter created? @calls)))]
+           (swap! rows assoc job-1
+                  (job job-1 "completed" :result {:resource-uri "http://assets/first"}))
+           (rx/push! ws-stream (message (event job-1 :end {:outcome "completed"}))))
+
+         (await (hva/wait-for #(= 2 (count (filter created? @calls))) "the second job"))
+
+         (let [job-2 (:job-id (second (filter created? @calls)))]
+           (swap! rows assoc job-2
+                  (job job-2 "completed" :result {:resource-uri "http://assets/second"}))
+           (rx/push! ws-stream (message (event job-2 :end {:outcome "completed"})))
            (await done)))))))
 
 (t/deftest ^:async a-cancelled-job-marks-the-file-cancelled-without-artifact

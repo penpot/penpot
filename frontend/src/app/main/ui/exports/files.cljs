@@ -65,10 +65,10 @@
 
 (defn- mark-file-queued
   "The job of a file exists but no worker picked it up yet."
-  [files file-id queued?]
+  [files file-id]
   (mapv #(cond-> %
            (= file-id (:id %))
-           (assoc :queued queued?))
+           (assoc :queued true))
         files))
 
 (defn- initialize-state
@@ -103,14 +103,17 @@
           (:name file)]]
 
         (when (or (some? (:progress file)) (:queued file) (:export-cancelled? file))
-          [:> text* {:class (stl/css :status-message)
-                     :as "span"
-                     :typography t/body-large
-                     :role "status"
-                     :aria-live "polite"}
-           (cond (:export-cancelled? file) (tr "labels.export-cancelled")
-                 (some? (:progress file))  (jp/milestone-text (:progress file))
-                 :else                      (tr "labels.queued"))])]
+          (let [progress  (:progress file)
+                cancelled (:export-cancelled? file)
+                queued?   (not (or (some? progress) cancelled))]
+            [:> text* {:class (stl/css :status-message)
+                       :as "span"
+                       :typography (if queued? t/body-medium t/body-large)
+                       :role "status"
+                       :aria-live "polite"}
+             (cond cancelled        (tr "labels.export-cancelled")
+                   (some? progress) (jp/milestone-text progress)
+                   :else            (tr "labels.queued"))]))]
 
        [:> context-notification {:level level
                                  :content (:name file)}])]))
@@ -148,17 +151,14 @@
            (reset! sub* (->> (fexp/export-files :files files :type selected
                                                 :on-job #(swap! jobs* assoc (:file-id %) (:job-id %)))
                              (rx/subs!
-                              (fn [{:keys [file-id error filename uri progress queued started
+                              (fn [{:keys [file-id error filename uri progress queued
                                            cancelled]}]
                                 (cond
                                   (some? progress)
                                   (swap! state* update :files mark-file-progress file-id progress)
 
                                   (true? queued)
-                                  (swap! state* update :files mark-file-queued file-id true)
-
-                                  (true? started)
-                                  (swap! state* update :files mark-file-queued file-id false)
+                                  (swap! state* update :files mark-file-queued file-id)
 
                                   (some? error)
                                   (swap! jobs* dissoc file-id)
