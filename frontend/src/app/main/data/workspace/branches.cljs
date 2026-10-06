@@ -412,7 +412,7 @@
                     (let [excluded (or excluded #{})
                           include? (if (some? include?)
                                      include?
-                                     (not (every? excluded change-keys)))]
+                                     (every? excluded change-keys))]
                       (if include?
                         (apply disj excluded change-keys)
                         (into excluded change-keys)))))))))

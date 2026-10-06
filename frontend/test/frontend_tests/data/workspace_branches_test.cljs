@@ -187,7 +187,8 @@
             (t/testing "the other direction starts the selection over"
               (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :main->branch))
               (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
-            (rx/dispose! store)))
+            (rx/dispose! store))
+          (done'))
         done))))
 
 (t/deftest the-selection-travels-with-the-merge-and-update-calls
