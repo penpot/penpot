@@ -11,6 +11,7 @@
    [app.common.geom.modifiers]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.grid-layout.layout-data :as gld]
+   [app.common.geom.shapes.grid-layout.params :as glparams]
    [app.common.math :as mth]
    [app.common.types.shape :as cts]
    [clojure.test :as t]))
@@ -408,3 +409,27 @@
           result (gld/set-auto-multi-span (auto-col-parent) tracks cmap cells frame-bounds {} :column)]
       (t/is (mth/close? 100.0 (:size (nth result 0)) 0.001))
       (t/is (mth/close? 100.0 (:size (nth result 1)) 0.001)))))
+
+;; ---------------------------------------------------------------------------
+;; calculate-params: derived paddings are never negative
+;; ---------------------------------------------------------------------------
+;;
+;; Adding a grid layout derives the paddings from the children. A child that
+;; overflows the board gave negative paddings that the shape schema rejects,
+;; which broke autosave (#12107).
+
+(defn- grid-params-for-children
+  [& children-attrs]
+  (let [parent   (cts/setup-shape {:type :frame :x 0 :y 0 :width 100 :height 100})
+        children (mapv #(cts/setup-shape (merge {:type :rect :parent-id (:id parent)} %))
+                       children-attrs)]
+    (glparams/calculate-params nil children parent)))
+
+(t/deftest grid-calculate-params-keeps-positive-padding
+  (let [params (grid-params-for-children {:x 10 :y 20 :width 30 :height 30})]
+    (t/is (mth/close? 20 (get-in params [:layout-padding :p1])))
+    (t/is (mth/close? 10 (get-in params [:layout-padding :p2])))))
+
+(t/deftest grid-calculate-params-clamps-overflowing-child-padding
+  (let [params (grid-params-for-children {:x -10 :y -5 :width 150 :height 150})]
+    (t/is (= {:p1 0 :p2 0 :p3 0 :p4 0} (:layout-padding params)))))
