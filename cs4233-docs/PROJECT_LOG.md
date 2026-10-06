@@ -188,3 +188,11 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - AI confirmed its workflow was deleted and never committed; the
   teammate's `ci-cd-assignment.yml` is the only pipeline added.
+
+### 18. Testing CI/CD before pushing (2026-10-05)
+
+> Is there any way I can test the CI/CD before I push it?
+
+- AI listed options: run the pipeline locally with `act` (needs Docker),
+  check the file with `actionlint`, or push `kylebranch` (not `develop`)
+  and start the pipeline by hand from GitHub's Actions tab.
