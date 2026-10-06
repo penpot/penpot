@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.contracts-test
+(ns performance-tests.render-wasm.contracts-test
   (:require
    [app.common.schema :as sm]
    [app.common.transit :as transit]
@@ -425,7 +425,7 @@
     (t/is (decl/transit-round-trips? (first collected))))
   (t/is (empty? @body-calls))
   (let [entry (decl/registered-case :contracts-scene/case)]
-    (t/is (= "frontend-tests.benches.contracts-test" (:ns entry)))
+    (t/is (= "performance-tests.render-wasm.contracts-test" (:ns entry)))
     (t/is (fn? (:run! entry)))
     (t/is (= :runtime ((:run! entry) :runtime)))
     (t/is (= [:touched] @body-calls))))

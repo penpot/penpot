@@ -1,4 +1,4 @@
-{:paths ["src" "vendor" "resources" "test"]
+{:paths ["src" "vendor" "resources" "test" "performance"]
  :deps
  {;; Carries `app.common.render-wasm.*`, shared with the headless exporter.
   penpot/common
@@ -32,8 +32,7 @@
 
   instaparse/instaparse {:mvn/version "1.5.0"}
   garden/garden {:git/url "https://github.com/noprompt/garden"
-                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
-  }
+                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}}
 
  :aliases
  {:outdated
@@ -65,5 +64,4 @@
 
   :renderer-bench
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]
-   :jvm-opts ["-Dpenpot.wasm.profile-marks=false"]}
-  }}
+   :jvm-opts ["-Dpenpot.wasm.profile-marks=false"]}}}

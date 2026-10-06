@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.containers-test
+(ns performance-tests.render-wasm.containers-test
   (:require
    [app.common.uuid :as uuid]
    [benches.render-wasm.builder :as builder :include-macros true]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.benches.test-helpers :as helpers]))
+   [performance-tests.render-wasm.test-helpers :as helpers]))
 
 (t/deftest frame-attaches-children-in-order
   (let [instance (builder/scene {:seed 1}

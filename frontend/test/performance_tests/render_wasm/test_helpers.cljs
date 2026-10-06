@@ -1,4 +1,4 @@
-(ns frontend-tests.benches.test-helpers
+(ns performance-tests.render-wasm.test-helpers
   "Shared helpers for renderer benchmark scene tests.
 
   These helpers assert nothing about shapes or the renderer. They only

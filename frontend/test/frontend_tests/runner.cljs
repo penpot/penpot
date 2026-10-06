@@ -5,16 +5,6 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [frontend-tests.basic-shapes-test]
-   [frontend-tests.benches.boolean-test]
-   [frontend-tests.benches.builder-test]
-   [frontend-tests.benches.containers-test]
-   [frontend-tests.benches.contracts-test]
-   [frontend-tests.benches.fingerprint-test]
-   [frontend-tests.benches.geometry-scenes-test]
-   [frontend-tests.benches.lifecycle-test]
-   [frontend-tests.benches.protocol-test]
-   [frontend-tests.benches.report-test]
-   [frontend-tests.benches.scene-snapshot-test]
    [frontend-tests.code-gen-style-test]
    [frontend-tests.composable-tests.comp.sync-test]
    [frontend-tests.copy-as-svg-test]
@@ -142,7 +132,17 @@
    [frontend-tests.util-zip-test]
    [frontend-tests.util.dom.dnd-test]
    [frontend-tests.worker-snap-test]
-   [goog.object :as gobj]))
+   [goog.object :as gobj]
+   [performance-tests.render-wasm.boolean-test]
+   [performance-tests.render-wasm.builder-test]
+   [performance-tests.render-wasm.containers-test]
+   [performance-tests.render-wasm.contracts-test]
+   [performance-tests.render-wasm.fingerprint-test]
+   [performance-tests.render-wasm.geometry-scenes-test]
+   [performance-tests.render-wasm.lifecycle-test]
+   [performance-tests.render-wasm.protocol-test]
+   [performance-tests.render-wasm.report-test]
+   [performance-tests.render-wasm.scene-snapshot-test]))
 
 (enable-console-print!)
 
@@ -157,16 +157,6 @@
 
 (def test-namespaces
   ['frontend-tests.basic-shapes-test
-   'frontend-tests.benches.boolean-test
-   'frontend-tests.benches.builder-test
-   'frontend-tests.benches.containers-test
-   'frontend-tests.benches.contracts-test
-   'frontend-tests.benches.fingerprint-test
-   'frontend-tests.benches.geometry-scenes-test
-   'frontend-tests.benches.lifecycle-test
-   'frontend-tests.benches.protocol-test
-   'frontend-tests.benches.report-test
-   'frontend-tests.benches.scene-snapshot-test
    'frontend-tests.code-gen-style-test
    'frontend-tests.composable-tests.comp.sync-test
    'frontend-tests.copy-as-svg-test
@@ -293,7 +283,17 @@
    'frontend-tests.util-webapi-test
    'frontend-tests.util.dom.dnd-test
    'frontend-tests.util-zip-test
-   'frontend-tests.worker-snap-test])
+   'frontend-tests.worker-snap-test
+   'performance-tests.render-wasm.boolean-test
+   'performance-tests.render-wasm.builder-test
+   'performance-tests.render-wasm.containers-test
+   'performance-tests.render-wasm.contracts-test
+   'performance-tests.render-wasm.fingerprint-test
+   'performance-tests.render-wasm.geometry-scenes-test
+   'performance-tests.render-wasm.lifecycle-test
+   'performance-tests.render-wasm.protocol-test
+   'performance-tests.render-wasm.report-test
+   'performance-tests.render-wasm.scene-snapshot-test])
 
 (assert (every? find-ns-obj test-namespaces)
         "test-namespaces contains a namespace that isn't required in runner.cljs")

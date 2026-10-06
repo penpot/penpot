@@ -177,10 +177,27 @@
      :elide-asserts true
      :anon-fn-naming-policy :off}}}
 
+  :performance-tests
+  {:target :esm
+   :output-dir "target/performance-tests"
+   :runtime :custom
+   :js-options {:js-provider :import}
+
+
+   :modules
+   {:test {:init-fn performance-tests.render-wasm.runner/init
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}
+
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :elide-asserts true
+     :anon-fn-naming-policy :off}}}
+
   :bench-render-wasm-runner
   {:target :node-script
-   :output-to "target/renderer-benchmarks/runner.cjs"
-   :output-dir "target/renderer-benchmarks/runner/"
+   :output-to "target/performance/render-wasm/runner.cjs"
+   :output-dir "target/performance/render-wasm/runner/"
    :main benches.render-wasm.node.runner/-main
    :devtools {:autoload false}
 
@@ -197,8 +214,8 @@
 
   :bench-render-wasm-pilot
   {:target :node-script
-   :output-to "target/renderer-benchmarks/pilot.cjs"
-   :output-dir "target/renderer-benchmarks/pilot/"
+   :output-to "target/performance/render-wasm/pilot.cjs"
+   :output-dir "target/performance/render-wasm/pilot/"
    :main benches.render-wasm.node.pilot/-main
    :devtools {:autoload false}
 
@@ -215,7 +232,7 @@
 
   :bench-render-wasm-browser
   {:target :esm
-   :output-dir "target/renderer-benchmarks/browser/"
+   :output-dir "target/performance/render-wasm/browser/"
    ;; Bundle npm deps (date-fns via app.common): the pilot serves plain
    ;; static files with no import-map resolver. TODO(10): revisit when
    ;; ticket 10 owns staging; artifacts must stay self-contained.
