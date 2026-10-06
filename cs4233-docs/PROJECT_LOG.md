@@ -208,3 +208,7 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - AI compared it with Penpot's own CI: same commands, all scripts exist.
   Likely to pass; main risks are slow runs and skipped queue tests.
+
+> So should I be good to try it?
+
+- AI confirmed `kylebranch` is ready to push and run from the Actions tab.
