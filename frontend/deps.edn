@@ -32,7 +32,7 @@
 
   instaparse/instaparse {:mvn/version "1.5.0"}
   garden/garden {:git/url "https://github.com/noprompt/garden"
-                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
+                 :git/sha "633785768136ed9b7338db60a4f14661ef44c453"}
   }
 
  :aliases
