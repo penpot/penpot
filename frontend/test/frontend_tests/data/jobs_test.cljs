@@ -150,7 +150,7 @@
 
        (await (hva/->promise (rp/cmd! :create-export-binfile-job
                                       {:file-ids #{job-id} :export-type :detach-libraries})))
-       (await (hva/->promise (rp/cmd! :create-import-job {:project-id (str job-id)})))
+       (await (hva/->promise (rp/cmd! :create-import-binfile-job {:project-id (str job-id)})))
        (await (hva/->promise (rp/cmd! :get-job {:id (str job-id)})))
        (await (hva/->promise (rp/cmd! :create-export-job {})))
 
@@ -163,7 +163,7 @@
          (t/testing "the import job needs no override: its name is the method"
            (t/is (= :post (:method import)))
            (t/is (str/ends-with? (:path (:uri import))
-                                 "/api/main/methods/create-import-job")))
+                                 "/api/main/methods/create-import-binfile-job")))
 
          (t/testing "the read is a get with the id of the job"
            (t/is (= :get (:method read)))

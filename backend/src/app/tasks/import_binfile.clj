@@ -32,6 +32,18 @@
    [:generated-by {:optional true} [:maybe ::sm/text]]
    [:referer      {:optional true} [:maybe ::sm/text]]])
 
+(def schema:create-params
+  "The business params of an import as the creation command receives
+  them: where the package goes and its name. The version is optional
+  because the command reads it from the package header when the caller
+  does not say it, and the manifest metadata kept for audit is filled by
+  the command, never sent by the caller."
+  [:map {:title "import-binfile-create-params" :closed true}
+   [:project-id ::sm/uuid]
+   [:name       [:or [:string {:max 250}]
+                 [:map-of ::sm/uuid [:string {:max 250}]]]]
+   [:version    {:optional true} [:enum 1 3]]])
+
 (def schema:result
   "What the job stores when the import succeeds: the files it created and
   how the libraries of the package were resolved."

@@ -118,7 +118,7 @@
                               :params         {:file-ids #{file-id}}})]
 
     (t/is (not (th/success? out)))
-    (t/is (= :data-validation (th/ex-code (:error out))))
+    (t/is (= :params-validation (th/ex-code (:error out))))
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
 
@@ -230,11 +230,10 @@
     (t/is (nil? (:error out)))
     session-id))
 
-(defn- create-import-job!
+(defn- create-import-binfile-job
   [profile-id project-id & {:keys [upload-id] :as extra}]
-  (th/command! (merge {::th/type       :create-import-job
+  (th/command! (merge {::th/type       :create-import-binfile-job
                        ::rpc/profile-id profile-id
-                       :name           :import-binfile
                        :params         {:project-id project-id
                                         :name       "imported"}
                        :upload-id      upload-id}
@@ -310,13 +309,13 @@
        (filter #(str/starts-with? % "penpot.chunked-upload."))
        (seq)))
 
-(t/deftest create-import-job-audits-the-old-spelling-of-the-manifest-tool
+(t/deftest create-import-binfile-job-audits-the-old-spelling-of-the-manifest-tool
   (let [profile    (th/create-profile* 1)
         package    (package-with-refer)
         expected   (:referer (manifest-of (-> fixture io/resource jio/file)))
         session-id (upload-chunked! profile :path package)
-        out        (create-import-job! (:id profile) (:default-project-id profile)
-                                       :upload-id session-id)
+        out        (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                              :upload-id session-id)
         props      (::audit/props (meta (:result out)))]
 
     (t/testing "the package names its tool with the old spelling only"
@@ -328,12 +327,12 @@
       (t/is (th/success? out))
       (t/is (= expected (:referer props))))))
 
-(t/deftest create-import-job-limits-its-own-concurrency
+(t/deftest create-import-binfile-job-limits-its-own-concurrency
   ;; the command assembles and stores the package inside the request, so
   ;; it declares the same kind of limit the legacy import command has
-  (let [[mdata _] (get (::rpc/methods th/*system*) :create-import-job)]
-    (t/is (= [[:create-import-job/by-profile ::rpc/profile-id]
-              [:create-import-job/global]]
+  (let [[mdata _] (get (::rpc/methods th/*system*) :create-import-binfile-job)]
+    (t/is (= [[:create-import-binfile-job/by-profile ::rpc/profile-id]
+              [:create-import-binfile-job/global]]
              (::climit/id mdata)))))
 
 (t/deftest create-export-binfile-job-accepts-the-params-of-a-json-client
@@ -356,25 +355,24 @@
       (t/is (= #{file-id} (:file-ids params)))
       (t/is (= :detach-libraries (:export-type params))))))
 
-(t/deftest create-import-job-accepts-the-params-of-a-json-client
+(t/deftest create-import-binfile-job-accepts-the-params-of-a-json-client
   (let [profile    (th/create-profile* 1)
         session-id (upload-chunked! profile)
-        out        (th/command! {::th/type       :create-import-job
+        out        (th/command! {::th/type       :create-import-binfile-job
                                  ::rpc/profile-id (:id profile)
-                                 :name           :import-binfile
                                  :params         {:project-id (str (:default-project-id profile))
                                                   :name       "imported"}
                                  :upload-id      session-id})]
 
     (t/is (th/success? out))))
 
-(t/deftest create-import-job-never-takes-a-path-from-the-caller
+(t/deftest create-import-binfile-job-never-takes-a-path-from-the-caller
   (let [profile (th/create-profile* 1)
-        out     (create-import-job! (:id profile) (:default-project-id profile)
-                                    :file {:filename "package.penpot"
-                                           :path     (jio/file "/etc/passwd")
-                                           :mtype    "application/zip"
-                                           :size     0})]
+        out     (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                           :file {:filename "package.penpot"
+                                                  :path     (jio/file "/etc/passwd")
+                                                  :mtype    "application/zip"
+                                                  :size     0})]
 
     (t/testing "a plain upload is not a way to name a package"
       (t/is (not (th/success? out)))
@@ -383,10 +381,10 @@
     (t/testing "and no job is created"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-import-job-answers-with-a-pending-job
+(t/deftest create-import-binfile-job-answers-with-a-pending-job
   (let [profile (th/create-profile* 1)
-        out     (create-import-job! (:id profile) (:default-project-id profile)
-                                    :upload-id (upload-chunked! profile))]
+        out     (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                           :upload-id (upload-chunked! profile))]
 
     (t/is (th/success? out))
 
@@ -418,11 +416,11 @@
           (t/is (= (:id result) (:job-id props)))
           (t/is (= #{:job-id :generated-by :referer} (set (keys props)))))))))
 
-(t/deftest create-import-job-assembles-the-chunks-of-its-upload
+(t/deftest create-import-binfile-job-assembles-the-chunks-of-its-upload
   (let [profile    (th/create-profile* 1)
         session-id (upload-chunked! profile)
-        out        (create-import-job! (:id profile) (:default-project-id profile)
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                              :upload-id session-id)]
 
     (t/is (th/success? out))
 
@@ -436,25 +434,25 @@
     (t/testing "and the temporary file of the assembly is gone"
       (t/is (empty? (assembled-tempfiles))))))
 
-(t/deftest create-import-job-rejects-an-incomplete-upload
+(t/deftest create-import-binfile-job-rejects-an-incomplete-upload
   (let [profile    (th/create-profile* 1)
         session-id (-> (th/command! {::th/type       :create-upload-session
                                      ::rpc/profile-id (:id profile)
                                      :total-chunks  2})
                        :result :session-id)
-        out        (create-import-job! (:id profile) (:default-project-id profile)
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                              :upload-id session-id)]
 
     (t/is (not (th/success? out)))
     (t/is (= :missing-chunks (th/ex-code (:error out))))
     (t/is (zero? (count-jobs)))))
 
-(t/deftest create-import-job-refuses-an-upload-of-another-profile
+(t/deftest create-import-binfile-job-refuses-an-upload-of-another-profile
   (let [owner      (th/create-profile* 1)
         other      (th/create-profile* 2)
         session-id (upload-chunked! owner)
-        out        (create-import-job! (:id other) (:default-project-id other)
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id other) (:default-project-id other)
+                                              :upload-id session-id)]
 
     (t/testing "the upload belongs to the profile that made it"
       (t/is (not (th/success? out)))
@@ -466,12 +464,12 @@
     (t/testing "nor is any job created"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-import-job-checks-the-edition-permission
+(t/deftest create-import-binfile-job-checks-the-edition-permission
   (let [owner      (th/create-profile* 1)
         other      (th/create-profile* 2)
         session-id (upload-chunked! other)
-        out        (create-import-job! (:id other) (:default-project-id owner)
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id other) (:default-project-id owner)
+                                              :upload-id session-id)]
 
     (t/testing "a job that cannot edit the destination is refused"
       (t/is (not (th/success? out))))
@@ -482,29 +480,19 @@
     (t/testing "and no job is created"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-import-job-refuses-a-name-that-is-not-an-import-job
-  (let [profile (th/create-profile* 1)
-        out     (create-import-job! (:id profile) (:default-project-id profile)
-                                    :name      :export-binfile
-                                    :upload-id (uuid/next))]
-
-    (t/is (not (th/success? out)))
-    (t/is (= :not-a-job-of-the-family (th/ex-code (:error out))))
-    (t/is (zero? (count-jobs)))))
-
-(t/deftest create-import-job-refuses-a-version-that-does-not-exist
+(t/deftest create-import-binfile-job-refuses-a-version-that-does-not-exist
   (let [profile    (th/create-profile* 1)
         session-id (upload-chunked! profile)
         ;; the chunks of the upload are alive: the GC reclaims them later
         before     (live-storage-objects)
-        out        (create-import-job! (:id profile) (:default-project-id profile)
-                                       :params {:project-id (:default-project-id profile)
-                                                :name       "imported"
-                                                :version    2}
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                              :params {:project-id (:default-project-id profile)
+                                                       :name       "imported"
+                                                       :version    2}
+                                              :upload-id session-id)]
 
     (t/is (not (th/success? out)))
-    (t/is (= :unsupported-version (th/ex-code (:error out))))
+    (t/is (= :params-validation (th/ex-code (:error out))))
     (t/is (zero? (count-jobs)))
 
     (t/testing "no package was staged for it"
@@ -516,7 +504,7 @@
     (t/testing "so nothing had to be assembled either"
       (t/is (empty? (assembled-tempfiles))))))
 
-(t/deftest create-import-job-rejects-malformed-params-before-assembling
+(t/deftest create-import-binfile-job-rejects-malformed-params-before-assembling
   ;; the shape of the caller params is checked before the chunks are
   ;; assembled: a name over the limit never copies the package to disk
   (let [profile    (th/create-profile* 1)
@@ -525,13 +513,13 @@
         out        (with-redefs [cmd-jobs/assemble-upload
                                  (fn [& _]
                                    (throw (ex-info "assembled" {})))]
-                     (create-import-job! (:id profile) (:default-project-id profile)
-                                         :params {:project-id (:default-project-id profile)
-                                                  :name       (apply str (repeat 251 "x"))}
-                                         :upload-id session-id))]
+                     (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                                :params {:project-id (:default-project-id profile)
+                                                         :name       (apply str (repeat 251 "x"))}
+                                                :upload-id session-id))]
 
     (t/is (not (th/success? out)))
-    (t/is (= :data-validation (th/ex-code (:error out))))
+    (t/is (= :params-validation (th/ex-code (:error out))))
     (t/is (zero? (count-jobs)))
 
     (t/testing "no package was staged for it"
@@ -540,7 +528,7 @@
     (t/testing "so nothing had to be assembled either"
       (t/is (empty? (assembled-tempfiles))))))
 
-(t/deftest create-import-job-leaves-no-temporary-when-the-package-is-corrupt
+(t/deftest create-import-binfile-job-leaves-no-temporary-when-the-package-is-corrupt
   (let [profile    (th/create-profile* 1)
         ;; a header that says "version 3" (the zip magic) over bytes that
         ;; are not a zip at all: what fails is reading the manifest, once
@@ -548,8 +536,8 @@
         session-id (upload-chunked! profile
                                     {:content (str "PK\u0003\u0004" "not a zip")})
         before     (live-storage-objects)
-        out        (create-import-job! (:id profile) (:default-project-id profile)
-                                       :upload-id session-id)]
+        out        (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                              :upload-id session-id)]
 
     (t/is (not (th/success? out)))
     (t/is (zero? (count-jobs)))
@@ -560,7 +548,7 @@
     (t/testing "and the file assembled from the chunks is gone"
       (t/is (empty? (assembled-tempfiles))))))
 
-(t/deftest create-import-job-releases-the-package-when-the-submit-fails
+(t/deftest create-import-binfile-job-releases-the-package-when-the-submit-fails
   (let [profile    (th/create-profile* 1)
         session-id (upload-chunked! profile)
         ;; the chunks of the upload are alive: the GC reclaims them later
@@ -569,8 +557,8 @@
                                                (ex/raise :type :internal
                                                          :code :boom
                                                          :hint "cannot create the job"))]
-                     (create-import-job! (:id profile) (:default-project-id profile)
-                                         :upload-id session-id))]
+                     (create-import-binfile-job (:id profile) (:default-project-id profile)
+                                                :upload-id session-id))]
 
     (t/testing "the failure reaches the caller"
       (t/is (not (th/success? out))))

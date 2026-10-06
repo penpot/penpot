@@ -228,9 +228,8 @@
                        (->> (uploads/upload-blob-chunked blob :on-progress report-upload!)
                             (rx/tap (fn [_] (finish-upload!))))))
           (rx/mapcat (fn [{:keys [session-id]}]
-                       (rp/cmd! :create-import-job
-                                {:name      :import-binfile
-                                 :params    {:project-id project-id
+                       (rp/cmd! :create-import-binfile-job
+                                {:params    {:project-id project-id
                                              :name       name
                                              :version    version}
                                  :upload-id session-id})))

@@ -89,7 +89,7 @@
   (mock/stub
    (fn [id params]
      (case id
-       :create-import-job
+       :create-import-binfile-job
        (let [job-id (uuid/next)]
          (swap! calls conj {:cmd id :params params :job-id job-id})
          (swap! rows assoc job-id (create-row job-id))
@@ -181,8 +181,7 @@
              job-id (:job-id (first @calls))]
 
          (t/testing "the package is uploaded and imported as one job"
-           (t/is (= :create-import-job (:cmd (first @calls))))
-           (t/is (= :import-binfile (:name (:params (first @calls)))))
+           (t/is (= :create-import-binfile-job (:cmd (first @calls))))
            (t/is (= {:project-id project-id :name "First" :version 3}
                     (:params (:params (first @calls)))))
            (t/is (= session-id (:upload-id (:params (first @calls))))))

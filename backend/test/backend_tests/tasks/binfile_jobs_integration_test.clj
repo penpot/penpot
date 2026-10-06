@@ -133,11 +133,10 @@
                 :params         {:file-ids    file-ids
                                  :export-type :detach-libraries}}))
 
-(defn- create-import-job!
+(defn- create-import-binfile-job
   [profile project-id]
-  (th/command! {::th/type       :create-import-job
+  (th/command! {::th/type       :create-import-binfile-job
                 ::rpc/profile-id (:id profile)
-                :name           :import-binfile
                 :params         {:project-id project-id
                                  :name       "imported"}
                 :upload-id      (upload-chunked! profile)}))
@@ -194,7 +193,7 @@
 (t/deftest the-import-job-runs-to-completion-in-its-own-queue
   (let [profile    (th/create-profile* 1)
         project-id (:default-project-id profile)
-        out        (create-import-job! profile project-id)
+        out        (create-import-binfile-job profile project-id)
         job-id     (:id (:result out))
         ;; read before the run: the handler drops the reference as soon as
         ;; it releases the package

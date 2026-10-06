@@ -7,10 +7,10 @@
 (ns app.rpc.commands.jobs
   "Creation of durable, user-facing jobs.
 
-  Export has one command per job type: the business params of each are
-  what its job-def declares, and nothing else travels in the body.
-  Creating a job never runs it: it freezes what the job will do, and the
-  work belongs to the runner."
+  One command per job type: the body carries the business params its
+  job-def declares and nothing else, and the job-def schema is the single
+  place that says what those params are. Creating a job never runs it: it
+  freezes what the job will do, and the work belongs to the runner."
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.v3 :as bf.v3]
@@ -32,26 +32,24 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
+   [app.tasks.export-binfile :as export-binfile]
+   [app.tasks.import-binfile :as import-binfile]
    [app.util.services :as sv]
    [datoteka.fs :as fs]))
-
-(def ^:private schema:job-params
-  "The business params of a job. The job-def of the job the command
-  creates is what validates them, so a new type of job needs no change
-  here."
-  [:map])
 
 (def ^:private schema:create-export-binfile-job
   "The `.penpot` package of the files frozen in the params, produced by
   the backend runner; the business params are what the `:export-binfile`
   job-def declares."
   [:map {:title "create-export-binfile-job" :closed true}
-   [:params schema:job-params]])
+   [:params export-binfile/schema:params]])
 
-(def ^:private schema:create-import-job
-  [:map {:title "create-import-job" :closed true}
-   [:name      ::sm/keyword]
-   [:params    schema:job-params]
+(def ^:private schema:create-import-binfile-job
+  "The `.penpot` package the caller uploaded, imported into a project by
+  the backend runner; the business params are what the `:import-binfile`
+  job-def declares for creation."
+  [:map {:title "create-import-binfile-job" :closed true}
+   [:params import-binfile/schema:create-params]
    ;; the package arrives as a chunked upload and never as a path the
    ;; caller names: see `assemble-upload`
    [:upload-id ::sm/uuid]])
@@ -131,12 +129,9 @@
    ::sm/result schema:job-summary}
   [cfg {:keys [::rpc/profile-id] :as envelope}]
   (let [job-def  (resolve-job-def cfg :export :export-binfile)
-        ;; the body may arrive as JSON, where a uuid is text and a set is
-        ;; a list: read the params the way the runner reads them from a
-        ;; row, before anything looks at them
-        params   (->> (:params envelope)
-                      (jobs/decode-params job-def)
-                      (jobs/validate-params job-def))
+        ;; the RPC layer decoded the params against the job-def schema
+        ;; before the command ran
+        params   (jobs/validate-params job-def (:params envelope))
         file-ids (:file-ids params)]
 
     (when (empty? file-ids)
@@ -180,7 +175,7 @@
         :binfile-v3 3
         1)))
 
-(sv/defmethod ::create-import-job
+(sv/defmethod ::create-import-binfile-job
   "Create a durable job that imports a `.penpot` package into a project.
 
   The package arrives as a chunked upload, which the server assembles
@@ -190,19 +185,17 @@
   follows it by its id."
   {::doc/added "2.20"
    ::webhooks/event? true
-   ::sm/params schema:create-import-job
+   ::sm/params schema:create-import-binfile-job
    ::sm/result schema:job-summary
    ;; assembling the upload and storing the package happens here, in the
    ;; request: the same limit the legacy import command declares
-   ::climit/id [[:create-import-job/by-profile ::rpc/profile-id]
-                [:create-import-job/global]]}
+   ::climit/id [[:create-import-binfile-job/by-profile ::rpc/profile-id]
+                [:create-import-binfile-job/global]]}
   [cfg {:keys [::rpc/profile-id] :as envelope}]
-  (let [name       (:name envelope)
-        job-def    (resolve-job-def cfg :import name)
-        ;; the body may arrive as JSON, where a uuid is text: read the
-        ;; params the way the runner reads them from a row, before the
-        ;; permission check looks at the destination project
-        given      (jobs/decode-params job-def (:params envelope))
+  (let [job-def    (resolve-job-def cfg :import :import-binfile)
+        ;; the RPC layer decoded the params against the create schema
+        ;; before the command ran
+        given      (:params envelope)
         project-id (:project-id given)]
 
     ;; the edition permission is checked here so a refusal arrives
@@ -213,19 +206,10 @@
     (quotes/check! cfg {::quotes/id ::quotes/import-jobs-per-profile
                         ::quotes/profile-id profile-id})
 
-    ;; a version the caller sends is known before the upload is assembled:
-    ;; rejecting it here leaves the upload session untouched
-    (let [asked (:version given)]
-      (when (and (some? asked) (not (contains? #{1 3} asked)))
-        (ex/raise :type :validation
-                  :code :unsupported-version
-                  :hint "unsupported binfile version"
-                  :version asked)))
-
     ;; the shape of what the caller sent is checked before the upload
-    ;; is assembled: the version is known good here (sent or defaulted
-    ;; for the check), so the merged map below only adds what the
-    ;; package says
+    ;; is assembled: the version is known good here (the create schema
+    ;; rejects one out of range, and the caller may omit it), so the
+    ;; merged map below only adds what the package says
     (jobs/validate-params job-def (assoc given :version (or (:version given) 1)))
 
     (let [file (assemble-upload cfg profile-id (:upload-id envelope))
@@ -260,7 +244,7 @@
                                          :filename "package.penpot"
                                          :mtype    "application/zip"})]
             (try
-              (let [summary (get-job-summary cfg (submit-job cfg job-def name params profile-id
+              (let [summary (get-job-summary cfg (submit-job cfg job-def :import-binfile params profile-id
                                                              :resource-id (:resource-id staged)))]
                 (with-meta summary
                   {::audit/props {:job-id      (:id summary)
