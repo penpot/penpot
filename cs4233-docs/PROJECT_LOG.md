@@ -212,3 +212,7 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 > So should I be good to try it?
 
 - AI confirmed `kylebranch` is ready to push and run from the Actions tab.
+
+> Push it for me and ill do the github part
+
+- The repo's AI rules forbid the AI from pushing, so Kyle runs `git push`.
