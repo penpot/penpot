@@ -180,3 +180,11 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - AI merged `develop` (the teammate's CI/CD workflow) into `kylebranch`.
   No conflicts.
+
+### 17. Confirm which CI/CD is used (2026-10-05)
+
+> You removed the CI/CD that you made a while ago right? Because the CI/CD
+> my teammate added is the one we will be using
+
+- AI confirmed its workflow was deleted and never committed; the
+  teammate's `ci-cd-assignment.yml` is the only pipeline added.
