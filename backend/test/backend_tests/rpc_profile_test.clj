@@ -190,7 +190,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -357,7 +357,7 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
@@ -393,7 +393,7 @@
       (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
-    (th/run-pending-tasks!)
+    (th/run-pending-jobs)
 
     (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
       (t/is (= 3 (count rows))))
@@ -509,7 +509,7 @@
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
 (t/deftest prepare-register-and-register-profile-2
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -563,7 +563,7 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest prepare-register-and-register-profile-3
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -611,7 +611,7 @@
   ;; When disable-email-verification is set and the profile is inactive
   ;; (e.g. created before the flag was set), re-registering should be
   ;; rejected with :email-already-exists.
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (with-redefs [app.config/flags #{:registration :login-with-password}]
       (let [current-token (atom nil)]
         ;; PREPARE REGISTER: first attempt (no profile exists yet)
@@ -699,7 +699,7 @@
 
 (t/deftest prepare-register-with-invitation-and-disabled-registration
   (with-redefs [app.config/flags #{:login-with-password :email-verification}]
-    (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (with-mocks [mock {:target 'app.email/send :return nil}]
       (let [email   "invited@example.com"
             fixture (create-invitation-fixture email (ct/in-future "48h"))
             itoken  (create-test-invitation-token fixture email)
@@ -840,7 +840,7 @@
   ;; verify-email mail with the invitation token EMBEDDED into the
   ;; verify-email JWE (so the team-invitation flow can resume after
   ;; the user clicks the email link).
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
@@ -1181,7 +1181,7 @@
             "prepare-register must not embed existing profile id of an anonymous caller"))))
 
 (t/deftest register-profile-with-invitation-must-not-take-over-existing-account
-  (with-mocks [_mock {:target 'app.email/send! :return nil}]
+  (with-mocks [_mock {:target 'app.email/send :return nil}]
     (let [;; Victim profile exists but is not yet active (e.g. registered
           ;; but has not clicked the verification link). This is the
           ;; remaining attack surface after fix 1b: `prepare-register`
@@ -1287,7 +1287,7 @@
       (t/is (true? (:is-active reloaded))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -1327,7 +1327,7 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -1343,7 +1343,7 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
@@ -1401,7 +1401,7 @@
 
 
 (t/deftest update-profile-password
-  (with-mocks [_ {:target 'app.email/send! :return nil}]
+  (with-mocks [_ {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1413,7 +1413,7 @@
 
 
 (t/deftest update-profile-password-bad-old-password
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data  {::th/type :update-profile-password
                  ::rpc/profile-id (:id profile)
@@ -1700,7 +1700,7 @@
     (t/is (th/ex-of-code? (:error out) :weak-password))))
 
 (t/deftest update-profile-password-sends-notification
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1710,14 +1710,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest update-profile-password-sends-notification-for-first-password
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1 {:password "!"})
           data    {::th/type :update-profile-password
                    ::rpc/profile-id (:id profile)
@@ -1726,14 +1726,14 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))
 
 
 (t/deftest recover-profile-sends-notification
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send :return nil}]
     (let [profile (th/create-profile* 1)
           token   (tokens/generate th/*system*
                                    {:iss :password-recovery
@@ -1745,7 +1745,7 @@
           out     (th/command! data)]
       (t/is (nil? (:error out)))
       (t/is (= 1 (:call-count @mock)))
-      (let [{:keys [::eml/factory :to :name]} (first (:call-args-list @mock))]
+      (let [[_cfg {:keys [::eml/factory :to :name]}] (first (:call-args-list @mock))]
         (t/is (= eml/password-changed factory))
         (t/is (= (:email profile) to))
         (t/is (= (:fullname profile) name))))))

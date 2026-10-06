@@ -10,9 +10,11 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
+   [app.jobs :as jobs]
    [app.nitrate :as nitrate]
    [app.setup :as-alias setup]
    [integrant.core :as ig]
@@ -161,46 +163,56 @@
                             (mark-archived! cfg rows)
                             (count events))))))))
 
-(def ^:private schema:handler-params
+(declare execute-audit-log-archive)
+
+(def schema:audit-log-archive-params
+  "Optional overrides for the repl invocation defaults."
   [:map
    ::db/pool
    ::setup/shared-keys
    ::http/client
-   [:app.nitrate/client {:optional true} [:maybe :map]]])
+   [:app.nitrate/client {:optional true} [:maybe :map]]
+   [:enabled {:optional true} :boolean]
+   [:uri {:optional true} ::sm/uri]])
 
-(defmethod ig/assert-key ::handler
-  [_ params]
-  (assert (sm/valid? schema:handler-params params) "valid params expected for handler"))
-
-(defmethod ig/init-key ::handler
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [{:keys [props] :as params}]
-    ;; NOTE: this let allows overwrite default configured values from
-    ;; the repl, when manually invoking the task. Prefer setting a send
-    ;; flag (:admin-console and/or :nexus); :enabled alone
-    ;; marks chunks without shipping. `invoke!` passes params under
-    ;; `:props`; direct REPL calls may pass a flat map.
-    (let [props   (or props params)
-          enabled (or (contains? cf/flags :nexus)
-                      (contains? cf/flags :admin-console)
-                      (:enabled props false))
+  {::jobs/name      :audit-log-archive
+   ::jobs/schema    schema:audit-log-archive-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-audit-log-archive cfg params))
+   ::jobs/decoder   (sm/decoder schema:audit-log-archive-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:audit-log-archive-params)})
 
-          uri     (cf/get :audit-log-archive-uri)
-          uri     (or uri (:uri props))
-          cfg     (assoc cfg ::uri uri)]
-
-      (when (and (contains? cf/flags :nexus)
-                 (not uri))
-        (ex/raise :type :internal
-                  :code :task-not-configured
-                  :hint "archive task not configured, missing uri"))
-
-      (when enabled
-        (loop [total 0]
-          (if-let [n (archive-events! cfg)]
-            (do
-              (px/sleep 100)
-              (recur (+ total ^long n)))
-
-            (when (pos? total)
-              (l/dbg :hint "events archived" :total total))))))))
+(defn execute-audit-log-archive
+  "Plain job handler: archive the accumulated audit events in chunks
+  (heartbeat per iteration: the sent chunk batches can be long)."
+  [cfg params]
+  ;; NOTE: this let allows overwrite default configured values from
+  ;; the repl, when manually invoking the task. Prefer setting a send
+  ;; flag (:admin-console and/or :nexus); :enabled alone
+  ;; marks chunks without shipping.
+  (let [enabled (or (contains? cf/flags :nexus)
+                    (contains? cf/flags :admin-console)
+                    (:enabled params false))
+        uri     (cf/get :audit-log-archive-uri)
+        uri     (or uri (:uri params))
+        ;; Normalize to an uri object; params may carry a plain string
+        ;; on direct invocations (validation only applies on submit!).
+        uri     (u/uri uri)
+        cfg     (assoc cfg ::uri uri)]
+    (when (and (contains? cf/flags :nexus)
+               (not uri))
+      (ex/raise :type :internal
+                :code :task-not-configured
+                :hint "archive task not configured, missing uri"))
+    (when enabled
+      (loop [total 0]
+        (if-let [n (archive-events! cfg)]
+          (do
+            (jobs/heartbeat cfg)
+            (px/sleep 100)
+            (recur (+ total ^long n)))
+          (when (pos? total)
+            (l/dbg :hint "events archived" :total total)))))))

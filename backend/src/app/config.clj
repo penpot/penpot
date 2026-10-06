@@ -77,6 +77,10 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :jobs-lease (ct/duration {:minutes 30})
+   :jobs-retention (ct/duration {:days 7})
+   :jobs-request-timeout (ct/duration {:minutes 2})
+
    :media-max-file-size (* 1024 1024 30) ; 30MiB
    :font-max-file-size  (* 1024 1024 30) ; 30MiB
 
@@ -103,6 +107,23 @@
    :ssrf-allowed-hosts #{}
    :ssrf-extra-blocked-cidrs #{}})
 
+(def schema:tenant
+  "Tenant identifier: hostname-label-style (letters, digits and
+  hyphens). It is interpolated into Redis keys separated by dots (msgbus
+  topics, rate-limit buckets, exporter job keys, which are also matched
+  with a glob pattern), so `.` and whitespace are rejected at startup
+  because one tenant would then be able to read or overwrite another's
+  keys.
+
+  `%`, `_` and `:` are rejected too, and the reason they were added is
+  gone: the job queue used to be filtered with a LIKE over a
+  `<tenant>:<queue>` prefix and now has a `tenant` column. They are kept
+  because narrowing the rule is a startup contract change with no real
+  tenant asking for it, and a tenant that has one would have to be
+  renamed. Tenants using those characters must be renamed before
+  upgrading."
+  [:re #"^[A-Za-z0-9-]+$"])
+
 (def schema:config
   (do #_sm/optional-keys
    [:map {:title "config"}
@@ -110,7 +131,7 @@
     [:admins {:optional true} [::sm/set ::sm/email]]
     [:secret-key {:optional true} :string]
 
-    [:tenant {:optional false} :string]
+    [:tenant {:optional false} schema:tenant]
     [:is-saas ::sm/boolean]
     [:public-uri {:optional false} ::sm/uri]
     [:host {:optional false} :string]
@@ -173,6 +194,9 @@
 
     [:deletion-delay {:optional true} ::ct/duration]
     [:file-clean-delay {:optional true} ::ct/duration]
+    [:jobs-lease {:optional true} ::ct/duration]
+    [:jobs-retention {:optional true} ::ct/duration]
+    [:jobs-request-timeout {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -190,6 +214,7 @@
     [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
     [:worker-default-parallelism {:optional true} ::sm/int]
     [:worker-webhook-parallelism {:optional true} ::sm/int]
+    [:worker-cron-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} ::sm/uri]
@@ -422,6 +447,32 @@
   :public-uri. With no segments, returns the normalized base."
   [& segments]
   (apply join-uri (c/get config :public-uri) segments))
+
+(defn get-jobs-lease
+  "Max time a job can run without touching modified_at (heartbeat or
+  progress) before the dispatcher marks it as `aborted` (system-side
+  terminal, never retried, reported with an error log)."
+  []
+  (or (c/get config :jobs-lease)
+      (ct/duration {:minutes 30})))
+
+(defn get-jobs-request-timeout
+  "Default timeout for the ephemeral request! calls (waiting for the
+  reply-key blpop); can be overridden per call. Any override is applied
+  by raising the pooled connection command timeout for the duration of
+  the call, which the pool restores on return."
+  []
+  (or (c/get config :jobs-request-timeout)
+      (ct/duration {:minutes 2})))
+
+(defn get-jobs-retention
+  "How long terminal (completed/failed/cancelled/aborted) internal job rows are
+  kept before the jobs GC deletes them. The legacy `task` table is not
+  touched by the jobs GC: while both versions run in parallel it is
+  cleaned by the legacy `tasks-gc` of that version."
+  []
+  (or (c/get config :jobs-retention)
+      (ct/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

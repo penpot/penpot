@@ -14,17 +14,24 @@
 
 - Most `app.db` helpers accept a pool, connection, or map containing `::db/pool` / `::db/conn`; preserve that convention in shared code.
 - `db/tx-run!` uses `next.jdbc.transaction/*nested-tx* :ignore`: nested transaction calls reuse the outer transaction, not a savepoint. Use explicit savepoints when nested rollback semantics matter.
+- Whether a call is nested is decided by the CONNECTION, not by an ambient flag: `db/transact!` binds `*after-commit-conn*` around the body, and a transactable that is not identical to that connection is an independent unit of work that owns its own after-commit context. A `tx-run!` that passes a pool while a transaction is open therefore commits on its own and drains its own callbacks, instead of leaving them in a context that may roll back.
+- `after-commit` callbacks run on commit only. A transaction marked `::db/rollback` (used by `srepl` and `app.tasks/offload-file-data`) commits nothing, so it runs none of them.
 - `db/run!` opens/reuses one connection but does not create a transaction.
-- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Worker task props use Transit and are decoded with `decode-transit-pgobject`.
+- `db/tjson` is Transit JSON for jsonb storage; `db/json` is plain JSON. Job params (`job.params`) are plain JSON, decoded with the job-def decoder (`app.jobs/decode-params`); only the legacy `task` props were Transit (`decode-transit-pgobject`).
 - Advisory transaction locks accept UUIDs or ints. UUID locks are hashed using a zero-UUID seeded siphash.
 
 ## Workers and cron
 
-- Task queues are tenant-prefixed. Submit dedupe only removes not-yet-due `new` tasks with the same name/queue/label; it does not dedupe due, scheduled, retry, running, or completed work.
-- The dispatcher selects `new`/`retry` tasks with `FOR UPDATE SKIP LOCKED`, marks them `scheduled`, and publishes Redis payload `[id scheduled-at]`. The runner skips Redis messages whose scheduled timestamp no longer matches DB state.
-- Lost `scheduled` tasks are rescheduled after about 5 minutes; `running` tasks older than about 24 hours are marked failed as orphans.
-- A task handler that is missing or returns an invalid result currently defaults to completed after warning. Throwing with `ex-data :type ::retry` controls retry behavior; `:strategy ::noop` retries without incrementing retry count.
-- Cron jobs lock their `scheduled_task` row with `FOR UPDATE SKIP LOCKED`, disable statement/idle-in-transaction timeouts locally, and reschedule themselves in `finally` unless interrupted. Worker, dispatcher, and cron components do not start when the DB pool is read-only.
+- `job` carries `tenant` (the instance the job belongs to) and a bare `queue`. Several instances share one database and the tenant is what keeps an instance from claiming another environment's jobs, so every query that acts on one instance's work filters on `tenant`: dispatch claim, orphan sweep, lost-job reschedule, cron no-overlap count, submit dedupe. The `job__dispatcher__idx` leads with `tenant` (equality) then `(priority DESC, scheduled_at)`; `queue` does not lead because the dispatcher claims every queue of its tenant. The `<tenant>:<queue>` prefix survives only in the Redis key, composed once by `app.worker/queue-key`.
+- Submit dedupe only removes not-yet-due `new` jobs of the same tenant with the same name/queue/label; it does not dedupe due, scheduled, retry, running, or completed work.
+- The dispatcher selects `new`/`retry` jobs with `FOR UPDATE SKIP LOCKED`, marks them `scheduled`, and publishes the JSON payload `[id scheduled-at]` to the `penpot.worker.queue:<tenant>:<queue>` Redis list. The runner skips Redis messages whose scheduled timestamp no longer matches DB state.
+- Lost `scheduled` jobs are rescheduled after 5 minutes; `running` jobs untouched longer than `:jobs-lease` (default 30 min) are marked `aborted` with `app.jobs/orphan-error` (`type :internal`, `code :orphan`). `aborted` is a system-side terminal state like `cancelled` (never retried, swept by retention like other terminals, reported with an error log); long jobs must `heartbeat` per chunk so a healthy backlog is never mistaken for a dead process. The `:progress` report is optional and only feeds the durable log.
+- An orphan gets its `end` event (`outcome "aborted"`) from the sweep itself: one bulk `INSERT ... SELECT` in the same transaction as the bulk `UPDATE`, never one insert per orphan. No msgbus notification goes out for it; orphans alert through the error log and the orphaned counter.
+- `job_event` is append-only and deleted by cascade with the job. `progress` is a row there, not a column: no Redis and no mutable column to keep in sync.
+- `job` is deletion-protected at the SQL level (`deletion_protection__tgr`): a stray `DELETE FROM job` raises instead of dropping the row and its `job_event` cascade without touching the referenced `storage_object`. The only intended deleters, the jobs GC and the submit dedupe, disable the guard with `SET LOCAL rules.deletion_protection TO off` inside their transaction; tests use `th/db-force-delete`.
+- A missing job-def raises (`:no-job-definition`) instead of completing. Throwing with `ex-data :type ::retry` still controls retry behavior; `:strategy ::noop` retries without incrementing retry count.
+- Cron entries claim their `scheduled_task` row with `FOR UPDATE SKIP LOCKED`, disable statement/idle-in-transaction timeouts locally, submit one `job` row per entry when no active instance exists (no-overlap), and reschedule themselves in `finally` unless interrupted. Worker, dispatcher, and cron components do not start when the DB pool is read-only.
+- Integrant params schemas name injected components as bare `::ns/key` entries (pool, metrics, msgbus, job defs), and a bare entry is a malli registry lookup, not `any?`: the owning namespace must `sm/register!` it at load, or the backend crashes at boot with `:malli.core/invalid-schema` instead of asserting. Unit tests never build those keys, so `backend-tests.worker-test` compiles the three worker schemas to catch it.
 
 ## Config and HTTP/session middleware
 
@@ -47,7 +54,9 @@
 
 ## Metrics recording
 
-- `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, and db-pool schemas; `app.db` wires the prometheus `MetricsTrackerFactory` unconditionally. Storage-specific metric contracts: `mem:backend/storage`.
+- `app.metrics/run!` is safe by default: a recording failure never throws (a metrics bug must not change the behavior of the measured operation). The first failure per metric id logs at `warn`, later ones at `debug`. The `instance` precondition is a plain assert (the backend enables `:backend-asserts`), and the collector lookup sits outside the recording guard, so a missing instance fails hard even when asserts are disabled. `::mtx/metrics` is required by the storage, s3-backend, db-pool and jobs APIs; jobs helpers never silently skip a missing metrics instance. The resolver is `app.metrics/instance` and it raises, unlike `run!`.
+- `app.msgbus` (`pub!`, `sub!`, `purge!`) keeps taking the **instance** on purpose: msgbus is what produces it, and `app.rpc.notifications` already shows the caller passing a cfg. `app.jobs` resolves `::mbus/msgbus` from the cfg internally, and `insert-event` keeps its explicit pre-insert check so a profile job never loses its notification.
+- `app.db/after-commit` is the boundary for SQL-backed metrics: callbacks are drained by the commit of the transaction that owns the connection they were registered on, and discarded when it rolls back. Because nesting follows the connection, that transaction is the outermost one only for a real nested call.
 
 ## Storage and media
 

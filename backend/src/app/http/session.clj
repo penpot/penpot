@@ -18,6 +18,7 @@
    [app.http :as-alias http]
    [app.http.auth :as-alias http.auth]
    [app.http.session.tasks :as-alias tasks]
+   [app.jobs :as jobs]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.setup.clock :as clock]
@@ -329,7 +330,7 @@
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/assert-key ::tasks/gc
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid database pool")
   (assert (ct/duration? (::tasks/max-age params)))
@@ -341,7 +342,7 @@
     (throw (IllegalArgumentException.
             "absolute session max-age must be greater than or equal to idle max-age"))))
 
-(defmethod ig/expand-key ::tasks/gc
+(defmethod ig/expand-key ::job-def
   [k v]
   (let [max-age          (cf/get :auth-token-cookie-max-age default-cookie-max-age)
         max-age-absolute (cf/get :auth-token-cookie-max-age-absolute
@@ -368,10 +369,25 @@
            :deleted result)
     result))
 
-(defmethod ig/init-key ::tasks/gc
-  [_ {:keys [::tasks/max-age ::tasks/max-age-absolute] :as cfg}]
-  (l/dbg :hint "initializing session gc task"
-         :max-age max-age
-         :max-age-absolute max-age-absolute)
-  (fn [_]
-    (db/tx-run! cfg collect-expired-tasks)))
+(declare execute-session-gc)
+
+(def schema:session-gc-params
+  "Params map (no params needed; config-derived only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::job-def
+  [_ cfg]
+  {::jobs/name      :session-gc
+   ::jobs/schema    schema:session-gc-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-session-gc cfg params))
+   ::jobs/decoder   (sm/decoder schema:session-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:session-gc-params)})
+
+(defn execute-session-gc
+  "Plain job handler: delete expired http sessions."
+  ([cfg] (execute-session-gc cfg nil))
+  ([cfg _params]
+   (jobs/heartbeat cfg)
+   (db/tx-run! cfg collect-expired-tasks)))
