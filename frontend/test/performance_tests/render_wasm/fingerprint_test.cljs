@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
-(ns frontend-tests.benches.fingerprint-test
+(ns performance-tests.render-wasm.fingerprint-test
   "Tests content identity with production records, paths and collection types.
   Validated scene snapshots retain child order even when maps reorder."
   (:require
