@@ -212,7 +212,7 @@
   "Notify `reviewers` (profile ids) that `actor-id` requested their review
   on the pull request. Follows the same in-transaction outbox pattern as
   the comment emails."
-  [conn {:keys [title description] :as pr} {:keys [team-id actor-id branch-name target-name reviewers]}]
+  [{:keys [::db/conn] :as cfg} {:keys [title description] :as pr} {:keys [team-id actor-id branch-name target-name reviewers]}]
   (when (seq reviewers)
     (let [users (->> (teams/get-users+props conn team-id)
                      (map profile/decode-row)
@@ -222,8 +222,9 @@
           url   (format-pull-request-url pr team-id)]
       (doseq [reviewer-id reviewers]
         (when-let [{:keys [fullname email]} (get users reviewer-id)]
-          (eml/send!
-           {::eml/conn conn
+          (eml/send
+           cfg
+           {::eml/reuse-conn true
             ::eml/factory eml/review-request
             :public-uri (cf/get :public-uri)
             :to email
@@ -349,7 +350,7 @@
                               :profile-id reviewer-id}
                              {::db/return-keys false}))
 
-               (send-review-request-emails! conn
+               (send-review-request-emails! cfg
                                             {:id pr-id
                                              :source-file-id branch-file-id
                                              :title title
@@ -596,7 +597,7 @@
        cfg
        msgbus
        messages
-       (fn [{:keys [::db/conn]}]
+       (fn [{:keys [::db/conn] :as cfg}]
          (db/update! conn :file-pull-request
                      (cond-> {:updated-at (ct/now)}
                        (some? title)       (assoc :title title)
@@ -621,7 +622,7 @@
                             :profile-id reviewer-id}))
              (when (seq added)
                (let [row (db/exec-one! conn [sql:get-pull-request id])]
-                 (send-review-request-emails! conn row
+                 (send-review-request-emails! cfg row
                                               {:team-id team-id
                                                :actor-id profile-id
                                                :branch-name (:branch-name row)

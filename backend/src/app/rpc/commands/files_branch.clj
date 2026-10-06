@@ -34,6 +34,7 @@
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
+   [app.jobs :as jobs]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
@@ -49,7 +50,6 @@
    [app.util.cache :as ucache]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.worker :as wrk]
    [clojure.set :as set]
    [clojure.string :as str]))
 
@@ -378,9 +378,9 @@
     (close-branch-pull-requests! cfg id {:profile-id profile-id
                                          :status "closed"
                                          :deleted-at dt})
-    (wrk/submit! {::db/conn conn
-                  ::wrk/task :delete-object
-                  ::wrk/params {:object :file :deleted-at dt :id branch-file-id}})
+    (jobs/submit cfg
+                 {::jobs/name :delete-object
+                  ::jobs/params {:object :file :deleted-at dt :id branch-file-id}})
     {:topic branch-file-id
      :message {:type :file-deleted
                :file-id branch-file-id

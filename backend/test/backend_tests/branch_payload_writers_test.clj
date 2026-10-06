@@ -48,14 +48,16 @@
   (th/db-query :file-data {:file-id file-id :type "main"}))
 
 (defn- scheduled-gc-file-ids
-  "The file ids of the `file-gc` tasks submitted so far."
+  "The file ids of the `file-gc` jobs submitted so far. A job's params
+  are plain JSON, so the id comes back as a string."
   []
-  (->> (th/db-query :task {:name "file-gc"})
-       (map (fn [{:keys [props]}]
-              (-> (if (db/pgobject? props)
-                    (db/decode-transit-pgobject props)
-                    props)
-                  (get :file-id))))
+  (->> (th/db-query :job {:name "file-gc"})
+       (map (fn [{:keys [params]}]
+              (-> (if (db/pgobject? params)
+                    (db/decode-json-pgobject params)
+                    params)
+                  (get :file-id)
+                  (uuid/parse))))
        (into #{})))
 
 (defn- branch-row-id

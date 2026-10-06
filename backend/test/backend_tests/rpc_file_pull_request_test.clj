@@ -854,7 +854,7 @@
         ;; that queueing fail after the pull request row is written
         (with-redefs [mbus/pub!   (fn [_ & {:keys [message]}]
                                     (swap! seen conj message))
-                      eml/send!   (fn [_] (throw (IllegalStateException. "boom")))]
+                      eml/send    (fn [_ _] (throw (IllegalStateException. "boom")))]
           (let [out (create-pr* author (:id branch) {:reviewers [(:id reviewer)]})]
             (t/is (some? (:error out)))))
         (t/is (empty? @seen))
