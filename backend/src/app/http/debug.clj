@@ -396,7 +396,7 @@
 
 ;; `app.graph.*` resolves at call time, never at the top of this namespace.
 ;; `app.graph.debug` (the console session tier) is a pure datascript overlay
-;; and no longer touches Ladybug, but `app.graph.ingest` still projects
+;; and no longer touches Ladybug, but `app.graph.export` still projects
 ;; through `app.graph.ladybug`, which imports `com.ladybugdb.*` and links the
 ;; native library into the JVM; this namespace loads on every backend boot.
 ;; The routes below are registered only under the `:graph` flag, so with the
@@ -405,19 +405,19 @@
 (defn- graph-export-file
   "Path of a freshly projected graph for `file-id`."
   [cfg file-id]
-  (let [ingest-file!      (requiring-resolve 'app.graph.ingest/ingest-file!)
-        {:keys [db-path]} (ingest-file! cfg file-id :skip-stats? true)]
+  (let [export-file!       (requiring-resolve 'app.graph.export/export-file!)
+        {:keys [db-path]} (export-file! cfg file-id :skip-stats? true)]
     (when-not (fs/exists? db-path)
       (ex/raise :type :internal
                 :code :graph-file-not-found
-                :hint "graph database file missing after ingest"
+                :hint "graph database file missing after export"
                 :file-id (str file-id)
                 :db-path db-path))
     db-path))
 
 (defn graph-export-handler
   "Stream a Ladybug `.lbug` database for a file, projected afresh from the
-  database by `app.graph.ingest/ingest-file!` — the reproducible artifact.
+  database by `app.graph.export/export-file!` — the reproducible artifact.
 
   `source=session` is retired: a console session is a datascript overlay
   with no database file to stream, so it raises
@@ -480,7 +480,7 @@
    ::yres/headers {"location" "/dbg/graph"}})
 
 (defn graph-reload-handler
-  "Re-ingest the currently loaded file into the in-memory graph session."
+  "Reload the currently loaded file into the in-memory graph session."
   [cfg {:keys [::session/profile-id]}]
   (let [session-info  (requiring-resolve 'app.graph.debug/session-info)
         load-session! (requiring-resolve 'app.graph.debug/load-session!)]
@@ -956,7 +956,7 @@
       ;; With the flag on, the Ladybug native library belongs to this process,
       ;; so load it here. A missing or unusable library then fails the boot
       ;; instead of the first console request.
-      (require 'app.graph.debug 'app.graph.ingest))
+      (require 'app.graph.debug 'app.graph.export))
 
     [["/readyz" {:handler (partial health-handler cfg)}]
      dbg]))

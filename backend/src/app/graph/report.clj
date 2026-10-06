@@ -30,9 +30,9 @@
     (println! (kv-line table count))))
 
 (defn print-ingest!
-  "Pretty-print the result map returned by `app.graph.ingest/ingest-file!`."
+  "Pretty-print the result map returned by `app.graph.export/export-file!`."
   [{:keys [file-id revn name db-path schema-version projection transforms stats]}]
-  (section-title "Graph ingest")
+  (section-title "Graph export")
   (println! (kv-line "File" (str name " (" file-id ")"))
             (kv-line "Revision" revn)
             (kv-line "Schema" schema-version)

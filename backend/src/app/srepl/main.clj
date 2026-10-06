@@ -497,11 +497,11 @@
   Options:
   - `:db-path` path or `:memory:`
   - `:reset-db?` delete any existing db first (default true)
-  - `:skip-stats?` skip post-ingest MATCH count queries (default false)"
+  - `:skip-stats?` skip post-export MATCH count queries (default false)"
   [file-id & opts]
-  (let [ingest-file!  (requiring-resolve 'app.graph.ingest/ingest-file!)
+  (let [export-file!  (requiring-resolve 'app.graph.export/export-file!)
         print-ingest! (requiring-resolve 'app.graph.report/print-ingest!)
-        result        (apply ingest-file! sys/system file-id opts)]
+        result        (apply export-file! sys/system file-id opts)]
     (print-ingest! result)
     result))
 

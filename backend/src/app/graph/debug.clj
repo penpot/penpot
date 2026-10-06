@@ -11,7 +11,7 @@
   (`app.graph.relation-overlay`), maintained from the msgbus file-change feed by
   `app.graph.relation-overlay.sync` and queried in Datalog through
   `app.graph.relation-overlay.console`. The Ladybug engine no longer appears on
-  this path: it keeps the batch-export tier (`app.graph.ingest`), where
+  this path: it keeps the batch-export tier (`app.graph.export`), where
   columnar output is the point. The overlay is immutable data in an atom,
   so readers never lock and the sync loop is the only writer."
   (:require
