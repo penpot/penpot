@@ -160,12 +160,6 @@
 
    :export-binfile {:response-type :blob}
 
-   ;; The exporter service owns the name `:create-export-job` (it answers on
-   ;; its own `api/export/jobs`), so the binfile job is asked for under
-   ;; another key and the URL stays the one the backend serves.
-   :create-binfile-export-job
-   {:rename-to :create-export-job}
-
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!

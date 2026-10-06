@@ -148,7 +148,7 @@
         http/response->map (mock/stub identity)
         http/process-response-type (mock/stub (fn [_ response] (rx/of response)))}
 
-       (await (hva/->promise (rp/cmd! :create-binfile-export-job
+       (await (hva/->promise (rp/cmd! :create-export-binfile-job
                                       {:file-ids #{job-id} :export-type :detach-libraries})))
        (await (hva/->promise (rp/cmd! :create-import-job {:project-id (str job-id)})))
        (await (hva/->promise (rp/cmd! :get-job {:id (str job-id)})))
@@ -158,7 +158,7 @@
          (t/testing "the binfile export asks the backend, not the exporter service"
            (t/is (= :post (:method export)))
            (t/is (str/ends-with? (:path (:uri export))
-                                 "/api/main/methods/create-export-job")))
+                                 "/api/main/methods/create-export-binfile-job")))
 
          (t/testing "the import job needs no override: its name is the method"
            (t/is (= :post (:method import)))

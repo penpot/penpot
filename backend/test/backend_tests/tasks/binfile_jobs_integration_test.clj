@@ -126,11 +126,10 @@
       (io/copy (sto/get-object-data (get-storage) object) out))
     path))
 
-(defn- create-export-job!
+(defn- create-export-binfile-job
   [profile file-ids]
-  (th/command! {::th/type       :create-export-job
+  (th/command! {::th/type       :create-export-binfile-job
                 ::rpc/profile-id (:id profile)
-                :name           :export-binfile
                 :params         {:file-ids    file-ids
                                  :export-type :detach-libraries}}))
 
@@ -150,7 +149,7 @@
 (t/deftest the-export-job-runs-to-completion-in-its-own-queue
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        out     (create-export-job! profile #{file-id})
+        out     (create-export-binfile-job profile #{file-id})
         job-id  (:id (:result out))]
 
     (t/is (th/success? out))

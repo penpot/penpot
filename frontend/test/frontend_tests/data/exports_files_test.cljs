@@ -47,7 +47,7 @@
   (mock/stub
    (fn [id params]
      (case id
-       :create-binfile-export-job
+       :create-export-binfile-job
        (let [job-id (uuid/next)]
          (swap! calls conj {:cmd id :params params :job-id job-id})
          (swap! rows assoc job-id (job job-id "running"))
@@ -61,7 +61,7 @@
        (rx/of nil)))))
 
 (def ^:private created?
-  (comp #{:create-binfile-export-job} :cmd))
+  (comp #{:create-export-binfile-job} :cmd))
 
 (defn- answered?
   "True when the file already has its answer: the artifact or an error."
@@ -89,9 +89,8 @@
              job-id (:job-id (first @calls))]
 
          (t/testing "the file is exported by a job of its own"
-           (t/is (= :create-binfile-export-job (:cmd (first @calls))))
-           (t/is (= {:name   :export-binfile
-                     :params {:file-ids    #{(:id target)}
+           (t/is (= :create-export-binfile-job (:cmd (first @calls))))
+           (t/is (= {:params {:file-ids    #{(:id target)}
                               :export-type :detach-libraries}}
                     (:params (first @calls)))))
 
@@ -194,12 +193,12 @@
          (t/testing "the server recorded the creation with its job id"
            (let [creates (filterv created? @calls)]
              (t/is (= 1 (count creates)))
-             (t/is (= :create-binfile-export-job (:cmd (first creates))))
+             (t/is (= :create-export-binfile-job (:cmd (first creates))))
              (t/is (uuid? (:job-id (first creates))))))
 
          (t/testing "the caller learns that same job tagged with its file"
            (t/is (= [{:job-id (:job-id (first (filterv created? @calls)))
-                     :file-id (:id one)}]
+                      :file-id (:id one)}]
                     @seen-jobs)))
 
          ;; files export one after the other: the second job is only
@@ -213,7 +212,7 @@
          (t/testing "the caller learns the second job too, tagged and in order"
            (t/is (= 2 (count @seen-jobs)))
            (t/is (= (:job-id (second (filterv created? @calls))) (:job-id (second @seen-jobs))))
-            (t/is (= (:id other) (:file-id (second @seen-jobs)))))
+           (t/is (= (:id other) (:file-id (second @seen-jobs)))))
 
          (let [{job-2 :job-id} (second @seen-jobs)]
            (swap! rows assoc job-2 (job job-2 "completed" :result {:resource-uri "http://assets/second"}))

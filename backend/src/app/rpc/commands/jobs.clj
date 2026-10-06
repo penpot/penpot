@@ -7,11 +7,10 @@
 (ns app.rpc.commands.jobs
   "Creation of durable, user-facing jobs.
 
-  The commands are generic on purpose: the type of job travels in `:name`
-  and its business params in `:params`, and the registry decides whether
-  that name is a job of the family the command serves. Creating a job
-  never runs it: it freezes what the job will do, and the work belongs to
-  the runner."
+  Export has one command per job type: the business params of each are
+  what its job-def declares, and nothing else travels in the body.
+  Creating a job never runs it: it freezes what the job will do, and the
+  work belongs to the runner."
   (:require
    [app.binfile.common :as bfc]
    [app.binfile.v3 :as bf.v3]
@@ -37,13 +36,16 @@
    [datoteka.fs :as fs]))
 
 (def ^:private schema:job-params
-  "The business params of a job. The job-def of the name the caller asked
-  for is what validates them, so a new type of job needs no change here."
+  "The business params of a job. The job-def of the job the command
+  creates is what validates them, so a new type of job needs no change
+  here."
   [:map])
 
-(def ^:private schema:create-export-job
-  [:map {:title "create-export-job" :closed true}
-   [:name   ::sm/keyword]
+(def ^:private schema:create-export-binfile-job
+  "The `.penpot` package of the files frozen in the params, produced by
+  the backend runner; the business params are what the `:export-binfile`
+  job-def declares."
+  [:map {:title "create-export-binfile-job" :closed true}
    [:params schema:job-params]])
 
 (def ^:private schema:create-import-job
@@ -91,12 +93,14 @@
      :expires-at (:expires-at job)}))
 
 (defn- submit-job
-  "Create the job row with what every user job shares: the queue of the
-  heavy work, no automatic retry and the expiry of the ledger."
-  [cfg name params profile-id & {:keys [resource-id]}]
+  "Create the job row with what every user job shares: the queue its
+  job-def routes the heavy work to (`::jobs/queue-name`, `:binfile` when
+  the def says nothing), no automatic retry and the expiry of the ledger."
+  [cfg job-def name params profile-id & {:keys [resource-id]}]
   (jobs/submit cfg (cond-> {::jobs/name        name
                             ::jobs/params      params
-                            ::jobs/queue       :binfile
+                            ::jobs/queue       (or (::jobs/queue-name job-def)
+                                                   :binfile)
                             ::jobs/profile-id  profile-id
                             ::jobs/max-retries 0
                             ::jobs/expires-at  (ct/plus (ct/now)
@@ -108,26 +112,25 @@
 ;; EXPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sv/defmethod ::create-export-job
+(sv/defmethod ::create-export-binfile-job
   "Create a durable job that exports a set of files as a `.penpot`
-  package.
+   package.
 
-  Its params are `:file-ids`, the set of files to export, and
-  `:export-type`, how the libraries of those files are handled: what the
-  job-def declares, and nothing more. There is no default for the type,
-  because a caller that does not say it would get a package that is not
-  the one it asked for.
+   Its params are `:file-ids`, the set of files to export, and
+   `:export-type`, how the libraries of those files are handled: what
+   the job-def declares, and nothing more. There is no default for the
+   type, because a caller that does not say it would get a package that
+   is not the one it asked for.
 
-  The job is created, not run: the caller follows it by its id. The read
-  permission of every file is checked here so a refusal arrives
-  synchronously, and the handler checks it again before reading."
+   The job is created, not run: the caller follows it by its id. The
+   read permission of every file is checked here so a refusal arrives
+   synchronously, and the handler checks it again before reading."
   {::doc/added "2.20"
    ::webhooks/event? true
-   ::sm/params schema:create-export-job
+   ::sm/params schema:create-export-binfile-job
    ::sm/result schema:job-summary}
   [cfg {:keys [::rpc/profile-id] :as envelope}]
-  (let [name     (:name envelope)
-        job-def  (resolve-job-def cfg :export name)
+  (let [job-def  (resolve-job-def cfg :export :export-binfile)
         ;; the body may arrive as JSON, where a uuid is text and a set is
         ;; a list: read the params the way the runner reads them from a
         ;; row, before anything looks at them
@@ -147,8 +150,8 @@
     (quotes/check! cfg {::quotes/id ::quotes/export-jobs-per-profile
                         ::quotes/profile-id profile-id})
 
-    (let [summary (get-job-summary cfg (submit-job cfg name params profile-id))]
-
+    (let [summary (get-job-summary cfg (submit-job cfg job-def :export-binfile
+                                                   params profile-id))]
       (with-meta summary
         {::audit/props {:job-id      (:id summary)
                         :files       (count file-ids)
@@ -257,7 +260,7 @@
                                          :filename "package.penpot"
                                          :mtype    "application/zip"})]
             (try
-              (let [summary (get-job-summary cfg (submit-job cfg name params profile-id
+              (let [summary (get-job-summary cfg (submit-job cfg job-def name params profile-id
                                                              :resource-id (:resource-id staged)))]
                 (with-meta summary
                   {::audit/props {:job-id      (:id summary)

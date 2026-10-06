@@ -53,11 +53,10 @@
       (assoc ::bfc/input (-> fixture io/resource jio/file))
       (v3/import-files!)))
 
-(defn- create-export-job!
+(defn- create-export-binfile-job
   [profile-id file-ids & {:as extra}]
-  (th/command! (merge {::th/type       :create-export-job
+  (th/command! (merge {::th/type       :create-export-binfile-job
                        ::rpc/profile-id profile-id
-                       :name           :export-binfile
                        :params         {:file-ids    file-ids
                                         :export-type :detach-libraries}}
                       extra)))
@@ -74,11 +73,11 @@
 ;; TESTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest create-export-job-answers-with-a-pending-job
+(t/deftest create-export-binfile-job-answers-with-a-pending-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
         before  (count-storage-objects)
-        out     (create-export-job! (:id profile) #{file-id})]
+        out     (create-export-binfile-job (:id profile) #{file-id})]
 
     (t/is (th/success? out))
 
@@ -108,15 +107,14 @@
         ;; artifact produced is what proves the call does not wait
         (t/is (= before (count-storage-objects)))))))
 
-(t/deftest create-export-job-requires-the-export-type
+(t/deftest create-export-binfile-job-requires-the-export-type
   ;; the type is part of the contract of the job: a caller that does not
   ;; say how to handle the libraries gets an error, not a package it did
   ;; not ask for
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        out     (th/command! {::th/type       :create-export-job
+        out     (th/command! {::th/type       :create-export-binfile-job
                               ::rpc/profile-id (:id profile)
-                              :name           :export-binfile
                               :params         {:file-ids #{file-id}}})]
 
     (t/is (not (th/success? out)))
@@ -124,9 +122,9 @@
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-export-job-requires-at-least-one-file
+(t/deftest create-export-binfile-job-requires-at-least-one-file
   (let [profile (th/create-profile* 1)
-        out     (create-export-job! (:id profile) #{})]
+        out     (create-export-binfile-job (:id profile) #{})]
 
     (t/is (not (th/success? out)))
     (t/is (= :validation (th/ex-type (:error out))))
@@ -134,11 +132,11 @@
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-export-job-checks-the-read-permission
+(t/deftest create-export-binfile-job-checks-the-read-permission
   (let [owner   (th/create-profile* 1)
         other   (th/create-profile* 2)
         file-id (first (:file-ids (import-fixture! owner)))
-        out     (create-export-job! (:id other) #{file-id})]
+        out     (create-export-binfile-job (:id other) #{file-id})]
 
     (t/testing "a file the caller cannot read is not exported"
       (t/is (not (th/success? out)))
@@ -147,20 +145,7 @@
     (t/testing "and no job was created for it"
       (t/is (zero? (count-jobs))))))
 
-(t/deftest create-export-job-refuses-a-name-that-is-not-an-export-job
-  (let [profile (th/create-profile* 1)
-        file-id (first (:file-ids (import-fixture! profile)))
-        out     (create-export-job! (:id profile) #{file-id} :name :import-binfile)]
-
-    (t/testing "the registry decides which names are export jobs"
-      (t/is (not (th/success? out)))
-      (t/is (= :validation (th/ex-type (:error out))))
-      (t/is (= :not-a-job-of-the-family (th/ex-code (:error out)))))
-
-    (t/testing "and nothing was created"
-      (t/is (zero? (count-jobs))))))
-
-(t/deftest create-export-job-enforces-the-quote
+(t/deftest create-export-binfile-job-enforces-the-quote
   (with-mocks [mock {:target 'app.config/get
                      :return (th/config-get-mock
                               {:quotes-export-jobs-per-profile 1})}]
@@ -169,11 +154,11 @@
           file-id (first (:file-ids (import-fixture! profile)))]
 
       (t/testing "the first job fits in the quote"
-        (t/is (th/success? (create-export-job! (:id profile) #{file-id})))
+        (t/is (th/success? (create-export-binfile-job (:id profile) #{file-id})))
         (t/is (= 1 (count-jobs))))
 
       (t/testing "the one that would go over it is refused"
-        (let [out (create-export-job! (:id profile) #{file-id})]
+        (let [out (create-export-binfile-job (:id profile) #{file-id})]
           (t/is (not (th/success? out)))
           (t/is (= :restriction (th/ex-type (:error out))))
           (t/is (= :max-quote-reached (th/ex-code (:error out))))
@@ -182,10 +167,10 @@
       (t/testing "so the quote is what stopped the second job"
         (t/is (= 1 (count-jobs)))))))
 
-(t/deftest create-export-job-adds-the-job-id-to-the-audit-props
+(t/deftest create-export-binfile-job-adds-the-job-id-to-the-audit-props
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        out     (create-export-job! (:id profile) #{file-id})
+        out     (create-export-binfile-job (:id profile) #{file-id})
         props   (::audit/props (meta (:result out)))]
 
     (t/testing "the audit of the call points at the job, not at its files"
@@ -351,15 +336,14 @@
               [:create-import-job/global]]
              (::climit/id mdata)))))
 
-(t/deftest create-export-job-accepts-the-params-of-a-json-client
+(t/deftest create-export-binfile-job-accepts-the-params-of-a-json-client
   ;; a JSON body carries text and lists, not uuids or sets: the command
   ;; has to read them with the decoder of the job-def, like the runner
   ;; does when it reads a job from its row
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        out     (th/command! {::th/type       :create-export-job
+        out     (th/command! {::th/type       :create-export-binfile-job
                               ::rpc/profile-id (:id profile)
-                              :name           :export-binfile
                               :params         {:file-ids    [(str file-id)]
                                                :export-type "detach-libraries"}})]
 
@@ -617,7 +601,7 @@
 (t/deftest get-job-answers-with-the-state-of-the-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))
+        job-id  (:id (:result (create-export-binfile-job (:id profile) #{file-id})))
         out     (get-job! (:id profile) job-id)]
 
     (t/is (th/success? out))
@@ -635,7 +619,7 @@
 (t/deftest get-job-answers-with-the-result-of-a-finished-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id profile) #{file-id})))]
 
     (t/is (pos? (claim-job! job-id)))
     (t/is (pos? (jobs/complete th/*system* :job-id job-id
@@ -651,7 +635,7 @@
 (t/deftest get-job-answers-with-the-error-of-a-failed-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id profile) #{file-id})))]
 
     (t/is (pos? (claim-job! job-id)))
     (t/is (pos? (jobs/fail th/*system* job-id {:type :internal
@@ -669,7 +653,7 @@
   (let [owner   (th/create-profile* 1)
         other   (th/create-profile* 2)
         file-id (first (:file-ids (import-fixture! owner)))
-        job-id  (:id (:result (create-export-job! (:id owner) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id owner) #{file-id})))]
 
     (t/testing "the owner reads it"
       (t/is (th/success? (get-job! (:id owner) job-id))))
@@ -697,7 +681,7 @@
 (t/deftest cancel-job-cancels-a-running-job
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id profile) #{file-id})))]
 
     (t/is (pos? (claim-job! job-id)))
 
@@ -713,7 +697,7 @@
   (let [owner   (th/create-profile* 1)
         other   (th/create-profile* 2)
         file-id (first (:file-ids (import-fixture! owner)))
-        job-id  (:id (:result (create-export-job! (:id owner) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id owner) #{file-id})))]
 
     (t/testing "another profile gets the answer of a job that does not exist"
       (let [out (cancel-job (:id other) job-id)]
@@ -727,7 +711,7 @@
 (t/deftest cancel-job-answers-a-finished-job-without-error
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
-        job-id  (:id (:result (create-export-job! (:id profile) #{file-id})))]
+        job-id  (:id (:result (create-export-binfile-job (:id profile) #{file-id})))]
 
     (t/is (pos? (claim-job! job-id)))
     (t/is (pos? (jobs/complete th/*system* :job-id job-id

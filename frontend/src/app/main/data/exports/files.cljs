@@ -73,9 +73,8 @@
   ...}` for the created job, so the caller can track it per file and
   cancel it while it runs."
   [ws-conn type file on-job]
-  (->> (rp/cmd! :create-binfile-export-job
-                {:name   :export-binfile
-                 :params {:file-ids    #{(:id file)}
+  (->> (rp/cmd! :create-export-binfile-job
+                {:params {:file-ids    #{(:id file)}
                           :export-type type}})
        (rx/mapcat (fn [{job-id :id}]
                     (when (fn? on-job)
