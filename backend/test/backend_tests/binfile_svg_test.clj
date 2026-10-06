@@ -255,6 +255,7 @@
           _      (tamper-svg-entry! bundle evil media-id (utf8bytes evil-text) :content-type content-type)
           result (-> th/*system*
                      (assoc ::bfc/project-id (:default-project-id profile))
+                     (assoc ::bfc/team-id (:default-team-id profile))
                      (assoc ::bfc/profile-id (:id profile))
                      (assoc ::bfc/input evil)
                      (v3/import-files!))]
