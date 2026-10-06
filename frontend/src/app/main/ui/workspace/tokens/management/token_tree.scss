@@ -22,10 +22,6 @@
       margin-block-end: var(--sp-s);
     }
   }
-
-  & .token-pill {
-    flex: 0 0 auto;
-  }
 }
 
 .node-parent {
@@ -37,7 +33,9 @@
   padding-inline-start: var(--sp-s);
   border-inline-start: $b-2 solid var(--color-background-quaternary);
 
-  &:has(> button) {
+  // Match pills as "not a group" so the rule does not depend on the
+  // pill's own markup, which lives in another module.
+  &:has(> :not(.node-parent)) {
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-xs);
@@ -49,9 +47,5 @@
     &:last-of-type {
       margin-block-end: var(--sp-s);
     }
-  }
-
-  & .token-pill {
-    flex: 0 0 auto;
   }
 }
