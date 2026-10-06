@@ -1180,6 +1180,53 @@
                                  :modify-delete :delete-modify} % %)))
       entry)))
 
+(defn change-key
+  "Stable identity of one comparison entry, and the key an exclusion set
+  (the compare panel's per-change selection, `compute-changes`'s
+  `excluded`) names a change by. Format `kind/context/id`, the format the
+  design-branches PoC used (`change-key` in
+  `common/src/app/common/files/merge.cljc@2feb570d3f`): `context` is the
+  entry's page (`:page-id`) or token set (`:set-id`) when it has one and
+  empty otherwise, and a keyword id is spelled by name. `compute-merge`
+  annotates every entry with this key and the merge filter computes the
+  same key per entity, so a key the panel sends names exactly one entity
+  of the comparison."
+  [{:keys [kind page-id set-id id]}]
+  (str (name kind) "/" (or page-id set-id "") "/" (if (keyword? id) (name id) id)))
+
+(defn- shape-component-owner
+  "The component a shape belongs to: `{:component-id .. :component-name
+  ..}` for the nearest main instance up its parent chain, or nil when the
+  shape belongs to none. The walk looks the shape up in `datas` in order
+  (the source side first), so an entity one side deleted still resolves
+  from the sides that carry it. The compare panel groups the per-change
+  selection by this (its `group-changes`, mirroring the design-branches
+  PoC's `component-owner-fn`)."
+  [datas page-id id]
+  (let [lookup (fn [id] (some (fn [data] (get-in data [:pages-index page-id :objects id])) datas))]
+    (loop [id id n 1000]
+      (when-let [shape (when (and (some? id) (not= id uuid/zero) (pos? n))
+                         (lookup id))]
+        (if (ctk/main-instance? shape)
+          (let [cid (:component-id shape)]
+            {:component-id   cid
+             :component-name (some (fn [data] (get-in data [:components cid :name])) datas)})
+          (recur (:parent-id shape) (dec n)))))))
+
+(defn- decorate-entry
+  "One summary entry with its `change-key` and, where the entity belongs
+  to one, its owning component, so the compare panel can key and group
+  what it shows without re-deriving either."
+  [datas entry]
+  (let [owner (case (:kind entry)
+                :shape     (shape-component-owner datas (:page-id entry) (:id entry))
+                :component (let [id (:id entry)]
+                             {:component-id   id
+                              :component-name (some (fn [data] (get-in data [:components id :name])) datas)})
+                nil)]
+    (cond-> (assoc entry :key (change-key entry))
+      (some? owner) (merge owner))))
+
 (defn- compute-merge*
   "The comparison itself. Both arities of `compute-merge` land here rather
   than one delegating to the other through the var, so that a test which
@@ -1209,7 +1256,12 @@
         ;; so `:main->branch` (theirs=branch, ours=main) is renamed here
         ;; (see `doc-sides`)
         changes   (if update? (mapv doc-sides changes) changes)
-        conflicts (if update? (mapv doc-sides conflicts) conflicts)]
+        conflicts (if update? (mapv doc-sides conflicts) conflicts)
+        ;; every entry carries its `change-key` and, where it has one, its
+        ;; owning component: the compare panel selects and groups by them
+        decorate  (partial decorate-entry [ours theirs base])
+        changes   (mapv decorate changes)
+        conflicts (mapv decorate conflicts)]
     {:changes   changes
      :conflicts conflicts
      ;; the tree-shape policies act per direction (`tree-modes`), so
@@ -1251,6 +1303,18 @@
   ([base main branch dir] (compute-merge* base main branch dir nil))
   ([base main branch dir {:keys [only-pages]}]
    (compute-merge* base main branch dir only-pages)))
+
+(defn nothing-to-merge?
+  "True when the summary carries change entries and `excluded` covers
+  every one of them: the user selected nothing, so a merge would integrate
+  nothing and the caller refuses with `:nothing-to-merge` instead (the
+  check `files_branch.clj::merge-file-branch@2feb570d3f` made on the PoC's
+  change list). A summary with no entries is NOT a refusal: there the
+  merge is a clean no-op that closes the branch."
+  [merge-summary excluded]
+  (let [entries (concat (:changes merge-summary) (:conflicts merge-summary))]
+    (and (seq entries)
+         (every? #(contains? excluded (change-key %)) entries))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MERGE -> CHANGES (clean changes plus resolved conflicts)
@@ -1560,8 +1624,13 @@
   move on a new parent.
   Returns `{:changes [...] :unsupported #{entries..}}`: the `:refuse`
   alternatives report `:shape-orphan` entries naming the container
-  instead of a placement the merge cannot honour."
-  [base theirs ours resolutions page-id dir]
+  instead of a placement the merge cannot honour.
+
+  `excluded` is the merge's exclusion set (see `change-key`). The ids it
+  names get no change at all, and an excluded creation carries its whole
+  source subtree out with it (see `drop-ids`), so nothing the pass emits
+  can reference a parent the merge does not create."
+  [base theirs ours resolutions page-id dir excluded]
   (let [bo (get-in base [:pages-index page-id :objects] {})
         to (get-in theirs [:pages-index page-id :objects] {})
         oo (get-in ours [:pages-index page-id :objects] {})
@@ -1571,9 +1640,32 @@
         snil=   (fn [a b] (= (strip-nil-attrs a) (strip-nil-attrs b)))
         {:keys [sbo sto soo reorders]} (classification-objects bo to oo)
 
+        ;; Ids this pass must not touch: the ones the exclusion set names
+        ;; (a clean change skipped, a conflict resolved to the target),
+        ;; plus, under the dependents policy, every shape the source places
+        ;; under an excluded creation — its added descendants and any
+        ;; shape it reparented there ("an excluded addition leaves its
+        ;; child shapes out"). The alternative policy, refusing the
+        ;; exclusion and naming those shapes instead, stays documented;
+        ;; this one is the working default because it keeps the tree sound
+        ;; without a refusal round trip.
+        own-drop (into #{}
+                       (filter (fn [id]
+                                 (contains? excluded (change-key {:kind :shape :page-id page-id :id id}))))
+                       (set/union (set (keys bo)) (set (keys to)) (set (keys oo))))
+        drop-ids (into own-drop
+                       (mapcat (fn [id]
+                                 (when (and (contains? oo id) (not (contains? to id)))
+                                   (subtree-ids oo id))))
+                       own-drop)
+        keep?    (complement drop-ids)
+
         ;; modifications + deletions (additions handled below, ordered)
         mod-del
-        (->> (flat-changes sbo sto soo resolutions
+        (->> (flat-changes (into {} (filter (fn [[id _]] (keep? id))) sbo)
+                           (into {} (filter (fn [[id _]] (keep? id))) sto)
+                           (into {} (filter (fn [[id _]] (keep? id))) soo)
+                           resolutions
                            (fn [_ _] nil)
                            (fn [id _]
                              (let [res (get resolutions id)
@@ -1615,12 +1707,15 @@
                                                      (not (snil= (get sbo id) (get soo id))))))
                                    (when-let [r (lost-root bo to oo id)]
                                      [id r]))))
-                         (keys oo))
+                         (filter keep? (keys oo)))
         lost    (into {} lost-pairs)
 
-        ;; same-parent reorders, on the tree as the target has it
+        ;; same-parent reorders, on the tree as the target has it. A
+        ;; reordered parent the exclusion names keeps the target's order
         reorder-changes (when (= :merge order-mode)
-                          (page-reorder-changes to oo sbo sto reorders resolutions page-id))
+                          (page-reorder-changes to oo sbo sto
+                                                (into {} (remove (fn [[id _]] (contains? drop-ids id))) reorders)
+                                                resolutions page-id))
 
         ;; `:dropped` `:expand`/`:page-root`: the target's shapes the
         ;; deleted container would take with it move out before the delete
@@ -1636,7 +1731,8 @@
         ;; still has — it moved them out before deleting)
         additions (into #{}
                         (filter (fn [id]
-                                  (and (contains? oo id)
+                                  (and (keep? id)
+                                       (contains? oo id)
                                        (not (contains? bo id))
                                        (not (contains? to id)))))
                         (keys oo))
@@ -1654,12 +1750,14 @@
         ;; whole subtree comes back.
         restore-set
         (into #{}
-              (remove #(contains? to %))
+              (remove (fn [id] (or (contains? to id) (contains? drop-ids id))))
               (into #{}
                     (mapcat #(subtree-ids oo %))
                     (cond
                       (= :conflict lost-mode)
-                      (into #{} (comp (filter (fn [[_ r]] (= :branch (get resolutions r))))
+                      (into #{} (comp (filter (fn [[_ r]]
+                                                (and (keep? r)
+                                                     (= :branch (get resolutions r)))))
                                       (map second))
                             lost-pairs)
 
@@ -1668,7 +1766,8 @@
 
                       :else
                       (keep (fn [id]
-                              (when (and (contains? bo id)
+                              (when (and (keep? id)
+                                         (contains? bo id)
                                          (not (contains? to id))
                                          (not (snil= (get sbo id) (get soo id)))
                                          (= :branch (get resolutions id)))
@@ -1715,8 +1814,17 @@
               ordered)
 
         ;; reparenting of EXISTING shapes — applied last, after new
-        ;; containers exist and attr/add changes settled
-        move-changes (page-move-changes to oo sbo sto resolutions page-id)
+        ;; containers exist and attr/add changes settled. A move whose
+        ;; shape the exclusion dropped cannot travel, and neither can one
+        ;; into a source-side parent the merge does not create (an
+        ;; excluded addition), which would orphan it
+        move-changes (into []
+                           (remove (fn [{:keys [parent-id shapes]}]
+                                     (or (contains? drop-ids (first shapes))
+                                         (and (contains? oo parent-id)
+                                              (not (contains? to parent-id))
+                                              (not (contains? all-adds parent-id))))))
+                           (page-move-changes to oo sbo sto resolutions page-id))
 
         ;; `:refuse`: the merge cannot place these shapes where they
         ;; belong, so it refuses instead, naming the container
@@ -1759,37 +1867,75 @@
 
   The 5-arity accepts the `compute-merge` summary the caller usually
   already computed (for the conflict gate), so the full three-way diff is
-  not run a second time just to derive `:unsupported`."
+  not run a second time just to derive `:unsupported`. The 6-arity takes
+  the EXCLUSION SET on top: a set of `change-key` strings naming the
+  entities the compare panel's user deselected.
+
+  An excluded entity is treated as resolved to the TARGET side: no change
+  is emitted for it and the target keeps its own value. That is the
+  recorded choice, not a silent win for one side (see
+  `pp:vcs:ds-no-silent-winner`): the user deselected the change, so the
+  result is exactly what the target has, and a conflicting entity lands
+  there whatever `resolutions` says. Excluding an added shape cascades to
+  every shape the source places under it (its added descendants and any
+  shape it reparented there), so no emitted change can reference a parent
+  the merge does not create; the alternative policy, refusing the
+  exclusion and naming those shapes instead, stays documented and is not
+  the working default."
   ([base main branch]
    (compute-changes base main branch {}))
   ([base main branch resolutions]
    (compute-changes base main branch resolutions nil))
   ([base main branch resolutions merge-summary]
+   (compute-changes base main branch resolutions merge-summary nil))
+  ([base main branch resolutions merge-summary excluded]
    (let [merge-summary (or merge-summary (compute-merge base main branch :branch->main))
-         unsupported   (unsupported-kinds (concat (:changes merge-summary) (:conflicts merge-summary)))
+         resolutions   (or resolutions {})
+         excluded      (or excluded #{})
+         ;; a kind no pass can translate refuses the merge UNLESS the user
+         ;; excluded the entry carrying it: an excluded change is dropped
+         ;; on the user's word, never silently
+         unsupported   (->> (concat (:changes merge-summary) (:conflicts merge-summary))
+                            (remove #(contains? excluded (change-key %)))
+                            (unsupported-kinds))
+
+         excl?   (fn [kind ctx id]
+                   (contains? excluded (change-key (assoc ctx :kind kind :id id))))
+         drop-ex (fn [kind ctx coll]
+                   (if (empty? excluded)
+                     coll
+                     (into {} (remove (fn [[id _]] (excl? kind ctx id))) coll)))
+         ;; an excluded entity is dropped from the three collections of
+         ;; every flat pass, so the pass sees it as absent on all three
+         ;; sides and emits nothing for it: a clean change is skipped and
+         ;; a conflicting entity lands on the target's value
+         flat    (fn [kind ctx b t o add-fn mod-fn del-fn]
+                   (flat-changes (drop-ex kind ctx b) (drop-ex kind ctx t) (drop-ex kind ctx o)
+                                 resolutions add-fn mod-fn del-fn))
 
          ;; colors/typographies classified without :modified-at (the apply
          ;; regenerates it via `touch`, so the emitted values may omit it)
-         colors (flat-changes (strip-modified-at (:colors base))
-                              (strip-modified-at (:colors main))
-                              (strip-modified-at (:colors branch))
-                              resolutions
-                              (fn [_ o] {:type :add-color :color o})
-                              (fn [_ o] {:type :mod-color :color o})
-                              (fn [id] {:type :del-color :id id}))
+         colors (flat :color {}
+                      (strip-modified-at (:colors base))
+                      (strip-modified-at (:colors main))
+                      (strip-modified-at (:colors branch))
+                      (fn [_ o] {:type :add-color :color o})
+                      (fn [_ o] {:type :mod-color :color o})
+                      (fn [id] {:type :del-color :id id}))
 
-         typos  (flat-changes (strip-modified-at (:typographies base))
-                              (strip-modified-at (:typographies main))
-                              (strip-modified-at (:typographies branch))
-                              resolutions
-                              (fn [_ o] {:type :add-typography :typography o})
-                              (fn [_ o] {:type :mod-typography :typography o})
-                              (fn [id] {:type :del-typography :id id}))
+         typos  (flat :typography {}
+                      (strip-modified-at (:typographies base))
+                      (strip-modified-at (:typographies main))
+                      (strip-modified-at (:typographies branch))
+                      (fn [_ o] {:type :add-typography :typography o})
+                      (fn [_ o] {:type :mod-typography :typography o})
+                      (fn [id] {:type :del-typography :id id}))
 
-         media  (flat-changes (:media base) (:media main) (:media branch) resolutions
-                              (fn [_ o] {:type :add-media :object o})
-                              (fn [_ o] {:type :mod-media :object o})
-                              (fn [id] {:type :del-media :id id}))
+         media  (flat :media {}
+                      (:media base) (:media main) (:media branch)
+                      (fn [_ o] {:type :add-media :object o})
+                      (fn [_ o] {:type :mod-media :object o})
+                      (fn [id] {:type :del-media :id id}))
 
          ;; pages: add (full page incl. objects) / delete + rename (mod-page)
          bpi (:pages-index base) mpi (:pages-index main) opi (:pages-index branch)
@@ -1801,67 +1947,67 @@
          ;; requires main untouched; a delete conflict resolved to `:branch`
          ;; either deletes (branch deleted) or RESTORES the full branch page
          ;; via the add-fn (main deleted, branch edited)
-         page-presence (->> (flat-changes (page-content-map bpi bpids)
-                                          (page-content-map mpi mpids)
-                                          (page-content-map opi opids)
-                                          resolutions
-                                          (fn [pid _] {:type :add-page :page (get opi pid)})
-                                          (fn [_ _] nil)
-                                          (fn [pid] {:type :del-page :id pid}))
+         page-presence (->> (flat :page {}
+                                  (page-content-map bpi bpids)
+                                  (page-content-map mpi mpids)
+                                  (page-content-map opi opids)
+                                  (fn [pid _] {:type :add-page :page (get opi pid)})
+                                  (fn [_ _] nil)
+                                  (fn [pid] {:type :del-page :id pid}))
                             (filterv some?))
          pmeta (fn [pi] (into {} (map (fn [id] [id (page-meta (get pi id))])) tri-common-pages))
          bpm (pmeta bpi) tpm (pmeta mpi) opm (pmeta opi)
-         page-meta-changes (->> (flat-changes bpm tpm opm resolutions
-                                              (fn [_ _] nil)
-                                              (fn [pid m] (-> (page-meta-clears (get tpm pid) m)
-                                                              (assoc :type :mod-page :id pid)))
-                                              (fn [_] nil))
+         page-meta-changes (->> (flat :page {} bpm tpm opm
+                                      (fn [_ _] nil)
+                                      (fn [pid m] (-> (page-meta-clears (get tpm pid) m)
+                                                      (assoc :type :mod-page :id pid)))
+                                      (fn [_] nil))
                                 (filterv some?))
 
          ;; page guides / flows per common page
          page-guides (into []
                            (mapcat (fn [pid]
-                                     (flat-changes (get-in base [:pages-index pid :guides] {})
-                                                   (get-in main [:pages-index pid :guides] {})
-                                                   (get-in branch [:pages-index pid :guides] {})
-                                                   resolutions
-                                                   (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
-                                                   (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
-                                                   (fn [gid] {:type :set-guide :page-id pid :id gid :params nil}))))
+                                     (flat :page-guide {:page-id pid}
+                                           (get-in base [:pages-index pid :guides] {})
+                                           (get-in main [:pages-index pid :guides] {})
+                                           (get-in branch [:pages-index pid :guides] {})
+                                           (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
+                                           (fn [gid g] {:type :set-guide :page-id pid :id gid :params g})
+                                           (fn [gid] {:type :set-guide :page-id pid :id gid :params nil}))))
                            common-pages)
          page-flows (into []
                           (mapcat (fn [pid]
-                                    (flat-changes (get-in base [:pages-index pid :flows] {})
-                                                  (get-in main [:pages-index pid :flows] {})
-                                                  (get-in branch [:pages-index pid :flows] {})
-                                                  resolutions
-                                                  (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
-                                                  (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
-                                                  (fn [fid] {:type :set-flow :page-id pid :id fid :params nil}))))
+                                    (flat :page-flow {:page-id pid}
+                                          (get-in base [:pages-index pid :flows] {})
+                                          (get-in main [:pages-index pid :flows] {})
+                                          (get-in branch [:pages-index pid :flows] {})
+                                          (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
+                                          (fn [fid f] {:type :set-flow :page-id pid :id fid :params f})
+                                          (fn [fid] {:type :set-flow :page-id pid :id fid :params nil}))))
                           common-pages)
 
          ;; page default-grids per common page
          page-grids (into []
                           (mapcat (fn [pid]
-                                    (flat-changes (get-in base [:pages-index pid :default-grids] {})
-                                                  (get-in main [:pages-index pid :default-grids] {})
-                                                  (get-in branch [:pages-index pid :default-grids] {})
-                                                  resolutions
-                                                  (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
-                                                  (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
-                                                  (fn [gt] {:type :set-default-grid :page-id pid :grid-type gt :params nil}))))
+                                    (flat :page-grid {:page-id pid}
+                                          (get-in base [:pages-index pid :default-grids] {})
+                                          (get-in main [:pages-index pid :default-grids] {})
+                                          (get-in branch [:pages-index pid :default-grids] {})
+                                          (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
+                                          (fn [gt p] {:type :set-default-grid :page-id pid :grid-type gt :params p})
+                                          (fn [gt] {:type :set-default-grid :page-id pid :grid-type gt :params nil}))))
                           common-pages)
 
          ;; page-level plugin-data per common page (flattened to [ns key] -> value)
          page-plugins (into []
                             (mapcat (fn [pid]
-                                      (flat-changes (flatten-plugin-data (get-in base [:pages-index pid :plugin-data] {}))
-                                                    (flatten-plugin-data (get-in main [:pages-index pid :plugin-data] {}))
-                                                    (flatten-plugin-data (get-in branch [:pages-index pid :plugin-data] {}))
-                                                    resolutions
-                                                    (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
-                                                    (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
-                                                    (fn [[ns k]] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value nil}))))
+                                      (flat :page-plugin {:page-id pid}
+                                            (flatten-plugin-data (get-in base [:pages-index pid :plugin-data] {}))
+                                            (flatten-plugin-data (get-in main [:pages-index pid :plugin-data] {}))
+                                            (flatten-plugin-data (get-in branch [:pages-index pid :plugin-data] {}))
+                                            (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
+                                            (fn [[ns k] v] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value v})
+                                            (fn [[ns k]] {:type :set-plugin-data :object-type :page :object-id pid :namespace ns :key k :value nil}))))
                             common-pages)
 
          ;; page order: reorder the common pages to branch's order via
@@ -1872,7 +2018,8 @@
          page-order-changes
          (let [order-of (fn [data] (filterv tri-common-pages (or (:pages data) [])))
                bo (order-of base) mo (order-of main) oo (order-of branch)]
-           (if (and (not= oo bo)
+           (if (and (not (excl? :page-order {} :page-order))
+                    (not= oo bo)
                     (or (= mo bo) (= (get resolutions :page-order) :branch)))
              (let [run-pages (reduce (fn [pages change]
                                        (case (:type change)
@@ -1911,21 +2058,22 @@
          ;; `page-shape-changes`); its `:unsupported` entries name the
          ;; container a `:refuse` alternative could not place under
          dir        (or (:dir merge-summary) :branch->main)
-         shapes-res (mapv (fn [pid] (page-shape-changes base main branch resolutions pid dir))
+         shapes-res (mapv (fn [pid] (page-shape-changes base main branch resolutions pid dir excluded))
                           common-pages)
          shapes     (into [] (mapcat :changes) shapes-res)
 
          ;; components: row metadata (shapes handled by the shape/page passes).
          ;; A branch soft-delete keeps the row with `:deleted true`; surface it
          ;; as a proper del-component so the deletion propagates.
-         components (flat-changes (strip-modified-at (:components base))
-                                  (strip-modified-at (:components main))
-                                  (strip-modified-at (:components branch)) resolutions
-                                  (fn [_ c] (assoc c :type :add-component))
-                                  (fn [id c] (if (:deleted c)
-                                               {:type :del-component :id id}
-                                               (assoc c :type :mod-component)))
-                                  (fn [id] {:type :del-component :id id}))
+         components (flat :component {}
+                          (strip-modified-at (:components base))
+                          (strip-modified-at (:components main))
+                          (strip-modified-at (:components branch))
+                          (fn [_ c] (assoc c :type :add-component))
+                          (fn [id c] (if (:deleted c)
+                                       {:type :del-component :id id}
+                                       (assoc c :type :mod-component)))
+                          (fn [id] {:type :del-component :id id}))
 
          bl (:tokens-lib base) ml (:tokens-lib main) ol (:tokens-lib branch)
          set-ids (set/union (lib-set-ids bl) (lib-set-ids ml) (lib-set-ids ol))
@@ -1934,30 +2082,36 @@
          ;; a new set carries metadata only (tokens come from the per-token
          ;; pass); a RESTORED set (delete conflict resolved to `:branch`)
          ;; carries its tokens, since the per-token pass skips deleted sets
-         set-presence (->> (flat-changes (set-content-map bl)
-                                         (set-content-map ml)
-                                         (set-content-map ol)
-                                         resolutions
-                                         (fn [sid _] {:type :set-token-set :id sid :attrs (set-restore-attrs ol bl sid)})
-                                         (fn [_ _] nil)
-                                         (fn [sid] {:type :set-token-set :id sid :attrs nil}))
+         set-presence (->> (flat :token-set {}
+                                 (set-content-map bl)
+                                 (set-content-map ml)
+                                 (set-content-map ol)
+                                 (fn [sid _] {:type :set-token-set :id sid :attrs (set-restore-attrs ol bl sid)})
+                                 (fn [_ _] nil)
+                                 (fn [sid] {:type :set-token-set :id sid :attrs nil}))
                            (filterv some?))
 
          ;; set rename: take branch name/description, keep main's tokens
          ;; (the per-token pass then layers branch's token edits). Emitted
-         ;; before token-vals.
+         ;; before token-vals. An excluded rename leaves the target's name
+         ;; standing, so the set-order moves below address that name.
          common-sets (set/intersection (lib-set-ids bl) (lib-set-ids ml) (lib-set-ids ol))
+         rename-wins? (fn [sid]
+                        (and (not (excl? :token-set-rename {} sid))
+                             (set-rename-wins? bl ml ol resolutions sid)))
          set-rename-changes
          (into []
-               (comp (filter (fn [sid] (set-rename-wins? bl ml ol resolutions sid)))
+               (comp (filter rename-wins?)
                      (map (fn [sid] {:type :set-token-set :id sid :attrs (set-rename-attrs ml ol sid)})))
                common-sets)
 
          ;; activation: each half settles the way `diff-tokens` classified
          ;; it, and one :set-tokens-status carries both, because the change
-         ;; replaces the whole status
-         settle (fn [b m o k]
+         ;; replaces the whole status. An excluded half settles to the
+         ;; target's value, so the change leaves it as it is.
+         settle (fn [b m o kind k]
                   (cond
+                    (excl? kind {} k) m
                     (= o b) m
                     (= m b) o
                     (= o m) m
@@ -1965,8 +2119,10 @@
                     :else m))
          main-theme-ids (active-theme-ids main)
          main-set-ids   (active-set-ids main)
-         theme-ids      (settle (active-theme-ids base) main-theme-ids (active-theme-ids branch) :active-themes)
-         active-ids     (settle (active-set-ids base) main-set-ids (active-set-ids branch) :active-sets)
+         theme-ids      (settle (active-theme-ids base) main-theme-ids (active-theme-ids branch)
+                                :token-active-themes :active-themes)
+         active-ids     (settle (active-set-ids base) main-set-ids (active-set-ids branch)
+                                :token-active-sets :active-sets)
          active-changes
          (if (and (= theme-ids main-theme-ids) (= active-ids main-set-ids))
            []
@@ -1979,14 +2135,15 @@
          (let [bo (set-order-by-id bl common-sets)
                mo (set-order-by-id ml common-sets)
                oo (set-order-by-id ol common-sets)]
-           (if (and (not= oo bo)
+           (if (and (not (excl? :token-set-order {} :token-set-order))
+                    (not= oo bo)
                     (or (= mo bo) (= (get resolutions :token-set-order) :branch)))
              ;; the moves address the sets by name as the renames above
              ;; leave them: branch's name where the rename wins, main's
              ;; where main's rename stands
              (let [names (mapv (fn [sid]
                                  (ctob/get-name
-                                  (ctob/get-set (if (set-rename-wins? bl ml ol resolutions sid) ol ml) sid)))
+                                  (ctob/get-set (if (rename-wins? sid) ol ml) sid)))
                                oo)]
                (vec (for [i (range (- (count names) 2) -1 -1)]
                       {:type :move-token-set
@@ -2003,23 +2160,34 @@
                                                (or (not (contains? (lib-set-ids ml) sid))
                                                    (not (contains? (lib-set-ids ol) sid))))))
                             set-ids)
+         ;; a set whose creation the exclusion drops cannot take tokens:
+         ;; its per-token pass goes with it (the dependents rule shapes
+         ;; get in `page-shape-changes`), or the tokens would address a set
+         ;; the merge never creates
+         dropped-sets (into #{}
+                            (filter (fn [sid]
+                                      (and (not (contains? (lib-set-ids ml) sid))
+                                           (excl? :token-set {} sid))))
+                            set-ids)
 
          token-vals (into []
                           (comp (remove skip-set-ids)
+                                (remove dropped-sets)
                                 (mapcat (fn [sid]
-                                          (flat-changes (lib-tokens-by-id bl sid)
-                                                        (lib-tokens-by-id ml sid)
-                                                        (lib-tokens-by-id ol sid)
-                                                        resolutions
-                                                        (fn [tid t] {:type :set-token :set-id sid :token-id tid :attrs t})
-                                                        (fn [tid t] {:type :set-token :set-id sid :token-id tid :attrs t})
-                                                        (fn [tid] {:type :set-token :set-id sid :token-id tid :attrs nil})))))
+                                          (flat :token {:set-id sid}
+                                                (lib-tokens-by-id bl sid)
+                                                (lib-tokens-by-id ml sid)
+                                                (lib-tokens-by-id ol sid)
+                                                (fn [tid t] {:type :set-token :set-id sid :token-id tid :attrs t})
+                                                (fn [tid t] {:type :set-token :set-id sid :token-id tid :attrs t})
+                                                (fn [tid] {:type :set-token :set-id sid :token-id tid :attrs nil})))))
                           set-ids)
 
-         themes (flat-changes (lib-themes bl) (lib-themes ml) (lib-themes ol) resolutions
-                              (fn [tid t] {:type :set-token-theme :id tid :attrs t})
-                              (fn [tid t] {:type :set-token-theme :id tid :attrs t})
-                              (fn [tid] {:type :set-token-theme :id tid :attrs nil}))]
+         themes (flat :token-theme {}
+                      (lib-themes bl) (lib-themes ml) (lib-themes ol)
+                      (fn [tid t] {:type :set-token-theme :id tid :attrs t})
+                      (fn [tid t] {:type :set-token-theme :id tid :attrs t})
+                      (fn [tid] {:type :set-token-theme :id tid :attrs nil}))]
 
      {:unsupported (into unsupported (map :kind) (mapcat :unsupported shapes-res))
       ;; components before shapes so del-component can store the main-instance

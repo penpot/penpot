@@ -2774,3 +2774,152 @@
     (t/is (not= k-default k-ignore))
     (t/is (not= k-default k-expand))
     (t/is (not= k-ignore k-expand))))
+
+;;; --- Selective merge: the exclusion set on the wire ---
+
+(t/deftest merge-with-exclusion-applies-the-rest
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "selective"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          keep-id  (uuid/random)
+          drop-id  (uuid/random)]
+
+      (t/testing "the branch adds two colors"
+        (apply-change* profile branch-file-id
+                       {:type :add-color :color {:id keep-id :name "Keep" :color "#00ff00" :opacity 1}})
+        (apply-change* profile branch-file-id
+                       {:type :add-color :color {:id drop-id :name "Drop" :color "#0000ff" :opacity 1}}))
+
+      (t/testing "the merge takes the selected change and leaves the excluded one out"
+        (let [out (th/command! {::th/type :merge-file-branch
+                                ::rpc/profile-id (:id profile)
+                                :branch-id branch-id
+                                :excluded #{(bm/change-key {:kind :color :id drop-id})}})]
+          (t/is (nil? (:error out)))
+          (t/is (= :merged (-> out :result :status))))
+
+        (let [out    (th/command! {::th/type :get-file
+                                   ::rpc/profile-id (:id profile)
+                                   :id (:id file)})
+              colors (-> out :result :data :colors)]
+          (t/is (contains? colors keep-id))
+          (t/is (not (contains? colors drop-id))))))))
+
+(t/deftest merge-refuses-when-every-change-is-excluded
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "nothing-selected"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          color-id (uuid/random)]
+
+      (apply-change* profile branch-file-id
+                     {:type :add-color :color {:id color-id :name "Solo" :color "#ff0000" :opacity 1}})
+
+      (t/testing "a merge whose every change is excluded refuses with :nothing-to-merge"
+        (let [out   (th/command! {::th/type :merge-file-branch
+                                  ::rpc/profile-id (:id profile)
+                                  :branch-id branch-id
+                                  :excluded #{(bm/change-key {:kind :color :id color-id})}})
+              error (:error out)]
+          (t/is (some? error))
+          (t/is (= :nothing-to-merge (-> error ex-data :code))))
+
+        ;; nothing was integrated and the branch survives the refusal
+        (t/is (= "open" (:status (first (th/db-query :file-branch {:id branch-id})))))
+        (let [out (th/command! {::th/type :get-file
+                                ::rpc/profile-id (:id profile)
+                                :id (:id file)})]
+          (t/is (not (contains? (-> out :result :data :colors) color-id)))))
+
+      (t/testing "the update refuses the same way when every incoming change is excluded"
+        (let [main-id (uuid/random)]
+          (apply-change* profile (:id file)
+                         {:type :add-color :color {:id main-id :name "Main" :color "#00ff00" :opacity 1}})
+          (let [out   (th/command! {::th/type :update-branch-from-main
+                                    ::rpc/profile-id (:id profile)
+                                    :branch-id branch-id
+                                    :excluded #{(bm/change-key {:kind :color :id main-id})}})
+                error (:error out)]
+            (t/is (some? error))
+            (t/is (= :nothing-to-merge (-> error ex-data :code))))
+          (let [out (th/command! {::th/type :get-file
+                                  ::rpc/profile-id (:id profile)
+                                  :id branch-file-id})]
+            (t/is (not (contains? (-> out :result :data :colors) main-id)))))))))
+
+(t/deftest update-with-exclusion-replays-the-branch-from-its-base
+  (with-redefs [cf/flags (conj cf/flags :branching)]
+    (let [profile (th/create-profile* 1 {:is-active true})
+          proj-id (:default-project-id profile)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id proj-id})
+          create  (:result (th/command! {::th/type :create-file-branch
+                                         ::rpc/profile-id (:id profile)
+                                         :file-id (:id file)
+                                         :name "partial-update"}))
+          branch-id      (:id create)
+          branch-file-id (:branch-file-id create)
+          main-1  (uuid/random)
+          main-2  (uuid/random)
+          own     (uuid/random)]
+
+      ;; main advances twice; the branch carries work of its own
+      (apply-change* profile (:id file)
+                     {:type :add-color :color {:id main-1 :name "M1" :color "#111111" :opacity 1}})
+      (apply-change* profile (:id file)
+                     {:type :add-color :color {:id main-2 :name "M2" :color "#222222" :opacity 1}})
+      (apply-change* profile branch-file-id
+                     {:type :add-color :color {:id own :name "Own" :color "#333333" :opacity 1}})
+
+      (t/testing "the update takes main's selected change and keeps the excluded one out"
+        (let [out (th/command! {::th/type :update-branch-from-main
+                                ::rpc/profile-id (:id profile)
+                                :branch-id branch-id
+                                :excluded #{(bm/change-key {:kind :color :id main-1})}})]
+          (t/is (nil? (:error out)))
+          (t/is (= :updated (-> out :result :status))))
+
+        ;; get-file derives the branch by replaying the squashed net over
+        ;; the repositioned base: this state IS that replay
+        (let [out    (th/command! {::th/type :get-file
+                                   ::rpc/profile-id (:id profile)
+                                   :id branch-file-id})
+              colors (-> out :result :data :colors)]
+          (t/is (contains? colors main-2))
+          (t/is (contains? colors own))
+          (t/is (not (contains? colors main-1))))
+
+        ;; the base moved to main, and main still holds the excluded work
+        (let [[row] (th/db-query :file-branch {:id branch-id})
+              mf    (th/db-get :file {:id (:id file)})]
+          (t/is (= (:revn mf) (:base-revn row))))
+        (let [out (th/command! {::th/type :get-file
+                                ::rpc/profile-id (:id profile)
+                                :id (:id file)})]
+          (t/is (contains? (-> out :result :data :colors) main-1))))
+
+      (t/testing "the excluded main work is a branch-side delta over the new base"
+        ;; the branch does not carry it and the base does, so the squashed
+        ;; net records the difference as a change of the branch's own
+        (let [diff (:result (th/command! {::th/type :get-branch-diff
+                                          ::rpc/profile-id (:id profile)
+                                          :branch-id branch-id}))]
+          (t/is (some #(and (= :color (:kind %))
+                            (= main-1 (:id %))
+                            (= :deleted (:status %)))
+                      (:changes diff))))))))

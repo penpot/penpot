@@ -99,31 +99,7 @@
   (or (get attr->label attr)
       (-> (name attr) (str/replace #"-" " ") str/capital)))
 
-;; --- Compare: grouping by category + per-item type labels
-
-(def ^:private kind->category
-  {:shape :pages :page :pages :page-attrs :pages :page-order :pages
-   :page-guide :pages :page-flow :pages :page-grid :pages :page-plugin :pages
-   :component :components
-   :color :colors
-   :typography :typographies
-   :media :media
-   :token :tokens :token-set :tokens :token-set-rename :tokens :token-set-order :tokens
-   :token-theme :tokens :token-active-themes :tokens :token-active-sets :tokens})
-
-(def ^:private category-order [:pages :components :colors :typographies :media :tokens])
-
-(def ^:private category->icon
-  {:pages i/document :components i/component :colors i/picker
-   :typographies i/text :media i/img :tokens i/tokens})
-
-(def ^:private category->label
-  {:pages "workspace.branches.compare.group.pages"
-   :components "workspace.branches.compare.group.components"
-   :colors "workspace.branches.compare.group.colors"
-   :typographies "workspace.branches.compare.group.typographies"
-   :media "workspace.branches.compare.group.media"
-   :tokens "workspace.branches.compare.group.tokens"})
+;; --- Compare: grouping by component + per-item type labels
 
 (def ^:private kind->type-label
   {:shape "workspace.branches.compare.type.shape"
@@ -401,7 +377,7 @@
 (mf/defc merge-branch-dialog*
   {::mf/register modal/components
    ::mf/register-as :merge-branch}
-  [{:keys [branch]}]
+  [{:keys [branch excluded]}]
   (let [archive?* (mf/use-state false)
         archive?  (deref archive?*)
 
@@ -425,9 +401,9 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps branch archive?)
+         (mf/deps branch archive? excluded)
          (fn [_]
-           (st/emit! (dwb/merge-branch branch {:keep-branch archive?})
+           (st/emit! (dwb/merge-branch branch {:keep-branch archive? :excluded excluded})
                      (modal/hide))))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -469,20 +445,25 @@
 
 (defn- confirm-merge!
   "Open the merge dialog for `branch` (merge into main is irreversible; the
-  dialog also lets the user choose whether to keep the branch archived)."
-  [branch]
-  (modal/show! :merge-branch {:branch branch}))
+  dialog also lets the user choose whether to keep the branch archived).
+  `excluded` is the compare dialog's per-change selection, if any."
+  ([branch] (confirm-merge! branch nil))
+  ([branch excluded]
+   (modal/show! :merge-branch {:branch branch :excluded excluded})))
 
 (defn- confirm-update!
   "Ask for confirmation before updating `branch` from main (overwrites
-  conflicting branch changes)."
-  [branch]
-  (st/emit! (modal/show {:type :confirm
-                         :title (tr "workspace.branches.update.confirm-title")
-                         :message (tr "workspace.branches.update.confirm-message" (:name branch))
-                         :accept-label (tr "workspace.branches.update.confirm-accept")
-                         :accept-style :primary
-                         :on-accept (fn [_] (st/emit! (dwb/update-branch-from-main branch)))})))
+  conflicting branch changes). `excluded` is the compare dialog's
+  per-change selection, if any."
+  ([branch] (confirm-update! branch nil))
+  ([branch excluded]
+   (st/emit! (modal/show {:type :confirm
+                          :title (tr "workspace.branches.update.confirm-title")
+                          :message (tr "workspace.branches.update.confirm-message" (:name branch))
+                          :accept-label (tr "workspace.branches.update.confirm-accept")
+                          :accept-style :primary
+                          :on-accept (fn [_] (st/emit! (dwb/update-branch-from-main branch
+                                                                                    {:excluded excluded})))}))))
 
 ;; --- Diff counts: known, or honestly unknown
 ;;
@@ -1089,9 +1070,40 @@
        hex
        (display-val value))]))
 
+(defn- selectable-item?
+  "A row the per-change selection covers: a clean change. A conflict keeps
+  its resolution UI instead, and an `:unsupported` entry is a refusal the
+  merge raises whatever the selection says."
+  [item]
+  (contains? #{:added :modified :deleted} (:status item)))
+
+(defn- group-changes
+  "Group the comparison's rows by the component they belong to (the
+  nearest main instance up a shape's tree, `:component-id` on the entry);
+  the rows of no component go last. The per-change selection is offered
+  per group, mirroring the design-branches PoC's `group-changes`
+  (`frontend/src/app/main/ui/workspace/branches.cljs@2feb570d3f`)."
+  [rows]
+  (->> rows
+       (group-by (fn [[_ item]] (:component-id item)))
+       (map (fn [[component-id group-rows]]
+              (let [item (second (first group-rows))
+                    row-keys (into #{} (comp (filter (fn [[_ it]] (selectable-item? it)))
+                                             (map (fn [[_ it]] (:key it))))
+                                   group-rows)]
+                {:id             (or (some-> component-id str) "other")
+                 :component?     (some? component-id)
+                 :name           (if component-id
+                                   (or (:component-name item)
+                                       (tr "workspace.branches.compare.group.component"))
+                                   (tr "workspace.branches.compare.group.other"))
+                 :row-keys       row-keys
+                 :rows           group-rows})))
+       (sort-by (juxt (complement :component?) :name))))
+
 (mf/defc branch-compare-item*
   {::mf/private true}
-  [{:keys [item index selected on-select]}]
+  [{:keys [item index selected on-select excluded? on-toggle]}]
   (let [on-click (mf/use-fn (mf/deps index on-select) #(on-select index))
         status   (item-status item)
         attrs    (:changed-attrs item)
@@ -1099,6 +1111,8 @@
         icon-id  (if (= :shape (:kind item))
                    (shape-icon-id item)
                    (get kind->icon (:kind item) i/git-branch))
+        selectable? (selectable-item? item)
+        change-key  (:key item)
         subtitle (cond
                    (= :added status)   (tr "workspace.branches.compare.subtitle-new"
                                            (if type-lbl (tr type-lbl) ""))
@@ -1108,12 +1122,20 @@
                    :else nil)]
     [:li {:class (stl/css-case :compare-item true
                                :is-selected (= index selected)
+                               :is-excluded (and selectable? excluded?)
                                :status-added    (= :added status)
                                :status-modified (= :modified status)
                                :status-deleted  (= :deleted status)
                                :status-conflict (= :conflict status))
           :role "button"
           :on-click on-click}
+     [:span {:class (stl/css :compare-item-check)
+             ;; the click must not also select the row for the detail pane
+             :on-click (fn [event] (when selectable? (.stopPropagation event)))}
+      (when selectable?
+        [:> checkbox* {:id change-key
+                       :checked (not excluded?)
+                       :on-change #(on-toggle #{change-key})}])]
      [:div {:class (stl/css :compare-item-icon)}
       [:> i/icon* {:icon-id icon-id}]]
      [:div {:class (stl/css :compare-item-body)}
@@ -1164,9 +1186,10 @@
   {::mf/register modal/components
    ::mf/register-as :branch-compare}
   [{:keys [branch]}]
-  (let [{:keys [status diff selected direction]} (mf/deref branch-diff)
+  (let [{:keys [status diff selected direction excluded]} (mf/deref branch-diff)
         direction  (or direction :branch->main)
         incoming?  (= direction :main->branch)
+        excluded   (or excluded #{})
 
         items
         (mf/with-memo [diff]
@@ -1180,25 +1203,38 @@
         active-filter  (deref active-filter*)
 
         ;; keep the original index for selection while filtering/grouping
-        indexed   (map-indexed vector items)
-        filtered  (filterv (fn [[_ it]] (status-matches? active-filter (item-status it))) indexed)
-        by-cat    (group-by (fn [[_ it]] (get kind->category (:kind it) :pages)) filtered)
+        filtered  (mf/with-memo [items active-filter]
+                    (filterv (fn [[_ it]] (status-matches? active-filter (item-status it)))
+                             (map-indexed vector items)))
+        groups    (mf/with-memo [filtered]
+                    (group-changes filtered))
 
-        on-close   (mf/use-fn #(st/emit! (modal/hide)))
+        ;; the selection covers the clean changes alone (see
+        ;; `selectable-item?`), which is what the footer counts
+        all-keys   (into #{} (comp (filter (fn [[_ it]] (selectable-item? it)))
+                                   (map (fn [[_ it]] (:key it))))
+                         (map-indexed vector items))
+        kept-count (count (remove excluded all-keys))
+
+        on-close   (mf/use-fn #(st/emit! (dwb/clear-diff-excluded)
+                                         (modal/hide)))
         on-select  (mf/use-fn #(st/emit! (dwb/select-diff-change %)))
+        on-toggle  (mf/use-fn (fn [change-keys include?]
+                                (st/emit! (dwb/toggle-diff-excluded change-keys include?))))
         on-filter  (mf/use-fn (fn [f] (reset! active-filter* f)))
         on-swap    (mf/use-fn (mf/deps branch direction)
                               #(st/emit! (dwb/fetch-branch-diff
                                           (:id branch)
                                           (if incoming? :branch->main :main->branch))))
-        on-merge   (mf/use-fn (mf/deps branch)
-                              #(confirm-merge! branch))
-        on-update  (mf/use-fn (mf/deps branch)
-                              #(confirm-update! branch))
-        on-resolve (mf/use-fn (mf/deps branch direction)
+        on-merge   (mf/use-fn (mf/deps branch excluded)
+                              #(confirm-merge! branch excluded))
+        on-update  (mf/use-fn (mf/deps branch excluded)
+                              #(confirm-update! branch excluded))
+        on-resolve (mf/use-fn (mf/deps branch direction excluded)
                               #(modal/show! :branch-conflicts
                                             {:branch branch
-                                             :mode (if incoming? :update :merge)}))
+                                             :mode (if incoming? :update :merge)
+                                             :excluded excluded}))
         on-export  (mf/use-fn
                     (mf/deps diff branch)
                     (fn []
@@ -1306,29 +1342,36 @@
               (tr label)])]
 
           [:div {:class (stl/css :compare-list)}
-           (for [cat category-order
-                 :let [group (get by-cat cat)]
-                 :when (seq group)]
-             [:div {:class (stl/css :compare-group) :key (name cat)}
-              [:div {:class (stl/css :compare-group-head)}
-               [:> i/icon* {:icon-id (get category->icon cat i/document) :size "s"}]
-               [:span {:class (stl/css :compare-group-label)} (tr (get category->label cat))]
-               (let [freqs (frequencies (map (fn [[_ it]] (item-status it)) group))]
-                 [:span {:class (stl/css :compare-group-counts)}
-                  (when (pos? (get freqs :added 0))
-                    [:span {:class (stl/css :count-added)} (dm/str "+" (get freqs :added))])
-                  (when (pos? (+ (get freqs :modified 0) (get freqs :conflict 0)))
-                    [:span {:class (stl/css :count-modified)}
-                     (dm/str "~" (+ (get freqs :modified 0) (get freqs :conflict 0)))])
-                  (when (pos? (get freqs :deleted 0))
-                    [:span {:class (stl/css :count-deleted)} (dm/str "−" (get freqs :deleted))])])]
-              [:ul {:class (stl/css :compare-group-items)}
-               (for [[idx item] group]
-                 [:> branch-compare-item* {:key idx
-                                           :item item
-                                           :index idx
-                                           :selected selected
-                                           :on-select on-select}])]])]]
+           (for [{:keys [id name component? rows row-keys]} groups]
+             (let [all-included? (not-any? excluded row-keys)]
+               [:div {:class (stl/css :compare-group) :key id}
+                [:div {:class (stl/css :compare-group-head)}
+                 (when (seq row-keys)
+                   ;; the group checkbox selects or deselects the group's
+                   ;; changes in one go
+                   [:> checkbox* {:id (str "group-" id)
+                                  :checked all-included?
+                                  :on-change #(on-toggle row-keys (not all-included?))}])
+                 [:> i/icon* {:icon-id (if component? i/component i/document) :size "s"}]
+                 [:span {:class (stl/css :compare-group-label)} name]
+                 (let [freqs (frequencies (map (fn [[_ it]] (item-status it)) rows))]
+                   [:span {:class (stl/css :compare-group-counts)}
+                    (when (pos? (get freqs :added 0))
+                      [:span {:class (stl/css :count-added)} (dm/str "+" (get freqs :added))])
+                    (when (pos? (+ (get freqs :modified 0) (get freqs :conflict 0)))
+                      [:span {:class (stl/css :count-modified)}
+                       (dm/str "~" (+ (get freqs :modified 0) (get freqs :conflict 0)))])
+                    (when (pos? (get freqs :deleted 0))
+                      [:span {:class (stl/css :count-deleted)} (dm/str "−" (get freqs :deleted))])])]
+                [:ul {:class (stl/css :compare-group-items)}
+                 (for [[idx item] rows]
+                   [:> branch-compare-item* {:key idx
+                                             :item item
+                                             :index idx
+                                             :selected selected
+                                             :excluded? (contains? excluded (:key item))
+                                             :on-select on-select
+                                             :on-toggle on-toggle}])]]))]]
 
          [:div {:class (stl/css :compare-detail)}
           [:> branch-compare-detail* {:item sel-item}]]])
@@ -1343,6 +1386,10 @@
            [:div {:class (stl/css :compare-footer-info)}
             [:> i/icon* {:icon-id i/info :size "s"}]
             [:span (tr "workspace.branches.compare.footer-changes" total)]
+            (when (seq all-keys)
+              [:span {:class (stl/css :compare-footer-selected)}
+               (tr "workspace.branches.compare.footer-selected"
+                   (str kept-count) (str (count all-keys)))])
             (when conflicts?
               [:span {:class (stl/css :compare-footer-conflicts)}
                (dm/str " · " (tr "workspace.branches.compare.footer-conflicts" conflicts))])]
@@ -1363,14 +1410,14 @@
               incoming?
               [:> button* {:variant "primary"
                            :icon i/status-update
-                           :disabled (zero? total)
+                           :disabled (zero? kept-count)
                            :on-click on-update}
                (tr "workspace.branches.update")]
 
               :else
               [:> button* {:variant "primary"
                            :icon i/git-merge
-                           :disabled (zero? total)
+                           :disabled (zero? kept-count)
                            :on-click on-merge}
                (tr "workspace.branches.merge.action")])]]))]]))
 
@@ -1579,7 +1626,7 @@
 (mf/defc branch-conflicts-dialog*
   {::mf/register modal/components
    ::mf/register-as :branch-conflicts}
-  [{:keys [branch mode conflicts]}]
+  [{:keys [branch mode conflicts excluded]}]
   (let [{:keys [diff selected resolutions status]} (mf/deref branch-diff)
 
         loading?    (= status :loading)
@@ -1633,11 +1680,13 @@
                                  #(when sel (st/emit! (dwb/set-conflict-resolution (:id sel) :main))))
         on-use-branch (mf/use-fn (mf/deps sel)
                                  #(when sel (st/emit! (dwb/set-conflict-resolution (:id sel) :branch))))
-        on-apply      (mf/use-fn (mf/deps branch resolutions mode keep?)
+        on-apply      (mf/use-fn (mf/deps branch resolutions mode keep? excluded)
                                  #(st/emit! (if (= mode :update)
-                                              (dwb/update-branch-from-main branch resolutions)
+                                              (dwb/update-branch-from-main branch {:resolutions resolutions
+                                                                                   :excluded excluded})
                                               (dwb/merge-branch branch {:resolutions resolutions
-                                                                        :keep-branch keep?}))))]
+                                                                        :keep-branch keep?
+                                                                        :excluded excluded}))))]
 
     ;; the fetched diff backs both the fallback conflict set and the side
     ;; subtitles, so it must be computed in the direction this modal resolves:

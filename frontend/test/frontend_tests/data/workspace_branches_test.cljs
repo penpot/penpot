@@ -59,7 +59,7 @@
   (ptk/emit! store (dwb/set-all-resolutions :main))
   (let [resolutions (get-in @store [:workspace-branch-diff :resolutions])]
     (ptk/emit! store (if (= mode :update)
-                       (dwb/update-branch-from-main branch resolutions)
+                       (dwb/update-branch-from-main branch {:resolutions resolutions})
                        (dwb/merge-branch branch {:resolutions resolutions})))))
 
 (defn- last-params
@@ -141,6 +141,77 @@
                   (t/is (not (contains? params :resolutions)))
                   (t/is (not (contains? params :expected-main-revn))
                         "the stored revn only travels with resolutions"))
+                (rx/dispose! store))))
+          (done'))
+        done))))
+
+;;; --- Selective merge: the per-change selection ---
+
+(t/deftest the-per-change-selection-toggles-and-clears
+  (let [store (make-store)
+        k1 "color//aaaaaaaa/1"
+        k2 "color//aaaaaaaa/2"]
+    (t/testing "a row flips on its own"
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
+      (t/is (= #{k1} (get-in @store [:workspace-branch-diff :excluded])))
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
+      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+
+    (t/testing "a group sets every key of it to one side"
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1 k2} false))
+      (t/is (= #{k1 k2} (get-in @store [:workspace-branch-diff :excluded])))
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1} false))
+      (t/is (= #{k1 k2} (get-in @store [:workspace-branch-diff :excluded])))
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1 k2} true))
+      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+
+    (t/testing "closing the compare dialog drops the selection"
+      (ptk/emit! store (dwb/toggle-diff-excluded #{k1}))
+      (ptk/emit! store (dwb/clear-diff-excluded))
+      (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))))
+
+(t/deftest a-refetch-of-the-same-comparison-keeps-the-selection
+  (t/async done
+    (let [calls (atom [])
+          branch {:id (uuid/next)}]
+      (mock/with-mocks
+        {rp/cmd! (cmd-stub calls (uuid/next))}
+        (fn [done']
+          (let [store (make-store)]
+            (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+            (ptk/emit! store (dwb/toggle-diff-excluded #{"color//aaaaaaaa/1"}))
+            (t/testing "the same branch and direction refetches over the selection"
+              (ptk/emit! store (dwb/fetch-branch-diff (:id branch)))
+              (t/is (= #{"color//aaaaaaaa/1"}
+                       (get-in @store [:workspace-branch-diff :excluded]))))
+            (t/testing "the other direction starts the selection over"
+              (ptk/emit! store (dwb/fetch-branch-diff (:id branch) :main->branch))
+              (t/is (= #{} (get-in @store [:workspace-branch-diff :excluded]))))
+            (rx/dispose! store)))
+        done))))
+
+(t/deftest the-selection-travels-with-the-merge-and-update-calls
+  (t/async done
+    (let [calls       (atom [])
+          conflict-id (uuid/next)]
+      (mock/with-mocks
+        {rp/cmd! (cmd-stub calls conflict-id)}
+        (fn [done']
+          (doseq [mode [:merge :update]]
+            (t/testing (name mode)
+              (let [branch   {:id (uuid/next)}
+                    store    (make-store)
+                    excluded #{"color//aaaaaaaa/1"}]
+                (reset! calls [])
+                (ptk/emit! store (if (= mode :update)
+                                   (dwb/update-branch-from-main branch {:excluded excluded})
+                                   (dwb/merge-branch branch {:excluded excluded})))
+                (t/is (= excluded (:excluded (last-params calls mode))))
+                (t/testing "an empty selection sends no `:excluded` at all"
+                  (ptk/emit! store (if (= mode :update)
+                                     (dwb/update-branch-from-main branch)
+                                     (dwb/merge-branch branch)))
+                  (t/is (not (contains? (last-params calls mode) :excluded))))
                 (rx/dispose! store))))
           (done'))
         done))))

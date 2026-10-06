@@ -1213,9 +1213,11 @@
           base   (tree-data [f nil :frame "F"] [a f :rect "A"] [b f :rect "B"])
           branch (tree-edit base assoc-in [f :shapes] [b a])
           r      (bm/compute-merge base base branch :branch->main)]
+      ;; every summary entry carries its `change-key` as well (the compare
+      ;; panel selects by it); the refusal content is what this asserts
       (t/is (= [{:kind :shape-order :status :unsupported :id f :page-id (tree-page-id base)
                  :label "F" :policy :same-parent-reorder}]
-               (:changes r)))
+               (mapv #(dissoc % :key) (:changes r))))
       (t/is (= #{:shape-order} (bm/unsupported-kinds (:changes r))))
       (t/is (= #{:shape-order} (:unsupported (bm/compute-changes base base branch {})))))))
 
@@ -1289,9 +1291,12 @@
           main   (tree-delete base p)
           branch (tree-add base m p :rect "M")
           r      (bm/compute-merge base main branch :branch->main)]
+      ;; every summary entry carries its `change-key` as well (the compare
+      ;; panel selects by it); the refusal content is what this asserts
       (t/is (= [{:kind :shape-orphan :status :unsupported :id p :page-id (tree-page-id base)
                  :label "P" :policy :addition-under-deleted-parent :shapes [m]}]
-               (filterv #(= :unsupported (:status %)) (:changes r))))
+               (mapv #(dissoc % :key)
+                     (filterv #(= :unsupported (:status %)) (:changes r)))))
       (t/is (= #{:shape-orphan} (:unsupported (bm/compute-changes base main branch {}))))
       (let [branch (tree-edit base assoc-in [c :name] "C renamed")]
         (t/is (= [[c :modify-delete]]
@@ -1486,3 +1491,160 @@
           branch (tree-add base m p :rect "M")
           {:keys [unsupported]} (bm/compute-changes base main branch {} {:changes [] :conflicts []})]
       (t/is (= #{:shape-orphan} unsupported)))))
+
+;;; --- Selective merge: the exclusion set (`bm/change-key`) ---
+
+(defn- orphan-parents
+  "Parent ids a change creates or moves a shape under that nothing the
+  merge emits provides: absent from `main` and never created by the
+  change list. A non-empty result is an orphan the translation let
+  through."
+  [main changes]
+  (let [created (into #{} (comp (filter #(= :add-obj (:type %))) (map :id)) changes)
+        kept    (into created (keys (tree-objects main)))]
+    (into #{}
+          (comp (filter #(contains? #{:add-obj :mov-objects} (:type %)))
+                (map :parent-id)
+                (remove kept))
+          changes)))
+
+(t/deftest change-key-is-stable-and-shape-scoped
+  (let [pid (uuid/next) id (uuid/next)]
+    (t/is (= (str "shape/" pid "/" id) (bm/change-key {:kind :shape :page-id pid :id id})))
+    (t/is (= "color//" (bm/change-key {:kind :color :id nil})))
+    (t/is (= "page-order//page-order" (bm/change-key {:kind :page-order :id :page-order})))
+    (t/is (= (str "token/" pid "/" id) (bm/change-key {:kind :token :set-id pid :id id})))
+    (t/is (= (bm/change-key {:kind :shape :page-id :p1 :id id})
+             (:key (first (filter #(= id (:id %))
+                                  (:changes (bm/compute-merge
+                                             (mkdata {})
+                                             (mkdata {})
+                                             (mkdata {id {:id id :name "A"}})
+                                             :branch->main)))))))))
+
+(t/deftest excluded-clean-change-is-not-emitted
+  (let [a (uuid/next) b (uuid/next)
+        pid    (uuid/custom 7 1)
+        base   (tree-data [a nil :rect "A"])
+        branch (-> base
+                   (tree-edit assoc-in [a :name] "A2")
+                   (tree-add b nil :rect "B"))
+        ka     (bm/change-key {:kind :shape :page-id pid :id a})
+        kb     (bm/change-key {:kind :shape :page-id pid :id b})
+        all    (:changes (bm/compute-changes base base branch {} nil #{}))
+        kept   (:changes (bm/compute-changes base base branch {} nil #{ka}))
+        none   (:changes (bm/compute-changes base base branch {} nil #{ka kb}))]
+    (t/is (= 2 (count all)))
+    (t/testing "the excluded modification stays out, the rest travels"
+      (t/is (= [b] (mapv :id (filter #(= :add-obj (:type %)) kept))))
+      (t/is (empty? (filter #(and (= :mod-obj (:type %)) (= a (:id %))) kept))))
+    (t/testing "every change excluded leaves nothing to apply"
+      (t/is (empty? none)))))
+
+(t/deftest nothing-to-merge?-reads-the-whole-selection
+  (let [a (uuid/next)
+        base   (tree-data [a nil :rect "A"])
+        branch (tree-edit base assoc-in [a :name] "A2")
+        summary (bm/compute-merge base base branch :branch->main)
+        ka      (bm/change-key {:kind :shape :page-id (uuid/custom 7 1) :id a})]
+    (t/is (seq (:changes summary)))
+    (t/is (bm/nothing-to-merge? summary #{ka}))
+    (t/is (not (bm/nothing-to-merge? summary #{})))
+    (t/is (not (bm/nothing-to-merge? summary #{(str ka "-stale")})))
+    (t/testing "a summary with no entries is not a refusal: the merge closes the branch"
+      (t/is (not (bm/nothing-to-merge? (bm/compute-merge base base base :branch->main) #{}))))))
+
+(t/deftest excluded-conflict-resolves-to-the-target
+  (let [a (uuid/next)
+        pid    (uuid/custom 7 1)
+        base   (tree-data [a nil :rect "A"])
+        main   (tree-edit base assoc-in [a :name] "main")
+        branch (tree-edit base assoc-in [a :name] "branch")
+        ka     (bm/change-key {:kind :shape :page-id pid :id a})]
+    (t/is (= 1 (count (:conflicts (bm/compute-merge base main branch :branch->main)))))
+    (t/testing "a :branch resolution still applies while the change is included"
+      (t/is (= 1 (count (:changes (bm/compute-changes base main branch {a :branch} nil #{}))))))
+    (t/testing "the exclusion is the recorded choice: the target keeps its value"
+      (let [{:keys [changes]} (bm/compute-changes base main branch {a :branch} nil #{ka})
+            data (cfc/process-changes main changes)]
+        (t/is (empty? changes))
+        (t/is (= "main" (get-in (tree-objects data) [a :name])))))))
+
+(t/deftest excluding-an-addition-leaves-its-child-shapes-out
+  (let [g (uuid/next) c1 (uuid/next) c2 (uuid/next) m (uuid/next)
+        pid    (uuid/custom 7 1)
+        base   (tree-data [m nil :rect "M"])
+        branch (-> base
+                   (tree-add g nil :frame "G")
+                   (tree-add c1 g :rect "C1")
+                   (tree-add c2 g :rect "C2")
+                   (cfc/process-changes [{:type :mov-objects :page-id pid :parent-id g
+                                          :index 0 :shapes [m] :ignore-touched true}]))
+        kg  (bm/change-key {:kind :shape :page-id pid :id g})
+        kc1 (bm/change-key {:kind :shape :page-id pid :id c1})]
+    (t/testing "without exclusions the additions and the move all travel"
+      (let [{:keys [changes]} (bm/compute-changes base base branch {} nil #{})]
+        (t/is (= #{g c1 c2} (into #{} (comp (filter #(= :add-obj (:type %))) (map :id)) changes)))
+        (t/is (empty? (orphan-parents base changes)))))
+
+    (t/testing "excluding the addition drops the whole added subtree and the move under it"
+      (let [{:keys [changes]} (bm/compute-changes base base branch {} nil #{kg})]
+        (t/is (empty? (filter #(= :add-obj (:type %)) changes)))
+        (t/is (empty? (filter #(and (= :mov-objects (:type %)) (= g (:parent-id %))) changes)))
+        (t/is (empty? (filter #(= m (:id %)) changes)))
+        (t/is (empty? (orphan-parents base changes)))))
+
+    (t/testing "excluding one descendant drops it alone and keeps the tree sound"
+      (let [{:keys [changes]} (bm/compute-changes base base branch {} nil #{kc1})]
+        (t/is (= #{g c2} (into #{} (comp (filter #(= :add-obj (:type %))) (map :id)) changes)))
+        (t/is (empty? (orphan-parents base changes)))))))
+
+(t/deftest excluded-deletion-takes-no-relocation-with-it
+  ;; under `:container-delete-over-main-edits :expand` the target's shapes
+  ;; move out of a container the source deleted before it goes; excluding
+  ;; that deletion keeps the container and takes no relocation with it
+  (binding [bm/*policies* (policies :container-delete-over-main-edits :expand)]
+    (let [f (uuid/next) x (uuid/next)
+          pid  (uuid/custom 7 1)
+          base (tree-data [f nil :frame "F"] [x f :rect "X"])
+          ;; the source deletes F whole while the target renamed X
+          branch (tree-delete base f)
+          main   (tree-edit base assoc-in [x :name] "X renamed")
+          kf (bm/change-key {:kind :shape :page-id pid :id f})]
+      (t/testing "without the exclusion the delete lands with its relocation"
+        (let [{:keys [changes]} (bm/compute-changes base main branch {} nil #{})]
+          (t/is (= [f] (mapv :id (filter #(= :del-obj (:type %)) changes))))
+          (t/is (= 1 (count (filter #(= :mov-objects (:type %)) changes))))
+          (t/is (empty? (orphan-parents main changes)))))
+
+      (t/testing "the excluded container survives and nothing relocates out of it"
+        (let [{:keys [changes]} (bm/compute-changes base main branch {} nil #{kf})]
+          (t/is (empty? (filter #(= :del-obj (:type %)) changes)))
+          (t/is (empty? (filter #(= :mov-objects (:type %)) changes)))
+          (t/is (empty? (orphan-parents main changes))))))))
+
+(t/deftest squashed-net-replays-the-updated-branch
+  ;; the update-from-main invariant: whatever the exclusion keeps out of
+  ;; the branch becomes a branch-side delta of the squashed net, so the
+  ;; branch state still replays from its repositioned base
+  (let [a (uuid/next) b (uuid/next) c (uuid/next)
+        base   (tree-data [a nil :rect "A"] [b nil :rect "B"])
+        main   (-> (tree-edit base assoc-in [a :name] "A-main")
+                   (tree-edit assoc-in [b :name] "B-main"))
+        branch (tree-add base c nil :rect "C")
+        kb     (bm/change-key {:kind :shape :page-id (uuid/custom 7 1) :id b})
+        ;; source = main, target = branch (the update direction)
+        {incoming :changes} (bm/compute-changes base branch main {} nil #{kb})
+        updated  (cfc/process-changes branch incoming)
+        ;; the repositioned base is main's own state
+        new-base main
+        {net :changes unsupported :unsupported} (bm/compute-changes new-base new-base updated {})]
+    (t/is (empty? unsupported))
+    (t/is (empty? (filter #(and (= :mod-obj (:type %)) (= b (:id %))) incoming)))
+    (t/is (= 1 (count incoming)))
+    (t/testing "the excluded main work stays in the net as a branch-side delta"
+      (t/is (some #(and (= :mod-obj (:type %)) (= b (:id %))) net))
+      (t/is (some #(and (= :add-obj (:type %)) (= c (:id %))) net)))
+    (t/testing "replaying the squashed net over the new base reproduces the branch"
+      (t/is (= (tree-objects updated)
+               (tree-objects (cfc/process-changes new-base net)))))))

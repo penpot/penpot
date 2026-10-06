@@ -143,6 +143,11 @@
       :unsupported-update-squash
       (ntf/warn (tr "workspace.branches.update.unsupported"))
 
+      ;; every change of the comparison was deselected: nothing to merge
+      ;; or to update, and the branch stays as it is
+      :nothing-to-merge
+      (ntf/warn (tr "workspace.branches.merge.nothing-selected"))
+
       (ntf/error fallback))))
 
 ;; --- Dashboard popover (list a file's branches from the dashboard)
@@ -360,10 +365,19 @@
    (ptk/reify ::fetch-branch-diff
      ptk/UpdateEvent
      (update [_ state]
-       (assoc state :workspace-branch-diff {:status :loading
-                                            :branch-id branch-id
-                                            :direction direction
-                                            :selected nil}))
+       (let [prev (:workspace-branch-diff state)]
+         (assoc state :workspace-branch-diff
+                {:status    :loading
+                 :branch-id branch-id
+                 :direction direction
+                 :selected  nil
+                 ;; a refetch of the SAME comparison keeps the user's
+                 ;; per-change selection (it names the same entities); a
+                 ;; different branch or direction starts over
+                 :excluded  (if (and (= branch-id (:branch-id prev))
+                                     (= direction (:direction prev)))
+                              (or (:excluded prev) #{})
+                              #{})})))
      ptk/WatchEvent
      (watch [_ _ stream]
        (->> (rp/cmd! :get-branch-diff {:branch-id branch-id :direction direction})
@@ -379,6 +393,38 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-branch-diff :selected] selected))))
+
+(defn toggle-diff-excluded
+  "Toggle the per-change selection of the current diff. `change-keys` are
+  change keys (`app.common.files.branch-merge/change-key`); a key the
+  selection holds is left OUT of the merge or update, and a key it lacks
+  travels. `include?` sets them all to that side instead of toggling (the
+  group checkbox): nil flips the whole batch, which is what a single row
+  checkbox needs too."
+  ([change-keys] (toggle-diff-excluded change-keys nil))
+  ([change-keys include?]
+   (assert (set? change-keys) "expected a set of change keys")
+   (ptk/reify ::toggle-diff-excluded
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-branch-diff :excluded]
+                  (fn [excluded]
+                    (let [excluded (or excluded #{})
+                          include? (if (some? include?)
+                                     include?
+                                     (not (every? excluded change-keys)))]
+                      (if include?
+                        (apply disj excluded change-keys)
+                        (into excluded change-keys)))))))))
+
+(defn clear-diff-excluded
+  "Drop the per-change selection: the compare dialog closes without
+  applying it."
+  []
+  (ptk/reify ::clear-diff-excluded
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-branch-diff :excluded] #{}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BRANCH CONTEXT (banner when the open file is a branch)
@@ -446,7 +492,7 @@
   `main-revn` is main's revn when the command computed those conflicts. It
   is stored with them because the modal's own diff fetch can still be in
   flight when the user applies; see `conflict-main-revn`."
-  [{:keys [branch mode conflicts main-revn]}]
+  [{:keys [branch mode conflicts main-revn excluded]}]
   (ptk/reify ::open-conflict-resolutions
     ptk/UpdateEvent
     (update [_ state]
@@ -457,9 +503,12 @@
               :main-revn main-revn}))
     ptk/WatchEvent
     (watch [_ _ _]
+      ;; `excluded` is the per-change selection the merge/update attempt
+      ;; was made with; the resolution modal applies it on retry
       (rx/of (modal/show :branch-conflicts {:branch branch
                                             :mode mode
-                                            :conflicts conflicts})))))
+                                            :conflicts conflicts
+                                            :excluded excluded})))))
 
 (defn- conflict-main-revn
   "Main's revn when the server computed the conflict set stored for
@@ -481,6 +530,11 @@
   branch row. With conflicts and no `resolutions`, opens the conflict
   resolution modal in update mode; with resolutions, applies them.
 
+  Options (`opts`): `:resolutions` `{entity-id (:main|:branch)}` as below,
+  and `:excluded`, the per-change selection (change keys,
+  `app.common.files.branch-merge/change-key`) naming main's changes the
+  user deselected, which the branch keeps its own value for.
+
   When the current diff in state is this branch's `:main->branch` diff,
   its main revn is sent as `expected-main-revn` so the server refuses to
   apply resolutions computed against a stale diff (`:file-modified`); in
@@ -489,7 +543,7 @@
   loaded carry the revn of the conflict answer instead
   (`conflict-main-revn`)."
   ([branch] (update-branch-from-main branch nil))
-  ([branch resolutions]
+  ([branch {:keys [resolutions excluded]}]
    (ptk/reify ::update-branch-from-main
      ptk/WatchEvent
      (watch [_ state _]
@@ -504,6 +558,7 @@
           (rx/of (ev/event {::ev/name "update-branch-from-main"}))
           (->> (rp/cmd! :update-branch-from-main (cond-> {:branch-id branch-id}
                                                    (seq resolutions)  (assoc :resolutions resolutions)
+                                                   (seq excluded)     (assoc :excluded excluded)
                                                    (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
                 (fn [{:keys [status conflicts] :as answer}]
@@ -519,7 +574,8 @@
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :update
                                                                     :conflicts conflicts
-                                                                    :main-revn (:main-revn answer)}))
+                                                                    :main-revn (:main-revn answer)
+                                                                    :excluded excluded}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.update.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.update.error"))))))
                (rx/catch
@@ -584,6 +640,9 @@
      under \"Archived\"); when false (default) the server deletes the
      branch and its file in the same transaction, so merged copies do not
      pile up and eat disk space.
+   - `:excluded` — the per-change selection (change keys,
+     `app.common.files.branch-merge/change-key`) naming the changes the
+     user deselected, which main keeps its own value for.
 
   When the current diff in state belongs to this branch, its main revn is
   sent as `expected-main-revn` so the server refuses to apply resolutions
@@ -592,7 +651,7 @@
   before that diff has loaded carry the revn of the conflict answer instead
   (`conflict-main-revn`). Unresolved conflicts open the resolution modal."
   ([branch] (merge-branch branch nil))
-  ([branch {:keys [resolutions keep-branch]}]
+  ([branch {:keys [resolutions keep-branch excluded]}]
    (assert (uuid? (:id branch)) "expected a branch row with a valid `:id`")
    (ptk/reify ::merge-branch
      ptk/WatchEvent
@@ -608,6 +667,7 @@
           (->> (rp/cmd! :merge-file-branch
                         (cond-> {:branch-id branch-id}
                           (seq resolutions)  (assoc :resolutions resolutions)
+                          (seq excluded)     (assoc :excluded excluded)
                           keep-branch        (assoc :keep-branch true)
                           (some? main-revn)  (assoc :expected-main-revn main-revn)))
                (rx/mapcat
@@ -623,7 +683,8 @@
                     :conflicts   (rx/of (open-conflict-resolutions {:branch branch
                                                                     :mode :merge
                                                                     :conflicts conflicts
-                                                                    :main-revn (:main-revn answer)}))
+                                                                    :main-revn (:main-revn answer)
+                                                                    :excluded excluded}))
                     :unsupported (rx/of (ntf/warn (tr "workspace.branches.merge.unsupported")))
                     (rx/of (ntf/error (tr "workspace.branches.merge.error"))))))
                (rx/catch

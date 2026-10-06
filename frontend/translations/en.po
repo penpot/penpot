@@ -6374,9 +6374,17 @@ msgstr "%s changes"
 msgid "workspace.branches.compare.footer-conflicts"
 msgstr "%s to resolve before merging"
 
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1391
+msgid "workspace.branches.compare.footer-selected"
+msgstr "%s of %s selected"
+
 #, unused
 msgid "workspace.branches.compare.group.colors"
 msgstr "Colors"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1098
+msgid "workspace.branches.compare.group.component"
+msgstr "Component"
 
 #, unused
 msgid "workspace.branches.compare.group.components"
@@ -6385,6 +6393,10 @@ msgstr "Components"
 #, unused
 msgid "workspace.branches.compare.group.media"
 msgstr "Media"
+
+#: src/app/main/ui/workspace/sidebar/branches.cljs:1099
+msgid "workspace.branches.compare.group.other"
+msgstr "Other changes"
 
 #, unused
 msgid "workspace.branches.compare.group.pages"
@@ -7062,6 +7074,10 @@ msgid "workspace.branches.merge.main-moved"
 msgstr ""
 "Main changed while you were reviewing; the comparison has been reloaded, "
 "please review and retry"
+
+#: src/app/main/data/workspace/branches.cljs:149
+msgid "workspace.branches.merge.nothing-selected"
+msgstr "Select at least one change to merge"
 
 #: src/app/main/data/workspace/branches.cljs:447
 msgid "workspace.branches.merge.success"

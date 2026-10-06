@@ -935,6 +935,10 @@
    ;; conflicts, a keyword id like :active-themes. A resolution is either a
    ;; whole-entity choice (:main/:branch) or a per-attr map {attr -> side}.
    [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
+   ;; the compare panel's per-change selection as a set of change keys
+   ;; (`app.common.files.branch-merge/change-key`): the entities the user
+   ;; deselected, which the merge resolves to the target side
+   [:excluded {:optional true} [::sm/set :string]]
    [:expected-main-revn {:optional true} ::sm/int]
    ;; when false (the default) the branch and its file are logically
    ;; deleted right after a successful merge, in the SAME transaction (so
@@ -960,7 +964,7 @@
    ::climit/id [[:merge-file-branch/by-profile ::rpc/profile-id]
                 [:merge-file-branch/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn keep-branch]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn keep-branch excluded]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1034,8 +1038,19 @@
              (let [merge-summary (bm/compute-merge base-data (:data main-file)
                                                    branch-data :branch->main)
                    conflicts  (:conflicts merge-summary)
-                   resolved?  (fn [c] (bm/conflict-resolved? c (get resolutions (:id c))))
+                   ;; an excluded conflict is resolved: the exclusion IS the
+                   ;; recorded choice, so it lands on the target side
+                   ;; (`bm/compute-changes`, `pp:vcs:ds-no-silent-winner`)
+                   resolved?  (fn [c] (or (contains? excluded (:key c))
+                                          (bm/conflict-resolved? c (get resolutions (:id c)))))
                    unresolved (remove resolved? conflicts)
+                   ;; the user deselected everything: refuse rather than
+                   ;; integrate nothing (the PoC's check at
+                   ;; `merge-file-branch@2feb570d3f`)
+                   _          (when (bm/nothing-to-merge? merge-summary excluded)
+                                (ex/raise :type :validation
+                                          :code :nothing-to-merge
+                                          :hint "select at least one change to merge"))
 
                    finish-branch!
                    (fn [ts]
@@ -1076,7 +1091,8 @@
                  (let [{:keys [changes unsupported]}
                        (bm/compute-changes base-data (:data main-file) branch-data
                                            (or resolutions {})
-                                           merge-summary)]
+                                           merge-summary
+                                           excluded)]
                    (cond
                      (seq unsupported)
                      (audited {:status :unsupported
@@ -1181,6 +1197,10 @@
    ;; resolutions in UI terms: id -> :main (take main) | :branch (keep
    ;; branch) | {attr -> side} (per-attr)
    [:resolutions {:optional true} [:map-of :any [:or [:enum :main :branch] [:map-of :keyword [:enum :main :branch]]]]]
+   ;; the compare panel's per-change selection as a set of change keys
+   ;; (`app.common.files.branch-merge/change-key`): main's changes the user
+   ;; deselected, which the branch keeps its own value for
+   [:excluded {:optional true} [::sm/set :string]]
    [:expected-main-revn {:optional true} ::sm/int]])
 
 (defn- persist-branch-update!
@@ -1234,7 +1254,7 @@
    ::climit/id [[:update-branch-from-main/by-profile ::rpc/profile-id]
                 [:update-branch-from-main/global]]}
   [{:keys [::mbus/msgbus] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn]}]
+   {:keys [::rpc/profile-id ::rpc/session-id branch-id resolutions expected-main-revn excluded]}]
   (bp/with-policies
     (check-branching-enabled!)
     (let [branch (db/get* cfg :file-branch {:id branch-id})]
@@ -1364,7 +1384,8 @@
                  (bm/compute-merge base-data main-raw branch-cmp :main->branch)
 
                  conflicts  (:conflicts merge-summary)
-                 resolved?  (fn [c] (bm/conflict-resolved? c (get resolutions (:id c))))
+                 resolved?  (fn [c] (or (contains? excluded (:key c))
+                                        (bm/conflict-resolved? c (get resolutions (:id c)))))
                  unresolved (remove resolved? conflicts)
 
                  ;; Resolutions arrive document-keyed (`:main` = main's value).
@@ -1384,6 +1405,14 @@
                (audited {:status :conflicts :conflicts conflicts :main-revn (:revn main-file)}
                         tpoint :update-from-main)
 
+               (bm/nothing-to-merge? merge-summary excluded)
+               ;; the user deselected everything: refuse rather than
+               ;; reposition the base over work nothing applies (the PoC's
+               ;; check at `merge-file-branch@2feb570d3f`, mirrored here)
+               (ex/raise :type :validation
+                         :code :nothing-to-merge
+                         :hint "select at least one change to merge")
+
                :else
                ;; target = branch, source = main -> changes that bring main's
                ;; net changes (and conflicts resolved to main) into the branch.
@@ -1394,7 +1423,8 @@
                (let [{:keys [changes unsupported]}
                      (bm/compute-changes base-data branch-cmp main-raw
                                          (or inverted {})
-                                         merge-summary)]
+                                         merge-summary
+                                         excluded)]
                  (cond
                    (seq unsupported)
                    (audited {:status :unsupported
@@ -1407,7 +1437,7 @@
                                                     (:changes merge-summary)))}
                             tpoint :update-from-main)
 
-                   (and (empty? changes) (not branch-diverged?))
+                   (and (empty? changes) (not branch-diverged?) (empty? excluded))
                    (let [ts (ct/now)]
                      ;; the branch is in sync with main: the repositioned
                      ;; base already represents the branch, so the op log
@@ -1416,7 +1446,11 @@
                      ;; be emptied only when what it encodes already sits in
                      ;; the base. A diverged branch holds its own work in
                      ;; that log, so it falls through to the squash below,
-                     ;; which re-derives the net against the new base.
+                     ;; which re-derives the net against the new base. The
+                     ;; shortcut needs no exclusion in play either: excluded
+                     ;; main work is NOT in the branch, so the branch differs
+                     ;; from the repositioned base and the squash has to
+                     ;; record that difference as a branch-side delta.
                      (db/delete! conn :file-branch-change {:branch-id branch-id})
                      ;; in sync, so no row is copied and the pairs are all
                      ;; the id space the base needs: unpaired rows stay

@@ -743,7 +743,7 @@
 
 .compare-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: var(--sp-s);
   padding: var(--sp-s);
@@ -755,6 +755,10 @@
   &:hover,
   &.is-selected {
     background-color: var(--color-background-quaternary);
+  }
+
+  &.is-excluded {
+    opacity: 0.55;
   }
 
   &.status-added {
@@ -772,6 +776,11 @@
   &.status-conflict {
     border-inline-start-color: var(--color-foreground-warning);
   }
+}
+
+.compare-item-check {
+  display: flex;
+  align-items: center;
 }
 
 .compare-item-icon {
@@ -963,6 +972,10 @@
 
 .compare-footer-conflicts {
   color: var(--color-foreground-warning);
+}
+
+.compare-footer-selected {
+  color: var(--color-foreground-secondary);
 }
 
 .compare-footer-actions {
