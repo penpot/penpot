@@ -228,3 +228,11 @@ uncommitted changes to `cs4233-docs/PROJECT_LOG.md`.)
 
 - AI pointed to the "CI/CD: Group Pipeline" workflow and noted that
   Penpot's `_DEVELOP` / `_STAGING` runs wait on Penpot's own servers.
+
+### 21. First pipeline run (2026-10-05)
+
+(Kyle sent a screenshot: "CI/CD: Group Pipeline" run #3 on `kylebranch`,
+Success in 6m 24s.)
+
+- All test jobs passed on the exporter work. Build and Deploy were
+  skipped by design: they only run on a push or on `main`.
