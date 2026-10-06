@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC Sucursal en España SL
 
-(ns backend-tests.graph-overlay-console-test
+(ns backend-tests.relation-overlay-console-test
   "Pure tests over the console's parse-gate-run pipeline
   (`app.graph.relation-overlay.console/run-query`) and the default query it ships
   (`app.graph.debug/default-query`).
