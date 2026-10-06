@@ -261,3 +261,9 @@
     (t/testing "images from another file are dropped, leaving the default fill when nothing is left"
       (t/is (= [(:fills gradient-span) [red-fill] (txt/get-default-text-fills)]
                (map :fills (spans-of (clipboard/clean-content content (assoc same :same-file? false)))))))))
+
+(t/deftest replace-custom-fonts
+  (t/testing "only custom fonts become the default font"
+    (let [content (text-content gradient-span (assoc gradient-span :font-id "gfont-roboto" :font-family "Roboto"))]
+      (t/is (= ["sourcesanspro" "gfont-roboto"]
+               (map :font-id (spans-of (clipboard/replace-custom-fonts content))))))))

@@ -885,7 +885,7 @@
                 (assoc change :index (get map-ids (:old-id change)))
                 change)))
 
-          (process-shape [valid-file-ids frame-id parent-id shape]
+          (process-shape [valid-file-ids other-team? frame-id parent-id shape]
             (cond-> shape
               :always
               (assoc :frame-id frame-id :parent-id parent-id)
@@ -896,7 +896,11 @@
               (assoc :shapes [])
 
               (cfh/text-shape? shape)
-              (ctt/remove-external-typographies valid-file-ids)))]
+              (ctt/remove-external-typographies valid-file-ids)
+
+              ;; Custom font ids differ between teams.
+              (and other-team? (cfh/text-shape? shape))
+              (update :content text-clipboard/replace-custom-fonts)))]
 
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
@@ -949,7 +953,11 @@
 
                   valid-file-ids (conj (set (keys libraries)) file-id)
 
-                  objects      (update-vals objects (partial process-shape valid-file-ids frame-id parent-id))
+                  ;; Shapes copied before the team was recorded count as same team.
+                  other-team?  (and (some? (:team-id pdata))
+                                    (not= (:team-id pdata) (:current-team-id state)))
+
+                  objects      (update-vals objects (partial process-shape valid-file-ids other-team? frame-id parent-id))
 
                   all-objects  (merge page-objects objects)
 

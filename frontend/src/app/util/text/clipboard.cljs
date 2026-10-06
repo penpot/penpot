@@ -328,6 +328,14 @@
                :font-style (:style variant))
         (ctt/remove-typography-from-node))))
 
+(defn replace-custom-fonts
+  "`content` with every custom font replaced by the default one, for pasting it
+  into another team, where custom fonts have other ids."
+  [content]
+  (txt/transform-nodes #(= :custom (cfnt/font-id->backend (:font-id %)))
+                       replace-custom-font
+                       content))
+
 (defn- drop-image-fills
   "`node` without image fills, or with the default fill when it had only those."
   [{:keys [fills] :as node}]
