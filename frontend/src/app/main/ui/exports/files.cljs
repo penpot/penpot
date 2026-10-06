@@ -32,7 +32,7 @@
   [files file-id]
   (mapv #(cond-> %
            (= file-id (:id %))
-           (assoc :export-error? true
+           (assoc :export-error true
                   :loading false))
         files))
 
@@ -42,7 +42,7 @@
   [files file-id]
   (mapv #(cond-> %
            (= file-id (:id %))
-           (assoc :export-cancelled? true
+           (assoc :export-cancelled true
                   :loading false))
         files))
 
@@ -50,7 +50,7 @@
   [files file-id]
   (mapv #(cond-> %
            (= file-id (:id %))
-           (assoc :export-success? true
+           (assoc :export-success true
                   :loading false))
         files))
 
@@ -83,14 +83,15 @@
   {::mf/private true}
   [{:keys [file]}]
   (let [level (cond
-                (:export-success? file) :success
-                (:export-error? file)   :error
-                :else                   :info)]
+                (:export-success file)   :success
+                (:export-error file)     :error
+                (:export-cancelled file) :warning
+                :else                    :info)]
     [:div {:class (stl/css-case
                    :file-entry true
                    :loading  (:loading file)
-                   :success  (:export-success? file)
-                   :error    (:export-error? file))}
+                   :success  (:export-success file)
+                   :error    (:export-error file))}
 
      (if (:loading file)
        [:*
@@ -102,21 +103,32 @@
                     :typography t/body-large}
           (:name file)]]
 
-        (when (or (some? (:progress file)) (:queued file) (:export-cancelled? file))
-          (let [progress  (:progress file)
-                cancelled (:export-cancelled? file)
-                queued?   (not (or (some? progress) cancelled))]
+        ;; while the file is being produced: waiting for a worker, then
+        ;; the milestone of the job
+        (when (or (some? (:progress file)) (:queued file))
+          (let [progress (:progress file)]
             [:> text* {:class (stl/css :status-message)
                        :as "span"
-                       :typography (if queued? t/body-medium t/body-large)
+                       :typography (if (some? progress) t/body-large t/body-medium)
                        :role "status"
                        :aria-live "polite"}
-             (cond cancelled        (tr "labels.export-cancelled")
-                   (some? progress) (jp/milestone-text progress)
-                   :else            (tr "labels.queued"))]))]
+             (if (some? progress)
+               (jp/milestone-text progress)
+               (tr "labels.queued"))]))]
 
-       [:> context-notification {:level level
-                                 :content (:name file)}])]))
+       [:*
+        [:> context-notification {:level level
+                                  :content (:name file)}]
+
+        ;; a cancelled file is a neutral terminal state, but the label is
+        ;; what tells the user why no artifact came out
+        (when (:export-cancelled file)
+          [:> text* {:class (stl/css :status-message)
+                     :as "span"
+                     :typography t/body-medium
+                     :role "status"
+                     :aria-live "polite"}
+           (tr "labels.export-cancelled")])])]))
 
 (mf/defc export-dialog
   {::mf/register modal/components

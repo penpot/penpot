@@ -307,20 +307,18 @@
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
+        ;; the message is user-facing text already (a hint or a translated
+        ;; label), never a key
         (if (some? (:error entry))
-          (tr (:error entry))
+          (:error entry)
           (tr "dashboard.import.analyze-error"))]
 
        import-error?
        [:> text* {:class (stl/css :error-message)
                   :as "span"
                   :typography t/body-small}
-        ;; backend-provided error key, dynamic by design
-        #_{:clj-kondo/ignore [:penpot/tr-dynamic]}
         (if (some? (:error entry))
-          (tr (:error entry))
+          (:error entry)
           (tr "labels.error"))]
 
        (and (= :import-queued status) (not import-success?))
