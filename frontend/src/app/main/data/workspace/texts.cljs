@@ -44,6 +44,7 @@
    [app.render-wasm.text-editor :as wasm.text-editor]
    [app.util.clipboard :as clipboard]
    [app.util.text-editor :as ted]
+   [app.util.text.clipboard :as text-clipboard]
    [app.util.text.content :as tc]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -1441,19 +1442,23 @@
       (rx/of event)
       (rx/empty))))
 
-(defn- editor-selected-text
-  "Plain text of the current WASM editor selection, or nil when there is none."
-  []
+(defn editor-selection-clipboard-data
+  "Clipboard items for the WASM editor selection, or nil when nothing is selected.
+  The HTML also carries the styled content for pasting it in Penpot."
+  [state]
   (when (and (wasm.text-editor/text-editor-has-focus?)
              (wasm.text-editor/text-editor-has-selection?))
     (let [text (wasm.text-editor/text-editor-export-selection)]
-      (when (seq text) text))))
-
-(defn- write-selection-to-clipboard
-  "Write `text` as plain text and HTML; Windows apps often prefer CF_HTML."
-  [text]
-  (clipboard/to-clipboard-multi {"text/plain" text
-                                 "text/html"  (clipboard/plain-text->html text)}))
+      (when (seq text)
+        (let [content (when (features/active-feature? state "text-editor-wasm/v1-html-paste")
+                        (-> (wasm.text-editor/text-editor-get-active-shape-id)
+                            (wasm.text-editor/selection-content)))
+              payload (when (some? content)
+                        (text-clipboard/payload->html content
+                                                      (:current-file-id state)
+                                                      (:current-team-id state)))]
+          {"text/plain" text
+           "text/html"  (clipboard/plain-text->html text payload)})))))
 
 (defn- on-clipboard-error
   [cause]
@@ -1471,9 +1476,9 @@
   []
   (ptk/reify ::v3-copy-selection
     ptk/WatchEvent
-    (watch [_ _ _]
-      (if-let [text (editor-selected-text)]
-        (->> (rx/from (write-selection-to-clipboard text))
+    (watch [_ state _]
+      (if-let [data (editor-selection-clipboard-data state)]
+        (->> (rx/from (clipboard/to-clipboard-multi data))
              (rx/ignore)
              (rx/catch on-clipboard-error))
         (rx/empty)))))
@@ -1483,9 +1488,9 @@
   []
   (ptk/reify ::v3-cut-selection
     ptk/WatchEvent
-    (watch [_ _ _]
-      (if-let [text (editor-selected-text)]
-        (->> (rx/from (write-selection-to-clipboard text))
+    (watch [_ state _]
+      (if-let [data (editor-selection-clipboard-data state)]
+        (->> (rx/from (clipboard/to-clipboard-multi data))
              (rx/mapcat (fn [_]
                           ;; Delete only once the text is safely on the clipboard,
                           ;; so a refused clipboard cannot lose the selection.

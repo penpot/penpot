@@ -22,7 +22,6 @@
    [app.render-wasm.api :as wasm.api]
    [app.render-wasm.text-editor :as text-editor]
    [app.render-wasm.text-paste :as text-paste]
-   [app.util.clipboard :as clipboard]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.text.clipboard :as text-clipboard]
@@ -154,6 +153,13 @@
 
       :else
       (sync-wasm-text-editor-content!))))
+
+(defn- write-clipboard-items
+  "Write `items` (mime type -> string) to the DataTransfer of a copy or cut event.
+  Windows apps prefer text/html, or they may paste the editor's empty `<br>`."
+  [^js data items]
+  (doseq [[mime value] items]
+    (.setData data mime value)))
 
 (defn- reset-input-node
   "Empties the contenteditable capture surface and restores a collapsed caret
@@ -343,30 +349,19 @@
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-has-selection?)
-               (let [text (or (text-editor/text-editor-export-selection) "")
-                     html (clipboard/plain-text->html text)
-                     data (.-clipboardData event)]
-                 ;; text/html matters on Windows: many apps prefer CF_HTML, and
-                 ;; without it they can pick up the empty contenteditable `<br>`.
-                 (.setData data "text/plain" text)
-                 (.setData data "text/html" html))))))
+             (when-let [items (dwt/editor-selection-clipboard-data @st/state)]
+               (write-clipboard-items (.-clipboardData event) items)))))
 
         on-cut
         (mf/use-fn
          (fn [^js event]
            (when (text-editor/text-editor-has-focus?)
              (dom/prevent-default event)
-             (when (text-editor/text-editor-has-selection?)
-               (let [text (or (text-editor/text-editor-export-selection) "")
-                     html (clipboard/plain-text->html text)
-                     data (.-clipboardData event)]
-                 (.setData data "text/plain" text)
-                 (.setData data "text/html" html)
-                 (when (seq text)
-                   (text-editor/text-editor-delete-backward)
-                   (sync-wasm-text-editor-content!)
-                   (wasm.api/request-render-preserving-target "text-cut"))))
+             (when-let [items (dwt/editor-selection-clipboard-data @st/state)]
+               (write-clipboard-items (.-clipboardData event) items)
+               (text-editor/text-editor-delete-backward)
+               (sync-wasm-text-editor-content!)
+               (wasm.api/request-render-preserving-target "text-cut"))
              (reset-input-node (mf/ref-val contenteditable-ref)))))
 
         on-key-down

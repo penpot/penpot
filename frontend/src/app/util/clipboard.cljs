@@ -24,16 +24,14 @@
        :allowHTMLPaste false})
 
 (defn plain-text->html
-  "Build a minimal text/html clipboard payload from plain text.
-
-  Windows apps often prefer CF_HTML over CF_UNICODETEXT; writing only
-  text/plain from a contenteditable copy handler can leave them with the
-  editor surface's empty/`<br>` fallback (a lone newline)."
-  [text]
-  (let [escaped (-> (or text "")
-                    (dom/escape-html)
-                    (str/replace "\n" "<br>"))]
-    (str "<meta charset=\"utf-8\">" escaped)))
+  "Minimal text/html clipboard payload for `text`, with `hidden-html` before it.
+  Windows apps prefer CF_HTML, and may otherwise paste the editor's empty `<br>`."
+  ([text] (plain-text->html text nil))
+  ([text hidden-html]
+   (let [escaped (-> (or text "")
+                     (dom/escape-html)
+                     (str/replace "\n" "<br>"))]
+     (str "<meta charset=\"utf-8\">" hidden-html escaped))))
 
 (defn- from-data-transfer
   "Get clipboard stream from DataTransfer instance"
