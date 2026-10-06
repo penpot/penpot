@@ -6,6 +6,7 @@
 (ns app.common.files.variant
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.variant :as ctv]))
 
@@ -35,6 +36,18 @@
             reverse)
        []))))
 
+(defn extract-properties-names
+  "Get the names of the properties of the component of which this shape
+   is main instance."
+  [data main-instance]
+  (if (and (ctk/main-instance? main-instance)
+           (ctv/variant-shape? main-instance))
+    (->> main-instance
+         (#(ctkl/get-component data (:component-id %) true))
+         :variant-properties
+         (map :name))
+    []))
+
 (defn extract-properties-values
   "Get a map of variant property names to their distinct possible values,
    collected from all components that belong to the variant container.
@@ -59,6 +72,7 @@
    Example return:
    [<main-shape-a-id> <main-shape-b-id>]"
   [data component]
+  (assert (ctv/valid-variant-component? component) "expected valid component variant")
   (when-let [variant-id (:variant-id component)]
     (let [page-id (:main-instance-page component)
           objects (-> (dm/get-in data [:pages-index page-id])

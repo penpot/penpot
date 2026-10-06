@@ -11,6 +11,7 @@
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.variants :as thv]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -63,6 +64,42 @@
     ;; Verify the order is maintained (reversed from shapes order)
     (t/is (= (:variant-id (first result)) (thi/id :v01)))
     (t/is (= (:variant-id (second result)) (thi/id :v01)))))
+
+;; ============================================================
+;; extract-properties-names
+;; ============================================================
+
+(t/deftest extract-properties-names-non-component
+  (let [file    (-> (thf/sample-file :file1)
+                    (ths/add-sample-shape :s01))
+        data    (:data file)
+        shape   (ths/get-shape file :s01)]
+    (t/is (= (fv/extract-properties-names data shape)
+             []))))
+
+(t/deftest extract-properties-names-non-variant
+  (let [file    (-> (thf/sample-file :file1)
+                    (tho/add-simple-component :c01 :m01 :s01))
+        data    (:data file)
+        main    (ths/get-shape file :m01)]
+    (t/is (= (fv/extract-properties-names data main)
+             []))))
+
+(t/deftest extract-properties-names-normal
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        data    (:data file)
+        main1   (ths/get-shape file :m01)]
+    (t/is (= (fv/extract-properties-names data main1)
+             ["Property 1"]))))
+
+(t/deftest extract-properties-names-two-properties
+  (let [file    (-> (thf/sample-file :file1)
+                    (thv/add-variant-two-properties :v01 :c01 :m01 :c02 :m02))
+        data    (:data file)
+        main1   (ths/get-shape file :m01)]
+    (t/is (= (fv/extract-properties-names data main1)
+             ["Property 1" "Property 2"]))))
 
 ;; ============================================================
 ;; extract-properties-values
