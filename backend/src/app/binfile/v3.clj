@@ -74,7 +74,7 @@
   [:map {:title "StorageObject"}
    [:id ::sm/uuid]
    [:size ::sm/int]
-   [:content-type :string]
+   [:content-type bfc/schema:content-type]
    [:bucket [::sm/one-of {:format :string} sto/valid-buckets]]
    [:hash {:optional true} :string]])
 
@@ -871,6 +871,7 @@
     (doseq [{:keys [id entry]} entries]
       (let [object  (-> (read-entry input entry)
                         (decode-storage-object)
+                        (d/update-when :content-type bfc/normalize-content-type)
                         (update :bucket d/nilv sto/default-bucket)
                         (validate-storage-object))
 
@@ -906,7 +907,17 @@
                       :expected-hash (:hash object)
                       :found-hash (sto/get-hash content))))
 
-        (let [params  (-> object
+        (let [clean   (when (bfc/svg-object? object)
+                        (let [limit (::bfc/import-max-object-size cfg)
+                              raw   (with-open [istream (cond-> (zip-entry-stream input (get-zip-entry input path))
+                                                          limit (size-limiting-stream limit))]
+                                      (io/read istream))]
+                          (bfc/sanitize-imported-svg object raw)))
+              content (if-let [{:keys [bytes hash]} clean]
+                        (-> (sto/content bytes)
+                            (sto/wrap-with-hash hash))
+                        content)
+              params  (-> object
                           (dissoc :id :size)
                           (assoc ::sto/content content)
                           (assoc ::sto/deduplicate? true)

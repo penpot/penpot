@@ -25,6 +25,23 @@
 (def tempfile-types
   (conj image-types "application/pdf" "application/zip"))
 
+(def storage-object-types
+  "Every content-type the system stores in storage objects: uploaded
+  images and fonts, generated thumbnails, temporary files and the
+  `application/octet-stream` fallback used by file data and font
+  variants. Sorted for determinism. Every member must have a
+  producing code path; anticipated but unproduced types (such as
+  `image/apng`) stay out until some flow actually stores them.
+  Import boundaries normalize the stored string (lowercase, no
+  parameters) before checking membership, so legacy spelling
+  variants keep importing while unknown types are rejected."
+  (into (sorted-set)
+        (concat image-types
+                font-types
+                ["application/octet-stream"
+                 "application/pdf"
+                 "application/zip"])))
+
 (defn format->extension
   [format]
   (case format

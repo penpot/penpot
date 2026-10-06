@@ -15,6 +15,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
@@ -27,6 +28,7 @@
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.media.svg :as svg]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
@@ -898,3 +900,74 @@
                          (cons (:id file)))
         load-fn     #(get-file cfg % :migrate? false)]
     (weak/loadable-weak-value-map library-ids load-fn {id file})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SVG IMPORT SANITIZATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def svg-content-type
+  "Canonical content type of SVG media objects."
+  "image/svg+xml")
+
+(defn normalize-content-type
+  "Canonicalize a stored content-type: lowercase, trimmed,
+  parameters after `;` dropped. Returns nil for missing or unusable
+  values so ancient bundle entries without content-type keep passing
+  through untouched."
+  [ctype]
+  (when (string? ctype)
+    (let [clean (-> ctype
+                    (str/split #";" 2)
+                    (first)
+                    (str/trim)
+                    (str/lower))]
+      (when-not (str/empty? clean)
+        clean))))
+
+(defn svg-object?
+  "True when the storage `object` claims the canonical SVG content
+  type. Expects an already normalized object (see
+  `normalize-content-type`): every import path normalizes the
+  metadata right after reading it, so the comparison stays an exact
+  match in a single place."
+  [object]
+  (= svg-content-type (:content-type object)))
+
+(def schema:content-type
+  "Typed content-type for binfile storage objects: a member of
+  `cm/storage-object-types`. Values are canonicalized with
+  `normalize-content-type` before validation, so legacy spellings
+  keep importing while unknown types are rejected."
+  [::sm/one-of {:format :string} cm/storage-object-types])
+
+(defn check-storage-content-type
+  "Check an imported storage `object` (already normalized, see
+  `normalize-content-type`) against `cm/storage-object-types`.
+  Returns nil when the type is allowed; raises `:type :validation`
+  with `:code :media-type-not-allowed` (same as the upload path)
+  when it is missing or unknown, so crafted bundles fail closed."
+  [object]
+  (when-not (contains? cm/storage-object-types (:content-type object))
+    (ex/raise :type :validation
+              :code :media-type-not-allowed
+              :hint "storage object declares an unknown content-type"
+              :content-type (:content-type object))))
+
+(defn sanitize-imported-svg
+  "Sanitize the raw `bytes` of an imported storage `object` when it
+  holds an SVG document. Expects an already normalized object (see
+  `normalize-content-type`); returns nil when the object is not an
+  SVG.
+
+  Otherwise returns a map with the sanitized `:bytes`, their `:size`
+  and their blake2b `:hash`, ready to persist with `sto/put-object!`.
+
+  Raises a `:validation` exception when the SVG cannot be parsed, the
+  same error the upload path reports."
+  [object ^bytes raw]
+  (when (svg-object? object)
+    (let [sanitized (svg/sanitize-svg (String. ^bytes raw "UTF-8"))
+          bytes     (.getBytes ^String sanitized "UTF-8")]
+      {:bytes bytes
+       :size  (alength ^bytes bytes)
+       :hash  (sto/calculate-hash (java.io.ByteArrayInputStream. bytes))})))
