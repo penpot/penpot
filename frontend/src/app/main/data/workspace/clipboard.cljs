@@ -1067,7 +1067,8 @@
     (watch [_ state  _]
       (let [[text content]
             (if (v3-html-paste? state)
-              (when-let [fragment (text-clipboard/html->fragment html)]
+              (when-let [fragment (some-> (text-clipboard/html->fragment html)
+                                          (text-clipboard/without-overrides))]
                 [(text-paste/fragment->text fragment)
                  (text-paste/fragment->content fragment (txt/get-default-text-attrs))])
               (let [style (deref refs/workspace-clipboard-style)
