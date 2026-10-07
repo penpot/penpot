@@ -14,6 +14,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.notifications :as ntf]
    [app.util.websocket :as util-ws]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -180,26 +181,6 @@
                 (recur)))))))
     (deref result (inc ms) nil)))
 
-(defn- open-subscription!
-  "Runs `handler` for `profile-id` against a live system, returning the
-  output channel that receives whatever the subscription forwards."
-  [handler profile-id params]
-  (let [output-ch (sp/chan :buf (sp/dropping-buffer 64))
-        state     (atom {})
-        wsp       (make-wsp profile-id state output-ch)]
-    ((get-method ws/handle-message handler) th/*system* wsp params)
-    output-ch))
-
-(defn- wait-until
-  "Polls `pred` until it holds or `ms` elapses. Returns whether it held."
-  [pred ms]
-  (let [deadline (+ (System/currentTimeMillis) ms)]
-    (loop []
-      (cond
-        (pred)                                   true
-        (>= (System/currentTimeMillis) deadline) false
-        :else (do (Thread/sleep 25) (recur))))))
-
 (defn- open-registered-connection
   "Registers a connection for `profile-id` in the real registry, so the
   revocation watcher can find it, and returns the pieces a test needs to
@@ -211,6 +192,28 @@
         wsp      (make-wsp profile-id ws-state output)]
     (ws/register-connection id wsp)
     {:id id :wsp wsp :state ws-state :output output}))
+
+(defn- open-subscription!
+  "Opens a registered subscription for `profile-id` and returns the
+  output channel that receives whatever it forwards.
+
+  The connection goes through the real registry on purpose: these tests
+  assert the end-to-end path, where a mutation announces the change and
+  the watcher closes the subscription."
+  [handler profile-id params]
+  (let [{:keys [wsp output]} (open-registered-connection profile-id)]
+    ((get-method ws/handle-message handler) th/*system* wsp params)
+    output))
+
+(defn- wait-until
+  "Polls `pred` until it holds or `ms` elapses. Returns whether it held."
+  [pred ms]
+  (let [deadline (+ (System/currentTimeMillis) ms)]
+    (loop []
+      (cond
+        (pred)                                   true
+        (>= (System/currentTimeMillis) deadline) false
+        :else (do (Thread/sleep 25) (recur))))))
 
 (defn- subscribe
   [{:keys [wsp] :as conn} handler params]
@@ -332,24 +335,33 @@
           change  {:type :file-change
                    :file-id file-id
                    :revn 1
-                   :changes [{:type :add :id (uuid/next)}]}
-          out     (open-subscription! :subscribe-file (:id editor)
-                                      {:file-id file-id})]
+                   :changes [{:type :add :id (uuid/next)}]}]
 
-      (t/testing "member receives file changes before revocation"
-        (publish file-id change)
-        (t/is (some? (poll-msg! out :file-change revocation-timeout-ms))))
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-file {:file-id file-id}))
+                out (:output conn)]
 
-      (t/testing "owner removes the member from the team"
-        (let [result (th/command! {::th/type :delete-team-member
-                                   ::rpc/profile-id (:id owner)
-                                   :team-id (:id team)
-                                   :member-id (:id editor)})]
-          (t/is (th/success? result))))
+            (t/testing "member receives file changes before revocation"
+              (publish file-id change)
+              (t/is (some? (poll-msg! out :file-change
+                                      revocation-timeout-ms))))
 
-      (t/testing "revoked member stops receiving file changes"
-        (publish file-id (assoc change :revn 2))
-        (t/is (nil? (poll-msg! out :file-change revocation-timeout-ms)))))))
+            (t/testing "owner removes the member from the team"
+              (let [result (th/command! {::th/type :delete-team-member
+                                         ::rpc/profile-id (:id owner)
+                                         :team-id (:id team)
+                                         :member-id (:id editor)})]
+                (t/is (th/success? result))))
+
+            (t/testing "the mutation alone drops the subscription"
+              (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+
+            (t/testing "revoked member stops receiving file changes"
+              (publish file-id (assoc change :revn 2))
+              (t/is (nil? (poll-msg! out :file-change
+                                     revocation-timeout-ms))))))))))
 
 (t/deftest revoked-member-stops-receiving-library-changes
   (let [owner  (th/create-profile* 1 {:is-active true})
@@ -365,23 +377,32 @@
                    :team-id team-id
                    :file-id (uuid/next)
                    :revn 1
-                   :changes [{:type :add :id (uuid/next)}]}
-          out     (open-subscription! :subscribe-team (:id editor)
-                                      {:team-id team-id})]
+                   :changes [{:type :add :id (uuid/next)}]}]
 
-      (t/testing "member receives library changes before revocation"
-        (publish team-id change)
-        (t/is (some? (poll-msg! out :library-change revocation-timeout-ms))))
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-team {:team-id team-id}))
+                out (:output conn)]
 
-      (t/testing "member leaves the team"
-        (let [result (th/command! {::th/type :leave-team
-                                   ::rpc/profile-id (:id editor)
-                                   :id team-id})]
-          (t/is (th/success? result))))
+            (t/testing "member receives library changes before revocation"
+              (publish team-id change)
+              (t/is (some? (poll-msg! out :library-change
+                                      revocation-timeout-ms))))
 
-      (t/testing "revoked member stops receiving library changes"
-        (publish team-id (assoc change :revn 2))
-        (t/is (nil? (poll-msg! out :library-change revocation-timeout-ms)))))))
+            (t/testing "member leaves the team"
+              (let [result (th/command! {::th/type :leave-team
+                                         ::rpc/profile-id (:id editor)
+                                         :id team-id})]
+                (t/is (th/success? result))))
+
+            (t/testing "leaving drops the team subscription"
+              (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))
+
+            (t/testing "revoked member stops receiving library changes"
+              (publish team-id (assoc change :revn 2))
+              (t/is (nil? (poll-msg! out :library-change
+                                     revocation-timeout-ms))))))))))
 
 (t/deftest role-downgrade-keeps-revocation-irrelevant
   "A role change that does not remove read access must not be treated as
@@ -546,7 +567,7 @@
           (t/testing "the event is not applied until it is announced"
             (t/is (= (:id file) (subscribed-file conn))))
 
-          (ws/notify-permissions-changed th/*system* (:id editor))
+          (ntf/notify-permissions-changed th/*system* (:id editor))
 
           (t/testing "the watcher closes the subscription off the bus"
             (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))))
@@ -568,7 +589,156 @@
       (t/is (some? (poll-msg! output :notification revocation-timeout-ms))))
 
     (t/testing "an internal revocation event never reaches the client"
-      (ws/notify-permissions-changed th/*system* (:id profile))
+      (ntf/notify-permissions-changed th/*system* (:id profile))
       (t/is (nil? (poll-msg! output :profile-permissions-changed
                              revocation-timeout-ms))))))
 
+
+;; --- MUTATIONS THAT ANNOUNCE THE CHANGE
+;;
+;; The watcher only helps if the mutations that can revoke access
+;; actually announce it. Each of these asserts the announcement reaches
+;; the bus, and that a change which does not remove access announces
+;; nothing harmful.
+
+(defn- captured-events
+  "Runs `f` collecting the revocation events published on the internal
+  topic."
+  [f]
+  (let [events (atom [])
+        real   mbus/pub!]
+    (with-redefs [mbus/pub! (fn [bus & {:keys [topic message]}]
+                              (when (= ntf/internal-revocation-topic topic)
+                                (swap! events conj message))
+                              (apply real bus topic message))]
+      (f))
+    @events))
+
+(defn- event-for
+  [events profile-id]
+  (first (filter #(= profile-id (:profile-id %)) events)))
+
+(t/deftest removing-a-member-announces-the-revocation
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [events (captured-events
+                  #(th/command! {::th/type :delete-team-member
+                                 ::rpc/profile-id (:id owner)
+                                 :team-id (:id team)
+                                 :member-id (:id editor)}))]
+      (t/is (= {:type :profile-permissions-changed
+                :profile-id (:id editor)}
+               (event-for events (:id editor)))))))
+
+(t/deftest a-role-change-announces-and-still-closes-nothing
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          events  (captured-events
+                   #(th/command! {::th/type :update-team-member-role
+                                  ::rpc/profile-id (:id owner)
+                                  :team-id (:id team)
+                                  :member-id (:id editor)
+                                  :role :viewer}))]
+
+      (t/testing "the change is announced so subscriptions get re-checked"
+        (t/is (some? (event-for events (:id editor)))))
+
+      (t/testing "a viewer can still read, so the subscription survives"
+        (with-clean-registry
+          (fn []
+            (let [conn (-> (open-registered-connection (:id editor))
+                           (subscribe :subscribe-file {:file-id (:id file)}))]
+              (t/is (zero? (ws/revalidate-profile-subscriptions
+                            th/*system* (:id editor))))
+              (t/is (some? (subscribed-file conn))))))))))
+
+(t/deftest deleting-a-file-announces-to-the-whole-team
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project (th/create-project* 1 {:profile-id (:id editor)
+                                         :team-id (:id team)})
+          file    (th/create-file* 1 {:profile-id (:id editor)
+                                      :project-id (:id project)})
+          events  (captured-events
+                   #(th/command! {::th/type :delete-file
+                                  ::rpc/profile-id (:id owner)
+                                  :id (:id file)}))]
+
+      ;; Which profiles had the file open is only known to their own
+      ;; connections, so the team is announced wholesale and the watcher
+      ;; re-checks each member.
+      (t/is (some? (event-for events (:id editor))))
+      (t/is (some? (event-for events (:id owner)))))))
+
+(t/deftest leaving-a-team-announces-and-tells-only-the-leaver
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        other  (th/create-profile* 3 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id other)
+                           :role :editor})
+    (let [published (atom [])
+          real      mbus/pub!]
+      (with-redefs [mbus/pub! (fn [bus & args]
+                                (let [opts (apply hash-map args)]
+                                  (swap! published conj opts))
+                                (apply real bus args))]
+        (th/command! {::th/type :leave-team
+                      ::rpc/profile-id (:id editor)
+                      :id (:id team)}))
+
+      (t/testing "the leaver is told they were removed, so the client leaves"
+        (let [msg (->> @published
+                       (filter #(= (:id editor) (:topic %)))
+                       (map :message)
+                       first)]
+          (t/is (= :team-membership-change (:type msg)))
+          (t/is (= :removed (:change msg)))
+          (t/is (= (:id team) (:team-id msg)))))
+
+      (t/testing "no other member is told they were removed"
+        (t/is (empty? (filter #(= (:id other) (:topic %)) @published)))))))
+
+(t/deftest deleting-a-share-link-announces-nothing
+  ;; A share-link visitor never passes the websocket subscribe check:
+  ;; `check-read-permissions!` is called without a share-id, and that
+  ;; arity only considers team membership. There is no subscription to
+  ;; revoke, so announcing would be noise.
+  (let [owner (th/create-profile* 1 {:is-active true})
+        file  (th/create-file* 1 {:profile-id (:id owner)
+                                  :project-id (:default-project-id owner)})]
+    (th/command! {::th/type :create-share-link
+                  ::rpc/profile-id (:id owner)
+                  :file-id (:id file)
+                  :who-comment "none"
+                  :who-inspect "none"
+                  :pages #{}})
+    (let [link-id (:id (db/exec-one! th/*system*
+                                     ["select id from share_link where file_id = ?"
+                                      (:id file)]))
+          events  (captured-events
+                   #(th/command! {::th/type :delete-share-link
+                                  ::rpc/profile-id (:id owner)
+                                  :id link-id}))]
+      (t/is (some? link-id))
+      (t/is (empty? events)))))

@@ -22,6 +22,7 @@
    [app.nitrate :as nitrate]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.notifications :as notifications]
    [app.util.websocket :as ws]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
@@ -354,40 +355,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A subscription is authorized once, when it is opened, and that single
-;; decision is then trusted for as long as the connection lives. When a
-;; mutation can take access away, it announces it here and every backend
+;; decision is then trusted for as long as the connection lives. The
+;; mutation that changes access announces it on
+;; `app.rpc.notifications/internal-revocation-topic`, and every backend
 ;; re-verifies the subscriptions it owns for that profile.
 ;;
-;; The announcement travels over the message bus precisely because the
-;; connection registry is local: the RPC that revokes access runs on
-;; whichever instance received the request, which is usually not the one
-;; holding the socket.
-
-(def internal-revocation-topic
-  "Message-bus topic carrying backend-internal revocation events.
-
-  Deliberately not the `uuid/zero` system topic: that one is piped
-  straight into the client output channel, so anything published there
-  would reach every connected client.
-
-  No client can subscribe here. `:subscribe-file` and
-  `:subscribe-team` only accept ids that first pass a permission check,
-  so a client can never make the bus deliver this topic to it."
-  "internal:subscription-revocation")
-
-(defn notify-permissions-changed
-  "Asks every backend to re-verify the subscriptions currently held by
-  `profile-id`, because something may have changed its access.
-
-  Fire-and-forget: `mbus/pub!` only enqueues, so a subscription can be
-  revoked before the announcement reaches the instance that owns it.
-  That errs on the safe side (cutting a still-live subscription), and
-  the client re-subscribes on its own."
-  [{:keys [::mbus/msgbus]} profile-id]
-  (mbus/pub! msgbus
-             :topic internal-revocation-topic
-             :message {:type :profile-permissions-changed
-                       :profile-id profile-id}))
+;; The announcement travels over the message bus precisely because this
+;; registry is local: the RPC that revokes access runs on whichever
+;; instance received the request, which is usually not the one holding
+;; the socket.
 
 (defn revalidate-profile-subscriptions
   "Re-checks every subscription held by the connections of `profile-id`
@@ -425,7 +401,9 @@
   instance owns."
   [{:keys [::mbus/msgbus] :as cfg}]
   (let [ch (sp/chan :buf (sp/dropping-buffer 64))]
-    (mbus/sub! msgbus :topic internal-revocation-topic :chan ch)
+    (mbus/sub! msgbus
+               :topic notifications/internal-revocation-topic
+               :chan ch)
     (sp/go-loop []
       (when-let [{:keys [type profile-id]} (sp/take! ch)]
         (when (= :profile-permissions-changed type)

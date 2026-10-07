@@ -29,6 +29,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
@@ -767,9 +768,10 @@
                                       :team-id team-id}))
 
 (defn leave-team
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id id reassign-to]}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
-        members (get-team-members conn id)]
+        members (get-team-members conn id)
+        team    (db/get conn :team {:id id})]
 
     (cond
       ;; we can only proceed if there are more members in the team
@@ -817,6 +819,16 @@
                 :hint "releasing owner before leave"))
 
     (delete-team-rels conn profile-id id)
+
+    ;; The leaver is told so, exactly as a removed member is, so the
+    ;; session stops asking for content it can no longer read.
+    (mbus/pub! msgbus
+               :topic profile-id
+               :message {:type :team-membership-change
+                         :change :removed
+                         :team-id id
+                         :team-name (:name team)})
+    (ntf/notify-permissions-changed cfg profile-id)
 
     nil))
 
@@ -900,7 +912,7 @@
 ;; --- Mutation: Team Update Role
 
 (defn update-team-member-role
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [profile-id team-id member-id role] :as params}]
   ;; We retrieve all team members instead of query the
   ;; database for a single member. This is just for
   ;; convenience, if this becomes a bottleneck or problematic,
@@ -950,6 +962,12 @@
                   params
                   {:team-id team-id
                    :profile-id member-id})
+
+      ;; A role change never removes read access on its own, but the open
+      ;; subscriptions are re-checked rather than assumed: the watcher
+      ;; decides from fresh data, which is also what keeps a downgrade to
+      ;; viewer from being mistaken for a revocation.
+      (ntf/notify-permissions-changed cfg member-id)
       nil)))
 
 (def ^:private schema:update-team-member-role
@@ -1016,6 +1034,11 @@
                            :change :removed
                            :team-id team-id
                            :team-name (:name team)}))
+
+    ;; Whatever this member may still read through another path (an
+    ;; organization owner keeps read-only access), the subscriptions they
+    ;; already hold have to be re-checked, not trusted from here on.
+    (ntf/notify-permissions-changed cfg member-id)
 
     nil))
 
