@@ -90,12 +90,12 @@
   ([frame {:keys [full-page? omit-background? type quality path]
            :or {type "png" full-page? false omit-background? false quality 95}}]
    (let [options (-> (obj/new)
-                     (obj/set "type" (name type))
-                     (obj/set "omitBackground" omit-background?)
-                     (cond-> path (obj/set "path" path))
-                     (cond-> (= "jpeg" type) (obj/set "quality" quality))
-                     (cond-> full-page?      (-> (obj/set "fullPage" true)
-                                                 (obj/set "clip" nil))))]
+                     (obj/set! "type" (name type))
+                     (obj/set! "omitBackground" omit-background?)
+                     (cond-> path (obj/set! "path" path))
+                     (cond-> (= "jpeg" type) (obj/set! "quality" quality))
+                     (cond-> full-page?      (-> (obj/set! "fullPage" true)
+                                                 (obj/set! "clip" nil))))]
      (.screenshot ^js frame options))))
 
 (defn emulate-media
