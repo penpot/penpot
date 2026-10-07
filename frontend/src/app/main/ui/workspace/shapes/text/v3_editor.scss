@@ -9,4 +9,20 @@
   opacity: 0;
   overflow: hidden;
   white-space: pre;
+
+  // The surface is positioned on the caret while idle, so clicks must always
+  // hit the outer overlay (keeping offset coordinates stable); focus is given
+  // to the surface programmatically from the overlay's pointer-down.
+  pointer-events: none;
+}
+
+// Positioned wrapper of the capture surface, translated during an IME
+// composition so the candidate window follows the WASM caret.
+.ime-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }

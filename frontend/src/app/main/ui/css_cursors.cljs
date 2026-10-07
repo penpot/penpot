@@ -17,6 +17,11 @@
   [name rotation]
   (dm/str "cursor-" name "-" (mod (* (.floor js/Math (/ rotation angle-step)) angle-step) 360)))
 
+(defn get-text
+  "Returns the text cursor class, rotating the I-beam with vertical text flow."
+  [rotation vertical?]
+  (get-dynamic "text" (+ (or rotation 0) (if vertical? 90 0))))
+
 (defn init-static-cursor-style
   "Initializes a static cursor style"
   [style name value]

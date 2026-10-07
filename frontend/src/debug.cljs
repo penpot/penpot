@@ -92,7 +92,8 @@
     (set! st/*debug-events-time* true)
 
     nil)
-  (js* "app.main.reinit()"))
+  (when-not (= option :ime)
+    (js* "app.main.reinit()")))
 
 (defn disable!
   [option]
@@ -105,7 +106,8 @@
     (set! st/*debug-events-time* false)
 
     nil)
-  (js* "app.main.reinit()"))
+  (when-not (= option :ime)
+    (js* "app.main.reinit()")))
 
 (defn ^:export toggle-debug
   [name]
