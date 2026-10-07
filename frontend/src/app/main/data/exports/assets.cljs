@@ -148,6 +148,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :export (cond-> {:in-progress true
+                                    :id (:id resource)
                                     :resource-id (:id resource)
                                     :healthy? true
                                     :error false
@@ -312,6 +313,10 @@
     :as params}]
   (let [exports (normalize-exports exports)]
     (ptk/reify ::request-multiple-export
+      ptk/UpdateEvent
+      (update [_ state]
+        (assoc state :export {:in-progress true :id (uuid/next)}))
+
       ptk/WatchEvent
       (watch [_ state _]
         (let [resource-id (volatile! nil)
@@ -438,7 +443,8 @@
                  (not (get-in state [:export :in-progress])))
           (let [suffix   (:suffix (first presets))
                 name     (cond-> (:name shape)
-                           (and (= 1 (count presets)) (some? suffix))
+                           (and (= 1 (count presets)) (some? suffix)
+                                (not (use-wasm-export? state (first presets))))
                            (str suffix))
                 defaults {:page-id page-id
                           :file-id file-id
