@@ -42,6 +42,7 @@
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
    [app.util.blob :as blob]
    [app.util.events :as events]
@@ -1167,6 +1168,12 @@
                :message {:type :file-deleted
                          :file-id id
                          :profile-id profile-id})
+
+    ;; Deleting the file ends read access for whoever had it open, and
+    ;; which profiles those are is only known to the connections
+    ;; themselves, so the whole team is announced and the watcher
+    ;; re-checks each of them.
+    (ntf/notify-team-permissions-changed cfg (:id team))
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:id team)
