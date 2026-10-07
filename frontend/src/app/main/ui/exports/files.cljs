@@ -114,7 +114,7 @@
                        :aria-live "polite"}
              (if (some? progress)
                (jp/milestone-text progress)
-               (tr "labels.queued"))]))]
+               (tr "jobs.queued"))]))]
 
        [:*
         [:> context-notification {:level level
@@ -128,7 +128,7 @@
                      :typography t/body-medium
                      :role "status"
                      :aria-live "polite"}
-           (tr "labels.export-cancelled")])])]))
+           (tr "jobs.export-cancelled")])])]))
 
 (mf/defc export-dialog
   {::mf/register modal/components

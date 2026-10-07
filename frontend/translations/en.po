@@ -2586,6 +2586,14 @@ msgstr "The token will expire on %s"
 msgid "integrations.token.will-not-expire"
 msgstr "The token has no expiration date"
 
+#: src/app/main/ui/exports/files.cljs:111
+msgid "jobs.export-cancelled"
+msgstr "Export cancelled"
+
+#: src/app/main/data/imports.cljs:259
+msgid "jobs.import-cancelled"
+msgstr "Import cancelled"
+
 #: src/app/main/ui/jobs/progress.cljs:26
 msgid "jobs.progress.stage.colors"
 msgstr "Processing the colors"
@@ -2635,12 +2643,16 @@ msgid "jobs.progress.stage.typographies"
 msgstr "Processing the typographies"
 
 #: src/app/main/ui/jobs/progress.cljs:33
+msgid "jobs.progress.stage.unknown"
+msgstr "Working"
+
+#: src/app/main/ui/jobs/progress.cljs:33
 msgid "jobs.progress.stage.upload"
 msgstr "Uploading file…"
 
-#: src/app/main/ui/jobs/progress.cljs:33
-msgid "jobs.progress.stage.unknown"
-msgstr "Working"
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+msgid "jobs.queued"
+msgstr "Queued"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
@@ -2912,10 +2924,6 @@ msgstr "Expired"
 msgid "labels.export"
 msgstr "Export"
 
-#: src/app/main/ui/exports/files.cljs:111
-msgid "labels.export-cancelled"
-msgstr "Export cancelled"
-
 #: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "Feedback disabled"
@@ -2987,10 +2995,6 @@ msgstr "Hide resolved comments"
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Import"
-
-#: src/app/main/data/imports.cljs:259
-msgid "labels.import-cancelled"
-msgstr "Import cancelled"
 
 #: src/app/main/ui/dashboard/team.cljs:1512
 msgid "labels.inactive"
@@ -3219,10 +3223,6 @@ msgstr "Profile"
 #: src/app/main/ui/dashboard/sidebar.cljs:355
 msgid "labels.projects"
 msgstr "Projects"
-
-#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
-msgid "labels.queued"
-msgstr "Queued"
 
 #: src/app/main/ui/dashboard/deleted.cljs:212
 msgid "labels.recent"
@@ -6291,10 +6291,6 @@ msgstr "Typographies"
 msgid "workspace.assets.typography.add-typography"
 msgstr "Add typography"
 
-#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:461
-msgid "workspace.assets.typography.multiple-texts-selected"
-msgstr "Select one text to create a typography style"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:855
 msgid "workspace.assets.typography.font-size"
 msgstr "Size"
@@ -6314,6 +6310,10 @@ msgstr "Letter Spacing"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:859
 msgid "workspace.assets.typography.line-height"
 msgstr "Line Height"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:461
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "Select one text to create a typography style"
 
 #: src/app/main/ui/dashboard/grid.cljs:226, src/app/main/ui/workspace/libraries.cljs:1070, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:802, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:838, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:957, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:976
 msgid "workspace.assets.typography.sample"

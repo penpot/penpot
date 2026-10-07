@@ -29,6 +29,12 @@ high-coverage support reference, never the base.
 
 ## Entry rules
 
+- Placement: a key names the feature that renders it (`dashboard.import.*`,
+  `files-export-modal.*`, `jobs.*`); `labels.*` is the bucket for the short
+  generic words reused across screens (Accept, Cancel, Download…), never the
+  home of a feature's own vocabulary. Keep a feature's strings together: the
+  durable jobs write their progress stages as `jobs.progress.stage.*` and
+  their row statuses as `jobs.*`, not half in `labels.*`.
 - Keys resolved dynamically from server-provided data carry a `#, backend`
   flag (set it in `en`, `sync` copies it to the locales): do not remove or
   rename these entries, and keep their `%s` placeholders (the backend only

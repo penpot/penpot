@@ -437,7 +437,7 @@
                         :file-id (:file-id target)}
                        {:status  :error
                         :file-id (:file-id target)
-                        :error   (tr "labels.import-cancelled")}
+                        :error   (tr "jobs.import-cancelled")}
                        {:libraries-resolution {}}]
                       @seen)))))))))
 
@@ -478,7 +478,7 @@
                       :progress {:stage :manifest}}
                      {:status  :error
                       :file-id (:file-id target)
-                      :error   (tr "labels.import-cancelled")}
+                      :error   (tr "jobs.import-cancelled")}
                      {:libraries-resolution {}}]
                     @seen))))))))
 

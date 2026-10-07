@@ -323,7 +323,7 @@
 
        (and (= :import-queued status) (not import-success?))
        [:div {:class (stl/css :progress-message)}
-        (tr "labels.queued")]
+        (tr "jobs.queued")]
 
        (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)}

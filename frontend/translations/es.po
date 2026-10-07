@@ -2629,6 +2629,14 @@ msgstr "El token expirará el %s"
 msgid "integrations.token.will-not-expire"
 msgstr "El token no tiene fecha de expiración"
 
+#: src/app/main/ui/exports/files.cljs:111
+msgid "jobs.export-cancelled"
+msgstr "Exportación cancelada"
+
+#: src/app/main/data/imports.cljs:259
+msgid "jobs.import-cancelled"
+msgstr "Importación cancelada"
+
 #: src/app/main/ui/jobs/progress.cljs:26
 msgid "jobs.progress.stage.colors"
 msgstr "Procesando colores"
@@ -2684,6 +2692,10 @@ msgstr "Trabajando"
 #: src/app/main/ui/jobs/progress.cljs:33
 msgid "jobs.progress.stage.upload"
 msgstr "Subiendo archivo…"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+msgid "jobs.queued"
+msgstr "En cola"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
@@ -2955,10 +2967,6 @@ msgstr "Expirada"
 msgid "labels.export"
 msgstr "Exportar"
 
-#: src/app/main/ui/exports/files.cljs:111
-msgid "labels.export-cancelled"
-msgstr "Exportación cancelada"
-
 #: src/app/main/ui/settings/feedback.cljs:83
 msgid "labels.feedback-disabled"
 msgstr "El modulo de recepción de opiniones esta deshabilitado"
@@ -3030,10 +3038,6 @@ msgstr "Ocultar comentarios resueltos"
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113, src/app/main/ui/settings/shortcuts.cljs:544, src/app/main/ui/workspace/tokens/sidebar.cljs:142
 msgid "labels.import"
 msgstr "Importar"
-
-#: src/app/main/data/imports.cljs:259
-msgid "labels.import-cancelled"
-msgstr "Importación cancelada"
 
 #: src/app/main/ui/dashboard/team.cljs:1512
 msgid "labels.inactive"
@@ -3266,10 +3270,6 @@ msgstr "Perfil"
 #: src/app/main/ui/dashboard/sidebar.cljs:355
 msgid "labels.projects"
 msgstr "Proyectos"
-
-#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
-msgid "labels.queued"
-msgstr "En cola"
 
 #: src/app/main/ui/dashboard/deleted.cljs:212
 msgid "labels.recent"
