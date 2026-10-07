@@ -69,11 +69,14 @@
                                    :response body)))))))))
 
 (defn- request
-  "POST `params` to a management method as transit+json."
+  "POST `params` to a management method as transit+json. The content
+  type travels on every call: without it the backend never parses the
+  body as transit and validates an empty map."
   [method params]
   (->> (fetch (method-uri method)
               #js {:method     "POST"
-                   :headers    (shared-key)
+                   :headers    (doto (shared-key)
+                                 (unchecked-set "Content-Type" "application/transit+json"))
                    :body       (t/encode-str params)
                    :dispatcher (dispatcher)})
        (p/mcat parse-response)))

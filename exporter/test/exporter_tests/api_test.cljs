@@ -95,6 +95,19 @@
         restore!
         done))))
 
+(t/deftest json-calls-declare-the-transit-content-type
+  ;; without it the backend never parses the body as transit and
+  ;; validates an empty map (every key a `missing-key`)
+  (t/async done
+    (let [restore! (install-fetch!)]
+      (with-restore-and-done
+        (p/fmap (fn [_]
+                  (t/is (= "application/transit+json"
+                           (fetch-header "Content-Type"))))
+                (api/claim-job (uuid/next) "2026-10-07T00:00:00Z"))
+        restore!
+        done))))
+
 (t/deftest report-job-progress-posts-the-beat
   (t/async done
     (let [job-id   (uuid/next)
