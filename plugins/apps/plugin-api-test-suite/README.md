@@ -17,9 +17,10 @@ fully before writing any test.
 
 ## The one rule that matters most
 
-> **Always call the API through `ctx.penpot`, never the global `penpot`.**
+> **Always call the API through `ctx.penpot` and `ctx.penpotMgmt`, never the
+> globals `penpot` and `penpotMgmt`.**
 
-`ctx.penpot` is a recording proxy. Calls made through it are what count towards
+`ctx.penpot` and `ctx.penpotMgmt` are recording proxies. Calls made through it are what count towards
 coverage and are correctly attributed to the right interface. Calls on the global
 `penpot` still work but are invisible to coverage. Same for shapes: operate on the
 objects returned by `ctx.penpot.*` (and on `ctx.board`), not on objects obtained
@@ -31,7 +32,9 @@ From `plugins/`:
 
 - Dev server: `pnpm run start:plugin:api-test-suite` (serves on port 4202).
 - In Penpot: open the Plugin Manager (Ctrl+Alt+P) and install
-  `http://localhost:4202/manifest.json`.
+  `http://localhost:4202/manifest.json`. The suite is a global plugin
+  (`"scope": "global"`), so the install dialog asks for the `allow:global`
+  permission. It keeps running while tests move between files.
 - Alternatively, a one-shot `pnpm --filter plugin-api-test-suite run build` output
   is served by the devenv alongside the other bundled plugins, at
   `https://localhost:3449/plugins/plugin-api-test-suite/manifest.json` (no hot
@@ -62,6 +65,8 @@ E2E_LOGIN_EMAIL=… E2E_LOGIN_PASSWORD=… \
 
 - It builds `headless.js`, logs in, creates a scratch file, injects the test
   bundle, and prints per-test results + the coverage report.
+- After the run it deletes the projects the tests created (see
+  [Working with other files](#working-with-other-files)).
 - Exit code is non-zero iff any test failed (coverage does not affect it).
 - Optional env: `PENPOT_BASE_URL` (default `https://localhost:3449`). Against a
   local devenv with a self-signed certificate, prefix the command with
@@ -214,15 +219,50 @@ committing.
 
 - `ctx.penpot` — the recording proxy over the real `penpot` global. Use it for
   every API call.
+- `ctx.penpotMgmt` — the recording proxy over the real `penpotMgmt` global, for
+  teams, projects and files (see [Working with other files](#working-with-other-files)).
 - `ctx.board` — a **fresh scratch `Board`** created for this test and
   **removed automatically afterwards**. Append shapes you create to it
   (`ctx.board.appendChild(shape)`) so the user's canvas is left clean. Do not rely
   on it persisting between tests.
+- `ctx.fixture(key, create)` — returns the value `create` resolves to, created
+  the first time `key` is used in the run and reused by later tests of the same
+  run. Keep shared fixtures here rather than in module variables: the plugin UI
+  keeps modules between runs, so a module-level cache would leak state from one
+  run into the next.
 
-The runner also resets shared state between tests: the selection is cleared and the
-active page is restored to whatever was active when the run started (both through
-the raw `penpot`, so they aren't credited toward coverage). A test that changes the
-active page therefore won't leak into later tests.
+The runner also resets shared state between tests: it reopens the file the run
+started in if a test left another one open, restores the page that was active
+when the run started and clears the selection (all through the raw globals, so
+they aren't credited toward coverage). A test that changes the active page or
+file therefore won't leak into later tests.
+
+### Working with other files
+
+The suite runs with global scope, so tests can reach teams, projects and files
+through `ctx.penpotMgmt`. They are objects like the rest of the API: `Team`
+(`listTeams()`), `Project` (`listProjects()`, `team.createProject()`) and
+`ProjectFile` (`project.listFiles()`, `project.createFile()`, `getFile(id)`),
+with `name`/`pinned`/`shared` properties and `open`, `moveTo`, `duplicate` and
+`remove` methods. `management.test.ts` shows the patterns:
+
+- Put every team and project a test creates under a name from
+  `temporaryName()` (`src/framework/temporary.ts`). Tests delete the teams they
+  create; the live CI driver deletes the teams and projects with that prefix
+  after the run. Runs from the plugin UI leave the projects behind. The tests
+  need nothing set up beforehand.
+- Assigning `name`, `pinned` or `shared` updates the object at once and saves
+  in the background. To check the saved result, list again inside
+  `waitForAsync()` (`src/tests/wait.ts`).
+- Shape, page, file and library objects taken before `file.open()` (or
+  `openFile`) are stale afterwards; look them up again in the new file.
+  `ctx.board` belongs to the file the test started in, so only use it there.
+- While a file opens, `penpot.currentFile`, `currentPage` and `root` are `null`
+  and file operations throw. `open` resolves once the file is ready.
+- These tests need the real backend, so tag them `skipIfMocked`.
+- The per-test timeout is 15s; opening a file takes about half a second
+  locally. Build expensive fixtures (such as a shared library) once per run with
+  `ctx.fixture`, as `sharedLibrary()` does.
 
 ### Sync or async
 
@@ -318,8 +358,8 @@ pnpm --filter plugin-api-test-suite run gen:api
 - `createText(str)` returns `Text | null` — guard the result (`if (text) { … }`).
 - `width`/`height` are read-only; use `resize(w, h)`. `x`/`y` are writable.
 - The plugin manifest already requests broad permissions (`content:*`,
-  `library:*`, `user:read`, `comment:*`, `allow:downloads`, `allow:localstorage`),
-  so most of the API is callable from tests without changes.
+  `library:*`, `user:read`, `comment:*`, `allow:downloads`, `allow:localstorage`,
+  `allow:global`), so most of the API is callable from tests without changes.
 - The runner sets `throwValidationErrors = true` and `naturalChildOrdering = true`,
   so invalid API usage throws (surfacing as a red test) and `children` is always in
   z-index order.
@@ -405,8 +445,6 @@ valid"); `fills-strokes.test.ts` pins this with a `toThrow`.
 ### External state / not reachable headless
 
 - **`ActiveUser.position/zoom`** — needs a second collaborator in the file.
-- **`LibrarySummary.*`, `LibraryContext.connectLibrary`** — need a published shared
-  library.
 - **`FileVersion.restore`, `Penpot.closePlugin`, `Penpot.ui`, `Context.openViewer`** —
   tear down or navigate away from the running plugin/workspace.
 - **`FileVersion.pin`** — only converts a _system_ autosave to a permanent version;
@@ -414,14 +452,16 @@ valid"); `fills-strokes.test.ts` pins this with a `toThrow`.
   rejects.
 - **`Context.addListener/removeListener`** — omitted from the `penpot` global
   (`Omit<Context, 'addListener' | 'removeListener'>`), so unreachable via `penpot`.
-- **`EventsMap` events `pagechange/filechange/themechange/contentsave/finish`** —
-  can't be triggered deterministically in the headless runner.
+- **`EventsMap` events `pagechange/themechange/contentsave`** — can't be
+  triggered deterministically in the headless runner. `filechange` and `finish`
+  are exercised in `management.test.ts` by switching files.
 
 ## Checklist before finishing
 
 - [ ] Test file is `src/tests/<name>.test.ts` and uses `test(...)` + `expect`,
       ideally wrapped in a `describe('<Group>', …)`.
-- [ ] All API calls go through `ctx.penpot`; shapes are appended to `ctx.board`.
+- [ ] All API calls go through `ctx.penpot` / `ctx.penpotMgmt`; shapes are
+      appended to `ctx.board`.
 - [ ] Created shapes don't leak (rely on the scratch board cleanup; don't touch the
       user's existing content).
 - [ ] Lint/format/typecheck pass:
@@ -438,6 +478,7 @@ valid"); `fills-strokes.test.ts` pins this with a `toThrow`.
 - `src/framework/static-coverage.ts` — the statically-covered allowlist.
 - `src/framework/expect.ts` — the assertion library.
 - `src/framework/types.ts` — `TestContext`, `TestResult`, `CoverageReport`, etc.
+- `src/framework/temporary.ts` — name prefix for temporary projects, shared with the CI driver.
 - `tools/gen-api-surface.ts` — generates `src/generated/api-surface.json`.
 - `src/plugin.ts` (sandbox), `src/ui.ts` (iframe), `src/model.ts` (messages).
 - `src/ci/headless.ts` + `ci/run-ci.ts` — CI path.

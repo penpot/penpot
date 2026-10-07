@@ -239,19 +239,26 @@
         team-id    (uuid/next)
         library-id (uuid/next)
         stream     (rx/subject)
-        events     (atom [])]
+        events     (atom [])
+        state      (atom {:current-file-id file-id :current-team-id team-id})]
     (await
      (mock/with-mocks*
-       {st/state           (atom {:current-file-id file-id :current-team-id team-id})
+       {st/state           state
         st/stream          stream
         st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
         rp/cmd!            (shared-files-cmd [{:id library-id :name "Published"}])
         r/check-permission (mock/stub (constantly true))}
        (let [context (library/library-subcontext plugin-id)
-             result  (settled (.connectLibrary context (str library-id)))
+             promise (.connectLibrary context (str library-id))
+             result  (settled promise)
+             done?   (atom false)
              link?   #(= ::dwl/link-file-to-library (ptk/type %))]
+         (.then promise #(reset! done? true))
          (await (async/wait-for #(some link? @events) "link event emitted"))
          (rx/push! stream (ptk/data-event ::dwl/link-file-to-library-finished))
+         (await (async/settle))
+         (t/is (false? @done?) "waits until the library data is loaded")
+         (swap! state assoc-in [:files library-id :data] {:id library-id})
          (let [{:keys [resolved]} (await result)
                link-data          (ev/-data (first (filter link? @events)))]
            (t/is (= library-id (obj/get resolved "$id")))
@@ -312,3 +319,25 @@
            {:keys [rejected]} (await (settled (.connectLibrary context (str (uuid/next)))))]
        (t/is (str/includes? (str rejected) "Plugin doesn't have 'library:write' permission"))
        (t/is (empty? @mock/rpc-calls))))))
+
+(t/deftest ^:async library-context-ignores-files-left-by-earlier-workspaces
+  (let [file-id    (uuid/next)
+        linked-id  (uuid/next)
+        visited-id (uuid/next)
+        other-id   (uuid/next)]
+    (await
+     (mock/with-mocks*
+       {st/state           (atom {:current-file-id file-id
+                                  :current-team-id (uuid/next)
+                                  :files {file-id    {:id file-id :data {}}
+                                          linked-id  {:id linked-id :data {}}
+                                          visited-id {:id visited-id}}})
+        rp/cmd!            (shared-files-cmd [{:id linked-id :name "Linked"}
+                                              {:id visited-id :name "Visited"}
+                                              {:id other-id :name "Other"}])
+        r/check-permission (mock/stub (constantly true))}
+       (let [context (library/library-subcontext plugin-id)]
+         (t/is (= #{file-id linked-id}
+                  (into #{} (map #(obj/get % "$id")) (.-connected context))))
+         (t/is (= #{(str visited-id) (str other-id)}
+                  (into #{} (map #(.-id %)) (await (.availableLibraries context))))))))))

@@ -1,15 +1,24 @@
-import type { Board, Penpot } from '@penpot/plugin-types';
+import type { Board, Penpot, PenpotMgmt } from '@penpot/plugin-types';
 
 export type TestStatus = 'pending' | 'running' | 'pass' | 'fail';
 
 /**
- * The context handed to every test. Tests MUST use `ctx.penpot` (the recording
- * proxy) rather than the global `penpot` so their API usage is counted towards
- * coverage. A fresh scratch `board` is provided per test and removed afterwards.
+ * The context handed to every test. Tests MUST use `ctx.penpot` and
+ * `ctx.penpotMgmt` (the recording proxies) rather than the globals so their API
+ * usage is counted towards coverage. A fresh scratch `board` is provided per
+ * test and removed afterwards.
  */
 export interface TestContext {
   penpot: Penpot;
+  /** Recording proxy over `penpotMgmt`, available because the suite runs with global scope. */
+  penpotMgmt: PenpotMgmt;
   board: Board;
+  /**
+   * Returns the value `create` resolves to, creating it the first time `key`
+   * is used in the current run. Use it for expensive fixtures shared by
+   * several tests; a later run creates them again.
+   */
+  fixture<T>(key: string, create: () => Promise<T>): Promise<T>;
 }
 
 export type TestFn = (ctx: TestContext) => void | Promise<void>;
