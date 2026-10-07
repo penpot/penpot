@@ -5,14 +5,16 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.consumer.config
-  "The worker role of the exporter configuration.
+  "The roles of the exporter process.
 
-  The exporter process may serve its http surfaces, consume the
-  backend `:exporter` queue, or both: `PENPOT_EXPORTER_ROLES` names the
-  roles (`http` by default, `http,worker` during the transition). The
-  worker pieces never read these values at import time: each accessor
-  reads the live configuration, so a long-lived process can be
-  restarted with another role without code changes."
+  `PENPOT_EXPORTER_ROLES` names the roles the process serves: `http`
+  serves the surfaces the exporter used to serve (gone once the
+  deletion task lands), `worker` consumes the backend `:exporter`
+  queue. The default is `worker`: the exporter is a consumer's process,
+  and no surface of it needs to be preserved. The worker pieces never
+  read these values at import time: each accessor reads the live
+  configuration, so a long-lived process can be restarted with another
+  role without code changes."
   (:require
    [app.config :as cf]
    [cljs.core :as c]
@@ -38,7 +40,7 @@
   ([] (roles (cf/get :exporter-roles)))
   ([spec]
    (if (nil? spec)
-     #{:http}
+     #{:worker}
      (scan-roles spec))))
 
 (defn worker-enabled?

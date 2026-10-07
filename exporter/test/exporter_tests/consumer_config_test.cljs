@@ -13,8 +13,11 @@
    [cuerdas.core :as str]))
 
 (t/deftest roles-parse-the-env-list
-  (t/testing "the default keeps the http surfaces only"
-    (t/is (= #{:http} (ccfg/roles "http"))))
+  (t/testing "the default serves the worker role only: the exporter is
+             a consumer's process, no surface needs preserving"
+    (t/is (= #{:worker} (ccfg/roles nil)))
+    (t/is (= #{:worker} (ccfg/roles))))
+  (t/is (= #{:http} (ccfg/roles "http")))
   (t/is (= #{:http :worker} (ccfg/roles "http,worker")))
   (t/is (= #{:http :worker} (ccfg/roles "http, worker")))
   (t/testing "the parser does not invent roles from noise"

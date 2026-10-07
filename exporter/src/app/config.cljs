@@ -33,9 +33,10 @@
    :exporter-max-jobs-per-profile 2
    :exporter-queue-max 64
    :exporter-job-ttl 3600
-   ;; the roles this instance serves: by default only the http service;
-   ;; `worker` turns the process into a consumer of the backend jobs
-   :exporter-roles "http"
+   ;; the roles this instance serves: by default the consumer of the
+   ;; backend jobs queue; `http` keeps the legacy surfaces alive until
+   ;; the deletion task takes them away
+   :exporter-roles "worker"
    :exporter-worker-concurrency 2
    :wasm-worker-pool-max 2
    :wasm-worker-pool-min 1
