@@ -40,7 +40,10 @@
    [:object-id ::sm/uuid]
    [:type      [::sm/one-of #{:png :jpeg :webp :svg :pdf}]]
    [:name      ::sm/text]
-   [:suffix    {:optional true} ::sm/text]
+   ;; a plain string on purpose, empty included: the export form sends
+   ;; `""` when the user types no suffix, and the legacy `/api/export`
+   ;; surface took it that way; the worker concatenates it as-is
+   [:suffix    {:optional true} :string]
    [:scale     ::sm/number]
    [:share-id  {:optional true} ::sm/uuid]])
 

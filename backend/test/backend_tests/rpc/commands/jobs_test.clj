@@ -251,9 +251,28 @@
                                           [(export-item file-id :type :psd)])]
 
     (t/is (not (th/success? out)))
-    (t/is (= :data-validation (th/ex-code (:error out))))
+    ;; refused by the RPC wrapper before the command runs (the same
+    ;; `:params-validation` a real caller sees over HTTP)
+    (t/is (= :params-validation (th/ex-code (:error out))))
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
+
+(t/deftest create-export-assets-job-accepts-an-empty-suffix
+  ;; the export form sends `""` when the user types no suffix (it is the
+  ;; normal case, not an edge): the legacy `/api/export` surface took a
+  ;; plain string, so the job must take it too
+  (let [profile (th/create-profile* 1)
+        file-id (first (:file-ids (import-fixture! profile)))
+        item    (assoc (export-item file-id) :suffix "")
+        out     (create-export-assets-job (:id profile) [item])]
+
+    (t/is (th/success? out))
+
+    (t/testing "and the empty suffix is frozen as-is for the worker"
+      (let [job     (jobs/get-job th/*system* (:id (:result out)))
+            job-def (jobs/get-job-def (::jobs/defs th/*system*) :export-assets)
+            params  (jobs/decode-params job-def (:params job))]
+        (t/is (= "" (:suffix (first (:exports params)))))))))
 
 (t/deftest create-export-assets-job-accepts-a-file-nameable-through-a-share
   ;; the viewer that renders a file through a public share exports the
