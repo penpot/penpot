@@ -41,8 +41,8 @@
 
 (defn- test-config
   [calls]
-  {:exporter.browser/pool {:exporter.browser/max            1
-                           :exporter.browser/create-browser (fake-create-browser calls)}})
+  {:exporter.browser/pool {:max            1
+                           :create-browser (fake-create-browser calls)}})
 
 (t/deftest ^:async pool-starts-and-stops-through-the-system
   (try

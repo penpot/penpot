@@ -46,41 +46,44 @@
 
 (def main start)
 
+;; Old hot reload path, superseded by exporter.main: the shadow entry
+;; point moved to exporter.main/main and the reload hooks ride its
+;; ^:dev metadata. Kept visible until app.* is fully ported.
 ;; Draining a pool waits for every checked-out resource to come back, which an
 ;; export in flight can hold for as long as its own timeout. On a hot reload
 ;; that would block `start` from ever running again, leaving a drained pool that
 ;; fails every later job.
-(def ^:private shutdown-step-timeout 3000)
+#_(def ^:private shutdown-step-timeout 3000)
 
-(defn- shutdown-step
-  [label f]
-  (-> (p/race [(p/do (f))
-               (p/fmap (constantly ::timeout) (p/delay shutdown-step-timeout))])
-      (p/handle (fn [result cause]
-                  (when (or (some? cause) (= ::timeout result))
-                    (l/warn :hint "shutdown step did not finish cleanly"
-                            :step label
-                            :cause cause))
-                  nil))))
+#_(defn- shutdown-step
+    [label f]
+    (-> (p/race [(p/do (f))
+                 (p/fmap (constantly ::timeout) (p/delay shutdown-step-timeout))])
+        (p/handle (fn [result cause]
+                    (when (or (some? cause) (= ::timeout result))
+                      (l/warn :hint "shutdown step did not finish cleanly"
+                              :step label
+                              :cause cause))
+                    nil))))
 
-(defn stop
-  [done]
-  ;; an empty line for visual feedback of restart
-  (js/console.log "")
+#_(defn stop
+    [done]
+    ;; an empty line for visual feedback of restart
+    (js/console.log "")
 
-  (if-not ^boolean wt/isMainThread
-    ;; A render worker owns no server, pools or connections; nothing to unwind.
-    (done)
-    (do
-      (l/info :msg "stopping")
-      (p/do
-        (shutdown-step "browser-pool" bwr/stop)
-        (shutdown-step "wasm-worker-pool" wasm.pool/stop)
-        ;; the pollers own their connections and may sit in a blocking
-        ;; pop for the whole poll timeout; draining the pools first lets
-        ;; the exports in flight unwind against their own resources
-        (shutdown-step "consumer-worker" worker/stop)
-        (done)))))
+    (if-not ^boolean wt/isMainThread
+      ;; A render worker owns no server, pools or connections; nothing to unwind.
+      (done)
+      (do
+        (l/info :msg "stopping")
+        (p/do
+          (shutdown-step "browser-pool" bwr/stop)
+          (shutdown-step "wasm-worker-pool" wasm.pool/stop)
+          ;; the pollers own their connections and may sit in a blocking
+          ;; pop for the whole poll timeout; draining the pools first lets
+          ;; the exports in flight unwind against their own resources
+          (shutdown-step "consumer-worker" worker/stop)
+          (done)))))
 
 (.on proc/default "uncaughtException"
      (fn [cause]

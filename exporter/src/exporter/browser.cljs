@@ -144,12 +144,12 @@
 ;; --- POOL SERVICE
 
 (def defaults
-  "Static pool defaults. The sizing (`::max`) mirrors the worker
+  "Static pool defaults. The sizing (`:max`) mirrors the worker
   concurrency default; the wiring layer passes the env-derived value."
-  {::max             2
-   ::acquire-timeout 10000
-   ::idle-timeout    10000
-   ::launch-args     ["--allow-insecure-localhost" "--font-render-hinting=none"]})
+  {:max             2
+   :acquire-timeout 10000
+   :idle-timeout    10000
+   :launch-args     ["--allow-insecure-localhost" "--font-render-hinting=none"]})
 
 (defn- default-create-browser
   [launch-args]
@@ -186,17 +186,17 @@
 (defmethod system/init-key ::pool
   [_ cfg]
   (let [opts           (merge defaults (d/without-nils cfg))
-        create-browser (or (::create-browser opts)
-                           (default-create-browser (::launch-args opts)))]
-    (l/info :hint "initializing browser pool" :max (::max opts))
+        create-browser (or (:create-browser opts)
+                           (default-create-browser (:launch-args opts)))]
+    (l/info :hint "initializing browser pool" :max (:max opts))
     (gp/createPool (make-factory create-browser)
-                   #js {:max                       (::max opts)
+                   #js {:max                       (:max opts)
                         :min                       0
                         :testOnBorrow              true
                         :evictionRunIntervalMillis 5000
                         :numTestsPerEvictionRun    5
-                        :acquireTimeoutMillis      (::acquire-timeout opts)
-                        :idleTimeoutMillis         (::idle-timeout opts)})))
+                        :acquireTimeoutMillis      (:acquire-timeout opts)
+                        :idleTimeoutMillis         (:idle-timeout opts)})))
 
 (defn- ^:async drain-pool
   [pool]
