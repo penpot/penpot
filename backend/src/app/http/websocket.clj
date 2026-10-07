@@ -295,7 +295,25 @@
                            :profile-id profile-id})
       (let [ch (:channel subs)]
         (sp/close! ch)
-        (mbus/purge! msgbus [ch])))))
+        (mbus/purge! msgbus [ch])
+        (swap! state dissoc ::file-subscription)))))
+
+(defn close-team-subscription
+  "Tears down the team subscription held by the connection `wsp`, if it
+  is subscribed to `team-id`.
+
+  Closing the channel is what stops the pipe into the client output, so
+  no further team or organization traffic reaches this connection.
+
+  Does nothing when the connection is subscribed to a different team,
+  so it is safe to call for a subscription that is already gone."
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state]} team-id]
+  (let [subs (::team-subscription @state)]
+    (when (= (:team-id subs) team-id)
+      (let [ch (:channel subs)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch])
+        (swap! state dissoc ::team-subscription)))))
 
 (defmethod handle-message :unsubscribe-file
   [cfg {:keys [::ws/id] :as wsp} {:keys [file-id] :as params}]
@@ -330,6 +348,114 @@
   (l/warn :hint "received unexpected message"
           :message message
           :conn-id id))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SUBSCRIPTION REVOCATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A subscription is authorized once, when it is opened, and that single
+;; decision is then trusted for as long as the connection lives. When a
+;; mutation can take access away, it announces it here and every backend
+;; re-verifies the subscriptions it owns for that profile.
+;;
+;; The announcement travels over the message bus precisely because the
+;; connection registry is local: the RPC that revokes access runs on
+;; whichever instance received the request, which is usually not the one
+;; holding the socket.
+
+(def internal-revocation-topic
+  "Message-bus topic carrying backend-internal revocation events.
+
+  Deliberately not the `uuid/zero` system topic: that one is piped
+  straight into the client output channel, so anything published there
+  would reach every connected client.
+
+  No client can subscribe here. `:subscribe-file` and
+  `:subscribe-team` only accept ids that first pass a permission check,
+  so a client can never make the bus deliver this topic to it."
+  "internal:subscription-revocation")
+
+(defn notify-permissions-changed
+  "Asks every backend to re-verify the subscriptions currently held by
+  `profile-id`, because something may have changed its access.
+
+  Fire-and-forget: `mbus/pub!` only enqueues, so a subscription can be
+  revoked before the announcement reaches the instance that owns it.
+  That errs on the safe side (cutting a still-live subscription), and
+  the client re-subscribes on its own."
+  [{:keys [::mbus/msgbus]} profile-id]
+  (mbus/pub! msgbus
+             :topic internal-revocation-topic
+             :message {:type :profile-permissions-changed
+                       :profile-id profile-id}))
+
+(defn revalidate-profile-subscriptions
+  "Re-checks every subscription held by the connections of `profile-id`
+  and closes the ones that are no longer authorized.
+
+  The event is the trigger, the fresh permission check is the decision.
+  Reusing the same predicates that `:subscribe-file` and
+  `:subscribe-team` authorize with means the watcher needs no second copy
+  of the permission rules: a downgrade to viewer keeps read access and
+  so keeps the subscription, and a non-member organization owner keeps
+  the read-only access it is entitled to.
+
+  Returns the number of subscriptions it closed."
+  [cfg profile-id]
+  (let [closed (volatile! 0)]
+    (doseq [id (connections-for-profile profile-id)]
+      (when-let [wsp (get-connection id)]
+        (let [subs (some-> wsp ::ws/state deref)
+              fsub (get subs ::file-subscription)
+              tsub (get subs ::team-subscription)]
+          (when (and fsub
+                     (not (files/has-read-permissions? cfg profile-id
+                                                       (:file-id fsub))))
+            (close-file-subscription cfg wsp (:file-id fsub))
+            (vswap! closed inc))
+          (when (and tsub
+                     (not (teams/has-read-permissions? cfg profile-id
+                                                       (:team-id tsub))))
+            (close-team-subscription cfg wsp (:team-id tsub))
+            (vswap! closed inc)))))
+    @closed))
+
+(defn- watch-revocations
+  "Consumes revocation events and applies them to the connections this
+  instance owns."
+  [{:keys [::mbus/msgbus] :as cfg}]
+  (let [ch (sp/chan :buf (sp/dropping-buffer 64))]
+    (mbus/sub! msgbus :topic internal-revocation-topic :chan ch)
+    (sp/go-loop []
+      (when-let [{:keys [type profile-id]} (sp/take! ch)]
+        (when (= :profile-permissions-changed type)
+          (try
+            (when (pos? (revalidate-profile-subscriptions cfg profile-id))
+              (l/debug :hint "revoked websocket subscriptions"
+                       :profile-id profile-id))
+            (catch Throwable cause
+              (l/error :hint "cannot revalidate websocket subscriptions"
+                       :profile-id profile-id
+                       :cause cause))))
+        (recur)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INTEGRANT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:revocation-watcher
+  [:map
+   ::mbus/msgbus
+   ::db/pool
+   :app.nitrate/client])
+
+(defmethod ig/assert-key ::revocation-watcher
+  [_ params]
+  (assert (sm/valid? schema:revocation-watcher params)))
+
+(defmethod ig/init-key ::revocation-watcher
+  [_ cfg]
+  (watch-revocations cfg))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP HANDLER

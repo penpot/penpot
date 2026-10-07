@@ -190,6 +190,36 @@
     ((get-method ws/handle-message handler) th/*system* wsp params)
     output-ch))
 
+(defn- wait-until
+  "Polls `pred` until it holds or `ms` elapses. Returns whether it held."
+  [pred ms]
+  (let [deadline (+ (System/currentTimeMillis) ms)]
+    (loop []
+      (cond
+        (pred)                                   true
+        (>= (System/currentTimeMillis) deadline) false
+        :else (do (Thread/sleep 25) (recur))))))
+
+(defn- open-registered-connection
+  "Registers a connection for `profile-id` in the real registry, so the
+  revocation watcher can find it, and returns the pieces a test needs to
+  drive it and inspect what it did."
+  [profile-id]
+  (let [id       (uuid/next)
+        output   (sp/chan :buf (sp/dropping-buffer 64))
+        ws-state (atom {})
+        wsp      (make-wsp profile-id ws-state output)]
+    (ws/register-connection id wsp)
+    {:id id :wsp wsp :state ws-state :output output}))
+
+(defn- subscribe
+  [{:keys [wsp] :as conn} handler params]
+  ((get-method ws/handle-message handler) th/*system* wsp params)
+  conn)
+
+(defn- subscribed-file [conn] (-> @(:state conn) ::ws/file-subscription :file-id))
+(defn- subscribed-team [conn] (-> @(:state conn) ::ws/team-subscription :team-id))
+
 (defn- publisher!
   "Returns a fn that publishes `message` on `topic` through the system
   msgbus, the same path `send-notifications!` uses."
@@ -256,9 +286,10 @@
         other    (th/create-file* 2 {:profile-id (:id profile)
                                      :project-id (:default-project-id profile)})
         output   (sp/chan :buf (sp/dropping-buffer 64))
+        relay    (sp/chan :buf (sp/dropping-buffer 64))
         ws-state (atom {::ws/file-subscription
                         {:file-id (:id file)
-                         :channel (sp/chan :buf (sp/dropping-buffer 64))
+                         :channel relay
                          :topic (:id file)}})
         wsp      (assoc (make-wsp (:id profile) ws-state output)
                         ::ws/state ws-state)]
@@ -276,13 +307,13 @@
           (t/is (= 1 (count @purged))))))
 
     (t/testing "the relay channel is closed so the go-loop stops"
-      (let [sub-ch (-> @ws-state ::ws/file-subscription :channel)]
-        (t/is (some? sub-ch))
-        (t/is (nil? (sp/poll! sub-ch)))
-        (t/is (true? (sp/closed? sub-ch)))))
+      (t/is (nil? (sp/poll! relay)))
+      (t/is (true? (sp/closed? relay))))
 
-    (t/testing "closing twice is safe"
-      (t/is (nil? (ws/close-file-subscription th/*system* wsp (:id file)))))))
+    (t/testing "the subscription is forgotten, so closing again is a no-op"
+      (t/is (nil? (::ws/file-subscription @ws-state)))
+      (with-redefs [mbus/pub! (fn [& _] (throw ::unexpected-publish))]
+        (t/is (nil? (ws/close-file-subscription th/*system* wsp (:id file))))))))
 
 (t/deftest revoked-member-stops-receiving-file-changes
   (let [owner   (th/create-profile* 1 {:is-active true})
@@ -383,3 +414,161 @@
       (t/testing "viewer keeps receiving file changes"
         (publish file-id change)
         (t/is (some? (poll-msg! out :file-change revocation-timeout-ms)))))))
+
+;; --- REVOCATION WATCHER
+;;
+;; The registry is local to a backend instance while the message bus is
+;; shared, so a revocation travels over the bus and each instance
+;; re-verifies the connections it owns.
+
+(defn- editor-in-team!
+  "Builds an owner, an editor with read access to `team`, and a project
+  and file inside it."
+  [owner-i editor-i]
+  (let [owner  (th/create-profile* owner-i {:is-active true})
+        editor (th/create-profile* editor-i {:is-active true})
+        team   (th/create-team* owner-i {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project (th/create-project* owner-i {:profile-id (:id editor)
+                                               :team-id (:id team)})
+          file    (th/create-file* owner-i {:profile-id (:id editor)
+                                            :project-id (:id project)})]
+      {:owner owner :editor editor :team team :file file})))
+
+(t/deftest revocation-closes-subscriptions-that-are-no-longer-authorized
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (with-clean-registry
+      (fn []
+        (let [conn (-> (open-registered-connection (:id editor))
+                       (subscribe :subscribe-file {:file-id (:id file)})
+                       (subscribe :subscribe-team {:team-id (:id team)}))]
+
+          (t/testing "both subscriptions are open before the revocation"
+            (t/is (= (:id file) (subscribed-file conn)))
+            (t/is (= (:id team) (subscribed-team conn))))
+
+          (t/testing "the member is removed from the team"
+            (let [result (th/command! {::th/type :delete-team-member
+                                       ::rpc/profile-id (:id owner)
+                                       :team-id (:id team)
+                                       :member-id (:id editor)})]
+              (t/is (th/success? result))))
+
+          (t/testing "revalidation closes the file and the team subscription"
+            (t/is (= 2 (ws/revalidate-profile-subscriptions
+                        th/*system* (:id editor)))))
+
+          (t/testing "nothing is left subscribed to relay content"
+            (t/is (nil? (subscribed-file conn)))
+            (t/is (nil? (subscribed-team conn))))
+
+          (t/testing "revalidating again is a no-op"
+            (t/is (zero? (ws/revalidate-profile-subscriptions
+                          th/*system* (:id editor))))))))))
+
+(t/deftest revocation-keeps-subscriptions-that-are-still-authorized
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (with-clean-registry
+      (fn []
+        (let [conn (-> (open-registered-connection (:id editor))
+                       (subscribe :subscribe-file {:file-id (:id file)})
+                       (subscribe :subscribe-team {:team-id (:id team)}))]
+
+          (t/testing "the editor is downgraded to viewer, which can still read"
+            (let [result (th/command! {::th/type :update-team-member-role
+                                       ::rpc/profile-id (:id owner)
+                                       :team-id (:id team)
+                                       :member-id (:id editor)
+                                       :role :viewer})]
+              (t/is (th/success? result))))
+
+          (t/testing "revalidation closes nothing"
+            (t/is (zero? (ws/revalidate-profile-subscriptions
+                          th/*system* (:id editor)))))
+
+          (t/testing "both subscriptions survive"
+            (t/is (= (:id file) (subscribed-file conn)))
+            (t/is (= (:id team) (subscribed-team conn)))))))))
+
+(t/deftest revocation-leaves-other-profiles-alone
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)
+        other-owner  (th/create-profile* 3 {:is-active true})
+        other-editor (th/create-profile* 4 {:is-active true})
+        other-team   (th/create-team* 3 {:profile-id (:id other-owner)})]
+    (th/create-team-role* {:team-id (:id other-team)
+                           :profile-id (:id other-editor)
+                           :role :editor})
+    (let [other-file (th/create-file* 3 {:profile-id (:id other-editor)
+                                         :project-id (:default-project-id
+                                                      other-editor)})]
+
+      (with-clean-registry
+        (fn []
+          (let [conn (-> (open-registered-connection (:id editor))
+                         (subscribe :subscribe-file {:file-id (:id file)}))
+                bystander (-> (open-registered-connection (:id other-editor))
+                              (subscribe :subscribe-file {:file-id (:id other-file)}))]
+
+            (th/command! {::th/type :delete-team-member
+                          ::rpc/profile-id (:id owner)
+                          :team-id (:id team)
+                          :member-id (:id editor)})
+
+            (ws/revalidate-profile-subscriptions th/*system* (:id editor))
+
+            (t/testing "the revoked member's subscription is closed"
+              (t/is (nil? (subscribed-file conn))))
+
+            (t/testing "a member of another team keeps their subscription"
+              (t/is (= (:id other-file) (subscribed-file bystander))))
+
+            (t/testing "revalidating a profile with no connections is safe"
+              (t/is (zero? (ws/revalidate-profile-subscriptions
+                            th/*system* (uuid/next)))))))))))
+
+(t/deftest watcher-consumes-revocation-events-from-the-bus
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (with-clean-registry
+      (fn []
+        (let [conn (-> (open-registered-connection (:id editor))
+                       (subscribe :subscribe-file {:file-id (:id file)}))]
+
+          (th/command! {::th/type :delete-team-member
+                        ::rpc/profile-id (:id owner)
+                        :team-id (:id team)
+                        :member-id (:id editor)})
+
+          (t/testing "the event is not applied until it is announced"
+            (t/is (= (:id file) (subscribed-file conn))))
+
+          (ws/notify-permissions-changed th/*system* (:id editor))
+
+          (t/testing "the watcher closes the subscription off the bus"
+            (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))))
+
+(t/deftest internal-revocation-events-are-not-delivered-to-clients
+  (let [profile (th/create-profile* 1 {:is-active true})
+        id      (uuid/next)
+        output  (sp/chan :buf (sp/dropping-buffer 64))
+        wsp     (assoc (make-wsp (:id profile) (atom {}) output)
+                       ::ws/id id)]
+
+    (ws/register-connection id wsp)
+    ((get-method ws/handle-message :open) th/*system* wsp nil)
+
+    (t/testing "the client does receive its own profile traffic"
+      (mbus/pub! (::mbus/msgbus th/*system*)
+                 :topic (:id profile)
+                 :message {:type :notification :text "hello"})
+      (t/is (some? (poll-msg! output :notification revocation-timeout-ms))))
+
+    (t/testing "an internal revocation event never reaches the client"
+      (ws/notify-permissions-changed th/*system* (:id profile))
+      (t/is (nil? (poll-msg! output :profile-permissions-changed
+                             revocation-timeout-ms))))))
+
