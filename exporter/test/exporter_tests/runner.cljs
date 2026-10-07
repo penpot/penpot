@@ -18,14 +18,23 @@
    [exporter-tests.scheduler-test]
    [exporter-tests.shell-test]
    [exporter-tests.wasm-pool-test]
+   [exporter-tests.worker-test]
    [goog.object :as gobj]))
 
 (enable-console-print!)
+
+;; The tests that ride the mock http must never leave a rejected promise
+;; dangling: a dangling one kills the whole run with ERR_UNHANDLED_REJECTION
+;; and without any way to point at the chain that broke. Log and keep going.
+(js/process.on "unhandledRejection"
+               (fn [reason _promise]
+                 (println (str "UNHANDLED-REJECTION: " reason))))
 
 (def test-namespaces
   ['exporter-tests.export-shapes-test
    'exporter-tests.jobs-test
    'exporter-tests.api-test
+   'exporter-tests.worker-test
    'exporter-tests.consumer-config-test
    'exporter-tests.renderer-svg-test
    'exporter-tests.scheduler-test
