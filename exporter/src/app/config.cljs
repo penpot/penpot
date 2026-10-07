@@ -33,6 +33,10 @@
    :exporter-max-jobs-per-profile 2
    :exporter-queue-max 64
    :exporter-job-ttl 3600
+   ;; the roles this instance serves: by default only the http service;
+   ;; `worker` turns the process into a consumer of the backend jobs
+   :exporter-roles "http"
+   :exporter-worker-concurrency 2
    :wasm-worker-pool-max 2
    :wasm-worker-pool-min 1
    :wasm-worker-idle-timeout 300
@@ -55,6 +59,8 @@
    [:exporter-max-jobs-per-profile {:optional true} ::sm/int]
    [:exporter-queue-max {:optional true} ::sm/int]
    [:exporter-job-ttl {:optional true} ::sm/int]
+   [:exporter-roles {:optional true} :string]
+   [:exporter-worker-concurrency {:optional true} ::sm/int]
    [:wasm-worker-pool-max {:optional true} ::sm/int]
    [:wasm-worker-pool-min {:optional true} ::sm/int]
    [:wasm-worker-idle-timeout {:optional true} ::sm/int]
