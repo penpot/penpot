@@ -15,8 +15,12 @@
    [app.jobs :as jobs]
    [app.metrics :as-alias mtx]
    [app.setup :as-alias setup]
+   [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
+   [cuerdas.core :as str]
+   [datoteka.fs :as fs]
+   [datoteka.io :as io]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -59,8 +63,8 @@
 (defn- get-row
   [id]
   (let [row (th/db-get :job {:id id}
-                       :status :result :error
-                       :started-at :completed-at :modified-at)]
+                       :status :result :error :resource-id
+                       :started-at :completed-at :modified-at :name)]
     (reduce (fn [row key]
               (update row key #(cond-> % (db/pgobject? %) db/decode-json-pgobject)))
             row
@@ -124,20 +128,22 @@
         out    (mgmt :claim-job {:job-id      job-id
                                  :scheduled-at (ct/in-future {:minutes 5})})]
     (t/is (nil? (:error out)))
-    (t/is (= {:action :skip} (:result out)))
+    (t/is (= {:action :skip :status "new"} (:result out)))
     (t/is (= "new" (:status (get-row job-id))))))
 
 (t/deftest claim-job-skips-terminal-and-cancelled-rows
+  ;; the skip says the state of the row that won: a worker that carries
+  ;; a stale payload sees cancelled/aborted, not a plain skip to retry on
   (let [completed-id (mk-job {:status "completed"})
         cancelled-id (mk-job {:status "cancelled"})
         aborted-id   (mk-job {:status "aborted"})]
-    (t/is (= {:action :skip}
+    (t/is (= {:action :skip :status "completed"}
              (:result (mgmt :claim-job {:job-id completed-id
                                         :scheduled-at (ct/now)}))))
-    (t/is (= {:action :skip}
+    (t/is (= {:action :skip :status "cancelled"}
              (:result (mgmt :claim-job {:job-id cancelled-id
                                         :scheduled-at (ct/now)}))))
-    (t/is (= {:action :skip}
+    (t/is (= {:action :skip :status "aborted"}
              (:result (mgmt :claim-job {:job-id aborted-id
                                         :scheduled-at (ct/now)}))))
     (t/is (= "completed" (:status (get-row completed-id))))
@@ -172,7 +178,7 @@
                                            :progress {:stage :pages
                                                       :counters {:pages {:current 100 :total 100}}}})]
     (t/is (nil? (:error out)))
-    (t/is (= {:action :skip} (:result out)))
+    (t/is (= {:action :skip :status "completed"} (:result out)))
     (t/is (= [] (get-progresss job-id)))))
 
 (t/deftest report-job-progress-persists-rapid-reports
@@ -314,19 +320,19 @@
     (t/testing "complete on a terminal row reports skip"
       (let [out (mgmt :complete-job {:job-id done-id :result {:x 1}})]
         (t/is (nil? (:error out)))
-        (t/is (= {:action :skip} (:result out)))))
+        (t/is (= {:action :skip :status "completed"} (:result out)))))
     (t/testing "fail on a terminal row reports skip"
       (let [out (mgmt :fail-job {:job-id done-id
                                  :error  {:type :internal
                                           :code "processing-error"
                                           :hint "bad image"}})]
         (t/is (nil? (:error out)))
-        (t/is (= {:action :skip} (:result out)))))
+        (t/is (= {:action :skip :status "completed"} (:result out)))))
     (t/testing "progress on a terminal row reports skip"
       (let [out (mgmt :report-job-progress {:job-id  done-id
                                             :progress {:stage :pages :counters {:pages {:current 4 :total 10}}}})]
         (t/is (nil? (:error out)))
-        (t/is (= {:action :skip} (:result out))))))
+        (t/is (= {:action :skip :status "completed"} (:result out))))))
   (let [cfg    (make-cfg)
         job-id (mk-job {})
         _      (jobs/claim cfg job-id (:scheduled-at (th/db-get :job {:id job-id} :id :scheduled-at)))]
@@ -385,7 +391,7 @@
                                        :result {:v 2}
                                        :resource-id second})]
           (t/is (nil? (:error out)))
-          (t/is (= {:action :skip} (:result out)))))
+          (t/is (= {:action :skip :status "completed"} (:result out)))))
 
       (t/testing "the row keeps the resource it was given and no event is added"
         (let [row (get-row job-id)]
@@ -547,3 +553,132 @@
       (let [out (mgmt :create-job-session {:job-id job-id})]
         (t/is (= :not-found (th/ex-type (:error out))))
         (t/is (= :profile-not-found (th/ex-code (:error out))))))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; COMPLETE-JOB MULTIPART
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- artifact-tempfile
+  "An on-disk artifact, as the multipart parser would leave one for the
+  server: a path with the bytes of the produced export in it."
+  [content]
+  (let [path (fs/create-tempfile :dir tmp/default-tmp-dir
+                                 :prefix "test-artifact-")]
+    (with-open [out (io/output-stream path)]
+      (io/write* out (.getBytes ^String content "UTF-8")))
+    path))
+
+(defn- multipart-complete
+  [job-id path & {:as extra}]
+  (mgmt :complete-job (merge {:job-id   job-id
+                              :content  {:path     path
+                                         :filename "result.zip"
+                                         :size     (fs/size path)
+                                         :mtype    "application/zip"}
+                              :filename "result.zip"
+                              :mtype    "application/zip"}
+                             extra)))
+
+(t/deftest complete-job-multipart-stores-the-artifact-and-completes
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})
+        path    (artifact-tempfile "penpot")
+        out     (multipart-complete job-id path)
+        row     (get-row job-id)
+        rid     (:resource-id row)]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :run} (:result out)))
+    (t/is (= "completed" (:status row)))
+
+    (t/testing "the artifact lives in the job-resource bucket, owned by the profile"
+      (let [{:keys [metadata]} (first (th/db-exec! ["SELECT metadata
+                                                     FROM storage_object WHERE id = ?" rid]))
+            metadata (cond-> metadata (db/pgobject? metadata) db/decode-transit-pgobject)]
+        (t/is (some? rid))
+        (t/is (= "job-resource" (:bucket metadata)))
+        (t/is (= (:id profile) (:profile-id metadata)))))
+
+    (t/testing "the result names the artifact and how to download it"
+      (let [result (:result row)]
+        (t/is (= "result.zip" (:filename result)))
+        (t/is (= "application/zip" (:mtype result)))
+        (t/is (= (fs/size path) (:size result)))
+        (t/is (str/ends-with? (:resource-uri result) (str "/assets/by-id/" rid)))))))
+
+(t/deftest complete-job-multipart-closes-the-render-session
+  (let [profile    (mk-profile)
+        job-id     (mk-job {:status     "running"
+                            :profile-id (:id profile)})
+        session-id (get-in (mgmt :create-job-session {:job-id job-id})
+                           [:result :session-id])
+        path       (artifact-tempfile "penpot")
+        out        (multipart-complete job-id path :session-id session-id)]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :run} (:result out)))
+    (t/testing "the session is gone, deleted after the commit"
+      (t/is (nil? (get-session-row session-id))))))
+
+(t/deftest complete-job-multipart-refuses-a-mtype-outside-the-allowlist
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})
+        path    (artifact-tempfile "penpot")
+        out     (multipart-complete job-id path
+                                    :content  {:path     path
+                                               :filename "result.gif"
+                                               :size     (fs/size path)
+                                               :mtype    "image/gif"}
+                                    :filename "result.gif"
+                                    :mtype    "image/gif")]
+    (t/is (some? (:error out)))
+    (t/is (= :validation (th/ex-type (:error out))))
+    (t/is (= :media-type-not-allowed (th/ex-code (:error out))))
+    (t/testing "no artifact was stored and the row is untouched"
+      (t/is (zero? (count (th/db-exec! ["SELECT id FROM storage_object"]))))
+      (t/is (= "running" (:status (get-row job-id)))))))
+
+(t/deftest complete-job-multipart-refuses-a-result-over-the-cap
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "running"
+                         :profile-id (:id profile)})
+        path    (artifact-tempfile "penpot")]
+    (with-mocks [mock {:target 'app.config/get-exporter-max-result-size
+                       :return 0}]
+      (let [out (multipart-complete job-id path)]
+        (t/is (some? (:error out)))
+        (t/is (= :validation (th/ex-type (:error out))))
+        (t/is (= :request-body-too-large (th/ex-code (:error out))))
+        (t/testing "no artifact was stored and the row is untouched"
+          (t/is (zero? (count (th/db-exec! ["SELECT id FROM storage_object"]))))
+          (t/is (= "running" (:status (get-row job-id)))))))))
+
+(t/deftest complete-job-multipart-of-a-terminal-job-skips-and-stores-nothing
+  (let [profile (mk-profile)
+        job-id  (mk-job {:status     "cancelled"
+                         :profile-id (:id profile)})
+        path    (artifact-tempfile "penpot")
+        out     (multipart-complete job-id path)]
+    (t/is (nil? (:error out)))
+    ;; the bytes are not used: the completion lost the race with the
+    ;; cancel, and no object is left for the storage GC to find
+    (t/is (= {:action :skip :status "cancelled"} (:result out)))
+    (t/is (zero? (count (th/db-exec! ["SELECT id FROM storage_object"]))))))
+
+(t/deftest fail-job-closes-the-render-session
+  (let [profile    (mk-profile)
+        job-id     (mk-job {:status     "running"
+                            :profile-id (:id profile)})
+        session-id (get-in (mgmt :create-job-session {:job-id job-id})
+                           [:result :session-id])
+        out        (mgmt :fail-job {:job-id    job-id
+                                    :error     {:type  :internal
+                                                :code  "processing-error"
+                                                :hint  "bad image"}
+                                    :session-id session-id})]
+    (t/is (nil? (:error out)))
+    (t/is (= {:action :run} (:result out)))
+    (t/is (= "failed" (:status (get-row job-id))))
+    (t/is (nil? (get-session-row session-id)))))
