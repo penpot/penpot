@@ -22,6 +22,13 @@ export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"target/$RENDER_TARGET"};
 export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
 
+# Let rustc emit wasm SIMD for our Rust code (autovec / core::arch::wasm32).
+# Skia SIMD still comes from the -simd prebuild + -msimd128 in EMCC_CFLAGS.
+# Gate on the emscripten target so native `./test` is unaffected.
+if [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-emscripten" ]; then
+    export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128"
+fi
+
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
 export EM_INITIAL_HEAP=$((256 * 1024 * 1024))
