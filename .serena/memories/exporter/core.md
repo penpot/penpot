@@ -9,6 +9,7 @@
 - Because exporter consumes `common/`, shared file/shape/model changes may need exporter verification even when the immediate change is not under `exporter/`.
 - Cross-cutting testing principles and anti-patterns: `mem:testing`.
 - Exporter test conventions and CI: `mem:exporter/testing`.
+- Promise chains in the exporter (management client, auth) follow promesa's two API families; arg orders, what each fn must return, the `->>` preference and the async-test silent-green trap: `mem:clojure/promesa` — read before touching promise code.
 
 ## HTTP and browser pool
 
