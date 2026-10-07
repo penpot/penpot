@@ -50,10 +50,11 @@
    :show-content
    :hide-in-viewer
 
-   ;; Needed to disable/enable width/height
+   ;; Needed to disable/enable width/height and x/y
    ;; otherwise the memo will not detect changes
    :layout-item-h-sizing
-   :layout-item-v-sizing])
+   :layout-item-v-sizing
+   :layout-item-absolute])
 
 (def ^:private generic-options
   #{:size :position :rotation})
@@ -161,6 +162,8 @@
                      (get n-values :layout-item-h-sizing))
          (identical? (get o-values :layout-item-v-sizing)
                      (get n-values :layout-item-v-sizing))
+         (identical? (get o-values :layout-item-absolute)
+                     (get n-values :layout-item-absolute))
          (identical? (get o-values :points)
                      (get n-values :points))
          (identical? (get o-values :selrect)
