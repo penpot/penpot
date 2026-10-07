@@ -179,7 +179,8 @@ mod tests {
 
     #[test]
     fn test_image_fill_round_trip() {
-        let image_fill = shapes::ImageFill::new(crate::uuid::Uuid::nil(), 0x80, 300, 200, true);
+        let image_fill =
+            shapes::ImageFill::new(crate::uuid::Uuid::nil(), 0x80, 300, 200, true).with_mtype(0x02);
         let fill = shapes::Fill::Image(image_fill);
         let raw_fill = RawFillData::try_from(&fill).expect("image fill must be serializable");
         let bytes = <[u8; RAW_FILL_DATA_SIZE]>::from(raw_fill);
