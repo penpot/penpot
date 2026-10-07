@@ -795,7 +795,7 @@
     :r4})
 
 (def ^:private text-extract-props
-  (into #{} cat [txt/root-attrs txt/paragraph-attrs txt/text-node-attrs]))
+  (into #{} cat [txt/root-attrs txt/paragraph-attrs txt/text-node-style-attrs]))
 
 (def ^:private layout-extract-props
   (set ctsl/layout-attrs))
@@ -846,7 +846,7 @@
                       (assoc-props node txt/paragraph-attrs)
 
                       (txt/is-text-node? node)
-                      (assoc-props node txt/text-node-attrs)))
+                      (assoc-props node txt/text-node-style-attrs)))
                   props)))
 
           (extract-layout-attrs [props shape]
@@ -889,7 +889,7 @@
                              (d/patch-object (select-keys props txt/paragraph-attrs))
 
                              (txt/is-text-node? node)
-                             (d/patch-object (select-keys props txt/text-node-attrs))))))))))
+                             (d/patch-object (select-keys props txt/text-node-style-attrs))))))))))
 
           (patch-layout-props [shape props]
             (let [shape (d/patch-object shape (select-keys props ctsl/layout-attrs))]

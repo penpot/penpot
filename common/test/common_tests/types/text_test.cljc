@@ -8,7 +8,9 @@
   (:require
 
    [app.common.types.shape :as cts]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as cttx]
+   [app.common.types.text.cjk-layout :as cjk]
    [clojure.test :as t :include-macros true]))
 
 (def content-base
@@ -368,3 +370,114 @@
 
     (t/is (every? #(= % "14") original-font-sizes))
     (t/is (every? #(= % "32") updated-font-sizes))))
+
+(defn- with-span-attrs
+  [attrs]
+  (update-in content-base [:children 0 :children 0 :children 0] merge attrs))
+
+(defn- with-paragraph-attrs
+  [attrs]
+  (update-in content-base [:children 0 :children 0] merge attrs))
+
+(t/deftest japanese-span-attrs-accept-supported-values
+  (t/is (ctst/valid-content?
+         (with-span-attrs {:text-combine-upright "digits2"
+                           :text-emphasis "open-sesame"
+                           :ruby "かんじ"
+                           :ruby-hidden true
+                           :ruby-size "quarter"
+                           :ruby-align "space-between"
+                           :ruby-overhang "none"
+                           :ruby-side "under"
+                           :warichu "warichu"
+                           :font-features "vpal"
+                           :annotation-clearance "auto"
+                           :text-orientation "upright"})))
+  (t/is (ctst/valid-content?
+         (with-paragraph-attrs {:writing-mode "vertical-rl" :text-orientation "mixed"}))))
+
+(t/deftest japanese-attrs-reject-unknown-values
+  (doseq [attrs [{:text-combine-upright "digits5"}
+                 {:text-emphasis "dot"}
+                 {:ruby-hidden "yes"}
+                 {:ruby-size "full"}
+                 {:ruby-align "end"}
+                 {:ruby-overhang "always"}
+                 {:ruby-side "left"}
+                 {:warichu "yes"}
+                 {:font-features "kern"}
+                 {:annotation-clearance "max"}
+                 {:text-orientation "sideways"}]]
+    (t/is (not (ctst/valid-content? (with-span-attrs attrs))) (pr-str attrs)))
+  (t/is (not (ctst/valid-content? (with-paragraph-attrs {:writing-mode "vertical-lr"})))))
+
+(t/deftest digit-combine-segments-combine-short-digit-runs
+  (t/is (= [["平成" false] ["31" true] ["年" false]]
+           (cjk/digit-combine-segments "平成31年" "digits2")))
+  (t/is (= [["第" false] ["１２３" true]]
+           (cjk/digit-combine-segments "第１２３" "digits3")))
+  (t/is (= [["12345" false]] (cjk/digit-combine-segments "12345" "digits")))
+  (t/is (= [["1" false]] (cjk/digit-combine-segments "1" "digits")))
+  (t/is (nil? (cjk/digit-combine-segments "31" "all"))))
+
+(t/deftest western-reading-test
+  (t/is (true? (cjk/western-reading? "editor")))
+  (t/is (true? (cjk/western-reading? "gross domestic product")))
+  (t/is (false? (cjk/western-reading? "エディター")))
+  (t/is (false? (cjk/western-reading? "ＧＤＰ")))
+  (t/is (false? (cjk/western-reading? "かnji")))
+  (t/is (false? (cjk/western-reading? "")))
+  (t/is (false? (cjk/western-reading? nil))))
+
+(t/deftest schema-accepts-every-japanese-enum-value
+  (doseq [[attr values] (dissoc cjk/enum-values :writing-mode :line-adjustment)
+          value         values]
+    (t/is (ctst/valid-content? (with-span-attrs {attr value})) (pr-str attr value)))
+  (doseq [value (:writing-mode cjk/enum-values)]
+    (t/is (ctst/valid-content? (with-paragraph-attrs {:writing-mode value})) value))
+  (doseq [value (:line-adjustment cjk/enum-values)]
+    (t/is (ctst/valid-content? (assoc content-base :line-adjustment value)) value))
+  (t/is (not (ctst/valid-content? (assoc content-base :line-adjustment "squeeze")))))
+
+(t/deftest japanese-enum-defaults-are-the-first-values
+  (t/is (= "horizontal-tb" (cjk/enum-default :writing-mode)))
+  (t/is (= "space-around" (cjk/enum-default :ruby-align)))
+  (t/is (= "auto" (cjk/enum-default :ruby-overhang)))
+  (t/is (= "push-in-first" (cjk/enum-default :line-adjustment)))
+  (t/is (= {:writing-mode "horizontal-tb" :text-orientation "mixed"}
+           cjk/paragraph-attr-defaults)))
+
+(t/deftest span-attr-defaults-cover-every-span-attr
+  (t/is (= (set cjk/span-attrs) (set (keys cjk/span-attr-defaults))))
+  (t/is (= "" (:ruby cjk/span-attr-defaults)))
+  (t/is (false? (:ruby-hidden cjk/span-attr-defaults)))
+  (t/is (= "half" (:ruby-size cjk/span-attr-defaults))))
+
+(t/deftest valid-enum-value-checks-the-attr-values
+  (t/is (cjk/valid-enum-value? :ruby-side "under"))
+  (t/is (not (cjk/valid-enum-value? :ruby-side "left")))
+  (t/is (not (cjk/valid-enum-value? :ruby-side nil))))
+
+(t/deftest digit-combine-covers-the-digits-values-only
+  (t/is (every? cjk/digit-combine? ["digits" "digits2" "digits3"]))
+  (t/is (not-any? cjk/digit-combine? ["none" "all" nil])))
+
+(t/deftest warichu-notes-show-no-ruby
+  (t/is (= "かん" (cjk/visible-ruby {:text "漢字" :ruby "かん"})))
+  (t/is (nil? (cjk/visible-ruby {:text "漢字" :ruby "かん" :warichu "warichu"})))
+  (t/is (nil? (cjk/visible-ruby {:text "漢字" :ruby "かん" :ruby-hidden true}))))
+
+(t/deftest ruby-span-is-true-for-hidden-readings
+  (t/is (cjk/ruby-span? {:ruby "かん" :ruby-hidden true}))
+  (t/is (not (cjk/ruby-span? {:ruby " "})))
+  (t/is (not (cjk/ruby-span? {}))))
+
+(t/deftest whole-shape-attr-reads-the-first-paragraph
+  (let [content {:type "root"
+                 :children [{:type "paragraph-set"
+                             :children [{:type "paragraph" :writing-mode "vertical-rl"
+                                         :children [{:text "a"}]}
+                                        {:type "paragraph" :writing-mode "horizontal-tb"
+                                         :children [{:text "b"}]}]}]}]
+    (t/is (= "vertical-rl" (cjk/whole-shape-attr content :writing-mode)))
+    (t/is (nil? (cjk/whole-shape-attr content :text-orientation)))))
