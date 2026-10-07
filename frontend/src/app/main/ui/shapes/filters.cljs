@@ -116,11 +116,9 @@
              :result filter-id}])
 
 (mf/defc filter-entry* [{:keys [entry]}]
-  ;; Raw JS props skip the kebab to camel conversion; `*` components read
-  ;; `filterId`/`filterIn`.
-  (let [props #js {:filterId (:id entry)
-                   :filterIn (:filter-in entry)
-                   :params (:params entry)}]
+  (let [props (mf/props {:filter-id (:id entry)
+                         :filter-in (:filter-in entry)
+                         :params (:params entry)})]
     (case (:type entry)
       :drop-shadow [:> drop-shadow-filter* props]
       :inner-shadow [:> inner-shadow-filter* props]
