@@ -301,11 +301,13 @@
   (let [texts  (for [shape (vals scene)
                      :when (= :text (:type shape))
                      node  (or (some->> (:content shape) (tree-seq :children :children)) [])
-                     :let  [text (:text node)]
+                     text  [(:text node) (:ruby node)]
                      :when (string? text)]
                  text)
         emoji? (boolean (some cfnt/contains-emoji? texts))
-        langs  (reduce cfnt/collect-used-languages #{} texts)]
+        ;; The exporter has no user locale; Han-only text falls back to Chinese.
+        langs  (-> (reduce cfnt/collect-used-languages #{} texts)
+                   (cfnt/resolve-ambiguous-cjk nil))]
     (distinct
      (cond-> (cfnt/add-noto-fonts [] langs)
        emoji? (cfnt/add-emoji-font)))))

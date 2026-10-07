@@ -1,6 +1,7 @@
 use skia_safe::{self as skia};
 
 use std::borrow::Cow;
+use std::cell::Cell;
 use std::collections::HashSet;
 
 use crate::error::Result;
@@ -53,6 +54,44 @@ fn svg_page_bounds(shape: &Shape, tree: ShapesPoolRef, scale: f32) -> skia::Rect
     }
 }
 
+thread_local! {
+    /// Set while an SVG document is being written.
+    static WRITING_SVG: Cell<bool> = const { Cell::new(false) };
+}
+
+/// True while an SVG export draws. `SkSVGDevice` rebuilds `<text>` from glyph
+/// IDs through the font's cmap, which loses vertical alternates and maps
+/// shared glyphs to the wrong code point, so vertical text draws outlines.
+pub(crate) fn writing_svg() -> bool {
+    WRITING_SVG.with(Cell::get)
+}
+
+/// Glyph output for vertical text drawn on the current canvas: outlines
+/// while an SVG export draws, text blobs otherwise.
+pub(crate) fn vertical_glyph_output() -> crate::shapes::text_vertical::GlyphOutput {
+    if writing_svg() {
+        crate::shapes::text_vertical::GlyphOutput::Outlines
+    } else {
+        crate::shapes::text_vertical::GlyphOutput::Text
+    }
+}
+
+/// Marks the SVG export as running until dropped.
+struct WritingSvg;
+
+impl WritingSvg {
+    fn start() -> Self {
+        WRITING_SVG.with(|writing| writing.set(true));
+        Self
+    }
+}
+
+impl Drop for WritingSvg {
+    fn drop(&mut self) {
+        WRITING_SVG.with(|writing| writing.set(false));
+    }
+}
+
 /// Renders a shape tree to an SVG document and returns the raw SVG bytes.
 ///
 /// Dedicated vector-SVG render path. Leaf content (paths, fills, …) is emitted
@@ -98,7 +137,9 @@ pub(crate) fn render_tree_to_svg(
     let page_h = bounds.height() * scale;
     let rect = skia::Rect::from_xywh(0., 0., page_w, page_h);
 
+    let writing = WritingSvg::start();
     let (defs, body) = render_body(shared, id, tree, scale, rect, -bounds.left(), -bounds.top())?;
+    drop(writing);
 
     let mut aliases = HashSet::new();
     collect_font_aliases(tree, id, &mut aliases);
