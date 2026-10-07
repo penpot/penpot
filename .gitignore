@@ -82,6 +82,7 @@ opencode.json
 /web
 /library/target/
 /library/*.zip
+/library/.shadow-cljs
 /external
 /penpot-nitrate
 /test-results/
@@ -89,6 +90,7 @@ opencode.json
 /blob-report/
 /playwright/.cache/
 /render-wasm/target/
+/render-wasm/.render-wasm-build.lock
 /media-processor/dist/
 /**/node_modules
 /**/.yarn/*
