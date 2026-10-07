@@ -35,6 +35,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -2151,6 +2152,33 @@
         (update :pages-index d/update-vals repair-container)
         (d/update-when :components d/update-vals repair-container))))
 
+(defmethod migrate-data "0031-migrate-stroke-width-token-attr"
+  ;; Stroke width tokens used to be applied to the single `:stroke-width` token
+  ;; attribute, replaced by the four per-side attributes. The editor reads only
+  ;; the new keys, so a file written before the change keeps the token on
+  ;; `:stroke-width` and the token looks unapplied even though its value is
+  ;; still set. Copy the legacy reference to every side (matching how applying
+  ;; the token resolves all sides) and drop the old key. A side that already
+  ;; carries a reference wins over the recycled global one.
+  [data _]
+  (letfn [(repair-shape [shape]
+            (let [applied (:applied-tokens shape)
+                  token   (:stroke-width applied)]
+              (if (some? token)
+                (update shape :applied-tokens
+                        (fn [applied]
+                          (-> (zipmap ctt/per-side-stroke-width-keys (repeat token))
+                              (merge applied)
+                              (dissoc :stroke-width))))
+                shape)))
+
+          (repair-container [container]
+            (d/update-when container :objects d/update-vals repair-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals repair-container)
+        (d/update-when :components d/update-vals repair-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2238,4 +2266,5 @@
          "0027-separate-tokens-status"
          "0028-normalize-constrained-values"
          "0029-move-background-blur-out-of-blur"
-         "0030-remove-stroke-per-side-attr"]))
+         "0030-remove-stroke-per-side-attr"
+         "0031-migrate-stroke-width-token-attr"]))
