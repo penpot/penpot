@@ -977,14 +977,29 @@
           libr-id (bfc/lookup-index libr-id)]
 
       (when (and file-id libr-id)
-        (l/dbg :hint "create file library link"
-               :file-id (str file-id)
-               :lib-id (str libr-id)
-               ::l/sync? true)
-        (let [rel-params {:file-id file-id
-                          :library-file-id libr-id}]
-          (db/insert! conn :file-library-rel rel-params)
-          (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))
+        (cond
+          (= file-id libr-id)
+          (l/warn :hint "ignoring self-referencing library link"
+                  :file-id (str file-id)
+                  :lib-id (str libr-id)
+                  ::l/sync? true)
+
+          (contains? (bfc/get-libraries cfg [libr-id]) file-id)
+          (l/warn :hint "ignoring circular library link"
+                  :file-id (str file-id)
+                  :lib-id (str libr-id)
+                  ::l/sync? true)
+
+          :else
+          (do
+            (l/dbg :hint "create file library link"
+                   :file-id (str file-id)
+                   :lib-id (str libr-id)
+                   ::l/sync? true)
+            (let [rel-params {:file-id file-id
+                              :library-file-id libr-id}]
+              (db/insert! conn :file-library-rel rel-params)
+              (bfc/upsert-file-library-sync! conn (assoc rel-params :synced-at timestamp)))))))))
 
 (defn- import-storage-objects
   [{:keys [::bfc/input ::entries-index ::bfc/timestamp] :as cfg}]

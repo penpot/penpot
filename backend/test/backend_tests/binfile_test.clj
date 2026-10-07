@@ -2484,3 +2484,116 @@
         (t/is (= (str (first result) "/" thumb-page-id "/" thumb-frame-id "/" thumb-tag)
                  (:object-id thumb)))
         (t/is (some? (:media-id thumb)))))))
+
+(t/deftest import-skips-circular-library-relations
+  ;; https://github.com/penpot/penpot/issues/12052: two libraries that use
+  ;; each other (possible before the 2.17.1 guard) export both relations in
+  ;; the manifest; the import must skip the one closing the cycle instead
+  ;; of recreating it. The cycle is built with direct inserts because the
+  ;; UI command `link-file-to-library` already rejects it.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id lib-a) (:id lib-b)})
+           (assoc ::bfc/export-type :include-libraries))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v3/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)]
+        (t/is (= 2 (count result)))
+        ;; only one of the two cycle edges survives the import
+        (t/is (= 1 (count rels)))
+        ;; no imported file lists itself among its transitive libraries
+        (doseq [file-id result]
+          (t/is (not (contains? (bfc/get-libraries th/*system* [file-id])
+                                file-id))))))))
+
+(t/deftest import-skips-self-referencing-library-relation
+  ;; A file linked to itself must not abort the import; the edge is
+  ;; skipped the same way `link-file-to-library` rejects it.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-a)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id lib-a)})
+           (assoc ::bfc/export-type :include-libraries))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v3/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)]
+        (t/is (= 1 (count result)))
+        (t/is (= 0 (count rels)))))))
+
+(t/deftest import-keeps-acyclic-library-relations
+  ;; Control test: a chain without cycles must be imported untouched, so
+  ;; the new guard only skips edges that would close a cycle.
+  (let [profile (th/create-profile* 1)
+        lib-a   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library A"})
+        lib-b   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library B"})
+        lib-c   (th/create-file* 3 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true
+                                    :name "Library C"})]
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-a)
+                 :library-file-id (:id lib-b)})
+    (db/insert! th/*system* :file-library-rel
+                {:file-id (:id lib-b)
+                 :library-file-id (:id lib-c)})
+
+    (let [output (tmp/tempfile :suffix ".zip")]
+      (v3/export-files!
+       (-> th/*system*
+           (assoc ::bfc/ids #{(:id lib-a) (:id lib-b) (:id lib-c)})
+           (assoc ::bfc/export-type :include-libraries))
+       (io/output-stream output))
+
+      (let [result (:file-ids (-> th/*system*
+                                  (assoc ::bfc/project-id (:default-project-id profile))
+                                  (assoc ::bfc/profile-id (:id profile))
+                                  (assoc ::bfc/input output)
+                                  (v3/import-files!)))
+            rels   (mapcat #(db/query th/*system* :file-library-rel {:file-id %})
+                           result)]
+        (t/is (= 3 (count result)))
+        (t/is (= 2 (count rels)))))))
