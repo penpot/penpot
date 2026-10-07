@@ -276,3 +276,20 @@
 
     (t/testing "tokens shared by both shapes are applied"
       (t/is (= "opacity.50" (get-in result [:applied-tokens :opacity]))))))
+
+;; ---------------------------------------------------------------------------
+;; Ruby readings and warichu notes belong to their own characters
+;; ---------------------------------------------------------------------------
+
+(t/deftest copy-props-leaves-ruby-reading-and-warichu-behind
+  (let [source (text {:content (content {:text "漢字"
+                                         :font-size "20"
+                                         :ruby "かんじ"
+                                         :ruby-size "third"
+                                         :warichu "warichu"})})
+        target (text {})
+        node   (-> (paste-props source target) :content :children first :children first :children first)]
+    (t/is (= "20" (:font-size node)))
+    (t/is (= "third" (:ruby-size node)))
+    (t/is (nil? (:ruby node)))
+    (t/is (nil? (:warichu node)))))

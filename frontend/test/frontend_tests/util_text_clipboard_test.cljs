@@ -144,6 +144,17 @@
              (html->fragment
               "<table><tr><td>a</td><td> b</td></tr><tr><td>c</td><td>d</td></tr></table>")))))
 
+(t/deftest ruby-keeps-the-base-text
+  (t/testing "the annotated text is pasted and the reading is dropped"
+    (t/is (= [(paragraph (run "漢字です"))]
+             (html->fragment "<p><ruby>漢字<rt>かんじ</rt></ruby>です</p>"))))
+
+  (t/testing "rb bases and rp fallback parentheses"
+    (t/is (= [(paragraph (run "漢字"))]
+             (html->fragment
+              (str "<ruby><rb>漢</rb><rp>(</rp><rt>かん</rt><rp>)</rp></ruby>"
+                   "<ruby>字<rp>(</rp><rt>じ</rt><rp>)</rp></ruby>"))))))
+
 (t/deftest hidden-content-is-skipped
   (t/testing "style, script and display:none give no text"
     (t/is (= [(paragraph (run "shown"))]
