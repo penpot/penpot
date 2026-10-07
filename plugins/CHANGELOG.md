@@ -8,6 +8,15 @@
 - **plugin-types**: Added `waitForLayoutUpdate` to wait until pending layout updates have finished. It rejects when the optional timeout elapses, defaulting to 30 seconds so a wait never hangs.
 - **plugin-types**: Added `waitForLayoutUpdate` to the `Shape` interface to wait until the pending layout updates of a shape and its children have finished
 - **plugin-types:** `Stroke` exposes per-side widths for boards and rectangles, also supported by `borderWidth` and `dimension` tokens. Read-only `strokeWidthType` reports `simple` when all four effective widths match, otherwise `multiple`.
+- **plugin-types**: Added `writingMode` and `textOrientation` properties for text shapes (vertical writing)
+- **plugin-types:** Added `textCombineUpright` property for text shapes (Tate-chu-yoko)
+- **plugin-types:** Added `ruby` property for text shapes (furigana annotation)
+- **plugin-types:** Added `textEmphasis` property for text shapes (emphasis marks / bouten)
+- **plugin-types:** Added `warichu` property for text shapes (inline two-line notes)
+- **plugin-types:** `textCombineUpright` now accepts `digits` (combine 2-4 digit runs)
+- **plugin-types:** Added `fontFeatures` (`none`, `palt`, or `vpal`) to text shapes and text ranges.
+- **plugin-types:** Added `annotationClearance` (`none` or `auto`) to text shapes.
+- **plugin-types:** Added `lineAdjustment` (`push-in-first`, `push-out-first` or `push-out-only`) to text shapes: how Japanese lines slightly too long are fitted.
 
 ### 🩹 Fixes
 
