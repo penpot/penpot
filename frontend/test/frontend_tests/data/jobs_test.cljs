@@ -152,9 +152,10 @@
                                       {:file-ids #{job-id} :export-type :detach-libraries})))
        (await (hva/->promise (rp/cmd! :create-import-binfile-job {:project-id (str job-id)})))
        (await (hva/->promise (rp/cmd! :get-job {:id (str job-id)})))
-       (await (hva/->promise (rp/cmd! :create-export-job {})))
+       (await (hva/->promise (rp/cmd! :create-export-assets-job
+                                      {:params {:exports []}})))
 
-       (let [[export import read exporter] @requests]
+       (let [[export import read assets] @requests]
          (t/testing "the binfile export asks the backend, not the exporter service"
            (t/is (= :post (:method export)))
            (t/is (str/ends-with? (:path (:uri export))
@@ -171,6 +172,7 @@
                                  "/api/main/methods/get-job"))
            (t/is (= (str job-id) (:id (:query read)))))
 
-         (t/testing "and the exporter keeps its own name"
-           (t/is (= :post (:method exporter)))
-           (t/is (str/ends-with? (:path (:uri exporter)) "/api/export/jobs"))))))))
+         (t/testing "and the assets export joins the same door"
+           (t/is (= :post (:method assets)))
+           (t/is (str/ends-with? (:path (:uri assets))
+                                 "/api/main/methods/create-export-assets-job"))))))))

@@ -255,6 +255,51 @@
     (t/testing "and nothing was created"
       (t/is (zero? (count-jobs))))))
 
+(t/deftest create-export-assets-job-accepts-a-file-nameable-through-a-share
+  ;; the viewer that renders a file through a public share exports the
+  ;; same way every share fetch goes: the share id names the file, the
+  ;; share-link permissions answer (a logged viewer is enough), and the
+  ;; workspace membership is never touched
+  (let [owner     (th/create-profile* 1 {:is-active true})
+        viewer    (th/create-profile* 2 {:is-active true})
+        file-id   (first (:file-ids (import-fixture! owner)))
+        share     (th/command! {::th/type       :create-share-link
+                                ::rpc/profile-id (:id owner)
+                                :file-id         file-id
+                                :pages           #{(uuid/next)}
+                                :who-comment     "team"
+                                :who-inspect     "all"})
+        share-id  (:id (:result share))
+
+        out       (create-export-assets-job (:id viewer)
+                                            [(export-item file-id
+                                                          :share-id share-id)])]
+
+    (t/testing "a logged viewer of the share can have the job"
+      (t/is (th/success? out))
+      (t/is (= 1 (count-jobs)))))
+
+  (t/testing "a share id that names another file is not a pass"
+    (let [owner    (th/create-profile* 3 {:is-active true})
+          viewer   (th/create-profile* 4 {:is-active true})
+          file-a   (first (:file-ids (import-fixture! owner)))
+          file-b   (first (:file-ids (import-fixture! viewer)))
+          share    (th/command! {::th/type       :create-share-link
+                                 ::rpc/profile-id (:id viewer)
+                                 :file-id         file-b
+                                 :pages           #{(uuid/next)}
+                                 :who-comment     "team"
+                                 :who-inspect     "all"})
+          share-id (:id (:result share))
+          out      (create-export-assets-job (:id viewer)
+                                             [(export-item file-a
+                                                           :share-id share-id)])]
+      (t/is (not (th/success? out)))
+      (t/is (= :not-found (th/ex-type (:error out))))
+      (t/testing "and nothing was created for it"
+        ;; only the accepted share job of the first case exists
+        (t/is (= 1 (count-jobs)))))))
+
 (t/deftest create-export-assets-job-adds-the-job-id-to-the-audit-props
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))

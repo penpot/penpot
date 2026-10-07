@@ -220,7 +220,8 @@
         error?            (:error state)
         ;; The exporter is at capacity: worth its own wording, so the user
         ;; knows retrying later is the thing to do.
-        busy?             (= :queue-full (:error-code state))
+        busy?             (contains? #{:queue-full :max-quote-reached}
+                                     (:error-code state))
         healthy?          (:healthy? state)
         detail-visible?   (:detail-visible state)
         widget-visible?   (:widget-visible state)
@@ -228,13 +229,19 @@
         items             (:exports state)
         job-id            (:job-id state)
         status            (:status state)
+        ;; The stages of the job, named: what the worker reports beats
+        ;; a single "exporting" wording.
+        stage-title       (case (:stage state)
+                            :preparing (tr "workspace.options.exporting-preparing")
+                            :packaging (tr "workspace.options.exporting-packaging")
+                            nil)
         queued?           (and (some? job-id) (= "queued" status))
         cancelling?       (and (some? job-id) (= "cancelling" status))
         cancelled?        (and (some? job-id) (= "cancelled" status))
-        ;; Only the wasm backend can actually stop: a browser render holds its
-        ;; pool slot until playwright gives up.
+        ;; The job is cancellable while it runs: the mark reaches the
+        ;; row and the worker unwinds at its next beat.
         cancellable?      (and (some? job-id)
-                               (= "wasm" (:backend state))
+                               (= "running" status)
                                (:in-progress state)
                                (not cancelling?))
         total             (or (:total state) (count items))
@@ -270,6 +277,7 @@
           cancelled?     (tr "workspace.options.exporting-cancelled")
           queued?        (tr "workspace.options.exporting-queued")
           complete?      (tr "workspace.options.exporting-complete")
+          (and healthy? (some? stage-title)) stage-title
           healthy?       (tr "workspace.options.exporting-object")
           (not healthy?) (tr "workspace.options.exporting-object-slow"))
 

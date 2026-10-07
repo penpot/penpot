@@ -11,13 +11,24 @@
 - Exporter test conventions and CI: `mem:exporter/testing`.
 - Promise chains in the exporter (management client, auth) follow promesa's two API families; arg orders, what each fn must return, the `->>` preference and the async-test silent-green trap: `mem:clojure/promesa` — read before touching promise code.
 
-## HTTP and browser pool
+## HTTP and browser pool (legacy surface, doomed)
 
 - POST body limit is about 60 MB. Exporter supports `application/transit+json`; request params merge query params and body params.
 - Map response bodies are Transit JSON and force HTTP 200; nil 200 bodies become 204.
 - Auth token comes from cookie `auth-token`, then uploads use Bearer auth plus the management shared key.
 - Each export job gets a fresh Playwright browser context. On success, the context closes and the browser returns to the pool; on error, the browser is destroyed instead of reused.
 - Borrow validates browser connection. Pool acquire timeout is about 10s; font loading timeout logs a warning and continues after about 15s.
+- The `http` role needs `PENPOT_EXPORTER_ROLES=http`. Default is gone once the HTTP deletion task lands; the scheduler config keys (`PENPOT_EXPORTER_MAX_CONCURRENT_JOBS` and friends) belong to this surface.
+
+## Worker (consumer of the jobs substrate)
+
+- Roles: `PENPOT_EXPORTER_ROLES` selects `http` and/or `worker`; **default is `worker`** (consumer-only process, no HTTP server to preserve): `app.consumer.config`, all accessors read live config.
+- `worker` boots K pollers (`app.consumer.worker`): one Redis connection per poller (connection = slot + backpressure), BLPOP on `penpot.worker.queue:<tenant>:exporter`, payload `[job-id scheduled-at]` JSON; corrupt payload warns and drops, dead Redis delays 1s and retries. `K = PENPOT_EXPORTER_WORKER_CONCURRENCY` default 2, floor 1; replicas × K is the total concurrency. Pollers start after pools in `core.cljs` and stop before redis in the shutdown.
+- Management client (`app.consumer.api`): claim/progress/create-job-session/complete-job (JSON and multipart via undici FormData)/fail-job, POST to `<internal-uri>/api/management/methods/<method>` with `X-Shared-Key: exporter <key>` (key = `PENPOT_EXPORTER_SHARED_KEY` or HKDF-derived from the secret); transit bodies, non-2xx errors carry `:status` and the error body.
+- Runner (`app.consumer.exports`, `run-export!`): mints a render session (`create-job-session`), plans via `make-plan` (single → artifact of its type; multi → zip; frames → pdf via pdfunite), settles via `complete-job-with-artifact` multipart or `fail-job`; the settle never rejects.
+- Beats: per-object milestones `:preparing/:rendering/:packaging` with `objects`/`pages` counters, throttled at 250ms; a watchdog repeats the last milestone every 1s.
+- Cancellation: a `skip` answer on any beat means the row is terminal (cancelled, aborted, settled). The runner raises `:job-cancelled` between units of work; mid-Skia the watchdog fires the local port once (`jobs/mark-cancelled`: flag + SharedArrayBuffer + terminate callbacks registered by `renderer.wasm/with-scope`), killing the leased worker thread. The runner owns the local registry entry via `jobs/register!` and releases it on settle.
+- The legacy job machinery (`app.jobs`, scheduler, store) only serves the `http` surfaces plus the local cancel arm; the worker reuses pools and `job.utils/track!/release!` for temp files.
 
 ## Export batching and async behavior
 

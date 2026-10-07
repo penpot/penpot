@@ -5,7 +5,7 @@ Frontend: CLJS SPA; React/Rumext; Potok; RxJS; okulary refs; SCSS modules; share
 ## Stable namespace map
 
 - `app.main.ui.*`: Rumext/React UI components for workspace, dashboard, viewer, settings, auth, nitrate, etc.
-- `app.main.data.*`: Potok event handlers and side effects.
+- `app.main.data.*`: Potok event handlers and side effects. Exports live in `app.main.data.exports.*`: assets (shapes and frames) and files (binfile) both run as jobs of the jobs substrate (`create-export-*-job` + `dj/watch-job` on the websocket; the widget `ui.exports.assets/progress-widget` shows milestones `{stage counters}`, downloads on the completed row's `result` and cancels by job id). The single-object wasm render stays client-side: it renders and downloads locally and never creates a job.
 - `app.main.refs`: reactive refs/lenses over store and derived workspace data.
 - `app.main.store`: Potok store and `emit!`.
 - `app.plugins.*` and `app.plugins`: CLJS implementation of Plugin JS API proxies.

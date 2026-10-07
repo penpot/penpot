@@ -253,7 +253,9 @@
   object is written: a lost race against a cancel never stores bytes.
 
   With `:session-id`, the render session the worker minted through
-  `create-job-session` is deleted after the completion commits.
+  `create-job-session` is deleted once the completion is answered,
+  whatever it says: the settle of the run is what ends the life of the
+  session it minted, even a settle that lost against a cancel.
 
   A completion of a job that already ended answers `{:action :skip,
   :status ...}` and changes nothing."
@@ -271,7 +273,10 @@
       (do
         (check-artifact! content)
         (complete-with-artifact cfg job content filename mtype session-id))
-      (skip-with-status cfg job-id))
+      (do
+        ;; a completion that lost the race is not a session to keep either
+        (close-job-session! cfg session-id)
+        (skip-with-status cfg job-id)))
 
     ;; the JSON form: nothing to store here, the resource (if any)
     ;; already lives in storage
@@ -283,7 +288,9 @@
       (do
         (close-job-session! cfg session-id)
         {:action :run})
-      (skip-with-status cfg job-id))))
+      (do
+        (close-job-session! cfg session-id)
+        (skip-with-status cfg job-id)))))
 
 ;; ---- RPC METHOD: FAIL-JOB
 
@@ -308,10 +315,12 @@
    ::sm/result schema:fail-job-result
    ::rpc/auth false} ;; shared-key enforced by route resolver
   [cfg {:keys [job-id error session-id]}]
+  ;; The session is closed whatever the write says: the worker that
+  ;; settles (even a settle that loses against a cancel it cannot see)
+  ;; is what ends the life of the render session it minted.
+  (close-job-session! cfg session-id)
   (if (pos? (jobs/fail cfg job-id error))
-    (do
-      (close-job-session! cfg session-id)
-      {:action :run})
+    {:action :run}
     (skip-with-status cfg job-id)))
 
 ;; ---- RPC METHOD: CREATE-JOB-SESSION

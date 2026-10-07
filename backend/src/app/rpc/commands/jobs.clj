@@ -121,7 +121,8 @@
 (defn- check-file-permissions
   "The files the job will read, checked before anything is stored: a
   refusal arrives synchronously. The handler checks it again before
-  reading, because a permission can be revoked while the job waits."
+  reading, because a permission can be revoked while the job waits.
+  This is the binfile flavour: whole files, no share ids."
   [cfg profile-id file-ids]
   (when (empty? file-ids)
     (ex/raise :type :validation
@@ -129,6 +130,21 @@
               :hint "expected at least one file to export"))
   (doseq [file-id file-ids]
     (files/check-read-permissions! cfg profile-id file-id)))
+
+(defn- check-item-permissions
+  "The assets flavour: the items name files, and a viewer that reached
+  them through a share link names the share, so the permission goes the
+  same way every share fetch goes (a logged viewer of a public share is
+  allowed; the workspace path stays for the plain items). The command
+  is not anonymous: an anonymous visitor has no profile to own the
+  artifact, the same as the exporter cookie this cutover replaces."
+  [cfg profile-id items]
+  (doseq [item items]
+    (let [file-id  (:file-id item)
+          share-id (:share-id item)]
+      (if (some? share-id)
+        (files/check-read-permissions! cfg profile-id file-id share-id)
+        (files/check-read-permissions! cfg profile-id file-id)))))
 
 (sv/defmethod ::create-export-binfile-job
   "Create a durable job that exports a set of files as a `.penpot`
@@ -188,8 +204,7 @@
         ;; before the command ran
         params  (jobs/validate-params job-def (:params envelope))]
 
-    (check-file-permissions cfg profile-id
-                            (into #{} (map :file-id) (:exports params)))
+    (check-item-permissions cfg profile-id (:exports params))
 
     (quotes/check! cfg {::quotes/id ::quotes/export-jobs-per-profile
                         ::quotes/profile-id profile-id})
