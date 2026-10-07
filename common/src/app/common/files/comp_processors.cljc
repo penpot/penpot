@@ -23,18 +23,18 @@
      (if (:deleted component)
        (if (nil? (:objects component))
          (do
-           (log/warn :msg "Adding empty :objects to deleted component"
-                     :component-id (:id component)
+           (log/warn :hint "adding empty :objects to deleted component"
+                     :component-id (str (:id component))
                      :component-name (:name component)
-                     :file-id (:id file-data))
+                     :file-id (str (:id file-data)))
            (assoc component :objects {}))
          component)
        (if (contains? component :objects)
          (do
-           (log/warn :msg "Removing :objects from non-deleted component"
-                     :component-id (:id component)
+           (log/warn :hint "removing :objects from non-deleted component"
+                     :component-id (str (:id component))
                      :component-name (:name component)
-                     :file-id (:id file-data))
+                     :file-id (str (:id file-data)))
            (dissoc component :objects))
          component)))))
 
@@ -50,15 +50,15 @@
      (fn [shape]
        (if (false? (:component-root shape))
          (do
-           (log/warn :msg "Normalizing :component-root false on shape"
-                     :shape-id (:id shape)
+           (log/warn :hint "normalizing :component-root false on shape"
+                     :shape-id (str (:id shape))
                      :shape-name (:name shape)
-                     :file-id (:id file-data))
+                     :file-id (str (:id file-data)))
            {:result :update :updated-shape (dissoc shape :component-root)})
          {:result :keep})))
     (catch #?(:clj Throwable :cljs :default) e
-      (log/warn :msg "Failed to normalize :component-root on shapes"
-                :file-id (:id file-data)
+      (log/warn :hint "failed to normalize :component-root on shapes"
+                :file-id (str (:id file-data))
                 :cause e)
       file-data)))
 
@@ -82,19 +82,19 @@
                     (not= (:shape-ref shape) (:id near-match))
                     (nil? (ctk/get-swap-slot shape)))
              (let [updated-shape (ctk/set-swap-slot shape (:id near-match))]
-               (log/warn :msg "Adding missing swap slot to shape"
-                         :shape-id (:id shape)
+               (log/warn :hint "adding missing swap slot to shape"
+                         :shape-id (str (:id shape))
                          :shape-name (:name shape)
-                         :swap-slot (:id near-match)
-                         :file-id (:id file)
-                         :container-id (:id container)
+                         :swap-slot (str (:id near-match))
+                         :file-id (str (:id file))
+                         :container-id (str (:id container))
                          :container-type (:type container))
                {:result :update :updated-shape updated-shape})
              {:result :keep}))
          {:result :keep})))
     (catch #?(:clj Throwable :cljs :default) e
-      (log/warn :msg "Failed to fix missing swap slots on shapes"
-                :file-id (:id file-data)
+      (log/warn :hint "failed to fix missing swap slots on shapes"
+                :file-id (str (:id file-data))
                 :cause e)
       file-data)))
 
@@ -127,21 +127,21 @@
 
                                       (nil? (:component-file ref-shape))
                                       (dissoc :component-file))]
-                         (log/warn :msg "Syncing component id and file with ref shape"
-                                   :shape-id (:id shape)
+                         (log/warn :hint "syncing component id and file with ref shape"
+                                   :shape-id (str (:id shape))
                                    :shape-name (:name shape)
-                                   :component-id (:component-id shape')
-                                   :component-file (:component-file shape')
-                                   :ref-shape-id (:id ref-shape)
-                                   :file-id (:id file)
-                                   :container-id (:id container)
+                                   :component-id (str (:component-id shape'))
+                                   :component-file (str (:component-file shape'))
+                                   :ref-shape-id (str (:id ref-shape))
+                                   :file-id (str (:id file))
+                                   :container-id (str (:id container))
                                    :container-type (:type container))
                          {:result :update :updated-shape shape'})
                        {:result :keep}))
                    {:result :keep})))
               (catch #?(:clj Throwable :cljs :default) e
-                (log/warn :msg "Failed to sync component id and file with ref shape"
-                          :file-id (:id file-data)
+                (log/warn :hint "failed to sync component id and file with ref shape"
+                          :file-id (str (:id file-data))
                           :cause e)
                 file-data)))]
     ;; If a copy inside a main is updated, we need to repeat the process for the change to be
