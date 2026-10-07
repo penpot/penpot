@@ -6,13 +6,34 @@
 
 (ns app.plugins.management
   (:require
+   [app.common.features :as cfeat]
    [app.common.uuid :as uuid]
+   [app.main.data.dashboard :as dd]
    [app.main.data.helpers :as dsh]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]))
+   [beicon.v2.core :as rx]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
+
+(defn- project-summary
+  [project]
+  #js {:id (str (:id project))
+       :teamId (str (:team-id project))
+       :name (:name project)
+       :isDefault (boolean (:is-default project))
+       :fileCount (or (:count project) 0)})
+
+(defn- file-summary
+  [file]
+  #js {:id (str (:id file))
+       :teamId (str (:team-id file))
+       :projectId (str (:project-id file))
+       :name (:name file)
+       :modifiedAt (.toISOString ^js (:modified-at file))})
 
 (defn workspace-context
   [state]
@@ -83,14 +104,7 @@
        (fn [resolve reject]
          (->> (rp/cmd! :get-projects {:team-id team-id})
               (rx/map (fn [projects]
-                        (clj->js
-                         (mapv (fn [project]
-                                 {:id (str (:id project))
-                                  :teamId (str (:team-id project))
-                                  :name (:name project)
-                                  :isDefault (boolean (:is-default project))
-                                  :fileCount (:count project)})
-                               (remove :deleted-at projects)))))
+                        (into-array (map project-summary (remove :deleted-at projects)))))
               (rx/subs! resolve reject)))))))
 
 (defn list-files
@@ -102,15 +116,67 @@
        (fn [resolve reject]
          (->> (rp/cmd! :get-project-files {:project-id project-id})
               (rx/map (fn [files]
-                        (clj->js
-                         (mapv (fn [file]
-                                 {:id (str (:id file))
-                                  :teamId (str (:team-id file))
-                                  :projectId (str (:project-id file))
-                                  :name (:name file)
-                                  :modifiedAt (.toISOString ^js (:modified-at file))})
-                               files))))
+                        (into-array (map file-summary files))))
               (rx/subs! resolve reject)))))))
+
+(defn- creation-name
+  [options]
+  (let [name (obj/get options "name")]
+    (when (string? name)
+      (let [name (str/trim name)]
+        (when (<= 1 (count name) 250)
+          name)))))
+
+(defn create-project
+  [options]
+  (let [team-id (if-let [id (obj/get options "teamId")]
+                  (uuid/parse* id)
+                  (:current-team-id @st/state))
+        name    (creation-name options)]
+    (cond
+      (nil? team-id)
+      (js/Promise.reject (js/Error. "Expected a team UUID"))
+
+      (nil? name)
+      (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))
+
+      :else
+      (js/Promise.
+       (fn [resolve reject]
+         (->> (rp/cmd! :create-project {:team-id team-id :name name})
+              (rx/tap (fn [project]
+                        (st/emit!
+                         (fn [state]
+                           (if (= (:team-id project) (:current-team-id state))
+                             (assoc-in state [:projects (:id project)] (assoc project :count 0))
+                             state)))))
+              (rx/map project-summary)
+              (rx/subs! resolve reject)))))))
+
+(defn create-file
+  [options]
+  (let [project-id (uuid/parse* (obj/get options "projectId"))
+        name       (creation-name options)]
+    (cond
+      (nil? project-id)
+      (js/Promise.reject (js/Error. "Expected a project UUID"))
+
+      (nil? name)
+      (js/Promise.reject (js/Error. "Expected a name with 1 to 250 characters"))
+
+      :else
+      (js/Promise.
+       (fn [resolve reject]
+         (let [features (set/difference (:features @st/state #{}) cfeat/frontend-only-features)]
+           (->> (rp/cmd! :create-file {:project-id project-id :name name :features features})
+                (rx/tap (fn [file]
+                          (st/emit!
+                           (fn [state]
+                             (if (= (:team-id file) (:current-team-id state))
+                               (ptk/update (dd/file-created file) state)
+                               state)))))
+                (rx/map file-summary)
+                (rx/subs! resolve reject))))))))
 
 (defn create-context
   []
@@ -119,4 +185,6 @@
     {:get (fn [] (clj->js (workspace-context @st/state)))}
     :openFile open-file
     :listProjects list-projects
-    :listFiles list-files))
+    :listFiles list-files
+    :createProject create-project
+    :createFile create-file))

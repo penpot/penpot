@@ -427,6 +427,14 @@ export function createApi(
       checkPermission('content:read', false);
       return plugin.context.management!.listFiles(options);
     },
+    createProject(options) {
+      checkPermission('content:write', false);
+      return plugin.context.management!.createProject(options);
+    },
+    createFile(options) {
+      checkPermission('content:write', false);
+      return plugin.context.management!.createFile(options);
+    },
     openFile(fileId, options) {
       checkPermission('content:read', false);
       return plugin.context.management!.openFile(fileId, options);

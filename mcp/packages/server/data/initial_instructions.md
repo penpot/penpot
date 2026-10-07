@@ -435,7 +435,11 @@ For many tasks, it can be critical to visually inspect the design. Remember to u
 # The `penpotMgmt` Object
 
 This object (of type `PenpotMgmt`) serves to manage Penpot design projects and files.
-It allows you to discover and navigate to different design files the user has access to.
+It allows you to discover, create and navigate to design projects and files the user has access to.
+Create a project with `await penpotMgmt.createProject({ name: "Design system" })` (optionally specify `teamId`).
+Create a file with `await penpotMgmt.createFile({ projectId: project.id, name: "Login" })`.
+Both creation methods require `content:write` and return metadata without changing the current view.
+To edit the new file, call `await penpotMgmt.openFile(file.id, { teamId: file.teamId })` and reacquire file, page and shape objects.
 You navigate to different design files only when your task explicitly requires it/you are instructed to do so.
 
 --

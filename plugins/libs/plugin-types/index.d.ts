@@ -809,9 +809,9 @@ export interface FileSummary {
 /**
  * Application management API exposed as `penpotMgmt` to global plugins.
  *
- * - Requires `content:read` permission.
+ * - Discovery and navigation require `content:read`; creation requires `content:write`.
  * - Available in the dashboard and file workspaces.
- * - Use this API to discover and open files; file operations on `penpot` require a ready workspace.
+ * - Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
  * - Reacquire file, page and shape objects after changing files.
  */
 export interface PenpotMgmt {
@@ -844,6 +844,41 @@ export interface PenpotMgmt {
    */
   listFiles(options: { projectId: string }): Promise<FileSummary[]>;
   /**
+   * Creates a project and returns its metadata snapshot. Requires `content:write`.
+   *
+   * - `teamId` defaults to the current team.
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not change navigation or open a file.
+   * - Rejects invalid input, backend access errors and quota errors.
+   *
+   * @example
+   * ```ts
+   * const project = await penpotMgmt.createProject({ name: 'Design system' });
+   * ```
+   */
+  createProject(options: {
+    name: string;
+    teamId?: string;
+  }): Promise<ProjectSummary>;
+  /**
+   * Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
+   *
+   * - Requires an explicit `projectId`.
+   * - Trims `name` and requires 1 to 250 characters.
+   * - Does not open the file or change navigation. Use `openFile` to edit it.
+   * - Rejects invalid input, backend access errors and quota errors.
+   *
+   * @example
+   * ```ts
+   * const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
+   * await penpotMgmt.openFile(file.id, { teamId: file.teamId });
+   * ```
+   */
+  createFile(options: {
+    name: string;
+    projectId: string;
+  }): Promise<FileSummary>;
+  /**
    * Opens a file in this tab and resolves once its workspace and page are ready.
    *
    * - `teamId` defaults to the current team.
@@ -869,7 +904,12 @@ export interface PenpotMgmt {
 export interface Context {
   readonly management?: Pick<
     PenpotMgmt,
-    'workspace' | 'openFile' | 'listProjects' | 'listFiles'
+    | 'workspace'
+    | 'openFile'
+    | 'listProjects'
+    | 'listFiles'
+    | 'createProject'
+    | 'createFile'
   >;
   /**
    * Returns the current penpot version.

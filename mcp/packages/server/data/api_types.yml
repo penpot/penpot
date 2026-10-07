@@ -5128,9 +5128,9 @@ PenpotMgmt:
 
     Application management API exposed as `penpotMgmt` to global plugins.
 
-    * Requires `content:read` permission.
+    * Discovery and navigation require `content:read`; creation requires `content:write`.
     * Available in the dashboard and file workspaces.
-    * Use this API to discover and open files; file operations on `penpot` require a ready workspace.
+    * Use this API to discover, create and open files; file operations on `penpot` require a ready workspace.
     * Reacquire file, page and shape objects after changing files.
 
     ```
@@ -5138,6 +5138,8 @@ PenpotMgmt:
         workspace: WorkspaceContext;
         listProjects(options?: { teamId?: string }): Promise<ProjectSummary[]>;
         listFiles(options: { projectId: string }): Promise<FileSummary[]>;
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>;
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>;
         openFile(fileId: string, options?: { teamId?: string }): Promise<void>;
         on(
             type: "workspacechange",
@@ -5198,6 +5200,51 @@ PenpotMgmt:
         Example
         ```
         const files = await penpotMgmt.listFiles({ projectId: project.id });
+        ```
+      createProject: |-
+        ```
+        createProject(options: { name: string; teamId?: string }): Promise<ProjectSummary>
+        ```
+
+        Creates a project and returns its metadata snapshot. Requires `content:write`.
+
+        * `teamId` defaults to the current team.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not change navigation or open a file.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; teamId?: string }
+
+        Returns Promise<ProjectSummary>
+
+        Example
+        ```
+        const project = await penpotMgmt.createProject({ name: 'Design system' });
+        ```
+      createFile: |-
+        ```
+        createFile(options: { name: string; projectId: string }): Promise<FileSummary>
+        ```
+
+        Creates a file with an initial page and returns its metadata snapshot. Requires `content:write`.
+
+        * Requires an explicit `projectId`.
+        * Trims `name` and requires 1 to 250 characters.
+        * Does not open the file or change navigation. Use `openFile` to edit it.
+        * Rejects invalid input, backend access errors and quota errors.
+
+        Parameters
+
+        * options: { name: string; projectId: string }
+
+        Returns Promise<FileSummary>
+
+        Example
+        ```
+        const file = await penpotMgmt.createFile({ projectId: project.id, name: 'Login' });
+        await penpotMgmt.openFile(file.id, { teamId: file.teamId });
         ```
       openFile: |-
         ```
@@ -5260,7 +5307,9 @@ Context:
             "workspace"
             | "openFile"
             | "listProjects"
-            | "listFiles",
+            | "listFiles"
+            | "createProject"
+            | "createFile",
         >;
         version: string;
         root: Shape | null;
@@ -5340,7 +5389,9 @@ Context:
             "workspace"
             | "openFile"
             | "listProjects"
-            | "listFiles",
+            | "listFiles"
+            | "createProject"
+            | "createFile",
         >
         ```
       version: |-
