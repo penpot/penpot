@@ -188,3 +188,14 @@ details[open] > .collapsible-header .collapsible-arrow {
     width: 100%;
     margin-top: var(--spacing-4);
 }
+
+.session-id-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-8);
+}
+
+#session-id-value {
+    flex: 1;
+    user-select: all;
+}

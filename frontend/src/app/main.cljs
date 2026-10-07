@@ -16,6 +16,7 @@
    [app.main.data.event :as ev]
    [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
+   [app.main.data.workspace.mcp :as mcp]
    [app.main.errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
@@ -54,8 +55,12 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
+;; Root component of the last render; a hot reload of `app.main.ui` replaces it
+(defonce ^:private rendered-app (atom nil))
+
 (defn init-ui
   []
+  (reset! rendered-app ui/app)
   (mf/render! app-root (mf/element ui/app)))
 
 (defn- initialize-rasterizer
@@ -77,6 +82,7 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
+              (mcp/initialize)
               (dp/refresh-profile))
 
        ;; Watch for profile deletion events
@@ -146,7 +152,10 @@
    (init-ui)))
 
 (defn ^:dev/after-load after-load
+  "Rerender the UI after a hot reload. When the reload replaced the root
+  component, unmount the whole tree first so its cleanups run before
+  the new tree mounts."
   []
-  (reinit))
+  (reinit (not (identical? @rendered-app ui/app))))
 
 (set! (.-stackTraceLimit js/Error) 50)

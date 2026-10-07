@@ -20,7 +20,6 @@ on:
         description: 'Name of the branch or ref'
         type: string
         required: true
-        default: 'develop'
       force:
         description: 'Rebuild and overwrite even if this version already exists in S3'
         type: boolean
@@ -30,6 +29,17 @@ on:
       sha:
         description: 'Bundled commit, full 40-char SHA.'
         value: ${{ jobs.check.outputs.sha }}
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_REGION:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      S3_BUCKET:
+        required: false
 
 # Literal group name: under `workflow_call`, `github.workflow` resolves to the
 # caller's workflow, which put this workflow and the other reusable one called
@@ -38,6 +48,9 @@ on:
 concurrency:
   group: build-bundle-${{ inputs.gh_ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   # ── 1. Decide whether there is anything to build ───────────────────────
@@ -55,8 +68,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
 
@@ -122,8 +136,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ inputs.gh_ref }}
 

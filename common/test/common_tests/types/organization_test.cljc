@@ -73,12 +73,12 @@
   (let [always-organization (assoc organization-perms :permissions {:create-teams "any"
                                                                     :delete-teams "onlyOwners"
                                                                     :move-teams "always"})]
-    ;; Organization owner should always be allowed
+    ;; Team owners can move the team anywhere, or take it out
     (t/is (true? (cto/allowed? :move-team
                                {:organization-perms always-organization
                                 :profile-id :owner
                                 :team-perms {}})))
-    ;; Regular member should be allowed when move-teams is "always"
+    ;; Being the organization owner makes no difference
     (t/is (true? (cto/allowed? :move-team
                                {:organization-perms always-organization
                                 :profile-id :member
@@ -88,7 +88,8 @@
   (let [my-organizations (assoc organization-perms :permissions {:create-teams "any"
                                                                  :delete-teams "onlyOwners"
                                                                  :move-teams "myOrganizations"})]
-    ;; Organization owner must also stay within same-owner organizations
+    ;; Same owner means same subscription: the organization owner is
+    ;; bound by it too
     (t/is (false? (cto/allowed? :move-team
                                 {:organization-perms my-organizations
                                  :profile-id :owner
@@ -99,7 +100,7 @@
                                 :profile-id :owner
                                 :team-perms {}
                                 :target-organization-same-owner? true})))
-    ;; Regular member should be allowed only if target has same owner
+    ;; A team owner who is not the organization owner, same rule
     (t/is (true? (cto/allowed? :move-team
                                {:organization-perms my-organizations
                                 :profile-id :member
@@ -111,11 +112,27 @@
                                  :team-perms {}
                                  :target-organization-same-owner? false})))))
 
+(t/deftest move-team-myorganizations-denies-taking-the-team-out
+  (let [my-organizations (assoc organization-perms :permissions {:create-teams "any"
+                                                                 :delete-teams "onlyOwners"
+                                                                 :move-teams "myOrganizations"})]
+    ;; Taking a team out has no target organization, so no same owner
+    (t/is (false? (cto/allowed? :move-team
+                                {:organization-perms my-organizations
+                                 :profile-id :owner
+                                 :team-perms {}})))
+    (t/is (false? (cto/allowed? :move-team
+                                {:organization-perms my-organizations
+                                 :profile-id :member
+                                 :team-perms {}
+                                 :target-organization-same-owner? nil})))))
+
 (t/deftest move-team-never-denies-all
   (let [never-organization (assoc organization-perms :permissions {:create-teams "any"
                                                                    :delete-teams "onlyOwners"
                                                                    :move-teams "never"})]
-    ;; Even organization owner should be denied
+    ;; Only the Admin Console moves teams: the organization owner is
+    ;; denied in Penpot too
     (t/is (false? (cto/allowed? :move-team
                                 {:organization-perms never-organization
                                  :profile-id :owner

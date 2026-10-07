@@ -1,4 +1,3 @@
-import type { Penpot } from '@penpot/plugin-types';
 import type { createPluginManager } from './plugin-manager';
 import { createApi } from './api';
 import { ses } from './ses.js';
@@ -67,7 +66,7 @@ export function createSandbox(
   const pluginApi = createApi(plugin);
 
   const safeHandler = {
-    get(target: Penpot, prop: string, receiver: unknown) {
+    get(target: object, prop: string, receiver: unknown) {
       const originalValue = Reflect.get(target, prop, receiver);
 
       if (typeof originalValue === 'function') {
@@ -200,6 +199,12 @@ export function createSandbox(
 
   if (apiExtensions) {
     publicPluginApi = Object.assign(publicPluginApi, apiExtensions);
+  }
+
+  if (plugin.manifest.scope === 'global') {
+    Object.assign(publicPluginApi, {
+      penpotMgmt: new Proxy(pluginApi.penpotMgmt, safeHandler),
+    });
   }
 
   const compartment = ses.createCompartment(publicPluginApi);

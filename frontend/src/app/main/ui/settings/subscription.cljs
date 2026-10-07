@@ -613,7 +613,9 @@
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
        (if nitrate?
-         [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
+         [:> plan-card* {:card-title (if (= (:status nitrate-license) "trialing")
+                                       (tr "subscription.settings.enterprise-trial")
+                                       (tr "subscription.settings.enterprise"))
                          :cancel-at (when (:cancel-at nitrate-license)
                                       (tr "nitrate.subscription.active-until" (ct/format-inst (:cancel-at nitrate-license) "d MMMM, yyyy")))
                          :benefits-title (tr "subscription.settings.benefits.nitrate-unlimited-benefits")

@@ -21,31 +21,55 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   build-bundle:
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-bundle.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     with:
       gh_ref: ${{ github.ref_name }}
       force: ${{ inputs.force || false }}
 
   build-docker:
     needs: build-bundle
+    permissions:
+      contents: read
     uses: ./.github/workflows/build-docker.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+      PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
     with:
       gh_ref: ${{ github.ref_name }}
       force: ${{ inputs.force || false }}
 
   build-docker-admin-console:
+    permissions: {}
     uses: ./.github/workflows/build-docker-admin-console.yml
-    secrets: inherit
+    secrets:
+      ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
     with:
       gh_ref: ${{ github.ref_name }}
       force: ${{ inputs.force || false }}
 
   notify:
     name: Notifications
+    permissions: {}
     runs-on: ubuntu-latest
     needs:
       - build-docker
@@ -66,7 +90,16 @@ jobs:
     needs:
       - build-docker
       - build-docker-admin-console
+    permissions:
+      contents: write
     uses: ./.github/workflows/release.yml
-    secrets: inherit
+    secrets:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+      PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
     with:
       gh_ref: ${{ github.ref_name }}

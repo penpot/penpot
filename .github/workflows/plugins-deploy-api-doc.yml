@@ -39,39 +39,26 @@ jobs:
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ steps.vars.outputs.gh_ref }}
 
-      # START: Setup Node and PNPM enabling cache
+      # No dependency cache here: a deploy must not restore a cache that
+      # other workflows can write to.
       - name: Setup pnpm + Node.js
-        uses: pnpm/setup@v2
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
           working-directory: plugins
           runtime: node@24.21.0
           install: false
 
-      - name: Get pnpm store path
-        id: pnpm-store
-        working-directory: ./plugins
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('plugins/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-      # END: Setup Node and PNPM enabling cache
-
       - name: Install deps
         working-directory: ./plugins
         shell: bash
         run: |
-          pnpm install --no-frozen-lockfile;
+          pnpm install --frozen-lockfile;
           pnpm add -D -w wrangler@latest;
 
       - name: Build docs
@@ -120,7 +107,7 @@ jobs:
           EOF
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
           workingDirectory: plugins
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

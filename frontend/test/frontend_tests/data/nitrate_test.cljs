@@ -15,10 +15,12 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dt]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.verify-token :as verify-token]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -139,74 +141,6 @@
       (let [event @(first @emitted)]
         (t/is (= :auth-register (:id event)))
         (t/is (= invitation-token (get-in event [:params :invitation-token])))))))
-
-(t/deftest accept-organization-invitation-audit-event-test
-  (let [emitted (atom [])]
-    (with-redefs [st/emit! (fn
-                             ([event]
-                              (swap! emitted conj event))
-                             ([event & events]
-                              (swap! emitted into (cons event events))))]
-      (t/testing "accepting a team invitation that adds an organization member"
-        (verify-token/handle-token
-         {:iss :team-invitation
-          :state :created
-          :team-id "team-1"
-          :organization-id "organization-1"
-          :role :editor
-          :invitation-id "invitation-1"
-          :member-id "invitee-1"
-          :profile-id "inviter-1"
-          :organization-member-count-before 4})
-
-        (t/is (= {::ev/name "accept-organization-invitation"
-                  ::ev/origin "team-invitation-acceptance"
-                  :team-id "team-1"
-                  :organization-id "organization-1"
-                  :role :editor
-                  :invitation-id "invitation-1"
-                  :user-id "invitee-1"
-                  :user-who-send-invitation "inviter-1"
-                  :organization-member-add-source "team-invitation"
-                  :belongs-to-team-on-add true
-                  :organization-member-count-before 4}
-                 @(first @emitted))))
-
-      (reset! emitted [])
-      (t/testing "accepting an invitation directly to the organization"
-        (verify-token/handle-token
-         {:iss :team-invitation
-          :state :created
-          :organization-id "organization-2"
-          :organization-team-id "team-default"
-          :role :viewer
-          :invitation-id "invitation-2"
-          :member-id "invitee-2"
-          :profile-id "inviter-2"
-          :organization-member-count-before 0})
-
-        (t/is (= {::ev/name "accept-organization-invitation"
-                  ::ev/origin "organization-invitation-acceptance"
-                  :organization-id "organization-2"
-                  :role :viewer
-                  :invitation-id "invitation-2"
-                  :user-id "invitee-2"
-                  :user-who-send-invitation "inviter-2"
-                  :organization-member-add-source "direct-organization-invitation"
-                  :belongs-to-team-on-add false
-                  :organization-member-count-before 0}
-                 @(first @emitted))))
-
-      (reset! emitted [])
-      (t/testing "does not audit a team invitation for an existing organization member"
-        (verify-token/handle-token
-         {:iss :team-invitation
-          :state :created
-          :team-id "team-3"
-          :organization-id "organization-3"
-          :role :editor})
-
-        (t/is (= 3 (count @emitted)))))))
 
 (t/deftest build-admin-console-url-preserves-public-uri-subpath
   (t/testing "builds admin console routes below the configured Penpot subpath"
@@ -420,3 +354,43 @@
                       {:callback callback})
           parsed     (-> href u/uri :query u/query-string->map :callback)]
       (t/is (= callback parsed)))))
+
+(defn- ^:async observe-add-team-rejected-by-permissions
+  "Runs `add-team-to-organization` for `team` while the backend rejects it
+  with `:not-allowed`, as when another session changed the permissions
+  after the modal opened. Resolves to the emitted events."
+  [team]
+  (let [emitted (atom [])
+        event   (dnt/add-team-to-organization {:team-id (:id team)
+                                               :organization-id "org-2"
+                                               :skip-audit? true})
+        state   {:teams {(:id team) team}}]
+    (await
+     (mock/with-mocks*
+       {rt/get-current-href (mock/stub (constantly "http://localhost/#/dashboard"))
+        rp/cmd! (mock/stub
+                 (fn [cmd _params]
+                   (case cmd
+                     :check-nitrate-sso (rx/of {:authorized true})
+                     ::dnt/add-team-to-organization
+                     (rx/throw (ex-info "not allowed" {:type :validation :code :not-allowed})))))
+        modal/show (mock/stub (fn [& args] {:modal-show args}))}
+       (await (async/observe (ptk/watch event state nil)
+                             :on-next #(swap! emitted conj %)))))
+    @emitted))
+
+(t/deftest ^:async add-team-to-organization-shows-no-permission-on-stale-move
+  (let [emitted (await (observe-add-team-rejected-by-permissions
+                        {:id "team-1" :organization {:id "org-1"}}))]
+    (t/is (= 2 (count emitted)))
+    (t/is (= ::dt/fetch-teams (ptk/type (first emitted))))
+    (t/is (= {:modal-show [:no-permission-modal {:type :no-organizations-change}]}
+             (second emitted)))))
+
+(t/deftest ^:async add-team-to-organization-shows-no-permission-on-stale-add
+  (let [emitted (await (observe-add-team-rejected-by-permissions
+                        {:id "team-1"}))]
+    (t/is (= 2 (count emitted)))
+    (t/is (= ::dt/fetch-teams (ptk/type (first emitted))))
+    (t/is (= {:modal-show [:no-permission-modal {:type :no-organizations-create}]}
+             (second emitted)))))

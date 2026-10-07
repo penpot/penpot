@@ -9,6 +9,7 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
 @use "ds/_utils.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .base-menu {
   position: absolute;
@@ -70,6 +71,7 @@
   }
 
   &.plugins {
+    max-width: $sz-364;
     max-height: calc(100vh - $sz-200);
     overflow: hidden auto;
   }
@@ -118,6 +120,12 @@
 
 .item-name {
   grid-area: name;
+}
+
+.plugin-name {
+  @include text-ellipsis;
+
+  min-width: 0;
 }
 
 .item-indicator {

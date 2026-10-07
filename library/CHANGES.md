@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.2.0
+
+- Update deps and build it with penpot 2.18.3
+
 
 ## 1.2.0-RC1
 

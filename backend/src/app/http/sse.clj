@@ -60,14 +60,13 @@
                                     (partial write! output)
                                     (partial pu/close! output))]
                       (try
-                        (binding [events/*channel* channel]
-                          (let [result (handler)]
-                            (events/tap :end result)))
-
-                        (catch Throwable cause
-                          (let [result (errors/handle' cause request)]
-                            (events/tap channel :error result)))
-
+                        (binding [events/*sink* channel]
+                          (try
+                            (let [result (handler)]
+                              (events/tap :end result))
+                            (catch Throwable cause
+                              (let [result (errors/handle' cause request)]
+                                (events/tap :error result)))))
                         (finally
                           (sp/close! channel)
                           (px/await! listener))))))}))

@@ -19,7 +19,6 @@ on:
         description: 'Name of the branch or ref'
         type: string
         required: true
-        default: 'develop'
       sha:
         description: >-
           Exact commit to check out (full 40-char SHA, e.g. from
@@ -33,6 +32,27 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_REGION:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      DOCKER_PASSWORD:
+        required: false
+      DOCKER_REGISTRY:
+        required: false
+      DOCKER_USERNAME:
+        required: false
+      MATTERMOST_WEBHOOK:
+        required: false
+      PUB_DOCKER_PASSWORD:
+        required: false
+      PUB_DOCKER_USERNAME:
+        required: false
+      S3_BUCKET:
+        required: false
 
 # Literal group name: under `workflow_call`, `github.workflow` resolves to the
 # caller's workflow, which put this workflow and the other reusable one called
@@ -50,6 +70,9 @@ env:
   # missing (e.g. if runners ever move to separate machines).
   BUNDLE_CACHE: /var/tmp/penpot-bundle-cache
 
+permissions:
+  contents: read
+
 jobs:
   # ── 1. Resolve the build key and check the whole set at once ───────────
   prepare:
@@ -58,6 +81,7 @@ jobs:
     timeout-minutes: 15
     outputs:
       gh_ref: ${{ steps.vars.outputs.gh_ref }}
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
       bundle_version: ${{ steps.vars.outputs.bundle_version }}
       sha: ${{ steps.vars.outputs.sha }}
       short_sha: ${{ steps.vars.outputs.short_sha }}
@@ -66,8 +90,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
           ref: ${{ inputs.sha != '' && inputs.sha || inputs.gh_ref }}
 
@@ -76,7 +101,10 @@ jobs:
         env:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
         run: |
+          # A git ref accepts characters that a Docker tag does not.
+          REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
           echo "gh_ref=$GH_REF" >> $GITHUB_OUTPUT
+          echo "ref_slug=$REF_SLUG" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           echo "short_sha=$(git rev-parse --short=12 HEAD)" >> $GITHUB_OUTPUT
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
@@ -160,12 +188,13 @@ jobs:
           echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}-${{ matrix.image }}" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.sha != '' && inputs.sha || inputs.gh_ref }}
 
       - name: Login to Docker Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -175,7 +204,7 @@ jobs:
       # images from DockerHub for unregistered users.
       # https://docs.docker.com/docker-hub/usage/
       - name: Login to DockerHub Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
           password: ${{ secrets.PUB_DOCKER_PASSWORD }}
@@ -187,7 +216,7 @@ jobs:
       # reuses the same PUB_DOCKER_* credentials as the DockerHub
       # login above.
       - name: Login to Docker Hardened Images registry (base image pull)
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: dhi.io
           username: ${{ secrets.PUB_DOCKER_USERNAME }}
@@ -219,23 +248,23 @@ jobs:
           popd
 
       - name: Set up QEMU (stable)
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
           platforms: linux/amd64,linux/arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Extract metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ matrix.image }}
           labels: |
             bundle_version=${{ needs.prepare.outputs.bundle_version }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ./docker/images/
           file: ./docker/images/Dockerfile.${{ matrix.image }}
@@ -263,10 +292,10 @@ jobs:
           echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Login to Docker Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -275,13 +304,13 @@ jobs:
       - name: Point branch tags to the new build key
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
         run: |
           set -e
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
-              -t "${DOCKER_REGISTRY}/${image}:${GH_REF}" \
+              -t "${DOCKER_REGISTRY}/${image}:${REF_SLUG}" \
               "${DOCKER_REGISTRY}/${image}:sha-${SHORT_SHA}"
           done
 
@@ -300,7 +329,7 @@ jobs:
 
       - name: Write step summary
         env:
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
@@ -312,7 +341,7 @@ jobs:
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
             echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo ""
-            echo "All \`:${GH_REF}\` tags now point to \`sha-${SHORT_SHA}\`."
+            echo "All \`:${REF_SLUG}\` tags now point to \`sha-${SHORT_SHA}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 3b. Skip path: make sure THIS ref's tags point to the existing
@@ -332,10 +361,10 @@ jobs:
           echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Login to Docker Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ secrets.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -344,19 +373,19 @@ jobs:
       - name: Point branch tags to the existing build key
         env:
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
         run: |
           set -e
           for image in $ALL_IMAGES; do
             docker buildx imagetools create \
-              -t "${DOCKER_REGISTRY}/${image}:${GH_REF}" \
+              -t "${DOCKER_REGISTRY}/${image}:${REF_SLUG}" \
               "${DOCKER_REGISTRY}/${image}:sha-${SHORT_SHA}"
           done
 
       - name: Write step summary
         env:
-          GH_REF: ${{ needs.prepare.outputs.gh_ref }}
+          REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
@@ -368,7 +397,7 @@ jobs:
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
             echo "- Checked at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo ""
-            echo "All \`:${GH_REF}\` tags now point to \`sha-${SHORT_SHA}\`."
+            echo "All \`:${REF_SLUG}\` tags now point to \`sha-${SHORT_SHA}\`."
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 4. Single failure notification for the whole workflow ─────────────

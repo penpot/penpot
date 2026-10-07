@@ -20,7 +20,14 @@ fi
 export BUILD_NAME="${BUILD_NAME:-render-wasm}"
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
 export CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"target/$RENDER_TARGET"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.93.1/skia-binaries-319323662b1685a112f5-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.153.3/skia-binaries-b7f043e0b1e2a850e702-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp-pdf-simd.tar.gz"}
+
+# Let rustc emit wasm SIMD for our Rust code (autovec / core::arch::wasm32).
+# Skia SIMD still comes from the -simd prebuild + -msimd128 in EMCC_CFLAGS.
+# Gate on the emscripten target so native `./test` is unaffected.
+if [ "$CARGO_BUILD_TARGET" = "wasm32-unknown-emscripten" ]; then
+    export RUSTFLAGS="${RUSTFLAGS:-} -C target-feature=+simd128"
+fi
 
 # 256 MB of initial heap to perform less
 # initial calls to memory grow.
@@ -39,8 +46,12 @@ export EM_MEMORY_GROWTH_GEOMETRIC_STEP="0.8"
 # Default: dlmalloc
 export EM_MALLOC="dlmalloc"
 
+# -msimd128: allow wasm SIMD in the linked module. Skia prebuilts must be
+# built with the same flag (penpot/skia-binaries, WASM_SIMD=1) for Skia/skcms
+# kernels to actually contain v128 ops; engines do not autovec scalar wasm.
 export EMCC_CFLAGS="--no-entry \
     --js-library src/js/wapi.js \
+    -msimd128 \
     -sMALLOC=$EM_MALLOC \
     -sINVOKE_RUN=0 \
     -sALLOW_TABLE_GROWTH=0 \

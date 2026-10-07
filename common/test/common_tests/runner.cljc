@@ -21,7 +21,11 @@
    [common-tests.files-migrations-0025-test]
    [common-tests.files-migrations-0026-test]
    [common-tests.files-migrations-test]
+   [common-tests.files.comp-processors-test]
+   [common-tests.files.helpers-test]
+   [common-tests.files.repair-test]
    [common-tests.files.shapes-builder-test]
+   [common-tests.files.tokens-test]
    [common-tests.files.validate-test]
    [common-tests.geom-align-test]
    [common-tests.geom-bounds-layout-nil-test]
@@ -47,9 +51,12 @@
    [common-tests.geom-shapes-tree-seq-test]
    [common-tests.geom-snap-test]
    [common-tests.geom-test]
+   [common-tests.helpers-test]
+   [common-tests.logging-test]
    [common-tests.logic.chained-propagation-test]
    [common-tests.logic.comp-creation-test]
    [common-tests.logic.comp-detach-with-nested-test]
+   [common-tests.logic.comp-flex-interactions-test]
    [common-tests.logic.comp-main-edit-breaks-copy-slots-test]
    [common-tests.logic.comp-remove-swap-slots-test]
    [common-tests.logic.comp-reset-test]
@@ -61,8 +68,13 @@
    [common-tests.logic.multiple-nesting-levels-test]
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
+   [common-tests.logic.swap-keeps-id-test]
+   [common-tests.logic.text-sync-test]
+   [common-tests.logic.text-touched-test]
+   [common-tests.logic.token-apply-test]
    [common-tests.logic.token-test]
    [common-tests.logic.variants-switch-test]
+   [common-tests.logic.variants-test]
    [common-tests.math-test]
    [common-tests.media-test]
    [common-tests.path-names-test]
@@ -73,24 +85,32 @@
    [common-tests.svg-test]
    [common-tests.text-test]
    [common-tests.time-test]
+   [common-tests.token-test]
+   [common-tests.types-shape-tree-test]
    [common-tests.types.absorb-assets-test]
    [common-tests.types.color-test]
    [common-tests.types.components-test]
    [common-tests.types.container-test]
    [common-tests.types.fill-test]
+   [common-tests.types.font-test]
    [common-tests.types.modifiers-test]
    [common-tests.types.objects-map-test]
    [common-tests.types.organization-test]
    [common-tests.types.path-data-test]
+   [common-tests.types.plugins-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
    [common-tests.types.shape-layout-test]
    [common-tests.types.stroke-test]
+   [common-tests.types.text-test]
    [common-tests.types.token-test]
    [common-tests.types.tokens-lib-test]
+   [common-tests.types.tokens-migrations-test]
    [common-tests.types.tokens-status-test]
+   [common-tests.types.variant-test]
    [common-tests.undo-stack-test]
-   [common-tests.uuid-test]))
+   [common-tests.uuid-test]
+   [common-tests.variant-test]))
 
 (def test-namespaces
   [#?(:clj 'common-tests.fressian-test)
@@ -98,11 +118,16 @@
    'common-tests.buffer-test
    'common-tests.colors-test
    'common-tests.data-test
-   'common-tests.files-changes-test
    'common-tests.files-builder-test
+   'common-tests.files-changes-test
    'common-tests.files-migrations-0025-test
    'common-tests.files-migrations-0026-test
    'common-tests.files-migrations-test
+   'common-tests.files.comp-processors-test
+   'common-tests.files.helpers-test
+   'common-tests.files.repair-test
+   'common-tests.files.shapes-builder-test
+   'common-tests.files.tokens-test
    'common-tests.files.validate-test
    'common-tests.geom-align-test
    'common-tests.geom-bounds-layout-nil-test
@@ -128,9 +153,12 @@
    'common-tests.geom-shapes-tree-seq-test
    'common-tests.geom-snap-test
    'common-tests.geom-test
+   'common-tests.helpers-test
+   'common-tests.logging-test
    'common-tests.logic.chained-propagation-test
    'common-tests.logic.comp-creation-test
    'common-tests.logic.comp-detach-with-nested-test
+   'common-tests.logic.comp-flex-interactions-test
    'common-tests.logic.comp-main-edit-breaks-copy-slots-test
    'common-tests.logic.comp-remove-swap-slots-test
    'common-tests.logic.comp-reset-test
@@ -142,8 +170,13 @@
    'common-tests.logic.multiple-nesting-levels-test
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
+   'common-tests.logic.swap-keeps-id-test
+   'common-tests.logic.text-sync-test
+   'common-tests.logic.text-touched-test
+   'common-tests.logic.token-apply-test
    'common-tests.logic.token-test
    'common-tests.logic.variants-switch-test
+   'common-tests.logic.variants-test
    'common-tests.math-test
    'common-tests.media-test
    'common-tests.path-names-test
@@ -154,24 +187,32 @@
    'common-tests.svg-test
    'common-tests.text-test
    'common-tests.time-test
+   'common-tests.token-test
+   'common-tests.types-shape-tree-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.color-test
    'common-tests.types.components-test
    'common-tests.types.container-test
    'common-tests.types.fill-test
+   'common-tests.types.font-test
    'common-tests.types.modifiers-test
    'common-tests.types.objects-map-test
    'common-tests.types.organization-test
    'common-tests.types.path-data-test
+   'common-tests.types.plugins-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.shape-layout-test
    'common-tests.types.stroke-test
+   'common-tests.types.text-test
    'common-tests.types.token-test
    'common-tests.types.tokens-lib-test
+   'common-tests.types.tokens-migrations-test
    'common-tests.types.tokens-status-test
+   'common-tests.types.variant-test
    'common-tests.undo-stack-test
-   'common-tests.uuid-test])
+   'common-tests.uuid-test
+   'common-tests.variant-test])
 
 #?(:cljs
    (assert (every? find-ns-obj test-namespaces)

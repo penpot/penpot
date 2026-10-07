@@ -31,13 +31,13 @@
     "@tigersway/eleventy-plugin-ancestry": "^1.0.3",
     "@types/markdown-it": "14.2.0",
     "elasticlunr": "^0.9.5",
-    "eleventy-plugin-metagen": "^1.8.4",
+    "eleventy-plugin-metagen": "^1.8.5",
     "eleventy-plugin-nesting-toc": "^1.3.0",
     "eleventy-plugin-youtube-embed": "^1.13.2",
     "luxon": "^3.7.2",
-    "markdown-it": "^15.0.0",
-    "markdown-it-anchor": "^9.2.1",
+    "markdown-it": "^15.0.2",
+    "markdown-it-anchor": "^10.0.0",
     "markdown-it-plantuml": "^1.4.1"
   },
-  "packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f"
+  "packageManager": "pnpm@12.8.1+sha512.f64ba907507f5ceafe06c8d38e6052d0179444580ec1279ddd5bfc11cb48aa8a2644b66598e07e761da84872a9fc57d5f902b87fa49d024198d558612aabbe45"
 }

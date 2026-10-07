@@ -3,16 +3,17 @@ import { openUISchema } from '../models/open-ui-options.schema.js';
 import { createModal } from '../create-modal.js';
 
 export const openUIApi = z
-  .function()
-  .args(
-    z.string(),
-    z.string(),
-    z.enum(['dark', 'light']),
-    openUISchema.optional(),
-    z.boolean().optional(),
-    z.boolean().optional(),
-    z.boolean().optional(),
-  )
+  .function({
+    input: [
+      z.string(),
+      z.string(),
+      z.enum(['dark', 'light']),
+      openUISchema.optional(),
+      z.boolean().optional(),
+      z.boolean().optional(),
+      z.boolean().optional(),
+    ],
+  })
   .implement(
     (
       title,

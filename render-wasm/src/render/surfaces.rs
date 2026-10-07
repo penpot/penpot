@@ -165,8 +165,7 @@ impl DocAtlas {
     pub fn try_new() -> Result<Self> {
         // Keep atlas as a regular surface like the rest. Start with a tiny
         // transparent surface and grow it on demand.
-        let mut surface =
-            get_gpu_state().create_surface_with_dimensions("atlas".to_string(), 1, 1)?;
+        let mut surface = get_gpu_state().create_surface_with_dimensions(1, 1)?;
 
         surface.canvas().clear(skia::Color::TRANSPARENT);
 
@@ -183,6 +182,12 @@ impl DocAtlas {
     // TODO: delete one docatlas is optional
     pub fn is_empty(&self) -> bool {
         self.size.width <= 0 || self.size.height <= 0
+    }
+
+    /// Drops all atlas content while keeping its allocation and placement.
+    pub fn clear(&mut self) {
+        self.surface.canvas().clear(skia::Color::TRANSPARENT);
+        self.tile_doc_rects.clear();
     }
 
     /// Sets the document-space bounds used to clamp atlas updates.
@@ -276,8 +281,7 @@ impl DocAtlas {
             return Ok(());
         }
 
-        let mut new_surface =
-            gpu_state.create_surface_with_dimensions("atlas".to_string(), new_w, new_h)?;
+        let mut new_surface = gpu_state.create_surface_with_dimensions(new_w, new_h)?;
         new_surface.canvas().clear(skia::Color::TRANSPARENT);
 
         // Copy old atlas into the new one with offset.
@@ -307,7 +311,6 @@ impl DocAtlas {
         self.origin = skia::Point::new(new_left, new_top);
         self.size = skia::ISize::new(new_w, new_h);
         self.scale = new_scale;
-        gpu_state.delete_surface(&mut self.surface);
         self.surface = new_surface;
         Ok(())
     }
@@ -528,35 +531,25 @@ impl Surfaces {
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
 
         let target = gpu_state.create_target_surface(width, height)?;
-        let filter = gpu_state.create_surface_with_isize("filter".to_string(), extra_tile_dims)?;
-        let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height)?;
-        let backbuffer =
-            gpu_state.create_surface_with_dimensions("backbuffer".to_string(), width, height)?;
+        let filter = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let cache = gpu_state.create_surface_with_dimensions(width, height)?;
+        let backbuffer = gpu_state.create_surface_with_dimensions(width, height)?;
 
         let max_texture_size = gpu_state.max_texture_size();
-        let tile_atlas = gpu_state.create_surface_with_dimensions(
-            "tile_atlas".to_string(),
-            max_texture_size,
-            max_texture_size,
-        )?;
+        let tile_atlas =
+            gpu_state.create_surface_with_dimensions(max_texture_size, max_texture_size)?;
 
-        let current =
-            gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims)?;
+        let current = gpu_state.create_surface_with_isize(extra_tile_dims)?;
 
-        let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims)?;
-        let inner_shadows =
-            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims)?;
-        let text_drop_shadows = gpu_state
-            .create_surface_with_isize("text_drop_shadows".to_string(), extra_tile_dims)?;
-        let shape_fills =
-            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims)?;
-        let shape_strokes =
-            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims)?;
-        let export = gpu_state.create_surface_with_isize("export".to_string(), extra_tile_dims)?;
+        let drop_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let inner_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let text_drop_shadows = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let shape_fills = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let shape_strokes = gpu_state.create_surface_with_isize(extra_tile_dims)?;
+        let export = gpu_state.create_surface_with_isize(extra_tile_dims)?;
 
-        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height)?;
-        let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height)?;
+        let ui = gpu_state.create_surface_with_dimensions(width, height)?;
+        let debug = gpu_state.create_surface_with_dimensions(width, height)?;
 
         let tiles = TileTextureCache::new(tile_atlas.width(), tile_atlas.height());
         let atlas = DocAtlas::try_new()?;
@@ -677,12 +670,10 @@ impl Surfaces {
         ));
         canvas.scale((s / scale, s / scale));
 
-        self.atlas.surface.draw(
-            canvas,
-            (0.0, 0.0),
-            self.sampling_options,
-            Some(&skia::Paint::default()),
-        );
+        let sampling = skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None);
+        self.atlas
+            .surface
+            .draw(canvas, (0.0, 0.0), sampling, Some(&skia::Paint::default()));
 
         canvas.restore();
     }
@@ -1852,14 +1843,8 @@ impl TileTextureCache {
                     continue;
                 }
 
-                self.transforms[index] = skia::RSXform::new(
-                    dest_scale,
-                    0.0,
-                    (
-                        (x as f32 * self.tile_size - offset.x).round(),
-                        (y as f32 * self.tile_size - offset.y).round(),
-                    ),
-                );
+                let (tx, ty) = tiles::tile_screen_xy(Tile(x, y), self.tile_size, offset);
+                self.transforms[index] = skia::RSXform::new(dest_scale, 0.0, (tx, ty));
 
                 let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 self.textures[index].set_ltrb(src.left, src.top, src.right, src.bottom);
@@ -1903,8 +1888,7 @@ impl TileTextureCache {
 
                 let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
                 let scos = doc_rect.width() * s / src.width();
-                let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
-                let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
+                let (tx, ty) = tiles::doc_rect_screen_xy(doc_rect, viewbox.pan, s);
 
                 transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));
                 textures.push(src);
@@ -1932,8 +1916,7 @@ impl TileTextureCache {
             }
 
             let src = tiles::tile_atlas_content_rect(tile_ref.rect, self.slot_size);
-            let tx = ((doc_rect.left + viewbox.pan.x) * s).round();
-            let ty = ((doc_rect.top + viewbox.pan.y) * s).round();
+            let (tx, ty) = tiles::doc_rect_screen_xy(doc_rect, viewbox.pan, s);
             let scos = doc_rect.width() * s / src.width();
 
             transforms.push(skia::RSXform::new(scos, 0.0, (tx, ty)));

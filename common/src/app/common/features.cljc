@@ -56,6 +56,7 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "text-editor-wasm/v1"
+    "text-editor-wasm/v1-html-paste"
     "render-wasm/v1"
     "variants/v1"})
 
@@ -81,6 +82,7 @@
     "text-editor/v2-html-paste"
     "text-editor/v2"
     "text-editor-wasm/v1"
+    "text-editor-wasm/v1-html-paste"
     "tokens/numeric-input"
     "render-wasm/v1"})
 
@@ -131,6 +133,7 @@
     :feature-text-editor-v2 "text-editor/v2"
     :feature-text-editor-v2-html-paste "text-editor/v2-html-paste"
     :feature-text-editor-wasm "text-editor-wasm/v1"
+    :feature-text-editor-wasm-html-paste "text-editor-wasm/v1-html-paste"
     :feature-render-wasm "render-wasm/v1"
     :feature-variants "variants/v1"
     :feature-token-input "tokens/numeric-input"

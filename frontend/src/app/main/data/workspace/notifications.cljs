@@ -52,6 +52,7 @@
     (watch [_ state stream]
       (let [stopper     (rx/filter (ptk/type? ::finalize) stream)
             profile-id (:profile-id state)
+            organization-id (dm/get-in state [:teams team-id :organization :id])
 
             initmsg    [{:type :subscribe-file
                          :file-id file-id
@@ -75,7 +76,9 @@
                                                (or (= topic uuid/zero)
                                                    (= topic profile-id)
                                                    (= topic team-id)
-                                                   (= topic file-id))))
+                                                   (= topic file-id)
+                                                   (when (some? organization-id)
+                                                     (= topic organization-id)))))
                                   (rx/map process-message))
 
                              ;; On reconnect, send again the subscription messages

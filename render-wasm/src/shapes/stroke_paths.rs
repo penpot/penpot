@@ -48,7 +48,7 @@ pub fn stroke_to_path(
         paint.set_stroke_cap(cap);
     }
 
-    let mut stroke_outline = skia::Path::default();
+    let mut stroke_outline = skia::PathBuilder::new();
     let success = skia::path_utils::fill_path_with_paint(
         &transformed_shape_path,
         &paint,
@@ -60,6 +60,7 @@ pub fn stroke_to_path(
     if !success {
         return None;
     }
+    let stroke_outline = stroke_outline.detach();
 
     // For inner/outer strokes, use boolean ops to clip
     // the 2×-width stroke outline to the correct region.
@@ -198,9 +199,9 @@ fn stroke_region(path: &skia::Path, width: f32) -> Option<skia::Path> {
     paint.set_style(skia::PaintStyle::Stroke);
     paint.set_stroke_width(width);
 
-    let mut outline = skia::Path::default();
+    let mut outline = skia::PathBuilder::new();
     skia::path_utils::fill_path_with_paint(path, &paint, &mut outline, None, None)
-        .then_some(outline)
+        .then(|| outline.detach())
 }
 
 /// Filled geometry of a single stroke cap, matching what `handle_stroke_caps`

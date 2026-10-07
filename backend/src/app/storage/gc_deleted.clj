@@ -15,8 +15,10 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [clojure.set :as set]
@@ -51,7 +53,7 @@
   "DELETE FROM storage_object
     WHERE id = ANY(?::uuid[])")
 
-(defn- delete-sobjects!
+(defn- delete-sobjects
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
@@ -61,7 +63,7 @@
   "DELETE FROM upload_session_chunk
     WHERE object_id = ANY(?::uuid[])")
 
-(defn- delete-upload-session-chunks!
+(defn- delete-upload-session-chunks
   "Remove the chunk mappings for the given storage object ids. This must run
   before the storage_object rows are deleted: the upload_session_chunk
   foreign keys are ON DELETE NO ACTION."
@@ -75,7 +77,7 @@
           deleted_at = NOW() + INTERVAL '1 day'
     WHERE id = ANY(?::uuid[])")
 
-(defn- increment-attempts-and-defer!
+(defn- increment-attempts-and-defer
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:increment-attempts-and-defer ids])))
@@ -85,7 +87,7 @@
     WHERE id = ANY(?::uuid[])
       AND deletion_attempts >= ?")
 
-(defn- delete-give-up!
+(defn- delete-give-up
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:delete-give-up ids max-attempts])))
@@ -93,7 +95,7 @@
 (defn- process-chunk
   "Attempt to delete a chunk of storage objects from a specific backend.
 
-  This function runs inside the caller's transaction (clean-deleted!) —
+  This function runs inside the caller's transaction (clean-deleted) —
   it does NOT open its own transaction. The caller is responsible for
   ensuring the rows are locked via FOR UPDATE SKIP LOCKED before calling.
 
@@ -121,18 +123,18 @@
         ;; storage_object rows (NO ACTION foreign keys). It only affects
         ;; objects of the upload-session bucket; for any other bucket the
         ;; delete matches no rows.
-        (delete-upload-session-chunks! conn ok-ids)
-        (delete-sobjects! conn ok-ids))
+        (delete-upload-session-chunks conn ok-ids)
+        (delete-sobjects conn ok-ids))
 
       (when (seq fail-ids)
-        (increment-attempts-and-defer! conn fail-ids)
+        (increment-attempts-and-defer conn fail-ids)
         ;; NOTE: same NO ACTION ordering as above: the give-up DELETE below
         ;; removes storage_object rows, so chunk mappings must go first.
         ;; Deferred objects keep their rows; only the mapping of a
         ;; permanently given-up object disappears early, and that object is
         ;; already deleted-marked.
-        (delete-upload-session-chunks! conn fail-ids)
-        (let [given-up (delete-give-up! conn fail-ids)]
+        (delete-upload-session-chunks conn fail-ids)
+        (let [given-up (delete-give-up conn fail-ids)]
           (when (pos? (db/get-update-count given-up))
             (l/wrn :hint "giving up on orphan blob after max attempts"
                    :ids fail-ids
@@ -160,7 +162,7 @@
   [conn size]
   (db/exec! conn [sql:get-deleted-chunk (ct/now) size]))
 
-(defn- clean-deleted!
+(defn- clean-deleted
   [cfg]
   (loop [total 0]
     (let [deleted (db/tx-run! cfg
@@ -172,18 +174,42 @@
                                                    (+ acc (process-chunk conn storage backend-id ids)))
                                                  0
                                                  by-backend))))))]
+      ;; Heartbeat per chunk: each chunk commits on its own, so a long
+      ;; sweep neither loses work on late failure nor outruns the lease.
+      (jobs/heartbeat cfg)
       (if deleted
         (recur (+ total deleted))
         total))))
 
-(defmethod ig/assert-key ::handler
+(declare execute-storage-gc-deleted)
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
   (assert (db/pool? (::db/pool params)) "expect valid db pool"))
 
-(defmethod ig/init-key ::handler
+(def schema:storage-gc-deleted-params
+  "Params map (no params needed; cfg-provided config only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [_]
-    (let [total (clean-deleted! cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:deleted total})))
+  {::jobs/name      :storage-gc-deleted
+   ::jobs/schema    schema:storage-gc-deleted-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-gc-deleted cfg params))
+   ::jobs/decoder   (sm/decoder schema:storage-gc-deleted-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-gc-deleted-params)})
+
+(defn execute-storage-gc-deleted
+  "Plain job handler: clean the marked-deleted storage objects."
+  ([cfg] (execute-storage-gc-deleted cfg {}))
+  ([cfg _params]
+   ;; NOTE: no outer transaction here on purpose — clean-deleted
+   ;; commits each chunk in its own transaction, so a late failure
+   ;; only loses the in-flight chunk.
+   (jobs/heartbeat cfg)
+   (let [total (clean-deleted cfg)]
+     (l/inf :hint "task finished" :total total)
+     {:deleted total})))

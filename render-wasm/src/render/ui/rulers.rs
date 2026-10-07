@@ -364,14 +364,12 @@ fn draw_mask(ctx: &RenderCtx, rect: Rect, axis: MaskAxis, fade_to_end: bool) {
         MaskAxis::Horizontal => (rect.right, rect.top),
         MaskAxis::Vertical => (rect.left, rect.bottom),
     };
-    let shader = skia::gradient_shader::linear(
-        ((rect.left, rect.top), end),
-        &colors[..],
-        Some(&offsets[..]),
-        skia::TileMode::Clamp,
-        None,
-        None,
-    );
+    let colors4f: Vec<skia::Color4f> = colors.iter().map(|c| skia::Color4f::from(*c)).collect();
+    let gradient_colors =
+        skia::gradient::Colors::new(&colors4f, Some(&offsets[..]), skia::TileMode::Clamp, None);
+    let gradient =
+        skia::gradient::Gradient::new(gradient_colors, skia::gradient::Interpolation::default());
+    let shader = skia::shaders::linear_gradient(((rect.left, rect.top), end), &gradient, None);
     let mut paint = Paint::default();
     paint.set_anti_alias(false);
     paint.set_style(PaintStyle::Fill);

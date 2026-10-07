@@ -14,7 +14,9 @@
   ever iterating the whole physical store."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.db :as db]
+   [app.jobs :as jobs]
    [app.storage :as sto]
    [app.storage.impl :as impl]
    [integrant.core :as ig]))
@@ -75,14 +77,33 @@
         (recur (long (+ total (count rows)))))
       total)))
 
-(defmethod ig/assert-key ::handler
+(declare execute-storage-pending-gc)
+
+(defmethod ig/assert-key ::job-def
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid db pool")
   (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage"))
 
-(defmethod ig/init-key ::handler
+(def schema:storage-pending-gc-params
+  "Params map (no params needed; cfg-provided config only)."
+  [:map {:closed true}])
+
+(defmethod ig/init-key ::job-def
   [_ cfg]
-  (fn [_]
-    (let [total (process! cfg)]
-      (l/inf :hint "task finished" :total total)
-      {:processed total})))
+  {::jobs/name      :storage-pending-gc
+   ::jobs/schema    schema:storage-pending-gc-params
+   ::jobs/handler
+   (fn [_context params]
+     (execute-storage-pending-gc cfg params))
+   ::jobs/decoder   (sm/decoder schema:storage-pending-gc-params sm/json-transformer)
+   ::jobs/validator (sm/validator schema:storage-pending-gc-params)})
+
+(defn execute-storage-pending-gc
+  "Plain job handler: reclaim storage objects created in 'pending' state
+  that were never promoted to 'valid'."
+  ([cfg] (execute-storage-pending-gc cfg {}))
+  ([cfg _params]
+   (jobs/heartbeat cfg)
+   (let [total (process! cfg)]
+     (l/inf :hint "task finished" :total total)
+     {:processed total})))

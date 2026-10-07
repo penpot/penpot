@@ -10,7 +10,6 @@
    [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
-   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uri :as u]
@@ -47,19 +46,12 @@
    [:embed-assets {:optional true} ::sm/boolean]])
 
 (defn- export-binfile
-  [{:keys [::sto/storage] :as cfg} {:keys [type file-id include-libraries embed-assets]}]
-  (let [output (tmp/tempfile*)
-        ;; Convert legacy boolean flags to unified export-type
-        export-type (cond
-                      (some? type) type
-                      (true? include-libraries) :include-libraries
-                      (true? embed-assets) :merge-libraries
-                      :else :detach-libraries)]
+  [{:keys [::sto/storage] :as cfg} {:keys [file-id] :as params}]
+  (let [output (tmp/tempfile*)]
 
     (try
-      (-> cfg
-          (assoc ::bfc/ids #{file-id})
-          (assoc ::bfc/export-type export-type)
+      (-> (bfc/export-cfg cfg {:ids #{file-id}
+                               :export-type (bfc/resolve-export-type params)})
           (bf.v3/export-files! output))
 
       (let [data   (sto/content output)
@@ -98,22 +90,13 @@
                         :project-id project-id)
 
         cfg
-        (-> cfg
-            (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team))
-            (assoc ::bfc/project-id project-id)
-            (assoc ::bfc/profile-id profile-id)
-            (assoc ::bfc/team-id (:id team))
-            (assoc ::bfc/name name)
-            (assoc ::bfc/import-max-binary-entry-size (cf/get :binfile-import-max-binary-entry-size))
-            (assoc ::bfc/import-max-text-entry-size (cf/get :binfile-import-max-text-entry-size))
-            (assoc ::bfc/import-max-text-total-size (cf/get :binfile-import-max-text-total-size))
-            (assoc ::bfc/import-max-zip-entries (cf/get :binfile-import-max-zip-entries)))
+        (bfc/import-cfg cfg {:profile-id profile-id
+                             :project-id project-id
+                             :team team
+                             :name name
+                             :input (:path file)})
 
-        input-path (:path file)
-        owned?     (some? upload-id)
-
-        cfg
-        (assoc cfg ::bfc/input input-path)
+        owned? (some? upload-id)
 
         result
         (try
@@ -126,7 +109,7 @@
                              :version version})))
           (finally
             (when owned?
-              (fs/delete input-path))))]
+              (fs/delete (:path file)))))]
 
     (db/update! pool :project
                 {:modified-at (ct/now)}

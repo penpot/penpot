@@ -1,7 +1,8 @@
 interface McpOptions {
     getToken(): string;
     getServerUrl(): string;
-    setMcpStatus(status: string);
+    isConnectionRequested(): boolean;
+    setMcpStatus(status: string, sessionId?: string);
     on(eventType: "disconnect" | "connect", cb: () => void);
 }
 

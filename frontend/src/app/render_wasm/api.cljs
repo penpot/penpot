@@ -17,6 +17,7 @@
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.render-wasm.api.props :as props]
+   [app.common.render-wasm.api.select :as wselect]
    [app.common.render-wasm.helpers :as h]
    [app.common.render-wasm.mem :as mem]
    [app.common.render-wasm.mem.heap32 :as mem.h32]
@@ -50,6 +51,7 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.rulers-state :as rulers-state]
    [app.render-wasm.text-editor :as text-editor]
+   [app.render-wasm.text-paste :as text-paste]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.functions :as fns]
@@ -727,18 +729,6 @@
 
 (declare get-text-dimensions)
 
-(defn use-shape
-  [id]
-  ;; Use `wasm/live?` (not `initialized?`) so context-restore reload can
-  ;; select shapes while `reloading?` still blocks external app callers.
-  (when (wasm/live?)
-    (let [buffer (uuid/get-u32 id)]
-      (h/call wasm/internal-module "_use_shape"
-              (aget buffer 0)
-              (aget buffer 1)
-              (aget buffer 2)
-              (aget buffer 3)))))
-
 (defn has-shape
   [id]
   (when (wasm/live?)
@@ -793,7 +783,7 @@
    Updates the cached content, pushes to WASM, and returns {:shape-id :content} for saving.
    `:with-fills?` also returns the selection's `:fills`."
   [styles & [opts]]
-  (let [result (text-editor/apply-styles-to-selection styles use-shape set-shape-text-content opts)]
+  (let [result (text-editor/apply-styles-to-selection styles wselect/use-shape set-shape-text-content opts)]
     (request-render "apply-styles-to-selection")
     result))
 
@@ -801,7 +791,7 @@
   "Apply paragraph attrs to the paragraphs the editor selection touches.
    Returns {:shape-id :content} for saving."
   [attrs]
-  (let [result (text-editor/apply-paragraph-attrs-to-selection attrs use-shape set-shape-text-content)]
+  (let [result (text-editor/apply-paragraph-attrs-to-selection attrs wselect/use-shape set-shape-text-content)]
     (request-render "apply-paragraph-attrs-to-selection")
     result))
 
@@ -811,10 +801,22 @@
   [shape-id range]
   (when-let [styles (text-editor/get-pending-caret-styles shape-id)]
     (let [result (text-editor/apply-styles-to-range
-                  shape-id range styles use-shape set-shape-text-content)]
+                  shape-id range styles wselect/use-shape set-shape-text-content)]
       (text-editor/clear-pending-caret-styles!)
       (request-render "apply-pending-caret-styles")
       result)))
+
+(defn apply-paste-styles
+  "Restyle the text just pasted at `start` with the overrides of `fragment`;
+   returns {:shape-id :content}, or nil when the shape has no cached content."
+  [shape-id fragment start]
+  (when-let [content (text-editor/get-cached-content shape-id)]
+    (let [content (text-paste/apply-fragment-styles content fragment start)]
+      (wselect/use-shape shape-id)
+      (set-shape-text-content shape-id content)
+      (request-render "apply-paste-styles")
+      {:shape-id shape-id
+       :content  content})))
 
 (defn set-parent-id
   [id]
@@ -1130,7 +1132,7 @@
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
 
 (defn clear-shape-fills!
-  "Clear the fills of the currently-selected shape (call `use-shape` first).
+  "Clear the fills of the currently-selected shape (call `use-shape!` first).
   Equivalent to `set-shape-fills` with an empty collection."
   []
   (when (initialized?)
@@ -1407,7 +1409,7 @@
 
 (defn get-text-dimensions
   ([id]
-   (use-shape id)
+   (wselect/use-shape id)
    (get-text-dimensions))
   ([]
    (if-not (initialized?)
@@ -1588,7 +1590,7 @@
    `skip-fills-strokes?` is true, fill/stroke records were already in the batch;
    only image fetches remain.
 
-   Always `use-shape` first: after a multi-shape batch the WASM current shape is
+   Always `use-shape!` first: after a multi-shape batch the WASM current shape is
    the last record in the chunk, not this shape."
   [shape skip-layout? & {:keys [skip-fills-strokes?] :or {skip-fills-strokes? false}}]
   (let [id      (dm/get-prop shape :id)
@@ -1608,7 +1610,7 @@
                              true))]
 
     (when needs-current?
-      (use-shape id))
+      (wselect/use-shape id))
 
     (when (and (some? content) (= type :svg-raw))
       (set-shape-svg-raw-content (get-static-markup shape)))
@@ -1814,8 +1816,7 @@
         prepared  (serialize-shape/serialize-shapes-batch!
                    chunk
                    {:include-layout? true
-                    :include-fills-strokes? true}
-                   use-shape)]
+                    :include-fills-strokes? true})]
 
     (loop [xs prepared
            t-acc (transient thumbnails-acc)
@@ -1964,8 +1965,7 @@
   (let [prepared     (serialize-shape/serialize-shapes-batch!
                       shapes
                       {:include-layout? true
-                       :include-fills-strokes? true}
-                      use-shape)
+                       :include-fills-strokes? true})
         total-shapes (count prepared)
         {:keys [thumbnails full text-font-state]}
         (loop [index 0
@@ -2492,6 +2492,13 @@
                               :cause cause)
                    nil)))))
 
+;; Stable listener identities, so `removeEventListener` matches across hot reloads
+(defonce ^:private webgl-context-lost-listener
+  (fn [event] (on-webgl-context-lost event)))
+
+(defonce ^:private webgl-context-restored-listener
+  (fn [event] (on-webgl-context-restored event)))
+
 (defn init-canvas-context
   [canvas]
   (if-not (wasm/module-ready?)
@@ -2536,8 +2543,8 @@
           ;; Add event listeners for WebGL context lost
           (set! wasm/canvas canvas)
           (when can-listen?
-            (.addEventListener canvas "webglcontextlost" on-webgl-context-lost)
-            (.addEventListener canvas "webglcontextrestored" on-webgl-context-restored))
+            (.addEventListener canvas "webglcontextlost" webgl-context-lost-listener)
+            (.addEventListener canvas "webglcontextrestored" webgl-context-restored-listener))
           (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)
@@ -2571,8 +2578,8 @@
 
      ;; Remove listener before losing/deleting context.
      (when wasm/canvas
-       (.removeEventListener wasm/canvas "webglcontextlost" on-webgl-context-lost)
-       (.removeEventListener wasm/canvas "webglcontextrestored" on-webgl-context-restored))
+       (.removeEventListener wasm/canvas "webglcontextlost" webgl-context-lost-listener)
+       (.removeEventListener wasm/canvas "webglcontextrestored" webgl-context-restored-listener))
      (stop-canvas-snapshot-listener!)
 
      (when (wasm/module-ready?)
@@ -2772,7 +2779,7 @@
 (defn shape-to-path
   [id]
   (when (initialized?)
-    (use-shape id)
+    (wselect/use-shape id)
     (try
       (let [offset (-> (h/call wasm/internal-module "_current_to_path")
                        (mem/->offset-32))
@@ -2796,7 +2803,7 @@
    the fill rule itself)."
   [id stroke-index]
   (when (initialized?)
-    (use-shape id)
+    (wselect/use-shape id)
     (try
       (let [offset    (-> (h/call wasm/internal-module "_convert_stroke_to_path" stroke-index)
                           (mem/->offset-32))
@@ -2886,7 +2893,7 @@
 (defn calculate-position-data
   [shape]
   (when (initialized?)
-    (use-shape (:id shape))
+    (wselect/use-shape (:id shape))
     (let [heapf32 (mem/get-heap-f32)
           heapu32 (mem/get-heap-u32)
           offset (-> (h/call wasm/internal-module "_calculate_position_data")

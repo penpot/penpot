@@ -10,6 +10,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.plugins.file :as file]
+   [app.plugins.management :as management]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
@@ -18,6 +19,21 @@
    [goog.functions :as gf]))
 
 (defmulti handle-state-change (fn [type _ _ _ _] type))
+
+(defmethod handle-state-change "workspacechange"
+  [_ _ old-val new-val _]
+  (let [old-workspace (management/workspace-context old-val)
+        new-workspace (management/workspace-context new-val)]
+    (if (= old-workspace new-workspace)
+      ::not-changed
+      (clj->js new-workspace))))
+
+(defmethod handle-state-change "logout"
+  [_ _ old-val new-val _]
+  (if (and (:profile-id old-val)
+           (not= (:profile-id old-val) (:profile-id new-val)))
+    ::void
+    ::not-changed))
 
 (defmethod handle-state-change "finish"
   [_ _ old-val new-val _]
@@ -123,7 +139,9 @@
        (try
          (let [result (handle-state-change type plugin-id old-val new-val props)]
            (when (not= ::not-changed result)
-             (debounced-callback result)))
+             (if (contains? #{"workspacechange" "logout"} type)
+               (safe-callback result)
+               (debounced-callback result))))
          (catch :default cause
            (.error js/console cause)))))
 

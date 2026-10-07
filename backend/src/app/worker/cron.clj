@@ -5,17 +5,28 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.worker.cron
+  "Cron pure scheduler: each tick claims the scheduled_task entry and
+  submits a system job (no profile_id, no user ledger) for it to the
+  dedicated `:cron` queue. Execution happens via the standard
+  dispatcher -> runner path, and so with the same lease, orphan
+  detection, retries and telemetry as for every other job. To keep the
+  no-overlap semantics (one entry is not re-fired while the previous
+  instance lives), the scheduler only submits when there is no active
+  instance (`new`/`scheduled`/`running`/`retry` with the same `name`
+  and `label` of the entry). The `FOR UPDATE SKIP LOCKED` claim on the
+  scheduled_task row already serializes the tick between nodes."
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
+   [app.jobs :as jobs]
+   [app.jobs.metrics :as metrics]
+   [app.metrics :as-alias mtx]
    [app.util.cron :as cron]
-   [app.worker :as wrk]
-   [app.worker.runner :refer [get-error-context]]
-   [cuerdas.core :as str]
+   [app.worker :as-alias wrk]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px])
@@ -30,7 +41,19 @@
        on conflict (id)
        do nothing")
 
-(defn- synchronize-cron-entries!
+;; The tenant filter is what makes the no-overlap check per instance: the
+;; job this count decides about is submitted to this tenant's queue, so
+;; counting other tenants' active jobs would let one instance skip a tick
+;; for work that is none of its business.
+(def ^:private sql:count-active-jobs
+  "SELECT count(*) AS n
+     FROM job
+    WHERE name = ?
+      AND label = ?
+      AND tenant = ?
+      AND status IN ('new','scheduled','running','retry')")
+
+(defn- synchronize-cron-entries
   [{:keys [::db/conn ::entries]}]
   (doseq [{:keys [id cron]} entries]
     (let [result   (db/exec-one! conn [sql:upsert-cron-task id (str cron)])
@@ -38,48 +61,86 @@
       (l/dbg :hint "register task" :id id :cron (str cron)
              :status (if updated? "created" "exists")))))
 
-(defn- lock-scheduled-task!
+(defn- lock-scheduled-task
   [conn id]
   (let [sql (str "SELECT id FROM scheduled_task "
                  " WHERE id=? FOR UPDATE SKIP LOCKED")]
     (some? (db/exec-one! conn [sql (d/name id)]))))
 
+(defn submit-cron-job
+  "Submit the system job for the entry to the `:cron` queue. Uses the
+  entry id as the job label (stable per entry) and returns the created
+  job-id. No-overlap pre-check lives in the caller."
+  [cfg {:keys [job props id]}]
+  (jobs/submit
+   cfg
+   {::jobs/name   job
+    ::jobs/params (or props {})  ;; entries don't carry props; default to empty map
+    ::jobs/queue  :cron
+    ::jobs/label  (name id)}))
+
 (declare ^:private schedule-cron-task)
 
 (defn- execute-cron-task
-  [cfg {:keys [id cron] :as task}]
+  "Tick thread for one entry: claim the scheduled_task row and submit
+  the system job; no in-process execution of the handler here."
+  [cfg {:keys [id cron job] :as entry}]
   (px/thread
     {:name (str "penpot/cron-task/" id)}
     (let [tpoint (ct/tpoint)]
       (try
-        (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+        (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                           (db/exec-one! conn ["SET LOCAL statement_timeout=0;"])
                           (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout=0;"])
-                          (when (lock-scheduled-task! conn id)
+
+                          (when (lock-scheduled-task conn id)
                             (db/update! conn :scheduled-task
                                         {:cron-expr (str cron)
                                          :modified-at (ct/now)}
                                         {:id id}
                                         {::db/return-keys false})
-                            (l/dbg :hint "start" :id id)
-                            ((:fn task) task)
-                            (let [elapsed (ct/format-duration (tpoint))]
-                              (l/dbg :hint "end" :id id :elapsed elapsed)))))
+
+                            ;; The count query is not locked, so a job could
+                            ;; transition from running to completed between the
+                            ;; count and the submit. This is acceptable: the
+                            ;; next tick will submit if needed. The FOR UPDATE
+                            ;; SKIP LOCKED on the scheduled_task row prevents
+                            ;; race conditions between nodes.
+                            (let [tenant (cf/get :tenant)
+                                  row    (db/exec-one! conn  [sql:count-active-jobs (d/name job) (str id) tenant])
+                                  active (or (get row :n) 0)]
+                              (if (pos? active)
+                                (do
+                                  (db/after-commit #(metrics/record-cron cfg :skipped :active))
+                                  (l/dbg :hint "skip"
+                                         :reason "scheduling, active instance exists"
+                                         :id id :job (d/name job)))
+                                (let [job-id  (submit-cron-job cfg entry)
+                                      elapsed (ct/format-duration (tpoint))]
+                                  (db/after-commit #(metrics/record-cron cfg :submitted :none))
+                                  (l/dbg :hint "submit"
+                                         :id id
+                                         :job (d/name job)
+                                         :job-id (str job-id)
+                                         :elapsed elapsed)))))))
 
         (catch InterruptedException _
+          (metrics/record-cron cfg :error :interrupted)
           (let [elapsed (ct/format-duration (tpoint))]
             (l/debug :hint "task interrupted" :id id :elapsed elapsed)))
 
         (catch Throwable cause
-          (let [elapsed (ct/format-duration (tpoint))]
-            (binding [l/*context* (get-error-context cause task)]
+          (metrics/record-cron cfg :error :failure)
+          (let [elapsed (ct/format-duration (tpoint))
+                context (assoc (cf/logging-context) :params entry)]
+            (binding [l/*context* context]
               (l/err :hint "unhandled exception on running task"
                      :id id
                      :elapsed elapsed
                      :cause cause))))
         (finally
           (when-not (px/interrupted? :current)
-            (schedule-cron-task cfg task)))))))
+            (schedule-cron-task cfg entry)))))))
 
 (defn- ms-until-valid
   [cron]
@@ -89,9 +150,9 @@
     (ct/diff now next)))
 
 (defn- schedule-cron-task
-  [{:keys [::running] :as cfg} {:keys [cron id] :as task}]
+  [{:keys [::running] :as cfg} {:keys [cron id] :as entry}]
   (let [ts (ms-until-valid cron)
-        ft (px/schedule! ts (partial execute-cron-task cfg task))]
+        ft (px/schedule! ts (partial execute-cron-task cfg entry))]
 
     (l/dbg :hint "schedule" :id id
            :ts (ct/format-duration ts)
@@ -106,48 +167,51 @@
      [:maybe
       [:map
        [:cron [:fn cron/cron-expr?]]
-       [:task :keyword]
+       [:job :keyword]
        [:props {:optional true} :map]
        [:id {:optional true} :keyword]]]]]
-   ::wrk/registry
-   ::db/pool])
+   ::jobs/defs
+   ::db/pool
+   ::mtx/metrics])
 
 (defmethod ig/assert-key ::wrk/cron
   [_ params]
   (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::wrk/cron
-  [_ {:keys [::wrk/entries ::wrk/registry ::db/pool] :as cfg}]
+  [_ {:keys [::wrk/entries ::jobs/defs ::db/pool] :as cfg}]
   (if (db/read-only? pool)
     (l/wrn :hint "service not started (db is read-only)")
     (let [running (atom #{})
-          entries (->> entries
-                       (filter some?)
-                       ;; If id is not defined, use the task as id.
-                       (map (fn [{:keys [id task] :as item}]
-                              (if (some? id)
-                                (assoc item :id (d/name id))
-                                (assoc item :id (d/name task)))))
-                       (map (fn [item]
-                              (update item :task d/name)))
-                       (map (fn [{:keys [task] :as item}]
-                              (let [f (wrk/get-task registry task)]
-                                (when-not f
-                                  (ex/raise :type :internal
-                                            :code :task-not-found
-                                            :hint (str/fmt "task %s not configured" task)))
-                                (-> item
-                                    (dissoc :task)
-                                    (assoc :fn f))))))
-
-          cfg     (assoc cfg ::entries entries ::running running)]
+          ;; doall sits outside the threading: it forces the lazy
+          ;; validation above (unknown job names fail fast here).
+          ;; NOTE: it must not go inside ->> — the threaded value
+          ;; would land as doall's count arg and explode.
+          entries (doall
+                   (->> entries
+                        (filter some?)
+                        ;; If id is not defined, use the job as id.
+                        ;; The job stays a keyword (the canonical job
+                        ;; name): only the id is stringified, because it
+                        ;; becomes the job label and the scheduled_task
+                        ;; row id.
+                        (map (fn [{:keys [id job] :as item}]
+                               (if (some? id)
+                                 (assoc item :id (d/name id))
+                                 (assoc item :id (d/name job)))))
+                        (map (fn [item]
+                               ;; fail fast when the entry references
+                               ;; an unknown job name
+                               (jobs/get-job-def defs (:job item))
+                               item))))]
 
       (l/inf :hint "started" :tasks (count entries))
 
-      (db/tx-run! cfg synchronize-cron-entries!)
+      (let [cfg (assoc cfg ::entries entries ::running running)]
+        (db/tx-run! cfg synchronize-cron-entries)
 
-      (->> (filter some? entries)
-           (run! (partial schedule-cron-task cfg)))
+        (->> (filter some? entries)
+             (run! (partial schedule-cron-task cfg))))
 
       (reify
         clojure.lang.IDeref
@@ -163,4 +227,3 @@
 (defmethod ig/halt-key! ::wrk/cron
   [_ instance]
   (some-> instance d/close!))
-
