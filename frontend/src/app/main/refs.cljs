@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cph]
    [app.common.files.tokens :as cfo]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
@@ -288,6 +289,14 @@
 (def workspace-data
   "Currently working file data on workspace"
   (l/derived dsh/lookup-file-data st/state))
+
+(def japanese-layout-config
+  "Japanese layout switches: `:file?` for the workspace file and
+  `:all-files?` from the profile."
+  (l/derived (fn [state]
+               {:file?      (ctf/japanese-layout-enabled? (dsh/lookup-file-data state))
+                :all-files? (true? (dm/get-in state [:profile :props :japanese-layout-all-files]))})
+             st/state =))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]

@@ -135,6 +135,7 @@
    [frontend-tests.ui.sidebar-scroll-test]
    [frontend-tests.ui.stroke-menu-test]
    [frontend-tests.ui.text-attrs-multiple-test]
+   [frontend-tests.ui.text-options-test]
    [frontend-tests.ui.workspace-libraries-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-object-test]
@@ -292,6 +293,7 @@
    'frontend-tests.ui.sidebar-scroll-test
    'frontend-tests.ui.stroke-menu-test
    'frontend-tests.ui.text-attrs-multiple-test
+   'frontend-tests.ui.text-options-test
    'frontend-tests.ui.workspace-libraries-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-object-test
