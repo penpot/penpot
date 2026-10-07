@@ -23,13 +23,14 @@
     "SUMMARY" "TABLE" "TBODY" "TFOOT" "THEAD" "TR" "UL"})
 
 ;; Elements whose text is read; any other element is skipped with its children.
-;; `O:P` is Word's paragraph filler, which marks its empty lines.
+;; `O:P` is Word's paragraph filler, which marks its empty lines. Ruby keeps its
+;; base text (`RUBY`, `RB`); the reading (`RT`, `RTC`) and fallback `RP` are skipped.
 (def ^:private allowed-tags
   (into block-tags
         #{"A" "ABBR" "B" "BDI" "BDO" "BIG" "BR" "CENTER" "CITE" "CODE" "DATA"
-          "DEL" "DFN" "EM" "FONT" "I" "INS" "KBD" "LABEL" "MARK" "O:P" "Q" "S"
-          "SAMP" "SMALL" "SPAN" "STRIKE" "STRONG" "SUB" "SUP" "TD" "TH" "TIME"
-          "TT" "U" "VAR" "WBR"}))
+          "DEL" "DFN" "EM" "FONT" "I" "INS" "KBD" "LABEL" "MARK" "O:P" "Q" "RB"
+          "RUBY" "S" "SAMP" "SMALL" "SPAN" "STRIKE" "STRONG" "SUB" "SUP" "TD"
+          "TH" "TIME" "TT" "U" "VAR" "WBR"}))
 
 (def ^:private bold-tags #{"B" "STRONG" "TH" "H1" "H2" "H3" "H4" "H5" "H6"})
 (def ^:private italic-tags #{"I" "EM" "CITE" "VAR" "DFN"})
