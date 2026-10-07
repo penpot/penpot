@@ -110,6 +110,7 @@
    [frontend-tests.ui.ds-controls-numeric-input-test]
    [frontend-tests.ui.gradient-handlers-test]
    [frontend-tests.ui.history-test]
+   [frontend-tests.ui.inspect-geometry-test]
    [frontend-tests.ui.inspect-stroke-tokens-test]
    [frontend-tests.ui.layout-container-multiple-test]
    [frontend-tests.ui.measurements-test]
@@ -251,6 +252,7 @@
    'frontend-tests.ui.ds-controls-numeric-input-test
    'frontend-tests.ui.gradient-handlers-test
    'frontend-tests.ui.history-test
+   'frontend-tests.ui.inspect-geometry-test
    'frontend-tests.ui.inspect-stroke-tokens-test
    'frontend-tests.ui.layout-container-multiple-test
    'frontend-tests.ui.measurements-test
