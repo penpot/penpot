@@ -37,6 +37,7 @@ See `mem:scripts/paren-repair`.
 UI and packages:
 - App UI components, SCSS modules, style-system boundaries, accessibility, i18n, and render performance: `mem:frontend/ui-conventions-and-style-system`.
 - JS/TS packages, shared UI package, text editor, Storybook, and package builds: `mem:frontend/ui-packages-text-editor-workflow`.
+- IME composition in the WASM text editor (capture surface rules, candidate window anchoring, Linux Chrome caret-bounds limit, real-IME debugging): `mem:frontend/text-editor-ime`.
 - PO translation workflow and per-locale conventions: `mem:frontend/translations`.
 
 Workspace behavior:
