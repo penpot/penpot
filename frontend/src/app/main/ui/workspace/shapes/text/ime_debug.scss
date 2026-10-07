@@ -1,0 +1,48 @@
+.ime-debug {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.geometry {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.panel {
+  position: absolute;
+  bottom: 48px;
+  left: 64px;
+  max-width: 480px;
+  padding: 8px 12px;
+  border: 1px solid #697582;
+  border-radius: 4px;
+  background: #17212b;
+  color: #fff;
+  font: 12px / 18px monospace;
+}
+
+.wasm-caret {
+  color: #36bdff;
+}
+
+.dom-caret {
+  color: #ffbe55;
+}
+
+.composition {
+  color: #ff73ce;
+}
+
+.composition-text {
+  max-height: 72px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.note {
+  color: #c0ccd8;
+}

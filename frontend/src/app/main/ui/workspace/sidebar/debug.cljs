@@ -22,6 +22,7 @@
   "Debug options that don't require a page reload to take effect.
   These options are handled reactively via okulary subscriptions."
   #{:shape-panel
+    :ime
     :show-ids
     :show-touched
     :components-debugger})

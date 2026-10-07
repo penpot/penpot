@@ -22,6 +22,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -439,6 +440,12 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
+(defn current-ruby-values
+  [{:keys [attrs shape]}]
+  (shape-current-values shape
+                        #(and (txt/is-text-node? %) (jl/ruby-span? %))
+                        attrs))
+
 (defn v3-current-text-values
   [{:keys [editor-styles attrs]}]
   (let [result (-> editor-styles
@@ -465,7 +472,8 @@
 (defn current-paragraph-values
   [{:keys [editor-styles editor-state editor-instance attrs shape] :as options}]
   (cond
-    (some? editor-styles) (v3-current-text-values options)
+    (some? editor-styles) (merge (shape-current-values shape txt/is-paragraph-node? attrs)
+                                 (select-keys editor-styles attrs))
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
     :else (shape-current-values shape txt/is-paragraph-node? attrs)))
@@ -503,26 +511,24 @@
 
      (count (:text node)))))
 
-
 (defn decorate-range-info
-  "Adds information about ranges inside the metadata of the text nodes"
+  "Adds information about ranges inside the metadata of the text nodes.
+   Offsets run top-down so every node counts from its parent's start."
   [content]
-  (->> (with-meta content {:start 0 :end (count-node-chars content)})
-       (txt/transform-nodes
-        (fn [node]
-          (d/update-when
-           node
-           :children
-           (fn [children]
-             (let [start (-> node meta (:start 0))]
-               (->> children
-                    (reduce (fn [[result start] node]
-                              (let [end (+ start (count-node-chars node))]
-                                [(-> result
-                                     (conj (with-meta node {:start start :end end})))
-                                 end]))
-                            [[] start])
-                    (first)))))))))
+  (letfn [(decorate-children [node]
+            (let [start (-> node meta (:start 0))]
+              (d/update-when
+               node
+               :children
+               (fn [children]
+                 (->> children
+                      (reduce (fn [[result start] child]
+                                (let [end   (+ start (count-node-chars child))
+                                      child (with-meta child {:start start :end end})]
+                                  [(conj result (decorate-children child)) end]))
+                              [[] start])
+                      (first))))))]
+    (decorate-children (with-meta content {:start 0 :end (count-node-chars content)}))))
 
 (defn split-content-at
   [content position]
@@ -557,10 +563,41 @@
                     (<= (-> node meta :end) end))))
         #(d/patch-object % attrs))))
 
-(defn- update-text-range-attrs
+(defn- overlapping-text-nodes
+  "Text nodes of a range-decorated content with characters in [start, end)."
+  [content start end]
+  (->> (txt/node-seq txt/is-text-node? content)
+       (filter (fn [node]
+                 (let [{node-start :start node-end :end} (meta node)]
+                   (and (< node-start end) (< start node-end)))))))
+
+(defn- annotated-span-bounds
+  "The range [start, end) widened to cover every ruby or warichu span it
+   cuts, so a reading or note is never split between two spans."
+  [content start end]
+  (->> (overlapping-text-nodes content start end)
+       (filter jl/annotated-span?)
+       (reduce (fn [[start end] node]
+                 (let [{node-start :start node-end :end} (meta node)]
+                   [(min start node-start) (max end node-end)]))
+               [start end])))
+
+(defn single-span-range?
+  "True when the characters [start, end) of `content`, widened to whole ruby
+   and warichu spans, all belong to one text span."
+  [content start end]
+  (or (nil? content)
+      (let [content     (decorate-range-info content)
+            [start end] (annotated-span-bounds content start end)]
+        (<= (count (overlapping-text-nodes content start end)) 1))))
+
+(defn update-text-range-attrs
+  "Applies `attrs` to the characters [start, end) of a text shape. A range
+   that cuts a ruby or warichu span covers the whole span."
   [shape start end attrs]
-  (let [new-content (-> (:content shape)
-                        (decorate-range-info)
+  (let [content     (decorate-range-info (:content shape))
+        [start end] (annotated-span-bounds content start end)
+        new-content (-> content
                         (split-content-at start)
                         (split-content-at end)
                         (update-content-range start end attrs))]
@@ -626,30 +663,32 @@
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
-  (let [attrs (d/without-nils attrs)]
-    (ptk/reify ::update-paragraph-attrs
-      ptk/UpdateEvent
-      (update [_ state]
-        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
+  (ptk/reify ::update-paragraph-attrs
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
 
-      ptk/WatchEvent
-      (watch [_ state _]
-        (when-not (some? (get-in state [:workspace-editor-state id]))
-          (let [objects   (dsh/lookup-page-objects state)
-                shape     (get objects id)
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-not (some? (get-in state [:workspace-editor-state id]))
+        (let [objects   (dsh/lookup-page-objects state)
+              shape     (get objects id)
 
-                merge-fn  (fn [node attrs]
-                            (reduce-kv
-                             (fn [node k v] (assoc node k v))
-                             node
-                             attrs))
+              merge-fn  (fn [node attrs]
+                          (reduce-kv
+                           (fn [node k v]
+                             (if (nil? v)
+                               (dissoc node k)
+                               (assoc node k v)))
+                           node
+                           attrs))
 
-                update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
-                shape-ids (cond
-                            (cfh/text-shape? shape)  [id]
-                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+              update-fn #(txt/update-text-content % txt/is-paragraph-node? merge-fn attrs)
+              shape-ids (cond
+                          (cfh/text-shape? shape)  [id]
+                          (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-            (rx/of (dwsh/update-shapes shape-ids update-fn))))))))
+          (rx/of (dwsh/update-shapes shape-ids update-fn)))))))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -680,6 +719,47 @@
                     (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
                   updated-shape))]
           (rx/of (dwsh/update-shapes shape-ids merge-shape)))))))
+
+(defn update-ruby-presentation-attrs
+  [shape attrs]
+  (txt/update-text-content
+   shape
+   #(and (txt/is-text-node? %) (jl/ruby-span? %))
+   d/txt-merge
+   attrs))
+
+(defn update-all-ruby-presentation
+  "Apply ruby presentation `attrs` to the ruby spans of the text shapes in
+   `ids`, and of the texts inside the groups among them, in one update."
+  [ids attrs]
+  (ptk/reify ::update-all-ruby-presentation
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects   (dsh/lookup-page-objects state)
+            wasm?     (features/active-feature? state "render-wasm/v1")
+            shape-ids (into []
+                            (comp (mapcat (fn [id]
+                                            (let [shape (get objects id)]
+                                              (cond
+                                                (cfh/text-shape? shape)  [id]
+                                                (cfh/group-shape? shape) (cfh/get-children-ids objects id)))))
+                                  (distinct))
+                            ids)
+            update-fn (fn [shape]
+                        (let [updated-shape (update-ruby-presentation-attrs shape attrs)]
+                          (when (and wasm? (cfh/text-shape? updated-shape))
+                            (wasm.text-editor/cache-shape-text-content!
+                             (:id updated-shape)
+                             (:content updated-shape)))
+                          updated-shape))
+            undo-id   (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/update-shapes shape-ids update-fn))
+         (if wasm?
+           (rx/of (dwwt/resize-wasm-text-all shape-ids))
+           (rx/empty))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn migrate-node
   [node]
