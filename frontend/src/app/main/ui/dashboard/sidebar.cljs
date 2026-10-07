@@ -23,7 +23,6 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link*]]
-   [app.main.ui.components.mcp-menu :refer [mcp-menu*]]
    [app.main.ui.dashboard.check-updates :as dcu]
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -256,7 +255,6 @@
         (get default-project :id)
 
         team-id     (get team :id)
-        mcp-state   (mf/deref refs/mcp)
 
         projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
@@ -383,15 +381,6 @@
                      :keyboard-action go-libs-with-key}
            [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
-
-       (when (and (contains? cf/flags :mcp)
-                  (:enabled mcp-state)
-                  (:token-valid mcp-state))
-         [:div {:class (stl/css :sidebar-content-section)}
-          [:> mcp-menu* {:dashboard true
-                         :is-mcp-connected (= "connected" (:connection-status mcp-state))
-                         :is-connection-requested (:connection-requested mcp-state)
-                         :session-id (:session-id mcp-state)}]])
 
        [:div {:class (stl/css :sidebar-content-section)
               :data-testid "pinned-projects"}

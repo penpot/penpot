@@ -7,9 +7,11 @@
 (ns app.main.ui.components.mcp-menu
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.mcp :as mcp]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -36,13 +38,13 @@
         open-timer*  (mf/use-ref nil)
         close-timer* (mf/use-ref nil)
 
-        on-open-menu
+        on-toggle-menu
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
            (cancel-timer! open-timer*)
            (cancel-timer! close-timer*)
-           (reset! menu-open* true)))
+           (swap! menu-open* not)))
 
         on-close-menu
         (mf/use-fn
@@ -80,7 +82,7 @@
          (mf/deps dashboard)
          #(st/emit! (mcp/connect-mcp)
                     (ev/event {::ev/name "connect-mcp-plugin"
-                               ::ev/origin (if dashboard "dashboard:sidebar" "workspace:toolbar")})))
+                               ::ev/origin (if dashboard "dashboard:header" "workspace:toolbar")})))
 
         on-disconnect
         (mf/use-fn
@@ -102,8 +104,8 @@
     [:div {:class (stl/css-case :mcp-tool true :dashboard dashboard)
            :on-pointer-enter on-display-menu
            :on-pointer-leave on-hide-menu}
-     [:> button* {:variant "ghost"
-                  :on-click on-open-menu
+     [:> button* {:variant (if dashboard "secondary" "ghost")
+                  :on-click on-toggle-menu
                   :aria-haspopup true
                   :aria-expanded menu-open?
                   :aria-pressed menu-open?
@@ -115,9 +117,7 @@
                                     :connected is-mcp-connected)}]
        [:span {:class (stl/css-case :toolbar-mcp-button-label true
                                     :connected is-mcp-connected)}
-        (if (and dashboard is-mcp-connected)
-          (tr "workspace.toolbar.mcp-connected")
-          (tr "workspace.toolbar.mcp"))]]]
+        (tr "workspace.toolbar.mcp")]]]
 
      [:div {:class (stl/css :toolbar-mcp-menu)}
       [:> dropdown-menu* {:show menu-open?
@@ -139,3 +139,14 @@
         (if is-connection-requested
           (tr "workspace.header.menu.mcp.plugin.status.disconnect")
           (tr "workspace.header.menu.mcp.plugin.status.connect"))]]]]))
+
+(mf/defc dashboard-mcp-menu*
+  []
+  (let [mcp-state (mf/deref refs/mcp)]
+    (when (and (contains? cf/flags :mcp)
+               (:enabled mcp-state)
+               (:token-valid mcp-state))
+      [:> mcp-menu* {:dashboard true
+                     :is-mcp-connected (= "connected" (:connection-status mcp-state))
+                     :is-connection-requested (:connection-requested mcp-state)
+                     :session-id (:session-id mcp-state)}])))

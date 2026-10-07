@@ -13,10 +13,10 @@
 
 .mcp-tool {
   position: relative;
-}
 
-.dashboard {
-  margin-inline: var(--sp-l);
+  &.dashboard {
+    --mcp-disconnected-dot-color: var(--color-foreground-secondary);
+  }
 }
 
 .toolbar-mcp-button {
@@ -38,7 +38,7 @@
   inline-size: px2rem(6);
   block-size: px2rem(6);
   border-radius: 50%;
-  background-color: var(--color-background-disabled);
+  background-color: var(--mcp-disconnected-dot-color, var(--color-background-disabled));
 
   &.connected {
     background-color: var(--color-accent-primary);
@@ -72,6 +72,7 @@
 
 .toolbar-mcp-menu {
   position: absolute;
+  z-index: var(--z-index-dropdown);
   left: 0;
   top: $sz-36;
 }
@@ -85,7 +86,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);
-  z-index: var(--z-index-dropdown);
   margin: 0;
   padding: var(--sp-xs);
   border: $b-2 solid var(--panel-border-color);

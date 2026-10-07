@@ -17,6 +17,7 @@
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.mcp-menu :refer [dashboard-mcp-menu*]]
    [app.main.ui.dashboard.deleted :as deleted]
    [app.main.ui.dashboard.grid :refer [line-grid*]]
    [app.main.ui.dashboard.import :as udi]
@@ -50,6 +51,7 @@
              (tr "dashboard.personal-projects")
              (tr "dashboard.projects-title"))]]
      [:div {:class (stl/css :dashboard-header-actions)}
+      [:> dashboard-mcp-menu*]
       [:> layout-toggle* {:layout layout
                           :on-change on-change}]
       (when can-edit
