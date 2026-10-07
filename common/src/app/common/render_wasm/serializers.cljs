@@ -9,10 +9,12 @@
     [app.common.data :as d]
     [app.common.data.macros :as dm]
     [app.common.files.helpers :as cfh]
+    [app.common.logging :as log]
     [app.common.render-wasm.serializers.color :as sr-clr]
     [app.common.render-wasm.wasm :as wasm]
     [app.common.types.color :as clr]
     [app.common.types.shape-tree :as ctst]
+    [app.common.types.text.cjk-layout :as cjk]
     [app.common.uuid :as uuid]
     [cuerdas.core :as str]))
 
@@ -302,6 +304,21 @@
   [text-direction]
   (untranslate "text-direction" text-direction "ltr"))
 
+(defn translate-text-layout-enum
+  "Wasm discriminant of the value of the CJK text layout enum `attr`. An
+   unset value takes the default; an unknown one also takes it, with a
+   warning, since content validation should have rejected it. 0 when the
+   enum is not exported."
+  [attr value]
+  (let [default (cjk/enum-default attr)
+        value   (some-> value d/name)
+        value   (if (str/blank? value) default value)]
+    (if-let [values (unchecked-get wasm/serializers (name attr))]
+      (if-let [discriminant (unchecked-get values value)]
+        discriminant
+        (do (log/wrn :hint "unknown text layout value" :attr attr :value value)
+            (unchecked-get values default)))
+      0)))
 
 (defn translate-font-style
   [font-style]
