@@ -195,15 +195,15 @@
                                     :project-id (:default-project-id profile)
                                     :is-shared false})
         [svg-path svg-size] (write-temp-svg clean-svg)
-        out     (th/command! {::th/type :upload-file-media-object
-                              ::rpc/profile-id (:id profile)
-                              :file-id (:id file)
-                              :is-local true
-                              :name "benign.svg"
-                              :content {:filename "benign.svg"
-                                        :path svg-path
-                                        :mtype "image/svg+xml"
-                                        :size svg-size}})
+        out     (th/multipart-command! {::th/type :upload-file-media-object
+                                        ::rpc/profile-id (:id profile)
+                                        :file-id (:id file)
+                                        :is-local true
+                                        :name "benign.svg"
+                                        :content {:filename "benign.svg"
+                                                  :path svg-path
+                                                  :mtype "image/svg+xml"
+                                                  :size svg-size}})
         _       (t/is (nil? (:error out)) (str "upload failed: " (pr-str (:error out))))
         uploaded (:result out)
         page-id (first (get-in file [:data :pages]))
