@@ -4,6 +4,7 @@ import { initLogger, logger, logActiveTransports } from "./logger.js";
 import { healthRoutes } from "./routes/health.js";
 import { createImageRoutes } from "./routes/image.js";
 import { createFontRoutes } from "./routes/font.js";
+import { createSvgRoutes } from "./routes/svg.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { timeoutMiddleware } from "./middleware/timeout.js";
 import { sharedKeyAuth } from "./middleware/auth.js";
@@ -11,6 +12,7 @@ import { createQueueMiddleware } from "./middleware/queue.js";
 import { loggingMiddleware } from "./middleware/logging.js";
 import { configureImageLimits } from "./services/image.js";
 import { configureFontLimits } from "./services/font.js";
+import { configureSvgLimits } from "./services/svg.js";
 import { configureUploadLimits } from "./upload.js";
 import sharp from "sharp";
 
@@ -39,6 +41,8 @@ configureFontLimits({
   timeout: config.fontTimeout,
 });
 
+configureSvgLimits({ maxSize: config.svgMaxSize });
+
 configureUploadLimits({ maxFileSize: config.maxFileSize, memoryThreshold: config.memoryThreshold });
 
 const queueMiddleware = createQueueMiddleware(config.maxConcurrentRequests);
@@ -49,6 +53,7 @@ app.use(loggingMiddleware);
 app.get("/api/health", healthRoutes);
 app.use("/api/image", sharedKeyAuth(config.sharedKey), queueMiddleware, createImageRoutes());
 app.use("/api/font", sharedKeyAuth(config.sharedKey), queueMiddleware, createFontRoutes());
+app.use("/api/svg", sharedKeyAuth(config.sharedKey), queueMiddleware, createSvgRoutes());
 app.use(errorHandler);
 
 app.listen(config.port, config.host, () => {

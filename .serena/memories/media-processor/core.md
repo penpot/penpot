@@ -9,6 +9,7 @@ Stateless HTTP service for Penpot image and font processing. Handles image info 
 - Framework: Express
 - Image processing: sharp (libvips)
 - Font processing: FontForge (TTF/OTF), sfnt2woff, woff2_decompress
+- SVG sanitization: DOMPurify (allowlist) over jsdom (temporary DOM for Node)
 - Upload handling: multer (hybrid storage: memory for small, disk for large)
 - Logging: pino (with optional Loki transport)
 - Config validation: Zod
@@ -33,10 +34,12 @@ media-processor/
 │   ├── routes/
 │   │   ├── health.ts         # GET /api/health
 │   │   ├── image.ts          # POST /api/image/info, /api/image/thumbnail
-│   │   └── font.ts           # POST /api/font/convert
+│   │   ├── font.ts           # POST /api/font/convert
+│   │   └── svg.ts            # POST /api/svg/sanitize
 │   └── services/
 │       ├── image.ts          # sharp-based image info/thumbnail generation
 │       ├── font.ts           # FontForge/woff-tools font conversion
+│       ├── svg.ts            # DOMPurify SVG sanitization over jsdom
 │       └── errors.ts         # throwValidation, throwRestriction, throwProcessing
 ├── test/                     # Vitest test files
 ├── vitest.config.ts          # Test configuration
@@ -54,6 +57,7 @@ media-processor/
 
 ### Resource Limits
 - Image: max pixels, max width/height enforced before processing
+- SVG: max input size enforced before parsing (default 30MB, `PENPOT_MEDIA_PROCESSOR_SVG_MAX_SIZE`); an oversized input is rejected with 413, never truncated
 - Font: prlimit wraps FontForge processes with memory (AS) and CPU time limits
 - Concurrency: p-queue limits concurrent requests (default 10)
 - Upload: hybrid storage — memory for files < 10MB, disk for larger; configurable via `PENPOT_MEDIA_PROCESSOR_MEMORY_THRESHOLD`
@@ -73,6 +77,25 @@ media-processor/
 - Supported formats: TTF, OTF, WOFF, WOFF2
 - SFNT type detected via magic bytes (0x4f54544f = OTF, 0x00010000 = TTF)
 - Temp files cleaned up in finally blocks (best-effort)
+
+### SVG Sanitization
+- `POST /api/svg/sanitize` (multipart field `file`) returns the sanitized SVG
+  bytes with `Content-Type: image/svg+xml`; it is the remote backend of
+  `app.media/sanitize-svg` in the JVM.
+- DOMPurify is given `USE_PROFILES: {svg: true, svgFilters: true}` and
+  `NAMESPACE: "http://www.w3.org/2000/svg"`, so it parses the document as XML/SVG
+  the way a browser parses a standalone `.svg`. Its default allowlist fails closed
+  and already drops `script`, `foreignObject`, `set`, `animate` and `use`; do not
+  add `ADD_TAGS`/`ADD_ATTR`/`FORBID_TAGS`, and do not use `IN_PLACE`, `setConfig`
+  or hooks. To fix a bypass, upgrade DOMPurify (it is a fast-moving security
+  dependency; pin the latest patched 3.x).
+- A fresh jsdom `window` is created per call and closed in `finally`. Reusing one
+  window in a long-lived process leaks memory and degrades latency without bound.
+- The XML declaration and DOCTYPE are stripped before parsing (the XML parser
+  bails on them; stripping the DOCTYPE also keeps its entities undeclared). An
+  input that does not produce an `<svg` root is rejected with 400
+  `invalid-svg-file`.
+- Errors: `400 invalid-svg-file` (not a well-formed SVG), `413 svg-too-large`.
 
 ## Commands
 

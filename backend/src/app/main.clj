@@ -652,10 +652,12 @@
     ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
 
    :app.tasks.import-binfile/job-def
-   {::db/pool      (ig/ref ::db/pool)
-    ::sto/storage  (ig/ref ::sto/storage)
-    ::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::mbus/msgbus  (ig/ref ::mbus/msgbus)}
+   {::db/pool           (ig/ref ::db/pool)
+    ::sto/storage       (ig/ref ::sto/storage)
+    ::mtx/metrics       (ig/ref ::mtx/metrics)
+    ::mbus/msgbus       (ig/ref ::mbus/msgbus)
+    ::http.client/client (ig/ref ::http.client/client)
+    ::setup/shared-keys  (ig/ref ::setup/shared-keys)}
 
    :app.storage.gc-deleted/job-def
    {::db/pool     (ig/ref ::db/pool)

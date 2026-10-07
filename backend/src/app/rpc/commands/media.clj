@@ -16,7 +16,6 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.media :as media]
-   [app.media.svg :as svg]
    [app.media.validation :as media.v]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
@@ -126,12 +125,12 @@
 ;; inverse, soft referential integrity).
 
 (defn- process-main-image
-  [info]
+  [cfg info]
   (let [path  (:path info)
         mtype (:mtype info)
         path  (if (= mtype "image/svg+xml")
                 (let [content   (slurp path)
-                      sanitized (svg/sanitize-svg content)
+                      sanitized (media/sanitize-svg cfg content)
                       temp-path (tmp/tempfile :prefix "penpot-svg-" :suffix ".svg" :min-age "5m")]
                   (spit (str temp-path) sanitized)
                   temp-path)
@@ -168,7 +167,7 @@
       (assoc ::thumb (process-thumb-image cfg info))
 
       :always
-      (assoc ::image (process-main-image info)))))
+      (assoc ::image (process-main-image cfg info)))))
 
 (defn- create-file-media-object
   [{:keys [::sto/storage ::db/conn] :as cfg}

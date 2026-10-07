@@ -28,7 +28,7 @@
    [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.media.svg :as svg]
+   [app.media :as media]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
@@ -1020,11 +1020,15 @@
   Otherwise returns a map with the sanitized `:bytes`, their `:size`
   and their blake2b `:hash`, ready to persist with `sto/put-object!`.
 
+  `system` reaches the sanitizer the same way it does on the upload
+  path: the local filter, or DOMPurify in media-processor when remote
+  media processing is enabled (`app.media/sanitize-svg`).
+
   Raises a `:validation` exception when the SVG cannot be parsed, the
   same error the upload path reports."
-  [object ^bytes raw]
+  [system object ^bytes raw]
   (when (svg-object? object)
-    (let [sanitized (svg/sanitize-svg (String. ^bytes raw "UTF-8"))
+    (let [sanitized (media/sanitize-svg system (String. ^bytes raw "UTF-8"))
           bytes     (.getBytes ^String sanitized "UTF-8")]
       {:bytes bytes
        :size  (alength ^bytes bytes)

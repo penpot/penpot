@@ -7,6 +7,7 @@
 (ns backend-tests.media-test
   (:require
    [app.common.exceptions :as ex]
+   [app.config :as cf]
    [app.media :as media]
    [app.media.svg :as svg]
    [backend-tests.helpers :as th]
@@ -202,6 +203,23 @@
           result (svg/sanitize-svg svg)]
       (t/is (clojure.string/includes? result "xml:space"))
       (t/is (clojure.string/includes? result "hola")))))
+
+(t/deftest sanitize-svg-dispatch-local
+  (t/testing "app.media/sanitize-svg delegates to the local filter without the remote flag"
+    (with-redefs [cf/flags #{}]
+      (let [result (media/sanitize-svg th/*system*
+                                       "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\"><script>alert('xss')</script><rect width=\"50\" height=\"50\"/></svg>")]
+        (t/is (not (clojure.string/includes? result "<script")))
+        (t/is (not (clojure.string/includes? result "alert")))
+        (t/is (clojure.string/includes? result "<rect"))))))
+
+(t/deftest sanitize-svg-dispatch-local-rejects-broken
+  (t/testing "app.media/sanitize-svg local path rejects malformed SVG"
+    (with-redefs [cf/flags #{}]
+      (let [err (ex/try! (media/sanitize-svg th/*system* "<svg><not-closed>"))]
+        (t/is (ex/error? err))
+        (t/is (= :validation (:type (ex-data err))))
+        (t/is (= :invalid-svg-file (:code (ex-data err))))))))
 
 (t/deftest info-invalid-image
   (t/testing "info on invalid image raises error"

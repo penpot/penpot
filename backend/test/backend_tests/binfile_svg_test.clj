@@ -18,8 +18,10 @@
    [app.common.features :as cfeat]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [backend-tests.helpers :as th]
@@ -28,7 +30,8 @@
    [clojure.string :as str]
    [clojure.test :as t]
    [datoteka.fs :as fs]
-   [datoteka.io :as io])
+   [datoteka.io :as io]
+   [mockery.core :refer [with-mocks]])
   (:import
    java.io.ByteArrayInputStream
    java.util.zip.ZipEntry
@@ -56,7 +59,7 @@
   (String. data "UTF-8"))
 
 (t/deftest sanitize-imported-svg-removes-script
-  (let [result (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+  (let [result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                           (utf8bytes evil-svg))]
     (t/is (some? result))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "<script")))
@@ -65,7 +68,7 @@
 (t/deftest sanitize-imported-svg-removes-aliased-xhref
   (let [object {:content-type "image/svg+xml; charset=utf-8" :bucket "file-media-object"}
         object (update object :content-type bfc/normalize-content-type)
-        result (bfc/sanitize-imported-svg object (utf8bytes evil-xhref-svg))]
+        result (bfc/sanitize-imported-svg th/*system* object (utf8bytes evil-xhref-svg))]
     (t/is (some? result))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "javascript:")))
     (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_XHREF")))))
@@ -81,7 +84,7 @@
     (doseq [ctype ["IMAGE/SVG+XML" "Image/Svg+Xml" "  image/svg+xml  " "image/svg+xml; charset=utf-8"]]
       (let [object {:content-type ctype :bucket "file-media-object"}
             object (update object :content-type bfc/normalize-content-type)
-            result (bfc/sanitize-imported-svg object (utf8bytes evil-svg))]
+            result (bfc/sanitize-imported-svg th/*system* object (utf8bytes evil-svg))]
         (t/is (some? result) (str "expected sanitize for " (pr-str ctype)))
         (when (some? result)
           (t/is (not (str/includes? (bytes-str (:bytes result)) "<script"))
@@ -90,19 +93,19 @@
 (t/deftest sanitize-imported-svg-ignores-missing-or-blank-type
   (t/testing "ancient bundle entries without content-type pass through untouched"
     (let [raw (utf8bytes "not-an-svg")]
-      (t/is (nil? (bfc/sanitize-imported-svg {} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type nil} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type ""} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "   "} raw))))))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type nil} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type ""} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "   "} raw))))))
 
 (t/deftest sanitize-imported-svg-ignores-non-svg
   (t/testing "objects that are not SVG pass through untouched"
     (let [raw (utf8bytes "not-an-svg")]
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "image/jpeg" :bucket "file-media-object"} raw)))
-      (t/is (nil? (bfc/sanitize-imported-svg {:content-type "image/png" :bucket "file-media-object"} raw))))))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "image/jpeg" :bucket "file-media-object"} raw)))
+      (t/is (nil? (bfc/sanitize-imported-svg th/*system* {:content-type "image/png" :bucket "file-media-object"} raw))))))
 
 (t/deftest sanitize-imported-svg-reports-size-and-hash
-  (let [result (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+  (let [result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                           (utf8bytes clean-svg))]
     (t/is (some? result))
     (t/is (= (alength ^bytes (:bytes result)) (:size result)))
@@ -112,8 +115,25 @@
 (t/deftest sanitize-imported-svg-rejects-broken-svg
   (t/testing "unparseable SVG raises the same validation error as the upload path"
     (t/is (thrown-with-msg? Exception #"SVG parsing failed during sanitization"
-                            (bfc/sanitize-imported-svg {:content-type "image/svg+xml" :bucket "file-media-object"}
+                            (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml" :bucket "file-media-object"}
                                                        (utf8bytes "<svg><not-closed>"))))))
+
+(t/deftest sanitize-imported-svg-routes-through-media-processor
+  (t/testing "with remote media processing on, the import sanitizes through the service"
+    (let [served "<svg xmlns=\"http://www.w3.org/2000/svg\"><circle r=\"4\"/></svg>"]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body (ByteArrayInputStream. (utf8bytes served))}}]
+        (with-redefs [cf/flags #{:remote-media-processing}
+                      cf/get (th/config-get-mock {:media-processing-service-uri "http://localhost:6065"
+                                                  :media-processing-service-timeout 5000})]
+          (let [system (assoc th/*system* ::setup/shared-keys {:media-processor "test-key"})
+                result (bfc/sanitize-imported-svg system
+                                                  {:content-type "image/svg+xml" :bucket "file-media-object"}
+                                                  (utf8bytes evil-svg))]
+            (t/is (some? result))
+            (t/is (= served (bytes-str (:bytes result))))
+            (t/is (= 1 (:call-count @mock)))))))))
 
 (t/deftest check-storage-content-type-allows-known-types
   (doseq [ctype ["image/svg+xml" "image/jpeg" "font/woff2" "application/octet-stream"]]
@@ -295,7 +315,7 @@
           _    (spit (str path) evil-svg :encoding "UTF-8")
           raw  (with-open [istream (jio/input-stream path)]
                  (io/read istream))
-          result (bfc/sanitize-imported-svg {:content-type "image/svg+xml"} raw)]
+          result (bfc/sanitize-imported-svg th/*system* {:content-type "image/svg+xml"} raw)]
       (t/is (some? result))
       (t/is (not (str/includes? (bytes-str (:bytes result)) "<script")))
       (t/is (not (str/includes? (bytes-str (:bytes result)) "PWNMARK_SCRIPT"))))))

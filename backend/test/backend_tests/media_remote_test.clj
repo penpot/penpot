@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.config :as cf]
    [app.http.client :as http]
+   [app.media :as media]
    [app.media.remote :as media.remote]
    [app.setup :as-alias setup]
    [app.util.json :as json]
@@ -608,3 +609,56 @@
                                    :height 200})
             ;; Stream should be closed after processing
             (t/is @closed)))))))
+
+;; ---------------------------------------------------------------------------
+;; :sanitize-svg
+;; ---------------------------------------------------------------------------
+
+(t/deftest sanitize-svg-happy-path
+  (t/testing "sanitize-svg returns the sanitized content from the service"
+    (let [clean "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>"]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200
+                                  :body (ByteArrayInputStream. (.getBytes clean "UTF-8"))}}]
+        (with-redefs [cf/get (th/config-get-mock config-mock)]
+          (let [result (media.remote/process (mk-system)
+                                             {:cmd     :sanitize-svg
+                                              :content "<svg><script>alert(1)</script></svg>"})]
+            (t/is (= clean (:content result)))
+            (t/is (= 1 (:call-count @mock)))
+            (let [[_ req-map] (:call-args @mock)]
+              (t/is (= :post (:method req-map)))
+              (t/is (str/includes? (str (:uri req-map)) "api/svg/sanitize"))
+              (t/is (= "test-shared-key" (get-in req-map [:headers "x-shared-key"])))
+              (t/is (str/starts-with? (get-in req-map [:headers "Content-Type"])
+                                      "multipart/form-data")))))))))
+
+(t/deftest sanitize-svg-closes-response-stream
+  (t/testing "sanitize-svg closes the response stream after reading it"
+    (let [{:keys [stream closed]} (tracking-stream (.getBytes "<svg/>" "UTF-8"))]
+      (with-mocks [mock {:target 'app.media.remote/service-request
+                         :return {:status 200 :body stream}}]
+        (with-redefs [cf/get (th/config-get-mock config-mock)]
+          (media.remote/process (mk-system) {:cmd :sanitize-svg :content "<svg/>"})
+          (t/is @closed))))))
+
+(t/deftest sanitize-svg-service-unavailable
+  (t/testing "sanitize-svg propagates the service error instead of falling back"
+    (with-mocks [mock {:target 'app.media.remote/service-request
+                       :throw (ex-info "Cannot connect to media-processor service"
+                                       {:type :internal
+                                        :code :media-processor-unavailable})}]
+      (with-redefs [cf/get (th/config-get-mock config-mock)]
+        (let [err (ex/try! (media.remote/process (mk-system)
+                                                 {:cmd :sanitize-svg :content "<svg/>"}))]
+          (t/is (ex/error? err))
+          (t/is (= :media-processor-unavailable (:code (ex-data err)))))))))
+
+(t/deftest sanitize-svg-dispatch-remote
+  (t/testing "app.media/sanitize-svg uses the remote backend when the flag is on"
+    (with-mocks [mock {:target 'app.media.remote/service-request
+                       :return {:status 200
+                                :body (ByteArrayInputStream. (.getBytes "<svg/>REMOTE" "UTF-8"))}}]
+      (with-redefs [cf/flags #{:remote-media-processing}
+                    cf/get (th/config-get-mock config-mock)]
+        (t/is (= "<svg/>REMOTE" (media/sanitize-svg (mk-system) "<svg/>")))))))

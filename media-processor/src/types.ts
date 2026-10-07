@@ -10,6 +10,7 @@ export interface AppConfig {
   imageMaxPixels: number;
   imageMaxWidth: number;
   imageMaxHeight: number;
+  svgMaxSize: number;
   fontProcessMem: number;
   fontProcessCpuTime: number;
   fontTimeout: number;

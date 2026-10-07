@@ -205,7 +205,7 @@
         ;; the shared helper unit tests, with no dedicated v2
         ;; import test.
         clean   (when (bfc/svg-object? mdata)
-                  (bfc/sanitize-imported-svg mdata data))
+                  (bfc/sanitize-imported-svg cfg mdata data))
         data    (or (:bytes clean) data)
         hash    (or (:hash clean) (sto/calculate-hash data))
 
