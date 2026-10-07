@@ -22,8 +22,17 @@
    [clojure.test :as t]
    [promesa.exec.csp :as sp]))
 
+(defn- with-clean-registry
+  "Runs `f` against an empty connection registry, restoring the previous
+  contents afterwards so tests cannot leak connections into each other."
+  [f]
+  (let [saved @ws/state]
+    (reset! ws/state {:connections {} :by-profile {}})
+    (try (f)
+         (finally (reset! ws/state saved)))))
+
 (t/use-fixtures :once th/state-init)
-(t/use-fixtures :each th/database-reset)
+(t/use-fixtures :each th/database-reset with-clean-registry)
 
 (defn make-wsp
   [profile-id state output-ch]
@@ -235,15 +244,6 @@
 
 ;; --- CONNECTION REGISTRY
 
-(defn- with-clean-registry
-  "Runs `f` against an empty connection registry, restoring the previous
-  contents afterwards so tests cannot leak connections into each other."
-  [f]
-  (let [saved @ws/state]
-    (reset! ws/state {:connections {} :by-profile {}})
-    (try (f)
-         (finally (reset! ws/state saved)))))
-
 (t/deftest registry-indexes-connections-by-profile
   (let [profile-a (uuid/next)
         profile-b (uuid/next)
@@ -251,38 +251,36 @@
         conn-b    (uuid/next)
         conn-c    (uuid/next)]
 
-    (with-clean-registry
-      (fn []
-        (t/testing "a profile with no connections has an empty index"
-          (t/is (= #{} (ws/connections-for-profile profile-a))))
+    (t/testing "a profile with no connections has an empty index"
+      (t/is (= #{} (ws/connections-for-profile profile-a))))
 
-        (ws/register-connection conn-a {::ws/profile-id profile-a})
-        (ws/register-connection conn-b {::ws/profile-id profile-a})
-        (ws/register-connection conn-c {::ws/profile-id profile-b})
+    (ws/register-connection conn-a {::ws/profile-id profile-a})
+    (ws/register-connection conn-b {::ws/profile-id profile-a})
+    (ws/register-connection conn-c {::ws/profile-id profile-b})
 
-        (t/testing "connections are indexed under their profile"
-          (t/is (= #{conn-a conn-b} (ws/connections-for-profile profile-a)))
-          (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
+    (t/testing "connections are indexed under their profile"
+      (t/is (= #{conn-a conn-b} (ws/connections-for-profile profile-a)))
+      (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
 
-        (t/testing "connections are retrievable by id"
-          (t/is (= profile-a (::ws/profile-id (ws/get-connection conn-a))))
-          (t/is (nil? (ws/get-connection (uuid/next)))))
+    (t/testing "connections are retrievable by id"
+      (t/is (= profile-a (::ws/profile-id (ws/get-connection conn-a))))
+      (t/is (nil? (ws/get-connection (uuid/next)))))
 
-        (t/testing "unregistering removes it from both the map and the index"
-          (ws/unregister-connection conn-b)
-          (t/is (= #{conn-a} (ws/connections-for-profile profile-a)))
-          (t/is (nil? (ws/get-connection conn-b))))
+    (t/testing "unregistering removes it from both the map and the index"
+      (ws/unregister-connection conn-b)
+      (t/is (= #{conn-a} (ws/connections-for-profile profile-a)))
+      (t/is (nil? (ws/get-connection conn-b))))
 
-        (t/testing "a profile whose last connection left is dropped from the index"
-          (ws/unregister-connection conn-a)
-          (t/is (= #{} (ws/connections-for-profile profile-a)))
-          (t/is (not (contains? (:by-profile @ws/state) profile-a)))
-          (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
+    (t/testing "a profile whose last connection left is dropped from the index"
+      (ws/unregister-connection conn-a)
+      (t/is (= #{} (ws/connections-for-profile profile-a)))
+      (t/is (not (contains? (:by-profile @ws/state) profile-a)))
+      (t/is (= #{conn-c} (ws/connections-for-profile profile-b))))
 
-        (t/testing "unregistering an unknown connection is a no-op"
-          (ws/unregister-connection (uuid/next))
-          (t/is (= #{conn-c} (ws/connections-for-profile profile-b)))
-          (t/is (= conn-c (-> (:connections @ws/state) keys first))))))))
+    (t/testing "unregistering an unknown connection is a no-op"
+      (ws/unregister-connection (uuid/next))
+      (t/is (= #{conn-c} (ws/connections-for-profile profile-b)))
+      (t/is (= conn-c (-> (:connections @ws/state) keys first))))))
 
 (t/deftest close-file-subscription-drops-only-the-matching-file
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -339,32 +337,29 @@
                    :revn 1
                    :changes [{:type :add :id (uuid/next)}]}]
 
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-file {:file-id file-id}))
-                out (:output conn)]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id file-id}))
+            out (:output conn)]
 
-            (t/testing "member receives file changes before revocation"
-              (publish file-id change)
-              (t/is (some? (poll-msg! out :file-change
-                                      revocation-timeout-ms))))
+        (t/testing "member receives file changes before revocation"
+          (publish file-id change)
+          (t/is (some? (poll-msg! out :file-change
+                                  revocation-timeout-ms))))
 
-            (t/testing "owner removes the member from the team"
-              (let [result (th/command! {::th/type :delete-team-member
-                                         ::rpc/profile-id (:id owner)
-                                         :team-id (:id team)
-                                         :member-id (:id editor)})]
-                (t/is (th/success? result))))
+        (t/testing "owner removes the member from the team"
+          (let [result (th/command! {::th/type :delete-team-member
+                                     ::rpc/profile-id (:id owner)
+                                     :team-id (:id team)
+                                     :member-id (:id editor)})]
+            (t/is (th/success? result))))
 
-            (t/testing "the mutation alone drops the subscription"
-              (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+        (t/testing "the mutation alone drops the subscription"
+          (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
 
-            (t/testing "revoked member stops receiving file changes"
-              (publish file-id (assoc change :revn 2))
-              (t/is (nil? (poll-msg! out :file-change
-                                     revocation-timeout-ms))))))))))
-
+        (t/testing "revoked member stops receiving file changes"
+          (publish file-id (assoc change :revn 2))
+          (t/is (nil? (poll-msg! out :file-change
+                                 revocation-timeout-ms))))))))
 (t/deftest revoked-member-stops-receiving-library-changes
   (let [owner  (th/create-profile* 1 {:is-active true})
         editor (th/create-profile* 2 {:is-active true})
@@ -381,31 +376,28 @@
                    :revn 1
                    :changes [{:type :add :id (uuid/next)}]}]
 
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-team {:team-id team-id}))
-                out (:output conn)]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-team {:team-id team-id}))
+            out (:output conn)]
 
-            (t/testing "member receives library changes before revocation"
-              (publish team-id change)
-              (t/is (some? (poll-msg! out :library-change
-                                      revocation-timeout-ms))))
+        (t/testing "member receives library changes before revocation"
+          (publish team-id change)
+          (t/is (some? (poll-msg! out :library-change
+                                  revocation-timeout-ms))))
 
-            (t/testing "member leaves the team"
-              (let [result (th/command! {::th/type :leave-team
-                                         ::rpc/profile-id (:id editor)
-                                         :id team-id})]
-                (t/is (th/success? result))))
+        (t/testing "member leaves the team"
+          (let [result (th/command! {::th/type :leave-team
+                                     ::rpc/profile-id (:id editor)
+                                     :id team-id})]
+            (t/is (th/success? result))))
 
-            (t/testing "leaving drops the team subscription"
-              (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))
+        (t/testing "leaving drops the team subscription"
+          (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))
 
-            (t/testing "revoked member stops receiving library changes"
-              (publish team-id (assoc change :revn 2))
-              (t/is (nil? (poll-msg! out :library-change
-                                     revocation-timeout-ms))))))))))
-
+        (t/testing "revoked member stops receiving library changes"
+          (publish team-id (assoc change :revn 2))
+          (t/is (nil? (poll-msg! out :library-change
+                                 revocation-timeout-ms))))))))
 (t/deftest role-downgrade-keeps-revocation-irrelevant
   "A role change that does not remove read access must not be treated as
   a revocation: `:viewer` can still read, so the subscription stays."
@@ -463,59 +455,55 @@
 (t/deftest revocation-closes-subscriptions-that-are-no-longer-authorized
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
 
-    (with-clean-registry
-      (fn []
-        (let [conn (-> (open-registered-connection (:id editor))
-                       (subscribe :subscribe-file {:file-id (:id file)})
-                       (subscribe :subscribe-team {:team-id (:id team)}))]
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)})
+                   (subscribe :subscribe-team {:team-id (:id team)}))]
 
-          (t/testing "both subscriptions are open before the revocation"
-            (t/is (= (:id file) (subscribed-file conn)))
-            (t/is (= (:id team) (subscribed-team conn))))
+      (t/testing "both subscriptions are open before the revocation"
+        (t/is (= (:id file) (subscribed-file conn)))
+        (t/is (= (:id team) (subscribed-team conn))))
 
-          (t/testing "the member is removed from the team"
-            (let [result (th/command! {::th/type :delete-team-member
-                                       ::rpc/profile-id (:id owner)
-                                       :team-id (:id team)
-                                       :member-id (:id editor)})]
-              (t/is (th/success? result))))
+      (t/testing "the member is removed from the team"
+        (let [result (th/command! {::th/type :delete-team-member
+                                   ::rpc/profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-id (:id editor)})]
+          (t/is (th/success? result))))
 
-          (t/testing "revalidation closes the file and the team subscription"
-            (t/is (= 2 (ws/revalidate-profile-subscriptions
-                        th/*system* (:id editor)))))
+      (t/testing "revalidation closes the file and the team subscription"
+        (t/is (= 2 (ws/revalidate-profile-subscriptions
+                    th/*system* (:id editor)))))
 
-          (t/testing "nothing is left subscribed to relay content"
-            (t/is (nil? (subscribed-file conn)))
-            (t/is (nil? (subscribed-team conn))))
+      (t/testing "nothing is left subscribed to relay content"
+        (t/is (nil? (subscribed-file conn)))
+        (t/is (nil? (subscribed-team conn))))
 
-          (t/testing "revalidating again is a no-op"
-            (t/is (zero? (ws/revalidate-profile-subscriptions
-                          th/*system* (:id editor))))))))))
+      (t/testing "revalidating again is a no-op"
+        (t/is (zero? (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor))))))))
 
 (t/deftest revocation-keeps-subscriptions-that-are-still-authorized
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
 
-    (with-clean-registry
-      (fn []
-        (let [conn (-> (open-registered-connection (:id editor))
-                       (subscribe :subscribe-file {:file-id (:id file)})
-                       (subscribe :subscribe-team {:team-id (:id team)}))]
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)})
+                   (subscribe :subscribe-team {:team-id (:id team)}))]
 
-          (t/testing "the editor is downgraded to viewer, which can still read"
-            (let [result (th/command! {::th/type :update-team-member-role
-                                       ::rpc/profile-id (:id owner)
-                                       :team-id (:id team)
-                                       :member-id (:id editor)
-                                       :role :viewer})]
-              (t/is (th/success? result))))
+      (t/testing "the editor is downgraded to viewer, which can still read"
+        (let [result (th/command! {::th/type :update-team-member-role
+                                   ::rpc/profile-id (:id owner)
+                                   :team-id (:id team)
+                                   :member-id (:id editor)
+                                   :role :viewer})]
+          (t/is (th/success? result))))
 
-          (t/testing "revalidation closes nothing"
-            (t/is (zero? (ws/revalidate-profile-subscriptions
-                          th/*system* (:id editor)))))
+      (t/testing "revalidation closes nothing"
+        (t/is (zero? (ws/revalidate-profile-subscriptions
+                      th/*system* (:id editor)))))
 
-          (t/testing "both subscriptions survive"
-            (t/is (= (:id file) (subscribed-file conn)))
-            (t/is (= (:id team) (subscribed-team conn)))))))))
+      (t/testing "both subscriptions survive"
+        (t/is (= (:id file) (subscribed-file conn)))
+        (t/is (= (:id team) (subscribed-team conn)))))))
 
 (t/deftest revocation-leaves-other-profiles-alone
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)
@@ -529,50 +517,46 @@
                                          :project-id (:default-project-id
                                                       other-editor)})]
 
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-file {:file-id (:id file)}))
-                bystander (-> (open-registered-connection (:id other-editor))
-                              (subscribe :subscribe-file {:file-id (:id other-file)}))]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))
+            bystander (-> (open-registered-connection (:id other-editor))
+                          (subscribe :subscribe-file {:file-id (:id other-file)}))]
 
-            (th/command! {::th/type :delete-team-member
-                          ::rpc/profile-id (:id owner)
-                          :team-id (:id team)
-                          :member-id (:id editor)})
+        (th/command! {::th/type :delete-team-member
+                      ::rpc/profile-id (:id owner)
+                      :team-id (:id team)
+                      :member-id (:id editor)})
 
-            (ws/revalidate-profile-subscriptions th/*system* (:id editor))
+        (ws/revalidate-profile-subscriptions th/*system* (:id editor))
 
-            (t/testing "the revoked member's subscription is closed"
-              (t/is (nil? (subscribed-file conn))))
+        (t/testing "the revoked member's subscription is closed"
+          (t/is (nil? (subscribed-file conn))))
 
-            (t/testing "a member of another team keeps their subscription"
-              (t/is (= (:id other-file) (subscribed-file bystander))))
+        (t/testing "a member of another team keeps their subscription"
+          (t/is (= (:id other-file) (subscribed-file bystander))))
 
-            (t/testing "revalidating a profile with no connections is safe"
-              (t/is (zero? (ws/revalidate-profile-subscriptions
-                            th/*system* (uuid/next)))))))))))
+        (t/testing "revalidating a profile with no connections is safe"
+          (t/is (zero? (ws/revalidate-profile-subscriptions
+                        th/*system* (uuid/next)))))))))
 
 (t/deftest watcher-consumes-revocation-events-from-the-bus
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
 
-    (with-clean-registry
-      (fn []
-        (let [conn (-> (open-registered-connection (:id editor))
-                       (subscribe :subscribe-file {:file-id (:id file)}))]
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))]
 
-          (th/command! {::th/type :delete-team-member
-                        ::rpc/profile-id (:id owner)
-                        :team-id (:id team)
-                        :member-id (:id editor)})
+      (th/command! {::th/type :delete-team-member
+                    ::rpc/profile-id (:id owner)
+                    :team-id (:id team)
+                    :member-id (:id editor)})
 
-          (t/testing "the event is not applied until it is announced"
-            (t/is (= (:id file) (subscribed-file conn))))
+      (t/testing "the event is not applied until it is announced"
+        (t/is (= (:id file) (subscribed-file conn))))
 
-          (ntf/notify-permissions-changed th/*system* (:id editor))
+      (ntf/notify-permissions-changed th/*system* (:id editor))
 
-          (t/testing "the watcher closes the subscription off the bus"
-            (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))))
+      (t/testing "the watcher closes the subscription off the bus"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))
 
 (t/deftest internal-revocation-events-are-not-delivered-to-clients
   (let [profile (th/create-profile* 1 {:is-active true})
@@ -605,14 +589,14 @@
 
 (defn- captured-events
   "Runs `f` collecting the revocation events published on the internal
-  topic."
+  topic, while letting every other publish reach the real bus untouched."
   [f]
   (let [events (atom [])
         real   mbus/pub!]
-    (with-redefs [mbus/pub! (fn [bus & {:keys [topic message]}]
+    (with-redefs [mbus/pub! (fn [bus & {:keys [topic message] :as opts}]
                               (when (= ntf/internal-revocation-topic topic)
                                 (swap! events conj message))
-                              (apply real bus topic message))]
+                              (apply real bus (mapcat identity opts)))]
       (f))
     @events))
 
@@ -658,13 +642,11 @@
         (t/is (some? (event-for events (:id editor)))))
 
       (t/testing "a viewer can still read, so the subscription survives"
-        (with-clean-registry
-          (fn []
-            (let [conn (-> (open-registered-connection (:id editor))
-                           (subscribe :subscribe-file {:file-id (:id file)}))]
-              (t/is (zero? (ws/revalidate-profile-subscriptions
-                            th/*system* (:id editor))))
-              (t/is (some? (subscribed-file conn))))))))))
+        (let [conn (-> (open-registered-connection (:id editor))
+                       (subscribe :subscribe-file {:file-id (:id file)}))]
+          (t/is (zero? (ws/revalidate-profile-subscriptions
+                        th/*system* (:id editor))))
+          (t/is (some? (subscribed-file conn))))))))
 
 (t/deftest deleting-a-file-announces-to-the-whole-team
   (let [owner  (th/create-profile* 1 {:is-active true})
@@ -682,11 +664,61 @@
                                   ::rpc/profile-id (:id owner)
                                   :id (:id file)}))]
 
-      ;; Which profiles had the file open is only known to their own
-      ;; connections, so the team is announced wholesale and the watcher
-      ;; re-checks each member.
-      (t/is (some? (event-for events (:id editor))))
-      (t/is (some? (event-for events (:id owner)))))))
+      ;; One event per team: the watcher resolves the members itself, so
+      ;; a large team cannot overflow the bounded publish buffers.
+      (t/is (= [{:type :team-permissions-changed
+                 :team-id (:id team)}]
+               events)))))
+
+(t/deftest deleting-a-team-announces-once
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team   (th/create-team* 1 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [events (captured-events
+                  #(th/command! {::th/type :delete-team
+                                 ::rpc/profile-id (:id owner)
+                                 :id (:id team)}))]
+      (t/is (= [{:type :team-permissions-changed
+                 :team-id (:id team)}]
+               events)))))
+
+(t/deftest team-event-closes-every-member-subscription
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)
+        other (th/create-profile* 3 {:is-active true})]
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id other)
+                           :role :editor})
+    (let [other-project (th/create-project* 3 {:profile-id (:id other)
+                                               :team-id (:id team)})
+          other-file    (th/create-file* 3 {:profile-id (:id other)
+                                            :project-id (:id other-project)})]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))
+            conn2 (-> (open-registered-connection (:id other))
+                      (subscribe :subscribe-file {:file-id (:id other-file)}))]
+
+        (th/command! {::th/type :delete-team
+                      ::rpc/profile-id (:id owner)
+                      :id (:id team)})
+
+        (t/testing "the announcement reaches the watcher off the bus"
+          (ntf/notify-team-permissions-changed th/*system* (:id team))
+          (t/is (wait-until #(nil? (subscribed-file conn)) 3000))
+          (t/is (wait-until #(nil? (subscribed-file conn2)) 3000)))))))
+
+(t/deftest rolled-back-revocation-announces-nothing
+  (let [editor (th/create-profile* 2 {:is-active true})
+        events (captured-events
+                #(try
+                   (db/tx-run! th/*system*
+                               (fn [_cfg]
+                                 (ntf/notify-permissions-changed th/*system* (:id editor))
+                                 (throw (ex-info "boom" {}))))
+                   (catch clojure.lang.ExceptionInfo _)))]
+    (t/is (empty? events))))
 
 (t/deftest leaving-a-team-announces-and-tells-only-the-leaver
   (let [owner  (th/create-profile* 1 {:is-active true})
@@ -754,8 +786,7 @@
 
 (t/deftest revalidation-interval-defaults-to-five-minutes
   (t/is (= (ct/duration {:minutes 5}) ws/default-revalidation-interval))
-  (t/testing "the default is a code constant, not a config.clj default"
-    (t/is (not (contains? cf/default :subscription-revalidation-interval)))))
+  (t/is (= (ct/duration {:minutes 5}) (ws/revalidation-interval))))
 
 (t/deftest revalidation-is-configurable
   (with-redefs [cf/get (fn [k default] (if (= :subscription-revalidation-interval k)
@@ -764,37 +795,36 @@
     (t/is (= (ct/duration {:seconds 30}) (ws/revalidation-interval)))))
 
 (t/deftest interval-recheck-drops-a-subscription-without-any-announcement
-  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+  (let [{:keys [editor team file]} (editor-in-team! 1 2)]
 
     (with-redefs [cf/get (fn [k default]
                            (if (= :subscription-revalidation-interval k)
                              (ct/duration {:millis 150})
                              default))]
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-file {:file-id (:id file)}))
-                out (:output conn)]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))
+            out (:output conn)]
 
-            (t/testing "the subscription is live at first"
-              (t/is (some? (subscribed-file conn))))
+        (t/testing "the subscription is live at first"
+          (t/is (some? (subscribed-file conn))))
 
-            ;; No command runs and no announcement is published: access is
-            ;; taken away the way an external change would take it.
-            (th/command! {::th/type :delete-team-member
-                          ::rpc/profile-id (:id owner)
-                          :team-id (:id team)
-                          :member-id (:id editor)})
+        ;; Access is taken away the way an external change would take
+        ;; it: a direct row delete fires no command and publishes no
+        ;; announcement, so the interval is the only thing that can
+        ;; close the subscription.
+        (db/exec! th/*system*
+                  ["delete from team_profile_rel where team_id = ? and profile_id = ?"
+                   (:id team) (:id editor)])
 
-            (t/testing "the interval re-check drops it anyway"
-              (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+        (t/testing "the interval re-check drops it anyway"
+          (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
 
-            (t/testing "and nothing reaches the client afterwards"
-              (mbus/pub! (::mbus/msgbus th/*system*)
-                         :topic (:id file)
-                         :message {:type :file-change :file-id (:id file) :revn 9})
-              (t/is (nil? (poll-msg! out :file-change
-                                     revocation-timeout-ms))))))))))
+        (t/testing "and nothing reaches the client afterwards"
+          (mbus/pub! (::mbus/msgbus th/*system*)
+                     :topic (:id file)
+                     :message {:type :file-change :file-id (:id file) :revn 9})
+          (t/is (nil? (poll-msg! out :file-change
+                                 revocation-timeout-ms))))))))
 
 (t/deftest interval-recheck-keeps-a-subscription-that-still-holds
   (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
@@ -803,32 +833,30 @@
                            (if (= :subscription-revalidation-interval k)
                              (ct/duration {:millis 150})
                              default))]
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-file {:file-id (:id file)}))
-                out (:output conn)]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))
+            out (:output conn)]
 
-            (t/testing "a downgrade to viewer still allows reading"
-              (t/is (th/success? (th/command! {::th/type :update-team-member-role
-                                               ::rpc/profile-id (:id owner)
-                                               :team-id (:id team)
-                                               :member-id (:id editor)
-                                               :role :viewer}))))
+        (t/testing "a downgrade to viewer still allows reading"
+          (t/is (th/success? (th/command! {::th/type :update-team-member-role
+                                           ::rpc/profile-id (:id owner)
+                                           :team-id (:id team)
+                                           :member-id (:id editor)
+                                           :role :viewer}))))
 
-            ;; Wait for at least two interval ticks, so a re-check that
-            ;; wrongly closed the subscription would have run.
-            (Thread/sleep 500)
+        ;; Wait for at least two interval ticks, so a re-check that
+        ;; wrongly closed the subscription would have run.
+        (Thread/sleep 500)
 
-            (t/testing "the subscription survives the interval"
-              (t/is (some? (subscribed-file conn))))
+        (t/testing "the subscription survives the interval"
+          (t/is (some? (subscribed-file conn))))
 
-            (t/testing "and traffic still flows"
-              (mbus/pub! (::mbus/msgbus th/*system*)
-                         :topic (:id file)
-                         :message {:type :file-change :file-id (:id file) :revn 3})
-              (t/is (some? (poll-msg! out :file-change
-                                      revocation-timeout-ms))))))))))
+        (t/testing "and traffic still flows"
+          (mbus/pub! (::mbus/msgbus th/*system*)
+                     :topic (:id file)
+                     :message {:type :file-change :file-id (:id file) :revn 3})
+          (t/is (some? (poll-msg! out :file-change
+                                  revocation-timeout-ms))))))))
 
 (t/deftest interval-recheck-covers-the-team-subscription-too
   (let [{:keys [editor team]} (editor-in-team! 1 2)]
@@ -837,16 +865,240 @@
                            (if (= :subscription-revalidation-interval k)
                              (ct/duration {:millis 150})
                              default))]
-      (with-clean-registry
-        (fn []
-          (let [conn (-> (open-registered-connection (:id editor))
-                         (subscribe :subscribe-team {:team-id (:id team)}))]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-team {:team-id (:id team)}))]
 
-            (t/is (some? (subscribed-team conn)))
+        (t/is (some? (subscribed-team conn)))
 
-            (th/command! {::th/type :leave-team
-                          ::rpc/profile-id (:id editor)
-                          :id (:id team)})
+        ;; Same external-change shape as above: no command, no
+        ;; announcement, only the interval.
+        (db/exec! th/*system*
+                  ["delete from team_profile_rel where team_id = ? and profile_id = ?"
+                   (:id team) (:id editor)])
 
-            (t/testing "the team subscription is dropped by the interval"
-              (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))))))))
+        (t/testing "the team subscription is dropped by the interval"
+          (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))))))
+
+(t/deftest a-failing-check-keeps-the-subscription
+  (let [{:keys [editor file]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))]
+
+        ;; Access still holds, but the check itself blows up.
+        (with-redefs [files/has-read-permissions?
+                      (fn [& _] (throw (RuntimeException. "db down")))]
+          (Thread/sleep 500)
+          (t/testing "a failing check keeps the subscription"
+            (t/is (some? (subscribed-file conn)))))))))
+
+(t/deftest a-false-check-closes-the-subscription
+  (let [{:keys [editor file]} (editor-in-team! 1 2)]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (let [conn (-> (open-registered-connection (:id editor))
+                     (subscribe :subscribe-file {:file-id (:id file)}))]
+
+        (with-redefs [files/has-read-permissions? (fn [& _] false)]
+          (t/testing "a check that returns false closes it"
+            (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))))
+
+(t/deftest resubscribe-stops-previous-revalidation
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)})]
+
+    (with-redefs [cf/get (fn [k default]
+                           (if (= :subscription-revalidation-interval k)
+                             (ct/duration {:millis 150})
+                             default))]
+      (let [counts (atom {})
+            real   files/has-read-permissions?]
+        (with-redefs [files/has-read-permissions?
+                      (fn [cfg pid fid]
+                        (swap! counts update fid (fnil inc 0))
+                        (real cfg pid fid))]
+          (let [conn (-> (open-registered-connection (:id profile))
+                         (subscribe :subscribe-file {:file-id (:id file1)}))]
+
+            (t/testing "the first subscription is re-checked on the interval"
+              (t/is (wait-until #(pos? (get @counts (:id file1) 0)) 3000)))
+
+            (t/testing "resubscribing moves the relay to the new file"
+              (subscribe conn :subscribe-file {:file-id (:id file2)})
+              (t/is (wait-until #(>= (get @counts (:id file2) 0) 2) 3000)))
+
+            (t/testing "the previous subscription stops revalidating"
+              (let [old (get @counts (:id file1) 0)]
+                (Thread/sleep 400)
+                (t/is (= old (get @counts (:id file1) 0)))))))))))
+
+;; --- EFFECT TESTS
+;;
+;; Announcing is not the same as revoking: these assert the subscription
+;; actually drops and the content stops flowing.
+
+(t/deftest deleting-a-file-closes-open-subscriptions
+  (let [{:keys [owner editor file]} (editor-in-team! 1 2)
+        publish (publisher!)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))
+          out (:output conn)]
+
+      (th/command! {::th/type :delete-file
+                    ::rpc/profile-id (:id owner)
+                    :id (:id file)})
+
+      (t/testing "the file subscription drops without any manual publish"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+
+      (t/testing "no file content reaches the client afterwards"
+        (publish (:id file) {:type :file-change :file-id (:id file) :revn 9})
+        (t/is (nil? (poll-msg! out :file-change revocation-timeout-ms)))))))
+
+(t/deftest deleting-a-project-closes-open-subscriptions
+  (let [{:keys [owner editor file]} (editor-in-team! 1 2)
+        project-id (:project-id file)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))
+          out (:output conn)]
+
+      (th/command! {::th/type :delete-project
+                    ::rpc/profile-id (:id owner)
+                    :id project-id})
+
+      (t/testing "the file subscription drops"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000)))
+
+      (t/testing "no file content reaches the client afterwards"
+        (mbus/pub! (::mbus/msgbus th/*system*)
+                   :topic (:id file)
+                   :message {:type :file-change :file-id (:id file) :revn 9})
+        (t/is (nil? (poll-msg! out :file-change revocation-timeout-ms)))))))
+
+(t/deftest deleting-a-team-closes-open-subscriptions
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)})
+                   (subscribe :subscribe-team {:team-id (:id team)}))]
+
+      (th/command! {::th/type :delete-team
+                    ::rpc/profile-id (:id owner)
+                    :id (:id team)})
+
+      (t/testing "both subscriptions drop"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000))
+        (t/is (wait-until #(nil? (subscribed-team conn)) 3000))))))
+
+(t/deftest moving-a-file-closes-source-team-subscriptions
+  (let [owner  (th/create-profile* 1 {:is-active true})
+        editor (th/create-profile* 2 {:is-active true})
+        team-a (th/create-team* 1 {:profile-id (:id owner)})
+        team-b (th/create-team* 2 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id team-a)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [project-a (th/create-project* 1 {:profile-id (:id owner)
+                                           :team-id (:id team-a)})
+          project-b (th/create-project* 2 {:profile-id (:id owner)
+                                           :team-id (:id team-b)})
+          file      (th/create-file* 1 {:profile-id (:id editor)
+                                        :project-id (:id project-a)})
+          conn      (-> (open-registered-connection (:id editor))
+                        (subscribe :subscribe-file {:file-id (:id file)}))]
+
+      (th/command! {::th/type :move-files
+                    ::rpc/profile-id (:id owner)
+                    :ids #{(:id file)}
+                    :project-id (:id project-b)})
+
+      (t/testing "a member left behind in the source team loses the subscription"
+        (t/is (wait-until #(nil? (subscribed-file conn)) 3000))))))
+
+(t/deftest close-team-subscription-is-idempotent
+  (let [profile (th/create-profile* 1 {:is-active true})
+        team    (th/create-team* 1 {:profile-id (:id profile)})
+        other   (th/create-team* 2 {:profile-id (:id profile)})
+        output  (sp/chan :buf (sp/dropping-buffer 64))
+        relay   (sp/chan :buf (sp/dropping-buffer 64))
+        ws-state (atom {::ws/team-subscription
+                        {:team-id (:id team)
+                         :channel relay
+                         :topic (:id team)}})
+        wsp     (assoc (make-wsp (:id profile) ws-state output)
+                       ::ws/state ws-state)]
+
+    (t/testing "closing a team the connection is not subscribed to does nothing"
+      (with-redefs [mbus/purge! (fn [& _] (throw ::unexpected-purge))]
+        (t/is (nil? (ws/close-team-subscription th/*system* wsp (:id other))))
+        (t/is (some? (::ws/team-subscription @ws-state)))))
+
+    (t/testing "closing the subscribed team purges the bus and the relay stops"
+      (let [purged (atom [])]
+        (with-redefs [mbus/purge! (fn [_ chans] (swap! purged conj chans))]
+          (ws/close-team-subscription th/*system* wsp (:id team))
+          (t/is (= 1 (count @purged)))))
+      (t/is (nil? (sp/poll! relay)))
+      (t/is (true? (sp/closed? relay))))
+
+    (t/testing "the subscription is forgotten, so closing again is a no-op"
+      (t/is (nil? (::ws/team-subscription @ws-state)))
+      (t/is (nil? (ws/close-team-subscription th/*system* wsp (:id team)))))))
+
+(t/deftest losing-a-team-keeps-the-other-file-subscription
+  (let [{:keys [owner editor team]} (editor-in-team! 1 2)
+        other-team (th/create-team* 3 {:profile-id (:id owner)})]
+    (th/create-team-role* {:team-id (:id other-team)
+                           :profile-id (:id editor)
+                           :role :editor})
+    (let [other-project (th/create-project* 3 {:profile-id (:id editor)
+                                               :team-id (:id other-team)})
+          other-file    (th/create-file* 3 {:profile-id (:id editor)
+                                            :project-id (:id other-project)})
+          conn          (-> (open-registered-connection (:id editor))
+                            (subscribe :subscribe-team {:team-id (:id team)})
+                            (subscribe :subscribe-file {:file-id (:id other-file)}))]
+
+      (th/command! {::th/type :delete-team-member
+                    ::rpc/profile-id (:id owner)
+                    :team-id (:id team)
+                    :member-id (:id editor)})
+
+      (t/testing "the lost team subscription drops"
+        (t/is (wait-until #(nil? (subscribed-team conn)) 3000)))
+
+      (t/testing "the file subscription on the other team survives"
+        (t/is (some? (subscribed-file conn)))))))
+
+(t/deftest organization-owner-keeps-read-only-access
+  (let [{:keys [owner editor team file]} (editor-in-team! 1 2)]
+
+    (let [conn (-> (open-registered-connection (:id editor))
+                   (subscribe :subscribe-file {:file-id (:id file)}))]
+
+      ;; The admin-console flag is off in tests, so Nitrate never grants
+      ;; this; stand in for an organization owner expelled from the team.
+      (with-redefs [nitrate/organization-owner-of-team? (fn [& _] true)]
+        (th/command! {::th/type :delete-team-member
+                      ::rpc/profile-id (:id owner)
+                      :team-id (:id team)
+                      :member-id (:id editor)})
+
+        (t/testing "revalidation closes nothing for an organization owner"
+          (t/is (zero? (ws/revalidate-profile-subscriptions
+                        th/*system* (:id editor)))))
+
+        (t/testing "the read-only subscription survives"
+          (t/is (some? (subscribed-file conn))))))))

@@ -894,6 +894,11 @@
                     ::jobs/params {:object :team
                                    :deleted-at (:deleted-at team)
                                    :id team-id}})
+
+      ;; The team is soft-deleted, so every subscription its members hold
+      ;; loses its authorization at once. One event: the watcher resolves
+      ;; the members itself.
+      (ntf/notify-team-permissions-changed cfg team-id)
       team)))
 
 (def ^:private schema:delete-team

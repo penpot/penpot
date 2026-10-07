@@ -323,8 +323,7 @@
     ;; Deleting the project ends read access for whoever had one of its
     ;; files open, so the whole team is announced and the watcher
     ;; re-checks each member against the subscriptions they hold.
-    (ntf/notify-team-permissions-changed
-     cfg (map :id (teams/get-team-members conn (:id team))))
+    (ntf/notify-team-permissions-changed cfg (:id team))
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:team-id (:team-id project)

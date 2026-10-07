@@ -73,8 +73,7 @@
   (swap! state
          (fn [{:keys [connections] :as st}]
            (let [owner   (::profile-id (get connections id))
-                 indexed (get-in st [:by-profile owner])
-                 indexed (if (set? indexed) (disj indexed id) indexed)]
+                 indexed (disj (get-in st [:by-profile owner] #{}) id)]
              (cond-> (assoc st :connections (dissoc connections id))
                (and owner (seq indexed))
                (assoc-in [:by-profile owner] indexed)
@@ -104,10 +103,6 @@
   (->> (vals (:connections @state))
        (filter #(= team-id (-> % ::ws/state deref ::team-subscription :team-id)))
        (map ::ws/id)))
-
-(defn repl-get-connections-for-profile
-  [profile-id]
-  (connections-for-profile profile-id))
 
 (defn repl-close-connection
   [id]
@@ -167,16 +162,19 @@
   (cf/get :subscription-revalidation-interval default-revalidation-interval))
 
 (defn- still-authorized?
-  "Evaluates the `pred` permission predicate, reporting instead of
+  "Runs the `authorized?` permission predicate, reporting instead of
   throwing when the lookup itself fails.
 
   A transient database error must not close a subscription that is still
-  legitimate, and the next tick tries again. This is the one place that
-  fails open, deliberately: the announcement path is the primary
-  mechanism and stays strict."
-  [pred]
+  legitimate, and the next tick tries again. This is one of two places
+  that fail open, deliberately: the announcement path (`watch-revocations`
+  below) also logs and moves on when a re-check throws. An interrupt is
+  not a lookup failure and is rethrown."
+  [authorized?]
   (try
-    (boolean pred)
+    (boolean (authorized?))
+    (catch InterruptedException cause
+      (throw cause))
     (catch Throwable cause
       (l/error :hint "cannot re-check a websocket subscription"
                :cause cause)
@@ -226,19 +224,20 @@
 
 
 (defn- schedule-revalidation
-  "Rearms `task` every `interval-ms` for as long as `running?` holds.
+  "Rearms `task` every `interval-ms` while `alive?` holds.
 
   Kept independent of the relay loop on purpose: a re-check driven by
   the same loop would be pushed away by a steady stream of messages, so
-  a busy file would never be re-checked at all. A task whose `running?`
-  turned false stops rearming."
-  [running? interval-ms task]
-  (when @running?
+  a busy file would never be re-checked at all. The closed channel is
+  what ends `alive?`, because every way a subscription can end closes
+  it."
+  [alive? interval-ms task]
+  (when (alive?)
     (px/schedule interval-ms
                  (fn []
-                   (when @running?
+                   (when (alive?)
                      (task)
-                     (schedule-revalidation running? interval-ms task))))))
+                     (schedule-revalidation alive? interval-ms task))))))
 
 (defn- start-relay
   "Forwards `channel` into the client output channel of `wsp`, and keeps
@@ -248,24 +247,22 @@
 
   `on-forward` runs for every forwarded message, which is how the file
   relay announces presence."
-  [_ {:keys [::ws/output-ch] :as wsp} channel authorized? close! on-forward]
-  (let [running? (atom true)]
-    (schedule-revalidation running?
-                           (inst-ms (revalidation-interval))
-                           (fn []
-                             (when-not (still-authorized? authorized?)
-                               (l/info :hint
-                                       "closing websocket subscription on re-check"
-                                       :profile-id (::profile-id wsp))
-                               (reset! running? false)
-                               (close!))))
-    (sp/go-loop []
-      ;; nil means the channel was closed, which means the subscription
-      ;; is gone and the relay ends.
-      (when-let [message (sp/take! channel)]
-        (sp/put! output-ch message)
-        (when on-forward (on-forward message))
-        (recur)))))
+  [{:keys [::ws/output-ch] :as wsp} channel authorized? close! on-forward]
+  (schedule-revalidation #(not (sp/closed? channel))
+                         (inst-ms (revalidation-interval))
+                         (fn []
+                           (when-not (still-authorized? authorized?)
+                             (l/info :hint
+                                     "closing websocket subscription on re-check"
+                                     :profile-id (::profile-id wsp))
+                             (close!))))
+  (sp/go-loop []
+    ;; nil means the channel was closed, which means the subscription
+    ;; is gone and the relay ends.
+    (when-let [message (sp/take! channel)]
+      (sp/put! output-ch message)
+      (when on-forward (on-forward message))
+      (recur))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HANDLER
@@ -349,16 +346,16 @@
     ;; The team topic also carries library change diffs, so a
     ;; subscription that outlives access to the team leaks content, not
     ;; just presence.
-    (start-relay cfg wsp channel
-                 #(teams/has-read-permissions? cfg profile-id team-id)
-                 #(close-team-subscription cfg wsp team-id)
-                 nil)
-
     (let [subs {:team-id team-id
                 :organization-id organization-id
                 :channel channel
                 :topic team-id}]
       (swap! state assoc ::team-subscription subs))
+
+    (start-relay wsp channel
+                 #(teams/has-read-permissions? cfg profile-id team-id)
+                 #(close-team-subscription cfg wsp team-id)
+                 nil)
 
     (mbus/sub! (::mbus/msgbus cfg) :topics topics :chan channel)
 
@@ -379,7 +376,7 @@
     (let [subs {:file-id file-id :channel fch :topic file-id}]
       (swap! state assoc ::file-subscription subs))
 
-    (start-relay cfg wsp fch
+    (start-relay wsp fch
                  #(files/has-read-permissions? cfg profile-id file-id)
                  #(close-file-subscription cfg wsp file-id)
                  (fn [message]
@@ -490,24 +487,38 @@
 
 (defn- watch-revocations
   "Consumes revocation events and applies them to the connections this
-  instance owns."
+  instance owns. Returns the subscription channel, which `ig/halt-key!`
+  closes to stop the loop."
   [{:keys [::mbus/msgbus] :as cfg}]
   (let [ch (sp/chan :buf (sp/dropping-buffer 64))]
     (mbus/sub! msgbus
                :topic notifications/internal-revocation-topic
                :chan ch)
     (sp/go-loop []
-      (when-let [{:keys [type profile-id]} (sp/take! ch)]
-        (when (= :profile-permissions-changed type)
-          (try
+      (when-let [{:keys [type profile-id team-id]} (sp/take! ch)]
+        (try
+          (cond
+            (= :profile-permissions-changed type)
             (when (pos? (revalidate-profile-subscriptions cfg profile-id))
               (l/debug :hint "revoked websocket subscriptions"
                        :profile-id profile-id))
-            (catch Throwable cause
-              (l/error :hint "cannot revalidate websocket subscriptions"
-                       :profile-id profile-id
-                       :cause cause))))
-        (recur)))))
+
+            (= :team-permissions-changed type)
+            (let [revoked (->> (teams/get-team-members cfg team-id)
+                               (map :id)
+                               (map #(revalidate-profile-subscriptions cfg %))
+                               (reduce + 0))]
+              (when (pos? revoked)
+                (l/debug :hint "revoked websocket subscriptions"
+                         :team-id team-id
+                         :count revoked))))
+          (catch Throwable cause
+            (l/error :hint "cannot revalidate websocket subscriptions"
+                     :profile-id profile-id
+                     :team-id team-id
+                     :cause cause)))
+        (recur)))
+    ch))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INTEGRANT
@@ -526,6 +537,10 @@
 (defmethod ig/init-key ::revocation-watcher
   [_ cfg]
   (watch-revocations cfg))
+
+(defmethod ig/halt-key! ::revocation-watcher
+  [_ ch]
+  (sp/close! ch))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP HANDLER

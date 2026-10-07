@@ -1099,8 +1099,7 @@
     ;; which profiles those are is only known to the connections
     ;; themselves, so the whole team is announced and the watcher
     ;; re-checks each of them.
-    (ntf/notify-team-permissions-changed
-     cfg (map :id (teams/get-team-members conn (:id team))))
+    (ntf/notify-team-permissions-changed cfg (:id team))
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:project-id (:project-id file)

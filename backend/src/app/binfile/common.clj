@@ -377,19 +377,27 @@
     inner join project as p on (p.id = f.project_id)
     where fpr.file_id = ?
       and fpr.profile_id = ?
+      and f.deleted_at is null
+      and p.deleted_at is null
       and exists (select 1
                     from team_profile_rel as tpr
+                   inner join team as t on (t.id = tpr.team_id)
                    where tpr.team_id = p.team_id
-                     and tpr.profile_id = fpr.profile_id)
+                     and tpr.profile_id = fpr.profile_id
+                     and t.deleted_at is null)
    union all
    select tpr.is_owner,
           tpr.is_admin,
           tpr.can_edit
      from team_profile_rel as tpr
+    inner join team as t on (t.id = tpr.team_id)
     inner join project as p on (p.team_id = tpr.team_id)
     inner join file as f on (p.id = f.project_id)
     where f.id = ?
       and tpr.profile_id = ?
+      and t.deleted_at is null
+      and p.deleted_at is null
+      and f.deleted_at is null
    union all
    select ppr.is_owner,
           ppr.is_admin,
@@ -399,10 +407,14 @@
     inner join project as p on (p.id = ppr.project_id)
     where f.id = ?
       and ppr.profile_id = ?
+      and f.deleted_at is null
+      and p.deleted_at is null
       and exists (select 1
                     from team_profile_rel as tpr
+                   inner join team as t on (t.id = tpr.team_id)
                    where tpr.team_id = p.team_id
-                     and tpr.profile_id = ppr.profile_id)")
+                     and tpr.profile_id = ppr.profile_id
+                     and t.deleted_at is null)")
 
 (defn- get-file-permissions*
   [conn profile-id file-id]

@@ -6,6 +6,8 @@
 
 (ns app.rpc.notifications
   (:require
+   [app.common.uuid :as uuid]
+   [app.db :as db]
    [app.msgbus :as mbus]))
 
 (defn notify-team-change
@@ -65,36 +67,52 @@
 (def internal-revocation-topic
   "Message-bus topic carrying backend-internal revocation events.
 
-  Deliberately not the `uuid/zero` system topic: that one is piped
-  straight into the client output channel, so anything published there
-  would reach every connected client.
+  A fixed uuid that is never a real resource id, so it cannot collide
+  with a file, team or profile topic — and deliberately not the
+  `uuid/zero` system topic, which is piped straight into the client
+  output channel, so anything published there would reach every
+  connected client.
 
   No client can subscribe here. `:subscribe-file` and `:subscribe-team`
   only accept ids that first pass a permission check, so a client can
   never make the bus deliver this topic to it."
-  "internal:subscription-revocation")
+  (uuid/uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"))
 
 (defn notify-permissions-changed
   "Asks every backend to re-verify the websocket subscriptions currently
   held by `profile-id`.
 
-  Fire-and-forget: `mbus/pub!` only enqueues, so a subscription can be
-  revoked before the announcement reaches the instance that owns it. That
-  errs on the safe side (cutting a still-live subscription), and the
-  client re-subscribes on its own."
+  Deferred past the commit: the watcher decides from a fresh permission
+  check on another connection, so announcing before the transaction
+  commits would let it see the old state and close nothing. Outside a
+  transaction the announcement goes out immediately.
+
+  The watcher always decides from a fresh permission check, so an extra
+  announcement is safe: it closes nothing whose access still holds."
   [cfg profile-id]
-  (let [msgbus (::mbus/msgbus cfg)]
-    (mbus/pub! msgbus
-               :topic internal-revocation-topic
-               :message {:type :profile-permissions-changed
-                         :profile-id profile-id})))
+  (db/after-commit
+   (fn []
+     (let [msgbus (::mbus/msgbus cfg)]
+       (mbus/pub! msgbus
+                  :topic internal-revocation-topic
+                  :message {:type :profile-permissions-changed
+                            :profile-id profile-id})))))
 
 (defn notify-team-permissions-changed
-  "Announces a possible access change to every member of `profiles`.
+  "Asks every backend to re-verify the subscriptions of every member of
+  `team-id`.
 
   Used when a change can move a resource out of the reach of a whole
-  team (moving or deleting files and projects). We cannot know which
-  members actually relied on it, and announcing too many is safe: the
-  watcher re-checks permissions and only closes what genuinely failed."
-  [cfg profiles]
-  (run! (partial notify-permissions-changed cfg) profiles))
+  team (moving, deleting or soft-deleting files, projects and teams). One
+  event per team: the watcher resolves the members itself, so a large
+  team cannot overflow the bounded publish buffers on the way out.
+
+  Like `notify-permissions-changed`, deferred past the commit."
+  [cfg team-id]
+  (db/after-commit
+   (fn []
+     (let [msgbus (::mbus/msgbus cfg)]
+       (mbus/pub! msgbus
+                  :topic internal-revocation-topic
+                  :message {:type :team-permissions-changed
+                            :team-id team-id})))))

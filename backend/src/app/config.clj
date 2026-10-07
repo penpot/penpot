@@ -145,6 +145,10 @@
     [:http-server-io-threads {:optional true} ::sm/int]
     [:http-server-max-worker-threads {:optional true} ::sm/int]
 
+    ;; How often a websocket subscription re-checks that its access still
+    ;; holds. The default lives in `app.http.websocket`, not here.
+    [:subscription-revalidation-interval {:optional true} ::ct/duration]
+
     ;; Explicit CORS allowlist used when the :cors flag is enabled.
     ;; Configured via PENPOT_ALLOWED_ORIGINS as a comma/whitespace
     ;; separated list of origins (e.g. "https://plugins.example.com").
@@ -252,10 +256,6 @@
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
     [:auth-token-cookie-max-age-absolute {:optional true} ::ct/duration]
-
-    ;; How often a websocket subscription re-checks that its access still
-    ;; holds. The default lives in `app.http.websocket`, not here.
-    [:subscription-revalidation-interval {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
     [:email-verify-threshold {:optional true} ::ct/duration]

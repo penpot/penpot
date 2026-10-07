@@ -256,17 +256,15 @@
 ;; --- COMMAND: Move file
 
 (defn- notify-team-access-changed
-  "Announces a possible read-access change to every member of `team-ids`.
+  "Announces a possible read-access change for `team-ids`.
 
-  Moving or deleting content can take it out of the reach of a whole
-  team, and the only place that knows who was relying on it is the set of
-  open connections. Announcing the whole team is cheap because the
-  watcher re-checks permissions and closes nothing for members who keep
-  their access."
-  [cfg conn team-ids]
+  Moving content can take it out of the reach of a whole team, and the
+  only place that knows who was relying on it is the set of open
+  connections. One event per team: the watcher resolves the members
+  itself, so a large team cannot overflow the bounded publish buffers."
+  [cfg team-ids]
   (doseq [team-id (into #{} (remove nil?) team-ids)]
-    (ntf/notify-team-permissions-changed
-     cfg (map :id (teams/get-team-members conn team-id)))))
+    (ntf/notify-team-permissions-changed cfg team-id)))
 
 (def sql:get-files
   "select id, features, project_id from file where id = ANY(?)")
@@ -343,7 +341,7 @@
     ;; the source teams are announced wholesale and the watcher re-checks
     ;; each member against the subscriptions they actually hold.
     (notify-team-access-changed
-     cfg conn
+     cfg
      (keep (partial perms/get-team-id-for-project conn) source))
 
     nil))
@@ -417,7 +415,7 @@
 
     ;; The project, and everything under it, leaves the source team. The
     ;; destination team only gains access, so it is not announced.
-    (notify-team-access-changed cfg conn [(:team-id project)])
+    (notify-team-access-changed cfg [(:team-id project)])
 
     nil))
 
