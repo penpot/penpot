@@ -421,3 +421,29 @@
                      {::ev/name "export-shapes"
                       ::ev/origin origin
                       :num-shapes (count exports)}))))
+
+
+(defn export-selected-shape
+  []
+  (ptk/reify ::export-selected-shape
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            selected (dsh/get-selected-ids state)
+            shape    (when (= 1 (count selected))
+                       (dsh/lookup-shape state (first selected)))
+            presets  (:exports shape)]
+        (if (and file-id page-id (seq presets))
+          (let [suffix   (:suffix (first presets))
+                name     (cond-> (:name shape)
+                           (and (= 1 (count presets)) (some? suffix))
+                           (str suffix))
+                defaults {:page-id page-id
+                          :file-id file-id
+                          :object-id (first selected)
+                          :name name}
+                exports  (mapv #(merge % defaults) presets)]
+            (rx/of (request-export {:exports exports})
+                   (export-shapes-event exports "workspace:shortcuts")))
+          (rx/empty))))))

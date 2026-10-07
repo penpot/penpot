@@ -4922,6 +4922,10 @@ msgid "shortcuts.escape"
 msgstr "Cancel"
 
 #: src/app/main/data/workspace/shortcuts.cljs:606
+msgid "shortcuts.export-selected-shape"
+msgstr "Export selected object"
+
+#: src/app/main/data/workspace/shortcuts.cljs:613
 msgid "shortcuts.export-shapes"
 msgstr "Export shapes"
 

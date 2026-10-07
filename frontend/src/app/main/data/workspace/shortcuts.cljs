@@ -602,6 +602,13 @@
                           :section [:workspace]
                           :fn #(st/emit! (toggle-layout-flag :snap-pixel-grid))}
 
+   :export-selected-shape {:tooltip (ds/meta "E")
+                           :label (fn [] (tr "shortcuts.export-selected-shape"))
+                           :command (ds/c-mod "e")
+                           :subsections [:basics :main-menu]
+                           :section [:workspace :basics]
+                           :fn #(st/emit! (de/export-selected-shape))}
+
    :export-shapes        {:tooltip (ds/meta-shift "E")
                           :label (fn [] (tr "shortcuts.export-shapes"))
                           :command (ds/c-mod "shift+e")
