@@ -150,6 +150,9 @@
                (rx/filter (fn [data] (= :unknown (:type data))))
                (rx/map (fn [_]
                          {:uri    (:uri file)
+                          :name   (:name file)
+                          :size   (:size file)
+                          :type   :unknown
                           :status :error
                           :error  (tr "dashboard.import.analyze-error")}))))
 
@@ -272,6 +275,90 @@
                       (finish-upload!)
                       (rx/from (entry-messages entries {:status :error
                                                         :error  (cause-message cause (tr "labels.error"))}))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WIZARD STEP AND FILE SIZE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn format-file-size
+  "Human size of a dropped file, like `234MB` or `512KB`.
+  Returns nil when the size is unknown, so callers show only the
+  extension."
+  [size]
+  (when (and (some? size) (number? size) (>= size 0))
+    (let [kb 1024
+          mb (* kb 1024)
+          gb (* mb 1024)]
+      (cond
+        (< size kb)
+        (str (js/Math.round size) "B")
+
+        (< size mb)
+        (let [v (/ size kb)]
+          (str (if (< v 10)
+                 (-> (.toFixed v 1)
+                     (str/replace #"\.0$" ""))
+                 (str (js/Math.round v)))
+               "KB"))
+
+        (< size gb)
+        (let [v (/ size mb)]
+          (str (if (< v 10)
+                 (-> (.toFixed v 1)
+                     (str/replace #"\.0$" ""))
+                 (str (js/Math.round v)))
+               "MB"))
+
+        :else
+        (let [v (/ size gb)]
+          (str (if (< v 10)
+                 (-> (.toFixed v 1)
+                     (str/replace #"\.0$" ""))
+                 (str (js/Math.round v)))
+               "GB"))))))
+
+(defn entry-extension
+  "The extension the wizard shows under the name, like `.penpot`.
+  It prefers the type the analysis found and falls back to the
+  extension of the dropped name, defaulting to `.penpot`."
+  [{:keys [type name]}]
+  (case type
+    :legacy-zip ".zip"
+    (:binfile-v1 :binfile-v3) ".penpot"
+    (let [ext (some-> name str/trim not-empty
+                      (str/replace #".*(\.[A-Za-z0-9]+)$" "$1")
+                      (str/lower))]
+      (if (contains? #{".penpot" ".zip"} ext)
+        ext
+        ".penpot"))))
+
+(defn import-step
+  "The wizard step the header paints: `:check` while the entries are
+  analyzed, `:upload` while any entry reports an `:upload` milestone,
+  and `:import` once the jobs run or the wizard reaches its outcome.
+  The upload milestone only exists on the client, so its presence is
+  what separates upload from import inside `:import-progress`."
+  [status entries]
+  (case status
+    (:analyze :import-ready)
+    :check
+
+    :import-progress
+    (if (some #(= :upload (-> % :progress :stage)) entries)
+      :upload
+      :import)
+
+    (:import-success :import-error :library-resolution :library-summary)
+    :import
+
+    :check))
+
+(defn awaiting-analysis?
+  "Whether the wizard hides the rows and shows the checking placeholder
+  instead: the dialog is still analyzing and no entry failed yet. Entries
+  that fail during analyze take the error-summary path instead of rows."
+  [status errors?]
+  (and (= :analyze status) (not errors?)))
 
 (defn import-files
   "Import the entries the wizard analyzed, one job per package.

@@ -510,6 +510,68 @@
          (rx/push! ws-stream (message (event job-id :end {:outcome "completed"})))
          (await done))))))
 
+(t/deftest format-file-size-writes-human-sizes
+  (t/testing "unknown sizes show nothing"
+    (t/is (nil? (imp/format-file-size nil)))
+    (t/is (nil? (imp/format-file-size -1))))
+
+  (t/testing "bytes, kilobytes, megabytes and gigabytes"
+    (t/is (= "0B" (imp/format-file-size 0)))
+    (t/is (= "512B" (imp/format-file-size 512)))
+    (t/is (= "1KB" (imp/format-file-size 1024)))
+    (t/is (= "1.5KB" (imp/format-file-size 1536)))
+    (t/is (= "512KB" (imp/format-file-size (* 512 1024))))
+    (t/is (= "234MB" (imp/format-file-size (* 234 1024 1024))))
+    (t/is (= "1.2GB" (imp/format-file-size (* 1.2 1024 1024 1024))))))
+
+(t/deftest entry-extension-prefers-the-analyzed-type
+  (t/testing "known types win over the name"
+    (t/is (= ".penpot" (imp/entry-extension {:type :binfile-v1 :name "a.zip"})))
+    (t/is (= ".penpot" (imp/entry-extension {:type :binfile-v3 :name "a.zip"})))
+    (t/is (= ".zip" (imp/entry-extension {:type :legacy-zip :name "a.penpot"}))))
+
+  (t/testing "unknown types fall back to the name, then to penpot"
+    (t/is (= ".penpot" (imp/entry-extension {:type :unknown :name "a.penpot"})))
+    (t/is (= ".zip" (imp/entry-extension {:type :unknown :name "a.ZIP"})))
+    (t/is (= ".penpot" (imp/entry-extension {:type :unknown :name "no-extension"})))
+    (t/is (= ".penpot" (imp/entry-extension {:type nil :name nil})))))
+
+(t/deftest awaiting-analysis-hides-the-rows-while-checking
+  (t/testing "only a clean analysis shows the placeholder"
+    (t/is (true? (imp/awaiting-analysis? :analyze false)))
+    (t/is (false? (imp/awaiting-analysis? :analyze true))))
+  (t/testing "any later stage shows the rows"
+    (t/is (false? (imp/awaiting-analysis? :import-ready false)))
+    (t/is (false? (imp/awaiting-analysis? :import-progress false)))
+    (t/is (false? (imp/awaiting-analysis? :import-success false)))))
+
+(t/deftest import-step-follows-the-wizard-status
+  (t/testing "analysis paints the check step"
+    (t/is (= :check (imp/import-step :analyze [])))
+    (t/is (= :check (imp/import-step :import-ready []))))
+
+  (t/testing "an upload milestone paints the upload step"
+    (let [entries [{:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :upload :counters {:upload {:current 1 :total 2}}}}]]
+      (t/is (= :upload (imp/import-step :import-progress entries)))))
+
+  (t/testing "queued or job milestones paint the import step"
+    (let [queued  [{:file-id (uuid/next) :status :import-queued}]
+          started [{:file-id (uuid/next) :status :import-progress}]
+          pages   [{:file-id (uuid/next)
+                    :status :import-progress
+                    :progress {:stage :pages :counters {:pages {:current 1 :total 8}}}}]]
+      (t/is (= :import (imp/import-step :import-progress queued)))
+      (t/is (= :import (imp/import-step :import-progress started)))
+      (t/is (= :import (imp/import-step :import-progress pages)))))
+
+  (t/testing "terminal and resolution stages paint the import step"
+    (t/is (= :import (imp/import-step :import-success [])))
+    (t/is (= :import (imp/import-step :import-error [])))
+    (t/is (= :import (imp/import-step :library-resolution [])))
+    (t/is (= :import (imp/import-step :library-summary [])))))
+
 (t/deftest ^:async cancel-job-asks-the-server-and-ignores-failures
   (let [calls  (atom [])
         job-id (uuid/next)]

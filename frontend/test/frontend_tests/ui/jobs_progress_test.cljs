@@ -32,6 +32,15 @@
                                             :files {:current 1 :total 2}}}
                                 :file? true)))))
 
+(t/deftest the-upload-counter-answers-a-percentage
+  (t/testing "the chunks sent become a whole percentage"
+    (t/is (= 33 (jp/upload-pct {:counters {:upload {:current 1 :total 3}}})))
+    (t/is (= 100 (jp/upload-pct {:counters {:upload {:current 9 :total 9}}}))))
+
+  (t/testing "any other stage cannot be determinate"
+    (t/is (nil? (jp/upload-pct {:counters {:pages {:current 3 :total 8}}})))
+    (t/is (nil? (jp/upload-pct nil)))))
+
 (t/deftest an-upload-milestone-writes-the-percentage-of-the-file
   (with-redefs [i18n/tr stub-tr]
     (t/testing "the chunks sent become a whole percentage"
