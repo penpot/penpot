@@ -12,6 +12,7 @@
     [app.common.math :as mth]
     [app.common.types.color :as clr]
     [app.common.types.fills :as types.fills]
+    [app.common.types.text.japanese-layout :as jl]
     [clojure.set :as set]
     [clojure.walk :as walk]
     [cuerdas.core :as str]))
@@ -49,6 +50,10 @@
 
 (def text-valign-attrs
   [:vertical-align])
+
+;; How the shape fits lines slightly too long (see `jl/enum-values`).
+(def text-line-adjustment-attrs
+  [:line-adjustment])
 
 (def text-decoration-attrs
   [:text-decoration])
@@ -97,21 +102,28 @@
   [:grow-type])
 
 (def root-attrs
-  text-valign-attrs)
+  (d/concat-vec text-valign-attrs text-line-adjustment-attrs))
 
 (def paragraph-attrs
   (d/concat-vec
    text-align-attrs
-   text-direction-attrs))
+   text-direction-attrs
+   jl/whole-shape-paragraph-attrs))
 
 (def text-node-attrs
   (d/concat-vec
    text-typography-attrs
    text-font-attrs
    text-spacing-attrs
+   jl/span-attrs
    text-decoration-attrs
    text-transform-attrs
    text-fills))
+
+(def text-node-style-attrs
+  "Text node attrs that style characters, without the attrs the characters
+   own (ruby reading, warichu)."
+  (vec (remove (set jl/text-content-attrs) text-node-attrs)))
 
 (def text-span-attrs
   "Inline text span attrs. Line-height is paragraph-level in the DOM editor;
