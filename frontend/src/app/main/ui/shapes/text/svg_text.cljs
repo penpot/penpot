@@ -9,16 +9,182 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.text.japanese-layout :as jl]
    [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.gradients :as grad]
+   [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
+
+(defn- px
+  "CSS pixel size, or nil for a non-positive size."
+  [size]
+  (when (pos? size) (dm/str size "px")))
+
+(defn- with-font-features
+  [style data]
+  (let [font-features (sts/font-feature-settings (:font-features data))]
+    (cond-> style
+      (some? font-features) (obj/set! "fontFeatureSettings" font-features))))
+
+(defn- annotation-style
+  "Style of a ruby, warichu or emphasis line drawn at `font-size` along a
+  position-data strip."
+  [data font-size vertical? text-orientation fill]
+  (with-font-features
+    #js {:fontFamily (:font-family data)
+         :fontSize (px font-size)
+         :fontWeight (:font-weight data)
+         :fontStyle (:font-style data)
+         :direction (:direction data)
+         :writingMode (if vertical? "vertical-rl" "horizontal-tb")
+         :textSpacingTrim "normal"
+         :textOrientation text-orientation
+         :textAutospace "normal"
+         :whiteSpace "pre"
+         :fill fill}
+    data))
+
+(defn- strip-text-combine-upright
+  "CSS text-combine-upright of a strip. SVG applies it to whole `text`
+   elements only, so the renderer gives each combined digit run of a
+   `digits` span its own strip, which takes `all`."
+  [data]
+  (let [value (:text-combine-upright data)]
+    (if-let [segments (jl/digit-combine-segments (str (:text data)) value)]
+      (when (and (= 1 (count segments)) (second (first segments)))
+        "all")
+      (sts/css-text-combine-upright value))))
+
+(defn- strip-text-props
+  "Props of the `text` element drawing a position-data strip's base text."
+  [shape data index fill browser-props]
+  (let [style (with-font-features
+                #js {:fontFamily (:font-family data)
+                     :fontSize (:font-size data)
+                     :fontWeight (:font-weight data)
+                     :textTransform (:text-transform data)
+                     :textDecoration (:text-decoration data)
+                     :textCombineUpright (strip-text-combine-upright data)
+                     :letterSpacing (:letter-spacing data)
+                     :fontStyle (:font-style data)
+                     :direction (:direction data)
+                     :textSpacingTrim "normal"
+                     :whiteSpace "pre"}
+                data)
+        key   (dm/str "text-" (:id shape) "-" index)]
+    (if (= "vertical-rl" (:writing-mode data))
+      ;; Vertical strip: glyphs run down the column; x is the column's
+      ;; central axis and y the strip top (stored y is the strip bottom).
+      #js {:key key
+           :x (+ (:x data) (/ (:width data) 2))
+           :y (- (:y data) (:height data))
+           :textLength (:height data)
+           :lengthAdjust "spacingAndGlyphs"
+           :style (-> style
+                      (obj/set! "writingMode" "vertical-rl")
+                      (obj/set! "textOrientation" (or (:text-orientation data) "mixed"))
+                      (obj/set! "textAutospace" "normal")
+                      (obj/set! "fill" fill))}
+      (cond-> #js {:key key
+                   :x (if (= "rtl" (:direction data)) (+ (:x data) (:width data)) (:x data))
+                   :y (:y data)
+                   :dominantBaseline "ideographic"
+                   :textLength (:width data)
+                   :lengthAdjust "spacingAndGlyphs"
+                   :style (obj/set! style "fill" fill)}
+        (some? browser-props)
+        (obj/merge! browser-props)))))
+
+(defn- warichu-line-props
+  "Props of the `text` element drawing one warichu sub-line at half size in
+  its own strip: the renderer splits the span and places each sub-line."
+  [data fill]
+  (let [vertical?  (= "vertical-rl" (:writing-mode data))
+        font-size  (* (js/parseFloat (:font-size data)) jl/warichu-font-scale)
+        font-size  (if (js/isNaN font-size) 0 font-size)
+        style      (annotation-style data font-size vertical? (when vertical? "upright") fill)
+        top        (- (:y data) (:height data))]
+    (if vertical?
+      #js {:x (+ (:x data) (/ (:width data) 2))
+           :y top
+           :style style}
+      #js {:x (:x data)
+           :y top
+           :dominantBaseline "hanging"
+           :textLength (:width data)
+           :lengthAdjust "spacingAndGlyphs"
+           :style style})))
+
+(defn- ruby-text-props
+  "Props of the `text` element drawing a strip's ruby annotation beside it
+  (vertical) or above/below it (horizontal), per its side and alignment. A
+  Western reading is centred as one word, never stretched to the base."
+  [shape data index ruby-font-size style]
+  (let [key       (dm/str "ruby-" (:id shape) "-" index)
+        ruby-side (:ruby-side data (jl/enum-default :ruby-side))
+        word?     (jl/western-reading? (jl/visible-ruby data))]
+    (if (= "vertical-rl" (:writing-mode data))
+      (let [x (if (= "under" ruby-side)
+                (- (:x data) (/ ruby-font-size 2))
+                (+ (:x data) (:width data) (/ ruby-font-size 2)))
+            top (- (:y data) (:height data))]
+        (if word?
+          #js {:key key
+               :x x
+               :y (+ top (/ (:height data) 2))
+               :textAnchor "middle"
+               :style style}
+          #js {:key key
+               :x x
+               :y top
+               :textLength (:height data)
+               :lengthAdjust "spacingAndGlyphs"
+               :style style}))
+      (let [rtl?       (= "rtl" (:direction data))
+            ruby-align (if word? "center" (:ruby-align data (jl/enum-default :ruby-align)))
+            fit?       (and (not word?)
+                            (or (= "none" (:ruby-overhang data (jl/enum-default :ruby-overhang)))
+                                (= "space-around" ruby-align)))]
+        (cond-> #js {:key key
+                     :x (if (= "center" ruby-align)
+                          (+ (:x data) (/ (:width data) 2))
+                          (if rtl? (+ (:x data) (:width data)) (:x data)))
+                     :y (if (= "under" ruby-side)
+                          (:y data)
+                          (- (:y data) (:height data)))
+                     :dominantBaseline (if (= "under" ruby-side) "hanging" "text-after-edge")
+                     :style style}
+          (= "center" ruby-align)
+          (obj/set! "textAnchor" "middle")
+
+          (= "start" ruby-align)
+          (obj/set! "textAnchor" (if rtl? "end" "start"))
+
+          fit?
+          (-> (obj/set! "textLength" (:width data))
+              (obj/set! "lengthAdjust" "spacingAndGlyphs"))
+
+          (= "space-between" ruby-align)
+          (-> (obj/set! "textLength" (:width data))
+              (obj/set! "lengthAdjust" "spacing")))))))
+
+(defn- emphasis-mark-props
+  "Props of the `text` element drawing one emphasis mark centred in its em
+  box, as placed by the renderer."
+  [data fill]
+  (let [size (:width data)]
+    #js {:x (+ (:x data) (/ size 2))
+         :y (- (:y data) (/ (:height data) 2))
+         :textAnchor "middle"
+         :dominantBaseline "central"
+         :style (annotation-style data size false nil fill)}))
 
 (defn set-white-fill
   [shape]
@@ -71,33 +237,24 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [rtl? (= "rtl" (:direction data))
+        (let [vertical?        (= "vertical-rl" (:writing-mode data))
+              ruby             (jl/visible-ruby data)
+              font-size        (js/parseFloat (:font-size data))
+              ruby-font-size   (if (js/isNaN font-size)
+                                 0
+                                 (* font-size (jl/ruby-font-scale (:ruby-size data))))
+              ;; Annotations take the fills of this strip's own render id.
+              annotation-fill  (str "url(#fill-" index "-" render-id "-" index ")")
 
               browser-props
-              (cond
-                (cf/check-browser? :safari)
+              (when (and (not vertical?) (cf/check-browser? :safari))
                 #js {:dominantBaseline "hanging"
                      :dy "0.2em"
                      :y (- (:y data) (:height data))})
 
-              props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
-                             :x (if rtl? (+ (:x data) (:width data)) (:x data))
-                             :y (:y data)
-                             :dominantBaseline "ideographic"
-                             :textLength (:width data)
-                             :lengthAdjust "spacingAndGlyphs"
-                             :style (-> #js {:fontFamily (:font-family data)
-                                             :fontSize (:font-size data)
-                                             :fontWeight (:font-weight data)
-                                             :textTransform (:text-transform data)
-                                             :textDecoration (:text-decoration data)
-                                             :letterSpacing (:letter-spacing data)
-                                             :fontStyle (:font-style data)
-                                             :direction (:direction data)
-                                             :whiteSpace "pre"}
-                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))}
-                        (cond-> browser-props
-                          (obj/merge! browser-props)))
+              text-props (strip-text-props shape data index
+                                           (str "url(#fill-" index "-" render-id ")")
+                                           browser-props)
               shape (-> shape
                         (assoc :fills (:fills data))
                         ;; The text elements have the shadow and blur already applied in the
@@ -112,5 +269,17 @@
            [:defs
             [:& fills/fills          {:shape shape :render-id render-id}]]
 
-           [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
-            [:> :text props (:text data)]]]))]]))
+           (if (:emphasis-mark data)
+             ;; Emphasis marks (圏点) are not stroked.
+             [:> :text (emphasis-mark-props data annotation-fill) (:text data)]
+             [:*
+              [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
+               (if (= "warichu" (:warichu data))
+                 [:> :text (warichu-line-props data annotation-fill) (:text data)]
+                 [:> :text text-props (:text data)])]
+              (when (some? ruby)
+                [:> :text (ruby-text-props shape data index ruby-font-size
+                                           (annotation-style data ruby-font-size vertical?
+                                                             (:text-orientation data "mixed")
+                                                             annotation-fill))
+                 ruby])])]))]]))

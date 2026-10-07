@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as legacy.txt]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.util.text.writing-mode :as wm]
    [rumext.v2 :as mf]))
 
 (mf/defc render-text*
@@ -18,9 +20,17 @@
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
                 (sts/generate-text-styles shape node))
-        class (when is-code (:$id node))]
-    [:span.text-node {:style style :class class}
-     (if (= text "") "\u00A0" text)]))
+        class (when is-code (:$id node))
+        ruby  (jl/visible-ruby node)]
+    (if (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)
+                        :class (when is-code (dm/str class "-ruby"))}
+       [:span.text-node {:style style :class class} (sts/text-children text node)]
+       [:rt {:style (sts/generate-ruby-styles shape node)
+             :class (when is-code (dm/str class "-rt"))}
+        ruby]]
+      [:span.text-node {:style style :class class}
+       (if (= text "") "\u00A0" (sts/text-children text node))])))
 
 (mf/defc render-root*
   [{:keys [node children shape is-code]}]
@@ -73,7 +83,13 @@
   [{:keys [shape grow-type is-code]} ref]
   (let [{:keys [id x y width height content]} shape
 
-        content (if is-code (legacy.txt/index-content content) content)
+        ;; Generated code keeps the writing mode whatever the renderer.
+        content (if is-code
+                  (legacy.txt/index-content content)
+                  (wm/renderable-content content))
+
+        ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.
+        vertical? (wm/vertical-text-content? content)
 
         style
         (when-not is-code
@@ -81,8 +97,8 @@
                :left 0
                :top 0
                :background "white"
-               :width  (if (#{:auto-width} grow-type) 100000 width)
-               :height (if (#{:auto-height :auto-width} grow-type) 100000 height)})]
+               :width  (if (and (not vertical?) (#{:auto-width} grow-type)) 100000 width)
+               :height (if (and (not vertical?) (#{:auto-height :auto-width} grow-type)) 100000 height)})]
 
     [:div.text-node-html
      {:id (dm/str "html-text-node-" id)

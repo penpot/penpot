@@ -29,6 +29,7 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
    [app.util.text.content :as content]
+   [app.util.text.writing-mode :as wm]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -98,11 +99,11 @@
 
                  (st/emit! (dwt/clean-text-modifier id))))
        ;; Always clear the task and log measurement errors.
-       (p/catch (fn [cause]
-                  (log/error :hint "Could not measure text shape"
-                             :shape-id id
-                             :cause cause)
-                  nil))))
+       (p/merr (fn [cause]
+                 (log/error :hint "Could not measure text shape"
+                            :shape-id id
+                            :cause cause)
+                 (p/resolved nil)))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
@@ -167,6 +168,16 @@
         pending-update* (mf/use-state {})
         pending-update  (deref pending-update*)
 
+        ;; Vertical texts already measured as horizontal (see `stale-layout?`).
+        remeasured-ref (mf/use-ref #{})
+
+        ;; A vertical text keeps the position data the WASM renderer computed
+        ;; for its columns; measure it once more as horizontal text.
+        stale-layout?
+        (fn [id]
+          (and (not (contains? (mf/ref-val remeasured-ref) id))
+               (wm/stale-vertical-layout? (:content (get text-shapes id)))))
+
         text-change?
         (fn [id]
           (let [new-shape (get text-shapes id)
@@ -176,7 +187,8 @@
             (or (and (not remote?) ;; changes caused by a remote peer are not re-calculated
                      (not (text-properties-equal? old-shape new-shape)))
                 ;; When the position data is nil we force to recalculate
-                (nil? (:position-data new-shape)))))
+                (nil? (:position-data new-shape))
+                (stale-layout? id))))
 
         changed-texts
         (mf/with-memo [text-shapes pending-update]
@@ -193,6 +205,7 @@
            ;; Unique to indentify the pending state
            (let [uid (uuid/next)
                  id  (:id shape)]
+             (mf/set-ref-val! remeasured-ref (conj (mf/ref-val remeasured-ref) id))
              (swap! pending-update* assoc uid id)
              ;; Callback refs run at the DOM commit boundary. Track the exact
              ;; measurement promise from that acknowledgement; any resize it

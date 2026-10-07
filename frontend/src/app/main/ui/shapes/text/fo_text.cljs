@@ -10,7 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as cc]
+   [app.common.types.text.japanese-layout :as jl]
    [app.main.ui.shapes.text.styles :as sts]
+   [app.util.text.writing-mode :as wm]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -19,9 +21,14 @@
   (let [text  (:text node)
         style (if (= text "")
                 (sts/generate-text-styles shape parent)
-                (sts/generate-text-styles shape node))]
-    [:span.text-node {:style style}
-     (if (= text "") "\u00A0" text)]))
+                (sts/generate-text-styles shape node))
+        ruby  (jl/visible-ruby node)]
+    (if (some? ruby)
+      [:ruby.ruby-node {:style (sts/generate-ruby-container-styles node)}
+       [:span.text-node {:style style} (sts/text-children text node)]
+       [:rt {:style (sts/generate-ruby-styles shape node)} ruby]]
+      [:span.text-node {:style style}
+       (if (= text "") "\u00A0" (sts/text-children text node))])))
 
 (mf/defc render-root*
   [{:keys [node children shape]}]
@@ -164,7 +171,10 @@
         y         (dm/get-prop shape :y)
         width     (dm/get-prop shape :width)
         height    (dm/get-prop shape :height)
-        content   (get shape :content)
+        content   (wm/renderable-content (get shape :content))
+
+        ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.
+        vertical? (wm/vertical-text-content? content)
 
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
@@ -175,8 +185,8 @@
       :data-colors (str/join "," colors)
       :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
-      :width  (if (#{:auto-width} grow-type) 100000 width)
-      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
+      :width  (if (and (not vertical?) (#{:auto-width} grow-type)) 100000 width)
+      :height (if (and (not vertical?) (#{:auto-height :auto-width} grow-type)) 100000 height)
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
