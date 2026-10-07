@@ -35,11 +35,12 @@
     "clipboard:read" "clipboard:write"
     "user:read"
     "allow:downloads"
-    "allow:localstorage"})
+    "allow:localstorage"
+    "allow:global"})
 
 (def schema:permissions
   "Schema for plugin permissions - a set of valid permission strings."
-  [:set {:gen/max 11} (into [:enum] (sort valid-permissions))])
+  [:set {:gen/max 12} (into [:enum] (sort valid-permissions))])
 
 (def max-plugins
   "Maximum number of plugins a profile can hold."
@@ -58,6 +59,7 @@
   [:map
    [:plugin-id :string]
    [:version {:optional true} :int]
+   [:scope {:optional true} [:enum "workspace" "global"]]
    [:name [:string {:max (:name registry-entry-max-lengths)}]]
    [:description {:optional true} [:string {:max (:description registry-entry-max-lengths)}]]
    [:host [:string {:max (:host registry-entry-max-lengths)}]]

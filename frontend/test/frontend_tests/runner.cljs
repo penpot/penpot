@@ -73,6 +73,7 @@
    [frontend-tests.plugins.interactions-test]
    [frontend-tests.plugins.library-test]
    [frontend-tests.plugins.local-storage-test]
+   [frontend-tests.plugins.management-test]
    [frontend-tests.plugins.page-active-validation-test]
    [frontend-tests.plugins.page-test]
    [frontend-tests.plugins.parser-test]
@@ -214,6 +215,7 @@
    'frontend-tests.plugins.comments-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.plugins.events-test
+   'frontend-tests.plugins.management-test
    'frontend-tests.plugins.file-test
    'frontend-tests.plugins.flex-test
    'frontend-tests.plugins.format-test

@@ -188,8 +188,8 @@ importers:
         specifier: 1.5.0
         version: 1.5.0
       '@penpot/plugin-types':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: link:../../../plugins/libs/plugin-types
+        version: link:../../../plugins/libs/plugin-types
     devDependencies:
       cross-env:
         specifier: ^10.1.0
@@ -662,9 +662,6 @@ packages:
 
   '@penpot/plugin-styles@1.5.0':
     resolution: {integrity: sha512-rwXFBRPd0IZs3ens+eRT8oA5WqkQgF6xlW6fCfH7U1NHRjej9HH7vTGXmfjoIVml6Xx1sbyYHZVxkQC8Ub8+zA==}
-
-  '@penpot/plugin-types@1.5.0':
-    resolution: {integrity: sha512-hFk4Rx66rLaSUWoN6bhxXkDI2ymwKg9xokdslvZvXM5MSmEmfhsJKUMwtuzgYWljbbfaQhK+DjK8g8yVbbavtA==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -1879,8 +1876,6 @@ snapshots:
   '@oxc-project/types@0.151.0': {}
 
   '@penpot/plugin-styles@1.5.0': {}
-
-  '@penpot/plugin-types@1.5.0': {}
 
   '@pinojs/redact@0.4.0': {}
 

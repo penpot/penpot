@@ -54,15 +54,20 @@
   "Read the manifest.json defined by the plugins definition and transforms it into an
   object that will be stored in the register."
   [plugin-url ^js manifest]
-  (let [name (obj/get manifest "name")
-        desc (obj/get manifest "description")
-        code (obj/get manifest "code")
-        icon (obj/get manifest "icon")
-        vers (d/nilv (obj/get manifest "version") 1)
+  (let [name  (obj/get manifest "name")
+        desc  (obj/get manifest "description")
+        code  (obj/get manifest "code")
+        icon  (obj/get manifest "icon")
+        vers  (d/nilv (obj/get manifest "version") 1)
+        scope (obj/get manifest "scope")
 
         permissions (into #{} (obj/get manifest "permissions" []))
         permissions
         (cond-> permissions
+          ;; Global plugins must be explicitly allowed by the user
+          (= "global" scope)
+          (conj "allow:global")
+
           (contains? permissions "content:write")
           (conj "content:read")
 
@@ -102,6 +107,7 @@
          {:plugin-id plugin-id
           :url (str plugin-url)
           :version vers
+          :scope scope
           :name name
           :description desc
           :host origin

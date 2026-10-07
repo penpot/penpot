@@ -166,13 +166,15 @@ Boards can have layout systems that automatically control the positioning and sp
 
 # The `penpot` and `penpotUtils` Objects, Exploring Designs
 
-A key object to use in your code is the `penpot` object (which is of type `Penpot`):
+A key object for navigating the currently active Penpot file is the `penpot` object (which is of type `Penpot`):
   * `penpot.selection` provides the list of shapes the user has selected in the Penpot UI.
      If it is unclear which elements to work on, you can ask the user to select them for you.
      ALWAYS immediately copy the selected shape(s) into `storage`! Do not assume that the selection remains unchanged.
   * `penpot.root` provides the root shape of the currently active page.
   * Generation of CSS content for elements via `penpot.generateStyle`
   * Generation of HTML/SVG content for elements via `penpot.generateMarkup`
+Members of `penpot` (e.g. `penpot.currentFile` and `penpot.root`) will be null no Penpot file is currently opened.
+You can use `penpotMgmt` to navigate to a file if needed (see below).
 
 For example, to generate CSS for the currently selected elements, you can execute this:
     return penpot.generateStyle(penpot.selection, { type: "css", withChildren: true });
@@ -429,6 +431,18 @@ For many tasks, it can be critical to visually inspect the design. Remember to u
 * Check for reasonable font sizes and typefaces
 * The use of flex layouts is encouraged for cases where elements are arranged in rows or columns with consistent spacing/positioning.
   Consider converting boards to flex layout when appropriate.
+
+# The `penpotMgmt` Object
+
+This object (of type `PenpotMgmt`) serves to manage Penpot design projects and files.
+It allows you to discover, create and navigate to design projects and files the user has access to.
+Create a project with `await penpotMgmt.createProject({ name: "Design system" })` (optionally specify `teamId`).
+Create a file with `await penpotMgmt.createFile({ projectId: project.id, name: "Login" })`.
+Both creation methods require `content:write` and return metadata without changing the current view.
+To edit the new file, call `await penpotMgmt.openFile(file.id, { teamId: file.teamId })` and reacquire file, page and shape objects.
+You navigate to different design files only when your task explicitly requires it/you are instructed to do so.
+If `penpotMgmt` is `null`, file management is unavailable and only the file that is open in Penpot can be used;
+ask the user to open another file if needed.
 
 --
 You have hereby read the 'Penpot High-Level Overview' and need not use a tool to read it again.

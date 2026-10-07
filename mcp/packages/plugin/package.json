@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@penpot/plugin-styles": "1.5.0",
-    "@penpot/plugin-types": "1.5.0"
+    "@penpot/plugin-types": "link:../../../plugins/libs/plugin-types"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

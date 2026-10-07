@@ -12,13 +12,14 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.broadcast :as mbc]
+   [app.main.data.auth :as-alias auth]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
-   [app.main.data.workspace :as-alias dw]
    [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [potok.v2.core :as ptk]))
 
 (def reconnect-fallback-interval 60000)
@@ -36,11 +37,13 @@
    :plugin-id preg/mcp-plugin-id
    :description "This plugin enables interaction with the Penpot MCP server"
    :allow-background true
+   :scope "global"
    :permissions
    #{"user:read"
      "library:read" "library:write"
      "comment:read" "comment:write"
-     "content:write" "content:read"}})
+     "content:write" "content:read"
+     "allow:global"}})
 
 (defonce interval-sub
   (atom nil))
@@ -147,7 +150,7 @@
                           (assoc :host (str (u/join cf/public-uri "plugins/mcp/"))))
 
             stopper-s (rx/merge
-                       (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                       (rx/filter (ptk/type? ::auth/logged-out) stream)
                        (rx/filter (ptk/type? ::stop-mcp-plugin) stream)
                        (rx/filter (ptk/type? ::init) stream))
 
@@ -234,7 +237,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper-s  (rx/merge
-                        (rx/filter (ptk/type? ::dw/finalize-workspace) stream)
+                        (rx/filter (ptk/type? ::auth/logged-out) stream)
                         (rx/filter (ptk/type? ::init) stream))
 
             mcp-state  (get state :mcp)]
@@ -274,3 +277,25 @@
                                        (stop-mcp-plugin))))))
 
              (rx/take-until stopper-s))))))
+
+(defn initialize
+  "Initialize the MCP controller for each authenticated app session."
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (if (contains? cf/flags :mcp)
+        (->> stream
+             (rx/filter #(or (ptk/type? ::du/set-profile %)
+                             (ptk/type? ::auth/logged-out %)))
+             (rx/map #(when (ptk/type? ::du/set-profile %)
+                        (:id (deref %))))
+             (rx/pipe (rxo/distinct-contiguous))
+             (rx/switch-map
+              (fn [profile-id]
+                (if profile-id
+                  (->> (rx/from (preg/wait-for-runtime))
+                       (rx/map (fn [_] (init))))
+                  (rx/empty))))
+             (rx/take-until (rx/filter (ptk/type? ::initialize) stream)))
+        (rx/empty)))))

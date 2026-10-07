@@ -2,12 +2,19 @@ import { ExecuteCodeTaskHandler } from "./task-handlers/ExecuteCodeTaskHandler";
 import { Task, TaskHandler } from "./TaskHandler";
 import { formatTaskError } from "./ErrorUtils";
 import type { PluginConnectionInit } from "../../common/src";
+import type { WorkspaceContext } from "@penpot/plugin-types";
 
 /**
  * indicates whether the plugin is running in an environment with the Penpot-integrated remote MCP server
  * enabled (as opposed to a local server used with the explicitly loaded plugin)
  */
 const isIntegratedRemoteMcp = !!mcp;
+
+/**
+ * the management API, which Penpot only exposes to plugins running with global scope;
+ * null otherwise (e.g. in Penpot versions without global plugins)
+ */
+const management = typeof penpotMgmt === "undefined" ? null : penpotMgmt;
 
 /**
  * Extracts the major.minor.patch prefix from a version string.
@@ -57,7 +64,7 @@ penpot.ui.onMessage<
                 penpotVersion: penpotVersionPrefix,
             });
         }
-        // connect only when requested in this workspace
+        // connect only when requested in this tab
         if (isIntegratedRemoteMcp && mcp?.isConnectionRequested()) {
             penpot.ui.sendMessage({
                 type: "start-server",
@@ -66,15 +73,22 @@ penpot.ui.onMessage<
             });
         }
     } else if (typeof message === "object" && message.type === "connection-metadata-request") {
-        const file = penpot.currentFile;
-        if (file && message.sessionId) {
+        const workspace = currentWorkspace();
+        if (message.sessionId) {
             const initialization: PluginConnectionInit & { penpotUserSessionId?: string } = {
                 type: "initialize",
-                session: { sessionId: message.sessionId, fileId: file.id, fileName: file.name },
+                session: {
+                    sessionId: message.sessionId,
+                    fileId: workspace.fileId,
+                    fileName: workspace.fileName,
+                    workspaceState: workspace.status,
+                },
                 penpotUserSessionId: penpot.currentUser.sessionId,
             };
             penpot.ui.sendMessage(initialization);
         }
+    } else if (typeof message === "object" && message.type === "context-request") {
+        sendWorkspaceContext();
     } else if (typeof message === "object" && message.type === "update-connection-status") {
         mcp?.setMcpStatus(message.status || "unknown", message.sessionId);
     } else if (typeof message === "object" && message.task && message.id) {
@@ -84,6 +98,38 @@ penpot.ui.onMessage<
         });
     }
 });
+
+/**
+ * Provides the workspace metadata of this tab.
+ * Without the management API, the metadata is derived from the open file.
+ */
+function currentWorkspace(): WorkspaceContext {
+    if (management) {
+        return management.workspace;
+    }
+    const file = penpot.currentFile;
+    return {
+        status: file ? "ready" : "none",
+        fileId: file?.id ?? null,
+        fileName: file?.name ?? null,
+        teamId: null,
+    };
+}
+
+/** Sends the current workspace metadata without replacing the connection. */
+function sendWorkspaceContext(): void {
+    const workspace = currentWorkspace();
+    penpot.ui.sendMessage({
+        type: "context-update",
+        context: {
+            fileId: workspace.fileId,
+            fileName: workspace.fileName,
+            workspaceState: workspace.status,
+        },
+    });
+}
+
+management?.on("workspacechange", sendWorkspaceContext);
 
 /**
  * Handles plugin task requests received from the MCP server via WebSocket.

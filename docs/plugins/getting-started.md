@@ -160,6 +160,7 @@ Set <code class="language-js">"version": 2</code> in your
 - **Code**: your plugin's file location. It needs to be compiled to JavaScript and reachable.
 - **Icon**: your plugin's icon, which will be also displayed in the plugin manager modal. It'll be a <code class="language-js"><img src=""></code> tag so you can use whichever image format works better for you. **It's recommended to use a 56x56 pixel icon for the best appearance on all devices**.
 - **Permissions**: your plugin's permissions, which allow access to different parts of the Penpot API.
+- **Scope** (optional): <code class="language-js">"workspace"</code> (the default) or <code class="language-js">"global"</code>. A workspace plugin closes when its file closes. A global plugin keeps running while the user moves between the dashboard and files, and gets the <code class="language-js">penpotMgmt</code> object to find, create and open projects and files. Global scope adds the <code class="language-js">allow:global</code> permission, which the user must accept.
 
 #### Types of permissions
 
@@ -184,6 +185,9 @@ Typical use cases: downloading the full project file for backup or sharing.
 
 - <code class="language-js">allow:localstorage</code>: Allows the access to the local storage proxy to store information. This info is only available for the plugin installation but be aware that a user can see this information in the browser.
 Typical use cases: storing authentication tokens for a plugin login
+
+- <code class="language-js">allow:global</code>: Allows the plugin to keep running while the user moves between the dashboard and files, and to find and open their projects and files. Added automatically when the manifest sets <code class="language-js">"scope": "global"</code>.
+Typical use cases: assistants or integrations that work across several files.
 
 _Note: Write permissions automatically includes its corresponding read permission (e.g., <code class="language-js">content:write</code> includes <code class="language-js">content:read</code>) because reading is required to perform write or modification actions._
 

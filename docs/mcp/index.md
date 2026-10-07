@@ -74,16 +74,17 @@ There are three key pieces:
 Some important concepts for users:
 * **Integrations page**: MCP is configured under **Your account → Integrations → MCP Server**. Here you enable or disable MCP, get the server URL and manage the MCP key.
 * **MCP key**: a personal, non-recoverable token that authenticates your AI client with the MCP server. Only one key can exist per user at a time. This is used by the remote MCP setup.
-* **MCP session**: a connection from a Penpot tab to the MCP server, identified by a short session ID. Several tabs can connect independently, including tabs showing the same file.
+* **MCP session**: a connection from a Penpot tab to the MCP server, identified by a short session ID derived from the tab's user session. Several tabs can connect independently, including tabs showing the same file.
 * **Current page**: the page open in the selected session. Switching browser focus to another tab does not change which session the agent uses.
 
 ### Working with multiple files
 
 Connect the tabs you want to use:
 
-* **Remote MCP**: open each file and choose **MCP → Connect** in the toolbar. Use **Disconnect** in the same menu to disconnect that tab.
+* **Remote MCP**: choose **MCP → Connect** in the dashboard header or a file's toolbar. Use **Disconnect** in the same place to disconnect that tab.
 * **Local MCP**: run the plugin in each file and connect it to your local server. Each plugin connection has its own session ID.
 * Connecting or disconnecting one tab does not disconnect the others.
+* A connected tab stays connected while navigating between the dashboard and files. Its session ID stays the same; requests operate on the currently open file.
 
 Choose a session for your agent:
 
@@ -176,7 +177,7 @@ When this happens, MCP fails fast instead of waiting for a long task timeout:
 To recover:
 
 * If the tab was only suspended, focus it, wait until MCP reconnects, and retry the prompt.
-* If the tab was unloaded or reloaded, open the file and connect again. Copy the new session ID if your agent was using the previous one.
+* If the tab was unloaded or reloaded, connect again from the dashboard or a file. Copy the new session ID if your agent was using the previous one.
 
 To reduce the chances of the browser putting Penpot to sleep during long MCP sessions:
 
@@ -271,7 +272,7 @@ Remote MCP is the easiest way to start using AI agents with Penpot. It's hosted 
 
 1. Open **Your account → Integrations**.
 2. In the **MCP Server** section, read the short description to confirm that feature is available for your account.
-3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions. You still need to connect each file explicitly.
+3. Use the **Status** toggle to enable MCP Server. Penpot remembers this state per user across sessions. You still need to connect each tab explicitly.
 4. If this is your first time, Penpot will ask you to **generate an MCP key**. The key is shown only once, store it safely.
    * Treat the MCP key like a password/token: do not share it in screenshots, logs, or code samples.
 5. Once enabled, you will see:

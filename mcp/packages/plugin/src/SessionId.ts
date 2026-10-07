@@ -2,8 +2,8 @@
 export class SessionId {
     private static readonly ALPHABET = "abcdefghijklmnopqrstuvwxyz234567";
 
-    public static async forFile(penpotUserSessionId: string, fileId: string): Promise<string> {
-        const input = new TextEncoder().encode(JSON.stringify([penpotUserSessionId, fileId]));
+    public static async forSession(penpotUserSessionId: string): Promise<string> {
+        const input = new TextEncoder().encode(penpotUserSessionId);
         const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", input));
         return SessionId.encode(digest);
     }

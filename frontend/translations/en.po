@@ -8180,6 +8180,12 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Start file downloads."
 
+#: src/app/main/ui/workspace/plugins.cljs:339
+msgid "workspace.plugins.permissions.allow-global"
+msgstr ""
+"Keep running while you move between the dashboard and your files, and find "
+"and open your projects and files."
+
 #: src/app/main/ui/workspace/plugins.cljs:332
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Store data in the browser."

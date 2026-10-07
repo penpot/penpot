@@ -33,7 +33,7 @@ vi.mock('./ses.js', () => ({
 describe('plugin-loader', () => {
   let mockContext: Context;
   let manifest: Manifest;
-  let mockPluginApi: Awaited<ReturnType<typeof createPlugin>>;
+  let mockPluginApi: NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
   let mockClose: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -61,7 +61,7 @@ describe('plugin-loader', () => {
         close: mockClose,
         sendMessage: vi.fn(),
       },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     mockContext = {
       addListener: vi.fn(),
@@ -84,6 +84,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
     expect(mockPluginApi.plugin.close).not.toHaveBeenCalled();
     expect(getPlugins()).toHaveLength(1);
@@ -129,7 +130,7 @@ describe('plugin-loader', () => {
       },
       iframeWindow: mockIframeWindow,
       manifest: { ...manifest, host: 'http://localhost:4202' },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     vi.mocked(createPlugin).mockResolvedValue(mockPluginWithIframe);
 
@@ -173,7 +174,7 @@ describe('plugin-loader', () => {
       },
       iframeWindow: mockIframeWindow1,
       manifest: { ...manifest, host: 'http://localhost:4202' },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     const mockPluginApi2 = {
       plugin: {
@@ -182,7 +183,7 @@ describe('plugin-loader', () => {
       },
       iframeWindow: mockIframeWindow2,
       manifest: { ...manifest, host: 'http://localhost:4203' },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     vi.mocked(createPlugin).mockResolvedValue(mockPluginApi1);
     await loadPlugin(manifest);
@@ -215,7 +216,7 @@ describe('plugin-loader', () => {
         pluginId: 'background-plugin',
         allowBackground: true,
       },
-    } as unknown as Awaited<ReturnType<typeof createPlugin>>;
+    } as unknown as NonNullable<Awaited<ReturnType<typeof createPlugin>>>;
 
     vi.mocked(createPlugin).mockResolvedValue(backgroundPluginApi);
     await loadPlugin(manifest);
@@ -250,6 +251,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
   });
 
@@ -265,6 +267,7 @@ describe('plugin-loader', () => {
       manifest,
       expect.any(Function),
       undefined,
+      expect.any(AbortSignal),
     );
   });
 });
