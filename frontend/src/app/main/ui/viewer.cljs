@@ -319,8 +319,10 @@
         frames    (:frames page)
         frame     (get frames index)
 
-        fullscreen? (mf/deref header/fullscreen-ref)
-        overlays    (mf/deref current-overlays-ref)
+        fullscreen?    (mf/deref header/fullscreen-ref)
+        chrome-hidden? (and (mf/deref header/chrome-hidden-ref)
+                            (not= section :inspect))
+        overlays       (mf/deref current-overlays-ref)
 
         orig-frame
         (mf/with-memo [current-animations]
@@ -347,16 +349,20 @@
 
         click-on-screen
         (mf/use-fn
+         (mf/deps chrome-hidden?)
          (fn [event]
-           (let [origin (dom/get-target event)
-                 over-section? (dom/get-data origin "viewer-section")
-                 layout (dom/get-element "viewer-layout")
-                 has-force? (dom/get-data layout "force-visible")]
+           ;; With the chrome deliberately hidden, clicking the canvas must
+           ;; not bring it back over the design.
+           (when-not chrome-hidden?
+             (let [origin (dom/get-target event)
+                   over-section? (dom/get-data origin "viewer-section")
+                   layout (dom/get-element "viewer-layout")
+                   has-force? (dom/get-data layout "force-visible")]
 
-             (when over-section?
-               (if (= has-force? "true")
-                 (dom/set-data! layout "force-visible" false)
-                 (dom/set-data! layout "force-visible" true))))))
+               (when over-section?
+                 (if (= has-force? "true")
+                   (dom/set-data! layout "force-visible" false)
+                   (dom/set-data! layout "force-visible" true)))))))
 
         on-click
         (mf/use-fn
@@ -465,8 +471,16 @@
                (wapi/request-fullscreen wrapper))
              (wapi/exit-fullscreen))))))
 
+    (mf/use-layout-effect
+     (mf/deps chrome-hidden?)
+     (fn []
+       ;; Hiding the chrome hands the height of the top bar back to the
+       ;; viewport. Re-measure it, so a fit/fill zoom still describes the
+       ;; space that is actually visible.
+       (set-up-new-size)))
+
     (mf/use-effect
-     (mf/deps zoom-type)
+     (mf/deps zoom-type chrome-hidden?)
      (fn []
        (case zoom-type
          :fit (st/emit! dv/zoom-to-fit)
@@ -545,7 +559,8 @@
               :viewer-layout (not= section :inspect)
               :inspect-layout (= section :inspect))
       :data-fullscreen fullscreen?
-      :data-force-visible (:show-thumbnails local)}
+      :data-force-visible (:show-thumbnails local)
+      :data-chrome-hidden chrome-hidden?}
 
 
      [:div {:class (stl/css :viewer-content)}

@@ -5339,6 +5339,10 @@ msgstr "Seleccionar capa anterior"
 msgid "shortcuts.separate-nodes"
 msgstr "Separar nodos"
 
+#: src/app/main/data/viewer/shortcuts.cljs:76
+msgid "shortcuts.show-chrome"
+msgstr "Mostrar interfaz"
+
 #: src/app/main/data/workspace/shortcuts.cljs:167
 msgid "shortcuts.show-measure"
 msgstr "Mostrar medidas"
@@ -5439,6 +5443,10 @@ msgstr "Alternar alineación"
 #: src/app/main/data/workspace/shortcuts.cljs:646
 msgid "shortcuts.toggle-assets"
 msgstr "Mostrar/ocultar recursos"
+
+#: src/app/main/data/viewer/shortcuts.cljs:69
+msgid "shortcuts.toggle-chrome-hidden"
+msgstr "Mostrar/ocultar interfaz"
 
 #: src/app/main/data/workspace/shortcuts.cljs:661
 msgid "shortcuts.toggle-colorpalette"
@@ -6113,6 +6121,10 @@ msgstr "No mostrar interacciones"
 msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
+#: src/app/main/ui/viewer/header.cljs:114
+msgid "viewer.header.hide-interface"
+msgstr "Ocultar interfaz"
+
 #: src/app/main/ui/viewer/header.cljs:350
 msgid "viewer.header.inspect-section"
 msgstr "Inspector (%s)"
@@ -6137,9 +6149,17 @@ msgstr "Mostrar interacciones"
 msgid "viewer.header.show-interactions-on-click"
 msgstr "Mostrar interacciones al hacer click"
 
+#: src/app/main/ui/viewer/header.cljs:152
+msgid "viewer.header.show-interface"
+msgstr "Mostrar interfaz"
+
 #: src/app/main/ui/viewer/header.cljs:236
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
+
+#: src/app/main/data/viewer.cljs:508
+msgid "viewer.interface-hidden-hint"
+msgstr "Interfaz oculta. Pulsa Escape para volver a mostrarla."
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
