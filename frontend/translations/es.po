@@ -8276,6 +8276,12 @@ msgstr ""
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "Comenzar descargas de ficheros."
 
+#: src/app/main/ui/workspace/plugins.cljs:339
+msgid "workspace.plugins.permissions.allow-global"
+msgstr ""
+"Seguir funcionando mientras te mueves entre el panel y tus archivos, y "
+"buscar y abrir tus proyectos y archivos."
+
 #: src/app/main/ui/workspace/plugins.cljs:332
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "Guardar datos en el navegador."

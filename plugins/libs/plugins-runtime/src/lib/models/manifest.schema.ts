@@ -20,6 +20,7 @@ export const manifestSchema = z.object({
       'comment:write',
       'allow:downloads',
       'allow:localstorage',
+      'allow:global',
       'clipboard:read',
       'clipboard:write',
     ]),
