@@ -673,6 +673,70 @@ msgstr "Connect selected libraries"
 msgid "dashboard.import.file-name-label"
 msgstr "File name"
 
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.title"
+msgstr "Import file"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.status.ready"
+msgstr "Ready"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.label"
+msgstr "Import steps"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.check"
+msgstr "Check"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.upload"
+msgstr "Upload"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.steps.import"
+msgstr "Import"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.title"
+msgstr "Checking your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.check.message"
+msgstr "Making sure each file can be imported. This only takes a moment."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.title"
+msgstr "Files ready"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.ready.message"
+msgstr "Your files can be imported. Continue to upload them."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.title"
+msgstr "Uploading your files..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.upload.message"
+msgstr "Sending your files. Keep this dialog open until the upload ends."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "Importing 1 file"
+msgstr[1] "Importing %s files"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "1 done"
+msgstr[1] "%s done"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.importing.message"
+msgstr "Rebuilding pages, components and assets in your project."
+
 #: src/app/main/ui/dashboard/import.cljs:619
 msgid "dashboard.import.import-error.check-error"
 msgstr "We couldn't verify this file."
@@ -714,6 +778,14 @@ msgstr "Next file"
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.queued.title"
+msgstr "Waiting to start..."
+
+#: src/app/main/ui/dashboard/import.cljs
+msgid "dashboard.import.queued.message"
+msgstr "Your files are uploaded. The import starts as soon as a slot is free."
 
 #: src/app/main/ui/dashboard/import.cljs:443
 msgid "dashboard.import.resolve-libraries"
@@ -2656,7 +2728,7 @@ msgstr "Uploading file…"
 
 #: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
 msgid "jobs.queued"
-msgstr "Queued"
+msgstr "Waiting job slot"
 
 #: src/app/main/ui/dashboard/comments.cljs:94
 msgid "label.mark-all-as-read"
